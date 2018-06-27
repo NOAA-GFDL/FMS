@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 !-----------------------------------------------------------------------
 !                 Communication for message-passing codes
 !
@@ -550,25 +568,33 @@ private
   ! </INTERFACE>
 
   interface mpp_max
-     module procedure mpp_max_real8
+     module procedure mpp_max_real8_0d
+     module procedure mpp_max_real8_1d
 #ifndef no_8byte_integers
-     module procedure mpp_max_int8
+     module procedure mpp_max_int8_0d
+     module procedure mpp_max_int8_1d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_max_real4
+     module procedure mpp_max_real4_0d
+     module procedure mpp_max_real4_1d
 #endif
-     module procedure mpp_max_int4
+     module procedure mpp_max_int4_0d
+     module procedure mpp_max_int4_1d
   end interface
 
   interface mpp_min
-     module procedure mpp_min_real8
+     module procedure mpp_min_real8_0d
+     module procedure mpp_min_real8_1d
 #ifndef no_8byte_integers
-     module procedure mpp_min_int8
+     module procedure mpp_min_int8_0d
+     module procedure mpp_min_int8_1d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_min_real4
+     module procedure mpp_min_real4_0d
+     module procedure mpp_min_real4_1d
 #endif
-     module procedure mpp_min_int4
+     module procedure mpp_min_int4_0d
+     module procedure mpp_min_int4_1d
   end interface
 
 

@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module mpp_parameter_mod
 #include <fms_platform.h>
 
@@ -34,7 +52,7 @@ module mpp_parameter_mod
   public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE, CENTER, CORNER
   public :: MAX_DOMAIN_FIELDS, MAX_TILES
   public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY
-  public :: NONBLOCK_UPDATE_TAG, EDGEUPDATE, EDGEONLY
+  public :: NONBLOCK_UPDATE_TAG, EDGEUPDATE, EDGEONLY, NONSYMEDGEUPDATE, NONSYMEDGE
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_io_mod. 
@@ -76,6 +94,7 @@ module mpp_parameter_mod
   integer, parameter :: WEST=2, EAST=3, SOUTH=4, NORTH=5, SCALAR_BIT=6, CENTER=7, CORNER=8
   integer, parameter :: SOUTH_WEST=7, SOUTH_EAST=8, NORTH_WEST=9, NORTH_EAST=10
   integer, parameter :: EDGEONLY = 11
+  integer, parameter :: NONSYMEDGE = 12
   integer, parameter :: SEND=1, RECV=2
   integer, parameter :: GLOBAL_DATA_DOMAIN=2**GLOBAL, CYCLIC_GLOBAL_DOMAIN=2**CYCLIC
   integer, parameter :: AGRID=0, BGRID=1, CGRID=2, DGRID=3
@@ -89,7 +108,7 @@ module mpp_parameter_mod
   integer, parameter :: FOLD_SOUTH_EDGE=2**SOUTH, FOLD_NORTH_EDGE=2**NORTH
   integer, parameter :: WUPDATE=2**WEST, EUPDATE=2**EAST, SUPDATE=2**SOUTH, NUPDATE=2**NORTH
   integer, parameter :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE, SCALAR_PAIR=2**SCALAR_BIT
-  integer, parameter :: EDGEUPDATE=2**EDGEONLY
+  integer, parameter :: EDGEUPDATE=2**EDGEONLY, NONSYMEDGEUPDATE=2**NONSYMEDGE
   integer, parameter :: ZERO=0, NINETY=90, MINUS_NINETY=-90, ONE_HUNDRED_EIGHTY=180
   integer, parameter :: NONBLOCK_UPDATE_TAG = 2
 

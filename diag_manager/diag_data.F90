@@ -1,4 +1,21 @@
-#include <fms_platform.h>
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 MODULE diag_data_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -34,7 +51,7 @@ MODULE diag_data_mod
   ! </DESCRIPTION>
 
   USE time_manager_mod, ONLY: time_type
-  USE mpp_domains_mod, ONLY: domain1d, domain2d
+  USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE mpp_io_mod, ONLY: fieldtype
   USE fms_mod, ONLY: WARNING, write_version_number
 #ifdef use_netCDF
@@ -45,6 +62,8 @@ MODULE diag_data_mod
   IMPLICIT NONE
 
   PUBLIC
+
+#include <fms_platform.h>
 
   ! <!-- PARAMETERS for diag_data.F90 -->
   ! <DATA NAME="MAX_FIELDS_PER_FILE" TYPE="INTEGER, PARAMETER" DEFAULT="300">
@@ -138,6 +157,7 @@ MODULE diag_data_mod
   TYPE diag_fieldtype
      TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
+     TYPE(domainUG) :: DomainU
      REAL :: miss, miss_pack
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count
@@ -295,6 +315,11 @@ MODULE diag_data_mod
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+!----------
+!ug support
+     logical(INT_KIND) :: use_domainUG = .false.
+     logical(INT_KIND) :: use_domain2D = .false.
+!----------
   END TYPE file_type
   ! </TYPE>
 
@@ -310,7 +335,7 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="units" TYPE="CHARACTER(len=128)">
   !   </DATA>
-  !   <DATA NAME="standard_name" TYPE="CHARACTER(len=128)">
+  !   <DATA NAME="standard_name" TYPE="CHARACTER(len=256)">
   !   </DATA>
   !   <DATA NAME="interp_method" TYPE="CHARACTER(len=64)">
   !   </DATA>
@@ -357,7 +382,8 @@ MODULE diag_data_mod
   !     send_data calls.
   !   </DATA>
   TYPE input_field_type
-     CHARACTER(len=128) :: module_name, field_name, long_name, units, standard_name
+     CHARACTER(len=128) :: module_name, field_name, long_name, units
+     CHARACTER(len=256) :: standard_name
      CHARACTER(len=64) :: interp_method
      INTEGER, DIMENSION(3) :: axes
      INTEGER :: num_axes
@@ -516,6 +542,10 @@ MODULE diag_data_mod
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+!----------
+!ug support
+     logical :: reduced_k_unstruct = .false.
+!----------
   END TYPE output_field_type
   ! </TYPE>
 
@@ -557,6 +587,8 @@ MODULE diag_data_mod
   !   </DATA>
   !   <DATA NAME="aux" TYPE="CHARACTER(len=128)">
   !   </DATA>
+  !   <DATA NAME="req" TYPE="CHARACTER(len=128)">
+  !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
   !   </DATA>
   !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
@@ -577,7 +609,8 @@ MODULE diag_data_mod
      TYPE(domain1d) :: Domain
      TYPE(domain2d) :: Domain2
      TYPE(domain2d), dimension(MAX_SUBAXES) :: subaxis_domain2
-     CHARACTER(len=128) :: aux
+     type(domainUG) :: DomainUG
+     CHARACTER(len=128) :: aux, req
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
@@ -625,7 +658,7 @@ MODULE diag_data_mod
   ! <DATA NAME="max_output_fields" TYPE="INTEGER" DEFAULT="300">
   !   Maximum number of output fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
-  ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="300">
+  ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="600">
   !   Maximum number of input fields.  Increase via the diag_manager_nml namelist.
   ! </DATA>
   ! <DATA NAME="max_out_per_in_field" TYPE="INTEGER" DEFAULT="150">
@@ -636,6 +669,12 @@ MODULE diag_data_mod
   ! </DATA>
   ! <DATA NAME="do_diag_field_log" TYPE="LOGICAL" DEFAULT=".FALSE." />
   ! <DATA NAME="write_bytes_in_file" TYPE="LOGICAL" DEFAULT=".FALSE." />
+  ! <DATA NAME="flush_nc_files" TYPE="LOGICAL" DEFAULT=".FALSE.">
+  !   Indicate if diag_manager should force the flush of the netCDF diagnostic
+  !   files to disk Note: changing this to .TRUE. can greatly reduce the model
+  !   performance as at each write to the netCDF diagnostic file, the model must
+  !   wait until the flush to disk finishes.
+  ! </DATA>
   ! <DATA NAME="debug_diag_manager" TYPE="LOGICAL" DEFAULT=".FALSE." />
   ! <DATA NAME="max_num_axis_sets" TYPE="INTEGER" DEFAULT="25" />
   ! <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
@@ -649,7 +688,7 @@ MODULE diag_data_mod
   !   Cause a fatal error if the output field has a value outside the
   !   given range for a variable.
   ! </DATA>
-  ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
+  ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">
   !   Maximum number of user definable attributes per field.
   ! </DATA>
   ! <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
@@ -671,20 +710,25 @@ MODULE diag_data_mod
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
   INTEGER :: max_output_fields = 300 !< Maximum number of output fields.  Increase via diag_manager_nml.
-  INTEGER :: max_input_fields = 300 !< Maximum number of input fields.  Increase via diag_manager_nml.
+  INTEGER :: max_input_fields = 600 !< Maximum number of input fields.  Increase via diag_manager_nml.
   INTEGER :: max_out_per_in_field = 150 !< Maximum number of output_fields per input_field.  Increase via diag_manager_nml.
   INTEGER :: max_axes = 60 !< Maximum number of independent axes.
   LOGICAL :: do_diag_field_log = .FALSE.
   LOGICAL :: write_bytes_in_file = .FALSE.
   LOGICAL :: debug_diag_manager = .FALSE.
-  LOGICAL :: conserve_water = .TRUE. ! Undocumented namelist to control flushing of output files.
+  LOGICAL :: flush_nc_files = .FALSE. !< Control if diag_manager will force a
+                                      !! flush of the netCDF file on each write.
+                                      !! Note: changing this to .TRUE. can greatly
+                                      !! reduce the performance of the model, as the
+                                      !! model must wait until the flush to disk has
+                                      !! completed.
   INTEGER :: max_num_axis_sets = 25
   LOGICAL :: use_cmor = .FALSE.
   LOGICAL :: issue_oor_warnings = .TRUE.
   LOGICAL :: oor_warnings_fatal = .FALSE.
   LOGICAL :: region_out_use_alt_value = .TRUE.
 
-  INTEGER :: max_field_attributes = 2 !< Maximum number of user definable attributes per field.
+  INTEGER :: max_field_attributes = 4 !< Maximum number of user definable attributes per field. Liptak: Changed from 2 to 4 20170718
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name

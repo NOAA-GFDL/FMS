@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module memutils_mod
 !Author: Balaji (V.Balaji@noaa.gov)
 !Various operations for memory management
@@ -285,7 +303,7 @@ module memutils_mod
     m = memuse()*1e-3
 #else
     call mem_dump(m)
-#endif 
+#endif
     mmin = m; call mpp_min(mmin)
     mmax = m; call mpp_max(mmax)
     mavg = m; call mpp_sum(mavg); mavg = mavg/mpp_npes()
@@ -325,7 +343,7 @@ real    :: multiplier
                       access=MPP_SEQUENTIAL, threading=MPP_SINGLE )
   else
     rewind(mem_unit)
-  endif  
+  endif
 
   do; read (mem_unit,'(a)', end=10) string
     if ( INDEX ( string, 'VmHWM:' ) == 1 ) then
@@ -333,7 +351,7 @@ real    :: multiplier
       exit
     endif
   enddo
-  
+
   if (TRIM(string(LEN_TRIM(string)-1:)) == "kB" ) &
     multiplier = 1.0/1024. ! Convert from kB to MB
 

@@ -1,9 +1,85 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+!> \author William Cooke <William.Cooke@noaa.gov>
+!!
+!! \brief interpolator_mod is a module to interpolate climatology data to model the grid.
+!!
+!! Modules Included:
+!!
+!! <table>
+!!   <tr>
+!!     <th>Module Name</th>
+!!     <th>Functions Included</th>
+!!   </tr>
+!!      <tr>
+!!     <td>mpp_mod</td>
+!!     <td>mpp_error, FATAL, mpp_pe, mpp_init, mpp_exit, mpp_npes,
+!!         WARNING, NOTE, input_nml_file</td>
+!!   </tr>
+!!      <tr>
+!!     <td>mpp_io_mod</td>
+!!     <td>mpp_open, mpp_close, mpp_get_times, mpp_get_atts, mpp_get_info,
+!!             mpp_read, mpp_get_axes, mpp_get_axis_data, mpp_get_fields,
+!!                fieldtype, atttype, axistype, MPP_RDONLY, MPP_NETCDF, MPP_MULTI,
+!!             MPP_APPEND, MPP_SINGLE</td>
+!!   </tr>
+!!      <tr>
+!!     <td>mpp_domains_mod</td>
+!!     <td>mpp_update_domains, mpp_define_domains, mpp_global_field,
+!!             domain2d, mpp_define_layout, mpp_get_compute_domain</td>
+!!   </tr>
+!!      <tr>
+!!     <td>diag_manager_mod</td>
+!!     <td>diag_manager_init, get_base_time, register_diag_field,
+!!             send_data, diag_axis_init</td>
+!!   </tr>
+!!   <tr>
+!!     <td>fms_mod</td>
+!!     <td>open_namelist_file, fms_init, mpp_pe, mpp_root_pe, stdlog,
+!!         file_exist, write_version_number, check_nml_error, error_mesg,
+!!         FATAL, NOTE, WARNING, close_file</td>
+!!   </tr>
+!!      <tr>
+!!     <td>horiz_interp_mod</td>
+!!     <td>horiz_interp_type, horiz_interp_new, horiz_interp_init,
+!!             horiz_interp, horiz_interp_del</td>
+!!   </tr>
+!!   <tr>
+!!     <td>time_manager_mod</td>
+!!     <td>time_type, set_time, set_date, get_date, get_calendar_type,
+!!             JULIAN, NOLEAP, get_date_julian, set_date_no_leap,
+!!             set_date_julian, get_date_no_leap, print_date,
+!!             operator(+), operator(-), operator(*), operator(>),
+!!             operator(<), decrement_time</td>
+!!   </tr>
+!!      <tr>
+!!     <td>time_interp_mod</td>
+!!     <td>time_interp, YEAR</td>
+!!   </tr>
+!!      <tr>
+!!     <td>constants_mod</td>
+!!     <td>grav, PI, SECONDS_PER_DAY</td>
+!!   </tr>
+!! </table>
 module interpolator_mod
-!
-! Purpose: Module to interpolate climatology data to model grid.
-!
-! author: William Cooke William.Cooke@noaa.gov
-!
+
 #include <fms_platform.h>
 
 use mpp_mod,           only : mpp_error, &
@@ -72,8 +148,13 @@ use time_manager_mod,  only : time_type,   &
 use time_interp_mod,   only : time_interp, YEAR
 use constants_mod,     only : grav, PI, SECONDS_PER_DAY
 
+!--------------------------------------------------------------------
+
 implicit none
-private 
+private
+
+!---------------------------------------------------------------------
+!-------  interfaces --------
 
 public interpolator_init, &
        interpolator,      &
@@ -85,6 +166,55 @@ public interpolator_init, &
        query_interpolator,&
        read_data
 
+!> \page interpolator interpolator Interface
+!!
+!! ~~~~~~~~~~{.f90}
+!! call interpolator (sulfate, model_time, p_half, model_data, name, is, js, clim_units)
+!! call interpolator (o3, model_time, p_half, model_data, "ozone", is, js)
+!! ~~~~~~~~~~
+!!
+!! The first option is used to generate sulfate models.
+!!
+!! The sulfate data is set by
+!! ~~~~~~~~~~{.f90}
+!! type(interpolate_type), intent(inout) :: sulfate
+!! ~~~~~~~~~~
+!! The name of the model is set by
+!! ~~~~~~~~~~{.f90}
+!! character(len=*), intent(in) :: name
+!! ~~~~~~~~~~
+!! The units used in this model are outputted to
+!! ~~~~~~~~~~{.f90}
+!! character(len=*), intent(out), optional :: clim_units
+!! ~~~~~~~~~~
+!!
+!! The second option is generate ozone models. 
+!!
+!! The ozone data is set by
+!! ~~~~~~~~~~{.f90}
+!! type(interpolate_type), intent(inout) :: o3
+!! ~~~~~~~~~~
+!!
+!! Both of these options use the following variables in the model.
+!!
+!! The time used in the model is set by
+!!
+!! ~~~~~~~~~~{.f90}
+!! type(time_type), intent(in) :: model_time
+!! ~~~~~~~~~~
+!! The model pressure field is set by
+!! ~~~~~~~~~~{.f90}
+!! real, intent(in), dimension(:,:,:) :: p_half
+!! ~~~~~~~~~~
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! \param [in] <field_name> The name of a field that you wish to interpolate
+!! \param [in] <Time> The model time that you wish to interpolate to
+!! \param [in] <phalf> The half level model pressure field
+!! \param [in] <is> Index for the physics window
+!! \param [in] <js> Index for the physics window
+!! \param [out] <interp_data> The model fields with the interpolated climatology data
+!! \param [out] <clim_units> The units of field_name
 interface interpolator
    module procedure interpolator_4D
    module procedure interpolator_3D
@@ -92,123 +222,158 @@ interface interpolator
    module procedure interpolator_4D_no_time_axis
    module procedure interpolator_3D_no_time_axis
    module procedure interpolator_2D_no_time_axis
-end interface 
+end interface
 
+!> \page assignment assignment Interface
+!!
+!! \param [in] <In> No description
+!! \param [inout] <Out> No description
 interface assignment(=)
    module procedure interpolate_type_eq
 end interface
 
+!> \page interp_weighted_scalar interp_weighted_scalar Interface
+!!
+!! ~~~~~~~~~~{.f90}
+!! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_data(ilon,j,:,:))
+!! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
+!! ~~~~~~~~~~
+!!
+!! \param [in] <grdin> No description
+!! \param [in] <grdout> No description
+!! \param [in] <datin> No description
+!! \param [out] <datout> No description
 interface interp_weighted_scalar
    module procedure interp_weighted_scalar_1D
    module procedure interp_weighted_scalar_2D
 end interface interp_weighted_scalar
+
+!---------------------------------------------------------------------
+!----------- version number for this module --------------------------
+
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 logical            :: module_is_initialized = .false.
 logical            :: clim_diag_initialized = .false.
 
-type, public  :: interpolate_type
+type, public  :: interpolate_type          !< Redundant climatology data between fields
 private
 !Redundant data between fields
 !All climatology data
-real, pointer            :: lat(:) =>NULL()
-real, pointer            :: lon(:) =>NULL()
-real, pointer            :: latb(:) =>NULL()
-real, pointer            :: lonb(:) =>NULL()
-real, pointer            :: levs(:) =>NULL()
-real, pointer            :: halflevs(:) =>NULL()
-type(horiz_interp_type)  :: interph
-type(time_type), pointer :: time_slice(:) =>NULL() ! An array of the times within the climatology.
-integer                  :: unit          ! Unit number on which file is being read.
-character(len=64)        :: file_name     ! Climatology filename
-integer                  :: TIME_FLAG     ! Linear or seaonal interpolation?
-integer                  :: level_type    ! Pressure or Sigma level
-integer                  :: is,ie,js,je
-integer                  :: vertical_indices ! direction of vertical 
-                                              ! data axis
-logical                  :: climatological_year ! Is data for year = 0000?
+real, pointer            :: lat(:) =>NULL()               !< No description
+real, pointer            :: lon(:) =>NULL()               !< No description
+real, pointer            :: latb(:) =>NULL()          !< No description
+real, pointer            :: lonb(:) =>NULL()          !< No description
+real, pointer            :: levs(:) =>NULL()          !< No description
+real, pointer            :: halflevs(:) =>NULL()     !< No description
+type(horiz_interp_type)  :: interph                         !< No description
+type(time_type), pointer :: time_slice(:) =>NULL() !< An array of the times within the climatology.
+integer                  :: unit          !< Unit number on which file is being read.
+character(len=64)        :: file_name     !< Climatology filename
+integer                  :: TIME_FLAG     !< Linear or seaonal interpolation?
+integer                  :: level_type    !< Pressure or Sigma level
+integer                  :: is,ie,js,je       !< No description
+integer                  :: vertical_indices !< direction of vertical
+                                              !! data axis
+logical                  :: climatological_year !< Is data for year = 0000?
 
 !Field specific data  for nfields
-type(fieldtype),   pointer :: field_type(:) =>NULL()   ! NetCDF field type
-character(len=64), pointer :: field_name(:) =>NULL()   ! name of this field
-integer,           pointer :: time_init(:,:) =>NULL()  ! second index is the number of time_slices being kept. 2 or ntime.
-integer,           pointer :: mr(:) =>NULL()           ! Flag for conversion of climatology to mixing ratio. 
-integer,           pointer :: out_of_bounds(:) =>NULL()! Flag for when surface pressure is out of bounds.
+type(fieldtype),   pointer :: field_type(:) =>NULL()   !< NetCDF field type
+character(len=64), pointer :: field_name(:) =>NULL()   !< name of this field
+integer,           pointer :: time_init(:,:) =>NULL()  !< second index is the number of time_slices being kept. 2 or ntime.
+integer,           pointer :: mr(:) =>NULL()           !< Flag for conversion of climatology to mixing ratio.
+integer,           pointer :: out_of_bounds(:) =>NULL()!< Flag for when surface pressure is out of bounds.
 !++lwh
-integer,           pointer :: vert_interp(:) =>NULL()  ! Flag for type of vertical interpolation.
+integer,           pointer :: vert_interp(:) =>NULL()  !< Flag for type of vertical interpolation.
 !--lwh
-real,              pointer :: data(:,:,:,:,:) =>NULL() ! (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
+real,              pointer :: data(:,:,:,:,:) =>NULL() !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
 
-real,              pointer :: pmon_pyear(:,:,:,:) =>NULL()
-real,              pointer :: pmon_nyear(:,:,:,:) =>NULL()
-real,              pointer :: nmon_nyear(:,:,:,:) =>NULL()
-real,              pointer :: nmon_pyear(:,:,:,:) =>NULL()
+real,              pointer :: pmon_pyear(:,:,:,:) =>NULL()          !< No description
+real,              pointer :: pmon_nyear(:,:,:,:) =>NULL()          !< No description
+real,              pointer :: nmon_nyear(:,:,:,:) =>NULL()          !< No description
+real,              pointer :: nmon_pyear(:,:,:,:) =>NULL()          !< No description
 !integer                    :: indexm, indexp, climatology
-integer,dimension(:),  pointer :: indexm =>NULL() 
-integer,dimension(:),  pointer :: indexp =>NULL()
-integer,dimension(:),  pointer :: climatology =>NULL() 
+integer,dimension(:),  pointer :: indexm =>NULL()                    !< No description
+integer,dimension(:),  pointer :: indexp =>NULL()                    !< No description
+integer,dimension(:),  pointer :: climatology =>NULL()               !< No description
 
-type(time_type), pointer :: clim_times(:,:) => NULL()
-logical :: separate_time_vary_calc
-real :: tweight, tweight1, tweight2, tweight3
-integer :: itaum, itaup
+type(time_type), pointer :: clim_times(:,:) => NULL()               !< No description
+logical :: separate_time_vary_calc                                        !< No description
+real :: tweight          !< No description
+real :: tweight1     !< The time weight between the climatology years
+real :: tweight2     !< No description
+real :: tweight3     !< The time weight between the month
+integer :: itaum     !< No description
+integer :: itaup     !< No description
 end type interpolate_type
 
 
-integer :: ndim, nvar,natt,ntime
-integer :: nlat,nlatb,nlon,nlonb,nlev,nlevh
-integer ::          len, ntime_in, num_fields
-type(axistype), allocatable :: axes(:)
-type(axistype),save          :: time_axis
-type(fieldtype), allocatable :: varfields(:)
+integer :: ndim          !< No description
+integer :: nvar          !< No description
+integer :: natt          !< No description
+integer :: ntime     !< No description
+integer :: nlat          !< No description
+integer :: nlatb     !< No description
+integer :: nlon          !< No description
+integer :: nlonb     !< No description
+integer :: nlev          !< No description
+integer :: nlevh     !< No description
+integer ::          len, ntime_in, num_fields               !< No description
+type(axistype), allocatable :: axes(:)                         !< No description
+type(axistype),save          :: time_axis                    !< No description
+type(fieldtype), allocatable :: varfields(:)               !< No description
 
 ! pletzer real, allocatable :: time_in(:)
 ! sjs real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
-character(len=32) :: name, units       
-integer           :: sense
+character(len=32) :: name, units                              !< No description
+integer           :: sense                                        !< No description
 
-integer, parameter :: max_diag_fields = 30
+integer, parameter :: max_diag_fields = 30                    !< No description
 
 ! flags to indicate direction of vertical axis in  data file
-integer, parameter :: INCREASING_DOWNWARD = 1, INCREASING_UPWARD = -1
+integer, parameter :: INCREASING_DOWNWARD = 1, INCREASING_UPWARD = -1          !< Flags to indicate direction of vertical axis in  data file
 !++lwh
 ! Flags to indicate whether the time interpolation should be linear or some other scheme for seasonal data.
 ! NOTIME indicates that data file has no time axis.
-integer, parameter :: LINEAR = 1, SEASONAL = 2, BILINEAR = 3, NOTIME = 4
+integer, parameter :: LINEAR = 1, SEASONAL = 2, BILINEAR = 3, NOTIME = 4     !< Flags to indicate whether the time interpolation 
+                                                                                               !! should be linear or some other scheme for seasonal data.
+                                                                                               !! NOTIME indicates that data file has no time axis.
 
 ! Flags to indicate where climatology pressure levels are pressure or sigma levels
-integer, parameter :: PRESSURE = 1, SIGMA = 2 
+integer, parameter :: PRESSURE = 1, SIGMA = 2          !< Flags to indicate where climatology pressure levels are pressure or sigma levels
 
 ! Flags to indicate whether the climatology units are mixing ratio (kg/kg) or column integral (kg/m2).
 ! Vertical interpolation scheme requires mixing ratio at this time.
-integer, parameter :: NO_CONV = 1, KG_M2 = 2 
+integer, parameter :: NO_CONV = 1, KG_M2 = 2          !< Flags to indicate whether the climatology units are mixing ratio (kg/kg) or column integral (kg/m2).
+                                                                 !< Vertical interpolation scheme requires mixing ratio at this time.
 
 ! Flags to indicate what to do when the model surface pressure exceeds the  climatology surface pressure level.
-integer, parameter, public :: CONSTANT = 1, ZERO = 2 
+integer, parameter, public :: CONSTANT = 1, ZERO = 2          !< Flags to indicate what to do when the model surface pressure 
+                                                                           !< exceeds the  climatology surface pressure level.
 
 ! Flags to indicate the type of vertical interpolation
-integer, parameter, public :: INTERP_WEIGHTED_P = 10, INTERP_LINEAR_P = 20, INTERP_LOG_P = 30
+integer, parameter, public :: INTERP_WEIGHTED_P = 10, INTERP_LINEAR_P = 20, INTERP_LOG_P = 30     !< Flags to indicate the type of vertical interpolation
 !--lwh
 
-integer :: num_clim_diag = 0
-character(len=64) :: climo_diag_name(max_diag_fields)
-integer :: climo_diag_id(max_diag_fields), hinterp_id(max_diag_fields)
-real ::  missing_value = -1.e10
+integer :: num_clim_diag = 0                                                       !< No description
+character(len=64) :: climo_diag_name(max_diag_fields)                         !< No description
+integer :: climo_diag_id(max_diag_fields), hinterp_id(max_diag_fields)     !< No description
+real ::  missing_value = -1.e10                                                       !< No description
 ! sjs integer :: itaum, itaup
 
 #ifdef NO_QUAD_PRECISION
 ! 64-bit precision (kind=8)
- integer, parameter:: f_p = selected_real_kind(15)
+ integer, parameter:: f_p = selected_real_kind(15)     !< 64-bit precision (kind=8)
 #else
 ! Higher precision (kind=16) for grid geometrical factors:
- integer, parameter:: f_p = selected_real_kind(20)
+ integer, parameter:: f_p = selected_real_kind(20)     !< Higher precision (kind=16) for grid geometrical factors
 #endif
 
-logical :: read_all_on_init = .false.
-integer :: verbose = 0  
-logical :: conservative_interp = .true.
-logical :: retain_cm3_bug = .true.
+logical :: read_all_on_init = .false.          !< No description
+integer :: verbose = 0                              !< No description
+logical :: conservative_interp = .true.          !< No description
+logical :: retain_cm3_bug = .true.               !< No description
 
 namelist /interpolator_nml/    &
                              read_all_on_init, verbose, conservative_interp, retain_cm3_bug
@@ -216,7 +381,13 @@ namelist /interpolator_nml/    &
 contains
 
 !#####################################################################
-
+!
+!---------------------------------------------------------------------
+!> \brief interpolator_type_eq receives the variable In and Out as
+!!        input and returns Out.
+!!
+!! \param [in] <In> No description
+!! \param [inout] <Out> No description
 subroutine interpolate_type_eq (Out, In)
 
 type(interpolate_type), intent(in) :: In
@@ -244,17 +415,17 @@ type(interpolate_type), intent(inout) :: Out
      Out%climatological_year = In%climatological_year
      Out%field_type => In%field_type
      if (associated(In%field_name   )) Out%field_name    =>  In%field_name
-     if (associated(In%time_init    )) Out%time_init     =>  In%time_init 
-     if (associated(In%mr           )) Out%mr            =>  In%mr         
+     if (associated(In%time_init    )) Out%time_init     =>  In%time_init
+     if (associated(In%mr           )) Out%mr            =>  In%mr
      if (associated(In%out_of_bounds)) Out%out_of_bounds =>  In%out_of_bounds
-     if (associated(In%vert_interp  )) Out%vert_interp   =>  In%vert_interp  
-     if (associated(In%data         )) Out%data          =>  In%data  
+     if (associated(In%vert_interp  )) Out%vert_interp   =>  In%vert_interp
+     if (associated(In%data         )) Out%data          =>  In%data
      if (associated(In%pmon_pyear   )) Out%pmon_pyear    =>  In%pmon_pyear
      if (associated(In%pmon_nyear   )) Out%pmon_nyear    =>  In%pmon_nyear
      if (associated(In%nmon_nyear   )) Out%nmon_nyear    =>  In%nmon_nyear
      if (associated(In%nmon_pyear   )) Out%nmon_pyear    =>  In%nmon_pyear
-     if (associated(In%indexm       )) Out%indexm        =>  In%indexm    
-     if (associated(In%indexp       )) Out%indexp        =>  In%indexp    
+     if (associated(In%indexm       )) Out%indexm        =>  In%indexm
+     if (associated(In%indexp       )) Out%indexp        =>  In%indexp
      if (associated(In%climatology  )) Out%climatology   =>  In%climatology
      if (associated(In%clim_times   )) Out%clim_times    =>  In%clim_times
       Out%separate_time_vary_calc = In%separate_time_vary_calc
@@ -267,13 +438,30 @@ type(interpolate_type), intent(inout) :: Out
 
 
 
-end subroutine interpolate_type_eq 
+end subroutine interpolate_type_eq
 
 
 
- 
+
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief interpolator_init receives various data as input in order
+!!        to initialize interpolating.
+!!
+!! \param [inout] <clim_type> An interpolate type containing the necessary file and field 
+!!                                     data to be passed to the interpolator routine
+!! \param [in] <file_name> Climatology filename
+!! \param [in] <lonb_mod> The corners of the model grid-box longitudes
+!! \param [in] <latb_mod> The corners of the model grid_box latitudes
+!! \param [in] <data_names> OPTIONAL: A list of the names of components within the climatology 
+!!                                               file which you wish to read
+!! \param [in] <data_out_of_bounds> A list of the flags that are to be used in determining 
+!!                                             what to do if the pressure levels in the model go out of
+!!                                      bounds from those of the climatology
+!! \param [in] <vert_interp> OPTIONAL: Flag to determine type of vertical interpolation
+!! \param [out] <clim_units> OPTIONAL: A list of the units for the components listed in data_names
+!! \param [out] <single_year_file> OPTIONAL: No description
 subroutine interpolator_init( clim_type, file_name, lonb_mod, latb_mod, &
                               data_names, data_out_of_bounds,           &
                               vert_interp, clim_units, single_year_file)
@@ -282,8 +470,8 @@ character(len=*), intent(in)            :: file_name
 real            , intent(in)            :: lonb_mod(:,:), latb_mod(:,:)
 character(len=*), intent(in) , optional :: data_names(:)
 !++lwh
-integer         , intent(in)            :: data_out_of_bounds(:) 
-integer         , intent(in), optional  :: vert_interp(:) 
+integer         , intent(in)            :: data_out_of_bounds(:)
+integer         , intent(in), optional  :: vert_interp(:)
 !--lwh
 character(len=*), intent(out), optional :: clim_units(:)
 logical,          intent(out), optional :: single_year_file
@@ -415,7 +603,7 @@ do i = 1, ndim
         case('degree')
           clim_type%lat = clim_type%lat*dtr
         case('radian')
-        case default  
+        case default
           call mpp_error(FATAL, "interpolator_init : Units for lat not recognised in file "//file_name)
       end select
     case('lon')
@@ -426,7 +614,7 @@ do i = 1, ndim
         case('degree')
           clim_type%lon = clim_type%lon*dtr
         case('radian')
-        case default  
+        case default
           call mpp_error(FATAL, "interpolator_init : Units for lon not recognised in file "//file_name)
       end select
     case('latb')
@@ -437,7 +625,7 @@ do i = 1, ndim
         case('degree')
           clim_type%latb = clim_type%latb*dtr
         case('radian')
-        case default  
+        case default
           call mpp_error(FATAL, "interpolator_init : Units for latb not recognised in file "//file_name)
       end select
     case('lonb')
@@ -448,7 +636,7 @@ do i = 1, ndim
         case('degree')
           clim_type%lonb = clim_type%lonb*dtr
         case('radian')
-        case default  
+        case default
           call mpp_error(FATAL, "interpolator_init : Units for lonb not recognised in file "//file_name)
       end select
     case('pfull')
@@ -457,7 +645,7 @@ do i = 1, ndim
       call mpp_get_axis_data(axes(i),clim_type%levs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( chomp(units) == "mb" .or. chomp(units) == "hPa") then
+      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
          clim_type%levs = clim_type%levs * 100.
       end if
 ! define the direction of the vertical data axis
@@ -473,17 +661,17 @@ do i = 1, ndim
           clim_type%levs(n) = alpha(n)
           end do
           deallocate (alpha)
-      else 
+      else
         clim_type%vertical_indices = INCREASING_DOWNWARD
       endif
-      
+
     case('phalf')
       nlevh=len
       allocate(clim_type%halflevs(nlevh))
       call mpp_get_axis_data(axes(i),clim_type%halflevs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( chomp(units) == "mb" .or. chomp(units) == "hPa") then
+      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
          clim_type%halflevs = clim_type%halflevs * 100.
       end if
 ! define the direction of the vertical data axis
@@ -499,7 +687,7 @@ do i = 1, ndim
           clim_type%halflevs(n) = alpha(n)
           end do
           deallocate (alpha)
-      else 
+      else
         clim_type%vertical_indices = INCREASING_DOWNWARD
       endif
     case('sigma_full')
@@ -512,9 +700,9 @@ do i = 1, ndim
       allocate(clim_type%halflevs(nlevh))
       call mpp_get_axis_data(axes(i),clim_type%halflevs)
       clim_type%level_type = SIGMA
-  
+
     case('time')
-      model_calendar = get_calendar_type() 
+      model_calendar = get_calendar_type()
       fileday = 0
       filemon = 0
       fileyr = 0
@@ -565,9 +753,9 @@ do i = 1, ndim
 !    base_time based on the netcdf info.
 !----------------------------------------------------------------------
         if ( (model_calendar == JULIAN .and.   &
-              trim(file_calendar) == 'julian')  .or. &
-              (model_calendar == NOLEAP .and.   &
-               trim(file_calendar) == 'noleap') )  then
+             & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
+             & (model_calendar == NOLEAP .and.   &
+             & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
           call mpp_error (NOTE, 'interpolator_mod: Model and file&
                     & calendars are the same for file ' //   &
                     & trim(file_name) // '; no calendar conversion  &
@@ -575,21 +763,21 @@ do i = 1, ndim
           base_time = set_date (fileyr, filemon, fileday, filehr, &
                                 filemin,filesec)
         else if ( (model_calendar == JULIAN .and.   &
-                   trim(file_calendar) == 'noleap')) then  
+             & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
           call mpp_error (NOTE, 'interpolator_mod: Using julian &
                             &model calendar and noleap file calendar&
                             & for file ' // trim(file_name) //   &
                             &'; calendar conversion needed')
           base_time = set_date_no_leap (fileyr, filemon, fileday,  &
-                                        filehr, filemin, filesec)
+               & filehr, filemin, filesec)
         else if ( (model_calendar == NOLEAP .and.   &
-                   trim(file_calendar) == 'julian')) then  
+             & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
           call mpp_error (NOTE, 'interpolator_mod: Using noleap &
                             &model calendar and julian file calendar&
                             & for file ' // trim(file_name) //  &
                             &'; calendar conversion needed')
           base_time = set_date_julian (fileyr, filemon, fileday,  &
-                                       filehr, filemin, filesec)
+               & filehr, filemin, filesec)
         else
           call mpp_error (FATAL , 'interpolator_mod: Model and file&
                & calendars ( ' // trim(file_calendar) // ' ) differ  &
@@ -599,12 +787,12 @@ do i = 1, ndim
 
       else
 
-!! if the year is specified as '0000', then the file is intended to 
+!! if the year is specified as '0000', then the file is intended to
 !! apply to all years -- the time variables within the file refer to
 !! the displacement from the start of each year to the time of the
-!! associated data. Time interpolation is to be done with interface 
+!! associated data. Time interpolation is to be done with interface
 !! time_interp_list, with the optional argument modtime=YEAR. base_time
-!! is set to an arbitrary value here; it's only use will be as a 
+!! is set to an arbitrary value here; it's only use will be as a
 !! timestamp for optionally generated diagnostics.
 
         base_time = get_base_time ()
@@ -632,15 +820,15 @@ do i = 1, ndim
         end do
         if (clim_type%climatological_year) then
           call mpp_error (NOTE, 'interpolator_mod :'  // &
-          trim(file_name) // ' is a year-independent climatology file') 
+          trim(file_name) // ' is a year-independent climatology file')
         else
           call mpp_error (NOTE, 'interpolator_mod :' // &
-            trim(file_name) // ' is a timeseries file') 
+            trim(file_name) // ' is a timeseries file')
         endif
 
         do n = 1, ntime
 !Assume that the times in the data file correspond to days only.
-            
+
 
           if (clim_type%climatological_year) then
 !! RSH NOTE:
@@ -658,14 +846,14 @@ do i = 1, ndim
 !    then define the times associated with each time-
 !    slice. if calendar conversion between data file and model calendar
 !    is needed, do it so that data from the file is associated with the
-!    same calendar time in the model. here the time_slice needs to 
-!    include the base_time; values will be generated relative to the 
+!    same calendar time in the model. here the time_slice needs to
+!    include the base_time; values will be generated relative to the
 !    "real" time.
 !--------------------------------------------------------------------
             if ( (model_calendar == JULIAN .and.   &
-                  trim(file_calendar) == 'julian')  .or. &
-                 (model_calendar == NOLEAP .and.   &
-                  trim(file_calendar) == 'noleap') )  then
+                 & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
+                 & (model_calendar == NOLEAP .and.   &
+                 & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
 
 !---------------------------------------------------------------------
 !    no calendar conversion needed.
@@ -679,7 +867,7 @@ do i = 1, ndim
 !    convert file times from noleap to julian.
 !---------------------------------------------------------------------
             else if ( (model_calendar == JULIAN .and.   &
-                       trim(file_calendar) == 'noleap')) then  
+                 & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
               Noleap_time = set_time (0, INT(time_in(n))) + base_time
               call get_date_no_leap (Noleap_time, yr, mo, dy, hr,  &
                                      mn, sc)
@@ -695,13 +883,13 @@ do i = 1, ndim
                          str= 'for file ' // trim(file_name) // ', the &
                                &last time slice is mapped to:')
               endif
-  
+
 
 !---------------------------------------------------------------------
 !    convert file times from julian to noleap.
 !---------------------------------------------------------------------
             else if ( (model_calendar == NOLEAP .and.   &
-                       trim(file_calendar) == 'julian')) then  
+                 & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
               Julian_time = set_time (0, INT(time_in(n))) + base_time
               call get_date_julian (Julian_time, yr, mo, dy, hr, mn, sc)
               clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy, &
@@ -718,7 +906,7 @@ do i = 1, ndim
               endif
 
 !---------------------------------------------------------------------
-!    any other calendar combinations would have caused a fatal error 
+!    any other calendar combinations would have caused a fatal error
 !    above.
 !---------------------------------------------------------------------
             endif
@@ -745,8 +933,8 @@ enddo
 ! -------------------------------------------------------------------
     if( .not. associated(clim_type%levs) ) then
         allocate( clim_type%levs(nlev) )
-        clim_type%levs = 0.0        
-    endif  
+        clim_type%levs = 0.0
+    endif
     if( .not. associated(clim_type%halflevs) )  then
         allocate( clim_type%halflevs(nlev+1) )
         clim_type%halflevs(1) = 0.0
@@ -777,22 +965,22 @@ if (.not. associated(clim_type%lonb) ) then
     clim_type%lonb(2:) = clim_type%lon(1:) + dlon
   else
 
-!! this is the case for zonal mean data, lon = 1, lonb not present 
+!! this is the case for zonal mean data, lon = 1, lonb not present
 !! in file.
 
     allocate(clim_type%lonb(2))
     clim_type%lonb(1) = -360.*dtr
     clim_type%lonb(2) = 360.0*dtr
     clim_type%lon(1) = 0.0
-  endif    
+  endif
 endif
 
-!clim_type%lonb=clim_type%lonb*dtr 
+!clim_type%lonb=clim_type%lonb*dtr
 ! This assumes the lonb are in degrees in the NetCDF file!
 
 if (.not. associated(clim_type%lat) .and. .not. associated(clim_type%latb)) &
    call mpp_error(FATAL,'Interpolator_init : There appears to be no latitude axis in file '//file_name)
-! In the case where only the grid midpoints of the latitudes are defined we force the 
+! In the case where only the grid midpoints of the latitudes are defined we force the
 ! definition of the boundaries to be half-way between the midpoints.
 if (.not. associated(clim_type%latb) ) then
    allocate(clim_type%latb(nlat+1))
@@ -813,7 +1001,7 @@ endif
                         clim_type%lonb, clim_type%latb, &
                         lonb_mod, latb_mod)
  else
-    
+
     call mpp_error(NOTE, "Using Bilinear interpolation")
 
     !!! DEBUG CODE
@@ -823,10 +1011,10 @@ endif
        allocate(agrid_mod(nx,ny,2))
        do j=1,ny
        do i=1,nx
-          call cell_center2((/lonb_mod(i,j),latb_mod(i,j)/), & 
-               (/lonb_mod(i+1,j),latb_mod(i+1,j)/), & 
-               (/lonb_mod(i,j+1),latb_mod(i,j+1)/), & 
-               (/lonb_mod(i+1,j+1),latb_mod(i+1,j+1)/),  agrid_mod(i,j,:))          
+          call cell_center2((/lonb_mod(i,j),latb_mod(i,j)/), &
+               (/lonb_mod(i+1,j),latb_mod(i+1,j)/), &
+               (/lonb_mod(i,j+1),latb_mod(i,j+1)/), &
+               (/lonb_mod(i+1,j+1),latb_mod(i+1,j+1)/),  agrid_mod(i,j,:))
        enddo
        enddo
     endif
@@ -835,11 +1023,11 @@ endif
 
     call horiz_interp_new (clim_type%interph, &
                         clim_type%lonb, clim_type%latb, &
-                        agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")    
+                        agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
  endif
 
 !--------------------------------------------------------------------
-!  allocate the variable clim_type%data . This will be the climatology 
+!  allocate the variable clim_type%data . This will be the climatology
 !  data horizontally interpolated, so it will be on the model horizontal
 !  grid, but it will still be on the climatology vertical grid.
 !--------------------------------------------------------------------
@@ -847,7 +1035,7 @@ endif
 select case(ntime)
  case (13:)
 ! This may  be data that does not have a continous time-line
-! i.e. IPCC data where decadal data is present but we wish to retain 
+! i.e. IPCC data where decadal data is present but we wish to retain
 ! the seasonal nature of the data.
 !! RSH: the following test will not always work; instead use the
 !! RSH: non-monthly variable to test on.
@@ -884,7 +1072,7 @@ endif
 !++lwh
  case (1:12)
 !--lwh
-! We have more than 4 timelevels 
+! We have more than 4 timelevels
 ! Assume we have monthly or higher time resolution datasets (climatology or time series)
 ! So we only need to read 2 datasets and apply linear temporal interpolation.
    if ( .not. read_all_on_init) then
@@ -896,10 +1084,10 @@ endif
    clim_type%data = 0.0
    clim_type%TIME_FLAG = LINEAR
 !++lwh
-!case (1:4) 
+!case (1:4)
 ! Assume we have seasonal data and read in all the data.
 ! We can apply sine curves to these data.
- 
+
 !  allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, ntime, num_fields))
 !  clim_type%data = 0.0
 !  clim_type%TIME_FLAG = SEASONAL
@@ -912,7 +1100,7 @@ end select
 
 
 !------------------------------------------------------------------
-!    Allocate space for the single time level of the climatology on its 
+!    Allocate space for the single time level of the climatology on its
 !    grid size.
 !----------------------------------------------------------------------
 
@@ -928,7 +1116,7 @@ end select
    clim_type%indexm(:)      = 0
    clim_type%indexp(:)      = 0
    clim_type%climatology(:) = 0
-   
+
 
 allocate(clim_type%field_name(num_fields))
 allocate(clim_type%field_type(num_fields))
@@ -960,7 +1148,7 @@ if(present(data_names)) then
       NAME_PRESENT = .FALSE.
       do i=1,nvar
          call mpp_get_atts(varfields(i),name=name,ndim=ndim,units=units)
-         if( name == data_names(j) ) then
+         if( trim(adjustl(lowercase(name))) == trim(adjustl(lowercase(data_names(j)))) ) then
             units=chomp(units)
             if (mpp_pe() == 0 ) write(*,*) 'Initializing src field : ',trim(name)
             clim_type%field_name(j) = name
@@ -972,7 +1160,7 @@ if(present(data_names)) then
             if( clim_type%out_of_bounds(j) /= CONSTANT .and. &
                 clim_type%out_of_bounds(j) /= ZERO ) &
                call mpp_error(FATAL,"Interpolator_init: data_out_of_bounds must be&
-                                    & set to ZERO or CONSTANT")               
+                                    & set to ZERO or CONSTANT")
             if( present(vert_interp) ) then
                clim_type%vert_interp(j) = vert_interp( MIN(j,SIZE(vert_interp(:))) )
                if( clim_type%vert_interp(j) /= INTERP_WEIGHTED_P .and. &
@@ -994,7 +1182,7 @@ else
       call mpp_error(FATAL,'interpolator_init : The size of the out of bounds array must be 1&
                            & or the number of fields in the climatology dataset')
    if ( present(vert_interp) ) then
-      if (size(vert_interp(:)) /= nvar .and. size(vert_interp(:)) /= 1 ) & 
+      if (size(vert_interp(:)) /= nvar .and. size(vert_interp(:)) /= 1 ) &
       call mpp_error(FATAL,'interpolator_init : The size of the vert_interp array must be 1&
                            & or the number of fields in the climatology dataset')
    endif
@@ -1074,7 +1262,17 @@ call write_version_number("INTERPOLATOR_MOD", version)
                           write (stdlog(), nml=interpolator_nml)
 
 end subroutine interpolator_init
-
+!
+!---------------------------------------------------------------------
+!
+!> \brief cell_center2 receives the variables q1, q2, q3, and q4
+!!        as inputs and returns e2.
+!!
+!! \param [in] <q1> No description
+!! \param [in] <q2> No description
+!! \param [in] <q3> No description
+!! \param [in] <q4> No description
+!! \param [out] <e2> No description
  subroutine cell_center2(q1, q2, q3, q4, e2)
       real , intent(in ) :: q1(2), q2(2), q3(2), q4(2)
       real , intent(out) :: e2(2)
@@ -1101,7 +1299,15 @@ end subroutine interpolator_init
       call cart_to_latlon(1, ec, e2(1), e2(2))
 
  end subroutine cell_center2
-
+!
+!---------------------------------------------------------------------
+!> \brief car_to_latlon receives the variables np, q, xs, and ys
+!!        as inputs and returns q, xs, and ys.
+!!
+!! \param [in] <np> No description
+!! \param [inout] <q> No description
+!! \param [inout] <xs> No description
+!! \param [inout] <ys> No description
  subroutine cart_to_latlon(np, q, xs, ys)
 ! vector version of cart_to_latlon1
   integer, intent(in):: np
@@ -1130,7 +1336,7 @@ end subroutine interpolator_init
 
      if ( lon < 0.) lon = 2.*pi + lon
      lat = asin(p(3))
-     
+
      xs(i) = lon
      ys(i) = lat
 ! q Normalized:
@@ -1140,7 +1346,13 @@ end subroutine interpolator_init
   enddo
 
  end  subroutine cart_to_latlon
-
+!
+!---------------------------------------------------------------------
+!> \brief latlon2xyz receives the variable p as input and returns e
+!!        as output in order to map (lon, lat) to (x,y,z).
+!!
+!! \param [in] <p> No description
+!! \param [out] <e> No description
  subroutine latlon2xyz(p, e)
 !
 ! Routine to map (lon, lat) to (x,y,z)
@@ -1171,9 +1383,18 @@ end subroutine interpolator_init
 !
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief check_climo_units checks the units that the climatology
+!!        data is using. This is needed to allow for conversion of
+!!        datasets to mixing ratios which is what the vertical
+!!        interpolation scheme requires. The default is to assume no
+!!        conversion is needed. If the units are those of a column
+!!        burden (kg/m2) then conversion to mixing ratio is flagged.
+!!
+!! \param [in] <units> The units which you will be checking
 function check_climo_units(units)
-! Function to check the units that the climatology data is using. 
-! This is needed to allow for conversion of datasets to mixing ratios which is what the 
+! Function to check the units that the climatology data is using.
+! This is needed to allow for conversion of datasets to mixing ratios which is what the
 ! vertical interpolation scheme requires
 ! The default is to assume no conversion is needed.
 ! If the units are those of a column burden (kg/m2) then conversion to mixing ratio is flagged.
@@ -1185,21 +1406,36 @@ integer :: check_climo_units
 check_climo_units = NO_CONV
 select case(chomp(units))
   case('kg/m2', 'kg/m^2', 'kg/m**2', 'kg m^-2', 'kg m**-2')
-     check_climo_units = KG_M2  
+     check_climo_units = KG_M2
   case('molecules/cm2/s', 'molecule/cm2/s', 'molec/cm2/s')
-     check_climo_units = KG_M2  
+     check_climo_units = KG_M2
   case('kg/m2/s')
-     check_climo_units = KG_M2  
+     check_climo_units = KG_M2
 end select
 
 end function check_climo_units
 !
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief init_clim_diag is a routine to register diagnostic fields
+!!        for the climatology file. This routine calculates the domain
+!!        decompostion of the climatology fields for later export
+!!        through send_data. The ids created here are for column
+!!        burdens that will diagnose the vertical interpolation 
+!!        routine.
+!!
+!! \param [inout] <clim_type> The interpolate type containing the 
+!!                      names of the fields in the climatology file
+!! \param [in] <mod_axes> The axes of the model
+!! \param [in] <init_time> The model initialization time
+!!
+!! \throw FATAL, "init_clim_diag : You must call interpolator_init before calling init_clim_diag"
+!! \throw FATAL, "init_clim_diag : Trying to set up too many diagnostic fields for the climatology data"
 subroutine init_clim_diag(clim_type, mod_axes, init_time)
 !
-! Routine to register diagnostic fields for the climatology file. 
-! This routine calculates the domain decompostion of the climatology fields 
+! Routine to register diagnostic fields for the climatology file.
+! This routine calculates the domain decompostion of the climatology fields
 ! for later export through send_data.
 ! The ids created here are for column burdens that will diagnose the vertical interpolation routine.
 ! climo_diag_id : 'module_name = climo' is intended for use with the model vertical resolution.
@@ -1231,7 +1467,7 @@ nyd = size(clim_type%lat(:))
 
 ! Define the domain decomposition of the climatology file. This may be (probably is) different from the model domain.
 call mpp_define_layout ((/1,nxd,1,nyd/), ndivs, domain_layout)
-call mpp_define_domains((/1,nxd,1,nyd/),domain_layout, domain,xhalo=0,yhalo=0)  
+call mpp_define_domains((/1,nxd,1,nyd/),domain_layout, domain,xhalo=0,yhalo=0)
 call mpp_get_compute_domain (domain, iscomp, iecomp, jscomp, jecomp)
    axes(1) = diag_axis_init(clim_type%file_name(1:5)//'x',clim_type%lon,units='degrees',cart_name='x',domain2=domain)
    axes(2) = diag_axis_init(clim_type%file_name(1:5)//'y',clim_type%lat,units='degrees',cart_name='y',domain2=domain)
@@ -1251,7 +1487,7 @@ climo_diag_id(i+num_clim_diag) =  register_diag_field('climo',clim_type%field_na
 hinterp_id(i+num_clim_diag) =  register_diag_field('hinterp',clim_type%field_name(i),mod_axes(1:2),init_time,&
                                 'interp_'//clim_type%field_name(i),'kg/kg' , missing_value)
 enddo
-! Total number of climatology diagnostics (num_clim_diag). This can be from multiple climatology fields with different spatial axes. 
+! Total number of climatology diagnostics (num_clim_diag). This can be from multiple climatology fields with different spatial axes.
 ! It is simply a holder for the diagnostic indices.
 num_clim_diag = num_clim_diag+size(clim_type%field_name(:))
 
@@ -1261,11 +1497,27 @@ end subroutine init_clim_diag
 
 
 
-!----------------------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!> \brief obtain_interpolator_time_slices makes sure that the
+!!        appropriate time slices are available for interpolation on
+!!        this time step.
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined 
+!!                      by a call to interpolator_init
+!! \param [in] <Time> The model time that you wish to interpolate to
+!!
+!! \throw FATAL "interpolator_timeslice 1:  file="
+!! \throw FATAL "interpolator_timeslice 2:  file="
+!! \throw FATAL "interpolator_timeslice 3:  file="
+!! \throw FATAL "interpolator_timeslice 4:  file="
+!! \throw FATAL "interpolator_timeslice 5:  file="
+!! \throw FATAL "interpolator_timeslice : No data from the previous 
+!!                    climatology time but we have the next time. How did 
+!!                    this happen?"
 subroutine obtain_interpolator_time_slices (clim_type, Time)
 
-!  Makes sure that appropriate time slices are available for interpolation 
+!  Makes sure that appropriate time slices are available for interpolation
 !  on this time step
 !
 ! INTENT INOUT
@@ -1292,7 +1544,7 @@ character(len=256) :: err_msg
        !++lwh
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR, err_msg=err_msg )
-          if(err_msg /= '') then
+          if(trim(err_msg) /= '') then
              call mpp_error(FATAL,'interpolator_timeslice 1: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
           endif
        else
@@ -1303,7 +1555,7 @@ character(len=256) :: err_msg
        !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, err_msg=err_msg )
-       if(err_msg /= '') then
+       if(trim(err_msg) /= '') then
           call mpp_error(FATAL,'interpolator_timeslice 2: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
        endif
     endif
@@ -1316,11 +1568,11 @@ character(len=256) :: err_msg
       ! We need 2 time levels.
         clim_type%itaum=0
         clim_type%itaup=0
-      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute 
+      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute
       ! the climatology year into the appropriate place.
 
-     
-      ! We need to get the previous months data for the climatology year before 
+
+      ! We need to get the previous months data for the climatology year before
       ! and after the model year.
         call get_date(Time, modyear, modmonth, modday, modhour, modminute, modsecond)
         call get_date(clim_type%time_slice(taum), climyear, climmonth, climday, climhour, climminute, climsecond)
@@ -1329,22 +1581,22 @@ character(len=256) :: err_msg
         do m = 1, size(clim_type%clim_times(:,:),2)
           !Assume here that a climatology is for 1 year and consists of 12 months starting in January.
           call get_date(clim_type%clim_times(1,m), year1, month1, day, hour, minute, second)
-          if (year1 == climyear) climatology = m 
+          if (year1 == climyear) climatology = m
         enddo
         do m = 1,12
           !Find which month we are trying to look at and set clim_date[mp] to the dates spanning that.
           call get_date(clim_type%clim_times(m,climatology), year1, month1, day, hour, minute, second)
           if ( month1 == modmonth ) then
-!RSHBUGFX   if ( modday <= day ) then 
-            if ( modday <  day ) then 
+!RSHBUGFX   if ( modday <= day ) then
+            if ( modday <  day ) then
               indexm = m-1 ; indexp = m
             else
               indexm = m ; indexp = m+1
             endif
           endif
-        
+
         enddo
-        if ( indexm == 0 ) then 
+        if ( indexm == 0 ) then
           indexm = 12
           yearm = modyear - 1
         else
@@ -1362,12 +1614,12 @@ character(len=256) :: err_msg
           call get_date(clim_type%time_slice(indexp+(climatology-1)*12), &
                         climyear, climmonth, climday, climhour, climminute, climsecond)
           month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
-        
+
         call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
           call mpp_error(FATAL,'interpolator_timeslice 3: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
 
@@ -1379,7 +1631,7 @@ character(len=256) :: err_msg
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_timeslice 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
 
@@ -1391,7 +1643,7 @@ character(len=256) :: err_msg
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_timeslice 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
 
@@ -1422,13 +1674,13 @@ character(len=256) :: err_msg
 
 
       else ! We are within a climatology data set
-        
+
 
         do i=1, size(clim_type%field_name(:))
           if (taum /= clim_type%time_init(i,1) .or. &
               taup /= clim_type%time_init(i,2) ) then
- 
-     
+
+
             call read_data(clim_type,clim_type%field_type(i),   &
                            clim_type%pmon_pyear(:,:,:,i), taum,i,Time)
 ! Read the data for the next month in the previous climatology.
@@ -1445,15 +1697,15 @@ character(len=256) :: err_msg
 ! set to zero so when next return to bilinear section will be sure to
 ! have proper data (relevant when running fixed_year case for more than
 ! one year in a single job)
-          clim_type%indexm(:) = 0       
-          clim_type%indexp(:) = 0        
-          clim_type%climatology(:) = 0             
+          clim_type%indexm(:) = 0
+          clim_type%indexp(:) = 0
+          clim_type%climatology(:) = 0
 
 
 !       clim_type%tweight3 = 0.0 ! This makes [pn]mon_nyear irrelevant. Set them to 0 to test.
-        clim_type%tweight1 = 0.0 
-        clim_type%tweight2 = 0.0 
-        clim_type%tweight3 = clim_type%tweight                                          
+        clim_type%tweight1 = 0.0
+        clim_type%tweight2 = 0.0
+        clim_type%tweight3 = clim_type%tweight
       endif
     endif   !(BILINEAR)
 
@@ -1469,7 +1721,7 @@ character(len=256) :: err_msg
 
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.eq.0) then
 !Neither time is set so we need to read 2 time slices.
-!Set up 
+!Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
     do i=1, size(clim_type%field_name(:))
@@ -1504,11 +1756,16 @@ character(len=256) :: err_msg
 !-------------------------------------------------------------------
 
 
-end subroutine obtain_interpolator_time_slices 
+end subroutine obtain_interpolator_time_slices
 
 
 !#####################################################################
-
+!
+!---------------------------------------------------------------------
+!> \brief unset_interpolator_time_flag sets a flag in clim_type to
+!!        false.
+!!
+!! \param [inout] <clim_type> The interpolate type containing the names of the fields in the climatology file
 subroutine unset_interpolator_time_flag (clim_type)
 
 type(interpolate_type), intent(inout) :: clim_type
@@ -1517,14 +1774,41 @@ type(interpolate_type), intent(inout) :: clim_type
       clim_type%separate_time_vary_calc = .false.
 
 
-end subroutine unset_interpolator_time_flag 
+end subroutine unset_interpolator_time_flag
 
 
 
 !#####################################################################
-
+!
 !---------------------------------------------------------------------
-
+!> \brief interpolator_4D receives a field name as input and
+!!        interpolates the field to model a 4D grid and time axis.
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! \param [in] <field_name> The name of a field that you wish to interpolate
+!! \param [in] <Time> The model time that you wish to interpolate to
+!! \param [in] <phalf> The half level model pressure field
+!! \param [in] <is> OPTIONAL: Index for the physics window
+!! \param [in] <js> OPTIONAL: Index for the physics window
+!! \param [out] <interp_data> The model fields with the interpolated climatology data
+!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!!
+!! \throw FATAL "interpolator_4D : You must call interpolator_init
+!!                    before calling interpolator"
+!! \throw FATAL "interpolator_mod: cannot use 4D interface to interpolator for this file"
+!! \throw FATAL "interpolator_4D 1:  file="
+!! \throw FATAL "interpolator_4D 2:  file="
+!! \throw FATAL "interpolator_4D 3:  file="
+!! \throw FATAL "interpolator_4D 4:  file="
+!! \throw FATAL "interpolator_4D 5:  file="
+!! \throw FATAL "interpolator_3D : No data from the previous climatology
+!!                    time but we have the next time. How did this happen?"
+!! \throw NOTE "Interpolator: model surface pressure is greater than
+!!              climatology surface pressure for "
+!! \throw NOTE "Interpolator: model top pressure is less than
+!!                    climatology top pressure for "
+!! \throw FATAL "Interpolator: the field name is not contained in this
+!!                    intepolate_type: "
 subroutine interpolator_4D(clim_type, Time, phalf, interp_data,  &
                            field_name, is,js, clim_units)
 !
@@ -1585,7 +1869,7 @@ if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
                &cannot use 4D interface to interpolator for this file')
      endif
    end do
-     
+
 
 
 
@@ -1599,10 +1883,10 @@ jend = jstart - 1 + size(interp_data,2)
 
   do i= 1,size(clim_type%field_name(:))
 !!++lwh
-   if ( field_name == clim_type%field_name(i) ) then
+   if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
     found_field=.true.
-    exit 
+    exit
  endif
 end do
    i = 1
@@ -1621,7 +1905,7 @@ end do
 !   stewp for this interpolate_type variable.
 !----------------------------------------------------------------------
 
-if ( .not. clim_type%separate_time_vary_calc) then     
+if ( .not. clim_type%separate_time_vary_calc) then
 !   print *, 'TIME INTERPOLATION NOT SEPARATED 4d--',  &
 !                                trim(clim_type%file_name), mpp_pe()
 
@@ -1629,7 +1913,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !++lwh
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR, err_msg=err_msg )
-          if(err_msg /= '') then
+          if(trim(err_msg) /= '') then
              call mpp_error(FATAL,'interpolator_4D 1: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
           endif
        else
@@ -1640,7 +1924,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, err_msg=err_msg )
-       if(err_msg /= '') then
+       if(trim(err_msg) /= '') then
           call mpp_error(FATAL,'interpolator_4D 2: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
        endif
     endif
@@ -1653,11 +1937,11 @@ if ( .not. clim_type%separate_time_vary_calc) then
       ! We need 2 time levels.
         clim_type%itaum=0
         clim_type%itaup=0
-      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute 
+      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute
       ! the climatology year into the appropriate place.
 
-     
-      ! We need to get the previous months data for the climatology year before 
+
+      ! We need to get the previous months data for the climatology year before
       ! and after the model year.
         call get_date(Time, modyear, modmonth, modday, modhour, modminute, modsecond)
         call get_date(clim_type%time_slice(taum), climyear, climmonth, climday, climhour, climminute, climsecond)
@@ -1666,22 +1950,22 @@ if ( .not. clim_type%separate_time_vary_calc) then
         do m = 1, size(clim_type%clim_times(:,:),2)
           !Assume here that a climatology is for 1 year and consists of 12 months starting in January.
           call get_date(clim_type%clim_times(1,m), year1, month1, day, hour, minute, second)
-          if (year1 == climyear) climatology = m 
+          if (year1 == climyear) climatology = m
         enddo
         do m = 1,12
           !Find which month we are trying to look at and set clim_date[mp] to the dates spanning that.
           call get_date(clim_type%clim_times(m,climatology), year1, month1, day, hour, minute, second)
           if ( month1 == modmonth ) then
-!RSHBUGFX   if ( modday <= day ) then 
-            if ( modday <  day ) then 
+!RSHBUGFX   if ( modday <= day ) then
+            if ( modday <  day ) then
               indexm = m-1 ; indexp = m
             else
               indexm = m ; indexp = m+1
             endif
           endif
-        
+
         enddo
-        if ( indexm == 0 ) then 
+        if ( indexm == 0 ) then
           indexm = 12
           yearm = modyear - 1
         else
@@ -1699,14 +1983,14 @@ if ( .not. clim_type%separate_time_vary_calc) then
           call get_date(clim_type%time_slice(indexp+(climatology-1)*12), &
                         climyear, climmonth, climday, climhour, climminute, climsecond)
           month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
-        
+
         call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_4D 3: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
         month(1) = clim_type%time_slice(indexm+(climatology-1)*12)
         month(2) = clim_type%time_slice(indexm+climatology*12)
@@ -1716,9 +2000,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_4D 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
         month(1) = clim_type%time_slice(indexp+(climatology-1)*12)
         month(2) = clim_type%time_slice(indexp+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
@@ -1727,9 +2011,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_4D 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
         if (indexm == clim_type%indexm(1) .and.  &
             indexp == clim_type%indexp(1) .and. &
@@ -1758,13 +2042,13 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
 
       else ! We are within a climatology data set
-        
+
 
         do i=1, size(clim_type%field_name(:))
           if (taum /= clim_type%time_init(i,1) .or. &
               taup /= clim_type%time_init(i,2) ) then
- 
-     
+
+
             call read_data(clim_type,clim_type%field_type(i),   &
                            clim_type%pmon_pyear(:,:,:,i), taum,i,Time)
 ! Read the data for the next month in the previous climatology.
@@ -1781,15 +2065,15 @@ if ( .not. clim_type%separate_time_vary_calc) then
 ! set to zero so when next return to bilinear section will be sure to
 ! have proper data (relevant when running fixed_year case for more than
 ! one year in a single job)
-          clim_type%indexm(:) = 0       
-          clim_type%indexp(:) = 0        
-          clim_type%climatology(:) = 0             
+          clim_type%indexm(:) = 0
+          clim_type%indexp(:) = 0
+          clim_type%climatology(:) = 0
 
 
 !       clim_type%tweight3 = 0.0 ! This makes [pn]mon_nyear irrelevant. Set them to 0 to test.
-        clim_type%tweight1 = 0.0 
-        clim_type%tweight2 = 0.0 
-        clim_type%tweight3 = clim_type%tweight                                          
+        clim_type%tweight1 = 0.0
+        clim_type%tweight2 = 0.0
+        clim_type%tweight3 = clim_type%tweight
       endif
     endif   !(BILINEAR)
 
@@ -1805,7 +2089,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.eq.0) then
 !Neither time is set so we need to read 2 time slices.
-!Set up 
+!Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
     do i=1, size(clim_type%field_name(:))
@@ -1859,11 +2143,11 @@ select case(clim_type%TIME_FLAG)
                    clim_type%pmon_nyear(istart:iend,jstart:jend,:,n) + &
                                clim_type%tweight2* clim_type%tweight3*   &
                    clim_type%nmon_nyear(istart:iend,jstart:jend,:,n)
-    
+
     end do
 
 end select
-    
+
 select case(clim_type%level_type)
   case(PRESSURE)
     p_fact = 1.0
@@ -1880,7 +2164,7 @@ select case(clim_type%mr(i))
    col_data(:,:,i) = col_data(:,:,i) + hinterp_data(:,:,k,i)* &
       (clim_type%halflevs(k+1)-clim_type%halflevs(k))/grav
     enddo
-    
+
   case(KG_M2)
     do k = 1,size(hinterp_data,3)
        col_data(:,:,i) = col_data(:,:,i) + hinterp_data(:,:,k,i)
@@ -1893,7 +2177,7 @@ end select
      do i= 1, size(clim_type%field_name(:))
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (climo_diag_name(j) .eq. clim_type%field_name(i)) then
+  if ( trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
     found = .true.
     exit
   endif
@@ -1972,6 +2256,34 @@ end subroutine interpolator_4D
 !#######################################################################
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief interpolator_3D receives a field name as input and
+!!        interpolates the field to model a 3D grid and time axis.
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! \param [in] <field_name> The name of a field that you wish to interpolate
+!! \param [in] <Time> The model time that you wish to interpolate to
+!! \param [in] <phalf> The half level model pressure field
+!! \param [in] <is> OPTIONAL: Index for the physics window
+!! \param [in] <js> OPTIONAL: Index for the physics window
+!! \param [out] <interp_data> The model fields with the interpolated climatology data
+!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!!
+!! \throw FATAL "interpolator_3D : You must call interpolator_init
+!!                    before calling interpolator"
+!! \throw FATAL "interpolator_3D 1:  file="
+!! \throw FATAL "interpolator_3D 2:  file="
+!! \throw FATAL "interpolator_3D 3:  file="
+!! \throw FATAL "interpolator_3D 4:  file="
+!! \throw FATAL "interpolator_3D 5:  file="
+!! \throw FATAL "interpolator_3D : No data from the previous climatology
+!!                    time but we have the next time. How did this happen?"
+!! \throw NOTE "Interpolator: model surface pressure is greater than
+!!              climatology surface pressure for "
+!! \throw NOTE "Interpolator: model top pressure is less than
+!!                    climatology top pressure for "
+!! \throw FATAL "Interpolator: the field name is not contained in this
+!!                    intepolate_type: "
 subroutine interpolator_3D(clim_type, Time, phalf, interp_data,field_name, is,js, clim_units)
 !
 ! Return 3-D field interpolated to model grid and time
@@ -2029,7 +2341,7 @@ jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
 !++lwh
-  if ( field_name == clim_type%field_name(i) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
     found_field=.true.
     if(present(clim_units)) then
@@ -2044,14 +2356,14 @@ do i= 1,size(clim_type%field_name(:))
 !----------------------------------------------------------------------
 
 
-if ( .not. clim_type%separate_time_vary_calc) then     
+if ( .not. clim_type%separate_time_vary_calc) then
 !   print *, 'TIME INTERPOLATION NOT SEPARATED 3d--',  &
 !                                trim(clim_type%file_name), mpp_pe()
     if (clim_type%climatological_year) then
 !++lwh
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR, err_msg=err_msg )
-          if(err_msg /= '') then
+          if(trim(err_msg) /= '') then
              call mpp_error(FATAL,'interpolator_3D 1: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
           endif
        else
@@ -2062,7 +2374,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, err_msg=err_msg )
-       if(err_msg /= '') then
+       if(trim(err_msg) /= '') then
           call mpp_error(FATAL,'interpolator_3D 2: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
        endif
     endif
@@ -2081,11 +2393,11 @@ if ( .not. clim_type%separate_time_vary_calc) then
       ! We need 2 time levels.
         clim_type%itaum=0
         clim_type%itaup=0
-      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute 
+      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute
       ! the climatology year into the appropriate place.
 
-     
-      ! We need to get the previous months data for the climatology year before 
+
+      ! We need to get the previous months data for the climatology year before
       ! and after the model year.
         call get_date(Time, modyear, modmonth, modday, modhour, modminute, modsecond)
         call get_date(clim_type%time_slice(taum), climyear, climmonth, climday, climhour, climminute, climsecond)
@@ -2094,22 +2406,22 @@ if ( .not. clim_type%separate_time_vary_calc) then
         do m = 1, size(clim_type%clim_times(:,:),2)
           !Assume here that a climatology is for 1 year and consists of 12 months starting in January.
           call get_date(clim_type%clim_times(1,m), year1, month1, day, hour, minute, second)
-          if (year1 == climyear) climatology = m 
+          if (year1 == climyear) climatology = m
         enddo
         do m = 1,12
           !Find which month we are trying to look at and set clim_date[mp] to the dates spanning that.
           call get_date(clim_type%clim_times(m,climatology), year1, month1, day, hour, minute, second)
           if ( month1 == modmonth ) then
-!RSHBUGFX   if ( modday <= day ) then 
-            if ( modday <  day ) then 
+!RSHBUGFX   if ( modday <= day ) then
+            if ( modday <  day ) then
               indexm = m-1 ; indexp = m
             else
               indexm = m ; indexp = m+1
             endif
           endif
-        
+
         enddo
-        if ( indexm == 0 ) then 
+        if ( indexm == 0 ) then
           indexm = 12
           yearm = modyear - 1
         else
@@ -2127,14 +2439,14 @@ if ( .not. clim_type%separate_time_vary_calc) then
         call get_date(clim_type%time_slice(indexp+(climatology-1)*12), &
                       climyear, climmonth, climday, climhour, climminute, climsecond)
         month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
-        
+
         call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_3D 3: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
         month(1) = clim_type%time_slice(indexm+(climatology-1)*12)
         month(2) = clim_type%time_slice(indexm+climatology*12)
@@ -2144,9 +2456,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_3D 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
         month(1) = clim_type%time_slice(indexp+(climatology-1)*12)
         month(2) = clim_type%time_slice(indexp+climatology*12)
@@ -2156,9 +2468,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_3D 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
 
         if (indexm == clim_type%indexm(i) .and.  &
@@ -2187,10 +2499,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
 
       else ! We are within a climatology data set
-        
+
         if (taum /= clim_type%time_init(i,1) .or. &
             taup /= clim_type%time_init(i,2) ) then
- 
+
           call read_data(clim_type,clim_type%field_type(i), clim_type%pmon_pyear(:,:,:,i), taum,i,Time)
 ! Read the data for the next month in the previous climatology.
           call read_data(clim_type,clim_type%field_type(i), clim_type%nmon_pyear(:,:,:,i), taup,i,Time)
@@ -2203,9 +2515,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
 ! set to zero so when next return to bilinear section will be sure to
 ! have proper data (relevant when running fixed_year case for more than
 ! one year in a single job)
-          clim_type%indexm(i) = 0       
-          clim_type%indexp(i) = 0        
-          clim_type%climatology(i) = 0             
+          clim_type%indexm(i) = 0
+          clim_type%indexp(i) = 0
+          clim_type%climatology(i) = 0
 
 
           clim_type%time_init(i,1) = taum
@@ -2213,7 +2525,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         endif
 !       clim_type%tweight3 = 0.0 ! This makes [pn]mon_nyear irrelevant. Set them to 0 to test.
         clim_type%tweight1 = 0.0 ; clim_type%tweight2 = 0.0
-        clim_type%tweight3 = clim_type%tweight                                          
+        clim_type%tweight3 = clim_type%tweight
       endif
 
     endif ! (BILINEAR)
@@ -2231,7 +2543,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.eq.0) then
 !Neither time is set so we need to read 2 time slices.
-!Set up 
+!Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
     call read_data(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,1,i), taum,i,Time)
@@ -2257,7 +2569,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
     endif! TIME_FLAG
 
-    endif   !( .not. clim_type%separate_time_vary_calc) 
+    endif   !( .not. clim_type%separate_time_vary_calc)
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
     hinterp_data = (1.-clim_type%tweight) * clim_type%data(istart:iend,jstart:jend,:,clim_type%itaum,i) + &
@@ -2270,7 +2582,7 @@ select case(clim_type%TIME_FLAG)
     (1.-clim_type%tweight2) *     clim_type%tweight3  * clim_type%nmon_pyear(istart:iend,jstart:jend,:,i) + &
         clim_type%tweight1  * (1.-clim_type%tweight3) * clim_type%pmon_nyear(istart:iend,jstart:jend,:,i) + &
         clim_type%tweight2  *     clim_type%tweight3  * clim_type%nmon_nyear(istart:iend,jstart:jend,:,i)
-    
+
 
 
 end select
@@ -2289,7 +2601,7 @@ select case(clim_type%mr(i))
    col_data(:,:) = col_data(:,:) + hinterp_data(:,:,k)* &
       (clim_type%halflevs(k+1)-clim_type%halflevs(k))/grav
     enddo
-    
+
   case(KG_M2)
     do k = 1,size(hinterp_data,3)
        col_data(:,:) = col_data(:,:) + hinterp_data(:,:,k)
@@ -2300,7 +2612,7 @@ end select
 
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (climo_diag_name(j) .eq. clim_type%field_name(i)) then
+  if ( trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
     found = .true.
     exit
   endif
@@ -2373,6 +2685,29 @@ end subroutine interpolator_3D
 !#######################################################################
 !
 !++lwh
+!---------------------------------------------------------------------
+!> \brief interpolator_2D receives a field name as input and
+!!        interpolates the field to model a 2D grid and time axis.
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! \param [in] <field_name> The name of a field that you wish to interpolate
+!! \param [in] <Time> The model time that you wish to interpolate to
+!! \param [in] <is> OPTIONAL: Index for the physics window
+!! \param [in] <js> OPTIONAL: Index for the physics window
+!! \param [out] <interp_data> The model fields with the interpolated climatology data
+!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!!
+!! \throw FATAL "interpolator_2D : You must call interpolator_init
+!!                    before calling interpolator"
+!! \throw FATAL "interpolator_2D 1:  file="
+!! \throw FATAL "interpolator_2D 2:  file="
+!! \throw FATAL "interpolator_2D 3:  file="
+!! \throw FATAL "interpolator_2D 4:  file="
+!! \throw FATAL "interpolator_2D 5:  file="
+!! \throw FATAL "interpolator_2D : No data from the previous climatology
+!!                    time but we have the next time. How did this happen?"
+!! \throw FATAL "Interpolator: the field name is not contained in this
+!!                    intepolate_type: "
 subroutine interpolator_2D(clim_type, Time, interp_data, field_name, is, js, clim_units)
 !
 ! Return 2-D field interpolated to model grid and time
@@ -2424,7 +2759,7 @@ jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
 !++lwh
-  if ( field_name == clim_type%field_name(i) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
 
     found_field=.true.
@@ -2441,14 +2776,14 @@ do i= 1,size(clim_type%field_name(:))
 !   stewp for this interpolate_type variable.
 !----------------------------------------------------------------------
 
-if ( .not. clim_type%separate_time_vary_calc) then     
+if ( .not. clim_type%separate_time_vary_calc) then
 !   print *, 'TIME INTERPOLATION NOT SEPARATED 2d--',  &
 !                                   trim(clim_type%file_name), mpp_pe()
     if (clim_type%climatological_year) then
 !++lwh
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR, err_msg=err_msg )
-          if(err_msg /= '') then
+          if(trim(err_msg) /= '') then
              call mpp_error(FATAL,'interpolator_2D 1: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
           endif
        else
@@ -2459,14 +2794,14 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, err_msg=err_msg )
-       if(err_msg /= '') then
+       if(trim(err_msg) /= '') then
           call mpp_error(FATAL,'interpolator_2D 2: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
        endif
     endif
 
-! If the climatology file has seasonal, a split time-line or has all the data 
+! If the climatology file has seasonal, a split time-line or has all the data
 ! read in then enter this loop.
-! 
+!
     if(clim_type%TIME_FLAG .ne. LINEAR .or. read_all_on_init) then
       clim_type%itaum=taum
       clim_type%itaup=taup
@@ -2480,9 +2815,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !      ! We need 2 time levels. Check we have the correct data.
 !        itaum=0
 !        itaup=0
-!      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute 
+!      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute
 !      ! the climatology year into the appropriate place.
-!      
+!
 !        call get_date(Time, modyear, modmonth, modday, modhour, modminute, modsecond)
 !        call get_date(clim_type%time_slice(taum), climyear, climmonth, climday, climhour, climminute, climsecond)
 !        clim_datem = set_date(climyear, modmonth, modday, modhour, modminute, modsecond)
@@ -2504,11 +2839,11 @@ if ( .not. clim_type%separate_time_vary_calc) then
       ! We need 2 time levels.
         clim_type%itaum=0
         clim_type%itaup=0
-      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute 
+      ! Assume this is monthly data. So we need to get the data applicable to the model date but substitute
       ! the climatology year into the appropriate place.
 
-     
-      ! We need to get the previous months data for the climatology year before 
+
+      ! We need to get the previous months data for the climatology year before
       ! and after the model year.
         call get_date(Time, modyear, modmonth, modday, modhour, modminute, modsecond)
         call get_date(clim_type%time_slice(taum), climyear, climmonth, climday, climhour, climminute, climsecond)
@@ -2517,22 +2852,22 @@ if ( .not. clim_type%separate_time_vary_calc) then
         do m = 1, size(clim_type%clim_times(:,:),2)
           !Assume here that a climatology is for 1 year and consists of 12 months starting in January.
           call get_date(clim_type%clim_times(1,m), year1, month1, day, hour, minute, second)
-          if (year1 == climyear) climatology = m 
+          if (year1 == climyear) climatology = m
         enddo
         do m = 1,12
           !Find which month we are trying to look at and set clim_date[mp] to the dates spanning that.
           call get_date(clim_type%clim_times(m,climatology), year1, month1, day, hour, minute, second)
           if ( month1 == modmonth ) then
-!RSHBUGFX   if ( modday <= day ) then 
-            if ( modday <  day ) then 
+!RSHBUGFX   if ( modday <= day ) then
+            if ( modday <  day ) then
               indexm = m-1 ; indexp = m
             else
               indexm = m ; indexp = m+1
             endif
           endif
-        
+
         enddo
-        if ( indexm == 0 ) then 
+        if ( indexm == 0 ) then
           indexm = 12
           yearm = modyear - 1
         else
@@ -2550,14 +2885,14 @@ if ( .not. clim_type%separate_time_vary_calc) then
         call get_date(clim_type%time_slice(indexp+(climatology-1)*12), &
                       climyear, climmonth, climday, climhour, climminute, climsecond)
         month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
-        
+
         call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_2D 3: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
         month(1) = clim_type%time_slice(indexm+(climatology-1)*12)
         month(2) = clim_type%time_slice(indexm+climatology*12)
@@ -2567,9 +2902,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_2D 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
         month(1) = clim_type%time_slice(indexp+(climatology-1)*12)
         month(2) = clim_type%time_slice(indexp+climatology*12)
@@ -2579,9 +2914,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if
-        if(err_msg /= '') then
+        if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_2D 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
-        endif    
+        endif
 
 
         if (indexm == clim_type%indexm(i) .and.  &
@@ -2610,10 +2945,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
 
       else ! We are within a climatology data set
-        
+
         if (taum /= clim_type%time_init(i,1) .or. &
             taup /= clim_type%time_init(i,2) ) then
- 
+
           call read_data(clim_type,clim_type%field_type(i), clim_type%pmon_pyear(:,:,:,i), taum,i,Time)
 ! Read the data for the next month in the previous climatology.
           call read_data(clim_type,clim_type%field_type(i), clim_type%nmon_pyear(:,:,:,i), taup,i,Time)
@@ -2626,9 +2961,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
 ! set to zero so when next return to bilinear section will be sure to
 ! have proper data (relevant when running fixed_year case for more than
 ! one year in a single job)
-          clim_type%indexm(i) = 0       
-          clim_type%indexp(i) = 0        
-          clim_type%climatology(i) = 0             
+          clim_type%indexm(i) = 0
+          clim_type%indexp(i) = 0
+          clim_type%climatology(i) = 0
 
 
           clim_type%time_init(i,1) = taum
@@ -2636,7 +2971,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         endif
 !       clim_type%tweight3 = 0.0 ! This makes [pn]mon_nyear irrelevant. Set them to 0 to test.
         clim_type%tweight1 = 0.0 ; clim_type%tweight2 = 0.0
-        clim_type%tweight3 = clim_type%tweight                                          
+        clim_type%tweight3 = clim_type%tweight
       endif
 
     endif ! (BILINEAR)
@@ -2653,7 +2988,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.eq.0) then
       !Neither time is set so we need to read 2 time slices.
-      !Set up 
+      !Set up
       ! field(:,:,:,1) as the previous time slice.
       ! field(:,:,:,2) as the next time slice.
         call read_data(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,1,i), taum,i,Time)
@@ -2698,7 +3033,7 @@ end select
 
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (climo_diag_name(j) .eq. clim_type%field_name(i)) then
+  if (trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
     found = .true.
     exit
   endif
@@ -2723,7 +3058,29 @@ end subroutine interpolator_2D
 !--lwh
 !
 !#######################################################################
-
+!
+!---------------------------------------------------------------------
+!> \brief interpolator_4D_no_time_axis receives a field name as input and
+!!        interpolates the field to model a 4D grid.
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! \param [in] <field_name> The name of a field that you wish to interpolate
+!! \param [in] <phalf> The half level model pressure field
+!! \param [in] <is> OPTIONAL: Index for the physics window
+!! \param [in] <js> OPTIONAL: Index for the physics window
+!! \param [out] <interp_data> The model fields with the interpolated climatology data
+!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!!
+!! \throw FATAL "interpolator_4D_no_time_axis : You must call
+!!                    interpolator_init before calling interpolator"
+!! \throw FATAL "interpolator_mod: cannot use 4D interface to
+!!                    interpolator for this file"
+!! \throw NOTE "Interpolator: model surface pressure is greater than
+!!                    surface pressure of input data for "
+!! \throw NOTE "Interpolator: model top pressure is less than surface
+!!                    pressure of input data for "
+!! \throw FATAL "Interpolator: the field name is not contained in this
+!!                    intepolate_type: "
 subroutine interpolator_4D_no_time_axis(clim_type, phalf, interp_data, field_name, is,js, clim_units)
 
 ! Return 4-D field interpolated to model grid
@@ -2781,9 +3138,9 @@ if (present(js)) jstart = js
 jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
-  if ( field_name == clim_type%field_name(i) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
     found_field=.true.
-    exit 
+    exit
   endif
 end do
 i = 1
@@ -2796,7 +3153,7 @@ endif
 do n=1, size(clim_type%field_name(:))
   hinterp_data(:,:,:,n) = clim_type%data(istart:iend,jstart:jend,:,1,n)
 end do
-    
+
 select case(clim_type%level_type)
   case(PRESSURE)
     p_fact = 1.0
@@ -2869,7 +3226,29 @@ endif
 end subroutine interpolator_4D_no_time_axis
 
 !#######################################################################
-
+!
+!---------------------------------------------------------------------
+!> \brief interpolator_3D_no_time_axis receives a field name as input and
+!!        interpolates the field to model a 3D grid.
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! \param [in] <field_name> The name of a field that you wish to interpolate
+!! \param [in] <phalf> The half level model pressure field
+!! \param [in] <is> OPTIONAL: Index for the physics window
+!! \param [in] <js> OPTIONAL: Index for the physics window
+!! \param [out] <interp_data> The model fields with the interpolated climatology data
+!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!!
+!! \throw FATAL "interpolator_3D_no_time_axis : You must call
+!!                    interpolator_init before calling interpolator"
+!! \throw FATAL "interpolator_mod: cannot use 4D interface to
+!!                    interpolator for this file"
+!! \throw NOTE "Interpolator: model surface pressure is greater than
+!!                    climatology surface pressure for "
+!! \throw NOTE "Interpolator: model top pressure is less than
+!!                    climatology top pressure for "
+!! \throw FATAL "Interpolator: the field name is not contained in this
+!!                    intepolate_type: "
 subroutine interpolator_3D_no_time_axis(clim_type, phalf, interp_data, field_name, is,js, clim_units)
 
 ! Return 3-D field interpolated to model grid
@@ -2892,15 +3271,19 @@ real, dimension(:,:,:), intent(in)  :: phalf
 real, dimension(:,:,:), intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
-real :: tweight, tweight1, tweight2, tweight3
-integer :: taum, taup, ilon
-real :: hinterp_data(size(interp_data,1),size(interp_data,2),size(clim_type%levs(:)))
-real :: p_fact(size(interp_data,1),size(interp_data,2))
-real :: pclim(size(clim_type%halflevs(:)))
-integer :: istart,iend,jstart,jend
-logical :: result
-logical :: found_field=.false.
-integer :: i, j, k, n
+!real :: tweight, tweight1, tweight2, tweight3
+real :: tweight      !< No description
+real :: tweight1     !< The time weight between the climatology years
+real :: tweight2     !< No description
+real :: tweight3     !< The time weight between the months
+integer :: taum, taup, ilon          !< No description
+real :: hinterp_data(size(interp_data,1),size(interp_data,2),size(clim_type%levs(:)))     !< No description
+real :: p_fact(size(interp_data,1),size(interp_data,2))          !< No description
+real :: pclim(size(clim_type%halflevs(:)))                         !< No description
+integer :: istart,iend,jstart,jend                                   !< No description
+logical :: result                         !< No description
+logical :: found_field=.false.          !< No description
+integer :: i, j, k, n                    !< No description
 
 if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_3D_no_time_axis : You must call interpolator_init before calling interpolator")
@@ -2914,7 +3297,7 @@ if (present(js)) jstart = js
 jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
-  if ( field_name == clim_type%field_name(i) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
     found_field=.true.
     if(present(clim_units)) then
       call mpp_get_atts(clim_type%field_type(i),units=clim_units)
@@ -2987,7 +3370,22 @@ endif
 end subroutine interpolator_3D_no_time_axis
 
 !#######################################################################
-
+!
+!---------------------------------------------------------------------
+!> \brief interpolator_2D_no_time_axis receives a field name as input and
+!!        interpolates the field to model a 2D grid.
+!!
+!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! \param [in] <field_name> The name of a field that you wish to interpolate
+!! \param [in] <is> OPTIONAL: Index for the physics window
+!! \param [in] <js> OPTIONAL: Index for the physics window
+!! \param [out] <interp_data> The model fields with the interpolated climatology data
+!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!!
+!! \throw FATAL "interpolator_2D_no_time_axis : You must call
+!!                    interpolator_init before calling interpolator"
+!! \throw FATAL "Interpolator: the field name is not contained in this
+!!                    intepolate_type: "
 subroutine interpolator_2D_no_time_axis(clim_type, interp_data, field_name, is, js, clim_units)
 
 ! Return 2-D field interpolated to model grid
@@ -3029,7 +3427,7 @@ if (present(js)) jstart = js
 jend = jstart - 1 + size(interp_data,2)
 
 do i= 1,size(clim_type%field_name(:))
-  if ( field_name == clim_type%field_name(i) ) then
+  if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 
     found_field=.true.
 
@@ -3054,6 +3452,11 @@ end subroutine interpolator_2D_no_time_axis
 
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief interpolator_end receives interpolate data as input
+!!        and deallocates its memory.
+!!
+!! \param [inout] <clim_type> The interpolate type whose components will be deallocated
 subroutine interpolator_end(clim_type)
 ! Subroutine to deallocate the interpolate type clim_type.
 !
@@ -3073,7 +3476,7 @@ if (associated (clim_type%lon     )) deallocate(clim_type%lon)
 if (associated (clim_type%latb    )) deallocate(clim_type%latb)
 if (associated (clim_type%lonb    )) deallocate(clim_type%lonb)
 if (associated (clim_type%levs    )) deallocate(clim_type%levs)
-if (associated (clim_type%halflevs)) deallocate(clim_type%halflevs) 
+if (associated (clim_type%halflevs)) deallocate(clim_type%halflevs)
 call horiz_interp_del(clim_type%interph)
 if (associated (clim_type%time_slice)) deallocate(clim_type%time_slice)
 if (associated (clim_type%field_type)) deallocate(clim_type%field_type)
@@ -3090,7 +3493,7 @@ if (associated (clim_type%pmon_pyear)) then
   deallocate(clim_type%nmon_pyear)
 endif
 
-!! RSH mod   
+!! RSH mod
 if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &
 !     read_all_on_init)) .or. clim_type%TIME_FLAG .eq. BILINEAR  ) then
       read_all_on_init)  ) then
@@ -3104,18 +3507,29 @@ end subroutine interpolator_end
 !
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief read_data receives various climate data as inputs and
+!!        returns a horizontally interpolated climatology field.
+!!
+!! \param [in] <clim_type> The interpolate type which contains the data
+!! \param [in] <src_field> The field type
+!! \param [in] <nt> The index of the time slice of the climatology that you wish to read
+!! \param [in] <i> OPTIONAL: The index of the field name that you are trying to read
+!! \param [in] <Time> OPTIONAL: The model time. Used for diagnostic purposes only
+!! \param [out] <hdata> The horizontally interpolated climatology field. This
+!                       field will still be on the climatology vertical grid
 subroutine read_data(clim_type,src_field, hdata, nt,i, Time)
 !
 !  INTENT IN
-!    clim_type : The interpolate type which contains the data 
-!    src_field : The field type 
+!    clim_type : The interpolate type which contains the data
+!    src_field : The field type
 !    nt        : The index of the time slice of the climatology that you wish to read.
 !    i         : The index of the field name that you are trying to read. (optional)
 !    Time      : The model time. Used for diagnostic purposes only. (optional)
 !
 !  INTENT OUT
 !
-!    hdata     : The horizontally interpolated climatology field. This 
+!    hdata     : The horizontally interpolated climatology field. This
 !                field will still be on the climatology vertical grid.
 !
 type(interpolate_type)   , intent(in)  :: clim_type
@@ -3142,7 +3556,7 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
                            size(clim_type%lat(:)), &
                            size(clim_type%levs(:))))
         km = size(clim_type%levs(:))
-        do k=1, km                      
+        do k=1, km
           climdata2(:,:,k) = climdata(:,:,km+1-k)
         end do
         climdata = climdata2
@@ -3158,17 +3572,27 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 end subroutine read_data
 
 !#######################################################################
-
+!
+!---------------------------------------------------------------------
+!> \brief read_data_no_time_axis receives various climate data as inputs and
+!!        returns a horizontally interpolated climatology field without the 
+!!            time axis.
+!!
+!! \param [in] <clim_type> The interpolate type which contains the data
+!! \param [in] <src_field> The field type
+!! \param [in] <i> OPTIONAL: The index of the field name that you are trying to read
+!! \param [out] <hdata> The horizontally interpolated climatology field. This
+!                       field will still be on the climatology vertical grid
 subroutine read_data_no_time_axis(clim_type,src_field, hdata, i)
 
 !  INTENT IN
-!    clim_type : The interpolate type which contains the data 
-!    src_field : The field type 
+!    clim_type : The interpolate type which contains the data
+!    src_field : The field type
 !    i         : The index of the field name that you are trying to read. (optional)
 
 !  INTENT OUT
 
-!    hdata     : The horizontally interpolated climatology field. This 
+!    hdata     : The horizontally interpolated climatology field. This
 !                field will still be on the climatology vertical grid.
 
 type(interpolate_type)   , intent(in)  :: clim_type
@@ -3192,7 +3616,7 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
                            size(clim_type%lat(:)), &
                            size(clim_type%levs(:))))
         km = size(clim_type%levs(:))
-        do k=1, km                      
+        do k=1, km
           climdata2(:,:,k) = climdata(:,:,km+1-k)
         end do
         climdata = climdata2
@@ -3206,6 +3630,14 @@ end subroutine read_data_no_time_axis
 
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief diag_read_data receives the data read in by read_data as
+!!            inputs and runs a diagnosis.
+!!
+!! \param [in] <clim_type> The interpolate type which contains the data
+!! \param [in] <model_data> The data read in from file that is being diagnosed
+!! \param [in] <i> The index of the field name that you are diagnosing
+!! \param [in] <Time> The model time. 
 subroutine diag_read_data(clim_type,model_data, i, Time)
 !
 ! A routine to diagnose the data read in by read_data
@@ -3228,7 +3660,7 @@ logical :: result, found
 
 found = .false.
 do j = 1,size(climo_diag_name(:))
-  if (climo_diag_name(j) .eq. clim_type%field_name(i)) then
+  if (trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
       found = .true.
       exit
   endif
@@ -3251,9 +3683,17 @@ end subroutine diag_read_data
 !#######################################################################
 !
 !++lwh
+!
+!---------------------------------------------------------------------
+!> \brief query_interpolator receives an interpolate type as input
+!!        and returns the number of fields and field names.
+!!
+!! \param [in] <clim_type> The interpolate type which contains the data
+!! \param [out] <nfields> OPTIONAL: No description
+!! \param [out] <field_names> OPTIONAL: No description
 subroutine query_interpolator( clim_type, nfields, field_names )
 !
-! Query an interpolate_type variable to find the number of fields and field names. 
+! Query an interpolate_type variable to find the number of fields and field names.
 !
 type(interpolate_type), intent(in)                    :: clim_type
 integer, intent(out), optional                        :: nfields
@@ -3267,6 +3707,11 @@ end subroutine query_interpolator
 !
 !#######################################################################
 !
+!---------------------------------------------------------------------
+!> \brief chomp receives a string from NetCDF files and removes
+!!        CHAR(0) from the end of this string.
+!!
+!! \param [in] <string> The string from the NetCDF file
 function chomp(string)
 !
 ! A function to remove CHAR(0) from the end of strings read from NetCDF files.
@@ -3285,6 +3730,15 @@ end function chomp
 !
 !#################################################################
 !
+!
+!---------------------------------------------------------------------
+!> \brief interp_weighted_scalar_2D receives the variables grdin,
+!!            grdout, and datin as inputs and returns datout.
+!!
+!! \param [in] <grdin> No description
+!! \param [in] <grdout> No description
+!! \param [in] <datin> No description
+!! \param [out] <datout> No description
  subroutine interp_weighted_scalar_2D (grdin, grdout, datin, datout )
 real, intent(in),  dimension(:) :: grdin, grdout
 real, intent(in),  dimension(:,:) :: datin
@@ -3345,8 +3799,15 @@ if (size(grdout(:)).ne. (size(datout,1 )+1)) &
 end subroutine interp_weighted_scalar_2D
 
 
+!
 !---------------------------------------------------------------------
- 
+!> \brief interp_weighted_scalar_1D receives the variables grdin,
+!!        grdout, and datin as inputs and returns datout.
+!!
+!! \param [in] <grdin> No description
+!! \param [in] <grdout> No description
+!! \param [in] <datin> No description
+!! \param [out] <datout> No description
  subroutine interp_weighted_scalar_1D (grdin, grdout, datin, datout )
 real, intent(in),  dimension(:) :: grdin, grdout, datin
 real, intent(out), dimension(:) :: datout
@@ -3397,6 +3858,15 @@ end subroutine interp_weighted_scalar_1D
 !
 !#################################################################
 !
+!---------------------------------------------------------------------
+!> \brief interp_linear receives the variables grdin,
+!!            grdout, and datin as inputs and returns a linear
+!!            interpolation.
+!!
+!! \param [in] <grdin> No description
+!! \param [in] <grdout> No description
+!! \param [in] <datin> No description
+!! \param [out] <datout> No description
 subroutine interp_linear ( grdin, grdout, datin, datout )
 real, intent(in),  dimension(:) :: grdin, grdout, datin
 real, intent(out), dimension(:) :: datout
@@ -3434,7 +3904,7 @@ if (size(grdout(:)).ne. (size(datout(:))+1)) &
    ! wt = min(max(wt,0.),1.)
 
      datout(k) = (1.-wt)*datin(j-1) + wt*datin(j)
-     
+
   enddo
 
 end subroutine interp_linear
@@ -3567,7 +4037,7 @@ call mpp_close(unit)
 ndivs = mpp_npes()
 
 call mpp_define_layout ((/1,nxd,1,nyd/), ndivs, domain_layout)
-call mpp_define_domains((/1,nxd,1,nyd/),domain_layout, domain,xhalo=0,yhalo=0)  
+call mpp_define_domains((/1,nxd,1,nyd/),domain_layout, domain,xhalo=0,yhalo=0)
 call mpp_get_data_domain(domain,isd,ied,jsd,jed)
 call mpp_get_compute_domain (domain, iscomp, iecomp, jscomp, jecomp)
 
@@ -3592,10 +4062,10 @@ allocate(model_data(isd:ied,jsd:jed,level))
 dx = 360./nxd
 dy = 180./nyd
 do i = 1,nxd+1
-  lonb_mod(i,:) = (i-1)*dx 
+  lonb_mod(i,:) = (i-1)*dx
 enddo
 do i = 1,nyd+1
-  latb_mod(:,i) = -90. + (i-1)*dy 
+  latb_mod(:,i) = -90. + (i-1)*dy
 enddo
 do i=1,nxd
   lon_mod(i)=(lonb_mod(i+1,1)+lonb_mod(i,1))/2.0
@@ -3612,14 +4082,14 @@ latb_mod = latb_mod * dtr
    axes(3) = diag_axis_init('z',p_full(isd,jsd,:),units='mb',cart_name='z')
 
 interp_diagnostic_id =  register_diag_field('interp','ozone',axes(1:3),model_time,&
-                                'interpolated_ozone_clim', 'kg/kg', missing_value)      
+                                'interpolated_ozone_clim', 'kg/kg', missing_value)
 column_diagnostic_id1 =  register_diag_field('interp','colozone',axes(1:2),model_time,&
-                                'column_ozone_clim', 'kg/m2', missing_value)      
+                                'column_ozone_clim', 'kg/m2', missing_value)
 
 do i=1,size(names(:))
 colaer = 'col'//trim(names(i))
 column_diagnostic_id(i) =  register_diag_field('interp',colaer,axes(1:2),model_time,&
-                                'column_aerosol_clim', 'kg/m2', missing_value)      
+                                'column_aerosol_clim', 'kg/m2', missing_value)
 enddo
 
 
@@ -3660,7 +4130,7 @@ call get_anthro_sulfate(aerosol,model_time,p_half,names(i),model_data,clim_units
 
       col_data(iscomp:iecomp,jscomp:jecomp)=0.0
       do k=1,level
-        if (trim(units) .eq. 'kg/m^2') then
+        if (trim(adjustl(lowercase(units))) .eq. 'kg/m^2') then
            col_data(iscomp:iecomp,jscomp:jecomp)= col_data(iscomp:iecomp,jscomp:jecomp)+ &
               model_data(iscomp:iecomp,jscomp:jecomp,k)
         else
@@ -3675,7 +4145,7 @@ call get_anthro_sulfate(aerosol,model_time,p_half,names(i),model_data,clim_units
 
   enddo
 
-   model_time = model_time + set_time(delt_secs,delt_days)      
+   model_time = model_time + set_time(delt_secs,delt_days)
 
    if (n.eq. ntsteps) call diag_manager_end(model_time)
 
@@ -3696,7 +4166,7 @@ subroutine sulfate_init(aerosol,lonb, latb, names, data_out_of_bounds, vert_inte
 type(interpolate_type), intent(inout)         :: aerosol
 real,                   intent(in)            :: lonb(:,:),latb(:,:)
 character(len=64),      intent(in)            :: names(:)
-integer,                intent(in)            :: data_out_of_bounds(:) 
+integer,                intent(in)            :: data_out_of_bounds(:)
 integer,                intent(in), optional  :: vert_interp(:)
 character(len=*),       intent(out),optional  :: units(:)
 

@@ -1,21 +1,20 @@
 !***********************************************************************
-!*                   GNU General Public License                        *
-!* This file is a part of fvGFS.                                       *
-!*                                                                     *
-!* fvGFS is free software; you can redistribute it and/or modify it    *
-!* and are expected to follow the terms of the GNU General Public      *
-!* License as published by the Free Software Foundation; either        *
-!* version 2 of the License, or (at your option) any later version.    *
-!*                                                                     *
-!* fvGFS is distributed in the hope that it will be useful, but        *
-!* WITHOUT ANY WARRANTY; without even the implied warranty of          *
-!* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU   *
-!* General Public License for more details.                            *
-!*                                                                     *
-!* For the full text of the GNU General Public License,                *
-!* write to: Free Software Foundation, Inc.,                           *
-!*           675 Mass Ave, Cambridge, MA 02139, USA.                   *
-!* or see:   http://www.gnu.org/licenses/gpl.html                      *
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
     subroutine READ_RECORD_CORE_(unit, field, nwords, data, start, axsiz)
       integer,         intent(in)    :: unit
@@ -198,8 +197,7 @@
           start = 1
           do i = 1,size(field%axes(:))
              axsiz(i) = field%size(i)
-             if( field%axes(i)%did.EQ.field%time_axis_index .AND. field%time_axis_index >0 )start(i) = tlevel
-
+             if( i .EQ. field%time_axis_index )start(i) = tlevel
           end do
           if( PRESENT(domain) )then
               call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_count=tile_count, position=position  )
@@ -236,7 +234,6 @@
 
       return
     end subroutine READ_RECORD_
-
 
     subroutine MPP_READ_2DDECOMP_2D_( unit, field, domain, data, tindex, tile_count )
       integer, intent(in) :: unit

@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
  module sat_vapor_pres_k_mod
 
@@ -176,7 +194,7 @@
       else
         allocate(TABLE(table_size), DTABLE(table_size), D2TABLE(table_size))
       endif
-      
+
    if (construct_table_wrt_liq) then
       if(allocated(TABLE2) .or. allocated(DTABLE2) .or. allocated(D2TABLE2)) then
         err_msg = 'Attempt to allocate sat vapor pressure table2s when already allocated'
@@ -219,7 +237,7 @@
 
         do i = 1, table_size
           tem(1) = tminl + dtres*real(i-1)
-          TABLE(i) = ES0*610.78*exp(-hlv/rvgas*(1./tem(1) - 1./tfreeze)) 
+          TABLE(i) = ES0*610.78*exp(-hlv/rvgas*(1./tem(1) - 1./tfreeze))
           DTABLE(i) = hlv*TABLE(i)/rvgas/tem(1)**2.
         enddo
 
@@ -248,11 +266,11 @@
 
          D2TABLE(table_size) = 0.50*dtinvl*&
               (DTABLE(table_size)-DTABLE(table_size-1))
-      
+
    if (construct_table_wrt_liq) then
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
- 
+
       do i = 1, table_size
         tem(1) = tminl + dtres*real(i-1)
         tem(2) = tem(1)-tinrc
@@ -262,7 +280,7 @@
         TABLE2(i) = es(1)
         DTABLE2(i) = (es(3)-es(2))*tfact
       enddo
- 
+
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
 
@@ -281,7 +299,7 @@
    if (construct_table_wrt_liq_and_ice) then
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
- 
+
       do i = 1, table_size
         tem(1) = tminl + dtres*real(i-1)
         tem(2) = tem(1)-tinrc
@@ -291,7 +309,7 @@
         TABLE3(i) = es(1)
         DTABLE3(i) = (es(3)-es(2))*tfact
       enddo
- 
+
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
 
@@ -316,7 +334,7 @@
  function compute_es_k(tem, TFREEZE) result (es)
  real, intent(in) :: tem(:), TFREEZE
  real :: es(size(tem,1))
-         
+
  real    :: x, esice, esh2o, TBASW, TBASI
  integer :: i
  real, parameter :: ESBASW = 101324.60
@@ -327,7 +345,7 @@
 
    do i = 1, size(tem)
 
-!  compute es over ice 
+!  compute es over ice
 
      if (tem(i) < TBASI) then
          x = -9.09718*(TBASI/tem(i)-1.0) - 3.56654*log10(TBASI/tem(i)) &
@@ -370,7 +388,7 @@
  function compute_es_liq_k(tem, TFREEZE) result (es)
  real, intent(in) :: tem(:), TFREEZE
  real :: es(size(tem,1))
-         
+
  real    :: x, esh2o, TBASW
  integer :: i
  real, parameter :: ESBASW = 101324.60
@@ -402,7 +420,7 @@
  function compute_es_liq_ice_k(tem, TFREEZE) result (es)
  real, intent(in) :: tem(:), TFREEZE
  real :: es(size(tem,1))
-         
+
  real    :: x, TBASW, TBASI
  integer :: i
  real, parameter :: ESBASW = 101324.60
@@ -415,14 +433,14 @@
 
      if (tem(i) < TBASI) then
 
-!  compute es over ice 
+!  compute es over ice
 
          x = -9.09718*(TBASI/tem(i)-1.0) - 3.56654*log10(TBASI/tem(i)) &
              +0.876793*(1.0-tem(i)/TBASI) + log10(ESBASI)
          es(i) =10.**(x)
      else
 
-!  compute es over water 
+!  compute es over water
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
@@ -442,9 +460,9 @@
  subroutine compute_qs_k_3d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:,:)           :: temp, press   
+ real, intent(in),  dimension(:,:,:)           :: temp, press
  real, intent(in)                              :: eps, zvir
- real, intent(out), dimension(:,:,:)           :: qs   
+ real, intent(out), dimension(:,:,:)           :: qs
  integer, intent(out)                          :: nbad
  real, intent(in),  dimension(:,:,:), optional :: q
  real, intent(in),                    optional :: hc
@@ -487,7 +505,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
        qs = (1.0 + zvir*q)*eps*esloc/press
@@ -500,7 +518,7 @@
          do j=1,size(qs,2)
            do i=1,size(qs,1)
              if (denom(i,j,k) > 0.0) then
-               qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)         
+               qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                qs(i,j,k) = eps
              endif
@@ -518,10 +536,10 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif ! (nbad = 0)
 
-     
+
  end subroutine compute_qs_k_3d
 
 !#######################################################################
@@ -529,9 +547,9 @@
  subroutine compute_qs_k_2d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:)           :: temp, press   
+ real, intent(in),  dimension(:,:)           :: temp, press
  real, intent(in)                            :: eps, zvir
- real, intent(out), dimension(:,:)           :: qs   
+ real, intent(out), dimension(:,:)           :: qs
  integer, intent(out)                        :: nbad
  real, intent(in),  dimension(:,:), optional :: q
  real, intent(in),                  optional :: hc
@@ -574,7 +592,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
        qs = (1.0 + zvir*q)*eps*esloc/press
@@ -603,7 +621,7 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif ! (nbad = 0)
 
 
@@ -614,9 +632,9 @@
  subroutine compute_qs_k_1d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:)           :: temp, press   
+ real, intent(in),  dimension(:)           :: temp, press
  real, intent(in)                          :: eps, zvir
- real, intent(out), dimension(:)           :: qs   
+ real, intent(out), dimension(:)           :: qs
  integer, intent(out)                      :: nbad
  real, intent(in),  dimension(:), optional :: q
  real, intent(in),                optional :: hc
@@ -659,7 +677,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
        qs = (1.0 + zvir*q)*eps*esloc/press
@@ -686,7 +704,7 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif ! (nbad = 0)
 
 
@@ -697,9 +715,9 @@
  subroutine compute_qs_k_0d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in)                :: temp, press   
+ real, intent(in)                :: temp, press
  real, intent(in)                :: eps, zvir
- real, intent(out)               :: qs   
+ real, intent(out)               :: qs
  integer, intent(out)            :: nbad
  real, intent(in),      optional :: q
  real, intent(in),      optional :: hc
@@ -741,7 +759,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
        qs = (1.0 + zvir*q)*eps*esloc/press
@@ -766,7 +784,7 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif ! (nbad = 0)
 
 
@@ -781,7 +799,7 @@
 
  real, intent(in),  dimension(:,:,:)           :: temp, press
  real, intent(in)                              :: eps, zvir
- real, intent(out), dimension(:,:,:)           :: mrs   
+ real, intent(out), dimension(:,:,:)           :: mrs
  integer, intent(out)                          :: nbad
  real, intent(in),  dimension(:,:,:), optional :: mr
  real, intent(in),                    optional :: hc
@@ -825,7 +843,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (mr) .and. use_exact_qs) then
        mrs = (eps + mr)*esloc/press
@@ -838,7 +856,7 @@
          do j=1,size(mrs,2)
            do i=1,size(mrs,1)
              if (denom(i,j,k) > 0.0) then
-               mrs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k) 
+               mrs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                mrs(i,j,k) = eps
              endif
@@ -856,10 +874,10 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif
 
-     
+
  end subroutine compute_mrs_k_3d
 
 !#######################################################################
@@ -869,7 +887,7 @@
 
  real, intent(in),  dimension(:,:)           :: temp, press
  real, intent(in)                            :: eps, zvir
- real, intent(out), dimension(:,:)           :: mrs   
+ real, intent(out), dimension(:,:)           :: mrs
  integer, intent(out)                        :: nbad
  real, intent(in), dimension(:,:), optional  :: mr
  real, intent(in),                 optional :: hc
@@ -912,7 +930,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (mr) .and. use_exact_qs) then
        mrs = (eps + mr)*esloc/press
@@ -924,7 +942,7 @@
        do j=1,size(mrs,2)
          do i=1,size(mrs,1)
            if (denom(i,j) > 0.0) then
-             mrs(i,j) = eps*esloc(i,j)/denom(i,j) 
+             mrs(i,j) = eps*esloc(i,j)/denom(i,j)
            else
              mrs(i,j) = eps
            endif
@@ -941,7 +959,7 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif
 
 
@@ -954,7 +972,7 @@
 
  real, intent(in),  dimension(:)           :: temp, press
  real, intent(in)                          :: eps, zvir
- real, intent(out), dimension(:)           :: mrs   
+ real, intent(out), dimension(:)           :: mrs
  integer, intent(out)                      :: nbad
  real, intent(in),  dimension(:), optional :: mr
  real, intent(in),                optional :: hc
@@ -997,7 +1015,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (mr) .and. use_exact_qs) then
        mrs = (eps + mr)*esloc/press
@@ -1008,7 +1026,7 @@
        denom = press - esloc
        do i=1,size(mrs,1)
          if (denom(i) > 0.0) then
-           mrs(i) = eps*esloc(i)/denom(i) 
+           mrs(i) = eps*esloc(i)/denom(i)
          else
            mrs(i) = eps
          endif
@@ -1024,7 +1042,7 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif
 
 
@@ -1037,7 +1055,7 @@
 
  real, intent(in)                              :: temp, press
  real, intent(in)                              :: eps, zvir
- real, intent(out)                             :: mrs   
+ real, intent(out)                             :: mrs
  integer, intent(out)                          :: nbad
  real, intent(in),                    optional :: mr
  real, intent(in),                    optional :: hc
@@ -1079,7 +1097,7 @@
    esloc = esloc*hc_loc
    if (present (esat)) then
      esat = esloc
-   endif 
+   endif
    if (nbad == 0) then
      if (present (mr) .and. use_exact_qs) then
        mrs = (eps + mr)*esloc/press
@@ -1089,9 +1107,9 @@
      else ! (present (mr))
        denom = press - esloc
        if (denom > 0.0) then
-         mrs = eps*esloc/denom 
+         mrs = eps*esloc/denom
        else
-         mrs = eps       
+         mrs = eps
        endif
        if (present (dmrsdT)) then
          dmrsdT = eps*press*desat/denom**2
@@ -1104,7 +1122,7 @@
      endif
      if (present (esat)) then
        esat = -999.
-     endif 
+     endif
    endif
 
 
@@ -1339,7 +1357,7 @@
      else
        del = tmp-dtres*real(ind)
        desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     endif 
+     endif
    enddo
 
  end subroutine lookup_des_k_1d
@@ -1380,7 +1398,7 @@
    else
      del = tmp-dtres*real(ind)
      desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-   endif 
+   endif
 
  end subroutine lookup_des_k_0d
 !#######################################################################
@@ -1399,7 +1417,7 @@
    else
      del = tmp-dtres*real(ind)
      esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-   endif 
+   endif
 
  end subroutine lookup_es_k_0d
 !#######################################################################
@@ -1629,7 +1647,7 @@
      else
        del = tmp-dtres*real(ind)
        desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-     endif 
+     endif
    enddo
 
  end subroutine lookup_des2_k_1d
@@ -1670,7 +1688,7 @@
    else
      del = tmp-dtres*real(ind)
      desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-   endif 
+   endif
 
  end subroutine lookup_des2_k_0d
 !#######################################################################
@@ -1689,7 +1707,7 @@
    else
      del = tmp-dtres*real(ind)
      esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-   endif 
+   endif
 
  end subroutine lookup_es2_k_0d
 !#######################################################################
@@ -1921,7 +1939,7 @@
      else
        del = tmp-dtres*real(ind)
        desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-     endif 
+     endif
    enddo
 
  end subroutine lookup_des3_k_1d
@@ -1962,7 +1980,7 @@
    else
      del = tmp-dtres*real(ind)
      desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-   endif 
+   endif
 
  end subroutine lookup_des3_k_0d
 !#######################################################################
@@ -1981,9 +1999,8 @@
    else
      del = tmp-dtres*real(ind)
      esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-   endif 
+   endif
 
  end subroutine lookup_es3_k_0d
 !#######################################################################
  end module sat_vapor_pres_k_mod
-

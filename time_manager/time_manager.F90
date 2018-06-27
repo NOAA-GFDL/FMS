@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module time_manager_mod
 
 ! <CONTACT EMAIL="fms@gfdl.noaa.gov">
@@ -90,6 +108,7 @@ public operator(+),  operator(-),   operator(*),   operator(/),  &
 ! Subroutines and functions operating on time_type
 public set_time, increment_time, decrement_time, get_time, interval_alarm
 public repeat_alarm, time_type_to_real, real_to_time_type
+public time_list_error
 
 ! List of available calendar types
 public    THIRTY_DAY_MONTHS,    JULIAN,    GREGORIAN,  NOLEAP,   NO_CALENDAR, INVALID_CALENDAR
@@ -107,6 +126,7 @@ public days_in_month
 public leap_year
 public length_of_year
 public days_in_year
+public day_of_year
 public month_name
 
 public valid_calendar_types
@@ -2913,6 +2933,20 @@ end function length_of_year_no_leap
 ! END OF length_of_year BLOCK
 !==========================================================================
 
+!==========================================================================
+! return number of day in year; Jan 1st is day 1, not zero!
+function day_of_year(time)
+  integer :: day_of_year
+  type(time_type), intent(in) :: Time
+
+  integer :: second, minute, hour, day, month, year
+  type(time_type) :: t
+  
+  call get_date(time,year,month,day,hour,minute,second)
+  t = time-set_date(year,1,1,0,0,0)
+  day_of_year = t%days + 1
+end
+
 ! START OF days_in_year BLOCK
 ! <FUNCTION NAME="days_in_year">
 
@@ -3264,6 +3298,19 @@ function date_to_string(time, err_msg)
   endif
 
 end function date_to_string
+
+!> \author Tom Robinson
+!! \email thomas.robinson@noaa.gov
+!! \brief This routine converts the integer t%days to a string
+subroutine time_list_error (T,Terr)
+  type(time_type),  intent(in)            :: t     !< time_type input
+  character(len=:),   allocatable         :: terr  !< String holding the t%days
+!> Allocate the string
+  allocate (character(len=10) :: terr)
+!> Write the integer to the string
+  write (terr,'(I0)') t%days
+end subroutine time_list_error
+
 
 end module time_manager_mod
 

@@ -1,4 +1,23 @@
 ! -*-f90-*-
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                 MPP_DOMAINS: initialization and termination                 !
@@ -101,6 +120,7 @@
 !NULL_DOMAIN is a domaintype that can be used to initialize to undef
       call mpp_define_null_domain(NULL_DOMAIN1d);
       call mpp_define_null_domain(NULL_DOMAIN2d);
+      call mpp_define_null_UG_domain(NULL_DOMAINUG)
 
       if( domain_clocks_on )then
           pack_clock          = mpp_clock_id( 'Halo pack' )
@@ -1273,17 +1293,28 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_NEST_FINE_3D_ mpp_update_nest_fine_r8_3D
 #undef MPP_UPDATE_NEST_FINE_4D_
 #define MPP_UPDATE_NEST_FINE_4D_ mpp_update_nest_fine_r8_4D
+#undef MPP_UPDATE_NEST_FINE_2D_V_
+#define MPP_UPDATE_NEST_FINE_2D_V_ mpp_update_nest_fine_r8_2Dv
+#undef MPP_UPDATE_NEST_FINE_3D_V_
+#define MPP_UPDATE_NEST_FINE_3D_V_ mpp_update_nest_fine_r8_3Dv
+#undef MPP_UPDATE_NEST_FINE_4D_V_
+#define MPP_UPDATE_NEST_FINE_4D_V_ mpp_update_nest_fine_r8_4Dv
 #undef MPP_UPDATE_NEST_COARSE_2D_
 #define MPP_UPDATE_NEST_COARSE_2D_ mpp_update_nest_coarse_r8_2D
 #undef MPP_UPDATE_NEST_COARSE_3D_
 #define MPP_UPDATE_NEST_COARSE_3D_ mpp_update_nest_coarse_r8_3D
 #undef MPP_UPDATE_NEST_COARSE_4D_
 #define MPP_UPDATE_NEST_COARSE_4D_ mpp_update_nest_coarse_r8_4D
+#undef MPP_UPDATE_NEST_COARSE_2D_V_
+#define MPP_UPDATE_NEST_COARSE_2D_V_ mpp_update_nest_coarse_r8_2Dv
+#undef MPP_UPDATE_NEST_COARSE_3D_V_
+#define MPP_UPDATE_NEST_COARSE_3D_V_ mpp_update_nest_coarse_r8_3Dv
+#undef MPP_UPDATE_NEST_COARSE_4D_V_
+#define MPP_UPDATE_NEST_COARSE_4D_V_ mpp_update_nest_coarse_r8_4Dv
 #include <mpp_update_nest_domains.h>
 
 #ifdef OVERLOAD_C8
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1303,7 +1334,6 @@ end subroutine init_nonblock_type
 
 #ifndef no_8byte_integers
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1332,18 +1362,29 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_NEST_FINE_3D_ mpp_update_nest_fine_r4_3D
 #undef MPP_UPDATE_NEST_FINE_4D_
 #define MPP_UPDATE_NEST_FINE_4D_ mpp_update_nest_fine_r4_4D
+#undef MPP_UPDATE_NEST_FINE_2D_V_
+#define MPP_UPDATE_NEST_FINE_2D_V_ mpp_update_nest_fine_r4_2Dv
+#undef MPP_UPDATE_NEST_FINE_3D_V_
+#define MPP_UPDATE_NEST_FINE_3D_V_ mpp_update_nest_fine_r4_3Dv
+#undef MPP_UPDATE_NEST_FINE_4D_V_
+#define MPP_UPDATE_NEST_FINE_4D_V_ mpp_update_nest_fine_r4_4Dv
 #undef MPP_UPDATE_NEST_COARSE_2D_
 #define MPP_UPDATE_NEST_COARSE_2D_ mpp_update_nest_coarse_r4_2D
 #undef MPP_UPDATE_NEST_COARSE_3D_
 #define MPP_UPDATE_NEST_COARSE_3D_ mpp_update_nest_coarse_r4_3D
 #undef MPP_UPDATE_NEST_COARSE_4D_
 #define MPP_UPDATE_NEST_COARSE_4D_ mpp_update_nest_coarse_r4_4D
+#undef MPP_UPDATE_NEST_COARSE_2D_V_
+#define MPP_UPDATE_NEST_COARSE_2D_V_ mpp_update_nest_coarse_r4_2Dv
+#undef MPP_UPDATE_NEST_COARSE_3D_V_
+#define MPP_UPDATE_NEST_COARSE_3D_V_ mpp_update_nest_coarse_r4_3Dv
+#undef MPP_UPDATE_NEST_COARSE_4D_V_
+#define MPP_UPDATE_NEST_COARSE_4D_V_ mpp_update_nest_coarse_r4_4Dv
 #include <mpp_update_nest_domains.h>
 #endif
 
 #ifdef OVERLOAD_C4
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1362,7 +1403,6 @@ end subroutine init_nonblock_type
 #endif
 
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1385,13 +1425,16 @@ end subroutine init_nonblock_type
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_r8_3D
+#undef MPP_DO_UPDATE_NEST_FINE_3D_V_
+#define MPP_DO_UPDATE_NEST_FINE_3D_V_ mpp_do_update_nest_fine_r8_3Dv
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
 #define MPP_DO_UPDATE_NEST_COARSE_3D_ mpp_do_update_nest_coarse_r8_3D
+#undef MPP_DO_UPDATE_NEST_COARSE_3D_V_
+#define MPP_DO_UPDATE_NEST_COARSE_3D_V_ mpp_do_update_nest_coarse_r8_3Dv
 #include <mpp_do_update_nest.h>
 
 #ifdef OVERLOAD_C8
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
@@ -1403,7 +1446,6 @@ end subroutine init_nonblock_type
 
 #ifndef no_8byte_integers
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
@@ -1420,14 +1462,17 @@ end subroutine init_nonblock_type
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_r4_3D
+#undef MPP_DO_UPDATE_NEST_FINE_3D_V_
+#define MPP_DO_UPDATE_NEST_FINE_3D_V_ mpp_do_update_nest_fine_r4_3Dv
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
 #define MPP_DO_UPDATE_NEST_COARSE_3D_ mpp_do_update_nest_coarse_r4_3D
+#undef MPP_DO_UPDATE_NEST_COARSE_3D_V_
+#define MPP_DO_UPDATE_NEST_COARSE_3D_V_ mpp_do_update_nest_coarse_r4_3Dv
 #include <mpp_do_update_nest.h>
 #endif
 
 #ifdef OVERLOAD_C4
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
@@ -1438,7 +1483,6 @@ end subroutine init_nonblock_type
 #endif
 
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_

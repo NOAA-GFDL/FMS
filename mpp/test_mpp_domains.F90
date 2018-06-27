@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 #ifdef test_mpp_domains
 program test
   use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
@@ -6,8 +24,8 @@ program test
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
   use mpp_mod,         only : input_nml_file
-  use mpp_mod,         only : mpp_get_current_pelist
-  use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE
+  use mpp_mod,         only : mpp_get_current_pelist, mpp_broadcast
+  use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE, AGRID
   use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
   use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D, BITWISE_EFP_SUM
@@ -28,7 +46,10 @@ program test
   use mpp_domains_mod, only : mpp_group_update_type, mpp_create_group_update
   use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
   use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
-  use mpp_domains_mod, only : WUPDATE, SUPDATE
+  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE
+  use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
+  use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
+  use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
 
   implicit none
@@ -49,13 +70,15 @@ program test
   logical :: test_performance = .false.
   logical :: test_interface = .true.
   logical :: test_edge_update = .false.
+  logical :: test_nonsym_edge = .false.
   logical :: test_group = .false.
   logical :: test_cubic_grid_redistribute = .false.
   logical :: check_parallel = .FALSE.  ! when check_parallel set to false,
   logical :: test_get_nbr = .FALSE.
   logical :: test_boundary = .false.
   logical :: test_global_sum = .false.
-  integer :: ensemble_size
+  logical :: test_halosize_performance = .false.
+  integer :: ensemble_size = 1
   integer :: layout_cubic(2) = (/0,0/)
   integer :: layout_tripolar(2) = (/0,0/)
   integer :: layout_ensemble(2) = (/0,0/)
@@ -65,6 +88,7 @@ program test
 
   logical :: mix_2D_3D = .false.
   logical :: test_subset = .false.
+  logical :: test_unstruct = .false.
   integer :: nthreads = 1
 
   !--- namelist variable for nest domain
@@ -85,6 +109,7 @@ program test
   integer :: jstart1_nest(MAX_NCONTACT) = 0,  jend1_nest(MAX_NCONTACT) = -1
   integer :: istart2_nest(MAX_NCONTACT) = 0,  iend2_nest(MAX_NCONTACT) = -1
   integer :: jstart2_nest(MAX_NCONTACT) = 0,  jend2_nest(MAX_NCONTACT) = -1
+  character :: cyclic_nest(MAX_NCONTACT) = 'N'
 
   namelist / test_mpp_domains_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
                                whalo, ehalo, shalo, nhalo, x_cyclic_offset, y_cyclic_offset, &
@@ -94,7 +119,11 @@ program test
                                jcount_coarse, extra_halo, npes_fine_list, npes_coarse, mix_2D_3D, test_get_nbr, &
                                test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
                                layout_cubic, layout_ensemble, nthreads, test_boundary, &
-                               layout_tripolar, test_group, test_global_sum, test_subset, refine_ratio
+                               layout_tripolar, test_group, test_global_sum, test_subset, test_unstruct, &
+                               test_nonsym_edge, test_halosize_performance, refine_ratio, &
+                               ncontact_nest, tile1_nest, tile2_nest,      &
+                               istart1_nest, iend1_nest, jstart1_nest, jend1_nest,                       &
+                               istart2_nest, iend2_nest, jstart2_nest, jend2_nest, cyclic_nest
   integer :: i, j, k, n
   integer :: layout(2)
   integer :: id
@@ -123,7 +152,6 @@ program test
       if (io_status > 0) then
          call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
       endif
-
 
   select case(trim(warn_level))
   case("fatal")
@@ -184,11 +212,23 @@ program test
       call test_subset_update()
   endif
 
+  if( test_halosize_performance ) then
+     call test_halosize_update( 'Folded-north' )
+     call test_halosize_update( 'Folded-north symmetry' )
+     call test_halosize_update( 'Cubic-Grid' )
+  endif
+
   if( test_edge_update ) then
       call test_update_edge( 'Cyclic' )
       call test_update_edge( 'Folded-north' ) !includes vector field test
       call test_update_edge( 'Folded-north symmetry' )
   endif
+
+  if( test_nonsym_edge ) then
+      call test_update_nonsym_edge( 'Folded-north' ) !includes vector field test
+      call test_update_nonsym_edge( 'Folded-north symmetry' )
+  endif
+
   if( test_performance) then
       call update_domains_performance('Folded-north')
       call update_domains_performance('Cubic-Grid')
@@ -207,6 +247,10 @@ program test
       call test_get_boundary('Four-Tile')
       call test_get_boundary('Cubic-Grid')
       call test_get_boundary('Folded-north')
+  endif
+
+  if( test_unstruct) then
+     call test_unstruct_update( 'Cubic-Grid' )
   endif
 
   if( test_group) then
@@ -2171,6 +2215,61 @@ contains
 
     deallocate(x, y, a, b, x_save, y_save)
 
+
+    !------------------------------------------------------------------
+    !              vector update : AGRID vector and scalar pair
+    !------------------------------------------------------------------
+    allocate( x (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( y (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( a (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( b (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( x_save (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( y_save (ism:iem,jsm:jem,nz,ntile_per_pe) )
+
+
+    x = 0
+    y = 0
+    do l = 1, ntile_per_pe
+       do k = 1, nz
+          do j = jsc, jec
+             do i = isc, iec+shift
+                x(i,j,k,l) = 1.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+          do j = jsc, jec+shift
+             do i = isc, iec
+                y(i,j,k,l) = 2.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    enddo
+
+    a  = x; b  = y
+    x_save  = x; y_save  = y
+
+    call mpp_update_domains( x, y, domain, gridtype=AGRID)
+
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=AGRID)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=AGRID)
+
+    !--- compare checksum
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' AGRID X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' AGRID Y')
+
+    x = x_save; y = y_save
+    a = x_save; b = y_save
+
+    call mpp_update_domains( x, y, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+
+    !--- compare checksum
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' AGRID SCALAR-PAIR X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' AGRID SCALAR-PAIR Y')
+
+    deallocate(x, y, a, b, x_save, y_save)
+
     nx = nx_save
     ny = ny_save
 
@@ -2827,8 +2926,70 @@ contains
 
     call mpp_clear_group_update(group_update)
 
+    !-----------------------------------------------------------------------------
+    !                   test for AGRID vector and scalar pair
+    !-----------------------------------------------------------------------------
+    deallocate(x1, y1)
+    deallocate(x2, y2)
 
+    allocate( x1(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( y1(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( x2(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( y2(ism:iem,jsm:jem, nz, num_fields) )
 
+    x1 = 0; y1 = 0
+    do l = 1, num_fields
+       x1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 1e6
+       y1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 2*1e6
+    enddo
+    x2 = x1; y2 = y1
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID)
+    end do
+
+    do l = 1, num_fields
+       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, complete=l==num_fields )
+    enddo
+
+    call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(isd:ied,jsd:jed,:,l),x2(isd:ied,jsd:jed,:,l),type//' AGRID X'//text)
+       call compare_checksums(y1(isd:ied,jsd:jed,:,l),y2(isd:ied,jsd:jed,:,l),type//' AGRID Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
+
+    x1 = 0; y1 = 0
+    do l = 1, num_fields
+       x1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 1e6
+       y1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 2*1e6
+    enddo
+    x2 = x1; y2 = y1
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR)
+    end do
+
+    do l = 1, num_fields
+       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR, complete=l==num_fields)
+    enddo
+
+    call mpp_start_group_update(group_update, domain, x1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, x1(isc,jsc,1,1))
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(isd:ied,jsd:jed,:,l),x2(isd:ied,jsd:jed,:,l),type//' AGRID SCALAR_PAIR X'//text)
+       call compare_checksums(y1(isd:ied,jsd:jed,:,l),y2(isd:ied,jsd:jed,:,l),type//' AGRID SCALAR_PAIR Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
 
     deallocate(pe_start, pe_end, tile1, tile2)
     deallocate(istart1, iend1, jstart1, jend1)
@@ -2841,6 +3002,703 @@ contains
     call mpp_deallocate_domain(domain)
 
 end subroutine test_group_update
+
+
+  !###############################################################
+  !--- This will test scalar and CGRID performance between halo=1 and halo=3
+  subroutine test_halosize_update( type )
+    character(len=*), intent(in) :: type
+
+    type(domain2D) :: domain
+    integer        :: ntiles, npes_per_tile
+    integer        :: i, j, k, l, n, shift
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+    integer        :: ism, iem, jsm, jem
+
+    integer, allocatable, dimension(:)       :: pe_start, pe_end
+    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+    real,    allocatable, dimension(:,:,:,:) :: x1, y1, x2, y2
+    real,    allocatable, dimension(:,:,:,:) :: a1, a2
+    real,    allocatable, dimension(:,:,:,:) :: base, global_all, global
+    real,    allocatable, dimension(:,:,:,:) :: base1, global1_all, global1
+    real,    allocatable, dimension(:,:,:,:) :: base2, global2_all, global2
+
+    integer            :: id1, id2, id3
+    logical            :: folded_north
+    logical            :: cubic_grid, is_symmetry
+    character(len=3)   :: text
+    character(len=1)   :: halostr
+    integer            :: nx_save, ny_save
+    integer            :: mytile
+    type(mpp_group_update_type) :: group_update1, group_update2
+    type(mpp_group_update_type), allocatable :: update_list(:)
+
+    if(whalo .ne. ehalo .or. whalo .ne. shalo .or. whalo .ne. nhalo) then
+       call mpp_error(FATAL,"test_mpp_domains: whalo, ehalo, shalo, nhalo must be the same when test_halosize_performance=true")
+    endif
+
+    folded_north       = .false.
+    cubic_grid         = .false.
+
+    nx_save = nx
+    ny_save = ny
+    !--- check the type
+    select case(type)
+    case ( 'Folded-north', 'Folded-north symmetry' )
+       ntiles = 1
+       mytile = 1
+       folded_north = .true.
+       npes_per_tile = npes
+       if(layout_tripolar(1)*layout_tripolar(2) == npes ) then
+          layout = layout_tripolar
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+       if(index(type, 'symmetry') == 0) then
+          is_symmetry = .false.
+       else
+          is_symmetry = .true.
+       end if
+    case ( 'Cubic-Grid' )
+       is_symmetry = .true.
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_halosize_update: for Cubic_grid mosaic, nx_cubic is zero, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_halosize_update: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles = 6
+       if( mod(npes, ntiles) .ne. 0 ) then
+          call mpp_error(NOTE,'test_halosize_update: npes is not divisible by ntiles, no test is done for '//trim(type) )
+          return
+       endif
+       npes_per_tile = npes/ntiles
+       mytile = mpp_pe()/npes_per_tile + 1
+       cubic_grid = .true.
+       if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
+          layout = layout_cubic
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+    case default
+       call mpp_error(FATAL, 'test_group_update: no such test: '//type)
+    end select
+
+    shift = 0
+    if(is_symmetry) shift = 1
+
+    !--- define domain
+    if(folded_north) then
+        call mpp_define_domains((/1,nx,1,ny/), layout, domain, &
+                          xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, &
+                          whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                          symmetry=is_symmetry, name=type )
+    else if( cubic_grid ) then
+       allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+       do n = 1, ntiles
+          pe_start(n) = (n-1)*npes_per_tile
+          pe_end(n)   = n*npes_per_tile-1
+       end do
+
+       do n = 1, ntiles
+          global_indices(:,n) = (/1,nx,1,ny/)
+          layout2D(:,n)         = layout
+       end do
+
+       call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+            global_indices, layout2D, pe_start, pe_end, use_memsize=.false.)
+       deallocate(pe_start, pe_end)
+       deallocate(layout2D, global_indices)
+    endif
+
+    !--- setup data
+    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+
+    if(num_fields<1) then
+       call mpp_error(FATAL, "test_mpp_domains: num_fields must be a positive integer")
+    endif
+
+    !--- scalar update
+    write(halostr,'(I1)') whalo
+    id1 = mpp_clock_id( type//' halo='//halostr//' scalar', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' halo=1 scalar', flags=MPP_CLOCK_SYNC )
+
+    allocate( a1(isd:ied,      jsd:jed,       nz, num_fields) )
+    allocate( a2(isd:ied,      jsd:jed,       nz, num_fields) )
+    allocate(base(isc:iec, jsc:jec, nz, num_fields))
+    allocate(global_all(1:nx,1:ny,nz,ntiles) )
+    allocate(global(1-whalo:nx+ehalo, 1-shalo:ny+nhalo, nz, num_fields))
+
+    do n = 1, ntiles
+       do k = 1, nz
+          do j = 1, ny
+             do i = 1, nx
+                global_all(i,j,k,n) = n + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    end do
+    global = 0.0
+    do l = 1, num_fields
+       global(1:nx,1:ny,:,l) = global_all(:,:,:,mytile)
+    enddo
+
+    base(isc:iec,jsc:jec,:,:) = global(isc:iec,jsc:jec,:,:)
+
+    !--- fill up the value at halo points
+    do l = 1, num_fields
+       if(folded_north) then
+          call fill_folded_north_halo(global(:,:,:,l), 0, 0, 0, 0, 1)
+       else if(cubic_grid) then
+          call fill_cubic_grid_halo(global(:,:,:,l), global_all, global_all, mytile, 0, 0, 1, 1 )
+       endif
+    enddo
+    a1 = 0.0
+    a2(isd:ied,jsd:jed,:,:) = global(isd:ied,jsd:jed,:,:)
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update1, a1(:,:,:,l), domain)
+    end do
+    do l =1, num_fields
+       call mpp_create_group_update(group_update2, a1(:,:,:,l), domain, whalo=1, ehalo=1, shalo=1, nhalo=1)
+    end do
+
+    do n = 1, num_iter
+       a1 = 0.0
+       a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:)
+
+       call mpp_clock_begin(id1)
+       call mpp_do_group_update(group_update1, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end(id1)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//' halo='//halostr//' scalar'//text)
+          enddo
+       endif
+    enddo
+
+    !--- make sure mpp_start_group_update/mpp_complete_group_update is OK
+    a1 = 0.0
+    a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:)
+
+    call mpp_start_group_update(group_update1, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update1, domain, a1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//'nonblock halo='//halostr//' scalar'//text)
+    enddo
+
+
+    a2 = 0
+    a2(isc-1:iec+1,jsc-1:jec+1,:,:) = global(isc-1:iec+1,jsc-1:jec+1,:,:)
+
+    do n = 1, num_iter
+       a1 = 0.0
+       a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:)
+       call mpp_clock_begin(id2)
+       call mpp_do_group_update(group_update2, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end(id2)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//' halo=1 scalar'//text)
+          enddo
+       endif
+    enddo
+
+    a1 = 0.0
+    a1(isc:iec,jsc:jec,:,:) = base(isc:iec,jsc:jec,:,:)
+    call mpp_start_group_update(group_update2, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update2, domain, a1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(:,:,:,l),a2(:,:,:,l),type//' nonblock halo=1 scalar'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update1)
+    call mpp_clear_group_update(group_update2)
+    deallocate(a1,a2,global,global_all,base)
+
+    !--- CGRID vector update -------------------------
+    id1 = mpp_clock_id( type//' halo='//halostr//' CGRID', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' halo=1 CGRID', flags=MPP_CLOCK_SYNC )
+
+    allocate( x1(isd:ied+shift,jsd:jed,       nz, num_fields) )
+    allocate( y1(isd:ied,      jsd:jed+shift, nz, num_fields) )
+    allocate( x2(isd:ied+shift,jsd:jed,       nz, num_fields) )
+    allocate( y2(isd:ied,      jsd:jed+shift, nz, num_fields) )
+    allocate(base1(isc:iec+shift, jsc:jec, nz, num_fields))
+    allocate(base2(isc:iec, jsc:jec+shift, nz, num_fields))
+    allocate(global1_all(1:nx+shift,1:ny,nz,ntiles) )
+    allocate(global2_all(1:nx,1:ny+shift,nz,ntiles) )
+    allocate(global1(1-whalo:nx+ehalo+shift, 1-shalo:ny+nhalo, nz, num_fields))
+    allocate(global2(1-whalo:nx+ehalo, 1-shalo:ny+nhalo+shift, nz, num_fields))
+    do l = 1, ntiles
+       do k = 1, nz
+          do j = 1, ny
+             do i = 1, nx+shift
+                global1_all(i,j,k,l) = 1.0e3 + l + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+          do j = 1, ny+shift
+             do i = 1, nx
+                global2_all(i,j,k,l) = 2.0e3 + l + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    end do
+
+    global1 = 0.0; global2 = 0.0
+    do l = 1, num_fields
+       global1(1:nx+shift,1:ny,:,l) = global1_all(1:nx+shift,1:ny,:,mytile)
+       global2(1:nx,1:ny+shift,:,l) = global2_all(1:nx,1:ny+shift,:,mytile)
+    end do
+
+   if(folded_north) then
+      do l = 1, num_fields
+         call fill_folded_north_halo(global1(:,:,:,l), 1, 0, shift, 0, -1)
+         call fill_folded_north_halo(global2(:,:,:,l), 0, 1, 0, shift, -1)
+      enddo
+   endif
+
+    base1(isc:iec+shift,jsc:jec,:,:) = global1(isc:iec+shift,jsc:jec,:,:)
+    base2(isc:iec,jsc:jec+shift,:,:) = global2(isc:iec,jsc:jec+shift,:,:)
+
+    if(folded_north) then
+       !redundant points must be equal and opposite for tripolar grid
+        global2(nx/2+1:nx,     ny+shift,:,:) = -global2(nx/2:1:-1, ny+shift,:,:)
+        global2(1-whalo:0,     ny+shift,:,:) = -global2(nx-whalo+1:nx, ny+shift,:,:)
+        global2(nx+1:nx+ehalo, ny+shift,:,:) = -global2(1:ehalo,       ny+shift,:,:)
+    else if(cubic_grid) then
+       do l = 1, num_fields
+          call fill_cubic_grid_halo(global1(:,:,:,l), global1_all, global2_all, mytile, 1, 0, 1, -1 )
+          call fill_cubic_grid_halo(global2(:,:,:,l), global2_all, global1_all, mytile, 0, 1, -1, 1 )
+       enddo
+    endif
+
+    x1 = 0; y1 = 0
+    do l =1, num_fields
+       call mpp_create_group_update(group_update1, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+    end do
+    do l =1, num_fields
+       call mpp_create_group_update(group_update2, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE, &
+            whalo=1, ehalo=1, shalo=1, nhalo=1 )
+    end do
+
+    x2(:,:,:,:) = global1(isd:ied+shift,jsd:jed,:,:)
+    y2(:,:,:,:) = global2(isd:ied,jsd:jed+shift,:,:)
+
+    do n = 1, num_iter
+       x1 = 0.0; y1 = 0.0
+       x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:)
+       y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:)
+       call mpp_clock_begin(id1)
+       call mpp_do_group_update(group_update1, domain, x1(isc,jsc,1,1))
+       call mpp_clock_end(id1)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' halo='//halostr//' CGRID X'//text)
+             call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' halo='//halostr//' CGRID Y'//text)
+          enddo
+       endif
+    enddo
+
+    !--- make sure non-blocking call is OK
+    x1 = 0.0; y1 = 0.0
+    x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:)
+    y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:)
+    call mpp_start_group_update(group_update1, domain, x1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update1, domain, x1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' nonblock halo='//halostr//' CGRID X'//text)
+       call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' nonblock halo='//halostr//' CGRID Y'//text)
+    enddo
+
+    x2 = 0; y2 = 0
+    x2(isc-1:iec+1+shift,jsc-1:jec+1,:,:) = global1(isc-1:iec+1+shift,jsc-1:jec+1,:,:)
+    y2(isc-1:iec+1,jsc-1:jec+1+shift,:,:) = global2(isc-1:iec+1,jsc-1:jec+1+shift,:,:)
+
+    do n = 1, num_iter
+       x1 = 0.0; y1 = 0.0
+       x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:)
+       y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:)
+       call mpp_clock_begin(id2)
+       call mpp_do_group_update(group_update2, domain, x1(isc,jsc,1,1))
+       call mpp_clock_end(id2)
+       if(n==num_iter) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' halo=1 CGRID X'//text)
+             call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' halo=1 CGRID Y'//text)
+          enddo
+       endif
+    enddo
+
+    x1 = 0.0; y1 = 0.0
+    x1(isc:iec+shift,jsc:jec,      :,:) = base1(isc:iec+shift,jsc:jec,      :,:)
+    y1(isc:iec,      jsc:jec+shift,:,:) = base2(isc:iec,      jsc:jec+shift,:,:)
+    call mpp_start_group_update(group_update2, domain, x1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update2, domain, x1(isc,jsc,1,1))
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(:,:,:,l),x2(:,:,:,l),type//' nonblock halo=1 CGRID X'//text)
+       call compare_checksums(y1(:,:,:,l),y2(:,:,:,l),type//' nonblock halo=1 CGRID Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update1)
+    call mpp_clear_group_update(group_update2)
+
+    deallocate(x1, y1, global1, global2)
+    deallocate(x2, y2, global1_all, global2_all)
+    deallocate(base1, base2)
+    call mpp_deallocate_domain(domain)
+
+end subroutine test_halosize_update
+
+  !###############################################################
+  subroutine test_unstruct_update( type )
+    character(len=*), intent(in) :: type
+
+    type(domain2D) :: SG_domain
+    type(domainUG) :: UG_domain
+    integer        :: num_contact, ntiles, npes_per_tile
+    integer        :: i, j, k, l, n, shift
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+    integer        :: ism, iem, jsm, jem, lsg, leg
+
+    integer, allocatable, dimension(:)       :: pe_start, pe_end, npts_tile, grid_index, ntiles_grid
+    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+    real,    allocatable, dimension(:,:)     :: x1, x2, g1, g2
+    real,    allocatable, dimension(:,:,:)   :: a1, a2, gdata
+    real,    allocatable, dimension(:,:)     :: rmask
+    real,    allocatable, dimension(:)       :: frac_crit
+    logical, allocatable, dimension(:,:,:)   :: lmask
+    integer, allocatable, dimension(:)       :: isl, iel, jsl, jel
+    logical            :: cubic_grid
+    character(len=3)   :: text
+    integer            :: nx_save, ny_save, tile
+    integer            :: ntotal_land, istart, iend, pos
+
+    cubic_grid         = .false.
+
+    nx_save = nx
+    ny_save = ny
+    !--- check the type
+    select case(type)
+    case ( 'Cubic-Grid' )
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_unstruct_update: for Cubic_grid mosaic, nx_cubic is zero, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_unstruct_update: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles = 6
+       num_contact = 12
+       cubic_grid = .true.
+       if( mod(npes, ntiles) == 0 ) then
+          npes_per_tile = npes/ntiles
+          write(outunit,*)'NOTE from test_unstruct_update ==> For Mosaic "', trim(type), &
+               '", each tile will be distributed over ', npes_per_tile, ' processors.'
+       else
+          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          return
+       endif
+       if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
+          layout = layout_cubic
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+       allocate(frac_crit(ntiles))
+       frac_crit(1) = 0.3; frac_crit(2) = 0.1; frac_crit(3) = 0.6
+       frac_crit(4) = 0.2; frac_crit(5) = 0.4; frac_crit(6) = 0.5
+
+    case default
+       call mpp_error(FATAL, 'test_group_update: no such test: '//type)
+    end select
+
+    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+    do n = 1, ntiles
+       pe_start(n) = (n-1)*npes_per_tile
+       pe_end(n)   = n*npes_per_tile-1
+    end do
+
+    do n = 1, ntiles
+       global_indices(:,n) = (/1,nx,1,ny/)
+       layout2D(:,n)         = layout
+    end do
+
+    !--- define domain
+    if( cubic_grid ) then
+       call define_cubic_mosaic(type, SG_domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+            global_indices, layout2D, pe_start, pe_end )
+    endif
+
+    !--- setup data
+    call mpp_get_compute_domain( SG_domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( SG_domain, isd, ied, jsd, jed )
+
+    allocate(lmask(nx,ny,ntiles))
+    allocate(npts_tile(ntiles))
+    lmask = .false.
+    if(mpp_pe() == mpp_root_pe() ) then
+       allocate(rmask(nx,ny))
+       !--- construct gmask.
+       do n = 1, ntiles
+          call random_number(rmask)
+          do j = 1, ny
+             do i = 1, nx
+                if(rmask(i,j) > frac_crit(n)) then
+                   lmask(i,j,n) = .true.
+                endif
+             enddo
+          enddo
+          npts_tile(n) = count(lmask(:,:,n))
+       enddo
+       ntotal_land = sum(npts_tile)
+       allocate(grid_index(ntotal_land))
+       l = 0
+       allocate(isl(0:mpp_npes()-1), iel(0:mpp_npes()-1))
+       allocate(jsl(0:mpp_npes()-1), jel(0:mpp_npes()-1))
+       call mpp_get_compute_domains(SG_domain,xbegin=isl,xend=iel,ybegin=jsl,yend=jel)
+
+       do n = 1, ntiles
+          do j = 1, ny
+             do i = 1, nx
+                if(lmask(i,j,n)) then
+                   l = l + 1
+                   grid_index(l) = (j-1)*nx+i
+                endif
+             enddo
+          enddo
+       enddo
+       deallocate(rmask, isl, iel, jsl, jel)
+    endif
+    call mpp_broadcast(npts_tile, ntiles, mpp_root_pe())
+    if(mpp_pe() .NE. mpp_root_pe()) then
+       ntotal_land = sum(npts_tile)
+       allocate(grid_index(ntotal_land))
+    endif
+    call mpp_broadcast(grid_index, ntotal_land, mpp_root_pe())
+
+    allocate(ntiles_grid(ntotal_land))
+    ntiles_grid = 1
+   !--- define the unstructured grid domain
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_get_UG_compute_domain(UG_domain, istart, iend)
+
+    !--- figure out lmask according to grid_index
+    pos = 0
+    do n = 1, ntiles
+       do l = 1, npts_tile(n)
+          pos = pos + 1
+          j = (grid_index(pos)-1)/nx + 1
+          i = mod((grid_index(pos)-1),nx) + 1
+          lmask(i,j,n) = .true.
+       enddo
+    enddo
+
+    !--- set up data
+    allocate(gdata(nx,ny,ntiles))
+    gdata = -999
+    do n = 1, ntiles
+       do j = 1, ny
+          do i = 1, nx
+             if(lmask(i,j,n)) then
+                gdata(i,j,n) = n*1.e+3 + i + j*1.e-3
+             endif
+          end do
+       end do
+    end do
+
+    !--- test the 2-D data is on computing domain
+    allocate( a1(isc:iec, jsc:jec,1), a2(isc:iec,jsc:jec,1 ) )
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do j = jsc, jec
+       do i = isc, iec
+          a1(i,j,1) = gdata(i,j,tile)
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,1), x2(istart:iend,1))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       x2(l,1) = gdata(i,j,tile)
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1(:,:,1), x1(:,1))
+    call compare_checksums_2D(x1, x2, type//' SG2UG 2-D compute domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1(:,1), a2(:,:,1))
+
+    call compare_checksums(a1(:,:,1:1),a2(:,:,1:1),type//' UG2SG 2-D compute domain')
+    deallocate(a1,a2,x1,x2)
+
+    !--- test the 3-D data is on computing domain
+    allocate( a1(isc:iec, jsc:jec,nz), a2(isc:iec,jsc:jec,nz ) )
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do k = 1, nz
+       do j = jsc, jec
+          do i = isc, iec
+             a1(i,j,k) = gdata(i,j,tile)
+             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
+          enddo
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,nz), x2(istart:iend,nz))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       do k = 1, nz
+          x2(l,k) = gdata(i,j,tile) + k*1.e-6
+       enddo
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1, x1)
+    call compare_checksums_2D(x1, x2, type//' SG2UG 3-D compute domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1, a2)
+
+    call compare_checksums(a1,a2,type//' UG2SG 3-D compute domain')
+    deallocate(a1,a2,x1,x2)
+
+    !--- test the 2-D data is on data domain
+    allocate( a1(isd:ied, jsd:jed,1), a2(isd:ied,jsd:jed,1 ) )
+    a1 = -999; a2 = -999
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do j = jsc, jec
+       do i = isc, iec
+          a1(i,j,1) = gdata(i,j,tile)
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,1), x2(istart:iend,1))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       x2(l,1) = gdata(i,j,tile)
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1(:,:,1), x1(:,1))
+    call compare_checksums_2D(x1, x2, type//' SG2UG 2-D data domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1(:,1), a2(:,:,1))
+
+    call compare_checksums(a1(:,:,1:1),a2(:,:,1:1),type//' UG2SG 2-D data domain')
+    deallocate(a1,a2,x1,x2)
+
+    !--- test the 3-D data is on computing domain
+    allocate( a1(isd:ied, jsd:jed,nz), a2(isd:ied,jsd:jed,nz ) )
+    a1 = -999; a2 = -999
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do k = 1, nz
+       do j = jsc, jec
+          do i = isc, iec
+             a1(i,j,k) = gdata(i,j,tile)
+             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
+          enddo
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,nz), x2(istart:iend,nz))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       do k = 1, nz
+          x2(l,k) = gdata(i,j,tile) + k*1.e-6
+       enddo
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1, x1)
+    call compare_checksums_2D(x1, x2, type//' SG2UG 3-D data domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1, a2)
+
+    call compare_checksums(a1,a2,type//' UG2SG 3-D data domain')
+    deallocate(a1,a2,x1,x2)
+
+    !----------------------------------------------------------------
+    !    test mpp_global_field_ug
+    !----------------------------------------------------------------
+    call mpp_get_UG_global_domain(UG_domain, lsg, leg)
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    allocate(g1(lsg:leg,nz), g2(lsg:leg,nz), x1(istart:iend,nz))
+    g1 = 0
+    g2 = 0
+    x1 = 0
+    do k = 1, nz
+       do l = lsg, leg
+          g1(l,k) = tile*1e6 + l + k*1.e-3
+       enddo
+       do l = istart, iend
+          x1(l,k) = g1(l,k)
+       enddo
+    enddo
+
+    call mpp_global_field_ug(UG_domain, x1, g2)
+    call compare_checksums_2D(g1,g2,type//' global_field_ug 3-D')
+
+    g2 = 0.0
+    call mpp_global_field_ug(UG_domain, x1(:,1), g2(:,1))
+    call compare_checksums_2D(g1(:,1:1),g2(:,1:1),type//' global_field_ug 2-D')
+
+    deallocate(g1,g2,x1)
+
+  end subroutine test_unstruct_update
+
 
 
   !#################################################################################
@@ -5382,6 +6240,126 @@ end subroutine test_group_update
 
   end subroutine test_update_edge
 
+
+  !##################################################################################
+  subroutine test_update_nonsym_edge( type )
+    character(len=*), intent(in) :: type
+    real, allocatable, dimension(:,:,:) :: x, x2
+    real, allocatable, dimension(:,:,:) :: y, y2
+    type(domain2D) :: domain
+    real,    allocatable :: global1(:,:,:), global2(:,:,:)
+    integer              :: shift, i, xhalo, yhalo
+    logical              :: is_symmetry
+    integer              :: is, ie, js, je, isd, ied, jsd, jed
+    type(mpp_group_update_type) :: group_update
+
+    if(index(type, 'symmetry') == 0) then
+       shift = 0
+       is_symmetry = .false.
+    else
+       shift = 1
+       is_symmetry = .true.
+    end if
+    select case(type)
+    case( 'Folded-north', 'Folded-north symmetry' )
+        call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+        call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo,   &
+             shalo=shalo, nhalo=nhalo, xflags=CYCLIC_GLOBAL_DOMAIN, yflags=FOLD_NORTH_EDGE, &
+             name=type, symmetry = is_symmetry  )
+    case default
+        call mpp_error( FATAL, 'test_update_edge: no such test: '//type )
+    end select
+
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+
+    !------------------------------------------------------------------
+    !              vector update : CGRID_NE
+    !------------------------------------------------------------------
+    !--- global1 is x-component and global2 is y-component
+    allocate(global1(1-whalo:nx+ehalo+shift, 1-shalo:ny+nhalo, nz))
+    allocate(global2(1-whalo:nx+ehalo, 1-shalo:ny+nhalo+shift, nz))
+    allocate(x  (isd:ied+shift,jsd:jed,nz), y (isd:ied,jsd:jed+shift,nz) )
+    allocate(x2 (isd:ied+shift,jsd:jed,nz), y2 (isd:ied,jsd:jed+shift,nz) )
+
+    global1 = 0.0
+    global2 = 0.0
+    do k = 1,nz
+       do j = 1,ny
+          do i = 1,nx+shift
+             global1(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+       do j = 1,ny+shift
+          do i = 1,nx
+             global2(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+    end do
+
+    select case (type)
+    case ('Folded-north')
+       !fill in folded north edge, cyclic east and west edge
+       call fill_folded_north_halo(global1, 1, 0, 0, 0, -1)
+       call fill_folded_north_halo(global2, 0, 1, 0, 0, -1)
+       !--- set the corner to 0
+       global1(1-whalo:0,     1-shalo:0,     :) = 0
+       global1(1-whalo:0,     ny+1:ny+nhalo, :) = 0
+       global1(nx+1:nx+ehalo, 1-shalo:0,     :) = 0
+       global1(nx+1:nx+ehalo, ny+1:ny+nhalo, :) = 0
+       global2(1-whalo:0,     1-shalo:0,     :) = 0
+       global2(1-whalo:0,     ny+1:ny+nhalo, :) = 0
+       global2(nx+1:nx+ehalo, 1-shalo:0,     :) = 0
+       global2(nx+1:nx+ehalo, ny+1:ny+nhalo, :) = 0
+    case ('Folded-north symmetry')
+       call fill_folded_north_halo(global1, 1, 0, 1, 0, -1)
+       call fill_folded_north_halo(global2, 0, 1, 0, 1, -1)
+    case default
+        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
+    end select
+
+    !redundant points must be equal and opposite
+    global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
+    global2(1-whalo:0,     ny+shift,:) = -global2(nx-whalo+1:nx, ny+shift,:)
+!    global2(nx+1:nx+ehalo, ny+shift,:) = -global2(1:ehalo,       ny+shift,:)
+
+    x2 = 0.0; y2 = 0.0
+    if(is_symmetry) then
+       x2(isd:ie+shift,jsd:je,:) = global1(isd:ie+shift,jsd:je,:)
+       y2(isd:ie,jsd:je+shift,:) = global2(isd:ie,jsd:je+shift,:)
+    else
+       x2(isd:ie+shift,js:je,:) = global1(isd:ie+shift,js:je,:)
+       y2(is:ie,jsd:je+shift,:) = global2(is:ie,jsd:je+shift,:)
+    endif
+
+    x = 0.; y = 0.
+    x(is:ie+shift,js:je,      :) = global1(is:ie+shift,js:je,      :)
+    y(is:ie      ,js:je+shift,:) = global2(is:ie,      js:je+shift,:)
+
+    call mpp_create_group_update(group_update, x, y, domain, gridtype=CGRID_NE, &
+                                 flags=WUPDATE+SUPDATE+NONSYMEDGEUPDATE, whalo=1, ehalo=1, shalo=1, nhalo=1)
+    call mpp_do_group_update(group_update, domain, x(is,js,1))
+
+    call compare_checksums( x,  x2, type//' CGRID_NE X' )
+    call compare_checksums( y,  y2, type//' CGRID_NE Y' )
+
+    call mpp_sync()
+
+    x = 0.; y = 0.
+    x(is:ie+shift,js:je,      :) = global1(is:ie+shift,js:je,      :)
+    y(is:ie      ,js:je+shift,:) = global2(is:ie,      js:je+shift,:)
+    call mpp_start_group_update(group_update, domain, x(is,js,1))
+    call mpp_complete_group_update(group_update, domain, x(is,js,1))
+
+    call compare_checksums( x,  x2, type//' CGRID_NE X nonblock' )
+    call compare_checksums( y,  y2, type//' CGRID_NE Y nonblock' )
+
+    deallocate(global1, global2, x, y, x2, y2)
+    call mpp_clear_group_update(group_update)
+
+  end subroutine test_update_nonsym_edge
+
+
   !##################################################################################
   subroutine test_cyclic_offset( type )
     character(len=*), intent(in) :: type
@@ -5967,7 +6945,6 @@ end subroutine test_modify_domain
     integer :: i, j, k
 
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.
-    ! mpp_sync()
     call mpp_sync_self()
 
     if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) .or. size(a,3) .ne. size(b,3) ) &
@@ -5994,6 +6971,9 @@ end subroutine test_modify_domain
         !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
         !--- hence we need to check the value point by point.
     else
+        write(stdunit, *)"sum1 =", sum1, mpp_pe()
+        write(stdunit, *)"sum2 =", sum2, mpp_pe()
+        write(stdunit,'(a,i3,a,f20.9,a,f20.9)')" at pe ", mpp_pe(), " sum(a)=", sum1, " sum(b)=", sum2
         call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
     end if
   end subroutine compare_checksums
@@ -6297,27 +7277,6 @@ end subroutine test_modify_domain
     call mpp_update_domains( x, domain, name=trim(type) )
 
     call compare_checksums( x(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), trim(type) )
-    !--- test arbitrary halo update when whalo, ehalo, shalo and nhalo are equal
-!!$    if(whalo == ehalo .and. whalo==shalo .and. whalo=nhalo) then 
-!!$             allocate(local2(isd:ied,jsd:jed,nz) )
-!!$             do wh = 1, whalo-1
-!!$                         local2(isd:ied,jsd:jed,:) = global2(isd:ied,jsd:jed,:,1)
-!!$                         x = 0.
-!!$                         x(isc:iec,jsc:jec,:,1) = local2(isc:iec,jsc:jec,:)
-!!$                         call fill_halo_zero(local2, wh, eh, sh, nh, 0, 0, isc, iec, jsc, jec, isd, ied, jsd, jed)
-!!$
-!!$                         write(type2,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' with whalo = ', wh, &
-!!$                              ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-!!$                         call mpp_update_domains( x, domain, whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name = type2  )
-!!$                         call compare_checksums( x(isd:ied,jsd:jed,:,1), local2, trim(type2) )
-!!$                      end do
-!!$                   end do
-!!$                end do
-!!$             end do
-!!$             deallocate(local2)
-!!$          end if
-!!$       endif
-!!$    end if
 
     deallocate(global, x)
     !------------------------------------------------------------------
@@ -6351,39 +7310,6 @@ end subroutine test_modify_domain
     call compare_checksums( x (isd:ied+shift,jsd:jed+shift,:),  global1(isd:ied+shift,jsd:jed+shift,:), trim(type)//' X' )
     call compare_checksums( y (isd:ied+shift,jsd:jed+shift,:),  global2(isd:ied+shift,jsd:jed+shift,:), trim(type)//' Y' )
 
-!!$    !--- test wide halo
-!!$             allocate(local1(isd:ied+shift,jsd:jed+shift,nz) )
-!!$             allocate(local2(isd:ied+shift,jsd:jed+shift,nz) )
-!!$             do wh = 1-whalo, whalo
-!!$                do eh = 1-ehalo, ehalo
-!!$                   do sh = 1-shalo, shalo
-!!$                      do nh = 1-nhalo, nhalo
-!!$                         if( wh*eh <= 0 ) cycle
-!!$                         if( sh*nh <= 0 ) cycle
-!!$                         if( wh*sh <= 0 ) cycle
-!!$
-!!$                         local1(isd:ied+shift,jsd:jed+shift,:) = global1(isd:ied+shift,jsd:jed+shift,:,1)
-!!$                         local2(isd:ied+shift,jsd:jed+shift,:) = global2(isd:ied+shift,jsd:jed+shift,:,1)
-!!$                         x = 0.; y = 0.
-!!$                         x(isc:iec+shift,jsc:jec+shift,:,1) = global1_all(isc:iec+shift,jsc:jec+shift,:,tile(1))
-!!$                         y(isc:iec+shift,jsc:jec+shift,:,1) = global2_all(isc:iec+shift,jsc:jec+shift,:,tile(1))
-!!$                         call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
-!!$                         call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
-!!$
-!!$                         write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type2), ' with whalo = ', wh, &
-!!$                              ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-!!$                         call mpp_update_domains( x,  y,  domain, flags=update_flags, gridtype=BGRID_NE, &
-!!$                              whalo=wh, ehalo=eh, shalo=sh, nhalo=nh, name=type3)
-!!$                         call compare_checksums( x(isd:ied+shift,jsd:jed+shift,:,1),  local1, trim(type3)//' X' )
-!!$                         call compare_checksums( y(isd:ied+shift,jsd:jed+shift,:,1),  local2, trim(type3)//' Y' )
-!!$                      end do
-!!$                   end do
-!!$                end do
-!!$             end do
-!!$             deallocate(local1, local2)
-!!$          end if
-!!$       endif
-!!$    end if
     !------------------------------------------------------------------
     !              vector update : CGRID_NE
     !------------------------------------------------------------------
@@ -6416,53 +7342,304 @@ end subroutine test_modify_domain
     call compare_checksums( x(isd:ied+shift,jsd:jed,:), global1(isd:ied+shift,jsd:jed,:), trim(type)//' X' )
     call compare_checksums( y(isd:ied,jsd:jed+shift,:), global2(isd:ied,jsd:jed+shift,:), trim(type)//' Y' )
 
-!!$          if(single_tile .or. four_tile .or. cubic_grid ) then
-!!$             allocate(local1(isd:ied+shift,jsd:jed,      nz) )
-!!$             allocate(local2(isd:ied,      jsd:jed+shift,nz) )
-!!$
-!!$             do wh = 1-whalo, whalo
-!!$                do eh = 1-ehalo, ehalo
-!!$                   do sh = 1-shalo, shalo
-!!$                      do nh = 1-nhalo, nhalo
-!!$                         if( wh*eh <= 0 ) cycle
-!!$                         if( sh*nh <= 0 ) cycle
-!!$                         if( wh*sh <= 0 ) cycle
-!!$                         local1(isd:ied+shift,jsd:jed,      :) = global1(isd:ied+shift,jsd:jed,      :,1)
-!!$                         local2(isd:ied,      jsd:jed+shift,:) = global2(isd:ied,      jsd:jed+shift,:,1)
-!!$                         x = 0.; y = 0.
-!!$                         x(isc:iec+shift,jsc:jec,      :,1) = global1_all(isc:iec+shift,jsc:jec,      :,tile(1))
-!!$                         y(isc:iec,      jsc:jec+shift,:,1) = global2_all(isc:iec,      jsc:jec+shift,:,tile(1))
-!!$                         call fill_halo_zero(local1, wh, eh, sh, nh, shift, 0, isc, iec, jsc, jec, isd, ied, jsd, jed)
-!!$                         call fill_halo_zero(local2, wh, eh, sh, nh, 0, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
-!!$
-!!$                         write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type), ' vector CGRID_NE with whalo = ', &
-!!$                              wh, ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
-!!$                         !          id = mpp_clock_id( trim(type3), flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-!!$                         !          call mpp_clock_begin(id)
-!!$                         call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, whalo=wh, ehalo=eh, &
-!!$                              shalo=sh, nhalo=nh, name=type3)
-!!$                         !          call mpp_clock_end  (id)
-!!$                         call compare_checksums( x(isd:ied+shift,jsd:jed, :,1),  local1, trim(type3)//' X' )
-!!$                         call compare_checksums( y(isd:ied,jsd:jed+shift, :,1),  local2, trim(type3)//' Y' )
-!!$                      end do
-!!$                   end do
-!!$                end do
-!!$             end do
-!!$             deallocate(local1, local2)
-!!$          end if
-!!$       endif
-!!$    end if
-
     deallocate(global1, global2, x, y)
 
   end subroutine test_nest_halo_update
 
+  subroutine get_nnest(domain, num_nest, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
+                       nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+    type(domain2D), intent(inout) :: domain
+    integer, intent(in)  :: num_nest, istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
+    integer, intent(in)  :: tile_coarse(:)
+    integer, intent(out) :: nnest, is_coarse(:), ie_coarse(:), js_coarse(:), je_coarse(:)
+    integer, intent(out) :: t_coarse(:), iadd_coarse(:), jadd_coarse(:), rotate_coarse(:)
+    integer :: is, ie, js, je, tile, isg, ieg, jsg, jeg
+    integer :: ncross, rotate, i1, i2, ntiles
+    integer :: is2, ie2, js2, je2
+    ntiles = 6
+    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
+    nnest = 0
+ 
+    do n = 1, num_nest
+       is = istart_coarse(n); ie = iend_coarse(n)
+       js = jstart_coarse(n); je = jend_coarse(n)
+       tile = tile_coarse(n)
+       ncross = 0
+       rotate = 0
+       do while(is >0 .and. js > 0)
+          is2 = max(is,1); ie2 = min(ie,ieg)
+          js2 = max(js,1); je2 = min(je,jeg)
+          if(ie2 .GE. is2 .and. je2 .GE. js2) then
+             nnest = nnest+1
+             if(nnest > ntiles) call mpp_error(FATAL, "get_nnest: nnest > ntiles")
+             select case(rotate)
+             case(0)
+                 is_coarse(nnest) = is2; ie_coarse(nnest) = ie2
+                 js_coarse(nnest) = js2; je_coarse(nnest) = je2
+             case(90)
+                 is_coarse(nnest) = js2; ie_coarse(nnest) = je2
+                 js_coarse(nnest) = ieg-ie2+1; je_coarse(nnest) = ieg-is2+1
+             case(-90)
+                is_coarse(nnest) = jeg-je2+1; ie_coarse(nnest) = jeg-js2+1
+                js_coarse(nnest) = is2; je_coarse(nnest) = ie2
+             end select
+             if(jend_coarse(n) > jeg) then
+                iadd_coarse(nnest) = 0
+                jadd_coarse(nnest) = ncross*jeg
+                if( je > jeg ) then
+                   js = 1; je = je - jeg
+                else
+                   is = 0 ; js = 0
+                endif
+             else if(iend_coarse(n) > ieg) then
+                jadd_coarse(nnest) = 0
+                iadd_coarse(nnest) = ncross*ieg
+                if(ie>ieg) then
+                   is = 1; ie = ie - ieg
+                else
+                   is = 0; js = 0
+                endif
+             else 
+                iadd_coarse(nnest) = 0
+                jadd_coarse(nnest) = 0
+                is = 0; js = 0
+             endif
+             rotate_coarse(nnest) = rotate
+             t_coarse(nnest) = tile      
+          else
+             if(je > jeg) then
+                js = js-jeg; je = je-jeg
+             else if(ie > ieg) then
+                is = is-ieg; ie = ie-ieg
+             else
+                call mpp_error(FATAL, "get_nnest: je <= jeg and ie <= ieg but (ie2<is2 .or. je2<js2")
+             end if
+          endif
+          !--- figure out tile and rotation
+          ncross = ncross+1
+          if(jend_coarse(n) > jeg) then
+             if(rotate == 0) then ! cross north edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                else  ! rotate 90 degree
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate + 90
+                endif
+             else if(rotate == 90) then  ! cross east edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate - 90
+                else  ! tile 1 3 5
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                endif
+             else
+                call mpp_error(FATAL, "get_nnest: rotate should be 0 or 90 when je>jeg")
+             endif
+          else if(iend_coarse(n) > ieg) then
+             if(rotate == 0) then ! cross east edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate - 90
+                else  ! no rotation
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                endif
+             else if(rotate == -90) then  ! cross east edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                else  ! tile 1 3 5
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate + 90
+                endif
+             else
+                call mpp_error(FATAL, "get_nnest: rotate should be 0 or -90 when ie>ieg")
+             endif
+          endif
+       enddo
+    enddo
+
+  end subroutine get_nnest
+
+
+  subroutine get_nnest2(domain, num_nest, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
+                       nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+    type(domain2D), intent(inout) :: domain
+    integer, intent(in)  :: num_nest, istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
+    integer, intent(in)  :: tile_coarse(:)
+    integer, intent(out) :: nnest, is_coarse(:), ie_coarse(:), js_coarse(:), je_coarse(:)
+    integer, intent(out) :: t_coarse(:), iadd_coarse(:), jadd_coarse(:), rotate_coarse(:)
+    integer :: is, ie, js, je, tile, isg, ieg, jsg, jeg
+    integer :: ncross, rotate, i1, i2, ntiles
+    integer :: is2, ie2, js2, je2
+    ntiles = 6
+    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
+    nnest = 0
+ 
+    do n = 1, num_nest
+       is = istart_coarse(n); ie = iend_coarse(n)
+       js = jstart_coarse(n); je = jend_coarse(n)
+       tile = tile_coarse(n)
+       ncross = 0
+       rotate = 0
+       do while(is >0 .and. js > 0)
+          is2 = max(is,1); ie2 = min(ie,ieg)
+          js2 = max(js,1); je2 = min(je,jeg)
+          if(ie2 .GE. is2 .and. je2 .GE. js2) then
+             nnest = nnest+1
+             if(nnest > ntiles) call mpp_error(FATAL, "get_nnest2: nnest > ntiles")
+             if(jend_coarse(n) > jeg) then
+                is_coarse(nnest) = is2; ie_coarse(nnest) = ie2
+                js_coarse(nnest) = js2+ncross*jeg; je_coarse(nnest) = je2+ncross*jeg
+
+                iadd_coarse(nnest) = 0
+                jadd_coarse(nnest) = ncross*jeg
+                if( je > jeg ) then
+                   js = 1; je = je - jeg
+                else
+                   is = 0 ; js = 0
+                endif
+             else if(iend_coarse(n) > ieg) then
+                is_coarse(nnest) = is2+ncross*ieg; ie_coarse(nnest) = ie2+ncross*ieg
+                js_coarse(nnest) = js2           ; je_coarse(nnest) = je2                
+                jadd_coarse(nnest) = 0
+                iadd_coarse(nnest) = ncross*ieg
+                if(ie>ieg) then
+                   is = 1; ie = ie - ieg
+                else
+                   is = 0; js = 0
+                endif
+             else
+                 is_coarse(nnest) = is2; ie_coarse(nnest) = ie2
+                 js_coarse(nnest) = js2; je_coarse(nnest) = je2
+                iadd_coarse(nnest) = 0
+                jadd_coarse(nnest) = 0
+                is = 0; js = 0
+             endif
+             rotate_coarse(nnest) = rotate
+             t_coarse(nnest) = tile      
+          else
+             if(je > jeg) then
+                js = js-jeg; je = je-jeg
+             else if(ie > ieg) then
+                is = is-ieg; ie = ie-ieg
+             else
+                call mpp_error(FATAL, "get_nnest2: je <= jeg and ie <= ieg but (ie2<is2 .or. je2<js2")
+             end if
+          endif
+          !--- figure out tile and rotation
+          ncross = ncross+1
+          if(jend_coarse(n) > jeg) then
+             if(rotate == 0) then ! cross north edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                else  ! rotate 90 degree
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate + 90
+                endif
+             else if(rotate == 90) then  ! cross east edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate - 90
+                else  ! tile 1 3 5
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                endif
+             else
+                call mpp_error(FATAL, "get_nnest2: rotate should be 0 or 90 when je>jeg")
+             endif
+          else if(iend_coarse(n) > ieg) then
+             if(rotate == 0) then ! cross east edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate - 90
+                else  ! no rotation
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                endif
+             else if(rotate == -90) then  ! cross east edge
+                if(mod(tile,2) ==0) then ! tile 2 4 6
+                   tile = tile + 1
+                   if(tile>ntiles) tile=tile-ntiles
+                else  ! tile 1 3 5
+                   tile = tile + 2
+                   if(tile>ntiles) tile=tile-ntiles
+                   rotate = rotate + 90
+                endif
+             else
+                call mpp_error(FATAL, "get_nnest2: rotate should be 0 or -90 when ie>ieg")
+             endif
+          endif
+       enddo
+    enddo
+
+  end subroutine get_nnest2
+
 !###############################################################################
+  subroutine fill_nest_data(buffer, is, ie, js, je, nnest, tile, ishift, jshift, iadd, jadd, rotate, &
+                            isl, iel, jsl, jel, xadd, yadd, sign1, sign2)
+     real, dimension(is:,js:,:), intent(inout) :: buffer
+     integer,                       intent(in) :: is, ie, js, je, nnest
+     integer,                       intent(in) :: ishift, jshift
+     integer, dimension(:),         intent(in) :: tile, iadd, jadd, rotate, isl, iel, jsl, jel
+     real,                          intent(in) :: xadd, yadd
+     integer,                       intent(in) :: sign1, sign2
+     integer :: i, j, k, n, nk
+     integer :: ioff, joff
+
+     ioff = 0
+     joff = 0
+     nk = size(buffer,3)
+     do k = 1, nk
+        do n = 1, nnest
+           if(iel(n) == ie) ioff = ishift
+           if(jel(n) == je) joff = jshift
+
+           select case (rotate(n))
+           case(ZERO)
+              do j = jsl(n), jel(n)+joff
+                 do i = isl(n), iel(n)+ioff
+                    buffer(i,j,k) = xadd + tile(n) + (i-iadd(n))*1.e-3 + (j-jadd(n))*1.e-6 + k*1.e-9
+                 enddo
+              enddo
+           case (NINETY)
+              do j = jsl(n), jel(n)+joff
+                 do i = isl(n), iel(n)+ioff
+                    buffer(i,j,k) = sign2*(yadd + tile(n) + (j-jadd(n))*1.e-3 + (nx-i+iadd(n)+1+ioff)*1.e-6 + k*1.e-9)
+                 enddo
+              enddo
+           case (MINUS_NINETY)
+              do j = jsl(n), jel(n)+joff
+                 do i = isl(n), iel(n)+ioff
+                    buffer(i,j,k) = sign1*(yadd + tile(n) + (ny-j+jadd(n)+1+joff)*1.e-3 + (i-iadd(n))*1.e-6 + k*1.e-9)
+                 enddo
+              enddo
+           case default
+              call mpp_error(FATAL,"fill_nest_data: rotate must be ZERO, NINETY, MINUS_NINETY")
+           end select
+        enddo
+     enddo
+
+  end subroutine fill_nest_data
+
+!###############################################################################
+
+
   subroutine test_update_nest_domain( type )
     character(len=*), intent(in) :: type
     logical                      :: cubic_grid
     logical                      :: is_fine_pe, is_coarse_pe
-    integer                      :: n, i, j, k, l
+    integer                      :: n, i, j, k
     integer                      :: ntiles, npes_per_tile
     integer                      :: npes_fine, pos
     integer                      :: isc_coarse, iec_coarse, jsc_coarse, jec_coarse
@@ -6475,13 +7652,34 @@ end subroutine test_modify_domain
     integer                      :: ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c
     integer                      :: iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c
     integer                      :: isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c
+    integer                      :: isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx
+    integer                      :: ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx
+    integer                      :: iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx
+    integer                      :: isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx
+    integer                      :: isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy
+    integer                      :: ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy
+    integer                      :: iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy
+    integer                      :: isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy
     integer                      :: isw_f2, iew_f2, jsw_f2, jew_f2, isw_c2, iew_c2, jsw_c2, jew_c2, tile_w2
     integer                      :: ise_f2, iee_f2, jse_f2, jee_f2, ise_c2, iee_c2, jse_c2, jee_c2, tile_e2
     integer                      :: iss_f2, ies_f2, jss_f2, jes_f2, iss_c2, ies_c2, jss_c2, jes_c2, tile_s2
     integer                      :: isn_f2, ien_f2, jsn_f2, jen_f2, isn_c2, ien_c2, jsn_c2, jen_c2, tile_n2
+    integer                      :: isw_fx2, iew_fx2, jsw_fx2, jew_fx2, isw_cx2, iew_cx2, jsw_cx2, jew_cx2, tile_wx2
+    integer                      :: ise_fx2, iee_fx2, jse_fx2, jee_fx2, ise_cx2, iee_cx2, jse_cx2, jee_cx2, tile_ex2
+    integer                      :: iss_fx2, ies_fx2, jss_fx2, jes_fx2, iss_cx2, ies_cx2, jss_cx2, jes_cx2, tile_sx2
+    integer                      :: isn_fx2, ien_fx2, jsn_fx2, jen_fx2, isn_cx2, ien_cx2, jsn_cx2, jen_cx2, tile_nx2
+    integer                      :: isw_fy2, iew_fy2, jsw_fy2, jew_fy2, isw_cy2, iew_cy2, jsw_cy2, jew_cy2, tile_wy2
+    integer                      :: ise_fy2, iee_fy2, jse_fy2, jee_fy2, ise_cy2, iee_cy2, jse_cy2, jee_cy2, tile_ey2
+    integer                      :: iss_fy2, ies_fy2, jss_fy2, jes_fy2, iss_cy2, ies_cy2, jss_cy2, jes_cy2, tile_sy2
+    integer                      :: isn_fy2, ien_fy2, jsn_fy2, jen_fy2, isn_cy2, ien_cy2, jsn_cy2, jen_cy2, tile_ny2
+    integer                      :: isw_f_T, iew_f_T, jsw_f_T, jew_f_T, isw_c_T, iew_c_T, jsw_c_T, jew_c_T
+    integer                      :: ise_f_T, iee_f_T, jse_f_T, jee_f_T, ise_c_T, iee_c_T, jse_c_T, jee_c_T
+    integer                      :: iss_f_T, ies_f_T, jss_f_T, jes_f_T, iss_c_T, ies_c_T, jss_c_T, jes_c_T
+    integer                      ::  isn_f_T, ien_f_T, jsn_f_T, jen_f_T, isn_c_T, ien_c_T, jsn_c_T, jen_c_T
     integer                      :: is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f
-    integer                      :: is_c2, ie_c2, js_c2, je_c2, is_f2, ie_f2, js_f2, je_f2
-    integer                      :: nx_fine, ny_fine, tile, position, ishift, jshift
+    integer                      :: is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx
+    integer                      :: is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy
+    integer                      :: nx_fine, ny_fine, tile, position, shift
     integer                      :: layout_fine(2)
     integer, allocatable         :: pelist(:)
     integer, allocatable         :: pelist_coarse(:)
@@ -6489,17 +7687,51 @@ end subroutine test_modify_domain
     integer, allocatable         :: pe_start(:), pe_end(:)
     integer, allocatable         :: layout2D(:,:), global_indices(:,:)
     real,    allocatable         :: x(:,:,:), x1(:,:,:), x2(:,:,:)
+    real,    allocatable         :: y(:,:,:), y1(:,:,:), y2(:,:,:)
     real,    allocatable         :: wbuffer(:,:,:), wbuffer2(:,:,:)
     real,    allocatable         :: ebuffer(:,:,:), ebuffer2(:,:,:)
     real,    allocatable         :: sbuffer(:,:,:), sbuffer2(:,:,:)
     real,    allocatable         :: nbuffer(:,:,:), nbuffer2(:,:,:)
-    integer                      :: istart_fine(MAX_NNEST) = 0, iend_fine(MAX_NNEST) = -1
-    integer                      :: jstart_fine(MAX_NNEST) = 0, jend_fine(MAX_NNEST) = -1
-    integer                      :: iend_coarse(MAX_NNEST) = -1, jend_coarse(MAX_NNEST) = -1
-    character(len=32)            :: position_name
+    real,    allocatable         :: wbufferx(:,:,:), wbufferx2(:,:,:)
+    real,    allocatable         :: ebufferx(:,:,:), ebufferx2(:,:,:)
+    real,    allocatable         :: sbufferx(:,:,:), sbufferx2(:,:,:)
+    real,    allocatable         :: nbufferx(:,:,:), nbufferx2(:,:,:)
+    real,    allocatable         :: wbuffery(:,:,:), wbuffery2(:,:,:)
+    real,    allocatable         :: ebuffery(:,:,:), ebuffery2(:,:,:)
+    real,    allocatable         :: sbuffery(:,:,:), sbuffery2(:,:,:)
+    real,    allocatable         :: nbuffery(:,:,:), nbuffery2(:,:,:)
+    integer                      :: istart_fine(num_nest), iend_fine(num_nest)
+    integer                      :: jstart_fine(num_nest), jend_fine(num_nest)
+    integer                      :: iend_coarse(num_nest), jend_coarse(num_nest)
+    integer                      :: is_fine(6*num_nest), ie_fine(6*num_nest)
+    integer                      :: js_fine(6*num_nest), je_fine(6*num_nest)
+    integer                      :: is_coarse(6*num_nest), ie_coarse(6*num_nest)
+    integer                      :: js_coarse(6*num_nest), je_coarse(6*num_nest)
+    integer                      :: t_coarse(6*num_nest), rotate_coarse(6*num_nest)
+    integer                      :: iadd_coarse(6*num_nest), jadd_coarse(6*num_nest)
+    integer                      :: nnest
     character(len=32)            :: text
     type(domain2d)               :: domain_coarse, domain_fine
     type(nest_domain_type)       :: nest_domain
+    logical                      :: x_cyclic, y_cyclic
+
+    x_cyclic = .false.
+    y_cyclic = .false.
+    if(cyclic_nest(1) == 'X') then
+       x_cyclic = .true.
+    else if(cyclic_nest(1) == 'Y') then
+       y_cyclic = .true.
+    endif
+
+    istart_fine = 0; iend_fine = -1
+    jstart_fine = 0; jend_fine = -1
+    iend_coarse = -1; jend_coarse = -1
+    is_fine = 0;  ie_fine = -1
+    js_fine = 0;  je_fine = -1
+    is_coarse = 0;  ie_coarse = -1
+    js_coarse = 0;  je_coarse = -1
+    t_coarse = 0; rotate_coarse = -1;
+    iadd_coarse = 0; jadd_coarse = 0
 
     select case(type)
     case ( 'Cubic-Grid' )
@@ -6549,14 +7781,16 @@ end subroutine test_modify_domain
     pelist_coarse(1:npes_coarse) = pelist(1:npes_coarse)
     pelist_fine(1:npes_fine) = pelist(npes_coarse+1:npes_coarse+npes_fine)
 
-    call mpp_declare_pelist(pelist_fine, "fine grid")
+    call mpp_declare_pelist(pelist_fine, "find grid")
     call mpp_declare_pelist(pelist_coarse, "coarse grid")
     is_fine_pe = ANY(pelist_fine(:) == mpp_pe() )
     is_coarse_pe = ANY(pelist_coarse(:) == mpp_pe())
     if(is_fine_pe .eqv. is_coarse_pe) call mpp_error(FATAL, 'test_update_nest_domain: is_fine_pe .eqv. is_coarse_pe')
 
-    !--- get the index of fine grid.
+    !--- compute iend_coarse and jend_coarse
     do n = 1, num_nest
+       iend_coarse(n) = istart_coarse(n) + icount_coarse(n) - 1
+       jend_coarse(n) = jstart_coarse(n) + jcount_coarse(n) - 1
        istart_fine(n) = 1; iend_fine(n) = icount_coarse(n)*refine_ratio
        jstart_fine(n) = 1; jend_fine(n) = jcount_coarse(n)*refine_ratio
     enddo
@@ -6624,15 +7858,18 @@ end subroutine test_modify_domain
  
     x_refine = refine_ratio
     y_refine = refine_ratio
-   
+
+    !--- each nest region might be over multiple face of cubic sphere grid. Get the number of nest region with consideration of face.
+    call get_nnest(domain_coarse, num_nest, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
+                       nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+
     call mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, num_nest, tile_fine, tile_coarse, &
                            istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, x_refine, y_refine, &
                            pelist, extra_halo, name="nest_domain")
 
-
     !---------------------------------------------------------------------------
     !
-    !                    fine to coarse
+    !                    fine to coarse scalar field, limit to position=CENTER.
     !
     !---------------------------------------------------------------------------
     if(is_fine_pe) then
@@ -6645,301 +7882,1676 @@ end subroutine test_modify_domain
        call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
     endif
 
-    do l = 1, 4  ! T, E, C, N
-       select case(l)
-       case(1)
-          position = CENTER
-          position_name = "CENTER"
-       case(2)
-          position = EAST
-          position_name = "EAST"
-       case(3)
-          position = CORNER
-          position_name = "CORNER"
-       case(4)
-          position = NORTH
-          position_name = "NORTH"
-       end select
-
-       call mpp_get_domain_shift(domain_coarse, ishift, jshift, position)
-
-       if(is_fine_pe) then
-          call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f,position=position)
-          allocate(x(is_c:ie_c, js_c:je_c, nz))
-          x = 0
-          do k = 1, nz
-             do j = js_c, je_c
-                do i = is_c, ie_c
-                   x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.001
-                enddo
+    if(is_fine_pe) then
+       call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f,position=CENTER)
+       allocate(x(is_c:ie_c, js_c:je_c, nz))
+       x = 0
+       do k = 1, nz
+          do j = js_c, je_c
+             do i = is_c, ie_c
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.001
              enddo
           enddo
-       else
-          allocate(x1(isd_coarse:ied_coarse+ishift, jsd_coarse:jed_coarse+jshift, nz))
-          allocate(x2(isd_coarse:ied_coarse+ishift, jsd_coarse:jed_coarse+jshift, nz))
-          x1 = 0
-          npes_per_tile = npes_coarse/ntiles
-          tile = mpp_pe()/npes_per_tile + 1
-          do k = 1, nz
-             do j = jsc_coarse, jec_coarse+jshift
-                do i = isc_coarse, iec_coarse+ishift
-                   x1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.002
-                enddo
+       enddo
+    else
+       allocate(x1(isd_coarse:ied_coarse, jsd_coarse:jed_coarse, nz))
+       allocate(x2(isd_coarse:ied_coarse, jsd_coarse:jed_coarse, nz))
+       x1 = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse
+                x1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.002
              enddo
           enddo
-          x2 = x1
-       endif
+       enddo
+       x2 = x1
+    endif
 
 
-       if(is_coarse_pe) then
-          is_c = max(istart_coarse(1), isc_coarse)
-          ie_c = min(iend_coarse(1),   iec_coarse) + ishift
-          js_c = max(jstart_coarse(1), jsc_coarse)
-          je_c = min(jend_coarse(1),   jec_coarse) + jshift
-          if( tile == tile_coarse(1) .AND. ie_c .GE. is_c .AND. je_c .GE. js_c ) then
+    if(is_coarse_pe) then
+       do n = 1, nnest
+          is_c = max(is_coarse(n), isc_coarse)
+          ie_c = min(ie_coarse(n),   iec_coarse)
+          js_c = max(js_coarse(n), jsc_coarse)
+          je_c = min(je_coarse(n),   jec_coarse)
+          if( tile == t_coarse(n) .AND. ie_c .GE. is_c .AND. je_c .GE. js_c ) then
+             call fill_coarse_data(x2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
+                  is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, 0, 0, 0.001, 0.001, 1, 1, &
+                  .false., .false., iend_coarse(1), jend_coarse(1) )
+          endif
+       enddo
+    endif
+
+    call mpp_update_nest_coarse(x, nest_domain, x1, position=CENTER)
+
+    !--- compare with assumed value
+    if( is_coarse_pe) then
+       call compare_checksums(x1, x2, trim(type)//' fine to coarse scalar')
+    endif
+    if(allocated(x))       deallocate(x)
+    if(allocated(x1))       deallocate(x1)
+    if(allocated(x2))       deallocate(x2)
+    call mpp_sync()
+    call mpp_error(NOTE, "test_mpp_domains: complete test scalar")
+    !---------------------------------------------------------------------------
+    !
+    !                    fine to coarse CGRID scalar pair update
+    !
+    !---------------------------------------------------------------------------
+    shift = 1
+
+    if(is_fine_pe) then
+       call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, position=EAST)
+       call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, position=NORTH)
+       allocate(x(is_cx:ie_cx, js_cx:je_cx, nz))
+       allocate(y(is_cy:ie_cy, js_cy:je_cy, nz))
+       x = 0
+       y = 0
+       do k = 1, nz
+          do j = js_cx, je_cx
+             do i = is_cx, ie_cx
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1.0E-6
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = js_cy, je_cy
+             do i = is_cy, ie_cy
+                y(i,j,k) = i*1.e+6 + j*1.e+3 + k + 2.0E-6
+             enddo
+          enddo
+       enddo
+       if(x_cyclic) then
+          if(ie_cx == iend_coarse(1)+1) then
+             i = ie_cx
              do k = 1, nz
-                do j = js_c, je_c
-                   do i = is_c, ie_c
-                      x2(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.001
-                   enddo
+                do j = js_cx, je_cx
+                   x(i,j,k) = istart_coarse(1)*1.e+6 + j*1.e+3 + k + 1.0E-6
                 enddo
              enddo
           endif
        endif
-
-       call mpp_update_nest_coarse(x, nest_domain, x1, position=position)
-
-       !--- compare with assumed value
-       if( is_coarse_pe) then
-          call compare_checksums(x1, x2, trim(type)//' fine to coarse buffer '//trim(position_name))
+       if(y_cyclic) then
+          if(je_cx == jend_coarse(1)+1) then
+             j = je_cx
+             do k = 1, nz
+                do i = is_cx, ie_cx
+                   y(i,j,k) = i*1.e+6 + jstart_coarse(1)*1.e+3 + k + 1.0E-6
+                enddo
+             enddo
+          endif
        endif
-       if(allocated(x))       deallocate(x)
-       if(allocated(x1))       deallocate(x1)
-       if(allocated(x2))       deallocate(x2)
-    enddo
+    else
+       allocate(x1(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       allocate(x2(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       allocate(y1(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       allocate(y2(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       x1 = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse+shift
+                x1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.001
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse
+                y1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.002
+             enddo
+          enddo
+       enddo
+       x2 = x1
+       y2 = y1
+    endif
+
+
+    if(is_coarse_pe) then
+       do n = 1, nnest
+          is_c = max(is_coarse(n), isc_coarse)
+          ie_c = min(ie_coarse(n),   iec_coarse)
+          js_c = max(js_coarse(n), jsc_coarse)
+          je_c = min(je_coarse(n),   jec_coarse) 
+          if( tile == t_coarse(n) .AND. ie_c+shift .GE. is_c .AND. je_c .GE. js_c ) then
+             call fill_coarse_data(x2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
+                  is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, shift, 0, 1.0E-6, 2.0E-6, 1, 1, &
+                  x_cyclic, .false., iend_coarse(1)+1, jend_coarse(1)+1)
+          endif
+          if( tile == t_coarse(n) .AND. ie_c .GE. is_c .AND. je_c+shift .GE. js_c ) then
+             call fill_coarse_data(y2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
+                  is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, 0, shift, 2.0E-6, 1.0E-6, 1, 1, &
+                  .false., y_cyclic, iend_coarse(1)+1, jend_coarse(1)+1)
+          endif
+       enddo
+    endif
+
+    call mpp_update_nest_coarse(x, y, nest_domain, x1, y1, gridtype=CGRID_NE, flags=SCALAR_PAIR)
+
+    !--- compare with assumed value
+    if( is_coarse_pe) then
+       call compare_checksums(x1, x2, trim(type)//' fine to coarse buffer CGRID Scalar_pair X')
+       call compare_checksums(x1, x2, trim(type)//' fine to coarse buffer CGRID Scalar_pair Y')
+    endif
+    if(allocated(x))       deallocate(x)
+    if(allocated(x1))       deallocate(x1)
+    if(allocated(x2))       deallocate(x2)
+    if(allocated(y))       deallocate(y)
+    if(allocated(y1))       deallocate(y1)
+    if(allocated(y2))       deallocate(y2)
+
+    call mpp_sync()
+    call mpp_error(NOTE, "test_mpp_domains: complete test CGRID scalar pair")
+    !---------------------------------------------------------------------------
+    !
+    !                    fine to coarse CGRID vector update
+    !
+    !---------------------------------------------------------------------------
+    shift = 1
+
+    if(is_fine_pe) then
+       call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, position=EAST)
+       call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, position=NORTH)
+       allocate(x(is_cx:ie_cx, js_cx:je_cx, nz))
+       allocate(y(is_cy:ie_cy, js_cy:je_cy, nz))
+       x = 0
+       y = 0
+       do k = 1, nz
+          do j = js_cx, je_cx
+             do i = is_cx, ie_cx
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1.0E-6
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = js_cy, je_cy
+             do i = is_cy, ie_cy
+                y(i,j,k) = i*1.e+6 + j*1.e+3 + k + 2.0E-6
+             enddo
+          enddo
+       enddo
+    else
+       allocate(x1(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       allocate(x2(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       allocate(y1(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       allocate(y2(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       x1 = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse+shift
+                x1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.001
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse
+                y1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.002
+             enddo
+          enddo
+       enddo
+       x2 = x1
+       y2 = y1
+    endif
+
+
+    if(is_coarse_pe) then
+       do n = 1, nnest
+          is_c = max(is_coarse(n), isc_coarse)
+          ie_c = min(ie_coarse(n),   iec_coarse)
+          js_c = max(js_coarse(n), jsc_coarse)
+          je_c = min(je_coarse(n),   jec_coarse) 
+          if( tile == t_coarse(n) .AND. ie_c+shift .GE. is_c .AND. je_c .GE. js_c ) then
+             call fill_coarse_data(x2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
+                  is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, shift, 0, 1.0E-6, 2.0E-6, 1, -1, &
+                  x_cyclic, .false., iend_coarse(1)+1, jend_coarse(1)+1)
+          endif
+          if( tile == t_coarse(n) .AND. ie_c .GE. is_c .AND. je_c+shift .GE. js_c ) then
+             call fill_coarse_data(y2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
+                  is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, 0, shift, 2.0E-6, 1.0E-6, -1, 1, &
+                  .false., y_cyclic, iend_coarse(1)+1, jend_coarse(1)+1)
+          endif
+       enddo
+    endif
+
+    call mpp_update_nest_coarse(x, y, nest_domain, x1, y1, gridtype=CGRID_NE)
+
+    !--- compare with assumed value
+    if( is_coarse_pe) then
+       call compare_checksums(x1, x2, trim(type)//' fine to coarse buffer CGRID Vector X')
+       call compare_checksums(x1, x2, trim(type)//' fine to coarse buffer CGRID Vector Y')
+    endif
+    if(allocated(x))       deallocate(x)
+    if(allocated(x1))       deallocate(x1)
+    if(allocated(x2))       deallocate(x2)
+    if(allocated(y))       deallocate(y)
+    if(allocated(y1))       deallocate(y1)
+    if(allocated(y2))       deallocate(y2)
+
+    call mpp_sync()
+    call mpp_error(NOTE, "test_mpp_domains: complete test CGRID vector")
 
     !---------------------------------------------------------------------------
     !
-    !                 Coarse to Fine
+    !                    fine to coarse DGRID vector update
     !
     !---------------------------------------------------------------------------
-    do l = 1, 4  ! T, E, C, N
-       select case(l)
-       case(1)
-          position = CENTER
-          position_name = "CENTER"
-       case(2)
-          position = EAST
-           position_name = "EAST"
-       case(3)
-          position = CORNER
-          position_name = "CORNER"
-       case(4)
-          position = NORTH
-          position_name = "NORTH"
-       end select
+    shift = 1
 
-       call mpp_get_domain_shift(domain_coarse, ishift, jshift, position)
-       !--- first check the index is correct or not
-       if(is_fine_pe) then
-          !--- The index from nest domain
-          call mpp_get_compute_domain(domain_fine, isc_fine, iec_fine, jsc_fine, jec_fine, position=position)
-          call mpp_get_data_domain(domain_fine, isd_fine, ied_fine, jsd_fine, jed_fine, position=position)
-          call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST,  position=position)
-          call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST,  position=position)
-          call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, position=position)
-          call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, position=position)
-
-          !-- The assumed index
-          isw_f2 = 0; iew_f2 = -1; jsw_f2 = 0; jew_f2 = -1
-          isw_c2 = 0; iew_c2 = -1; jsw_c2 = 0; jew_c2 = -1
-          ise_f2 = 0; iee_f2 = -1; jse_f2 = 0; jee_f2 = -1
-          ise_c2 = 0; iee_c2 = -1; jse_c2 = 0; jee_c2 = -1
-          iss_f2 = 0; ies_f2 = -1; jss_f2 = 0; jes_f2 = -1
-          iss_c2 = 0; ies_c2 = -1; jss_c2 = 0; jes_c2 = -1
-          isn_f2 = 0; ien_f2 = -1; jsn_f2 = 0; jen_f2 = -1
-          isn_c2 = 0; ien_c2 = -1; jsn_c2 = 0; jen_c2 = -1
-
-          !--- west
-          if( isc_fine == 1 ) then
-             isw_f2 = isd_fine; iew_f2 = isc_fine - 1
-             jsw_f2 = jsd_fine; jew_f2 = jed_fine
-             isw_c2 = istart_coarse(1)-whalo
-             iew_c2 = istart_coarse(1)
-             jsw_c2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
-             jew_c2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo
-          endif
-          !--- east
-          if( iec_fine == nx_fine+ishift ) then
-             ise_f2 = iec_fine+1; iee_f2 = ied_fine
-             jse_f2 = jsd_fine;   jee_f2 = jed_fine
-             ise_c2 = iend_coarse(1)+ishift
-             iee_c2 = iend_coarse(1)+ehalo+ishift
-             jse_c2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
-             jee_c2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo
-          endif
-          !--- south
-          if( jsc_fine == 1 ) then
-             iss_f2 = isd_fine; ies_f2 = ied_fine
-             jss_f2 = jsd_fine; jes_f2 = jsc_fine - 1
-             iss_c2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
-             ies_c2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo
-             jss_c2 = jstart_coarse(1)-shalo
-             jes_c2 = jstart_coarse(1)
-          endif
-          !--- north
-          if( jec_fine == ny_fine+jshift ) then
-             isn_f2 = isd_fine;  ien_f2 = ied_fine
-             jsn_f2 = jec_fine+1; jen_f2 = jed_fine
-             isn_c2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
-             ien_c2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo
-             jsn_c2 = jend_coarse(1)+jshift
-             jen_c2 = jend_coarse(1)+nhalo+jshift
-          endif
-
-          if( isw_f .NE. isw_f2 .OR. iew_f .NE. iew_f2 .OR. jsw_f .NE. jsw_f2 .OR. jew_f .NE. jew_f2 .OR. &
-               isw_c .NE. isw_c2 .OR. iew_c .NE. iew_c2 .OR. jsw_c .NE. jsw_c2 .OR. jew_c .NE. jew_c2 ) then
-             call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for "//trim(position_name))
-          endif
-          if( ise_f .NE. ise_f2 .OR. iee_f .NE. iee_f2 .OR. jse_f .NE. jse_f2 .OR. jee_f .NE. jee_f2 .OR. &
-               ise_c .NE. ise_c2 .OR. iee_c .NE. iee_c2 .OR. jse_c .NE. jse_c2 .OR. jee_c .NE. jee_c2 ) then
-             call mpp_error(FATAL, "test_mpp_domains: east buffer index mismatch for "//trim(position_name))
-          endif
-          if( iss_f .NE. iss_f2 .OR. ies_f .NE. ies_f2 .OR. jss_f .NE. jss_f2 .OR. jes_f .NE. jes_f2 .OR. &
-               iss_c .NE. iss_c2 .OR. ies_c .NE. ies_c2 .OR. jss_c .NE. jss_c2 .OR. jes_c .NE. jes_c2 ) then
-             call mpp_error(FATAL, "test_mpp_domains: south buffer index mismatch for "//trim(position_name))
-          endif
-          if( isn_f .NE. isn_f2 .OR. ien_f .NE. ien_f2 .OR. jsn_f .NE. jsn_f2 .OR. jen_f .NE. jen_f2 .OR. &
-               isn_c .NE. isn_c2 .OR. ien_c .NE. ien_c2 .OR. jsn_c .NE. jsn_c2 .OR. jen_c .NE. jen_c2 ) then
-             call mpp_error(FATAL, "test_mpp_domains: north buffer index mismatch for "//trim(position_name))
-          endif
-       endif
-
-       if(is_coarse_pe) then
-          call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse, position=position)
-          call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse, position=position)
-          allocate(x(isd_coarse:ied_coarse, jsd_coarse:jed_coarse, nz))
-          x = 0
-          npes_per_tile = npes_coarse/ntiles
-          tile = mpp_pe()/npes_per_tile + 1
-          do k = 1, nz
-             do j = jsc_coarse, jec_coarse
-                do i = isc_coarse, iec_coarse
-                   x(i,j,k) = tile + i*1.e-3 + j*1.e-6 + k*1.e-9
-                enddo
+    if(is_fine_pe) then
+       call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, position=NORTH)
+       call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, position=EAST)
+       allocate(x(is_cx:ie_cx, js_cx:je_cx, nz))
+       allocate(y(is_cy:ie_cy, js_cy:je_cy, nz))
+       x = 0
+       y = 0
+       do k = 1, nz
+          do j = js_cx, je_cx
+             do i = is_cx, ie_cx
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1.0E-6
              enddo
           enddo
+       enddo
+       do k = 1, nz
+          do j = js_cy, je_cy
+             do i = is_cy, ie_cy
+                y(i,j,k) = i*1.e+6 + j*1.e+3 + k + 2.0E-6
+             enddo
+          enddo
+       enddo
+    else
+       allocate(x1(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       allocate(x2(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       allocate(y1(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       allocate(y2(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       x1 = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse
+                x1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.001
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse+shift
+                y1(i,j,k) = i*1.e+6 + j*1.e+3 + k + 0.002
+             enddo
+          enddo
+       enddo
+       x2 = x1
+       y2 = y1
+    endif
+
+
+    if(is_coarse_pe) then
+       do n = 1, nnest
+          is_c = max(is_coarse(n), isc_coarse)
+          ie_c = min(ie_coarse(n),   iec_coarse)
+          js_c = max(js_coarse(n), jsc_coarse)
+          je_c = min(je_coarse(n),   jec_coarse) 
+          if( tile == t_coarse(n) .AND. ie_c .GE. is_c .AND. je_c+shift .GE. js_c ) then
+             call fill_coarse_data(x2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
+                  is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, 0, shift, 1.0E-6, 2.0E-6, 1, -1, &
+                  .false., y_cyclic, iend_coarse(1), jend_coarse(1) )
+          endif
+          if( tile == t_coarse(n) .AND. ie_c+shift .GE. is_c .AND. je_c .GE. js_c ) then
+             call fill_coarse_data(y2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
+                  is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, shift, 0, 2.0E-6, 1.0E-6, -1, 1, &
+                  x_cyclic, .false., iend_coarse(1), jend_coarse(1))
+          endif
+       enddo
+    endif
+
+    call mpp_update_nest_coarse(x, y, nest_domain, x1, y1, gridtype=DGRID_NE)
+
+    !--- compare with assumed value
+    if( is_coarse_pe) then
+       call compare_checksums(x1, x2, trim(type)//' fine to coarse buffer DGRID Vector X')
+       call compare_checksums(x1, x2, trim(type)//' fine to coarse buffer DGRID Vector Y')
+    endif
+    if(allocated(x))       deallocate(x)
+    if(allocated(x1))       deallocate(x1)
+    if(allocated(x2))       deallocate(x2)
+    if(allocated(y))       deallocate(y)
+    if(allocated(y1))       deallocate(y1)
+    if(allocated(y2))       deallocate(y2)
+
+    call mpp_sync()
+    call mpp_error(NOTE, "test_mpp_domains: complete test DGRID vector")
+
+    !---------------------------------------------------------------------------
+    !
+    !                 Coarse to Fine scalar field, position = CENTER
+    !
+    !---------------------------------------------------------------------------
+
+    !--- first check the index is correct or not
+    if(is_fine_pe) then
+       !--- The index from nest domain
+       call mpp_get_compute_domain(domain_fine, isc_fine, iec_fine, jsc_fine, jec_fine)
+       call mpp_get_data_domain(domain_fine, isd_fine, ied_fine, jsd_fine, jed_fine)
+       call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST)
+       call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST)
+       call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH)
+       call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH)
+
+       !-- The assumed index
+       isw_f2 = 0; iew_f2 = -1; jsw_f2 = 0; jew_f2 = -1
+       isw_c2 = 0; iew_c2 = -1; jsw_c2 = 0; jew_c2 = -1
+       ise_f2 = 0; iee_f2 = -1; jse_f2 = 0; jee_f2 = -1
+       ise_c2 = 0; iee_c2 = -1; jse_c2 = 0; jee_c2 = -1
+       iss_f2 = 0; ies_f2 = -1; jss_f2 = 0; jes_f2 = -1
+       iss_c2 = 0; ies_c2 = -1; jss_c2 = 0; jes_c2 = -1
+       isn_f2 = 0; ien_f2 = -1; jsn_f2 = 0; jen_f2 = -1
+       isn_c2 = 0; ien_c2 = -1; jsn_c2 = 0; jen_c2 = -1
+
+       !--- west
+       if( isc_fine == 1 ) then
+          isw_f2 = isd_fine; iew_f2 = isc_fine - 1
+          jsw_f2 = jsd_fine; jew_f2 = jed_fine
+          isw_c2 = istart_coarse(1)-whalo
+          iew_c2 = istart_coarse(1)
+          jsw_c2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jew_c2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo
+       endif
+       !--- east
+       if( iec_fine == nx_fine ) then
+          ise_f2 = iec_fine+1; iee_f2 = ied_fine
+          jse_f2 = jsd_fine;   jee_f2 = jed_fine
+          ise_c2 = iend_coarse(1)
+          iee_c2 = iend_coarse(1)+ehalo
+          jse_c2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jee_c2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo
+       endif
+       !--- south
+       if( jsc_fine == 1 ) then
+          iss_f2 = isd_fine; ies_f2 = ied_fine
+          jss_f2 = jsd_fine; jes_f2 = jsc_fine - 1
+          iss_c2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ies_c2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo
+          jss_c2 = jstart_coarse(1)-shalo
+          jes_c2 = jstart_coarse(1)
+       endif
+       !--- north
+       if( jec_fine == ny_fine ) then
+          isn_f2 = isd_fine;  ien_f2 = ied_fine
+          jsn_f2 = jec_fine+1; jen_f2 = jed_fine
+          isn_c2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ien_c2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo
+          jsn_c2 = jend_coarse(1)
+          jen_c2 = jend_coarse(1)+nhalo
+       endif
+
+       if( isw_f .NE. isw_f2 .OR. iew_f .NE. iew_f2 .OR. jsw_f .NE. jsw_f2 .OR. jew_f .NE. jew_f2 .OR. &
+            isw_c .NE. isw_c2 .OR. iew_c .NE. iew_c2 .OR. jsw_c .NE. jsw_c2 .OR. jew_c .NE. jew_c2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine scalar")
+       endif
+       if( ise_f .NE. ise_f2 .OR. iee_f .NE. iee_f2 .OR. jse_f .NE. jse_f2 .OR. jee_f .NE. jee_f2 .OR. &
+            ise_c .NE. ise_c2 .OR. iee_c .NE. iee_c2 .OR. jse_c .NE. jse_c2 .OR. jee_c .NE. jee_c2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: east buffer index mismatch for coarse to fine scalar")
+       endif
+       if( iss_f .NE. iss_f2 .OR. ies_f .NE. ies_f2 .OR. jss_f .NE. jss_f2 .OR. jes_f .NE. jes_f2 .OR. &
+            iss_c .NE. iss_c2 .OR. ies_c .NE. ies_c2 .OR. jss_c .NE. jss_c2 .OR. jes_c .NE. jes_c2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: south buffer index mismatch for coarse to fine scalar")
+       endif
+       if( isn_f .NE. isn_f2 .OR. ien_f .NE. ien_f2 .OR. jsn_f .NE. jsn_f2 .OR. jen_f .NE. jen_f2 .OR. &
+            isn_c .NE. isn_c2 .OR. ien_c .NE. ien_c2 .OR. jsn_c .NE. jsn_c2 .OR. jen_c .NE. jen_c2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: north buffer index mismatch for coarse to fine scalar")
+       endif
+    endif
+
+    if(is_coarse_pe) then
+       call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
+       call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
+       allocate(x(isd_coarse:ied_coarse, jsd_coarse:jed_coarse, nz))
+       x = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse
+                x(i,j,k) = tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+    else
+       allocate(x(isd_fine:ied_fine, jsd_fine:jed_fine, nz))
+       x = 0
+       do k = 1, nz
+          do j = jsc_fine, jec_fine
+             do i = isc_fine, iec_fine
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k
+             enddo
+          enddo
+       enddo
+    endif
+
+    if(is_fine_pe) then
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))
+          allocate(wbuffer2(isw_c:iew_c, jsw_c:jew_c,nz))
        else
-          allocate(x(isd_fine:ied_fine, jsd_fine:jed_fine, nz))
-          x = 0
-          do k = 1, nz
-             do j = jsc_fine, jec_fine
-                do i = isc_fine, iec_fine
-                   x(i,j,k) = i*1.e+6 + j*1.e+3 + k
-                enddo
+          allocate(wbuffer(1,1,1))
+          allocate(wbuffer2(1,1,1))
+       endif
+       wbuffer = 0; wbuffer2 = 0
+
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))
+          allocate(ebuffer2(ise_c:iee_c, jse_c:jee_c,nz))
+       else
+          allocate(ebuffer(1,1,1))
+          allocate(ebuffer2(1,1,1))
+       endif
+       ebuffer = 0; ebuffer2 = 0
+
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          allocate(sbuffer(iss_c:ies_c, jss_c:jes_c,nz))
+          allocate(sbuffer2(iss_c:ies_c, jss_c:jes_c,nz))
+       else
+          allocate(sbuffer(1,1,1))
+          allocate(sbuffer2(1,1,1))
+       endif
+       sbuffer = 0; sbuffer2 = 0
+
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))
+          allocate(nbuffer2(isn_c:ien_c, jsn_c:jen_c,nz))
+       else
+          allocate(nbuffer(1,1,1))
+          allocate(nbuffer2(1,1,1))
+       endif
+       nbuffer = 0; nbuffer2 = 0
+
+    endif
+
+    call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer)
+
+    !--- compare with the assumed value.
+    if( is_fine_pe ) then
+       call mpp_set_current_pelist(pelist_fine)
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(wbuffer2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(wbuffer, wbuffer2, trim(type)//' west buffer coarse to fine scalar')
+
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(sbuffer2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(sbuffer, sbuffer2, trim(type)//' south buffer coarse to fine scalar')
+
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(ebuffer2, ise_c, iee_c, jse_c, jee_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(ebuffer, ebuffer2, trim(type)//' east buffer coarse to fine scalar')
+
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(nbuffer2, isn_c, ien_c, jsn_c, jen_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(nbuffer, nbuffer2, trim(type)//' north buffer coarse to fine scalar')
+
+    endif
+    if(is_fine_pe) then
+       deallocate(wbuffer, ebuffer, sbuffer, nbuffer)
+       deallocate(wbuffer2, ebuffer2, sbuffer2, nbuffer2)
+    endif
+    deallocate(x)
+
+
+    !---------------------------------------------------------------------------
+    !
+    !                    coarse to fine BGRID scalar pair update
+    !
+    !---------------------------------------------------------------------------
+    shift = 1
+    !--- first check the index is correct or not
+    if(is_fine_pe) then
+       !--- The index from nest domain
+       call mpp_get_compute_domain(domain_fine, isc_fine, iec_fine, jsc_fine, jec_fine)
+       call mpp_get_data_domain(domain_fine, isd_fine, ied_fine, jsd_fine, jed_fine)
+       call mpp_get_C2F_index(nest_domain, isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx, WEST, position=CORNER)
+       call mpp_get_C2F_index(nest_domain, ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx, EAST, position=CORNER)
+       call mpp_get_C2F_index(nest_domain, iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx, SOUTH, position=CORNER)
+       call mpp_get_C2F_index(nest_domain, isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx, NORTH, position=CORNER)
+       call mpp_get_C2F_index(nest_domain, isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy, WEST, position=CORNER)
+       call mpp_get_C2F_index(nest_domain, ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy, EAST, position=CORNER)
+       call mpp_get_C2F_index(nest_domain, iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy, SOUTH, position=CORNER)
+       call mpp_get_C2F_index(nest_domain, isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy, NORTH, position=CORNER)
+
+       !-- The assumed index
+       isw_fx2 = 0; iew_fx2 = -1; jsw_fx2 = 0; jew_fx2 = -1
+       isw_cx2 = 0; iew_cx2 = -1; jsw_cx2 = 0; jew_cx2 = -1
+       ise_fx2 = 0; iee_fx2 = -1; jse_fx2 = 0; jee_fx2 = -1
+       ise_cx2 = 0; iee_cx2 = -1; jse_cx2 = 0; jee_cx2 = -1
+       iss_fx2 = 0; ies_fx2 = -1; jss_fx2 = 0; jes_fx2 = -1
+       iss_cx2 = 0; ies_cx2 = -1; jss_cx2 = 0; jes_cx2 = -1
+       isn_fx2 = 0; ien_fx2 = -1; jsn_fx2 = 0; jen_fx2 = -1
+       isn_cx2 = 0; ien_cx2 = -1; jsn_cx2 = 0; jen_cx2 = -1
+       isw_fy2 = 0; iew_fy2 = -1; jsw_fy2 = 0; jew_fy2 = -1
+       isw_cy2 = 0; iew_cy2 = -1; jsw_cy2 = 0; jew_cy2 = -1
+       ise_fy2 = 0; iee_fy2 = -1; jse_fy2 = 0; jee_fy2 = -1
+       ise_cy2 = 0; iee_cy2 = -1; jse_cy2 = 0; jee_cy2 = -1
+       iss_fy2 = 0; ies_fy2 = -1; jss_fy2 = 0; jes_fy2 = -1
+       iss_cy2 = 0; ies_cy2 = -1; jss_cy2 = 0; jes_cy2 = -1
+       isn_fy2 = 0; ien_fy2 = -1; jsn_fy2 = 0; jen_fy2 = -1
+       isn_cy2 = 0; ien_cy2 = -1; jsn_cy2 = 0; jen_cy2 = -1
+
+       !--- west
+       if( isc_fine == 1 ) then
+          isw_fx2 = isd_fine
+          iew_fx2 = isc_fine - 1
+          jsw_fx2 = jsd_fine 
+          jew_fx2 = jed_fine + shift
+          isw_cx2 = istart_coarse(1)-whalo
+          iew_cx2 = istart_coarse(1)
+          jsw_cx2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jew_cx2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo + shift
+          isw_fy2 = isd_fine
+          iew_fy2 = isc_fine - 1
+          jsw_fy2 = jsd_fine 
+          jew_fy2 = jed_fine + shift
+          isw_cy2 = istart_coarse(1)-whalo
+          iew_cy2 = istart_coarse(1)
+          jsw_cy2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jew_cy2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo + shift
+       endif
+       !--- east
+       if( iec_fine == nx_fine ) then
+          ise_fx2 = iec_fine+1+shift
+          iee_fx2 = ied_fine + shift
+          jse_fx2 = jsd_fine 
+          jee_fx2 = jed_fine + shift
+          ise_cx2 = iend_coarse(1)+shift
+          iee_cx2 = iend_coarse(1)+ehalo+shift
+          jse_cx2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jee_cx2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo + shift
+          ise_fy2 = iec_fine+1 + shift
+          iee_fy2 = ied_fine + shift
+          jse_fy2 = jsd_fine
+          jee_fy2 = jed_fine + shift
+          ise_cy2 = iend_coarse(1) + shift
+          iee_cy2 = iend_coarse(1)+ehalo + shift
+          jse_cy2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jee_cy2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo + shift
+       endif
+       !--- south
+       if( jsc_fine == 1 ) then
+          iss_fx2 = isd_fine
+          ies_fx2 = ied_fine + shift
+          jss_fx2 = jsd_fine
+          jes_fx2 = jsc_fine - 1
+          iss_cx2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ies_cx2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo + shift
+          jss_cx2 = jstart_coarse(1)-shalo
+          jes_cx2 = jstart_coarse(1)
+          iss_fy2 = isd_fine
+          ies_fy2 = ied_fine + shift
+          jss_fy2 = jsd_fine
+          jes_fy2 = jsc_fine - 1
+          iss_cy2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ies_cy2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo + shift
+          jss_cy2 = jstart_coarse(1)-shalo
+          jes_cy2 = jstart_coarse(1)
+       endif
+       !--- north
+       if( jec_fine == ny_fine ) then
+          isn_fx2 = isd_fine  
+          ien_fx2 = ied_fine + shift
+          jsn_fx2 = jec_fine+1 + shift
+          jen_fx2 = jed_fine + shift
+          isn_cx2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ien_cx2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo + shift
+          jsn_cx2 = jend_coarse(1) + shift
+          jen_cx2 = jend_coarse(1)+nhalo + shift
+          isn_fy2 = isd_fine  
+          ien_fy2 = ied_fine + shift
+          jsn_fy2 = jec_fine+1 + shift
+          jen_fy2 = jed_fine + shift
+          isn_cy2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ien_cy2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo + shift
+          jsn_cy2 = jend_coarse(1) + shift
+          jen_cy2 = jend_coarse(1)+nhalo + shift
+       endif
+
+      if( isw_fx .NE. isw_fx2 .OR. iew_fx .NE. iew_fx2 .OR. jsw_fx .NE. jsw_fx2 .OR. jew_fx .NE. jew_fx2 .OR. &
+            isw_cx .NE. isw_cx2 .OR. iew_cx .NE. iew_cx2 .OR. jsw_cx .NE. jsw_cx2 .OR. jew_cx .NE. jew_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine BGRID X")
+       endif
+       if( ise_fx .NE. ise_fx2 .OR. iee_fx .NE. iee_fx2 .OR. jse_fx .NE. jse_fx2 .OR. jee_fx .NE. jee_fx2 .OR. &
+            ise_cx .NE. ise_cx2 .OR. iee_cx .NE. iee_cx2 .OR. jse_cx .NE. jse_cx2 .OR. jee_cx .NE. jee_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: east buffer index mismatch for coarse to fine BGRID X")
+       endif
+       if( iss_fx .NE. iss_fx2 .OR. ies_fx .NE. ies_fx2 .OR. jss_fx .NE. jss_fx2 .OR. jes_fx .NE. jes_fx2 .OR. &
+            iss_cx .NE. iss_cx2 .OR. ies_cx .NE. ies_cx2 .OR. jss_cx .NE. jss_cx2 .OR. jes_cx .NE. jes_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: south buffer index mismatch for coarse to fine BGRID X")
+       endif
+       if( isn_fx .NE. isn_fx2 .OR. ien_fx .NE. ien_fx2 .OR. jsn_fx .NE. jsn_fx2 .OR. jen_fx .NE. jen_fx2 .OR. &
+            isn_cx .NE. isn_cx2 .OR. ien_cx .NE. ien_cx2 .OR. jsn_cx .NE. jsn_cx2 .OR. jen_cx .NE. jen_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: north buffer index mismatch for coarse to fine BGRID X")
+       endif
+
+      if( isw_fy .NE. isw_fy2 .OR. iew_fy .NE. iew_fy2 .OR. jsw_fy .NE. jsw_fy2 .OR. jew_fy .NE. jew_fy2 .OR. &
+            isw_cy .NE. isw_cy2 .OR. iew_cy .NE. iew_cy2 .OR. jsw_cy .NE. jsw_cy2 .OR. jew_cy .NE. jew_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine BGRID Y")
+       endif
+       if( ise_fy .NE. ise_fy2 .OR. iee_fy .NE. iee_fy2 .OR. jse_fy .NE. jse_fy2 .OR. jee_fy .NE. jee_fy2 .OR. &
+            ise_cy .NE. ise_cy2 .OR. iee_cy .NE. iee_cy2 .OR. jse_cy .NE. jse_cy2 .OR. jee_cy .NE. jee_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: east buffer index mismatch for coarse to fine BGRID Y")
+       endif
+       if( iss_fy .NE. iss_fy2 .OR. ies_fy .NE. ies_fy2 .OR. jss_fy .NE. jss_fy2 .OR. jes_fy .NE. jes_fy2 .OR. &
+            iss_cy .NE. iss_cy2 .OR. ies_cy .NE. ies_cy2 .OR. jss_cy .NE. jss_cy2 .OR. jes_cy .NE. jes_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: south buffer index mismatch for coarse to fine BGRID Y")
+       endif
+       if( isn_fy .NE. isn_fy2 .OR. ien_fy .NE. ien_fy2 .OR. jsn_fy .NE. jsn_fy2 .OR. jen_fy .NE. jen_fy2 .OR. &
+            isn_cy .NE. isn_cy2 .OR. ien_cy .NE. ien_cy2 .OR. jsn_cy .NE. jsn_cy2 .OR. jen_cy .NE. jen_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: north buffer index mismatch for coarse to fine BGRID Y")
+       endif
+    endif
+
+    if(is_coarse_pe) then
+       call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
+       call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
+       allocate(x(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse+shift, nz))
+       allocate(y(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse+shift, nz))
+       x = 0
+       y = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse+shift
+                x(i,j,k) = 1e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
              enddo
           enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse+shift
+                y(i,j,k) = 2e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+    else
+       allocate(x(isd_fine:ied_fine+shift, jsd_fine:jed_fine+shift, nz))
+       allocate(y(isd_fine:ied_fine+shift, jsd_fine:jed_fine+shift, nz))  
+       x = 0
+       y = 0
+       do k = 1, nz
+          do j = jsc_fine, jec_fine+shift
+             do i = isc_fine, iec_fine+shift
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1e-3
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_fine, jec_fine+shift
+             do i = isc_fine, iec_fine+shift
+                y(i,j,k) = i*1.e+6 + j*1.e+3 + k + 2e-3
+             enddo
+          enddo
+       enddo
+    endif
+
+    if(is_fine_pe) then
+       if( iew_cx .GE. isw_cx .AND. jew_cx .GE. jsw_cx ) then
+          allocate(wbufferx(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+          allocate(wbuffery(isw_cy:iew_cy, jsw_cy:jew_cy,nz))
+          allocate(wbufferx2(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+          allocate(wbuffery2(isw_cy:iew_cy, jsw_cy:jew_cy,nz))
+       else
+          allocate(wbufferx(1,1,1))
+          allocate(wbuffery(1,1,1))
+          allocate(wbufferx2(1,1,1))
+          allocate(wbuffery2(1,1,1))
+       endif
+       if( iee_cx .GE. ise_cx .AND. jee_cx .GE. jse_cx ) then
+          allocate(ebufferx(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+          allocate(ebuffery(ise_cy:iee_cy, jse_cy:jee_cy,nz))
+          allocate(ebufferx2(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+          allocate(ebuffery2(ise_cy:iee_cy, jse_cy:jee_cy,nz))
+       else
+          allocate(ebufferx(1,1,1))
+          allocate(ebuffery(1,1,1))
+          allocate(ebufferx2(1,1,1))
+          allocate(ebuffery2(1,1,1))
+       endif
+       if( ies_cx .GE. iss_cx .AND. jes_cx .GE. jss_cx ) then
+          allocate(sbufferx(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+          allocate(sbuffery(iss_cy:ies_cy, jss_cy:jes_cy,nz))
+          allocate(sbufferx2(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+          allocate(sbuffery2(iss_cy:ies_cy, jss_cy:jes_cy,nz))
+       else
+          allocate(sbufferx(1,1,1))
+          allocate(sbuffery(1,1,1))
+          allocate(sbufferx2(1,1,1))
+          allocate(sbuffery2(1,1,1))
+       endif
+       if( ien_cx .GE. isn_cx .AND. jen_cx .GE. jsn_cx ) then
+          allocate(nbufferx(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+          allocate(nbuffery(isn_cy:ien_cy, jsn_cy:jen_cy,nz))
+          allocate(nbufferx2(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+          allocate(nbuffery2(isn_cy:ien_cy, jsn_cy:jen_cy,nz))
+       else
+          allocate(nbufferx(1,1,1))
+          allocate(nbuffery(1,1,1))
+          allocate(nbufferx2(1,1,1))
+          allocate(nbuffery2(1,1,1))
+       endif
+       wbufferx = 0; wbufferx2 = 0
+       wbuffery = 0; wbuffery2 = 0
+       sbufferx = 0; sbufferx2 = 0
+       sbuffery = 0; sbuffery2 = 0
+       ebufferx = 0; ebufferx2 = 0
+       ebuffery = 0; ebuffery2 = 0
+       nbufferx = 0; nbufferx2 = 0
+       nbuffery = 0; nbuffery2 = 0
+    endif
+    call mpp_update_nest_fine(x, y, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, ebufferx, ebuffery, &
+                             nbufferx, nbuffery, gridtype=BGRID_NE, flags=SCALAR_PAIR)
+
+    !--- compare with the assumed value.
+    if( is_fine_pe ) then
+       call mpp_set_current_pelist(pelist_fine)
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, 1, 1)
+       endif
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, 1, 1)
+       endif
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(ebufferx2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(ebuffery2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, 1, 1)
+       endif
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2e3, 1e3, 1, 1)
        endif
 
-       if(is_fine_pe) then
-          if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
-             allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))
-             allocate(wbuffer2(isw_c:iew_c, jsw_c:jew_c,nz))
-          else
-             allocate(wbuffer(1,1,1))
-             allocate(wbuffer2(1,1,1))
-          endif
-          wbuffer = 0; wbuffer2 = 0
+       call compare_checksums(wbufferx, wbufferx2, trim(type)//' west buffer coarse to fine BGRID scalar pair X')
+       call compare_checksums(wbuffery, wbuffery2, trim(type)//' west buffer coarse to fine BGRID scalar pair Y')
+       call compare_checksums(sbufferx, sbufferx2, trim(type)//' south buffer coarse to fine BGRID scalar pair X')
+       call compare_checksums(sbuffery, sbuffery2, trim(type)//' south buffer coarse to fine BGRID scalar pair Y')
+       call compare_checksums(ebufferx, ebufferx2, trim(type)//' east buffer coarse to fine BGRID scalar pair X')
+       call compare_checksums(ebuffery, ebuffery2, trim(type)//' east buffer coarse to fine BGRID scalar pair Y')
+       call compare_checksums(nbufferx, nbufferx2, trim(type)//' north buffer coarse to fine BGRID scalar pair X')
+       call compare_checksums(nbuffery, nbuffery2, trim(type)//' north buffer coarse to fine BGRID scalar pair Y')
+    endif
+    if(allocated(x)) deallocate(x)
+    if(allocated(y)) deallocate(y)
+    if(is_fine_pe) then
+       deallocate(wbufferx, ebufferx, sbufferx, nbufferx)
+       deallocate(wbufferx2, ebufferx2, sbufferx2, nbufferx2)
+       deallocate(wbuffery, ebuffery, sbuffery, nbuffery)
+       deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
+    endif
 
-          if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
-             allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))
-             allocate(ebuffer2(ise_c:iee_c, jse_c:jee_c,nz))
-          else
-             allocate(ebuffer(1,1,1))
-             allocate(ebuffer2(1,1,1))
-          endif
-          ebuffer = 0; ebuffer2 = 0
+    !---------------------------------------------------------------------------
+    !
+    !                 Coarse to Fine scalar field, position = CORNER
+    !
+    !---------------------------------------------------------------------------
 
-          if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
-             allocate(sbuffer(iss_c:ies_c, jss_c:jes_c,nz))
-             allocate(sbuffer2(iss_c:ies_c, jss_c:jes_c,nz))
-          else
-             allocate(sbuffer(1,1,1))
-             allocate(sbuffer2(1,1,1))
-          endif
-          sbuffer = 0; sbuffer2 = 0
+    if(is_coarse_pe) then
+       call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
+       call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
+       allocate(x(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse+shift, nz))
+       x = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse+shift
+                x(i,j,k) = tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+    else
+       allocate(x(isd_fine:ied_fine+shift, jsd_fine:jed_fine+shift, nz))
+       x = 0
+       do k = 1, nz
+          do j = jsc_fine, jec_fine+shift
+             do i = isc_fine, iec_fine+shift
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k
+             enddo
+          enddo
+       enddo
+    endif
 
-          if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
-             allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))
-             allocate(nbuffer2(isn_c:ien_c, jsn_c:jen_c,nz))
-          else
-             allocate(nbuffer(1,1,1))
-             allocate(nbuffer2(1,1,1))
-          endif
-          nbuffer = 0; nbuffer2 = 0
+    if(is_fine_pe) then
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          allocate(wbuffer(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+          allocate(wbuffer2(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+       else
+          allocate(wbuffer(1,1,1))
+          allocate(wbuffer2(1,1,1))
+       endif
+       wbuffer = 0; wbuffer2 = 0
 
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          allocate(ebuffer(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+          allocate(ebuffer2(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+       else
+          allocate(ebuffer(1,1,1))
+          allocate(ebuffer2(1,1,1))
+       endif
+       ebuffer = 0; ebuffer2 = 0
+
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          allocate(sbuffer(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+          allocate(sbuffer2(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+       else
+          allocate(sbuffer(1,1,1))
+          allocate(sbuffer2(1,1,1))
+       endif
+       sbuffer = 0; sbuffer2 = 0
+
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          allocate(nbuffer(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+          allocate(nbuffer2(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+       else
+          allocate(nbuffer(1,1,1))
+          allocate(nbuffer2(1,1,1))
+       endif
+       nbuffer = 0; nbuffer2 = 0
+
+    endif
+
+    call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer, position=CORNER)
+
+    !--- compare with the assumed value.
+    if( is_fine_pe ) then
+       call mpp_set_current_pelist(pelist_fine)
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(wbuffer2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(wbuffer, wbuffer2, trim(type)//' west buffer coarse to fine scalar CORNER')
+
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(sbuffer2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(sbuffer, sbuffer2, trim(type)//' south buffer coarse to fine scalar CORNER')
+
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(ebuffer2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(ebuffer, ebuffer2, trim(type)//' east buffer coarse to fine scalar CORNER')
+
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(nbuffer2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 0.0, 0.0, 1, 1)
+       endif
+       call compare_checksums(nbuffer, nbuffer2, trim(type)//' north buffer coarse to fine scalar CORNER')
+
+    endif
+    if(is_fine_pe) then
+       deallocate(wbuffer, ebuffer, sbuffer, nbuffer)
+       deallocate(wbuffer2, ebuffer2, sbuffer2, nbuffer2)
+    endif
+    deallocate(x)
+
+
+    !---------------------------------------------------------------------------
+    !
+    !                    coarse to fine CGRID scalar pair update
+    !
+    !---------------------------------------------------------------------------
+    shift = 1
+    !--- first check the index is correct or not
+    if(is_fine_pe) then
+       !--- The index from nest domain
+       call mpp_get_compute_domain(domain_fine, isc_fine, iec_fine, jsc_fine, jec_fine)
+       call mpp_get_data_domain(domain_fine, isd_fine, ied_fine, jsd_fine, jed_fine)
+       call mpp_get_C2F_index(nest_domain, isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx, WEST, position=EAST)
+       call mpp_get_C2F_index(nest_domain, ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx, EAST, position=EAST)
+       call mpp_get_C2F_index(nest_domain, iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx, SOUTH, position=EAST)
+       call mpp_get_C2F_index(nest_domain, isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx, NORTH, position=EAST)
+       call mpp_get_C2F_index(nest_domain, isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy, WEST, position=NORTH)
+       call mpp_get_C2F_index(nest_domain, ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy, EAST, position=NORTH)
+       call mpp_get_C2F_index(nest_domain, iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy, SOUTH, position=NORTH)
+       call mpp_get_C2F_index(nest_domain, isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy, NORTH, position=NORTH)
+
+       !-- The assumed index
+       isw_fx2 = 0; iew_fx2 = -1; jsw_fx2 = 0; jew_fx2 = -1
+       isw_cx2 = 0; iew_cx2 = -1; jsw_cx2 = 0; jew_cx2 = -1
+       ise_fx2 = 0; iee_fx2 = -1; jse_fx2 = 0; jee_fx2 = -1
+       ise_cx2 = 0; iee_cx2 = -1; jse_cx2 = 0; jee_cx2 = -1
+       iss_fx2 = 0; ies_fx2 = -1; jss_fx2 = 0; jes_fx2 = -1
+       iss_cx2 = 0; ies_cx2 = -1; jss_cx2 = 0; jes_cx2 = -1
+       isn_fx2 = 0; ien_fx2 = -1; jsn_fx2 = 0; jen_fx2 = -1
+       isn_cx2 = 0; ien_cx2 = -1; jsn_cx2 = 0; jen_cx2 = -1
+       isw_fy2 = 0; iew_fy2 = -1; jsw_fy2 = 0; jew_fy2 = -1
+       isw_cy2 = 0; iew_cy2 = -1; jsw_cy2 = 0; jew_cy2 = -1
+       ise_fy2 = 0; iee_fy2 = -1; jse_fy2 = 0; jee_fy2 = -1
+       ise_cy2 = 0; iee_cy2 = -1; jse_cy2 = 0; jee_cy2 = -1
+       iss_fy2 = 0; ies_fy2 = -1; jss_fy2 = 0; jes_fy2 = -1
+       iss_cy2 = 0; ies_cy2 = -1; jss_cy2 = 0; jes_cy2 = -1
+       isn_fy2 = 0; ien_fy2 = -1; jsn_fy2 = 0; jen_fy2 = -1
+       isn_cy2 = 0; ien_cy2 = -1; jsn_cy2 = 0; jen_cy2 = -1
+
+       !--- west
+       if( isc_fine == 1 ) then
+          isw_fx2 = isd_fine
+          iew_fx2 = isc_fine - 1
+          jsw_fx2 = jsd_fine 
+          jew_fx2 = jed_fine
+          isw_cx2 = istart_coarse(1)-whalo
+          iew_cx2 = istart_coarse(1)
+          jsw_cx2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jew_cx2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo
+          isw_fy2 = isd_fine
+          iew_fy2 = isc_fine - 1
+          jsw_fy2 = jsd_fine 
+          jew_fy2 = jed_fine + shift
+          isw_cy2 = istart_coarse(1)-whalo
+          iew_cy2 = istart_coarse(1)
+          jsw_cy2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jew_cy2 = jstart_coarse(1) + (jec_fine + shift - jstart_fine(1))/y_refine + nhalo
+       endif
+       !--- east
+       if( iec_fine == nx_fine ) then
+          ise_fx2 = iec_fine+1+shift
+          iee_fx2 = ied_fine + shift
+          jse_fx2 = jsd_fine
+          jee_fx2 = jed_fine
+          ise_cx2 = iend_coarse(1)+shift
+          iee_cx2 = iend_coarse(1)+ehalo+shift
+          jse_cx2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jee_cx2 = jstart_coarse(1) + (jec_fine - jstart_fine(1))/y_refine + nhalo
+          ise_fy2 = iec_fine+1
+          iee_fy2 = ied_fine
+          jse_fy2 = jsd_fine
+          jee_fy2 = jed_fine + shift
+          ise_cy2 = iend_coarse(1)
+          iee_cy2 = iend_coarse(1)+ehalo
+          jse_cy2 = jstart_coarse(1) + (jsc_fine - jstart_fine(1))/y_refine - shalo
+          jee_cy2 = jstart_coarse(1) + (jec_fine + shift - jstart_fine(1))/y_refine + nhalo
+       endif
+       !--- south
+       if( jsc_fine == 1 ) then
+          iss_fx2 = isd_fine
+          ies_fx2 = ied_fine + shift
+          jss_fx2 = jsd_fine
+          jes_fx2 = jsc_fine - 1
+          iss_cx2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ies_cx2 = istart_coarse(1) + (iec_fine + shift - istart_fine(1))/x_refine + ehalo
+          jss_cx2 = jstart_coarse(1)-shalo
+          jes_cx2 = jstart_coarse(1)
+          iss_fy2 = isd_fine
+          ies_fy2 = ied_fine
+          jss_fy2 = jsd_fine
+          jes_fy2 = jsc_fine - 1
+          iss_cy2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ies_cy2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo
+          jss_cy2 = jstart_coarse(1)-shalo
+          jes_cy2 = jstart_coarse(1)
+       endif
+       !--- north
+       if( jec_fine == ny_fine ) then
+          isn_fx2 = isd_fine  
+          ien_fx2 = ied_fine + shift
+          jsn_fx2 = jec_fine+1
+          jen_fx2 = jed_fine
+          isn_cx2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ien_cx2 = istart_coarse(1) + (iec_fine + shift - istart_fine(1))/x_refine + ehalo
+          jsn_cx2 = jend_coarse(1)
+          jen_cx2 = jend_coarse(1)+nhalo
+          isn_fy2 = isd_fine  
+          ien_fy2 = ied_fine
+          jsn_fy2 = jec_fine+1 + shift
+          jen_fy2 = jed_fine + shift
+          isn_cy2 = istart_coarse(1) + (isc_fine - istart_fine(1))/x_refine - whalo
+          ien_cy2 = istart_coarse(1) + (iec_fine - istart_fine(1))/x_refine + ehalo
+          jsn_cy2 = jend_coarse(1) + shift
+          jen_cy2 = jend_coarse(1)+nhalo + shift
        endif
 
-       call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer, position=position)
-
-       !--- compare with the assumed value.
-       if( is_fine_pe ) then
-          call mpp_set_current_pelist(pelist_fine)
-          if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
-             do k = 1, nz
-                do j = jsw_c, jew_c
-                   do i = isw_c, iew_c
-                      wbuffer2(i,j,k) = tile_coarse(1) + i*1.e-3 + j*1.e-6 + k*1.e-9
-                   enddo
-                enddo
-             enddo
-          endif
-          call compare_checksums(wbuffer, wbuffer2, trim(type)//' west buffer '//trim(position_name))
-
-          if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
-             do k = 1, nz
-                do j = jss_c, jes_c
-                   do i = iss_c, ies_c
-                      sbuffer2(i,j,k) = tile_coarse(1) + i*1.e-3 + j*1.e-6 + k*1.e-9
-                   enddo
-                enddo
-             enddo
-          endif
-          call compare_checksums(sbuffer, sbuffer2, trim(type)//' south buffer '//trim(position_name))
-
-          if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
-             do k = 1, nz
-                do j = jse_c, jee_c
-                   do i = ise_c, iee_c
-                      ebuffer2(i,j,k) = tile_coarse(1) + i*1.e-3 + j*1.e-6 + k*1.e-9
-                   enddo
-                enddo
-             enddo
-          endif
-          call compare_checksums(ebuffer, ebuffer2, trim(type)//' east buffer '//trim(position_name))
-
-          if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
-             do k = 1, nz
-                do j = jsn_c, jen_c
-                   do i = isn_c, ien_c
-                      nbuffer2(i,j,k) = tile_coarse(1) + i*1.e-3 + j*1.e-6 + k*1.e-9
-                   enddo
-                enddo
-             enddo
-          endif
-          call compare_checksums(nbuffer, nbuffer2, trim(type)//' north buffer '//trim(position_name))
-
+      if( isw_fx .NE. isw_fx2 .OR. iew_fx .NE. iew_fx2 .OR. jsw_fx .NE. jsw_fx2 .OR. jew_fx .NE. jew_fx2 .OR. &
+            isw_cx .NE. isw_cx2 .OR. iew_cx .NE. iew_cx2 .OR. jsw_cx .NE. jsw_cx2 .OR. jew_cx .NE. jew_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine CGRID X")
        endif
-       if(is_fine_pe) then
-          deallocate(wbuffer, ebuffer, sbuffer, nbuffer)
-          deallocate(wbuffer2, ebuffer2, sbuffer2, nbuffer2)
+       if( ise_fx .NE. ise_fx2 .OR. iee_fx .NE. iee_fx2 .OR. jse_fx .NE. jse_fx2 .OR. jee_fx .NE. jee_fx2 .OR. &
+            ise_cx .NE. ise_cx2 .OR. iee_cx .NE. iee_cx2 .OR. jse_cx .NE. jse_cx2 .OR. jee_cx .NE. jee_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: east buffer index mismatch for coarse to fine CGRID X")
        endif
-       deallocate(x)
-    enddo
+       if( iss_fx .NE. iss_fx2 .OR. ies_fx .NE. ies_fx2 .OR. jss_fx .NE. jss_fx2 .OR. jes_fx .NE. jes_fx2 .OR. &
+            iss_cx .NE. iss_cx2 .OR. ies_cx .NE. ies_cx2 .OR. jss_cx .NE. jss_cx2 .OR. jes_cx .NE. jes_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: south buffer index mismatch for coarse to fine CGRID X")
+       endif
+       if( isn_fx .NE. isn_fx2 .OR. ien_fx .NE. ien_fx2 .OR. jsn_fx .NE. jsn_fx2 .OR. jen_fx .NE. jen_fx2 .OR. &
+            isn_cx .NE. isn_cx2 .OR. ien_cx .NE. ien_cx2 .OR. jsn_cx .NE. jsn_cx2 .OR. jen_cx .NE. jen_cx2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: north buffer index mismatch for coarse to fine CGRID X")
+       endif
+
+      if( isw_fy .NE. isw_fy2 .OR. iew_fy .NE. iew_fy2 .OR. jsw_fy .NE. jsw_fy2 .OR. jew_fy .NE. jew_fy2 .OR. &
+            isw_cy .NE. isw_cy2 .OR. iew_cy .NE. iew_cy2 .OR. jsw_cy .NE. jsw_cy2 .OR. jew_cy .NE. jew_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine CGRID Y")
+       endif
+       if( ise_fy .NE. ise_fy2 .OR. iee_fy .NE. iee_fy2 .OR. jse_fy .NE. jse_fy2 .OR. jee_fy .NE. jee_fy2 .OR. &
+            ise_cy .NE. ise_cy2 .OR. iee_cy .NE. iee_cy2 .OR. jse_cy .NE. jse_cy2 .OR. jee_cy .NE. jee_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: east buffer index mismatch for coarse to fine CGRID Y")
+       endif
+       if( iss_fy .NE. iss_fy2 .OR. ies_fy .NE. ies_fy2 .OR. jss_fy .NE. jss_fy2 .OR. jes_fy .NE. jes_fy2 .OR. &
+            iss_cy .NE. iss_cy2 .OR. ies_cy .NE. ies_cy2 .OR. jss_cy .NE. jss_cy2 .OR. jes_cy .NE. jes_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: south buffer index mismatch for coarse to fine CGRID Y")
+       endif
+       if( isn_fy .NE. isn_fy2 .OR. ien_fy .NE. ien_fy2 .OR. jsn_fy .NE. jsn_fy2 .OR. jen_fy .NE. jen_fy2 .OR. &
+            isn_cy .NE. isn_cy2 .OR. ien_cy .NE. ien_cy2 .OR. jsn_cy .NE. jsn_cy2 .OR. jen_cy .NE. jen_cy2 ) then
+          call mpp_error(FATAL, "test_mpp_domains: north buffer index mismatch for coarse to fine CGRID Y")
+       endif
+    endif
+
+    if(is_coarse_pe) then
+       call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
+       call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
+       allocate(x(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       allocate(y(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       x = 0
+       y = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse+shift
+                x(i,j,k) = 1e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse
+                y(i,j,k) = 2e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+    else
+       allocate(x(isd_fine:ied_fine+shift, jsd_fine:jed_fine, nz))
+       allocate(y(isd_fine:ied_fine, jsd_fine:jed_fine+shift, nz))  
+       x = 0
+       y = 0
+       do k = 1, nz
+          do j = jsc_fine, jec_fine
+             do i = isc_fine, iec_fine+shift
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1e-3
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_fine, jec_fine+shift
+             do i = isc_fine, iec_fine
+                y(i,j,k) = i*1.e+6 + j*1.e+3 + k + 2e-3
+             enddo
+          enddo
+       enddo
+    endif
+
+    if(is_fine_pe) then
+       if( iew_cx .GE. isw_cx .AND. jew_cx .GE. jsw_cx ) then
+          allocate(wbufferx(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+          allocate(wbuffery(isw_cy:iew_cy, jsw_cy:jew_cy,nz))
+          allocate(wbufferx2(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+          allocate(wbuffery2(isw_cy:iew_cy, jsw_cy:jew_cy,nz))
+       else
+          allocate(wbufferx(1,1,1))
+          allocate(wbuffery(1,1,1))
+          allocate(wbufferx2(1,1,1))
+          allocate(wbuffery2(1,1,1))
+       endif
+       if( iee_cx .GE. ise_cx .AND. jee_cx .GE. jse_cx ) then
+          allocate(ebufferx(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+          allocate(ebuffery(ise_cy:iee_cy, jse_cy:jee_cy,nz))
+          allocate(ebufferx2(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+          allocate(ebuffery2(ise_cy:iee_cy, jse_cy:jee_cy,nz))
+       else
+          allocate(ebufferx(1,1,1))
+          allocate(ebuffery(1,1,1))
+          allocate(ebufferx2(1,1,1))
+          allocate(ebuffery2(1,1,1))
+       endif
+       if( ies_cx .GE. iss_cx .AND. jes_cx .GE. jss_cx ) then
+          allocate(sbufferx(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+          allocate(sbuffery(iss_cy:ies_cy, jss_cy:jes_cy,nz))
+          allocate(sbufferx2(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+          allocate(sbuffery2(iss_cy:ies_cy, jss_cy:jes_cy,nz))
+       else
+          allocate(sbufferx(1,1,1))
+          allocate(sbuffery(1,1,1))
+          allocate(sbufferx2(1,1,1))
+          allocate(sbuffery2(1,1,1))
+       endif
+       if( ien_cx .GE. isn_cx .AND. jen_cx .GE. jsn_cx ) then
+          allocate(nbufferx(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+          allocate(nbuffery(isn_cy:ien_cy, jsn_cy:jen_cy,nz))
+          allocate(nbufferx2(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+          allocate(nbuffery2(isn_cy:ien_cy, jsn_cy:jen_cy,nz))
+       else
+          allocate(nbufferx(1,1,1))
+          allocate(nbuffery(1,1,1))
+          allocate(nbufferx2(1,1,1))
+          allocate(nbuffery2(1,1,1))
+       endif
+       wbufferx = 0; wbufferx2 = 0
+       wbuffery = 0; wbuffery2 = 0
+       sbufferx = 0; sbufferx2 = 0
+       sbuffery = 0; sbuffery2 = 0
+       ebufferx = 0; ebufferx2 = 0
+       ebuffery = 0; ebuffery2 = 0
+       nbufferx = 0; nbufferx2 = 0
+       nbuffery = 0; nbuffery2 = 0
+    endif
+    call mpp_update_nest_fine(x, y, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, ebufferx, ebuffery, &
+                             nbufferx, nbuffery, gridtype=CGRID_NE, flags=SCALAR_PAIR)
+
+    !--- compare with the assumed value.
+    if( is_fine_pe ) then
+       call mpp_set_current_pelist(pelist_fine)
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, 1, 1)
+       endif
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, 1, 1)
+       endif
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(ebufferx2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(ebuffery2, ise_c, iee_c, jse_c, jee_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, 1, 1)
+       endif
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c, jen_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, 1)
+          call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2e3, 1e3, 1, 1)
+       endif
+
+       call compare_checksums(wbufferx, wbufferx2, trim(type)//' west buffer coarse to fine CGRID scalar pair X')
+       call compare_checksums(wbuffery, wbuffery2, trim(type)//' west buffer coarse to fine CGRID scalar pair Y')
+       call compare_checksums(sbufferx, sbufferx2, trim(type)//' south buffer coarse to fine CGRID scalar pair X')
+       call compare_checksums(sbuffery, sbuffery2, trim(type)//' south buffer coarse to fine CGRID scalar pair Y')
+       call compare_checksums(ebufferx, ebufferx2, trim(type)//' east buffer coarse to fine CGRID scalar pair X')
+       call compare_checksums(ebuffery, ebuffery2, trim(type)//' east buffer coarse to fine CGRID scalar pair Y')
+       call compare_checksums(nbufferx, nbufferx2, trim(type)//' north buffer coarse to fine CGRID scalar pair X')
+       call compare_checksums(nbuffery, nbuffery2, trim(type)//' north buffer coarse to fine CGRID scalar pair Y')
+    endif
+
+    !---------------------------------------------------------------------------
+    !
+    !                    coarse to fine CGRID vector update
+    !
+    !---------------------------------------------------------------------------
+
+    if(is_coarse_pe) then
+       call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
+       call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
+       x = 0
+       y = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse+shift
+                x(i,j,k) = 1e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse
+                y(i,j,k) = 2e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+    else
+       x = 0
+       y = 0
+       do k = 1, nz
+          do j = jsc_fine, jec_fine
+             do i = isc_fine, iec_fine+shift
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1e-3
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_fine, jec_fine+shift
+             do i = isc_fine, iec_fine
+                y(i,j,k) = i*1.e+6 + j*1.e+3 + k + 2e-3
+             enddo
+          enddo
+       enddo
+    endif
+
+    if(is_fine_pe) then
+       wbufferx = 0; wbufferx2 = 0
+       wbuffery = 0; wbuffery2 = 0
+       sbufferx = 0; sbufferx2 = 0
+       sbuffery = 0; sbuffery2 = 0
+       ebufferx = 0; ebufferx2 = 0
+       ebuffery = 0; ebuffery2 = 0
+       nbufferx = 0; nbufferx2 = 0
+       nbuffery = 0; nbuffery2 = 0
+    endif
+    call mpp_update_nest_fine(x, y, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, ebufferx, ebuffery, &
+                             nbufferx, nbuffery, gridtype=CGRID_NE)
+
+    !--- compare with the assumed value.
+    if( is_fine_pe ) then
+       call mpp_set_current_pelist(pelist_fine)
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(ebufferx2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(ebuffery2, ise_c, iee_c, jse_c, jee_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c, jen_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+
+       call compare_checksums(wbufferx, wbufferx2, trim(type)//' west buffer coarse to fine CGRID vector X')
+       call compare_checksums(wbuffery, wbuffery2, trim(type)//' west buffer coarse to fine CGRID vector Y')
+       call compare_checksums(sbufferx, sbufferx2, trim(type)//' south buffer coarse to fine CGRID vector X')
+       call compare_checksums(sbuffery, sbuffery2, trim(type)//' south buffer coarse to fine CGRID vector Y')
+       call compare_checksums(ebufferx, ebufferx2, trim(type)//' east buffer coarse to fine CGRID vector X')
+       call compare_checksums(ebuffery, ebuffery2, trim(type)//' east buffer coarse to fine CGRID vector Y')
+       call compare_checksums(nbufferx, nbufferx2, trim(type)//' north buffer coarse to fine CGRID vector X')
+       call compare_checksums(nbuffery, nbuffery2, trim(type)//' north buffer coarse to fine CGRID vector Y')
+    endif
+
+    if(allocated(x)) deallocate(x)
+    if(allocated(y)) deallocate(y)
+    if(is_fine_pe) then
+       deallocate(wbufferx, ebufferx, sbufferx, nbufferx)
+       deallocate(wbufferx2, ebufferx2, sbufferx2, nbufferx2)
+       deallocate(wbuffery, ebuffery, sbuffery, nbuffery)
+       deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
+    endif
+
+
+    !---------------------------------------------------------------------------
+    !
+    !                    coarse to fine DGRID vector update
+    !
+    !---------------------------------------------------------------------------
+    shift = 1
+
+    if(is_coarse_pe) then
+       call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
+       call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
+       allocate(y(isd_coarse:ied_coarse+shift, jsd_coarse:jed_coarse, nz))
+       allocate(x(isd_coarse:ied_coarse, jsd_coarse:jed_coarse+shift, nz))
+       x = 0
+       y = 0
+       npes_per_tile = npes_coarse/ntiles
+       tile = mpp_pe()/npes_per_tile + 1
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse+shift
+             do i = isc_coarse, iec_coarse
+                x(i,j,k) = 1e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_coarse, jec_coarse
+             do i = isc_coarse, iec_coarse+shift
+                y(i,j,k) = 2e3 + tile + i*1.e-3 + j*1.e-6 + k*1.e-9
+             enddo
+          enddo
+       enddo
+    else
+       allocate(y(isd_fine:ied_fine+shift, jsd_fine:jed_fine, nz))
+       allocate(x(isd_fine:ied_fine, jsd_fine:jed_fine+shift, nz))  
+       x = 0
+       y = 0
+       do k = 1, nz
+          do j = jsc_fine, jec_fine+shift
+             do i = isc_fine, iec_fine
+                x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1e-3
+             enddo
+          enddo
+       enddo
+       do k = 1, nz
+          do j = jsc_fine, jec_fine
+             do i = isc_fine, iec_fine+shift
+                y(i,j,k) = i*1.e+6 + j*1.e+3 + k + 2e-3
+             enddo
+          enddo
+       enddo
+    endif
+
+    if(is_fine_pe) then
+       call mpp_get_C2F_index(nest_domain, isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx, WEST, position=NORTH)
+       call mpp_get_C2F_index(nest_domain, ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx, EAST, position=NORTH)
+       call mpp_get_C2F_index(nest_domain, iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx, SOUTH, position=NORTH)
+       call mpp_get_C2F_index(nest_domain, isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx, NORTH, position=NORTH)
+       call mpp_get_C2F_index(nest_domain, isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy, WEST, position=EAST)
+       call mpp_get_C2F_index(nest_domain, ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy, EAST, position=EAST)
+       call mpp_get_C2F_index(nest_domain, iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy, SOUTH, position=EAST)
+       call mpp_get_C2F_index(nest_domain, isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy, NORTH, position=EAST)
+
+       if( iew_cx .GE. isw_cx .AND. jew_cx .GE. jsw_cx ) then
+          allocate(wbufferx(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+          allocate(wbuffery(isw_cy:iew_cy, jsw_cy:jew_cy,nz))
+          allocate(wbufferx2(isw_cx:iew_cx, jsw_cx:jew_cx,nz))
+          allocate(wbuffery2(isw_cy:iew_cy, jsw_cy:jew_cy,nz))
+       else
+          allocate(wbufferx(1,1,1))
+          allocate(wbuffery(1,1,1))
+          allocate(wbufferx2(1,1,1))
+          allocate(wbuffery2(1,1,1))
+       endif
+       if( iee_cx .GE. ise_cx .AND. jee_cx .GE. jse_cx ) then
+          allocate(ebufferx(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+          allocate(ebuffery(ise_cy:iee_cy, jse_cy:jee_cy,nz))
+          allocate(ebufferx2(ise_cx:iee_cx, jse_cx:jee_cx,nz))
+          allocate(ebuffery2(ise_cy:iee_cy, jse_cy:jee_cy,nz))
+       else
+          allocate(ebufferx(1,1,1))
+          allocate(ebuffery(1,1,1))
+          allocate(ebufferx2(1,1,1))
+          allocate(ebuffery2(1,1,1))
+       endif
+       if( ies_cx .GE. iss_cx .AND. jes_cx .GE. jss_cx ) then
+          allocate(sbufferx(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+          allocate(sbuffery(iss_cy:ies_cy, jss_cy:jes_cy,nz))
+          allocate(sbufferx2(iss_cx:ies_cx, jss_cx:jes_cx,nz))
+          allocate(sbuffery2(iss_cy:ies_cy, jss_cy:jes_cy,nz))
+       else
+          allocate(sbufferx(1,1,1))
+          allocate(sbuffery(1,1,1))
+          allocate(sbufferx2(1,1,1))
+          allocate(sbuffery2(1,1,1))
+       endif
+       if( ien_cx .GE. isn_cx .AND. jen_cx .GE. jsn_cx ) then
+          allocate(nbufferx(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+          allocate(nbuffery(isn_cy:ien_cy, jsn_cy:jen_cy,nz))
+          allocate(nbufferx2(isn_cx:ien_cx, jsn_cx:jen_cx,nz))
+          allocate(nbuffery2(isn_cy:ien_cy, jsn_cy:jen_cy,nz))
+       else
+          allocate(nbufferx(1,1,1))
+          allocate(nbuffery(1,1,1))
+          allocate(nbufferx2(1,1,1))
+          allocate(nbuffery2(1,1,1))
+       endif
+
+       wbufferx = 0; wbufferx2 = 0
+       wbuffery = 0; wbuffery2 = 0
+       sbufferx = 0; sbufferx2 = 0
+       sbuffery = 0; sbuffery2 = 0
+       ebufferx = 0; ebufferx2 = 0
+       ebuffery = 0; ebuffery2 = 0
+       nbufferx = 0; nbufferx2 = 0
+       nbuffery = 0; nbuffery2 = 0
+    endif
+    call mpp_update_nest_fine(x, y, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, ebufferx, ebuffery, &
+                             nbufferx, nbuffery, gridtype=DGRID_NE)
+
+    !--- compare with the assumed value.
+    if( is_fine_pe ) then
+       call mpp_set_current_pelist(pelist_fine)
+       if( iew_c .GE. isw_c .AND. jew_c .GE. jsw_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+       if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+       if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(ebufferx2, ise_c, iee_c, jse_c, jee_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(ebuffery2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+       if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
+          call get_nnest2(domain_coarse, 1, tile_coarse, (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
+               nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
+          call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 1e3, 2e3, 1, -1)
+          call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c, jen_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
+               rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3, 1e3, -1, 1)
+       endif
+
+       call compare_checksums(wbufferx, wbufferx2, trim(type)//' west buffer coarse to fine DGRID vector X')
+       call compare_checksums(wbuffery, wbuffery2, trim(type)//' west buffer coarse to fine DGRID vector Y')
+       call compare_checksums(sbufferx, sbufferx2, trim(type)//' south buffer coarse to fine DGRID vector X')
+       call compare_checksums(sbuffery, sbuffery2, trim(type)//' south buffer coarse to fine DGRID vector Y')
+       call compare_checksums(ebufferx, ebufferx2, trim(type)//' east buffer coarse to fine DGRID vector X')
+       call compare_checksums(ebuffery, ebuffery2, trim(type)//' east buffer coarse to fine DGRID vector Y')
+       call compare_checksums(nbufferx, nbufferx2, trim(type)//' north buffer coarse to fine DGRID vector X')
+       call compare_checksums(nbuffery, nbuffery2, trim(type)//' north buffer coarse to fine DGRID vector Y')
+    endif
+
+    if(allocated(x)) deallocate(x)
+    if(allocated(y)) deallocate(y)
+    if(is_fine_pe) then
+       deallocate(wbufferx, ebufferx, sbufferx, nbufferx)
+       deallocate(wbufferx2, ebufferx2, sbufferx2, nbufferx2)
+       deallocate(wbuffery, ebuffery, sbuffery, nbuffery)
+       deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
+    endif
+
     call mpp_set_current_pelist()
     deallocate(pelist, pelist_fine, pelist_coarse)
 
   end subroutine test_update_nest_domain
+
+  !############################################################################
+  !--- this routine will get number of nest.
+  subroutine convert_index_up(domain, rotate, ncross, is_coarse, ie_coarse, js_coarse, je_coarse, &
+                                is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out)
+    type(domain2D), intent(in) :: domain
+    integer, intent(in)  :: is_coarse, ie_coarse, js_coarse, je_coarse
+    integer, intent(in)  :: is_in, ie_in, js_in, je_in, rotate, ncross
+    integer, intent(out) :: is_out, ie_out, js_out, je_out
+    integer :: isg, ieg, jsg, jeg
+
+    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
+
+    if( je_coarse > jeg .and. ie_coarse > ieg ) then
+       call mpp_error(FATAL,"convert_index_up:  je_coarse > jeg .and. ie_convert > ieg")
+    else if (je_coarse > jeg) then
+       select case(rotate)
+       case(0)
+          is_out = is_in
+          ie_out = ie_in
+          js_out = js_in + ncross*jeg
+          je_out = je_in + ncross*jeg
+       case(90)
+          is_out = js_in + ncross*jeg
+          ie_out = je_in + ncross*jeg
+          js_out = jeg - ie_in
+          je_out = jeg - is_in
+       case default
+          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or 90 when je_in>jeg")
+       end select
+    else if (ie_coarse > ieg) then
+       select case(rotate)
+       case(0)
+          is_out = is_in + ncross*ieg
+          ie_out = ie_in + ncross*ieg
+          js_out = js_in
+          je_out = je_in
+       case(-90)
+          js_out = is_in + ncross*ieg
+          je_out = ie_in + ncross*ieg
+          is_out = ieg - je_in
+          ie_out = ieg - js_in
+       case default
+          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or -90 when ie_in>ieg")
+       end select
+    else
+       is_out = is_in
+       ie_out = ie_in
+       js_out = js_in
+       je_out = je_in
+    endif
+
+  end subroutine convert_index_up
+
+  !############################################################################
+  subroutine fill_coarse_data(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c, nz, isd, jsd, nx, ny, &
+                              ishift, jshift, x_add, y_add, sign1, sign2, x_cyclic, y_cyclic, ieg, jeg)
+    integer, intent(in)    :: rotate, is_c, ie_c, js_c, je_c, nz, isd, jsd, iadd, jadd, nx, ny, ishift, jshift
+    integer, intent(in)    :: sign1, sign2
+    real,    intent(inout) :: data(isd:, jsd:, :)
+    real,    intent(in)    :: x_add, y_add
+    logical, intent(in)    :: x_cyclic, y_cyclic
+    integer, intent(in)    :: ieg, jeg
+    integer :: i, j, k
+
+    select case (rotate)
+    case (ZERO)
+       ! convert the index to be consistent with the fine grid.
+       do k = 1, nz
+          do j = js_c, je_c+jshift
+             do i = is_c, ie_c+ishift
+                data(i,j,k) = (i+iadd)*1.e+6 + (j+jadd)*1.e+3 + k + x_add
+             enddo
+          enddo
+       enddo
+    case (NINETY)
+       ! convert the index to be consistent with the fine grid.
+       do k = 1, nz
+          do j = js_c, je_c+jshift
+             do i = is_c, ie_c+ishift
+                data(i,j,k) = sign1*((nx-j+1+iadd+jshift)*1.e+6 + (i+jadd)*1.e+3 + k + y_add)
+             enddo
+          enddo
+       enddo
+    case (MINUS_NINETY)
+       ! convert the index to be consistent with the fine grid.
+       do k = 1, nz
+          do j = js_c, je_c+jshift
+             do i = is_c, ie_c+ishift
+                data(i,j,k) = sign2*((j+iadd)*1.e+6 + (ny-i+1+jadd+ishift)*1.e+3 + k + y_add)
+             enddo
+          enddo
+       enddo
+    case default
+       call mpp_error(FATAL,"fill_coarse_data: rotate_coarse must be ZERO, NINETY, MINUS_NINETY")
+    end select
+
+    !---handle cyclic condition
+    if(x_cyclic) then
+       if(ie_c+ishift+iadd == ieg) then
+          i = ie_c+ishift
+          do k = 1, nz
+             do j = js_c, je_c+jshift
+                data(i,j,k) = i*1.e+6 + (j+jadd)*1.e+3 + k + x_add
+             enddo
+          enddo
+       endif
+    endif
+
+
+    if(y_cyclic) then
+       if(je_c+jshift+jadd == jeg) then
+          j = je_c+jshift
+          do k = 1, nz
+             do j = js_c, je_c+jshift
+                data(i,j,k) = (i+iadd)*1.e+6 + j*1.e+3 + k + x_add
+             enddo
+          enddo
+       endif
+    endif
+
+
+end subroutine fill_coarse_data
+
 
 end program test
 #else
