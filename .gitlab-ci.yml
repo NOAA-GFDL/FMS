@@ -16,7 +16,7 @@ before_script:
     - module load cray-netcdf
     - module load cray-hdf5
     - list_paths -o pathnames_fms .
-    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/${COMP_FAMILY}.mk -c "$CPPFLAGS" -Iinclude -Impp/include pathnames_fms
+    - mkmf -m Makefile -p libfms_${myBuild}.a -t $FRE_COMMANDS_HOME/site/$FRE_SYSTEM_SITE/${COMP_mkTemplate}.mk -c "$CPPFLAGS" -Iinclude -Impp/include pathnames_fms
     - make $TARGET  libfms_${myBuild}.a
 
 # **********************************************************************
@@ -30,6 +30,7 @@ build:ncrc:intel16:debug:
     COMP_FAMILY: intel
     COMP_NAME: intel
     COMP_VERSION: 16.0.3.210
+    COMP_mkTemplate: intel
     TARGET: OPENMP=on DEBUG=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: ncrc_intel16_debug
@@ -47,6 +48,7 @@ build:ncrc:intel16:repro:
     COMP_FAMILY: intel
     COMP_NAME: intel
     COMP_VERSION: 16.0.3.210
+    COMP_mkTemplate: intel
     TARGET: OPENMP=on REPRO=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: ncrc_intel16_repro
@@ -64,6 +66,7 @@ build:ncrc:intel16:prod:
     COMP_FAMILY: intel
     COMP_NAME: intel
     COMP_VERSION: 16.0.3.210
+    COMP_mkTemplate: intel
     TARGET: OPENMP=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: ncrc_intel16_prod
@@ -84,6 +87,7 @@ build:ncrc:gnu:debug:
     COMP_FAMILY: gnu
     COMP_NAME: gcc
     COMP_VERSION: 5.3.0
+    COMP_mkTemplate: gnu
     TARGET: DEBUG=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
     myBuild: ncrc_gnu_debug
@@ -101,6 +105,7 @@ build:ncrc:gnu:repro:
     COMP_FAMILY: gnu
     COMP_NAME: gcc
     COMP_VERSION: 5.3.0
+    COMP_mkTemplate: gnu
     TARGET: OPENMP=on REPRO=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
     myBuild: ncrc_gnu_repro
@@ -118,6 +123,7 @@ build:ncrc:gnu:prod:
     COMP_FAMILY: gnu
     COMP_NAME: gcc
     COMP_VERSION: 5.3.0
+    COMP_mkTemplate: gnu
     TARGET: OPENMP=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
     myBuild: ncrc_gnu_prod
@@ -138,6 +144,7 @@ build:ncrc:pgi:debug:
     COMP_FAMILY: pgi
     COMP_NAME: pgi
     COMP_VERSION: 16.5.0
+    COMP_mkTemplate: pgi
     TARGET: OPENMP=on DEBUG=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: ncrc_pgi_debug
@@ -155,6 +162,7 @@ build:ncrc:pgi:repro:
     COMP_FAMILY: pgi
     COMP_NAME: pgi
     COMP_VERSION: 16.5.0
+    COMP_mkTemplate: pgi
     TARGET: OPENMP=on REPRO=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: ncrc_pgi_repro
@@ -172,6 +180,7 @@ build:ncrc:pgi:prod:
     COMP_FAMILY: pgi
     COMP_NAME: pgi
     COMP_VERSION: 16.5.0
+    COMP_mkTemplate: pgi
     TARGET: OPENMP=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
     myBuild: ncrc_pgi_prod
@@ -192,6 +201,7 @@ build:ncrc:cce:debug:
     COMP_FAMILY: cray
     COMP_NAME: cce
     COMP_VERSION: 8.5.0
+    COMP_mkTemplate: cce
     TARGET: OPENMP=on DEBUG=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
     myBuild: ncrc_cce_debug
@@ -209,6 +219,7 @@ build:ncrc:cce:repro:
     COMP_FAMILY: cray
     COMP_NAME: cce
     COMP_VERSION: 8.5.0
+    COMP_mkTemplate: cce
     TARGET: OPENMP=on REPRO=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
     myBuild: ncrc_cce_repro
@@ -226,6 +237,7 @@ build:ncrc:cce:prod:
     COMP_FAMILY: cray
     COMP_NAME: cce
     COMP_VERSION: 8.5.0
+    COMP_mkTemplate: cce
     TARGET: OPENMP=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
     myBuild: ncrc_cce_prod
