@@ -36,7 +36,7 @@ before_script:
 #
 # Intel 15 Compilers
 # **********************************************************************
-build:gfdl-ws:intel15:debug:
+.build:gfdl-ws:intel15:debug:
   stage: build
   tags:
     - gfdl-ws
@@ -61,7 +61,7 @@ build:gfdl-ws:intel15:debug:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:gfdl-ws:intel15:repro:
+.build:gfdl-ws:intel15:repro:
   stage: build
   tags:
     - gfdl-ws
@@ -86,7 +86,7 @@ build:gfdl-ws:intel15:repro:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:gfdl-ws:intel15:prod:
+.build:gfdl-ws:intel15:prod:
   stage: build
   tags:
     - gfdl-ws
