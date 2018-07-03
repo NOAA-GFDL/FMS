@@ -236,6 +236,7 @@ private
 
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
+  public :: mpp_sum_ad
   public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
   public :: mpp_gather, mpp_scatter, mpp_alltoall
 #ifdef use_MPI_GSM
@@ -675,6 +676,53 @@ private
      module procedure mpp_sum_cmplx4_3d
      module procedure mpp_sum_cmplx4_4d
      module procedure mpp_sum_cmplx4_5d
+#endif
+  end interface
+
+  interface mpp_sum_ad
+#ifndef no_8byte_integers
+     module procedure mpp_sum_int8_ad
+     module procedure mpp_sum_int8_scalar_ad
+     module procedure mpp_sum_int8_2d_ad
+     module procedure mpp_sum_int8_3d_ad
+     module procedure mpp_sum_int8_4d_ad
+     module procedure mpp_sum_int8_5d_ad
+#endif
+     module procedure mpp_sum_real8_ad
+     module procedure mpp_sum_real8_scalar_ad
+     module procedure mpp_sum_real8_2d_ad
+     module procedure mpp_sum_real8_3d_ad
+     module procedure mpp_sum_real8_4d_ad
+     module procedure mpp_sum_real8_5d_ad
+#ifdef OVERLOAD_C8
+     module procedure mpp_sum_cmplx8_ad
+     module procedure mpp_sum_cmplx8_scalar_ad
+     module procedure mpp_sum_cmplx8_2d_ad
+     module procedure mpp_sum_cmplx8_3d_ad
+     module procedure mpp_sum_cmplx8_4d_ad
+     module procedure mpp_sum_cmplx8_5d_ad
+#endif
+     module procedure mpp_sum_int4_ad
+     module procedure mpp_sum_int4_scalar_ad
+     module procedure mpp_sum_int4_2d_ad
+     module procedure mpp_sum_int4_3d_ad
+     module procedure mpp_sum_int4_4d_ad
+     module procedure mpp_sum_int4_5d_ad
+#ifdef OVERLOAD_R4
+     module procedure mpp_sum_real4_ad
+     module procedure mpp_sum_real4_scalar_ad
+     module procedure mpp_sum_real4_2d_ad
+     module procedure mpp_sum_real4_3d_ad
+     module procedure mpp_sum_real4_4d_ad
+     module procedure mpp_sum_real4_5d_ad
+#endif
+#ifdef OVERLOAD_C4
+     module procedure mpp_sum_cmplx4_ad
+     module procedure mpp_sum_cmplx4_scalar_ad
+     module procedure mpp_sum_cmplx4_2d_ad
+     module procedure mpp_sum_cmplx4_3d_ad
+     module procedure mpp_sum_cmplx4_4d_ad
+     module procedure mpp_sum_cmplx4_5d_ad
 #endif
   end interface
 
