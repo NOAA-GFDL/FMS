@@ -430,6 +430,9 @@ module mpp_domains_mod
   type nestSpec
      private
      integer                     :: xbegin, xend, ybegin, yend
+     integer                     :: xbegin_c, xend_c, ybegin_c, yend_c
+     integer                     :: xbegin_f, xend_f, ybegin_f, yend_f
+     integer                     :: xsize_c, ysize_c
      type(index_type)            :: west, east, south, north, center
      integer                     :: nsend, nrecv
      integer                     :: extra_halo
@@ -443,9 +446,12 @@ module mpp_domains_mod
 
   type nest_domain_type
      private
-     integer                    :: tile_fine, tile_coarse
-     integer                    :: istart_fine, iend_fine, jstart_fine, jend_fine
-     integer                    :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
+     integer                    :: num_nest
+     integer                    :: my_num_nest
+     integer,           pointer :: my_nest_id(:)
+     integer,           pointer :: tile_fine(:), tile_coarse(:)
+     integer,           pointer :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
+     integer,           pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
      integer                    :: x_refine, y_refine
      logical                    :: is_fine_pe, is_coarse_pe
      integer,           pointer :: pelist_fine(:) => NULL()
@@ -1676,6 +1682,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_fine_r8_2d
      module procedure mpp_update_nest_fine_r8_3d
      module procedure mpp_update_nest_fine_r8_4d
+     module procedure mpp_update_nest_fine_r8_2dv
+     module procedure mpp_update_nest_fine_r8_3dv
+     module procedure mpp_update_nest_fine_r8_4dv
 #ifdef OVERLOAD_C8
      module procedure mpp_update_nest_fine_c8_2d
      module procedure mpp_update_nest_fine_c8_3d
@@ -1690,6 +1699,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_fine_r4_2d
      module procedure mpp_update_nest_fine_r4_3d
      module procedure mpp_update_nest_fine_r4_4d
+     module procedure mpp_update_nest_fine_r4_2dv
+     module procedure mpp_update_nest_fine_r4_3dv
+     module procedure mpp_update_nest_fine_r4_4dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_update_nest_fine_c4_2d
@@ -1703,6 +1715,7 @@ module mpp_domains_mod
 
   interface mpp_do_update_nest_fine
      module procedure mpp_do_update_nest_fine_r8_3d
+     module procedure mpp_do_update_nest_fine_r8_3dv
 #ifdef OVERLOAD_C8
      module procedure mpp_do_update_nest_fine_c8_3d
 #endif
@@ -1711,6 +1724,7 @@ module mpp_domains_mod
 #endif
 #ifdef OVERLOAD_R4
      module procedure mpp_do_update_nest_fine_r4_3d
+     module procedure mpp_do_update_nest_fine_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_do_update_nest_fine_c4_3d
@@ -1722,6 +1736,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_coarse_r8_2d
      module procedure mpp_update_nest_coarse_r8_3d
      module procedure mpp_update_nest_coarse_r8_4d
+     module procedure mpp_update_nest_coarse_r8_2dv
+     module procedure mpp_update_nest_coarse_r8_3dv
+     module procedure mpp_update_nest_coarse_r8_4dv
 #ifdef OVERLOAD_C8
      module procedure mpp_update_nest_coarse_c8_2d
      module procedure mpp_update_nest_coarse_c8_3d
@@ -1736,6 +1753,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_coarse_r4_2d
      module procedure mpp_update_nest_coarse_r4_3d
      module procedure mpp_update_nest_coarse_r4_4d
+     module procedure mpp_update_nest_coarse_r4_2dv
+     module procedure mpp_update_nest_coarse_r4_3dv
+     module procedure mpp_update_nest_coarse_r4_4dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_update_nest_coarse_c4_2d
@@ -1749,6 +1769,7 @@ module mpp_domains_mod
 
   interface mpp_do_update_nest_coarse
      module procedure mpp_do_update_nest_coarse_r8_3d
+     module procedure mpp_do_update_nest_coarse_r8_3dv
 #ifdef OVERLOAD_C8
      module procedure mpp_do_update_nest_coarse_c8_3d
 #endif
@@ -1757,11 +1778,17 @@ module mpp_domains_mod
 #endif
 #ifdef OVERLOAD_R4
      module procedure mpp_do_update_nest_coarse_r4_3d
+     module procedure mpp_do_update_nest_coarse_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_do_update_nest_coarse_c4_3d
 #endif
      module procedure mpp_do_update_nest_coarse_i4_3d
+  end interface
+
+  interface mpp_get_F2C_index
+    module procedure mpp_get_F2C_index_fine
+    module procedure mpp_get_F2C_index_coarse
   end interface
 
 
@@ -2542,6 +2569,11 @@ end interface
   interface mpp_get_layout
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
+  end interface
+
+  interface check_data_size
+     module procedure check_data_size_1d
+     module procedure check_data_size_2d
   end interface
 
   ! <INTERFACE NAME="mpp_nullify_domain_list">
