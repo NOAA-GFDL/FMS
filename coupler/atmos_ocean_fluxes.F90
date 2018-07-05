@@ -64,10 +64,9 @@ module  atmos_ocean_fluxes_mod
   implicit none
   private
 
-!!$public  :: atmos_ocean_dep_fluxes_calc
-!!$public  :: atmos_ocean_fluxes_calc
-  public  :: atmos_ocean_fluxes_init
-  public  :: aof_set_coupler_flux
+  public :: atmos_ocean_fluxes_init
+  public :: atmos_ocean_type_fluxes_init
+  public :: aof_set_coupler_flux
 
   character(len=*), parameter :: mod_name = 'atmos_ocean_fluxes_mod'
   real, parameter :: epsln=1.0e-30
@@ -897,9 +896,14 @@ contains
         & trim(mod_name) // '(' // trim(sub_name) // ')'
     character(len=*), parameter   :: error_header =&
         & '==>Error from ' // trim(mod_name) // '(' // trim(sub_name) // '):'
+    logical, save                           :: initialized = .false.
+
+    if (initialized) return
 
     verbose = 5 ! Default verbosity level
     if (present(verbosity)) verbose = verbosity
+
+    initialized = .true.
 
     call fm_util_set_no_overwrite(.true.)
     call fm_util_set_caller(caller_str)
