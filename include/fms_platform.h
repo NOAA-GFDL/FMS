@@ -22,17 +22,12 @@
 #define __FMS_PLATFORM_
 
 
-!As of 07/2018, these macros get defined:
-!Platform specific:
-!Gaea - __CRAYXT_COMPUTE_LINUX_TARGET
-!
-!Compiler specific:
-!gfortran - __GFORTRAN__
-
-
 !Set type kinds.
 #ifdef PORTABLE_KINDS
-module use iso_c_binding, only: c_double,c_float,c_int64_t,c_int32_t,c_int16_t
+use,intrinsic :: iso_fortran_env, only: real128
+use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
+                                      c_int32_t,c_int16_t,c_intptr_t
+#define QUAD_KIND real128
 #define DOUBLE_KIND c_double
 #define FLOAT_KIND c_float
 #define LONG_KIND c_int64_t
@@ -41,6 +36,7 @@ module use iso_c_binding, only: c_double,c_float,c_int64_t,c_int32_t,c_int16_t
 #define POINTER_KIND c_intptr_t
 #else
 !These values are not necessarily portable.
+#define QUAD_KIND 16
 #define DOUBLE_KIND 8
 #define FLOAT_KIND 4
 #define LONG_KIND 8
@@ -110,9 +106,12 @@ module use iso_c_binding, only: c_double,c_float,c_int64_t,c_int32_t,c_int16_t
 #endif
 
 
-!Cray XT compilers and gfortran do not support quad precision.
-#if defined __CRAYXT_COMPUTE_LINUX_TARGET || defined __GFORTRAN__
+!If you want to use quad-precision.
 #define NO_QUAD_PRECISION
+#ifdef QUAD_PRECISION
+#undef NO_QUAD_PRECISION
+#else
+#define QUAD_KIND DOUBLE_KIND
 #endif
 
 
