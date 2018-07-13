@@ -21,13 +21,13 @@
 !
 ! AUTHOR: V. Balaji (v.balaji@noaa.gov)
 ! DATE: 2006-01-15
-#include <fms_platform.h>
 #ifdef test_mpp_pset
 !PSET_DEBUG is always turned on in the test program
 #define PSET_DEBUG
 #endif
 
 module mpp_pset_mod
+#include <fms_platform.h>
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &
        mpp_sync, mpp_error, FATAL, WARNING, stdout, stderr, mpp_chksum, &
        mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist, &

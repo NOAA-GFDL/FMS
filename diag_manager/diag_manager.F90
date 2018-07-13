@@ -18,6 +18,7 @@
 !***********************************************************************
 
 MODULE diag_manager_mod
+#include <fms_platform.h>
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
   !   Matt Harrison
   ! </CONTACT>
@@ -264,7 +265,6 @@ MODULE diag_manager_mod
 
   ! version number of this module
   ! Include variable "version" to be written to log file.
-#include <fms_platform.h>
 #include<file_version.h>
 
   type(time_type) :: Time_end

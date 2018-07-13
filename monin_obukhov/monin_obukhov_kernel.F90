@@ -17,8 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#include <fms_platform.h>
-
 ! -*-F90-*-
 ! $Id$
 
@@ -27,6 +25,7 @@
 !==============================================================================
 
 module monin_obukhov_inter
+#include <fms_platform.h>
 
 ! explicit interface to all kernel routines
 #include "monin_obukhov_interfaces.h"
