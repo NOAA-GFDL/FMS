@@ -1556,8 +1556,9 @@ end module data_override_mod
  integer                           :: get_cpu_affinity, base_cpu
  integer                           :: nthreads=1
  integer                           :: nwindows
+ integer                           :: nx_cubic=0, ny_cubic=0, nx_latlon=0, ny_latlon=0
 
- namelist / test_data_override_nml / layout, window, nthreads
+ namelist / test_data_override_nml / layout, window, nthreads, nx_cubic, ny_cubic, nx_latlon, ny_latlon
 
  call fms_init
  call constants_init
@@ -1707,7 +1708,13 @@ enddo
  if(id_sst > 0) used = send_data(id_sst, sst, Time)
  if(id_ice > 0) used = send_data(id_ice, ice, Time)
 
- call test_unstruct_grid( 'Cubic-Grid', Time )
+ if(nx_cubic > 0 .and. ny_cubic > 0) then
+    call test_unstruct_grid( 'Cubic-Grid', Time )
+ endif
+ if(nx_latlon > 0 .and. ny_latlon > 0) then
+    call test_unstruct_grid( 'Latlon-Grid', Time )
+ endif
+
 
 
 
@@ -1820,53 +1827,20 @@ contains
   type(time_type),              intent(in) :: Time !(target) model time
 
   integer :: pe, npes
-  integer :: nx=128, ny=128, nz=40, stackmax=4000000
+  integer :: nx, ny, nz=40, stackmax=4000000
   integer :: unit=7
   integer :: stdunit = 6
   logical :: debug=.FALSE., opened
  
   integer :: mpes = 0
   integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
-  integer :: x_cyclic_offset = 3   ! to be used in test_cyclic_offset
-  integer :: y_cyclic_offset = -4  ! to be used in test_cyclic_offset
   character(len=32) :: warn_level = "fatal"
-  integer :: wide_halo_x = 0, wide_halo_y = 0
-  integer :: nx_cubic = 96, ny_cubic = 96
-  logical :: test_performance = .false.
-  logical :: test_interface = .true.
-  logical :: test_nest_domain = .false.
-  logical :: test_edge_update = .false.
-  logical :: test_group = .false.
-  logical :: test_cubic_grid_redistribute = .false.
-  logical :: check_parallel = .FALSE.  ! when check_parallel set to false,
-  logical :: test_get_nbr = .FALSE.
-  logical :: test_boundary = .false.
-  logical :: test_global_sum = .false.
-  integer :: ensemble_size
   integer :: layout_cubic(2) = (/0,0/)
   integer :: layout_tripolar(2) = (/0,0/)
   integer :: layout_ensemble(2) = (/0,0/)
   logical :: do_sleep = .false.
   integer :: num_iter = 1
   integer :: num_fields = 4
-
-  !--- namelist variable for nest domain
-  integer :: tile_fine   = 1
-  integer :: tile_coarse = 1
-  integer :: istart_fine = 0, iend_fine = -1, jstart_fine = 0, jend_fine = -1
-  integer :: istart_coarse = 0, iend_coarse = -1, jstart_coarse = 0, jend_coarse = -1
-  integer :: npes_coarse = 0
-  integer :: npes_fine   = 0
-  integer :: extra_halo = 0
-  logical :: mix_2D_3D = .false.
-  logical :: test_subset = .false.
-  logical :: test_unstruct = .false.
-  integer :: nthreads = 1
-  integer :: i, j, k, l, shift
-  integer :: layout(2)
-  integer :: id
-  integer :: outunit, errunit, io_status
-  integer :: get_cpu_affinity, base_cpu, omp_get_num_threads, omp_get_thread_num
 
     type(domain2D) :: SG_domain
     type(domainUG) :: UG_domain
@@ -1882,21 +1856,16 @@ contains
     real,    allocatable, dimension(:)       :: frac_crit
     logical, allocatable, dimension(:,:,:)   :: lmask,msk
     integer, allocatable, dimension(:)       :: isl, iel, jsl, jel
-    logical            :: cubic_grid
     character(len=3)   :: text
-    integer            :: nx_save, ny_save, tile
+    integer            :: tile
     integer            :: ntotal_land, istart, iend, pos
-    
+    integer            :: outunit, errunit, k, l
+ 
   call mpp_memuse_begin()
-  call mpp_init()
   npes = mpp_npes()
  
   outunit = stdout()
   errunit = stderr()
-    cubic_grid         = .false.
-
-    nx_save = nx
-    ny_save = ny
     !--- check the type
     select case(type)
     case ( 'Cubic-Grid' )
@@ -1914,7 +1883,6 @@ contains
        ny = ny_cubic
        ntiles = 6
        num_contact = 12
-       cubic_grid = .true.
        if( mod(npes, ntiles) == 0 ) then
           npes_per_tile = npes/ntiles
           write(outunit,*)'NOTE from test_unstruct_update ==> For Mosaic "', trim(type), &
@@ -1931,27 +1899,36 @@ contains
        allocate(frac_crit(ntiles))
        frac_crit(1) = 0.3; frac_crit(2) = 0.1; frac_crit(3) = 0.6
        frac_crit(4) = 0.2; frac_crit(5) = 0.4; frac_crit(6) = 0.5
+       allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+       do n = 1, ntiles
+          pe_start(n) = (n-1)*npes_per_tile
+          pe_end(n)   = n*npes_per_tile-1
+       end do
 
+       do n = 1, ntiles
+          global_indices(:,n) = (/1,nx,1,ny/)
+          layout2D(:,n)         = layout
+       end do
+
+       call define_cubic_mosaic(type, SG_domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+            global_indices, layout2D, pe_start, pe_end )
+    case ( 'Latlon-Grid' )
+       if(nx_latlon == 0 .OR. ny_latlon == 0 ) then
+          call mpp_error(NOTE,'test_unstruct_update: for latlon mosaic, nx_latlon and ny_latlon are zero, '//&
+               'No test is done for Lalton-Grid mosaic. ' )
+          return
+       endif
+       nx = nx_latlon
+       ny = ny_latlon 
+       ntiles = 1
+       npes_per_tile = npes
+       allocate(frac_crit(ntiles))
+       frac_crit(1) = 0.3
+       call mpp_define_layout((/1,nx,1,ny/), npes, layout)
+       call mpp_define_domains((/1,nx,1,ny/), layout, SG_domain, xflags = cyclic_global_domain)
     case default
        call mpp_error(FATAL, 'test_group_update: no such test: '//type)
     end select
-
-    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
-    do n = 1, ntiles
-       pe_start(n) = (n-1)*npes_per_tile
-       pe_end(n)   = n*npes_per_tile-1
-    end do
-
-    do n = 1, ntiles
-       global_indices(:,n) = (/1,nx,1,ny/)
-       layout2D(:,n)         = layout
-    end do
-
-    !--- define domain
-    if( cubic_grid ) then
-       call define_cubic_mosaic(type, SG_domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
-            global_indices, layout2D, pe_start, pe_end )
-    endif
 
     !--- setup data
     call mpp_get_compute_domain( SG_domain, isc, iec, jsc, jec )
@@ -2017,19 +1994,6 @@ contains
        enddo
     enddo
 
-    !--- set up data
-!    allocate(gdata(nx,ny,ntiles))
-!    gdata = -999
-!    do n = 1, ntiles
-!       do j = 1, ny
-!          do i = 1, nx
-!             if(lmask(i,j,n)) then
-!                gdata(i,j,n) = n*1.e+3 + i + j*1.e-3
-!             endif
-!          end do
-!       end do
-!    end do
-
     !--- test the 2-D data is on computing domain
     allocate( a1(isc:iec, jsc:jec,1), a2(isc:iec,jsc:jec,1 ) )
     allocate(msk(isc:iec, jsc:jec,1)); msk = .false.
@@ -2037,7 +2001,6 @@ contains
     tile = mpp_pe()/npes_per_tile + 1
     do j = jsc, jec
        do i = isc, iec
-!          a1(i,j,1) = gdata(i,j,tile)
           msk(i,j,1) = lmask(i,j,tile)
        enddo
     enddo
@@ -2047,7 +2010,6 @@ contains
 
     !Create the test UG data
     a2 = -9999
-    !For this test on non-Land points a2 must match a1
     do j = jsc, jec
        do i = isc, iec
           if(.NOT. msk(i,j,1)) a2(i,j,1)=a1(i,j,1)
