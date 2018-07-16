@@ -330,7 +330,6 @@
          endif
       endif
 
-      ! TODO: Remove the +1/-1 correction
       ! NOTE: Since local is assumed to contiguously match the data domain, this
       !       is not a useful check.  But maybe someday we can support compute
       !       domains.
@@ -376,7 +375,6 @@
 
       ! Generate the pelist
       ! TODO: Add these to the domain API
-      ! TODO: Clean this shit up
       if (xonly) then
           n_ax = size(domain%x(1)%list(:))
           allocate(axis_pelist(n_ax))
