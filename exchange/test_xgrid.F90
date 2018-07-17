@@ -1,31 +1,56 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 #ifdef TEST_XGRID
 ! Now only test some simple test, will test cubic grid mosaic in the future.
 
 program xgrid_test
 
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_error, FATAL, mpp_chksum, mpp_min, mpp_max
-  use mpp_mod,         only : mpp_set_current_pelist, mpp_declare_pelist
+  use mpp_mod,         only : mpp_set_current_pelist, mpp_declare_pelist, mpp_sync
+  use mpp_mod,         only : mpp_root_pe, mpp_broadcast, stdout, NOTE, mpp_sync_self
   use mpp_domains_mod, only : mpp_define_domains, mpp_define_layout, mpp_domains_exit
   use mpp_domains_mod, only : mpp_get_compute_domain, domain2d, mpp_domains_init
   use mpp_domains_mod, only : mpp_define_mosaic_pelist, mpp_define_mosaic, mpp_global_sum
   use mpp_domains_mod, only : mpp_get_data_domain, mpp_get_global_domain, mpp_update_domains
+  use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_ug_compute_domain
+  use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug
   use mpp_io_mod,      only : mpp_open, MPP_RDONLY,MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_close
   use mpp_io_mod,      only : mpp_get_att_value
   use fms_mod,         only : fms_init, file_exist, field_exist, field_size, open_namelist_file
   use fms_mod,         only : check_nml_error, close_file, read_data, stdout, fms_end
   use fms_mod,         only : get_mosaic_tile_grid, write_data, set_domain
-  use fms_io_mod,      only : fms_io_exit
+  use fms_io_mod,      only : fms_io_exit, nullify_domain, set_domain
   use constants_mod,   only : DEG_TO_RAD
   use xgrid_mod,       only : xgrid_init, setup_xmap, put_to_xgrid, get_from_xgrid
   use xgrid_mod,       only : xmap_type, xgrid_count, grid_box_type, SECOND_ORDER
   use xgrid_mod,       only : get_xmap_grid_area, set_frac_area
+  use xgrid_mod,       only : get_from_xgrid_ug, put_to_xgrid_ug
   use mosaic_mod,      only : get_mosaic_ntiles, get_mosaic_grid_sizes
   use mosaic_mod,      only : get_mosaic_ncontacts, get_mosaic_contact
+  use grid_mod,        only : get_grid_comp_area
   use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
   use ensemble_manager_mod, only : get_ensemble_size
 
 implicit none
+#include <fms_platform.h>
 
   real, parameter :: EPSLN = 1.0e-10
   character(len=256) :: atm_input_file  = "INPUT/atmos_input.nc"
@@ -49,10 +74,11 @@ implicit none
   integer            :: ocn_npes = 0
   integer            :: atm_nest_npes = 0
   logical            :: concurrent = .false.
+  logical            :: test_unstruct = .false.
 
   namelist /xgrid_test_nml/ atm_input_file, atm_field_name, runoff_input_file, runoff_field_name, num_iter, &
                             nk_lnd, nk_ice, atm_layout, ice_layout, lnd_layout, atm_nest_layout, &
-                            atm_nest_npes, atm_npes, lnd_npes, ice_npes
+                            atm_nest_npes, atm_npes, lnd_npes, ice_npes, test_unstruct
 
   integer              :: remap_method
   integer              :: pe, npes, ierr, nml_unit, io, n
@@ -377,8 +403,6 @@ implicit none
      call mpp_error(FATAL, 'test_xgrid:both AREA_ATM and atm_mosaic does not exist in '//trim(grid_file))
   end if
 
-  deallocate(atm_nx, atm_ny, lnd_nx, lnd_ny, ice_nx, ice_ny)
-
   if( atm_pe ) then
      call mpp_get_compute_domain(atm_domain, isc_atm, iec_atm, jsc_atm, jec_atm)
      call mpp_get_data_domain(atm_domain, isd_atm, ied_atm, jsd_atm, jed_atm)
@@ -472,6 +496,10 @@ implicit none
     endif
     call set_frac_area(ice_frac, 'OCN', xmap)
   endif
+
+  if(test_unstruct) call test_unstruct_exchange()
+
+  deallocate(atm_nx, atm_ny, lnd_nx, lnd_ny, ice_nx, ice_ny)
 
   !--- remap realistic data and write the output file when atmos_input_file does exist
   atm_input_file_exist = file_exist(atm_input_file, domain=atm_domain)
@@ -689,6 +717,262 @@ implicit none
 
   call fms_io_exit
   call fms_end
+
+contains 
+
+  subroutine test_unstruct_exchange()
+
+    real, allocatable :: atm_data_in(:,:), atm_data_sg(:,:)
+    real, allocatable :: atm_data_sg_1(:,:), atm_data_sg_2(:,:), atm_data_sg_3(:,:)
+    real, allocatable :: lnd_data_sg(:,:,:), ice_data_sg(:,:,:)
+    real, allocatable :: atm_data_ug(:,:), tmp_sg(:,:,:)
+    real, allocatable :: atm_data_ug_1(:,:), atm_data_ug_2(:,:), atm_data_ug_3(:,:)
+    real, allocatable :: lnd_data_ug(:,:), ice_data_ug(:,:,:)
+    real, allocatable :: x_1(:), x_2(:), x_3(:), x_4(:)            
+    real, allocatable :: y_1(:), y_2(:), y_3(:), y_4(:)   
+    real,    allocatable, dimension(:,:)     :: rmask, tmp2d
+    logical, allocatable, dimension(:,:,:)   :: lmask
+    integer, allocatable, dimension(:)       :: npts_tile, grid_index, ntiles_grid
+    integer :: ntiles, nx, ny, ntotal_land, l, is_ug, ie_ug
+    type(domainUG) :: ug_domain
+    type(xmap_type) :: Xmap_ug
+
+    if(ntile_lnd .NE. 6) call mpp_error(FATAL, &
+         "test_xgrid: when test_unstruct is true, ntile_lnd must be 6")
+
+    !--- define unstructured grid domain
+    ntiles = ntile_lnd
+    nx = lnd_nx(1)
+    ny = lnd_ny(1)
+    allocate(lmask(nx,ny,ntiles))
+    allocate(npts_tile(ntiles))
+    lmask = .false.
+    if(mpp_pe() == mpp_root_pe() ) then
+       allocate(rmask(nx,ny))
+       !--- construct gmask.
+       call set_domain(Lnd_domain)
+       do n = 1, ntiles
+          rmask = 0
+          call get_grid_comp_area('LND', n, rmask)
+          do j = 1, ny
+             do i = 1, nx
+                if(rmask(i,j) > 0) then
+                   lmask(i,j,n) = .true.
+                endif
+             enddo
+          enddo
+          npts_tile(n) = count(lmask(:,:,n))
+       enddo
+       call nullify_domain()
+       ntotal_land = sum(npts_tile)
+       allocate(grid_index(ntotal_land))
+       l = 0
+       do n = 1, ntiles
+          do j = 1, ny
+             do i = 1, nx
+                if(lmask(i,j,n)) then
+                   l = l + 1
+                   grid_index(l) = (j-1)*nx+i
+                endif
+             enddo
+          enddo
+       enddo
+       deallocate(rmask)
+    endif
+    call mpp_broadcast(npts_tile, ntiles, mpp_root_pe())
+    if(mpp_pe() .NE. mpp_root_pe()) then
+       ntotal_land = sum(npts_tile)
+       allocate(grid_index(ntotal_land))
+    endif
+    call mpp_broadcast(grid_index, ntotal_land, mpp_root_pe())
+    allocate(ntiles_grid(ntotal_land))
+    ntiles_grid = 1
+    !--- define the unstructured grid domain
+    call mpp_define_unstruct_domain(UG_domain, Lnd_domain, npts_tile, ntiles_grid, mpp_npes(), &
+         1, grid_index, name="LAND unstruct")
+    call mpp_get_UG_compute_domain(UG_domain, is_ug, ie_ug)
+
+    call setup_xmap(Xmap_ug, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ice_domain, Lnd_domain /), &
+         grid_file, atm_grid, lnd_ug_domain=UG_domain)
+    !--- set frac area if nk_lnd or nk_ocn is greater than 1.
+    if(nk_lnd > 0 .AND. lnd_pe) then
+       allocate(tmp2d(is_ug:ie_ug,nk_lnd))
+       call mpp_pass_sg_to_ug(UG_domain, lnd_frac, tmp2d)
+       call set_frac_area(tmp2d, 'LND', xmap_ug)
+       deallocate(tmp2d)
+    endif
+
+    if(nk_ice > 0 ) then
+       call set_frac_area(ice_frac, 'OCN', Xmap_ug)
+    endif
+
+!    call setup_xmap(Xmap_runoff_ug, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file, lnd_ug_domain=UG_domain )
+    allocate(atm_data_ug(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(lnd_data_ug(is_ug:ie_ug, nk_lnd) )
+    allocate(ice_data_ug(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice) )
+    allocate(atm_data_ug_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_ug_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_ug_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+
+    allocate(atm_data_in(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_sg(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(lnd_data_sg(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd) )
+    allocate(ice_data_sg(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice) )
+    allocate(atm_data_sg_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_sg_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_sg_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    nxgrid = max(xgrid_count(Xmap), 1)
+    allocate(x_1(nxgrid), x_2(nxgrid))
+    allocate(x_3(nxgrid), x_4(nxgrid))
+    x_1 = 0
+    x_2 = 0
+    x_3 = 0
+    x_4 = 0
+
+    atm_data_in  = 0
+    atm_data_sg = 0
+    lnd_data_sg = 0
+    ice_data_sg = 0
+    atm_data_sg_1 = 0
+    atm_data_sg_2 = 0
+    atm_data_sg_3 = 0
+    atm_data_ug = 0
+    lnd_data_ug = 0
+    ice_data_ug = 0
+    atm_data_ug_1 = 0
+    atm_data_ug_2 = 0
+    atm_data_ug_3 = 0
+    call random_number(atm_data_in)
+    call put_to_xgrid(atm_data_in, 'ATM', x_1, Xmap, remap_method=remap_method)
+    call put_to_xgrid(atm_data_in+1, 'ATM', x_2, Xmap, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in+2, 'ATM', x_3, Xmap, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in+3, 'ATM', x_4, Xmap, remap_method=remap_method, complete=.true.)
+    call get_from_xgrid(lnd_data_sg, 'LND', x_1, xmap)
+    call get_from_xgrid(ice_data_sg, 'OCN', x_1, xmap)
+    call put_to_xgrid(lnd_data_sg, 'LND', x_2, xmap)
+    call put_to_xgrid(ice_data_sg, 'OCN', x_2, xmap)
+    call get_from_xgrid(atm_data_sg, 'ATM', x_2, xmap)
+    call get_from_xgrid(atm_data_sg_1, 'ATM', x_2, xmap, complete=.false.)
+    call get_from_xgrid(atm_data_sg_2, 'ATM', x_2, xmap, complete=.false.)
+    call get_from_xgrid(atm_data_sg_3, 'ATM', x_2, xmap, complete=.true.)
+
+    nxgrid = max(xgrid_count(Xmap_ug), 1)
+    allocate(y_1(nxgrid), y_2(nxgrid))
+    allocate(y_3(nxgrid), y_4(nxgrid))
+    y_1 = 0
+    y_2 = 0
+    y_3 = 0
+    y_4 = 0
+
+    call put_to_xgrid(atm_data_in, 'ATM', y_1, Xmap_ug, remap_method=remap_method)
+    call put_to_xgrid(atm_data_in+1, 'ATM', y_2, Xmap_ug, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in+2, 'ATM', y_3, Xmap_ug, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in+3, 'ATM', y_4, Xmap_ug, remap_method=remap_method, complete=.true.)
+    call get_from_xgrid_ug(lnd_data_ug, 'LND', y_1, xmap_ug)
+    call get_from_xgrid(ice_data_ug, 'OCN', y_1, xmap_ug)
+    call put_to_xgrid_ug(lnd_data_ug, 'LND', y_2, xmap_ug)
+    call put_to_xgrid(ice_data_ug, 'OCN', y_2, xmap_ug)
+    call get_from_xgrid(atm_data_ug, 'ATM', y_1, xmap_ug)
+    call get_from_xgrid(atm_data_ug_1, 'ATM', y_2, xmap_ug, complete=.false.)
+    call get_from_xgrid(atm_data_ug_2, 'ATM', y_2, xmap_ug, complete=.false.)
+    call get_from_xgrid(atm_data_ug_3, 'ATM', y_2, xmap_ug, complete=.true.)
+
+    !--- comparing data ---------------------
+    call compare_chksum(ice_data_ug, ice_data_sg, "ice_data_out")
+    call compare_chksum_2D(atm_data_ug, atm_data_ug, "atm_data_out")
+    call compare_chksum_2D(atm_data_ug_1, atm_data_ug_1, "atm_data_out_1")
+    call compare_chksum_2D(atm_data_ug_2, atm_data_ug_2, "atm_data_out_2")
+    call compare_chksum_2D(atm_data_ug_3, atm_data_ug_3, "atm_data_out_3")
+    allocate(tmp_sg(isc_lnd:iec_lnd,jsc_lnd:jec_lnd,nk_lnd))
+    tmp_sg = 0
+    call mpp_pass_ug_to_sg(ug_domain, lnd_data_ug, tmp_sg)
+    call compare_chksum(tmp_sg, lnd_data_sg, "lnd_data_out")
+    deallocate(tmp_sg, x_1, x_2, x_3, x_4, y_1, y_2, y_3, y_4)
+    deallocate(atm_data_in, atm_data_sg, lnd_data_sg, ice_data_sg)
+    deallocate(atm_data_sg_1, atm_data_sg_2, atm_data_sg_3)
+    deallocate(atm_data_ug, lnd_data_ug, ice_data_ug)
+    deallocate(atm_data_ug_1, atm_data_ug_2, atm_data_ug_3)
+
+  end subroutine test_unstruct_exchange
+
+ !###########################################################################
+  subroutine compare_chksum_2D( a, b, string )
+    real, intent(in), dimension(:,:) :: a, b
+    character(len=*), intent(in) :: string
+    integer(LONG_KIND) :: sum1, sum2
+    integer :: i, j
+
+    call mpp_sync_self()
+
+    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) ) &
+         call mpp_error(FATAL,'compare_chksum_2D: size of a and b does not match')
+
+    do j = 1, size(a,2)
+       do i = 1, size(a,1)
+          if(a(i,j) .ne. b(i,j)) then
+            write(*,'(a,i3,a,i3,a,i3,a,f20.9,a,f20.9)')"at pe ", mpp_pe(), &
+                  ", at point (",i,", ", j, "),a=", a(i,j), ",b=", b(i,j)
+            call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
+          endif
+       enddo
+    enddo
+
+    sum1 = mpp_chksum( a, (/pe/) )
+    sum2 = mpp_chksum( b, (/pe/) )
+
+    if( sum1.EQ.sum2 )then
+        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
+        !--- in some case, even though checksum agree, the two arrays 
+        !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
+        !--- hence we need to check the value point by point.
+    else
+        call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
+    end if
+  end subroutine compare_chksum_2D
+
+
+  !###########################################################################
+
+
+  subroutine compare_chksum( a, b, string )
+    real, intent(in), dimension(:,:,:) :: a, b
+    character(len=*), intent(in) :: string
+    integer(LONG_KIND) :: sum1, sum2
+    integer :: i, j, k
+
+    ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.
+    ! mpp_sync()
+    call mpp_sync_self()
+
+    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) .or. size(a,3) .ne. size(b,3) ) &
+         call mpp_error(FATAL,'compare_chksum: size of a and b does not match')
+
+    do k = 1, size(a,3)
+       do j = 1, size(a,2)
+          do i = 1, size(a,1)
+             if(a(i,j,k) .ne. b(i,j,k)) then
+                print*, "a,b=", a(i,j,k), b(i,j,k), i,j,k
+                write(*, '(a,i3,a,i3,a,i3,a,i3,a,f20.9,a,f20.9)')" at pe ", mpp_pe(), &
+                     ", at point (",i,", ", j, ", ", k, "), a = ", a(i,j,k), ", b = ", b(i,j,k)
+                call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
+             endif
+          enddo
+       enddo
+    enddo
+
+    call mpp_sync()
+    sum1 = mpp_chksum( a, (/pe/) )
+    sum2 = mpp_chksum( b, (/pe/) )
+
+    if( sum1.EQ.sum2 )then
+        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
+        !--- in some case, even though checksum agree, the two arrays 
+        !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
+        !--- hence we need to check the value point by point.
+    else
+        call mpp_error( FATAL, trim(string)//': chksums are not OK.' )
+    end if
+  end subroutine compare_chksum
 
 end program xgrid_test
 

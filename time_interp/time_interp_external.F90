@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 #include  <fms_platform.h>
 
 module time_interp_external_mod
@@ -18,7 +37,7 @@ module time_interp_external_mod
 !
 ! data are defined over data domain for domain2d data
 ! (halo values are NOT updated by this module)
-! 
+!
 !</DESCRIPTION>
 !
 !<NAMELIST NAME="time_interp_external_nml">
@@ -28,6 +47,7 @@ module time_interp_external_mod
 ! </DATA>
 !</NAMELIST>
 
+  use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file
   use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, MPP_NETCDF, MPP_MULTI, MPP_SINGLE,&
@@ -49,9 +69,8 @@ module time_interp_external_mod
   implicit none
   private
 
-  character(len=128), private :: version= &
-   'CVS $Id$'
-  character(len=128), private :: tagname='Tag $Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: modulo_year= 0001
@@ -60,13 +79,13 @@ module time_interp_external_mod
   integer,            private :: max_fields = 100, max_files= 40
   integer, private :: num_fields = 0, num_files=0
   ! denotes time intervals in file (interpreted from metadata)
-  integer, private :: num_io_buffers = 2 ! set -1 to read all records from disk into memory 
+  integer, private :: num_io_buffers = 2 ! set -1 to read all records from disk into memory
   logical, private :: module_initialized = .false.
   logical, private :: debug_this_module = .false.
 
   public init_external_field, time_interp_external, time_interp_external_init, &
-       time_interp_external_exit, get_external_field_size, get_time_axis
-  public set_override_region, reset_src_data_region
+       time_interp_external_exit, get_external_field_size, get_time_axis, get_external_field_missing
+  public set_override_region, reset_src_data_region, get_external_field_axes
 
   private find_buf_index,&
          set_time_modulo
@@ -80,7 +99,7 @@ module time_interp_external_mod
      type(time_type), dimension(:), pointer :: time =>NULL() ! midpoint of time interval
      type(time_type), dimension(:), pointer :: start_time =>NULL(), end_time =>NULL()
      type(fieldtype) :: field ! mpp_io type
-     type(time_type), dimension(:), pointer :: period =>NULL() 
+     type(time_type), dimension(:), pointer :: period =>NULL()
      logical :: modulo_time ! denote climatological time axis
      real, dimension(:,:,:,:), pointer :: data =>NULL() ! defined over data domain or global domain
      logical, dimension(:,:,:,:), pointer :: mask =>NULL() ! defined over data domain or global domain
@@ -99,6 +118,7 @@ module time_interp_external_mod
      integer :: tdim
      integer :: numwindows
      logical, dimension(:,:), pointer :: need_compute=>NULL()
+     real    :: missing ! missing value
   end type ext_fieldtype
 
   type, private :: filetype
@@ -111,6 +131,8 @@ module time_interp_external_mod
      module procedure time_interp_external_2d
      module procedure time_interp_external_3d
   end interface
+
+  integer :: outunit
 
   type(ext_fieldtype), save, private, pointer :: field(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
@@ -134,10 +156,10 @@ module time_interp_external_mod
       ! open and read namelist
 
       if(module_initialized) return
-      
+
       logunit = stdlog()
-      write(logunit,'(/a/)') version
-      write(logunit,'(/a/)') tagname
+      outunit = stdout()
+      call write_version_number("TIME_INTERP_EXTERNAL_MOD", version)
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, time_interp_external_nml, iostat=io_status)
@@ -160,7 +182,7 @@ module time_interp_external_mod
       call time_interp_init()
 
       return
-      
+
     end  subroutine time_interp_external_init
 ! </SUBROUTINE> NAME="time_interp_external_init"
 
@@ -168,8 +190,8 @@ module time_interp_external_mod
 !<FUNCTION NAME="init_external_field" TYPE="integer">
 !
 !<DESCRIPTION>
-! initialize an external field.  Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations. 
-! distributed reads are supported using the optional "domain" flag.  
+! initialize an external field.  Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations.
+! distributed reads are supported using the optional "domain" flag.
 ! Units conversion via the optional "desired_units" flag using udunits_mod.
 !
 ! Return integer id of field for future calls to time_interp_external.
@@ -193,7 +215,7 @@ module time_interp_external_mod
 ! domain flag (optional)
 !</IN>
 !<IN NAME="desired_units" TYPE="character(len=*)">
-! Target units for data (optional), e.g. convert from deg_K to deg_C.  
+! Target units for data (optional), e.g. convert from deg_K to deg_C.
 ! Failure to convert using udunits will result in failure of this module.
 !</IN>
 !<IN NAME="verbose" TYPE="logical">
@@ -209,11 +231,11 @@ module time_interp_external_mod
 
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
          verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
-         permit_calendar_conversion,use_comp_domain,ierr, nwindows )
-      
+         permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts )
+
       character(len=*), intent(in)            :: file,fieldname
       integer, intent(in), optional           :: format, threading
-      logical, intent(in), optional           :: verbose 
+      logical, intent(in), optional           :: verbose
       character(len=*), intent(in), optional  :: desired_units
       type(domain2d), intent(in), optional    :: domain
       type(axistype), intent(inout), optional :: axis_centers(4)
@@ -222,21 +244,24 @@ module time_interp_external_mod
                                                  permit_calendar_conversion,use_comp_domain
       integer,          intent(out), optional :: ierr
       integer,          intent(in),  optional :: nwindows
+      logical, optional                       :: ignore_axis_atts
+      real                                    :: missing
 
       integer :: init_external_field
-      
+
       type(fieldtype), dimension(:), allocatable :: flds
       type(axistype), dimension(:), allocatable :: axes, fld_axes
       type(axistype) :: time_axis
       type(atttype), allocatable, dimension(:) :: global_atts
 
       real(DOUBLE_KIND) :: slope, intercept
-      integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j, outunit
+      integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
       real, dimension(:), allocatable :: tstamp, tstart, tend, tavg
       character(len=1) :: cart
+      character(len=1), dimension(4) :: cart_dir
       character(len=128) :: units, fld_units
       character(len=128) :: name, msg, calendar_type, timebeg, timeend
       integer :: siz(4), siz_in(4), gxsize, gysize,gxsize_max, gysize_max
@@ -244,9 +269,14 @@ module time_interp_external_mod
       integer :: yr, mon, day, hr, minu, sec
       integer :: len, nfile, nfields_orig, nbuf, nx,ny
       integer :: numwindows
+      logical :: ignore_axatts
+
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
       if(present(ierr)) ierr = SUCCESS
+      ignore_axatts=.false.
+      cart_dir(1)='X';cart_dir(2)='Y';cart_dir(3)='Z';cart_dir(4)='T'
+      if(present(ignore_axis_atts)) ignore_axatts = ignore_axis_atts
       use_comp_domain1 = .false.
       if(PRESENT(use_comp_domain)) use_comp_domain1 = use_comp_domain
       form=MPP_NETCDF
@@ -278,14 +308,14 @@ module time_interp_external_mod
             exit  ! file is already opened
          endif
       enddo
-      if(nfile == 0) then      
+      if(nfile == 0) then
          call mpp_open(unit,trim(file),MPP_RDONLY,form,threading=thread,&
               fileset=fset)
          num_files = num_files + 1
          if(num_files > max_files) then ! not enough space in the file table, reallocate it
-            !--- z1l: For the case of multiple thread, realoc_files will cause memory leak. 
-            !---      If multiple threads are working on file A. One of the thread finished first and 
-            !---      begin to work on file B, the realloc_files will cause problem for 
+            !--- z1l: For the case of multiple thread, realoc_files will cause memory leak.
+            !---      If multiple threads are working on file A. One of the thread finished first and
+            !---      begin to work on file B, the realloc_files will cause problem for
             !---      other threads are working on the file A.
             !  call realloc_files(2*size(opened_files))
             call mpp_error(FATAL, "time_interp_external: num_files is greater than max_files, "// &
@@ -298,12 +328,12 @@ module time_interp_external_mod
       endif
 
       call mpp_get_info(unit,ndim,nvar,natt,ntime)
-      
+
       if (ntime < 1) then
           write(msg,'(a15,a,a58)') 'external field ',trim(fieldname),&
            ' does not have an associated record dimension (REQUIRED) '
           call mpp_error(FATAL,trim(msg))
-      endif       
+      endif
       allocate(global_atts(natt))
       call mpp_get_atts(unit, global_atts)
       allocate(axes(ndim))
@@ -312,7 +342,7 @@ module time_interp_external_mod
       call mpp_get_fields(unit,flds)
       allocate(tstamp(ntime),tstart(ntime),tend(ntime),tavg(ntime))
       call mpp_get_times(unit,tstamp)
-      transpose_xy = .false.     
+      transpose_xy = .false.
       isdata=1; iedata=1; jsdata=1; jedata=1
       gxsize=1; gysize=1
       siz_in = 1
@@ -324,28 +354,27 @@ module time_interp_external_mod
          call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
       elseif(use_comp_domain1) then
          call mpp_error(FATAL,"init_external_field:"//&
-              " use_comp_domain=true but domain is not present") 
+              " use_comp_domain=true but domain is not present")
       endif
-      
+
       init_external_field = -1
       nfields_orig = num_fields
 
-      outunit = stdout()
       do i=1,nvar
          call mpp_get_atts(flds(i),name=name,units=fld_units,ndim=ndim,siz=siz_in)
          call mpp_get_tavg_info(unit,flds(i),flds,tstamp,tstart,tend,tavg)
-
+         call mpp_get_atts(flds(i),missing=missing)
          ! why does it convert case of the field name?
          if (trim(lowercase(name)) /= trim(lowercase(fieldname))) cycle
 
          if (verb) write(outunit,*) 'found field ',trim(fieldname), ' in file !!'
          num_fields = num_fields + 1
          if(num_fields > max_fields) then
-            !--- z1l: For the case of multiple thread, realoc_fields will cause memory leak. 
-            !---      If multiple threads are working on field A. One of the thread finished first and 
-            !---      begin to work on field B, the realloc_files will cause problem for 
+            !--- z1l: For the case of multiple thread, realoc_fields will cause memory leak.
+            !---      If multiple threads are working on field A. One of the thread finished first and
+            !---      begin to work on field B, the realloc_files will cause problem for
             !---      other threads are working on the field A.
-            !call realloc_fields(size(field)*2) 
+            !call realloc_fields(size(field)*2)
             call mpp_error(FATAL, "time_interp_external: num_fields is greater than max_fields, "// &
                                       "increase time_interp_external_nml max_fields")
          endif
@@ -381,14 +410,17 @@ module time_interp_external_mod
          field(num_fields)%siz = 1
          field(num_fields)%ndim = ndim
          field(num_fields)%tdim = 4
+         field(num_fields)%missing = missing
          do j=1,field(num_fields)%ndim
             cart = 'N'
             call get_axis_cart(fld_axes(j), cart)
             call mpp_get_atts(fld_axes(j),len=len)
-            if (cart == 'N') then
+            if (cart == 'N' .and. .not. ignore_axatts) then
                write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
                call mpp_error(FATAL,'file/field '//trim(msg)// &
                     ' couldnt recognize axis atts in time_interp_external')
+            else if (cart == 'N' .and. ignore_axatts) then
+               cart = cart_dir(j)
             endif
             select case (cart)
             case ('X')
@@ -422,7 +454,7 @@ module time_interp_external_mod
                   dysize = len
                   field(num_fields)%jsc=jscomp;field(num_fields)%jec=jecomp
                elseif (PRESENT(override)) then
-                  gysize = len 
+                  gysize = len
                   if (PRESENT(axis_sizes)) axis_sizes(2) = len
                endif
                if(use_comp_domain1) then
@@ -440,19 +472,19 @@ module time_interp_external_mod
             case ('T')
                field(num_fields)%axes(4) = fld_axes(j)
                field(num_fields)%siz(4) = ntime
-               field(num_fields)%tdim   = j 
+               field(num_fields)%tdim   = j
             end select
          enddo
          siz = field(num_fields)%siz
-         
+
          if (PRESENT(axis_centers)) then
             axis_centers = field(num_fields)%axes
          endif
-         
+
          if (PRESENT(axis_sizes) .and. .not.PRESENT(override)) then
             axis_sizes = field(num_fields)%siz
          endif
-         
+
          deallocate(fld_axes)
          if (verb) write(outunit,'(a,4i6)') 'field x,y,z,t local size= ',siz
          if (verb) write(outunit,*) 'field contains data in units = ',trim(field(num_fields)%units)
@@ -492,19 +524,19 @@ module time_interp_external_mod
             field(num_fields)%je_src = jedata
             allocate(field(num_fields)%src_data(isdata:iedata,jsdata:jedata,siz(3),nbuf))
          endif
-         
+
          allocate(field(num_fields)%time(ntime))
          allocate(field(num_fields)%period(ntime))
          allocate(field(num_fields)%start_time(ntime))
          allocate(field(num_fields)%end_time(ntime))
-         
+
          call mpp_get_atts(time_axis,units=units,calendar=calendar_type)
          do j=1,ntime
             field(num_fields)%time(j)       = get_cal_time(tstamp(j),trim(units),trim(calendar_type),permit_calendar_conversion)
             field(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(units),trim(calendar_type),permit_calendar_conversion)
             field(num_fields)%end_time(j)   = get_cal_time(  tend(j),trim(units),trim(calendar_type),permit_calendar_conversion)
          enddo
-             
+
          if (field(num_fields)%modulo_time) then
             call set_time_modulo(field(num_fields)%Time)
             call set_time_modulo(field(num_fields)%start_time)
@@ -516,7 +548,7 @@ module time_interp_external_mod
          else
            field(num_fields)%correct_leap_year_inconsistency = .false.
          endif
-             
+
          if(get_axis_modulo_times(time_axis, timebeg, timeend)) then
            if(get_calendar_type() == NO_CALENDAR) then
              field(num_fields)%modulo_time_beg = set_time(timebeg)
@@ -531,7 +563,7 @@ module time_interp_external_mod
          endif
          if(ntime == 1) then
             call mpp_error(NOTE, 'time_interp_external_mod: file '//trim(file)//'  has only one time level')
-         else                
+         else
             do j= 1, ntime
                field(num_fields)%period(j) = field(num_fields)%end_time(j)-field(num_fields)%start_time(j)
                if (field(num_fields)%period(j) > set_time(0,0)) then
@@ -571,7 +603,7 @@ module time_interp_external_mod
                endif
             enddo
          endif
-             
+
          do j=1,ntime-1
             if (field(num_fields)%time(j) >= field(num_fields)%time(j+1)) then
                write(msg,'(A,i20)') "times not monotonically increasing. Filename: " &
@@ -579,9 +611,9 @@ module time_interp_external_mod
                call mpp_error(FATAL, TRIM(msg))
             endif
          enddo
-             
+
          field(num_fields)%modulo_time = get_axis_modulo(time_axis)
-             
+
          if (verb) then
             if (field(num_fields)%modulo_time) write(outunit,*) 'data are being treated as modulo in time'
             do j= 1, ntime
@@ -594,12 +626,12 @@ module time_interp_external_mod
                     'mid time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec
                call get_date(field(num_fields)%end_time(j),yr,mon,day,hr,minu,sec)
                write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
-                    'end time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec                  
+                    'end time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec
             enddo
          end if
 
       enddo
-    
+
       if (num_fields == nfields_orig) then
         if (present(ierr)) then
            ierr = ERR_FIELD_NOT_FOUND
@@ -614,9 +646,9 @@ module time_interp_external_mod
       deallocate(tstamp, tstart, tend, tavg)
 
       return
-      
+
     end function init_external_field
-    
+
 !</FUNCTION> NAME="init_external_field"
 
 
@@ -629,7 +661,7 @@ module time_interp_external_mod
       integer, intent(in), optional :: interp
       logical, intent(in), optional :: verbose
       type(horiz_interp_type),intent(in), optional :: horz_interp
-      logical, dimension(:,:), intent(out), optional :: mask_out ! set to true where output data is valid 
+      logical, dimension(:,:), intent(out), optional :: mask_out ! set to true where output data is valid
       integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in
       integer,                  intent(in), optional :: window_id
 
@@ -649,7 +681,7 @@ module time_interp_external_mod
 !
 !<DESCRIPTION>
 ! Provide data from external file interpolated to current model time.
-! Data may be local to current processor or global, depending on 
+! Data may be local to current processor or global, depending on
 ! "init_external_field" flags.
 !</DESCRIPTION>
 !
@@ -660,11 +692,11 @@ module time_interp_external_mod
 ! target time for data
 !</IN>
 !<INOUT NAME="data" TYPE="real" DIM="(:,:),(:,:,:)">
-! global or local data array 
+! global or local data array
 !</INOUT>
 !<IN NAME="interp" TYPE="integer">
 ! time_interp_external defined interpolation method (optional).  Currently this module only supports
-! LINEAR_TIME_INTERP. 
+! LINEAR_TIME_INTERP.
 !</IN>
 !<IN NAME="verbose" TYPE="logical">
 ! verbose flag for debugging (optional).
@@ -678,12 +710,12 @@ module time_interp_external_mod
       integer,                    intent(in), optional :: interp
       logical,                    intent(in), optional :: verbose
       type(horiz_interp_type),    intent(in), optional :: horz_interp
-      logical, dimension(:,:,:), intent(out), optional :: mask_out ! set to true where output data is valid 
+      logical, dimension(:,:,:), intent(out), optional :: mask_out ! set to true where output data is valid
       integer,                    intent(in), optional :: is_in, ie_in, js_in, je_in
       integer,                    intent(in), optional :: window_id
 
       integer :: nx, ny, nz, interp_method, t1, t2
-      integer :: i1, i2, isc, iec, jsc, jec, mod_time, outunit
+      integer :: i1, i2, isc, iec, jsc, jec, mod_time
       integer :: yy, mm, dd, hh, min, ss
       character(len=256) :: err_msg, filename
 
@@ -692,7 +724,7 @@ module time_interp_external_mod
           ! they are calculated using sizes of the "data" and isc,iec,jsc,jsc
           ! fileds from respective input field, to center the updated portion
           ! in the output array
- 
+
       real :: w1,w2
       logical :: verb
       character(len=16) :: message1, message2
@@ -700,14 +732,13 @@ module time_interp_external_mod
       nx = size(data,1)
       ny = size(data,2)
       nz = size(data,3)
-      outunit = stdout()
 
       interp_method = LINEAR_TIME_INTERP
       if (PRESENT(interp)) interp_method = interp
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
       if (debug_this_module) verb = .true.
-      
+
       if (index < 1.or.index > num_fields) &
            call mpp_error(FATAL,'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
 
@@ -716,7 +747,7 @@ module time_interp_external_mod
 
       if( field(index)%numwindows == 1 ) then
          nxw = iec-isc+1
-         nyw = jec-jsc+1 
+         nyw = jec-jsc+1
       else
          if( .not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in) ) then
             call mpp_error(FATAL, 'time_interp_external: is_in, ie_in, js_in and je_in must be present ' // &
@@ -729,7 +760,7 @@ module time_interp_external_mod
          jsc = jsc + js_in - 1
          jec = jsc + je_in - js_in
       endif
-      
+
       isw = (nx-nxw)/2+1; iew = isw+nxw-1
       jsw = (ny-nyw)/2+1; jew = jsw+nyw-1
 
@@ -756,7 +787,8 @@ module time_interp_external_mod
             where(field(index)%mask(isc:iec,jsc:jec,:,i1))
                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)
             elsewhere
-               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+!               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+               data(isw:iew,jsw:jew,:) = field(index)%missing
             end where
          else
             where(field(index)%mask(isc:iec,jsc:jec,:,i1))
@@ -773,7 +805,7 @@ module time_interp_external_mod
              filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
-          endif      
+          endif
         else
           if(field(index)%modulo_time) then
             mod_time=1
@@ -785,7 +817,7 @@ module time_interp_external_mod
              filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
-          endif     
+          endif
         endif
          w1 = 1.0-w2
          if (verb) then
@@ -812,7 +844,8 @@ module time_interp_external_mod
                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
                     field(index)%data(isc:iec,jsc:jec,:,i2)*w2
             elsewhere
-               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+!               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+               data(isw:iew,jsw:jew,:) = field(index)%missing
             end where
          else
             where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
@@ -828,15 +861,15 @@ module time_interp_external_mod
 
     end subroutine time_interp_external_3d
 !</SUBROUTINE> NAME="time_interp_external"
-    
+
     subroutine time_interp_external_0d(index, time, data, verbose)
 
       integer, intent(in) :: index
       type(time_type), intent(in) :: time
       real, intent(inout) :: data
       logical, intent(in), optional :: verbose
-      
-      integer :: t1, t2, outunit
+
+      integer :: t1, t2
       integer :: i1, i2, mod_time
       integer :: yy, mm, dd, hh, min, ss
       character(len=256) :: err_msg, filename
@@ -844,14 +877,13 @@ module time_interp_external_mod
       real :: w1,w2
       logical :: verb
 
-      outunit = stdout()
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
       if (debug_this_module) verb = .true.
-      
+
       if (index < 1.or.index > num_fields) &
            call mpp_error(FATAL,'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
-     
+
       if (field(index)%siz(4) == 1) then
          ! only one record in the file => time-independent field
          call load_record_0d(field(index),1)
@@ -865,7 +897,7 @@ module time_interp_external_mod
              filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 3:"//trim(err_msg)//&
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
-          endif    
+          endif
         else
           if(field(index)%modulo_time) then
             mod_time=1
@@ -877,7 +909,7 @@ module time_interp_external_mod
              filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 4:"//trim(err_msg)// &
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
-          endif     
+          endif
         endif
          w1 = 1.0-w2
          if (verb) then
@@ -908,7 +940,7 @@ module time_interp_external_mod
 
       integer :: ntime, n
       integer :: yr, mon, dy, hr, minu, sec
-      
+
       ntime = size(Time(:))
 
       do n = 1, ntime
@@ -921,7 +953,7 @@ module time_interp_external_mod
     end subroutine set_time_modulo
 
 ! ============================================================================
-! load specified record from file  
+! load specified record from file
 subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id_in)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
@@ -929,10 +961,9 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   integer,                 intent(in), optional :: is_in, ie_in, js_in, je_in
   integer,                 intent(in), optional :: window_id_in
 
-  ! ---- local vars 
+  ! ---- local vars
   integer :: ib ! index in the array of input buffers
   integer :: isw,iew,jsw,jew ! boundaries of the domain on each window
-  integer :: outunit
   integer :: is_region, ie_region, js_region, je_region, i, j, n
   integer :: start(4), nread(4)
   logical :: need_compute
@@ -942,15 +973,14 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
   window_id = 1
   if( PRESENT(window_id_in) ) window_id = window_id_in
-  outunit = stdout()
-  need_compute = .true.  
+  need_compute = .true.
 
 !$OMP CRITICAL
   ib = find_buf_index(rec,field%ibuf)
 
   if(ib>0) then
-     !--- do nothing   
-     need_compute = .false.  
+     !--- do nothing
+     need_compute = .false.
   else
      ! calculate current buffer number in round-robin fasion
      field%nbuf = field%nbuf + 1
@@ -958,7 +988,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      ib = field%nbuf
      field%ibuf(ib) = rec
      field%need_compute(ib,:) = .true.
- 
+
      if (field%domain_present .and. .not.PRESENT(interp)) then
         if (debug_this_module) write(outunit,*) 'reading record with domain for field ',trim(field%name)
         call mpp_read(field%unit,field%field,field%domain,field%src_data(:,:,:,ib),rec)
@@ -972,13 +1002,13 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         call mpp_read(field%unit,field%field,field%src_data(:,:,:,ib),start,nread)
      endif
   endif
-!$OMP END CRITICAL  
+!$OMP END CRITICAL
   isw=field%isc;iew=field%iec
   jsw=field%jsc;jew=field%jec
 
   if( field%numwindows > 1) then
      if( .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(ie_in) .OR. .NOT. PRESENT(js_in) .OR. .NOT. PRESENT(je_in) ) then
-        call mpp_error(FATAL, 'time_interp_external(load_record): is_in, ie_in, js_in, je_in must be present when numwindows>1') 
+        call mpp_error(FATAL, 'time_interp_external(load_record): is_in, ie_in, js_in, je_in must be present when numwindows>1')
      endif
      isw = isw + is_in - 1
      iew = isw + ie_in - is_in
@@ -986,7 +1016,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      jew = jsw + je_in - js_in
   endif
 
-  ! interpolate to target grid 
+  ! interpolate to target grid
 
   need_compute = field%need_compute(ib, window_id)
   if(need_compute) then
@@ -1023,7 +1053,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         field%need_compute(ib, window_id) = .false.
      else
         if ( field%region_type .NE. NO_REGION ) then
-           call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present") 
+           call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present")
         endif
         field%data(isw:iew,jsw:jew,:,ib) = field%src_data(isw:iew,jsw:jew,:,ib)
         field%mask(isw:iew,jsw:jew,:,ib) = mpp_is_valid(field%data(isw:iew,jsw:jew,:,ib),field%valid)
@@ -1039,12 +1069,10 @@ end subroutine load_record
 subroutine load_record_0d(field, rec)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
-  ! ---- local vars 
+  ! ---- local vars
   integer :: ib ! index in the array of input buffers
-  integer :: outunit
   integer :: start(4), nread(4)
 
-  outunit = stdout()
   ib = find_buf_index(rec,field%ibuf)
 
   if(ib>0) then
@@ -1055,7 +1083,7 @@ subroutine load_record_0d(field, rec)
      if(field%nbuf > size(field%data,4).or.field%nbuf <= 0) field%nbuf = 1
      ib = field%nbuf
      field%ibuf(ib) = rec
- 
+
      if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
      start = 1; nread = 1
      start(3) = 1;            nread(3) = size(field%src_data,3)
@@ -1069,7 +1097,7 @@ subroutine load_record_0d(field, rec)
      ! convert units
      where(field%mask(1,1,:,ib)) field%data(1,1,:,ib) = &
           field%data(1,1,:,ib)*field%slope + field%intercept
-  endif  
+  endif
 
 end subroutine load_record_0d
 
@@ -1092,7 +1120,7 @@ subroutine reset_src_data_region(index, is, ie, js, je)
    field(index)%ie_src = ie
    field(index)%js_src = js
    field(index)%je_src = je
-   
+
 
 end subroutine reset_src_data_region
 
@@ -1104,7 +1132,7 @@ subroutine set_override_region(index, region_type, is_region, ie_region, js_regi
    field(index)%region_type = region_type
    field(index)%is_region   = is_region
    field(index)%ie_region   = ie_region
-   field(index)%js_region   = js_region   
+   field(index)%js_region   = js_region
    field(index)%je_region   = je_region
 
    return
@@ -1128,7 +1156,7 @@ subroutine realloc_files(n)
      ptr(i)%filename = ''
      ptr(i)%unit = -1
   enddo
-  
+
   if (associated(opened_files))then
      ptr(1:size(opened_files)) = opened_files(:)
      deallocate(opened_files)
@@ -1189,7 +1217,7 @@ end subroutine realloc_fields
       integer :: find_buf_index
 
       integer :: nbuf, i
-      
+
       nbuf = size(buf(:))
 
       find_buf_index = -1
@@ -1219,7 +1247,7 @@ end subroutine realloc_fields
 
       integer :: index
       integer :: get_external_field_size(4)
-      
+
       if (index .lt. 1 .or. index .gt. num_fields) &
            call mpp_error(FATAL,'invalid index in call to get_external_field_size')
 
@@ -1230,7 +1258,63 @@ end subroutine realloc_fields
       get_external_field_size(4) = field(index)%siz(4)
 
     end function get_external_field_size
-!</FUNCTION> NAME="get_external_field"
+!</FUNCTION> NAME="get_external_field_size"
+
+
+!<FUNCTION NAME="get_external_field_missing" TYPE="real">
+!
+!<DESCRIPTION>
+! return missing value
+!</DESCRIPTION>
+!
+!<IN NAME="index" TYPE="integer">
+! returned from previous call to init_external_field.
+!</IN>
+
+    function get_external_field_missing(index)
+
+      integer :: index
+      real :: missing
+      real :: get_external_field_missing
+
+      if (index .lt. 1 .or. index .gt. num_fields) &
+           call mpp_error(FATAL,'invalid index in call to get_external_field_size')
+
+
+!      call mpp_get_atts(field(index)%field,missing=missing)
+      get_external_field_missing = field(index)%missing
+
+    end function get_external_field_missing
+!</FUNCTION> NAME="get_external_field_missing"
+
+!<FUNCTION NAME="get_external_field_axes" TYPE="axistype" DIM="(4)">
+!
+!<DESCRIPTION>
+! return field axes after call to init_external_field.
+! Ordering is X/Y/Z/T.
+!</DESCRIPTION>
+!
+!<IN NAME="index" TYPE="integer">
+! returned from previous call to init_external_field.
+!</IN>
+
+
+    function get_external_field_axes(index)
+
+      integer :: index
+      type(axistype), dimension(4) :: get_external_field_axes
+
+      if (index .lt. 1 .or. index .gt. num_fields) &
+           call mpp_error(FATAL,'invalid index in call to get_external_field_size')
+
+
+      get_external_field_axes(1) = field(index)%axes(1)
+      get_external_field_axes(2) = field(index)%axes(2)
+      get_external_field_axes(3) = field(index)%axes(3)
+      get_external_field_axes(4) = field(index)%axes(4)
+
+    end function get_external_field_axes
+!</FUNCTION> NAME="get_external_field_axes"
 
 ! ===========================================================================
 subroutine get_time_axis(index, time)
@@ -1238,13 +1322,13 @@ subroutine get_time_axis(index, time)
   type(time_type), intent(out) :: time(:) ! array of time values to be filled
 
   integer :: n ! size of the data to be assigned
-    
+
   if (index < 1.or.index > num_fields) &
        call mpp_error(FATAL,'invalid index in call to get_time_axis')
 
   n = min(size(time),size(field(index)%time))
-  
-  time(1:n) = field(index)%time(1:n)  
+
+  time(1:n) = field(index)%time(1:n)
 end subroutine
 
 !<SUBROUTINE NAME="time_interp_external_exit">
@@ -1273,7 +1357,7 @@ end subroutine
          field(i)%slope = 0.
          field(i)%intercept = 0.
       enddo
-      
+
       deallocate(field)
       deallocate(opened_files)
 
@@ -1468,15 +1552,15 @@ do i=1,ntime
    write(outunit,*) 'global sum= ', sm
    write(outunit,*) 'global max= ', mx
    write(outunit,*) 'global min= ', mn
-   
-   where(mask_d) 
+
+   where(mask_d)
       data_d = 1.0
    elsewhere
       data_d = 0.0
    endwhere
    sm = mpp_global_sum(domain_out,data_d,flags=BITWISE_EXACT_SUM)
    write(outunit,*) 'n valid points= ', sm
-   
+
    time = increment_time(time,0,days_inc)
 enddo
 
@@ -1492,14 +1576,3 @@ stop
 
 end program test_time_interp_ext
 #endif
-    
-  
-
-      
-
-
-
-
-
-
-

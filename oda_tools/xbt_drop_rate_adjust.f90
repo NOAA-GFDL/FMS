@@ -1,16 +1,34 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module xbt_adjust
 
   use oda_types_mod, only : ocean_profile_type, missing_value
 
   implicit none
-  
+
   real, parameter :: s1=0.30731408,s2=6.707e-9,s3=-8.1899e-5,sa=3.227,&
                      sb=-2.17e-4
   real, parameter :: t1=0.29585798,t2=1.002e-9,t3=-3.1658e-5,ta=3.426,&
        tb=-4.7e-4
 
 contains
-  
+
 subroutine xbt_drop_rate_adjust(station)
 
 
@@ -20,7 +38,7 @@ subroutine xbt_drop_rate_adjust(station)
   integer :: k
   real :: dpth_orig, dpth_new,tdrop
   integer :: fix_depth
-  
+
   if (.not. station%accepted) return
 
   fix_depth = int(station%fix_depth)
@@ -28,7 +46,7 @@ subroutine xbt_drop_rate_adjust(station)
   case(-1)
       return
   case(0)
-      return      
+      return
   case(1)
 ! use Hanawa et al (1994) drop rate correction
       do k=1,station%levels
@@ -59,30 +77,30 @@ subroutine xbt_drop_rate_adjust(station)
              else
                  dpth_new = dpth_orig*0.9524
              endif
-             station%depth(k)=dpth_new       
+             station%depth(k)=dpth_new
          endif
       enddo
-      station%fix_depth=-1.0      
+      station%fix_depth=-1.0
   case(103)
-      do k=1,station%levels      
+      do k=1,station%levels
          dpth_orig = station%depth(k)
          if (dpth_orig .ne. missing_value) then
              tdrop=(s1*dpth_orig + s2) - s3
              dpth_new = sa*tdrop + sb*tdrop*tdrop
-             station%depth(k)=dpth_new             
+             station%depth(k)=dpth_new
          endif
       enddo
-      station%fix_depth=-1.0      
+      station%fix_depth=-1.0
   case(104)
       do k=1,station%levels
          dpth_orig = station%depth(k)
          if (dpth_orig .ne. missing_value) then
              tdrop=(t1*dpth_orig + t2) - t3
              dpth_new = ta*tdrop + tb*tdrop*tdrop
-             station%depth(k)=dpth_new             
+             station%depth(k)=dpth_new
          endif
       enddo
-      station%fix_depth=-1.0      
+      station%fix_depth=-1.0
   end select
 
   return

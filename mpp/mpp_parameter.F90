@@ -1,13 +1,30 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module mpp_parameter_mod
 #include <fms_platform.h>
 
   implicit none
   private
 
-  character(len=128), public :: version= &
-       '$Id mpp_parameter.F90 $'
-  character(len=128), public :: tagname= &
-       '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
+  public version
 
   !--- public paramters which is used by mpp_mod and its components. 
   !--- All othere modules should import these parameters from mpp_mod. 
@@ -23,7 +40,7 @@ module mpp_parameter_mod
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
+  public :: MPP_FILL_INT, MPP_FILL_FLOAT, MPP_FILL_DOUBLE
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_domains_mod. 
@@ -35,7 +52,7 @@ module mpp_parameter_mod
   public :: AGRID, GLOBAL, CYCLIC, DOMAIN_ID_BASE, CENTER, CORNER
   public :: MAX_DOMAIN_FIELDS, MAX_TILES
   public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY
-  public :: NONBLOCK_UPDATE_TAG, EDGEUPDATE, EDGEONLY
+  public :: NONBLOCK_UPDATE_TAG, EDGEUPDATE, EDGEONLY, NONSYMEDGEUPDATE, NONSYMEDGE
 
   !--- public paramters which is used by mpp_domains_mod and its components. 
   !--- All othere modules should import these parameters from mpp_io_mod. 
@@ -56,8 +73,9 @@ module mpp_parameter_mod
   integer            :: DEFAULT_TAG = 1
   !--- implimented to centralize _FILL_ values for land_model.F90 into mpp_mod
   !------- instead of multiple includes of netcdf.inc and manual assignments
-  integer, parameter :: MPP_FILL_INT =-2147483647               !NF_FILL_INT
-  real,    parameter :: MPP_FILL_DOUBLE= 9.9692099683868690e+36 !NF_FILL_DOUBLE
+  integer(INT_KIND) , parameter :: MPP_FILL_INT    = -2147483647            !NF_FILL_INT
+  real(DOUBLE_KIND) , parameter :: MPP_FILL_DOUBLE = 9.9692099683868690e+36 !NF_FILL_DOUBLE
+  real(FLOAT_KIND)  , parameter :: MPP_FILL_FLOAT  = 9.9692099683868690e+36 !NF_FILL_DOUBLE
   !--- predefined clock granularities, but you can use any integer
   !--- using CLOCK_LOOP and above may distort coarser-grain measurements
   integer, parameter :: CLOCK_COMPONENT=1      !component level, e.g model, exchange
@@ -76,6 +94,7 @@ module mpp_parameter_mod
   integer, parameter :: WEST=2, EAST=3, SOUTH=4, NORTH=5, SCALAR_BIT=6, CENTER=7, CORNER=8
   integer, parameter :: SOUTH_WEST=7, SOUTH_EAST=8, NORTH_WEST=9, NORTH_EAST=10
   integer, parameter :: EDGEONLY = 11
+  integer, parameter :: NONSYMEDGE = 12
   integer, parameter :: SEND=1, RECV=2
   integer, parameter :: GLOBAL_DATA_DOMAIN=2**GLOBAL, CYCLIC_GLOBAL_DOMAIN=2**CYCLIC
   integer, parameter :: AGRID=0, BGRID=1, CGRID=2, DGRID=3
@@ -89,7 +108,7 @@ module mpp_parameter_mod
   integer, parameter :: FOLD_SOUTH_EDGE=2**SOUTH, FOLD_NORTH_EDGE=2**NORTH
   integer, parameter :: WUPDATE=2**WEST, EUPDATE=2**EAST, SUPDATE=2**SOUTH, NUPDATE=2**NORTH
   integer, parameter :: XUPDATE=WUPDATE+EUPDATE, YUPDATE=SUPDATE+NUPDATE, SCALAR_PAIR=2**SCALAR_BIT
-  integer, parameter :: EDGEUPDATE=2**EDGEONLY
+  integer, parameter :: EDGEUPDATE=2**EDGEONLY, NONSYMEDGEUPDATE=2**NONSYMEDGE
   integer, parameter :: ZERO=0, NINETY=90, MINUS_NINETY=-90, ONE_HUNDRED_EIGHTY=180
   integer, parameter :: NONBLOCK_UPDATE_TAG = 2
 
@@ -103,7 +122,7 @@ module mpp_parameter_mod
   integer, parameter :: BITWISE_EFP_SUM=2
   integer, parameter :: MPP_DOMAIN_TIME=MPP_DEBUG+1
   integer, parameter :: MAX_DOMAIN_FIELDS=100
-  integer, parameter :: MAX_TILES=100
+  integer, parameter :: MAX_TILES=10
 
   !--- The following paramters are used by mpp_io_mod and its components.
   integer, parameter :: MPP_WRONLY=100, MPP_RDONLY=101, MPP_APPEND=102, MPP_OVERWR=103 !action on open

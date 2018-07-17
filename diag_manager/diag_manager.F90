@@ -1,4 +1,21 @@
-#include <fms_platform.h>
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 MODULE diag_manager_mod
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
@@ -162,7 +179,7 @@ MODULE diag_manager_mod
   !     If <TT>.TRUE.</TT> then <TT>diag_manager_mod</TT> will issue a <TT>FATAL</TT> error if any values for the output field are
   !     outside the given range.
   !   </DATA>
-  !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="2">
+  !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">
   !     Maximum number of user definable attributes per field.
   !   </DATA>
   !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
@@ -180,8 +197,9 @@ MODULE diag_manager_mod
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
-       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date
-  USE mpp_io_mod, ONLY: mpp_open, mpp_close
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
+       & get_ticks_per_second
+  USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
 #ifdef INTERNAL_FILE_NML
@@ -191,13 +209,15 @@ MODULE diag_manager_mod
 #endif
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & file_exist, fms_error_handler, check_nml_error
-  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num
+       & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
+  USE fms_io_mod, ONLY: get_instance_filename
+  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
+       & diag_axis_add_attribute, axis_compatible_check
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
        & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init
+       & prepend_attribute, attribute_init, diag_util_init
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -207,36 +227,45 @@ MODULE diag_manager_mod
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
-       & max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time
+       & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
+       & write_manifest_file
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
+  USE diag_manifest_mod, ONLY: write_diag_manifest
+  USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
+
+!----------
+!ug support
+  use diag_axis_mod, only: DIAG_AXIS_2DDOMAIN
+  use diag_axis_mod, only: DIAG_AXIS_UGDOMAIN
+!----------
+
   IMPLICIT NONE
 
   PRIVATE
   PUBLIC :: diag_manager_init, send_data, send_tile_averaged_data, diag_manager_end,&
        & register_diag_field, register_static_field, diag_axis_init, get_base_time, get_base_date,&
-       & need_data, average_tiles, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
+       & need_data, DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
        & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures,&
-       & get_diag_field_id
+       & get_diag_field_id, diag_axis_add_attribute
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
+  PUBLIC :: diag_send_complete_instant
   ! Public interfaces from diag_data_mod
   PUBLIC :: DIAG_FIELD_NOT_FOUND
 
   ! version number of this module
-  CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id$'
-  CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'
+  ! Include variable "version" to be written to log file.
+#include <fms_platform.h>
+#include<file_version.h>
 
   type(time_type) :: Time_end
 
@@ -330,6 +359,10 @@ MODULE diag_manager_mod
      MODULE PROCEDURE send_data_1d
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
+#ifdef OVERLOAD_R8
+     MODULE PROCEDURE send_data_2d_r8
+     MODULE PROCEDURE send_data_3d_r8
+#endif
   END INTERFACE
   ! </INTERFACE>
 
@@ -340,7 +373,7 @@ MODULE diag_manager_mod
   !   <TEMPLATE>
   !     INTEGER FUNCTION register_diag_field (module_name, field_name, axes, init_time,
   !           long_name, units, missing_value, range, mask_variant, standard_name,
-  !           verbose, area, volume)
+  !           verbose, area, volume, realm)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !      Return field index for subsequent calls to
@@ -371,6 +404,7 @@ MODULE diag_manager_mod
   !    <IN NAME="standard_name" TYPE="CHARACTER(len=*)" />
   !    <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
   !    <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
+  !    <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
@@ -398,6 +432,7 @@ MODULE diag_manager_mod
   !    <IN NAME="time" TYPE="TYPE(time_type)" DIM="(:,:,:)" />
   !    <IN NAME="mask" TYPE="LOGICAL" DIM="(:,:,:)" />
   INTERFACE send_tile_averaged_data
+     MODULE PROCEDURE send_tile_averaged_data1d
      MODULE PROCEDURE send_tile_averaged_data2d
      MODULE PROCEDURE send_tile_averaged_data3d
   END INTERFACE
@@ -447,10 +482,11 @@ CONTAINS
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
+  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
-       & area, volume)
+       & area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
@@ -459,17 +495,19 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
+    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
 
     IF ( PRESENT(init_time) ) THEN
        register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
             & (/null_axis_id/), init_time,long_name, units, missing_value, range, &
             & standard_name=standard_name, do_not_log=do_not_log, err_msg=err_msg,&
-            & area=area, volume=volume)
+            & area=area, volume=volume, realm=realm)
     ELSE
-       IF ( PRESENT(err_msg) ) err_msg = ''
        register_diag_field_scalar = register_static_field(module_name, field_name,&
             & (/null_axis_id/),long_name, units, missing_value, range,&
-            & standard_name=standard_name, do_not_log=do_not_log)
+            & standard_name=standard_name, do_not_log=do_not_log, realm=realm)
     END IF
   END FUNCTION register_diag_field_scalar
   ! </FUNCTION>
@@ -486,14 +524,18 @@ CONTAINS
   !   <IN NAME="mask_variant" TYPE="LOGICAL, OPTIONAL" />
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL">
+  !     The interp method to be used when regridding the field in post-processing.
+  !     Valid options are "conserve_order1", "conserve_order2", and "none".
+  !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell area field</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell volume field</IN>
+  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
-       & do_not_log, err_msg, interp_method, tile_count, area, volume)
+       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, INTENT(in) :: axes(:)
     TYPE(time_type), INTENT(in) :: init_time
@@ -505,6 +547,7 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     INTEGER, OPTIONAL, INTENT(in) :: tile_count
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
+    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
 
     INTEGER :: field, j, ind, file_num, freq
     INTEGER :: i, cm_ind, cm_file_num
@@ -534,7 +577,7 @@ CONTAINS
     ! Call register static, then set static back to false
     register_diag_field_array = register_static_field(module_name, field_name, axes,&
          & long_name, units, missing_value, range, mask_variant1, standard_name=standard_name,&
-         & DYNAMIC=.TRUE., do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count)
+         & DYNAMIC=.TRUE., do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, realm=realm)
 
     IF ( .NOT.first_send_data_call ) THEN
        ! <ERROR STATUS="WARNING">
@@ -656,7 +699,7 @@ CONTAINS
   !   <TEMPLATE>
   !     INTEGER FUNCTION register_static_field(module_name, field_name, axes,
   !       long_name, units, missing_value, range, mask_variant, standard_name,
-  !       dynamic, do_not_log, interp_method, tile_count)
+  !       dynamic, do_not_log, interp_method, tile_count, area, volume, realm)
   !   </TEMPLATE>
   !   <DESCRIPTION>
   !     Return field index for subsequent call to send_data.
@@ -672,13 +715,17 @@ CONTAINS
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL" DEFAULT=".FALSE."/>
   !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" DEFAULT=".TRUE."/>
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL" />
+  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL">
+  !     The interp method to be used when regridding the field in post-processing.
+  !     Valid options are "conserve_order1", "conserve_order2", and "none".
+  !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for the area field associated with this field</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for the volume field associated with this field</IN>
+  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
-       & tile_count, area, volume)
+       & tile_count, area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, DIMENSION(:), INTENT(in) :: axes
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
@@ -689,6 +736,7 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     INTEGER,          OPTIONAL, INTENT(in) :: tile_count, area, volume
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm !< String to set as the value to the modeling_realm attribute
 
     REAL :: missing_value_use
     INTEGER :: field, num_axes, j, out_num, k
@@ -696,6 +744,7 @@ CONTAINS
     INTEGER :: tile, file_num
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
+    INTEGER :: domain_type
 
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
@@ -750,6 +799,9 @@ CONTAINS
     field = register_static_field
     ! Negative index returned if this field was not found in the diag_table.
     IF ( register_static_field < 0 ) RETURN
+
+    ! Check that the axes are compatible with each other
+    domain_type = axis_compatible_check(axes,field_name)
 
     IF ( tile > 1 ) THEN
        IF ( .NOT.input_fields(field)%register ) THEN
@@ -861,15 +913,18 @@ CONTAINS
     END IF
 
     IF ( PRESENT(interp_method) ) THEN
-       IF ( TRIM(interp_method) .NE. 'conserve_order1' ) THEN
+       IF ( TRIM(interp_method) .NE. 'conserve_order1' .AND.&
+            & TRIM(interp_method) .NE. 'conserve_order2' .AND.&
+            & TRIM(interp_method) .NE. 'none' ) THEN
           ! <ERROR STATUS="FATAL">
           !   when registering module/output_field <module_name>/<field_name> then optional
-          !   argument interp_method = <interp_method>, but it should be "conserve_order1"
+          !   argument interp_method = <interp_method>, but it should be "conserve_order1",
+          !   "conserve_order2", or "none"
           ! </ERROR>
           CALL error_mesg ('diag_manager_mod::register_diag_field',&
                & 'when registering module/output_field '//TRIM(module_name)//'/'//&
                & TRIM(field_name)//', the optional argument interp_method = '//TRIM(interp_method)//&
-               & ', but it should be "conserve_order1"', FATAL)
+               & ', but it should be "conserve_order1", "conserve_order2", or "none"', FATAL)
        END IF
        input_fields(field)%interp_method = TRIM(interp_method)
     ELSE
@@ -917,16 +972,63 @@ CONTAINS
        ! reset the number of diurnal samples to 1 if the field is static (and, therefore,
        ! doesn't vary diurnally)
        IF ( .NOT.dynamic1 ) output_fields(out_num)%n_diurnal_samples = 1
+
+       !Check that the domain associated with the inputted field matches
+       !the domain associated output files to which it will be written.
+       file_num = output_fields(out_num)%output_file
+       if (domain_type .eq. DIAG_AXIS_2DDOMAIN) then
+           if (files(file_num)%use_domainUG) then
+               call error_mesg("diag_manager_mod::register_static_field", &
+                               "Diagnostics living on a structured grid" &
+                               //" and an unstructured grid cannot exist" &
+                               //" in the same file (" &
+                               //trim(files(file_num)%name)//")", &
+                               FATAL)
+           elseif (.not. files(file_num)%use_domain2D) then
+               files(file_num)%use_domain2D = .true.
+           endif
+       elseif (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+           if (files(file_num)%use_domain2D) then
+               call error_mesg("diag_manager_mod::register_static_field", &
+                               "Diagnostics living on a structured grid" &
+                               //" and an unstructured grid cannot exist" &
+                               //" in the same file (" &
+                               //trim(files(file_num)%name)//")", &
+                               FATAL)
+           elseif (.not. files(file_num)%use_domainUG) then
+               files(file_num)%use_domainUG = .true.
+           endif
+       endif
+
+
        !  if local_output (size of output_fields does NOT equal size of input_fields)
        IF ( output_fields(out_num)%reduced_k_range ) THEN
           CALL get_subfield_vert_size(axes, out_num)
 
-          local_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
-          local_end(3)   = output_fields(out_num)%output_grid%l_end_indx(3)
-          local_siz(3)   = local_end(3) - local_start(3) +1
-
-          ALLOCATE(output_fields(out_num)%buffer(siz(1), siz(2), local_siz(3),&
-               & output_fields(out_num)%n_diurnal_samples))
+!----------
+!ug support
+         !Send_data requires that the reduced k dimension be the 3rd dimension
+         !of the buffer, so set it to be the correct size.  If the diagnostic
+         !is unstructured, set the second dimension of the buffer to be 1.
+          if (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+              local_start(2) = output_fields(out_num)%output_grid%l_start_indx(2)
+              local_end(2) = output_fields(out_num)%output_grid%l_end_indx(2)
+              local_siz(2) = local_end(2) - local_start(2) + 1
+              allocate(output_fields(out_num)%buffer(siz(1),local_siz(2),siz(3), &
+                                                     output_fields(out_num)%n_diurnal_samples))
+              output_fields(out_num)%region_elements = siz(1)*local_siz(2)*siz(3)
+              output_fields(out_num)%reduced_k_unstruct = .true.
+          else
+              local_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
+              local_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+              local_siz(3) = local_end(3) - local_start(3) + 1
+              allocate(output_fields(out_num)%buffer(siz(1),siz(2),local_siz(3), &
+                                                     output_fields(out_num)%n_diurnal_samples))
+              output_fields(out_num)%region_elements = siz(1)*siz(2)*local_siz(3)
+              output_fields(out_num)%reduced_k_unstruct = .false.
+          endif
+          output_fields(out_num)%total_elements = siz(1)*siz(2)*siz(3)
+!----------
 
           IF ( output_fields(out_num)%time_max ) THEN
              output_fields(out_num)%buffer = MAX_VALUE
@@ -935,8 +1037,6 @@ CONTAINS
           ELSE
              output_fields(out_num)%buffer = EMPTY
           END IF
-          output_fields(out_num)%region_elements = siz(1)*siz(2)*local_siz(3)
-          output_fields(out_num)%total_elements  = siz(1)*siz(2)*siz(3)
        ELSE IF ( output_fields(out_num)%local_output ) THEN
           IF ( SIZE(axes(:)) .LE. 1 ) THEN
              ! <ERROR STATUS="FATAL">axes of <field_name> must >= 2 for local output</ERROR>
@@ -1020,7 +1120,14 @@ CONTAINS
        END IF
 
        IF ( output_fields(out_num)%reduced_k_range ) THEN
-          output_fields(out_num)%axes(3) = output_fields(out_num)%output_grid%subaxes(3)
+!----------
+!ug support
+          if (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+              output_fields(out_num)%axes(2) = output_fields(out_num)%output_grid%subaxes(2)
+          else
+              output_fields(out_num)%axes(3) = output_fields(out_num)%output_grid%subaxes(3)
+          endif
+!----------
        END IF
 
        ! Initialize a time variable used in an error check
@@ -1033,14 +1140,31 @@ CONTAINS
                & TRIM(msg)//' for module/field '//TRIM(module_name)//'/'//TRIM(field_name),&
                & FATAL)
        END IF
+
+       ! Add the modeling_realm attribute
+       IF ( PRESENT(realm) ) THEN
+          CALL prepend_attribute(output_fields(out_num), 'modeling_realm', lowercase(TRIM(realm)))
+       END IF
     END DO
 
     IF ( input_fields(field)%mask_variant ) THEN
        DO j = 1, input_fields(field)%num_output_fields
           out_num = input_fields(field)%output_fields(j)
           IF(output_fields(out_num)%time_average) THEN
-             ALLOCATE(output_fields(out_num)%counter(siz(1), siz(2), siz(3),&
-                  & output_fields(out_num)%n_diurnal_samples))
+!----------
+!ug support
+             !Send_data requires that the reduced k dimension be the 3rd dimension
+             !of the counter array, so set it to be the correct size.  If the diagnostic
+             !is unstructured, set the second dimension of the counter array to be 1.
+              if (output_fields(out_num)%reduced_k_range .and. &
+                  domain_type .eq. DIAG_AXIS_UGDOMAIN) then
+                  allocate(output_fields(out_num)%counter(siz(1),local_siz(2),siz(3), &
+                                                          output_fields(out_num)%n_diurnal_samples))
+              else
+                  allocate(output_fields(out_num)%counter(siz(1),siz(2),siz(3), &
+                                                          output_fields(out_num)%n_diurnal_samples))
+              endif
+!----------
              output_fields(out_num)%counter = 0.0
           END IF
        END DO
@@ -1164,8 +1288,6 @@ CONTAINS
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     INTEGER :: cm_ind, cm_file_num, file_num
-    INTEGER :: year, month, day, hour, minute, second
-    CHARACTER(len=25) :: date_prefix
 
     IF ( PRESENT(err_msg) ) THEN
        err_msg = ''
@@ -1191,15 +1313,6 @@ CONTAINS
     ! Get the file number that the output_field will be written to
     file_num = output_field%output_file
 
-    ! Create the date_string
-    IF ( prepend_date ) THEN
-       call get_date(diag_init_time, year, month, day, hour, minute, second)
-       write (date_prefix, '(1I20.4, 2I2.2,".")') year, month, day
-       date_prefix=adjustl(date_prefix)
-    ELSE
-       date_prefix=''
-    END IF
-
     ! Take care of the cell_measures attribute
     IF ( PRESENT(area) ) THEN
        IF ( get_related_field(area, output_field, cm_ind, cm_file_num) ) THEN
@@ -1207,11 +1320,7 @@ CONTAINS
                & 'area: '//TRIM(output_fields(cm_ind)%output_name))
           IF ( cm_file_num.NE.file_num ) THEN
              ! Not in the same file, set the global attribute associated_files
-             ! Should look like :associated_files = " output_name: output_file_name " ;
-             ! Need to append *.nc as files()%name does not include this.
-             CALL prepend_attribute(files(file_num), 'associated_files',&
-                  & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & TRIM(date_prefix)//TRIM(files(cm_file_num)%name)//'.nc')
+             CALL add_associated_files(file_num, cm_file_num, cm_ind)
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
@@ -1230,10 +1339,7 @@ CONTAINS
                & 'volume: '//TRIM(output_fields(cm_ind)%output_name))
           IF ( cm_file_num.NE.file_num ) THEN
              ! Not in the same file, set the global attribute associated_files
-             ! Should look like :associated_files = " output_name: output_file_name " ;
-             CALL prepend_attribute(files(file_num), 'associated_files',&
-                  & TRIM(output_fields(cm_ind)%output_name)//': '//&
-                  & TRIM(date_prefix)//TRIM(files(cm_file_num)%name)//'.nc')
+             CALL add_associated_files(file_num, cm_file_num, cm_ind)
           END IF
        ELSE
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measures',&
@@ -1246,6 +1352,58 @@ CONTAINS
     END IF
   END SUBROUTINE init_field_cell_measures
   ! </SUBROUTINE>
+
+  !> \brief Add to the associated files attribute
+  !!
+  !! \throw FATAL, "Length of asso_file_name is not long enough to hold the associated file name."
+  !!     The length of character array asso_file_name is not long enough to hold the full file name
+  !!     of the associated_file.  Please contact the developer to increase the length of the  variable.
+  SUBROUTINE add_associated_files(file_num, cm_file_num, cm_ind)
+    INTEGER, intent(in) :: file_num !< File number that needs the associated_files attribute
+    INTEGER, intent(in) :: cm_file_num !< file number that contains the associated field
+    INTEGER, intent(in) :: cm_ind !< index of the output_field in the associated file
+
+    INTEGER :: year, month, day, hour, minute, second
+    INTEGER :: n
+    CHARACTER(len=25) :: date_prefix
+    CHARACTER(len=256) :: asso_file_name
+
+    ! Create the date_string
+    IF ( prepend_date ) THEN
+       CALL get_date(diag_init_time, year, month, day, hour, minute, second)
+       WRITE (date_prefix, '(1I20.4, 2I2.2,".")') year, month, day
+       date_prefix=ADJUSTL(date_prefix)
+    ELSE
+       date_prefix=''
+    END IF
+
+    ! Get the base file name
+    ! Verify asso_file_name is long enough to hold the file name,
+    ! plus 17 for the additional '.ens_??.tile?.nc' (and a null character)
+    IF ( LEN_TRIM(files(cm_file_num)%name)+17 > LEN(asso_file_name) ) THEN
+       CALL error_mesg ('diag_manager_mod::add_associated_files',&
+            & 'Length of asso_file_name is not long enough to hold the associated file name. '&
+            & //'Contact the developer', FATAL)
+    ELSE
+       asso_file_name = TRIM(files(cm_file_num)%name)
+    END IF
+
+    ! Add the ensemble number string into the file name
+    ! As frepp does not have native support for multiple ensemble runs
+    ! this will not be done.  However, the code is left here for the time
+    ! frepp does.
+    !CALL get_instance_filename(TRIM(asso_file_name), asso_file_name)
+
+    ! Append .nc suffix, if needed. Note that we no longer try to append cubic sphere tile
+    ! number to the name of the associated file.
+    n = max(len_trim(asso_file_name),3)
+    if (asso_file_name(n-2:n).NE.'.nc') asso_file_name = trim(asso_file_name)//'.nc'
+
+    ! Should look like :associated_files = " output_name: output_file_name " ;
+    CALL prepend_attribute(files(file_num), 'associated_files',&
+         & TRIM(output_fields(cm_ind)%output_name)//': '//&
+         & TRIM(date_prefix)//TRIM(asso_file_name))
+  END SUBROUTINE add_associated_files
 
   ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
@@ -1398,6 +1556,92 @@ CONTAINS
   END FUNCTION send_data_2d
   ! </FUNCTION>
 
+#ifdef OVERLOAD_R8
+  ! <FUNCTION NAME="send_data_2d_r8" INTERFACE="send_data">
+  LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
+       & mask, rmask, ie_in, je_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(kind=8), INTENT(in), DIMENSION(:,:) :: field
+    REAL, INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    LOGICAL, INTENT(in), DIMENSION(:,:), OPTIONAL :: mask
+    REAL, INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_2d_r8 = .FALSE.
+       RETURN
+    END IF
+
+    ! First copy the data to a three d array with last element 1
+    field_out(:, :, 1) = field
+
+    ! Default values for mask
+    IF ( PRESENT(mask) ) THEN
+       mask_out(:, :, 1) = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
+    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
+       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    ELSE
+       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+    END IF
+  END FUNCTION send_data_2d_r8
+  ! </FUNCTION>
+
+  ! <FUNCTION NAME="send_data_3d_r8" INTERFACE="send_data">
+  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(kind=8), INTENT(in), DIMENSION(:,:,:) :: field
+    REAL, INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
+    LOGICAL, INTENT(in), DIMENSION(:,:,:), OPTIONAL :: mask
+    REAL, INTENT(in), DIMENSION(:,:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) :: field_out
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) ::  mask_out
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_3d_r8 = .FALSE.
+       RETURN
+    END IF
+
+    ! First copy the data to a three d array with last element 1
+    field_out = field
+
+    ! Default values for mask
+    IF ( PRESENT(mask) ) THEN
+       mask_out = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out = .FALSE.
+    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask_out,&
+            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    ELSE
+       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=ks_in,&
+            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    END IF
+  END FUNCTION send_data_3d_r8
+  ! </FUNCTION>
+#endif
+
   ! <FUNCTION NAME="send_data_3d" INTERFACE="send_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
   !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"> </IN>
@@ -1442,12 +1686,11 @@ CONTAINS
 #endif
     LOGICAL :: average, phys_window, need_compute
     LOGICAL :: reduced_k_range, local_output
-    LOGICAL :: time_max, time_min, time_rms
+    LOGICAL :: time_max, time_min, time_rms, time_sum
     LOGICAL :: missvalue_present
     LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
-    TYPE(time_type) :: dt ! time interval for diurnal output
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1679,6 +1922,8 @@ CONTAINS
        ! Looking for max and min value of this field over the sampling interval?
        time_max = output_fields(out_num)%time_max
        time_min = output_fields(out_num)%time_min
+       ! Sum output over time interval
+       time_sum = output_fields(out_num)%time_sum
        IF ( output_fields(out_num)%total_elements > SIZE(field(f1:f2,f3:f4,ks:ke)) ) THEN
           output_fields(out_num)%phys_window = .TRUE.
        ELSE
@@ -1693,15 +1938,21 @@ CONTAINS
        ! compute the diurnal index
        sample = 1
        IF ( PRESENT(time) ) THEN
-          dt = set_time(0,1)/output_fields(out_num)%n_diurnal_samples ! our time interval
           CALL get_time(time,second,day,tick) ! current date
-          sample = set_time(second,0,tick)/dt + 1
+          sample = floor((second+real(tick)/get_ticks_per_second())*output_fields(out_num)%n_diurnal_samples/SECONDS_PER_DAY) + 1
        END IF
 
        ! Get the vertical layer start and end index.
        IF ( reduced_k_range ) THEN
-          l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
-          l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+!----------
+!ug support
+           if (output_fields(out_num)%reduced_k_unstruct) then
+               js = output_fields(out_num)%output_grid%l_start_indx(2)
+               je = output_fields(out_num)%output_grid%l_end_indx(2)
+           endif
+           l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
+           l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+!----------
        END IF
        ksr= l_start(3)
        ker= l_end(3)
@@ -2357,7 +2608,7 @@ CONTAINS
                          DO j=f3, f4
                             DO i=f1, f2
                                IF ( field(i,j,k) /= missvalue ) THEN
-                                  output_fields(out_num)%count_0d = output_fields(out_num)%count_0d + weight1
+                                  output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) + weight1
                                   EXIT outer3
                                END IF
                             END DO
@@ -2549,7 +2800,7 @@ CONTAINS
              END IF ! if mask present
           END IF  !if mask_variant
 !$OMP CRITICAL
-          IF ( .NOT.need_compute )&
+          IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
                & output_fields(out_num)%num_elements(sample) =&
                & output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ke-ks+1)
           IF ( reduced_k_range ) &
@@ -2713,7 +2964,88 @@ CONTAINS
              END IF
           END IF
           output_fields(out_num)%count_0d(sample) = 1
-       ELSE  ! ( not average, not min, max)
+       ELSE IF ( time_sum ) THEN
+          IF ( PRESENT(mask) ) THEN
+             IF ( need_compute ) THEN
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
+                            IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
+                               output_fields(out_num)%buffer(i1,j1,k1,sample) = &
+                                    output_fields(out_num)%buffer(i1,j1,k1,sample) + &
+                                    field(i-is+1+hi,j-js+1+hj,k)
+                            END IF
+                         END IF
+                      END DO
+                   END DO
+                END DO
+                ! Minimum time value with masking
+             ELSE IF ( reduced_k_range ) THEN
+                ksr= l_start(3)
+                ker= l_end(3)
+                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
+                     &   output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                     &   field(f1:f2,f3:f4,ksr:ker)
+             ELSE
+                IF ( debug_diag_manager ) THEN
+                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                   IF ( err_msg_local /= '' ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
+                   END IF
+                END IF
+                WHERE ( mask(f1:f2,f3:f4,ks:ke) ) &
+                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
+                     &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
+                     &  field(f1:f2,f3:f4,ks:ke)
+             END IF
+          ELSE
+             IF ( need_compute ) THEN
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <=i.AND.i<=l_end(1)+hi.AND.l_start(2)+hj<=j.AND.j<=l_end(2)+hj) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1=  j-l_start(2)-hj+1
+                            output_fields(out_num)%buffer(i1,j1,k1,sample) = &
+                               &    output_fields(out_num)%buffer(i1,j1,k1,sample) + &
+                               &    field(i-is+1+hi,j-js+1+hj,k)
+                         END IF
+                      END DO
+                   END DO
+                END DO
+             ELSE IF ( reduced_k_range ) THEN
+                ksr= l_start(3)
+                ker= l_end(3)
+                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
+                     &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                     &  field(f1:f2,f3:f4,ksr:ker)
+             ELSE
+                IF ( debug_diag_manager ) THEN
+                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                   IF ( err_msg_local /= '' ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
+                   END IF
+                END IF
+                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
+                &    output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
+                &    field(f1:f2,f3:f4,ks:ke)
+             END IF
+          END IF
+          output_fields(out_num)%count_0d(sample) = 1
+       ELSE  ! ( not average, not min, not max, not sum )
           output_fields(out_num)%count_0d(sample) = 1
           IF ( need_compute ) THEN
              DO j = js, je
@@ -2840,6 +3172,91 @@ CONTAINS
   END FUNCTION send_data_3d
   ! </FUNCTION>
 
+  ! <FUNCTION NAME="send_tile_averaged_data1d" INTERFACE="send_tile_averaged_data">
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
+  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"></IN>
+  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">  </IN>
+  !   <IN NAME="time" TYPE="TYPE(time_type)">  </IN>
+  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:), OPTIONAL"></IN>
+  LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )
+    INTEGER, INTENT(in) :: id  ! id od the diagnostic field
+    REAL, INTENT(in) :: field(:,:) ! field to average and send
+    REAL, INTENT(in) :: area (:,:) ! area of tiles (== averaging weights), arbitrary units
+    TYPE(time_type), INTENT(in)  :: time ! current time
+    LOGICAL, INTENT(in),OPTIONAL :: mask (:,:) ! land mask
+
+    REAL, DIMENSION(SIZE(field,1)) :: out(SIZE(field,1))
+
+    ! If id is < 0 it means that this field is not registered, simply return
+    IF ( id <= 0 ) THEN
+       send_tile_averaged_data1d = .FALSE.
+       RETURN
+    END IF
+
+    CALL average_tiles1d (id, field, area, mask, out)
+    send_tile_averaged_data1d = send_data(id, out, time=time, mask=ANY(mask,DIM=2))
+  END FUNCTION send_tile_averaged_data1d
+
+  ! <SUBROUTINE NAME="average_tiles1d">
+  !   <OVERVIEW>
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE average_tiles1d(diag_field_id, x, area, mask, out)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !   </DESCRIPTION>
+  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
+  !   <IN NAME="x" TYPE="REAL, DIMENSION(:,:)">(ug_index, tile) field to average</IN>
+  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">(ug_index, tile) fractional area</IN>
+  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:)">(ug_index, tile) land mask</IN>
+  !   <OUT NAME="out" TYPE="REAL, DIMENSION(:,:)">(ug_index) result of averaging</OUT>
+  SUBROUTINE average_tiles1d(diag_field_id, x, area, mask, out)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL, DIMENSION(:,:), INTENT(in) :: x
+    REAL, DIMENSION(:,:), INTENT(in) :: area
+    LOGICAL, DIMENSION(:,:), INTENT(in) :: mask
+    REAL, DIMENSION(:), INTENT(out) :: out
+
+    INTEGER  :: it ! iterator over tile number
+    REAL, DIMENSION(SIZE(x,1)) :: s ! area accumulator
+    REAL :: local_missing_value
+
+    ! # FATAL if diag_field_id is less than 0, indicates field was not in diag_table.
+    ! The calling functions should not have passed in an invalid diag_field_id
+    IF ( diag_field_id <= 0 ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   diag_field_id less than 0.  Contact developers.
+       ! </ERROR>
+       CALL error_mesg('diag_manager_mod::average_tiles1d',&
+            & "diag_field_id less than 0.  Contact developers.", FATAL)
+    END IF
+
+    ! Initialize local_missing_value
+    IF ( input_fields(diag_field_id)%missing_value_present ) THEN
+       local_missing_value = input_fields(diag_field_id)%missing_value
+    ELSE
+       local_missing_value = 0.0
+    END IF
+
+    ! Initialize s and out to zero.
+    s(:) = 0.0
+    out(:) = 0.0
+
+    DO it = 1, SIZE(area,dim=2)
+       WHERE ( mask(:,it) )
+          out(:) = out(:) + x(:,it)*area(:,it)
+          s(:) = s(:) + area(:,it)
+       END WHERE
+    END DO
+
+    WHERE ( s(:) > 0 )
+       out(:) = out(:)/s(:)
+    ELSEWHERE
+       out(:) = local_missing_value
+    END WHERE
+  END SUBROUTINE average_tiles1d
+
+
   ! <FUNCTION NAME="send_tile_averaged_data2d" INTERFACE="send_tile_averaged_data">
   !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
   !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"></IN>
@@ -2854,6 +3271,12 @@ CONTAINS
     LOGICAL, INTENT(in),OPTIONAL :: mask (:,:,:) ! land mask
 
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2)) :: out(SIZE(field,1), SIZE(field,2))
+
+    ! If id is < 0 it means that this field is not registered, simply return
+    IF ( id <= 0 ) THEN
+       send_tile_averaged_data2d = .FALSE.
+       RETURN
+    END IF
 
     CALL average_tiles(id, field, area, mask, out)
     send_tile_averaged_data2d = send_data(id, out, time, mask=ANY(mask,DIM=3))
@@ -2876,6 +3299,12 @@ CONTAINS
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,4)) :: out
     LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,4)) :: mask3
     INTEGER :: it
+
+    ! If id is < 0 it means that this field is not registered, simply return
+    IF ( id <= 0 ) THEN
+       send_tile_averaged_data3d = .FALSE.
+       RETURN
+    END IF
 
     DO it=1, SIZE(field,4)
        CALL average_tiles(id, field(:,:,:,it), area, mask, out(:,:,it) )
@@ -2913,6 +3342,16 @@ CONTAINS
     INTEGER  :: it ! iterator over tile number
     REAL, DIMENSION(SIZE(x,1),SIZE(x,2)) :: s ! area accumulator
     REAL :: local_missing_value
+
+    ! # FATAL if diag_field_id is less than 0, indicates field was not in diag_table.
+    ! The calling functions should not have passed in an invalid diag_field_id
+    IF ( diag_field_id <= 0 ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   diag_field_id less than 0.  Contact developers.
+       ! </ERROR>
+       CALL error_mesg('diag_manager_mod::average_tiles',&
+            & "diag_field_id less than 0.  Contact developers.", FATAL)
+    END IF
 
     ! Initialize local_missing_value
     IF ( input_fields(diag_field_id)%missing_value_present ) THEN
@@ -3096,6 +3535,36 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
+  !>@brief The subroutine 'diag_send_complete_instant' allows the user to 
+  !! save diagnostic data on variable intervals (user defined in code logic)
+  !! to the same file.  The argument (time_type) will be written to the 
+  !! time axis correspondingly.
+  !>@details The user is responsible for any averaging of accumulated data
+  !! as this routine is not designed for instantaneous values.  This routine
+  !! works only for send_data calls within OpenMP regions as they are buffered
+  !! until the complete signal is given.
+  SUBROUTINE diag_send_complete_instant(time)
+    TYPE (time_type), INTENT(in) :: time
+    !--- local variables
+    integer :: file, j, freq, in_num, file_num, out_num
+
+    DO file = 1, num_files
+      freq = files(file)%output_freq
+      IF (freq == 0) then
+        DO j = 1, files(file)%num_fields
+          out_num = files(file)%fields(j)
+          in_num = output_fields(out_num)%input_field
+          IF ( (input_fields(in_num)%numthreads == 1) .AND.&
+               & (input_fields(in_num)%active_omp_level.LE.1) ) CYCLE
+          file_num = output_fields(out_num)%output_file
+          CALL diag_data_out(file_num, out_num, &
+               & output_fields(out_num)%buffer, time)
+        END DO
+      END IF
+    END DO
+  END SUBROUTINE diag_send_complete_instant
+
+  !-----------------------------------------------------------------------
   SUBROUTINE diag_send_complete(time_step, err_msg)
     TYPE (time_type), INTENT(in)           :: time_step
     character(len=*), INTENT(out), optional :: err_msg
@@ -3259,6 +3728,11 @@ CONTAINS
     ! Now it's time to output static fields
     CALL write_static(file)
 
+    !::sdu:: Write the manifest file here
+    IF ( write_manifest_file ) THEN
+       CALL write_diag_manifest(file)
+    END IF
+
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
        CALL mpp_sum (files(file)%bytes_written)
@@ -3304,14 +3778,19 @@ CONTAINS
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
-         & oor_warnings_fatal, max_out_per_in_field, conserve_water, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, prepend_date
+         & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
+         & max_file_attributes, max_axis_attributes, prepend_date, write_manifest_file
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
 
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
+
+    ! Initialize diag_util_mod and diag_data_mod
+    ! These init routine only write out the version number to the log file
+    call diag_util_init()
+    call diag_data_init()
 
     ! Determine pack_size from how many bytes a real value has (how compiled)
     pack_size = SIZE(TRANSFER(0.0_DblKind, (/0.0, 0.0, 0.0, 0.0/)))
@@ -3328,7 +3807,7 @@ CONTAINS
     stdout_unit = stdout()
 
     ! version number to logfile
-    CALL write_version_number(version, tagname)
+    CALL write_version_number("DIAG_MANAGER_MOD", version)
 
     Time_zero = set_time(0,0)
     !--- initialize time_end to time_zero
@@ -3372,6 +3851,16 @@ CONTAINS
        err_msg_local = ''
        WRITE (err_msg_local,'(ES8.1E2)') CMOR_MISSING_VALUE
        CALL error_mesg('diag_manager_mod::diag_manager_init', 'Using CMOR missing value ('//TRIM(err_msg_local)//').', NOTE)
+    END IF
+
+    ! Issue note if attempting to set diag_manager_nml::max_files larger than
+    ! mpp_get_maxunits() -- Default is 1024 set in mpp_io.F90
+    IF ( max_files .GT. mpp_get_maxunits() ) THEN
+       err_msg_local = ''
+       WRITE (err_msg_local,'(A,I6,A,I6,A,I6,A)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
+            & mpp_get_maxunits(),"'.  Forcing 'max_files' to be ",mpp_get_maxunits(),"."
+       CALL error_mesg('diag_manager_mod::diag_managet_init', TRIM(err_msg_local), NOTE)
+       max_files = mpp_get_maxunits()
     END IF
 
     ! How to handle Out of Range Warnings.
@@ -3435,7 +3924,7 @@ CONTAINS
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here
-    null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'X', 'none')
+    null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'N', 'none')
     RETURN
   END SUBROUTINE diag_manager_init
   ! </SUBROUTINE>
@@ -3586,8 +4075,8 @@ CONTAINS
 
   SUBROUTINE diag_field_attribute_init(diag_field_id, name, type, cval, ival, rval)
     INTEGER, INTENT(in) :: diag_field_id !< input field ID, obtained from diag_manager_mod::register_diag_field.
-    CHARACTER(len=*) :: name !< Name of the attribute
-    INTEGER, INTENT(in) :: type !< NetCDF type (NF_FLOAT, NF_INT, NF_CHAR)
+    CHARACTER(len=*), INTENT(in) :: name !< Name of the attribute
+    INTEGER, INTENT(in) :: type !< NetCDF type (NF90_FLOAT, NF90_INT, NF90_CHAR)
     CHARACTER(len=*), INTENT(in), OPTIONAL :: cval !< Character string attribute value
     INTEGER, DIMENSION(:), INTENT(in), OPTIONAL :: ival !< Integer attribute value(s)
     REAL, DIMENSION(:), INTENT(in), OPTIONAL :: rval !< Real attribute value(s)
@@ -3634,7 +4123,7 @@ CONTAINS
                   & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Contact the developers.', FATAL)
-          ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR ) THEN
+          ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR .AND. debug_diag_manager ) THEN
              ! <ERROR STATUS="NOTE">
              !   Attribute <name> already defined for module/input_field <module_name>/<field_name>.
              !   Prepending.
@@ -3643,7 +4132,7 @@ CONTAINS
                   & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Prepending.', NOTE)
-          ELSE
+          ELSE IF ( this_attribute.EQ.0 ) THEN
              ! Defining a new attribute
              ! Increase the number of field attributes
              this_attribute = output_fields(out_field)%num_attributes + 1
@@ -4063,6 +4552,18 @@ END MODULE diag_manager_mod
 !  "test_diag_manager_mod", "dat2", "dat2_rms", "diag_test2", "all", "rms",  "none", 2,
 !  "test_diag_manager_mod", "dat2", "dat2",     "diag_test2", "all", .true., "none", 2,
 !--------------------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+!> diag_table for test 100 (unstructured grid)
+!!
+!!test_unstructured_grid_diag_manager
+!!1990 1 1 0 0 0
+!!#output files
+!!"unstructured_diag_test", 1, "days", 1, "days", "time",
+!!#output variables
+!!"UG_unit_test", "unstructured_real_scalar_field_data", "rsf_diag_1", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!!"UG_unit_test", "unstructured_real_2D_field_data", "unstructured_real_2D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!--------------------------------------------------------------------------------------------------
 PROGRAM test
   ! This program runs only one of many possible tests with each execution.
   ! Each test ends with an intentional fatal error.
@@ -4076,9 +4577,11 @@ PROGRAM test
   ! may be triggered upon the call to diag_manager_init, register_diag_field or send_data.
   ! Because of this, the calls to all of those routines differ depending on the test.
 
-  USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
+  USE mpp_mod, ONLY: mpp_pe, mpp_root_pe, mpp_debug, mpp_set_stack_size
+  USE mpp_io_mod, ONLY: mpp_io_init
   USE mpp_domains_mod, ONLY: domain2d, mpp_define_domains, mpp_get_compute_domain
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
+  USE mpp_domains_mod, ONLY: mpp_domains_init, mpp_domains_set_stack_size
   USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, stdlog, stdout
 #ifdef INTERNAL_FILE_NML
@@ -4086,6 +4589,7 @@ PROGRAM test
 #else
   USE fms_mod, ONLY:  open_namelist_file, close_file
 #endif
+  USE fms_io_mod, ONLY: fms_io_init
   USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
 
@@ -4095,9 +4599,10 @@ PROGRAM test
 
   USE diag_manager_mod, ONLY: diag_manager_init, send_data, diag_axis_init, diag_manager_end
   USE diag_manager_mod, ONLY: register_static_field, register_diag_field, diag_send_complete
-  USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute
+  USE diag_manager_mod, ONLY: diag_manager_set_time_end, diag_field_add_attribute, diag_axis_add_attribute
   USE diag_manager_mod, ONLY: diag_field_add_cell_measures
   USE diag_manager_mod, ONLY: get_diag_field_id, DIAG_FIELD_NOT_FOUND
+  USE diag_axis_mod, ONLY: get_axis_num
 
   IMPLICIT NONE
 
@@ -4139,11 +4644,44 @@ PROGRAM test
   INTEGER :: numthreads=1, ny_per_thread, idthread
   INTEGER :: months=0, days=0, dt_step=0
 
+  ! Variables needed for test 22
+  INTEGER :: id_nv, id_nv_init
+
+!!!!!! Stuff for unstrctured grid
+    integer(INT_KIND)              :: nx = 8                               !<Total number of grid points in the x-dimension (longitude?)
+    integer(INT_KIND)              :: ny = 8                               !<Total number of grid points in the y-dimension (latitude?)
+    integer(INT_KIND)              :: nz = 2                               !<Total number of grid points in the z-dimension (height)
+    integer(INT_KIND)              :: nt = 2                               !<Total number of time grid points.
+    integer(INT_KIND)              :: io_tile_factor = 1                   !< The IO tile factor
+    integer(INT_KIND)              :: halo = 2                             !<Number of grid points in the halo???
+    integer(INT_KIND)              :: ntiles_x = 1                         !<Number of tiles in the x-direction (A 2D grid of tiles is used in this test.)
+    integer(INT_KIND)              :: ntiles_y = 2                         !<Number of tiles in the y-direction (A 2D grid of tiles is used in this test.)
+    integer(INT_KIND)              :: total_num_tiles                      !<The total number of tiles for the run (= ntiles_x*ntiles_y)
+    integer(INT_KIND)              :: stackmax = 1500000                   !<Default size to which the mpp stack will be set.
+    integer(INT_KIND)              :: stackmaxd = 500000                   !<Default size to which the mpp_domains stack will be set.
+    logical(INT_KIND)              :: debug = .false.                      !<Flag to print debugging information.
+    character(len=64)              :: test_file = "test_unstructured_grid" !<Base filename for the unit tests.
+    character(len=64)              :: iospec = '-F cachea'                 !<Something cray related ???
+    integer(INT_KIND)              :: pack_size = 1                        !<(Number of bits in real(DOUBLE_KIND))/(Number of bits in real)
+    integer(INT_KIND)              :: npes                                 !<Total number of ranks in the current pelist.
+    integer(INT_KIND)              :: io_status                            !<Namelist read error code.
+    real(DOUBLE_KIND)              :: doubledata = 0.0                     !<Used to determine pack_size.  This must be kind=DOUBLE_KIND.
+    real                           :: realdata = 0.0                       !<Used to determine pack_size.  Do not specify a kind parameter.
+    integer(INT_KIND)              :: funit = 7                            !<File unit.
+    logical(INT_KIND)              :: fopened                              !<Flag telling if a file is already open.
+    type(time_type)                :: diag_time                            !<
+
+    integer(INT_KIND)              :: output_unit=6
+!!!!!!
+
+
 
   NAMELIST /test_diag_manager_nml/ layout, test_number, nlon, nlat, nlev, io_layout, numthreads, &
                                    dt_step, months, days
-
+  NAMELIST /utest_nml/nx,ny,nz,nt,ntiles_x,ntiles_y,io_tile_factor
   ! Initialize all id* vars to be -1
+  id_nv = -1
+  id_nv_init = -1
   id_phalf = -1
   id_pfull = -1
   id_bk = -1
@@ -4167,13 +4705,15 @@ PROGRAM test
   out_unit = stdout()
   CALL constants_init
   CALL set_calendar_type(JULIAN)
-
+  npes = mpp_npes()
 #ifdef INTERNAL_FILE_NML
   READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=ierr)
+  READ (input_nml_file, NML=utest_nml, IOSTAT=i)
 #else
   IF ( file_exist('input.nml') ) THEN
      nml_unit = open_namelist_file()
      READ(nml_unit, nml=test_diag_manager_nml, iostat=ierr)
+     READ(nml_unit, nml=utest_nml, iostat=i)
      CALL close_file(nml_unit)
   ELSE
      ! Set ierr to an arbitrary positive number if input.nml does not exist.
@@ -4189,6 +4729,60 @@ PROGRAM test
   END IF
   WRITE (log_unit,test_diag_manager_nml)
 
+!> If the test_number == 100, then call the unstrcutured grid unit test and skip everything else.
+if (test_number == 100) then
+   !Initialize the mpp_domains module
+    if (debug) then
+        call mpp_domains_init(MPP_DEBUG)
+    else
+        call mpp_domains_init()
+    endif
+
+   !Initialize the mpp_io module.
+    if (debug) then
+        call mpp_io_init(MPP_DEBUG)
+    else
+        call mpp_io_init()
+    endif
+
+   !Initialize the fms_io module.
+    call fms_io_init()
+
+   !Set the mpp and mpp_domains stack sizes.
+    call mpp_set_stack_size(stackmax)
+    call mpp_domains_set_stack_size(stackmaxd)
+
+   !Write out test configuration parameters.
+    if (mpp_pe() .eq. mpp_root_pe()) then
+        write(output_unit,*)
+        write(output_unit,*) "Performing unstructured_io unit test with:"
+        write(output_unit,*) "Total number of ranks:                          ", &
+                             npes
+        write(output_unit,*) "Total number of grid points in the x-dimension: ", &
+                             nx
+        write(output_unit,*) "Total number of grid points in the y-dimension: ", &
+                             ny
+        write(output_unit,*) "Total number of grid points in the z-dimension: ", &
+                             nz
+        write(output_unit,*) "Total number of grid points in the t-dimension: ", &
+                             nt
+        write(output_unit,*) "Halo width (# of grid points):                  ", &
+                             halo
+        write(output_unit,*) "Using Unstructured domaintypes and calls..."
+    endif
+
+   !Add a suffix to the test file.
+    write(test_file,'(a,i3.3)') trim(test_file),npes
+
+   !Initialize the diag manager module.
+    call diag_manager_init()
+
+   !Set the diag_time variable to be 01/01/1990 at 00:00:00 (midnight).
+    call set_calendar_type(JULIAN)
+    time = set_date(1990,1,1,0,0,0)
+   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, time,io_tile_factor)
+else
+!!!!!! ALL OTHER TESTS !!!!!!
   IF ( test_number == 12 ) THEN
      CALL diag_manager_init(err_msg=err_msg)
      IF ( err_msg /= '' ) THEN
@@ -4276,6 +4870,31 @@ PROGRAM test
   id_lon2 = diag_axis_init('lon2',  RAD_TO_DEG*lon_global2,  'degrees_E', 'x', long_name='longitude', Domain2=Domain2)
   id_lat2 = diag_axis_init('lat2',  RAD_TO_DEG*lat_global2,  'degrees_N', 'y', long_name='latitude',  Domain2=Domain2)
 
+  IF ( test_number == 22 ) THEN
+     ! Can we get the 'nv' axis ID?
+     id_nv = get_axis_num('nv', 'nv')
+     IF ( id_nv .GT. 0 ) THEN
+        write (out_unit,'(a)') 'test22.1 Passes: id_nv has a positive value'
+     ELSE
+        write (out_unit,'(a)') 'test22.1 Failed: id_nv does not have a positive value'
+     END IF
+
+     ! Can I call diag_axis_init on 'nv' again, and get the same ID back?
+     id_nv_init = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number', set_name='nv')
+     IF ( id_nv_init .EQ. id_nv ) THEN
+        write (out_unit,'(a)') 'test22.2 Passes: Can call diag_axis_init on "nv" and get same ID'
+     ELSE
+        write (out_unit,'(a)') 'test22.2 Failed: Cannot call diag_axis_init on "nv" and get same ID'
+     END IF
+  END IF
+
+  IF ( test_number == 21 ) THEN
+     ! Testing addition of axis attributes
+     CALL diag_axis_add_attribute(id_lon1, 'real_att', 2.3)
+     CALL diag_axis_add_attribute(id_lat1, 'int_att', (/ 2, 3 /))
+     CALL diag_axis_add_attribute(id_pfull, 'char_att', 'Some string')
+  END IF
+
   IF ( test_number == 14 ) THEN
      Time = set_date(1990,1,29,0,0,0)
   ELSE
@@ -4333,7 +4952,7 @@ PROGRAM test
 
   IF ( test_number == 18 ) THEN
      id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K',&
-          & volume=id_dat1, area=id_dat2, err_msg=err_msg)
+          & volume=id_dat1, area=id_dat2, realm='myRealm', err_msg=err_msg)
      IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
         CALL error_mesg ('test_diag_manager',&
              & 'Unexpected error registering dat2h '//err_msg, FATAL)
@@ -4350,7 +4969,7 @@ PROGRAM test
      END IF
   END IF
 
-  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 ) THEN
+  IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 .OR. test_number == 22 ) THEN
      is_in = 1
      js_in = 1
      ie_in = nlon
@@ -4727,7 +5346,7 @@ PROGRAM test
         WRITE (out_unit,'(a)') 'test1.2 fails: '//TRIM(err_msg)
      END IF
   END IF
-
+endif !! This is the endif for the unstructured grid if
   CALL diag_manager_end(Time)
   CALL fms_io_exit
   CALL fms_end
@@ -4761,5 +5380,659 @@ CONTAINS
     lonb = lonb_global(is:ie+1)
     latb = latb_global(js:je+1)
   END SUBROUTINE compute_grid
+
+  SUBROUTINE unstruct_test(nx, ny, nz, npes, num_domain_tiles_x, num_domain_tiles_y, diag_time,io_tile_factor)
+        use, intrinsic :: iso_fortran_env, only: output_unit
+        use mpp_parameter_mod,             only: FATAL
+        use mpp_mod,                       only: mpp_error, &
+                                                 mpp_pe, &
+                                                 mpp_root_pe, &
+                                                 mpp_sync, &
+                                                 mpp_chksum
+        use mpp_domains_mod,               only: domain2D, &
+                                                 mpp_define_mosaic, &
+                                                 mpp_deallocate_domain, &
+                                                 domainUG, &
+                                                 mpp_define_unstruct_domain, &
+!                                                mpp_deallocate_domainUG, &
+                                                 mpp_get_UG_compute_domain, &
+                                                 mpp_get_UG_domain_grid_index, &
+                                                 mpp_get_UG_domain_ntiles
+        use diag_axis_mod,                 only: diag_axis_init, diag_axis_add_attribute
+        use diag_manager_mod,              only: register_diag_field, &
+                                                 send_data
+        use time_manager_mod,              only: time_type, &
+                                                 set_time, &
+                                                 operator(+), &
+                                                 assignment(=)
+        implicit none
+
+       !Inputs/Ouputs
+        integer(INT_KIND),intent(in)  :: nx                 !<The number of grid points in the x-direction.
+        integer(INT_KIND),intent(in)  :: ny                 !<The number of grid points in the y-direction.
+        integer(INT_KIND),intent(in)  :: nz                 !<The number of grid points in the z-direction.
+        integer(INT_KIND),intent(in)  :: npes               !<The total number of ranks used in this test.
+        integer(INT_KIND),intent(in)  :: num_domain_tiles_x !<The total number of domain tiles in the x-dimension for the 2D structured domain in this test.
+        integer(INT_KIND),intent(in)  :: num_domain_tiles_y !<The total number of domain tiles in the y-dimension for the 2D structured domain in this test.
+        type(time_type),intent(inout) :: diag_time          !<Time for diag_manager.
+        integer(INT_KIND),intent(in)  :: io_tile_factor     !<I/O tile factor.  See below.
+
+       !Local variables
+        integer(INT_KIND)                              :: num_domain_tiles                           !<The total number of domain tiles for the 2D structured domain in this test.
+        integer(INT_KIND)                              :: npes_per_domain_tile                       !<The number of ranks per domain tile for the 2D structured domain.
+        integer(INT_KIND)                              :: my_domain_tile_id                          !<The 2D structured domain tile id for the current rank.
+        logical(INT_KIND)                              :: is_domain_tile_root                        !<Flag telling if the current rank is the root rank of its associated 2D structured domain tile.
+        integer(INT_KIND),dimension(2)                 :: layout_for_full_domain                     !<Rank layout (2D grid) for the full 2D structured domain. Example: 16 ranks -> (16,1) or (8,2) or (4,4) or (2,8) or (1,16)
+        integer(INT_KIND),dimension(:),allocatable     :: pe_start                                   !<Array holding the smallest rank id assigned to each 2D structured domain tile.
+        integer(INT_KIND),dimension(:),allocatable     :: pe_end                                     !<Array holding the largest rank id assigned to each 2D structured domain tile.
+        integer(INT_KIND)                              :: x_grid_points_per_domain_tile              !<The number of grid points in the x-dimension on each 2D structured domain tile.
+        integer(INT_KIND)                              :: y_grid_points_per_domain_tile              !<The number of grid points in the y-dimension on each 2D structured domain tile.
+        integer(INT_KIND),dimension(:,:),allocatable   :: global_indices                             !<Required to define the 2D structured domain.
+        integer(INT_KIND),dimension(:,:),allocatable   :: layout2D                                   !<Required to define the 2D structured domain.
+        type(domain2D)                                 :: domain_2D                                  !<A structured 2D domain.
+        logical(INT_KIND),dimension(:,:,:),allocatable :: land_mask                                  !<A toy mask.
+        integer(INT_KIND),dimension(:),allocatable     :: num_non_masked_grid_points_per_domain_tile !<Total number of non-masked grid points on each 2D structured domain tile.
+        integer(INT_KIND)                              :: mask_counter                               !<Counting variable.
+        integer(INT_KIND)                              :: num_non_masked_grid_points                 !<Total number of non-masked grid points for the 2D structured domain.
+        integer(INT_KIND),dimension(:),allocatable     :: num_land_tiles_per_non_masked_grid_point   !<Number of land tiles per non-masked grid point for the 2D structured domain.
+        integer(INT_KIND)                              :: num_ranks_using_unstructured_grid          !<Number of ranks using the unstructured domain.
+        integer(INT_KIND),dimension(:),allocatable     :: unstructured_grid_point_index_map          !<Array that maps indices between the 2D structured and unstructured domains.
+        type(domainUG)                                 :: domain_ug                                  !<An unstructured mpp domain.
+        integer(INT_KIND),dimension(:),allocatable     :: unstructured_axis_data                     !<Data that is registered to the restart file for the unstructured axis.
+        integer(INT_KIND)                              :: unstructured_axis_data_size                !<Size of the unstructured axis data array.
+        character(len=256)                             :: unstructured_axis_name                     !<Name for the unstructured axis.
+        real,dimension(:),allocatable                  :: x_axis_data                                !<Data for the x-axis that is registered to the restart file.
+        real,dimension(:),allocatable                  :: y_axis_data                                !<Data for the y-axis that is registered to the restart file.
+        real,dimension(:),allocatable                  :: z_axis_data                                !<Data for the z-axis that is registered to the restart file.
+        real                                           :: unstructured_real_scalar_field_data_ref    !<Reference test data for an unstructured real scalar field.
+        real,dimension(:),allocatable                  :: unstructured_real_1D_field_data_ref        !<Reference test data for an unstructured real 1D field.
+        real,dimension(:,:),allocatable                :: unstructured_real_2D_field_data_ref        !<Reference test data for an unstructured real 2D field.
+        real,dimension(:,:,:),allocatable              :: unstructured_real_3D_field_data_ref        !<Reference test data for an unstructured real 3D field.
+        integer                                        :: unstructured_int_scalar_field_data_ref     !<Reference test data for an unstructured integer scalar field.
+        integer,dimension(:),allocatable               :: unstructured_int_1D_field_data_ref         !<Reference test data for an unstructured integer 1D field.
+        integer,dimension(:,:),allocatable             :: unstructured_int_2D_field_data_ref         !<Reference test data for an unstructured integer 2D field.
+        character(len=256)                             :: unstructured_real_scalar_field_name        !<Name for an unstructured real scalar field.
+        real                                           :: unstructured_real_scalar_field_data        !<Data for an unstructured real scalar field.
+        character(len=256)                             :: unstructured_real_1D_field_name            !<Name for an unstructured real 1D field.
+        real,dimension(:),allocatable                  :: unstructured_real_1D_field_data            !<Data for an unstructured real 1D field.
+        character(len=256)                             :: unstructured_real_2D_field_name            !<Name for an unstructured real 2D field.
+        real,dimension(:,:),allocatable                :: unstructured_real_2D_field_data            !<Data for an unstructured real 2D field.
+        character(len=256)                             :: unstructured_real_3D_field_name            !<Name for an unstructured real 3D field.
+        real,dimension(:,:,:),allocatable              :: unstructured_real_3D_field_data            !<Data for an unstructured real 3D field.
+        character(len=256)                             :: unstructured_int_scalar_field_name         !<Name for an unstructured integer scalar field.
+        integer                                        :: unstructured_int_scalar_field_data         !<Data for an unstructured integer scalar field.
+        character(len=256)                             :: unstructured_int_1D_field_name             !<Name for an unstructured integer 1D field.
+        integer,dimension(:),allocatable               :: unstructured_int_1D_field_data             !<Data for an unstructured integer 1D field.
+        character(len=256)                             :: unstructured_int_2D_field_name             !<Name for an unstructured integer 2D field.
+        character(len=100)                             :: unstructured_1d_alt                       !<Name of the unstrucutred 1D field if L>1
+        integer,dimension(:,:),allocatable             :: unstructured_int_2D_field_data             !<Data for an unstructured integer 2D field.
+       integer(INT_KIND),allocatable,dimension(:)      :: unstructured_axis_diag_id                  !<Id returned for the unstructured axis by diag_axis_init.
+       integer(INT_KIND)                               :: x_axis_diag_id                             !<Id returned for the x-axis by diag_axis_init.
+       integer(INT_KIND)                              :: y_axis_diag_id                             !<Id returned for the y-axis by diag_axis_init.
+       integer(INT_KIND)                              :: z_axis_diag_id                             !<Id returned for the z-axis by diag_axis_init.
+       real,allocatable,dimension(:) :: lat, lon
+       integer(INT_KIND)             :: idlat
+       integer(INT_KIND)                              :: idlon
+       integer(INT_KIND)                              :: rsf_diag_id                                !<Id returned for a real scalar field associated with the unstructured grid by
+                                !!register_diag_field.
+       integer(INT_KIND),allocatable,dimension(:)     :: rsf_diag_1d_id                             !<Id returned for a real 1D array  field associated with the unstructured grid by                                                                                                     !!register_diag_field.
+       integer(INT_KIND)                              :: rsf_diag_2d_id                             !<Id returned for a real 2D array  field associated with the unstructured grid by                                                                                                     !!register_diag_field.
+        integer(INT_KIND)                              :: num_diag_time_steps                        !<Number of timesteps (to simulate the model running).
+        type(time_type)                                :: diag_time_start                            !<Starting time for the test.
+        type(time_type)                                :: diag_time_step                             !<Time step for the test.
+        logical(INT_KIND)                              :: used                                       !<Return value from send data.
+
+        integer(INT_KIND)                              :: i                                          !<Loop variable.
+        integer(INT_KIND)                              :: j                                          !<Loop variable.
+        integer(INT_KIND)                              :: k,l=1                                          !<Loop variable.
+        integer(INT_KIND)                              :: p                                          !<Counting variable.
+
+       !Needed to define the 2D structured domain but never used.
+        integer(INT_KIND)              :: ncontacts
+        integer(INT_KIND),dimension(20) :: tile1
+        integer(INT_KIND),dimension(20) :: tile2
+        integer(INT_KIND),dimension(20) :: istart1
+        integer(INT_KIND),dimension(20) :: iend1
+        integer(INT_KIND),dimension(20) :: jstart1
+        integer(INT_KIND),dimension(20) :: jend1
+        integer(INT_KIND),dimension(20) :: istart2
+        integer(INT_KIND),dimension(20) :: iend2
+        integer(INT_KIND),dimension(20) :: jstart2
+        integer(INT_KIND),dimension(20) :: jend2
+
+        integer(INT_KIND),dimension(3)  :: npes_io_group
+
+       !Print out a message that the test is starting.
+        if (mpp_pe() .eq. mpp_root_pe()) then
+            write(output_unit,*)
+            write(output_unit,*) "</----------------------------------------"
+            write(output_unit,*) "Test create_unstructured_test_restart_file" &
+                                 //" starting ..."
+            write(output_unit,*)
+        endif
+
+       !Synchronize all ranks.
+        call mpp_sync()
+
+       !Make sure that valid inputs were passed in.
+        if (nx .lt. 1 .or. ny .lt. 1) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" there must be at least on grid point in the" &
+                           //" x- and y- dimensions.")
+        endif
+        if (npes .gt. nx*ny) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" the total number of ranks cannot be greater" &
+                           //" than the total number of grid points in the" &
+                           //" x-y plane.")
+        endif
+        if (num_domain_tiles_x .lt. 1 .or. num_domain_tiles_y .lt. 1) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" there must be at least on domain tile in the" &
+                           //" x- and y- dimensions.")
+        endif
+        if (mod(nx,num_domain_tiles_x) .ne. 0) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" the total number of grid points in the" &
+                           //" x-dimension must be evenly divisible by the" &
+                           //" total number of domain tiles in the" &
+                           //" x-dimension.")
+        endif
+        if (mod(ny,num_domain_tiles_y) .ne. 0) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" the total number of grid points in the" &
+                           //" y-dimension must be evenly divisible by the" &
+                           //" total number of domain tiles in the" &
+                           //" y-dimension.")
+        endif
+        if (num_domain_tiles_x*num_domain_tiles_y .gt. npes) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" the total number of domain tiles cannot be" &
+                           //" greater than the total number of ranks.")
+        endif
+        if (mod(npes,num_domain_tiles_x) .ne. 0) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" the total number of ranks must be evenly" &
+                           //" divisible by the total number of domain" &
+                           //" tiles in the x-dimension.")
+        endif
+        if (mod(npes,num_domain_tiles_y) .ne. 0) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" the total number of ranks must be evenly" &
+                           //" divisible by the total number of domain" &
+                           //" tiles in the y-dimension.")
+        endif
+
+       !Set domain tile values for the 2D structured domain.
+        num_domain_tiles = num_domain_tiles_x*num_domain_tiles_y
+        npes_per_domain_tile = npes/num_domain_tiles
+        my_domain_tile_id = (mpp_pe())/npes_per_domain_tile + 1
+        if (mpp_pe() .eq. (my_domain_tile_id-1)*npes_per_domain_tile) then
+            is_domain_tile_root = .true.
+        else
+            is_domain_tile_root = .false.
+        endif
+        layout_for_full_domain(1) = num_domain_tiles_x
+        layout_for_full_domain(2) = npes/layout_for_full_domain(1)
+
+       !For each 2D structured domain tile, store the beginning and ending
+       !rank ids assigned to it.  For example, if there are 8 ranks and 2
+       !domain tiles, then tile 1 will be assigned ranks 0 - 3 and tile 2
+       !will be assigned ranks 4 - 7.
+        allocate(pe_start(num_domain_tiles))
+        allocate(pe_end(num_domain_tiles))
+        do i = 1,num_domain_tiles
+            pe_start(i) = (i-1)*npes_per_domain_tile
+            pe_end(i) = i*npes_per_domain_tile - 1
+        enddo
+
+       !Calculate parameters needed to construct the 2D structured domain.
+       !All domain tiles are assumed to be the same size.
+        x_grid_points_per_domain_tile = nx/num_domain_tiles_x
+        y_grid_points_per_domain_tile = ny/num_domain_tiles_y
+        allocate(global_indices(4,num_domain_tiles))
+        do i = 1,num_domain_tiles
+            global_indices(:,i) = (/1,x_grid_points_per_domain_tile, &
+                                    1,y_grid_points_per_domain_tile/)
+        enddo
+        allocate(layout2D(2,num_domain_tiles))
+        do i = 1,num_domain_tiles
+            layout2D(1,i) = layout_for_full_domain(1)/num_domain_tiles_x
+            layout2D(2,i) = layout_for_full_domain(2)/num_domain_tiles_y
+        enddo
+
+       !This test does not use the "contact" region between tiles, but
+       !the 2D structured domain requires these inputs, so just set them
+       !all equal to 1.
+        ncontacts = 1
+        tile1 = 1
+        tile2 = 1
+        istart1 = 1
+        iend1 = 1
+        jstart1 = 1
+        jend1 = 1
+        istart2 = 1
+        iend2 = 1
+        jstart2 = 1
+        jend2 = 1
+!write (6,*)size(tile1)
+       !Define the 2D structured domain.
+        call mpp_define_mosaic(global_indices, &
+                               layout2D, &
+                               domain_2D, &
+                               num_domain_tiles, &
+                               0, &
+                               tile1, &
+                               tile2, &
+                               istart1, &
+                               iend1, &
+                               jstart1, &
+                               jend1, &
+                               istart2, &
+                               iend2, &
+                               jstart2, &
+                               jend2, &
+                               pe_start, &
+                               pe_end)
+
+       !Define a toy mask to mimic what happens in the land model.
+        allocate(land_mask(x_grid_points_per_domain_tile, &
+                           y_grid_points_per_domain_tile, &
+                           num_domain_tiles))
+        allocate(num_non_masked_grid_points_per_domain_tile(num_domain_tiles))
+        land_mask = .false.
+        do k = 1,num_domain_tiles
+            mask_counter = 0
+            do j = 1,y_grid_points_per_domain_tile
+                do i = 1,x_grid_points_per_domain_tile
+                    if (mod((k-1)*y_grid_points_per_domain_tile*x_grid_points_per_domain_tile + &
+                            (j-1)*x_grid_points_per_domain_tile + &
+                            (i-1),2) .eq. 0) then
+                        land_mask(i,j,k) = .true.
+                        mask_counter = mask_counter + 1
+                    endif
+                enddo
+            enddo
+            num_non_masked_grid_points_per_domain_tile(k) = mask_counter
+        enddo
+
+       !Set the number of land tiles allowed per non-masked grid point.
+        num_non_masked_grid_points = sum(num_non_masked_grid_points_per_domain_tile)
+        allocate(num_land_tiles_per_non_masked_grid_point(num_non_masked_grid_points))
+        num_land_tiles_per_non_masked_grid_point = 1
+
+       !Set the number of ranks to use with the unstructured domain.  There
+       !must be at least one grid point per rank.
+        num_ranks_using_unstructured_grid = npes
+        if (num_ranks_using_unstructured_grid .gt. num_non_masked_grid_points) then
+            call mpp_error(FATAL, &
+                           "create_unstructured_test_restart_file:" &
+                           //" the number of ranks exceeds the number of" &
+                           //" non-masked grid points for the unstructured" &
+                           //" domain.")
+        endif
+
+       !Define an array used to map grid points from the "structured" 2D grid
+       !to the "unstructured" 1D grid.  The mapping goes as follows (fortran
+       !ording so first index is fastest):
+       !
+       ! 2D "structured" grid (lon,lat,tile) => 1D "unstructured" grid (p)
+       !
+       !where masked points are skipped.
+        allocate(unstructured_grid_point_index_map(num_non_masked_grid_points))
+        p = 0
+        do k = 1,num_domain_tiles
+            do j = 1,y_grid_points_per_domain_tile
+                do i = 1,x_grid_points_per_domain_tile
+                    if (land_mask(i,j,k)) then
+                        p = p + 1
+                        unstructured_grid_point_index_map(p) = (j-1)*x_grid_points_per_domain_tile + i
+                    endif
+                enddo
+            enddo
+        enddo
+       !> Set in namelist is "I/O tile factor".  The number of ranks that
+       !! participate in I/O for a tile is equal to:
+       !!
+       !! num_io_ranks_on_a_tile = num_ranks_on_the_tile / "I/O tile factor".
+       !!
+       !!so for:
+       !!
+       !! io_tile_factor = 1, all of the ranks on a tile participate in the I/O
+       !! io_tile_factor = 2, 1/2 of the ranks on a tile participate in the I/O
+       !! io_tile_factor = 3, 1/3 of the ranks on a tile participate in the I/O
+       !! ...
+       !! io_tile_factor = 0 is a special case where only one rank participates
+       !!                  in the I/O for a tile.
+       !! io_tile_factor = 1
+if (mpp_pe() == mpp_root_pe()) write(6,*) "IO_TILE_FACTOR is ",io_tile_factor
+allocate(unstructured_axis_diag_id(1))
+allocate(rsf_diag_1d_id(1))
+
+       !Define the "unstructured" domain decomposition.
+        call mpp_define_unstruct_domain(domain_ug, &
+                                        domain_2D, &
+                                        num_non_masked_grid_points_per_domain_tile, &
+                                        num_land_tiles_per_non_masked_grid_point, &
+                                        num_ranks_using_unstructured_grid, &
+                                        io_tile_factor, &
+                                        unstructured_grid_point_index_map)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!      !Don't need to modify above here!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+       !Get the that will be registered for the unstructured axis. This should
+       !be each rank's unstructured compute domain (I think, because a gather
+       !is performed by the root of each I/O domain pelist.
+        call mpp_get_UG_compute_domain(domain_ug,size=unstructured_axis_data_size)
+        if(.not.allocated(unstructured_axis_data))allocate(unstructured_axis_data(unstructured_axis_data_size))
+!! THIS IS A PROBLEM !!
+        call mpp_get_UG_domain_grid_index(domain_ug,unstructured_axis_data)
+!write(6,*)"ID:",mpp_pe()," DATA: ",unstructured_axis_data
+       !Initialize the "unstructured" axis for the diagnostics.
+        unstructured_axis_name = "ug_axis"
+
+        unstructured_axis_diag_id(l) = diag_axis_init(trim(unstructured_axis_name), &
+                                                   real(unstructured_axis_data), &
+                                                   "none", &
+                                                   "U", &
+                                                   long_name="mapping indices", &
+                                                   domainU=domain_ug)
+   call diag_axis_add_attribute(unstructured_axis_diag_id(l),'compress','grid_xt grid_yt')
+
+!write(6,*) "ID U",unstructured_axis_diag_id
+       !Add the x-, y-, and z-axes to the restart file.  Until a bug in
+       !the code is resolved, I must register the unstructured axis first.
+       !Also initialize the axes for the diagnostics.
+        if (.not.allocated(x_axis_data)) allocate(x_axis_data(nx))
+!        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny))
+!! ASSUMES 4 PEs!!!
+! if (mpp_pe() > 4) call error_mesg("Diag_test_unstruct","Only 4 PEs please",fatal)
+     do i=1,nx
+          x_axis_data(i) = real(i)
+     enddo
+!     if (mod(mpp_pe(),2).eq.0) then
+!        do j = 1,ny/4
+!            y_axis_data(j) = real(j)
+!        enddo
+!
+!     else
+!        do j = 1,ny/4
+!            y_axis_data(j) = real(j+ny/4)
+!        enddo
+!     endif
+
+       x_axis_diag_id = diag_axis_init("grid_xt", &
+                                       x_axis_data, &
+                                       "degrees", &
+                                       "X", &
+                                       long_name="longitude")
+
+        if (.not.allocated(y_axis_data))allocate(y_axis_data(ny/num_domain_tiles_y))
+        do i = 1,ny/num_domain_tiles_y
+            y_axis_data(i) = real(i)
+        enddo
+       y_axis_diag_id = diag_axis_init("grid_yt", &
+                                       y_axis_data, &
+                                       "degrees", &
+                                       "Y", &
+                                       long_name="latitude")
+
+        if (.not.allocated(z_axis_data))allocate(z_axis_data(nz))
+        do i = 1,nz
+            z_axis_data(i) = real(i*5.0)
+        enddo
+       z_axis_diag_id = diag_axis_init("zfull", &
+                                       z_axis_data, &
+                                       "km", &
+                                       "Z", &
+                                       long_name="dont look down")
+!write (6,*) z_axis_diag_id
+
+       !Define some reference test data.
+
+       !real scalar field.
+        unstructured_real_scalar_field_data_ref = 1234.5678*real(l)
+
+       !real 1D field.
+        if (.not.allocated(unstructured_real_1D_field_data_ref)) allocate(unstructured_real_1D_field_data_ref(unstructured_axis_data_size))
+        do i = 1,unstructured_axis_data_size
+            unstructured_real_1D_field_data_ref(i) = real(i) *real(i)+0.1*(mpp_pe()+1)
+        enddo
+
+       !real 2D field.
+        if (.not.allocated(unstructured_real_2D_field_data_ref)) allocate(unstructured_real_2D_field_data_ref(unstructured_axis_data_size,nz))
+        do j = 1,nz
+            do i = 1,unstructured_axis_data_size
+                unstructured_real_2D_field_data_ref(i,j) = real(j)+0.1*(mpp_pe()+1.0)
+                                                           !-1.0*real((j-1)* &
+                                                           !unstructured_axis_data_size+i) &
+                                                           !+ 1.1111111*real(l)
+            enddo
+        enddo
+
+       !real 3D field.
+!       if(.not.allocated(unstructured_real_3D_field_data_ref) allocate(unstructured_real_3D_field_data_ref(unstructured_axis_data_size,nz,cc_axis_size))
+!       do k = 1,cc_axis_size
+!           do j = 1,nz
+!               do i = 1,unstructured_axis_data_size
+!                   unstructured_real_3D_field_data_ref(i,j,k) = -1.0*real((k-1)*nz* &
+!                                                                unstructured_axis_data_size+(j-1)* &
+!                                                                unstructured_axis_data_size+i) &
+!                                                                + 2.2222222
+!               enddo
+!           enddo
+!       enddo
+
+       !integer scalar field.
+        unstructured_int_scalar_field_data_ref = 7654321*L
+
+       !integer 1D field.
+        if (.not.allocated(unstructured_int_1D_field_data_ref)) allocate(unstructured_int_1D_field_data_ref(unstructured_axis_data_size))
+        do i = 1,unstructured_axis_data_size
+            unstructured_int_1D_field_data_ref(i) = i - 8*l
+        enddo
+
+       !integer 2D field.
+        if (.not.allocated(unstructured_int_2D_field_data_ref)) allocate(unstructured_int_2D_field_data_ref(unstructured_axis_data_size,nz))
+        do j = 1,nz
+            do i = 1,unstructured_axis_data_size
+                unstructured_int_2D_field_data_ref(i,j) = -1*((j-1)*unstructured_axis_data_size+i) + 2*L
+            enddo
+        enddo
+
+     !> Latitude and Longitude
+     allocate(lat(ny/num_domain_tiles_y),lon(nx))
+     do i=1,nx
+          lon(i) = real(i)*360.0/real(nx)
+     enddo
+     do j=1,ny/num_domain_tiles_y
+          lat(j) = real(j)*180.8/real(ny)
+     enddo
+
+       !Add a real scalar field to the restart file.  Initialize it as a
+       !diagnostic.
+        unstructured_real_scalar_field_name = "unstructured_real_scalar_field_1"
+        unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
+
+       idlon = register_diag_field("UG_unit_test", &
+                                         "lon", &
+                                         (/x_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="E-W longitude", &
+                                         units="degrees")
+l=SIZE(unstructured_axis_diag_id)
+
+       rsf_diag_id = register_diag_field("UG_unit_test", &
+                                         "unstructured_real_scalar_field_data", &
+                                         init_time=diag_time, &
+                                         long_name="rsf_diag_1", &
+                                         units="ergs")
+       rsf_diag_1d_id(1) = register_diag_field("UG_unit_test", &
+                                         "unstructured_real_1D_field_data", &
+                                         (/unstructured_axis_diag_id(1)/),&
+                                         init_time=diag_time, &
+                                         long_name="ONE_D_ARRAY", &
+                                         units="ergs")
+
+       rsf_diag_2d_id = register_diag_field("UG_unit_test", &
+                                         "unstructured_real_2D_field_data", &
+                                         (/unstructured_axis_diag_id(1), z_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="TWO_D_ARRAY", &
+                                         units="ergs")
+
+       idlat = register_diag_field("UG_unit_test", &
+                                         "lat", &
+                                         (/y_axis_diag_id/),&
+                                         init_time=diag_time, &
+                                         long_name="S-N latitude", &
+                                         units="degrees")
+
+
+IF (l .NE. 1) THEN
+  do l=2,3
+   write(unstructured_1d_alt,'(a,I0)') "unstructured_real_1D",L
+   rsf_diag_1d_id(L) = register_diag_field ("UG_unit_test", trim(unstructured_1d_alt),&
+                                          (/unstructured_axis_diag_id(L)/),&
+                                           init_time=diag_time, &
+                                           long_name="OTHER"//trim(unstructured_1d_alt), &
+                                           units="kg")
+  enddo
+ENDIF !L.ne.1
+       !Add a real 1D field to the restart file.  This field is of the form:
+       !field = field(unstructured).
+        unstructured_real_1D_field_name = "unstructured_real_1D_field_1"
+        if (.not.allocated(unstructured_real_1D_field_data)) allocate(unstructured_real_1D_field_data(unstructured_axis_data_size))
+        unstructured_real_1D_field_data = unstructured_real_1D_field_data_ref
+
+       !Add a real 2D field to the restart file.  This field is of the form:
+       !field = field(unstructured,z).
+        unstructured_real_2D_field_name = "unstructured_real_2D_field_1"
+       if (.not.allocated(unstructured_real_2D_field_data)) allocate(unstructured_real_2D_field_data(unstructured_axis_data_size,nz))
+       unstructured_real_2D_field_data = unstructured_real_2D_field_data_ref
+!       allocate(unstructured_real_2D_field_data(unstructured_axis_data_size,nx))
+!       unstructured_real_2D_field_data = 1
+
+       !Add a real 3D field to the restart file.  This field is of the form:
+       !field = field(unstructured,z,cc).
+!       unstructured_real_3D_field_name = "unstructured_real_3D_field_1"
+!       if (.not.allocated(unstructured_real_3D_field_data)) allocate(unstructured_real_3D_field_data(unstructured_axis_data_size,nz,cc_axis_size))
+!       unstructured_real_3D_field_data = unstructured_real_3D_field_data_ref
+
+       !Add an integer scalar field to the restart file.
+        unstructured_int_scalar_field_name = "unstructured_int_scalar_field_1"
+        unstructured_int_scalar_field_data = unstructured_int_scalar_field_data_ref
+
+       !Add an integer 1D field to the restart file.  This field is of the
+       !from: field = field(unstructured).
+        unstructured_int_1D_field_name = "unstructured_int_1D_field_1"
+        if (.not.allocated(unstructured_int_1D_field_data)) allocate(unstructured_int_1D_field_data(unstructured_axis_data_size))
+        unstructured_int_1D_field_data = unstructured_int_1D_field_data_ref
+
+       !Add an integer 2D field to the restart file.  This field is of the
+       !form: field = field(unstructured,z).
+        unstructured_int_2D_field_name = "unstructured_int_2D_field_1"
+        if (.not.allocated(unstructured_int_2D_field_data)) allocate(unstructured_int_2D_field_data(unstructured_axis_data_size,nz))
+        unstructured_int_2D_field_data = unstructured_int_2D_field_data_ref
+
+       !Simulate the model timesteps, so that diagnostics may be written
+       !out.
+        num_diag_time_steps = 4
+        diag_time_step = set_time(12*3600)
+        diag_time_start = diag_time
+! used = send_data(idlat,lat,diag_time)
+! used = send_data(idlon,lon,diag_time)
+        do i = 1,num_diag_time_steps
+
+           !Update the current time.
+            diag_time = diag_time + diag_time_step
+
+           !"Evolve" the test data.
+            unstructured_real_scalar_field_data_ref = unstructured_real_scalar_field_data_ref + &
+                                                      real(1)
+            unstructured_real_scalar_field_data = unstructured_real_scalar_field_data_ref
+
+           !Update the data.
+           if (rsf_diag_id .gt. 0) then
+               used = send_data(rsf_diag_id, &
+                                unstructured_real_scalar_field_data, &
+                                diag_time)
+           endif
+         IF (SIZE(rsf_diag_1d_id) == 1) THEN
+          used = send_data(rsf_diag_1d_id(1), &
+                                unstructured_real_1D_field_data, &
+                                diag_time)
+         ELSE
+          DO L=1,3
+           used = send_data(rsf_diag_1d_id(L), &
+                                unstructured_real_1D_field_data, &
+                                diag_time)
+          ENDDO
+         ENDIF
+          used = send_data(rsf_diag_2d_id, &
+                                unstructured_real_2D_field_data, &
+                                diag_time)
+ used = send_data(idlat,lat,diag_time)
+ used = send_data(idlon,lon,diag_time)
+
+        enddo
+       !Deallocate the unstructured domain.
+        call mpp_sync()
+!       call mpp_deallocate_domainUG(domain_ug)
+
+       !Deallocate the 2D structured domain.
+        call mpp_deallocate_domain(domain_2D)
+
+       !Deallocate local allocatables.
+        deallocate(pe_start)
+        deallocate(pe_end)
+        deallocate(global_indices)
+        deallocate(layout2D)
+        deallocate(land_mask)
+        deallocate(num_non_masked_grid_points_per_domain_tile)
+        deallocate(num_land_tiles_per_non_masked_grid_point)
+        deallocate(unstructured_grid_point_index_map)
+        deallocate(x_axis_data)
+        deallocate(y_axis_data)
+        deallocate(z_axis_data)
+        deallocate(unstructured_axis_data)
+        deallocate(unstructured_real_1D_field_data_ref)
+        deallocate(unstructured_real_2D_field_data_ref)
+!       deallocate(unstructured_real_3D_field_data_ref)
+        deallocate(unstructured_int_1D_field_data_ref)
+        deallocate(unstructured_int_2D_field_data_ref)
+        deallocate(unstructured_real_1D_field_data)
+        deallocate(unstructured_real_2D_field_data)
+!       deallocate(unstructured_real_3D_field_data)
+        deallocate(unstructured_int_1D_field_data)
+        deallocate(unstructured_int_2D_field_data)
+
+
+
+       !Print out a message that the test is done.
+        call mpp_sync()
+        if (mpp_pe() .eq. mpp_root_pe()) then
+            write(output_unit,*)
+            write(output_unit,*) "Test create_unstructured_test_restart_file" &
+                                 //" complete."
+            write(output_unit,*) "----------------------------------------/>"
+            write(output_unit,*)
+        endif
+
+
+        return
+  END SUBROUTINE unstruct_test
+
 END PROGRAM test
 #endif

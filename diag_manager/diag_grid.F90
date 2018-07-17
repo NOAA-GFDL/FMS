@@ -1,4 +1,21 @@
-#include <fms_platform.h>
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 MODULE diag_grid_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -60,10 +77,9 @@ MODULE diag_grid_mod
   IMPLICIT NONE
 
   ! Parameters
-  CHARACTER(len=128), PARAMETER :: version =&
-       & '$Id$'
-  CHARACTER(len=128), PARAMETER :: tagname =&
-       & '$Name$'
+  ! Include variable "version" to be written to log file.
+#include <fms_platform.h>
+#include<file_version.h>
 
   ! Derived data types
   ! <PRIVATE>
@@ -224,8 +240,8 @@ CONTAINS
     INTEGER :: myPe, npes, npesPerTile
     INTEGER, ALLOCATABLE, DIMENSION(:) :: xbegin, xend, ybegin, yend
 
-    ! Write the version and tagname to the logfile
-    CALL write_version_number(version, tagname)
+    ! Write the file version to the logfile
+    CALL write_version_number("DIAG_GRID_MOD", version)
 
     ! Verify all allocatable / pointers for diag_global_grid hare not
     ! allocated / associated.
@@ -343,10 +359,10 @@ CONTAINS
     diag_global_grid%dimJ = j_dim
     diag_global_grid%adimI = ai_dim
     diag_global_grid%adimJ = aj_dim
-    !--- For the nested model, the nested region only has 1 tile ( ntiles = 1) but 
+    !--- For the nested model, the nested region only has 1 tile ( ntiles = 1) but
     !--- the tile_id is 7 for the nested region. In the routine get_local_indexes,
     !--- local variables ijMin and ijMax have dimesnion (ntiles) and will access
-    !--- ijMin(diag_global_grid%tile_number,:). For the nested region, ntiles = 1 and 
+    !--- ijMin(diag_global_grid%tile_number,:). For the nested region, ntiles = 1 and
     !--- diag_global_grid%tile_number = 7 will cause out of bounds. So need to
     !--- set diag_global_grid%tile_number = 1 when ntiles = 1 for the nested model.
     if(ntiles == 1) then
@@ -476,25 +492,17 @@ CONTAINS
 
     LOGICAL :: onMyPe
 
+    !For cfsite potential fix.
+    INTEGER :: minI
+    INTEGER :: minJ
+    REAL :: minimum_distance
+    REAL :: global_min_distance
+    INTEGER :: rank_buf
+
     IF ( .NOT. diag_grid_initialized )&
          & CALL error_mesg('diag_grid_mod::get_local_indexes',&
          &'Module not initialized, first initialze module with a call &
          &to diag_grid_init', FATAL)
-
-    myTile = diag_global_grid%tile_number
-    ntiles = diag_global_grid%ntiles
-
-    ! Arrays to home min/max for each tile
-    ALLOCATE(ijMin(ntiles,2), STAT=istat)
-    IF ( istat .NE. 0 )&
-         & CALL error_mesg('diag_grid_mod::get_local_indexes',&
-         &'Cannot allocate ijMin index array', FATAL)
-    ALLOCATE(ijMax(ntiles,2), STAT=istat)
-    IF ( istat .NE. 0 )&
-         & CALL error_mesg('diag_grid_mod::get_local_indexes',&
-         &'Cannot allocate ijMax index array', FATAL)
-    ijMin = 0
-    ijMax = 0
 
     ! Make adjustment for negative longitude values
     if ( lonStart < 0. ) then
@@ -508,36 +516,84 @@ CONTAINS
        my_lonEnd = lonEnd
     end if
 
-    ! There will be four points to define a region, find all four.
-    ! Need to call the correct function depending on if the tile is a
-    ! pole tile or not.
-    !
-    ! Also, if looking for a single point, then use the a-grid
-    IF ( latStart == latEnd .AND. my_lonStart == my_lonEnd ) THEN
-       ! single point
-       IF ( MOD(diag_global_grid%tile_number,3) == 0 ) THEN
-          ijMax(myTile,:) = find_pole_index_agrid(latStart,my_lonStart)
-       ELSE
-          ijMax(myTile,:) = find_equator_index_agrid(latStart,my_lonStart)
-       END IF
+    IF (latStart .EQ. latEnd .AND. my_lonStart .EQ. my_lonEnd) THEN
 
-       WHERE ( ijMax(:,1) .NE. 0 )
-          ijMax(:,1) = ijMax(:,1) + diag_global_grid%myXbegin - 1
-       END WHERE
-       WHERE ( ijMax(:,2) .NE. 0 )
-          ijMax(:,2) = ijMax(:,2) + diag_global_grid%myYbegin - 1
-       END WHERE
+        !For a single point, use the a-grid longitude and latitude
+        !values.
 
-       DO j = 1, 6 ! Each tile.
-          CALL mpp_max(ijMax(j,1))
-          CALL mpp_max(ijMax(j,2))
-       END DO
+        myTile = diag_global_grid%tile_number
+        ntiles = diag_global_grid%ntiles
 
-       ijMin = ijMax
+        allocate(ijMin(ntiles,2))
+        ijMin = 0
+
+        !Find the i,j indices of the a-grid point nearest to the
+        !my_lonStart,latStart point.
+        CALL find_nearest_agrid_index(latStart, &
+                                      my_lonStart, &
+                                      minI, &
+                                      minJ, &
+                                      minimum_distance)
+
+        !Find the minimum distance across all ranks.
+        global_min_distance = minimum_distance
+        CALL mpp_min(global_min_distance)
+
+        !In the case of a tie (i.e. two ranks with exactly the same
+        !minimum distance), use the i,j values from the larger rank id.
+        IF (global_min_distance .EQ. minimum_distance) THEN
+            rank_buf = mpp_pe()
+        ELSE
+            rank_buf = -1
+        ENDIF
+        CALL mpp_max(rank_buf)
+
+        !Sanity check.
+        IF (rank_buf .EQ. -1) THEN
+            CALL error_mesg("get_local_indexes", &
+                            "No rank has minimum distance.", &
+                            FATAL)
+        ENDIF
+
+        IF (rank_buf .EQ. mpp_pe()) THEN
+            ijMin(mytile,1) = minI + diag_global_grid%myXbegin - 1
+            ijMin(mytile,2) = minJ + diag_global_grid%myYbegin - 1
+        ENDIF
+
+        DO i = 1,ntiles
+            CALL mpp_max(ijMin(i,1))
+            CALL mpp_max(ijMin(i,2))
+        ENDDO
+
+        istart = ijMin(mytile,1)
+        jstart = ijMin(mytile,2)
+        iend = istart
+        jend = jstart
+
+        DEALLOCATE(ijMin)
     ELSE
-       ! multi-point
+
+        myTile = diag_global_grid%tile_number
+        ntiles = diag_global_grid%ntiles
+
+        ! Arrays to home min/max for each tile
+        ALLOCATE(ijMin(ntiles,2), STAT=istat)
+        IF ( istat .NE. 0 )&
+             & CALL error_mesg('diag_grid_mod::get_local_indexes',&
+             &'Cannot allocate ijMin index array', FATAL)
+        ALLOCATE(ijMax(ntiles,2), STAT=istat)
+        IF ( istat .NE. 0 )&
+             & CALL error_mesg('diag_grid_mod::get_local_indexes',&
+             &'Cannot allocate ijMax index array', FATAL)
+        ijMin = 0
+        ijMax = 0
+
+        ! There will be four points to define a region, find all four.
+        ! Need to call the correct function depending on if the tile is a
+        ! pole tile or not.
        dimI = diag_global_grid%dimI
        dimJ = diag_global_grid%dimJ
+
        ! Build the delta array
        ALLOCATE(delta_lat(dimI,dimJ), STAT=istat)
        IF ( istat .NE. 0 )&
@@ -649,15 +705,16 @@ CONTAINS
           ijMin(myTile,2) = 0
           ijMax(myTile,2) = 0
        END IF
+
+       istart = ijMin(myTile,1)
+       jstart = ijMin(myTile,2)
+       iend = ijMax(myTile,1)
+       jend = ijMax(myTile,2)
+
+       DEALLOCATE(ijMin)
+       DEALLOCATE(ijMax)
     END IF
 
-    istart = ijMin(myTile,1)
-    jstart = ijMin(myTile,2)
-    iend = ijMax(myTile,1)
-    jend = ijMax(myTile,2)
-
-    DEALLOCATE(ijMin)
-    DEALLOCATE(ijMax)
   END SUBROUTINE get_local_indexes
   ! </SUBROUTINE>
 
@@ -1214,4 +1271,80 @@ CONTAINS
     gCirDistance = RADIUS * 2. * ASIN(SQRT((SIN(deltaTheta/2.))**2 + COS(theta1)*COS(theta2)*(SIN(deltaLambda/2.))**2))
   END FUNCTION gCirDistance
   ! </FUNCTION>
+
+  !Find the i,j indices and distance of the a-grid point nearest to
+  !the inputted lat,lon point.
+  SUBROUTINE find_nearest_agrid_index(lat, &
+                                      lon, &
+                                      minI, &
+                                      minJ, &
+                                      minimum_distance)
+
+    !Inputs/outputs
+    REAL,INTENT(IN) :: lat
+    REAL,INTENT(IN) :: lon
+    INTEGER,INTENT(OUT) :: minI
+    INTEGER,INTENT(OUT) :: minJ
+    REAL,INTENT(OUT) :: minimum_distance
+
+    !Local variables
+    REAL :: llat
+    REAL :: llon
+    INTEGER :: j
+    INTEGER :: i
+    REAL :: dist
+
+    !Since the poles have an non-unique longitude value, make a small
+    !correction if looking for one of the poles.
+    IF (lat .EQ. 90.0) THEN
+       llat = lat - .1
+    ELSEIF (lat .EQ. -90.0) THEN
+       llat = lat + .1
+    ELSE
+       llat = lat
+    END IF
+    llon = lon
+
+    !Loop through non-halo points.  Calculate the distance
+    !between each a-grid point and the point that we
+    !are seeking.  Store the minimum distance and its
+    !corresponding i,j indices.
+    minI = 0
+    minJ = 0
+    minimum_distance = 2.0*RADIUS*3.141592653
+    DO j = 1,diag_global_grid%adimJ-2
+        DO i = 1,diag_global_grid%adimI-2
+            dist = gCirDistance(llat, &
+                                llon, &
+                                diag_global_grid%aglo_lat(i,j), &
+                                diag_global_grid%aglo_lon(i,j))
+            IF (dist .LT. minimum_distance) THEN
+
+                !These number shouldn't be hardcoded, but they have to
+                !match the ones in diag_grid_init.
+                if (diag_global_grid%tile_number .eq. 4 .or. &
+                        diag_global_grid%tile_number .eq. 5) then
+
+                    !Because of transpose in diag_grid_init.
+                    minI = j
+                    minJ = i
+
+                else
+                    minI = i
+                    minJ = j
+                endif
+                minimum_distance = dist
+            ENDIF
+        ENDDO
+    ENDDO
+
+    !Check that valid i,j indices have been found.
+    IF (minI .EQ. 0 .OR. minJ .EQ. 0) THEN
+        call error_mesg("find_nearest_agrid_index", &
+                        "A minimum distance was not found.", &
+                        FATAL)
+    ENDIF
+
+  END SUBROUTINE find_nearest_agrid_index
+
 END MODULE diag_grid_mod

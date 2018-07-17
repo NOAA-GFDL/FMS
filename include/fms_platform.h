@@ -2,30 +2,25 @@
 #define __FMS_PLATFORM_
 
 ! -*-f90-*-*
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!                                                                   !!
-!!                   GNU General Public License                      !!
-!!                                                                   !!
-!! This file is part of the Flexible Modeling System (FMS).          !!
-!!                                                                   !!
-!! FMS is free software; you can redistribute it and/or modify       !!
-!! it and are expected to follow the terms of the GNU General Public !!
-!! License as published by the Free Software Foundation.             !!
-!!                                                                   !!
-!! FMS is distributed in the hope that it will be useful,            !!
-!! but WITHOUT ANY WARRANTY; without even the implied warranty of    !!
-!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     !!
-!! GNU General Public License for more details.                      !!
-!!                                                                   !!
-!! You should have received a copy of the GNU General Public License !!
-!! along with FMS; if not, write to:                                 !!
-!!          Free Software Foundation, Inc.                           !!
-!!          59 Temple Place, Suite 330                               !!
-!!          Boston, MA  02111-1307  USA                              !!
-!! or see:                                                           !!
-!!          http://www.gnu.org/licenses/gpl.txt                      !!
-!!                                                                   !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 #ifdef __sgi
 #ifdef _COMPILER_VERSION
 !the MIPSPro compiler defines _COMPILER_VERSION
@@ -49,7 +44,7 @@
 #endif
 
 !most compilers support Cray pointers
-!if you find a compiler that doesn't, #undef this inside a suitable #ifdef
+!if you find a compiler that doesnt, #undef this inside a suitable #ifdef
 #define use_CRI_pointers
 
 !values of kind: double and long are 8-byte, float and int are 4-byte
@@ -79,7 +74,7 @@
 #endif
 
 #ifdef sgi_generic
-!this is for the Edinburgh n32/o32 compiler, which won't accept 8-byte ints at any price
+!this is for the Edinburgh n32/o32 compiler, which wont accept 8-byte ints at any price
 #define no_8byte_integers
 #define LONG_KIND 4
 #endif
@@ -123,13 +118,13 @@
 #define _PURE PURE
 #else
 !DEC$ MESSAGE:'Not using PURE'
-#define _PURE 
+#define _PURE
 #endif
 
 #ifdef _F2000
 !DEC$ MESSAGE:'Converting pointers to allocatable components'
 #define _ALLOCATABLE ALLOCATABLE
-#define _NULL 
+#define _NULL
 #define _ALLOCATED ALLOCATED
 #else
 !DEC$ MESSAGE:'Using pointers'

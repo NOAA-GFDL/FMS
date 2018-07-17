@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                                  MPP_TRANSMIT                               !
@@ -30,7 +48,7 @@
       integer, intent(in),  optional :: tag
       integer, intent(out), optional :: recv_request, send_request
       logical                       :: block_comm
-      integer                       :: i, out_unit
+      integer                       :: i 
       MPP_TYPE_, allocatable, save  :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
       integer                       :: comm_tag
       integer                       :: rsize
@@ -41,10 +59,9 @@
       block_comm = .true.
       if(PRESENT(block)) block_comm = block
 
-      out_unit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
+          write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
 
@@ -97,6 +114,7 @@
              call MPI_RECV( get_data, get_len, MPI_TYPE_, from_pe, comm_tag, mpp_comm_private, stat, error )
              call MPI_GET_COUNT( stat, MPI_TYPE_, rsize, error)
              if(rsize .NE. get_len) then
+                print*, "rsize, get_len=", rsize, get_len, mpp_pe(), from_pe
                 call mpp_error(FATAL, "MPP_TRANSMIT: get_len does not match size of data received")
              endif
           else
@@ -131,7 +149,7 @@
 
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
+          write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
       end if
       return
@@ -150,15 +168,14 @@
       MPP_TYPE_, intent(inout) :: data(*)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      integer :: n, i, from_rank, out_unit
+      integer :: n, i, from_rank, stdout_unit
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_BROADCAST: You must first call mpp_init.' )
       n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
-      out_unit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
-          write( out_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
+          write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
                'T=',tick, ' PE=',pe, ' MPP_BROADCAST begin: from_pe, length=', from_pe, length
       end if
 

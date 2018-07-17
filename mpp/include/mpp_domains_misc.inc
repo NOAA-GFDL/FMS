@@ -1,4 +1,23 @@
 ! -*-f90-*-
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                 MPP_DOMAINS: initialization and termination                 !
@@ -45,7 +64,7 @@
       module_is_initialized = .TRUE.
       pe = mpp_root_pe()
       unit = stdlog()
-      if( mpp_pe() .EQ.mpp_root_pe() ) write( unit,'(/a)' )'MPP_DOMAINS module '//trim(version)//trim(tagname)
+      if( mpp_pe() .EQ.mpp_root_pe() ) write( unit,'(/a)' )'MPP_DOMAINS module '//trim(version)
 
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG
@@ -101,6 +120,7 @@
 !NULL_DOMAIN is a domaintype that can be used to initialize to undef
       call mpp_define_null_domain(NULL_DOMAIN1d);
       call mpp_define_null_domain(NULL_DOMAIN2d);
+      call mpp_define_null_UG_domain(NULL_DOMAINUG)
 
       if( domain_clocks_on )then
           pack_clock          = mpp_clock_id( 'Halo pack' )

@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
     subroutine MPP_WRITE_COMPRESSED_1D_(unit, field, domain, data, nelems_io, tstamp, default_data)
       integer, intent(in) :: unit
       type(fieldtype), intent(inout) :: field
@@ -14,6 +32,23 @@
       call mpp_write_compressed(unit, field, domain, data2D, nelems_io, tstamp, default_data)
       return
     end subroutine MPP_WRITE_COMPRESSED_1D_
+
+    subroutine MPP_WRITE_COMPRESSED_3D_(unit, field, domain, data, nelems_io, tstamp, default_data)
+      integer, intent(in) :: unit
+      type(fieldtype), intent(inout) :: field
+      type(domain2D), intent(inout) :: domain
+      MPP_TYPE_, intent(inout) :: data(:,:,:)
+      integer, intent(in) :: nelems_io(:)  ! number of compressed elements
+      real,              intent(in), optional :: tstamp
+      MPP_TYPE_,         intent(in), optional :: default_data
+
+      MPP_TYPE_ :: data2D(size(data,1),size(data,2)*size(data,3))
+      pointer( ptr, data2D )
+      ptr = LOC(data)
+
+      call mpp_write_compressed(unit, field, domain, data2D, nelems_io, tstamp, default_data)
+      return
+    end subroutine MPP_WRITE_COMPRESSED_3D_
 
     subroutine MPP_WRITE_COMPRESSED_2D_(unit, field, domain, data, nelems_io, tstamp, default_data)
       integer,           intent(in)           :: unit
@@ -47,7 +82,7 @@
       fill = 0
       if(PRESENT(default_data)) fill = default_data
 
-      io_domain=>mpp_get_io_domain(domain) 
+      io_domain=>mpp_get_io_domain(domain)
       if (.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_WRITE_COMPRESSED_2D_: io_domain must be defined.' )
       npes = mpp_get_domain_npes(io_domain)
       allocate(pelist(npes))
@@ -71,7 +106,7 @@
       ! and a clear, concise unpack
       do j=1,mynelems
         do i=1,nz
-          sbuff(i,j) = data(j,i) 
+          sbuff(i,j) = data(j,i)
       enddo; enddo
 
    !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size
@@ -89,7 +124,7 @@
          enddo; enddo
          ! cludge for now; need resizing accessor
          field%size(1) = nelems
-         call write_record( unit, field, nelems*nz, cdata, tstamp)
+         call write_record_default( unit, field, nelems*nz, cdata, tstamp)
          deallocate(rbuff,cdata)
       endif
 

@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 module fms_mod
 
@@ -135,17 +153,19 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_RDONLY, MPP_WRONLY, MPP_APPEND, MPP_OVERWR, &
                        MPP_SEQUENTIAL, MPP_DIRECT,                     &
                        MPP_SINGLE, MPP_MULTI, MPP_DELETE, mpp_io_exit, &
-                       fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields
+                       fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields, &
+                       do_cf_compliance
 
 use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        read_data, write_data, read_compressed, read_distributed, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
                        set_domain, get_domain_decomp, nullify_domain, &
                        open_file, open_direct_file, string, get_mosaic_tile_grid, &
-                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist
+                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
+                       write_version_number
 
 use memutils_mod, only: print_memuse_stats, memutils_init
-use constants_mod, only: constants_version=>version, constants_tagname=>tagname !pjp: PI not computed
+use constants_mod, only: constants_version=>version !pjp: PI not computed
 
 
 implicit none
@@ -169,7 +189,9 @@ public :: get_mosaic_tile_grid, get_mosaic_tile_file
 
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error, field_exist,     &
-          write_version_number, error_mesg, fms_error_handler
+          error_mesg, fms_error_handler
+! i/o routines from fms_io
+public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
 public :: lowercase, uppercase, string,        &
@@ -186,6 +208,8 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+! public mpp-io interfaces
+public :: do_cf_compliance
 
 !Balaji
 !this is published by fms and applied to any initialized clocks
@@ -283,8 +307,8 @@ integer, public :: clock_flag_default
 
 !  ---- version number -----
 
-  character(len=128) :: version = '$Id$'
-  character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
   logical :: module_is_initialized = .FALSE.
 
@@ -413,7 +437,7 @@ subroutine fms_init (localcomm )
 
 !--- write version info and namelist to logfile ---
 
-    call write_version_number (version, tagname)
+    call write_version_number("FMS_MOD", version)
     if (mpp_pe() == mpp_root_pe()) then
       unit = stdlog()
       write (unit, nml=fms_nml)
@@ -423,7 +447,7 @@ subroutine fms_init (localcomm )
     call memutils_init( print_memory_usage )
     call print_memuse_stats('fms_init')
 
-    call write_version_number (constants_version,constants_tagname)
+    call write_version_number("CONSTANTS_MOD", constants_version)
 
 end subroutine fms_init
 ! </SUBROUTINE>
@@ -757,68 +781,6 @@ end subroutine fms_end
 
     do_nml_error_init = .FALSE.
   END SUBROUTINE nml_error_init
-
-!#######################################################################
-! <SUBROUTINE NAME="write_version_number">
-
-!   <OVERVIEW>
-!     Prints to the log file (or a specified unit) the (cvs) version id string and
-!     (cvs) tag name.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Prints to the log file (stdlog) or a specified unit the (cvs) version id string
-!      and (cvs) tag name.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!    call write_version_number ( version [, tag, unit] )
-!   </TEMPLATE>
-
-!   <IN NAME="version" TYPE="character(len=*)">
-!    string that contains routine name and version number.
-!   </IN>
-!   <IN NAME="tag" TYPE="character(len=*)">
-!    The tag/name string, this is usually the Name string
-!    returned by CVS when checking out the code.
-!   </IN>
-!   <IN NAME="unit" TYPE="integer">
-!    The Fortran unit number of an open formatted file. If this unit number 
-!    is not supplied the log file unit number is used (stdlog). 
-!   </IN>
-! prints module version number to the log file of specified unit number
-
- subroutine write_version_number (version, tag, unit)
-
-!   in:  version = string that contains routine name and version number
-!
-!   optional in:
-!        tag = cvs tag name that code was checked out with
-!        unit    = alternate unit number to direct output  
-!                  (default: unit=stdlog)
-
-   character(len=*), intent(in) :: version
-   character(len=*), intent(in), optional :: tag 
-   integer,          intent(in), optional :: unit 
-
-   integer :: logunit 
-
-   if (.not.module_is_initialized) call fms_init ( )
-
-     logunit = stdlog()
-     if (present(unit)) then
-         logunit = unit
-     else    
-       ! only allow stdlog messages on root pe
-         if ( mpp_pe() /= mpp_root_pe() ) return
-     endif   
-
-     if (present(tag)) then
-         write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
-     else    
-         write (logunit,'(/,80("="),/(a))') trim(version)
-     endif   
-
- end subroutine write_version_number
-! </SUBROUTINE>
 
 !#######################################################################
 

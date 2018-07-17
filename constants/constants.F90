@@ -1,245 +1,152 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
+!! \brief Defines useful constants for Earth. Constants are defined as real
+!! parameters. Constants are accessed through the "use" statement.
+!!
+!! \author Bruce Wyman <Bruce.Wyman@noaa.gov>
 module constants_mod
 
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!    Defines useful constants for Earth.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   Constants are defined as real parameters.
-!   Constants are accessed through the "use" statement.
-! </DESCRIPTION>
-
+!---variable for strong typing grid parameters
+use platform_mod, only: r8_kind
 implicit none
 private
 
-character(len=128) :: version='$Id$'
-character(len=128) :: tagname='$Name$'
-!dummy variable to use in HUGE initializations
-real :: realnumber
-
-!------------ physical constants ---------------
-! <DATA NAME="RADIUS" UNITS="m" TYPE="real" DEFAULT="6371.e3">
-!   radius of the earth
-! </DATA>
-! <DATA NAME="OMEGA" UNITS="1/s" TYPE="real" DEFAULT="7.292e-5">
-!   rotation rate of the planet (earth)
-! </DATA>
-! <DATA NAME="GRAV" UNITS="m/s^2" TYPE="real" DEFAULT="9.80">
-!   acceleration due to gravity
-! </DATA>
-! <DATA NAME="RDGAS" UNITS="J/kg/deg" TYPE="real" DEFAULT="287.04">
-!   gas constant for dry air
-! </DATA>
-! <DATA NAME="KAPPA" TYPE="real" DEFAULT="2./7.">
-!   RDGAS / CP_AIR
-! </DATA>
-! <DATA NAME="CP_AIR" UNITS="J/kg/deg" TYPE="real" DEFAULT="RDGAS/KAPPA">
-!   specific heat capacity of dry air at constant pressure
-! </DATA>
-! <DATA NAME="CP_OCEAN" UNITS="J/kg/deg" TYPE="real" DEFAULT="3989.24495292815">
-!   specific heat capacity taken from McDougall (2002) "Potential Enthalpy ..."
-! </DATA>
-! <DATA NAME="RHO0" UNITS="kg/m^3" TYPE="real" DEFAULT="1.035e3">
-!   average density of sea water
-! </DATA>
-! <DATA NAME="RHO0R" UNITS="m^3/kg" TYPE="real" DEFAULT="1.0/RHO0">
-!   reciprocal of average density of sea water
-! </DATA>
-! <DATA NAME="RHO_CP" UNITS="J/m^3/deg" TYPE="real" DEFAULT="RHO0*CP_OCEAN">
-!   (kg/m^3)*(cal/kg/deg C)(joules/cal) = (joules/m^3/deg C)
-! </DATA>
-
-real, public, parameter :: RADIUS = 6371.0e3   
-real, public, parameter :: OMEGA  = 7.292e-5 
-real, public, parameter :: GRAV   = 9.80    
-real, public, parameter :: RDGAS  = 287.04 
-real, public, parameter :: KAPPA  = 2./7.  
-real, public, parameter :: CP_AIR = RDGAS/KAPPA 
-real, public, parameter :: CP_OCEAN = 3989.24495292815
-real, public, parameter :: RHO0    = 1.035e3
-real, public, parameter :: RHO0R   = 1.0/RHO0
-real, public, parameter :: RHO_CP  = RHO0*CP_OCEAN
-
-!------------ water vapor constants ---------------
-! <DATA NAME="ES0" TYPE="real" DEFAULT="1.0">
-!   Humidity factor. Controls the humidity content of the atmosphere through 
-!   the Saturation Vapour Pressure expression when using DO_SIMPLE.
-! </DATA>
-! <DATA NAME="RVGAS" UNITS="J/kg/deg" TYPE="real" DEFAULT="461.50">
-!   gas constant for water vapor
-! </DATA>
-! <DATA NAME="CP_VAPOR" UNITS="J/kg/deg" TYPE="real" DEFAULT="4.0*RVGAS">
-!   specific heat capacity of water vapor at constant pressure
-! </DATA>
-! <DATA NAME="DENS_H2O" UNITS="kg/m^3" TYPE="real" DEFAULT="1000.">
-!   density of liquid water
-! </DATA>
-! <DATA NAME="HLV" UNITS="J/kg" TYPE="real" DEFAULT="2.500e6">
-!   latent heat of evaporation
-! </DATA>
-! <DATA NAME="HLF" UNITS="J/kg" TYPE="real" DEFAULT="3.34e5">
-!   latent heat of fusion
-! </DATA>
-! <DATA NAME="HLS" UNITS="J/kg" TYPE="real" DEFAULT="2.834e6">
-!   latent heat of sublimation
-! </DATA>
-! <DATA NAME="TFREEZE" UNITS="degK" TYPE="real" DEFAULT="273.16">
-!   temp where fresh water freezes
-! </DATA>
-
-real, public, parameter :: ES0 = 1.0 
-real, public, parameter :: RVGAS = 461.50 
-real, public, parameter :: CP_VAPOR = 4.0*RVGAS
-real, public, parameter :: DENS_H2O = 1000. 
-real, public, parameter :: HLV = 2.500e6   
-real, public, parameter :: HLF = 3.34e5   
-real, public, parameter :: HLS = HLV + HLF
-real, public, parameter :: TFREEZE = 273.16    
-
-!-------------- radiation constants -----------------
-
-! <DATA NAME="WTMAIR" UNITS="AMU" TYPE="real" DEFAULT="2.896440E+01">
-!  molecular weight of air 
-! </DATA>
-! <DATA NAME="WTMH2O" UNITS="AMU" TYPE="real" DEFAULT="1.801534E+01">
-!  molecular weight of water
-! </DATA>
-! <DATA NAME="WTMOZONE" UNITS="AMU" TYPE="real" DEFAULT="4.799820E+01">
-!   molecular weight of ozone
-! </DATA>
-! <DATA NAME="WTMC" UNITS="AMU" TYPE="real" DEFAULT="1.200000+01">
-!   molecular weight of carbon 
-! <DATA NAME="WTMCO2" UNITS="AMU" TYPE="real" DEFAULT="4.400995+01">
-!   molecular weight of carbon dioxide
-! <DATA NAME="WTMO2" UNITS="AMU" TYPE="real" DEFAULT="3.19988+01">
-!   molecular weight of molecular oxygen
-! <DATA NAME="WTMCFC11" UNITS="AMU" TYPE="real" DEFAULT="1.373681+02">
-!   molecular weight of CFC-11 (CCl3F)
-! <DATA NAME="WTMCFC12" UNITS="AMU" TYPE="real" DEFAULT="1.209135+02">
-!   molecular weight of CFC-21 (CCl2F2)
-! </DATA>
-! <DATA NAME="DIFFAC" TYPE="real" DEFAULT="1.660000E+00">
-! diffusivity factor
-! </DATA>
-! <DATA NAME="SECONDS_PER_DAY" UNITS="seconds" TYPE="real" DEFAULT="8.640000E+04">
-! seconds in a day
-! </DATA>
-! <DATA NAME="AVOGNO" UNITS="atoms/mole" TYPE="real" DEFAULT="6.023000E+23">
-!  Avogadro's number 
-! </DATA>
-! <DATA NAME="PSTD" UNITS="dynes/cm^2" TYPE="real" DEFAULT="1.013250E+06">
-!  mean sea level pressure
-! </DATA>
-! <DATA NAME="PSTD_MKS" UNITS="Newtons/m^2" TYPE="real" DEFAULT="101325.0">
-!  mean sea level pressure
-! </DATA>
-
-real, public, parameter :: WTMAIR = 2.896440E+01
-real, public, parameter :: WTMH2O = WTMAIR*(RDGAS/RVGAS) !pjp OK to change value because not used yet.
-!real, public, parameter :: WTMO3  = 47.99820E+01
-real, public, parameter :: WTMOZONE =  47.99820
-real, public, parameter :: WTMC     =  12.00000
-real, public, parameter :: WTMCO2   =  44.00995
-real, public, parameter :: WTMO2    =  31.9988
-real, public, parameter :: WTMCFC11 = 137.3681
-real, public, parameter :: WTMCFC12 = 120.9135
-real, public, parameter :: DIFFAC = 1.660000E+00
-real, public, parameter :: SECONDS_PER_DAY  = 8.640000E+04, SECONDS_PER_HOUR = 3600., SECONDS_PER_MINUTE=60.
-real, public, parameter :: AVOGNO = 6.023000E+23
-real, public, parameter :: PSTD   = 1.013250E+06
-real, public, parameter :: PSTD_MKS    = 101325.0
-!real, public, parameter :: REARTH  = 6.356766E+08 !pjp Not used anywhere. 
-
-! <DATA NAME="RADCON" UNITS="deg sec/(cm day)" TYPE="real" DEFAULT="((1.0E+02*GRAV)/(1.0E+04*CP_AIR))*SECONDS_PER_DAY">
-!  factor used to convert flux divergence to heating rate in degrees per day
-! </DATA>
-! <DATA NAME="RADCON_MKS" UNITS="deg sec/(m day)" TYPE="real" DEFAULT="(GRAV/CP_AIR)*SECONDS_PER_DAY">
-!  factor used to convert flux divergence to heating rate in degrees per day
-! </DATA>
-! <DATA NAME="O2MIXRAT" TYPE="real" DEFAULT="2.0953E-01">
-! mixing ratio of molecular oxygen in air
-! </DATA>
-! <DATA NAME="RHOAIR" UNITS="kg/m^3" TYPE="real" DEFAULT="1.292269">
-!  reference atmospheric density
-! </DATA>
-! <DATA NAME="ALOGMIN" TYPE="real" DEFAULT="-50.0">
-!  minimum value allowed as argument to log function
-! </DATA>
-
-real, public, parameter :: RADCON = ((1.0E+02*GRAV)/(1.0E+04*CP_AIR))*SECONDS_PER_DAY
-real, public, parameter :: RADCON_MKS  = (GRAV/CP_AIR)*SECONDS_PER_DAY
-real, public, parameter :: O2MIXRAT    = 2.0953E-01
-real, public, parameter :: RHOAIR      = 1.292269
-real, public, parameter :: ALOGMIN     = -50.0
-
-!------------ miscellaneous constants ---------------
-! <DATA NAME="STEFAN" UNITS="W/m^2/deg^4" TYPE="real" DEFAULT="5.6734e-8">
-!   Stefan-Boltzmann constant
-! </DATA>
-! <DATA NAME="VONKARM"  TYPE="real" DEFAULT="0.40">
-!   Von Karman constant
-! </DATA>
-! <DATA NAME="PI" TYPE="real" DEFAULT="3.14159265358979323846">
-!    ratio of circle circumference to diameter
-! </DATA>
-! <DATA NAME="RAD_TO_DEG"  TYPE="real" DEFAULT="180.0/PI">
-!   degrees per radian
-! </DATA>
-! <DATA NAME="DEG_TO_RAD"  TYPE="real" DEFAULT="PI/180.0">
-!   radians per degree
-! </DATA>
-! <DATA NAME="RADIAN"  TYPE="real" DEFAULT="180.0/PI">
-!   equal to RAD_TO_DEG. Named RADIAN for backward compatability.
-! </DATA>
-! <DATA NAME="C2DBARS" UNITS="dbars" TYPE="real" DEFAULT="1.e-4">
-!   converts rho*g*z (in mks) to dbars: 1dbar = 10^4 (kg/m^3)(m/s^2)m
-! </DATA>
-! <DATA NAME="KELVIN" TYPE="real" DEFAULT="273.15">
-!   degrees Kelvin at zero Celsius
-! </DATA>
-! <DATA NAME="EPSLN" TYPE="real" DEFAULT="1.0e-40">
-!   a small number to prevent divide by zero exceptions
-! </DATA>
-
-real, public, parameter :: STEFAN  = 5.6734e-8 
-real, public, parameter :: VONKARM = 0.40     
-real, public, parameter :: PI      = 3.14159265358979323846
-real, public, parameter :: RAD_TO_DEG=180./PI
-real, public, parameter :: DEG_TO_RAD=PI/180.
-real, public, parameter :: RADIAN  = RAD_TO_DEG
-real, public, parameter :: C2DBARS = 1.e-4
-real, public, parameter :: KELVIN  = 273.15
-real, public, parameter :: EPSLN   = 1.0e-40
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 !-----------------------------------------------------------------------
-! version and tagname published
-! so that write_version_number can be called for constants_mod by fms_init
-public :: version, tagname
-!-----------------------------------------------------------------------
+! version is public so that write_version_number can be called for constants_mod
+! by fms_init
+public :: version
+
+real :: realnumber !< dummy variable to use in HUGE initializations
+
+#ifdef GFS_PHYS
+! SJL: the following are from fv3_gfsphysics/gfs_physics/physics/physcons.f90
+real,               public, parameter :: RADIUS = 6.3712e+6_r8_kind           !< Radius of the Earth [m]
+real(kind=r8_kind), public, parameter :: PI_8   = 3.1415926535897931_r8_kind  !< Ratio of circle circumference to diameter [N/A]
+real,               public, parameter :: PI     = 3.1415926535897931_r8_kind  !< Ratio of circle circumference to diameter [N/A] (REAL(KIND=8))
+real,               public, parameter :: OMEGA  = 7.2921e-5_r8_kind   !< Rotation rate of the Earth [1/s]
+real,               public, parameter :: GRAV   = 9.80665_r8_kind     !< Acceleration due to gravity [m/s^2]
+real(kind=r8_kind), public, parameter :: GRAV_8 = 9.80665_r8_kind     !< Acceleration due to gravity [m/s^2] (REAL(KIND=8))
+real,               public, parameter :: RDGAS  = 287.05_r8_kind      !< Gas constant for dry air [J/kg/deg]
+real,               public, parameter :: RVGAS  = 461.50_r8_kind      !< Gas constant for water vapor [J/kg/deg]
+! Extra:
+real,               public, parameter :: HLV      = 2.5e6_r8_kind     !< Latent heat of evaporation [J/kg]
+real,               public, parameter :: HLF      = 3.3358e5_r8_kind  !< Latent heat of fusion [J/kg]
+real,               public, parameter :: con_cliq = 4.1855e+3_r8_kind !< spec heat H2O liq [J/kg/K]
+real,               public, parameter :: con_csol = 2.1060e+3_r8_kind !< spec heat H2O ice [J/kg/K]
+real,               public, parameter :: CP_AIR = 1004.6_r8_kind      !< Specific heat capacity of dry air at constant pressure [J/kg/deg]
+real,               public, parameter :: KAPPA  = RDGAS/CP_AIR        !< RDGAS / CP_AIR [dimensionless]
+real,               public, parameter :: TFREEZE = 273.15_r8_kind     !< Freezing temperature of fresh water [K]
+#else
+
+#ifdef SMALL_EARTH
+#if defined(DCMIP) || (defined(HIWPP) && defined(SUPER_K))
+ real, private, parameter :: small_fac =  1._r8_kind / 120._r8_kind #only needed for supercell test
+#elif defined(HIWPP)
+ real, private, parameter :: small_fac = 1._r8_kind / 166.7_r8_kind
+#else
+ real, private, parameter :: small_fac = 1._r8_kind / 10._r8_kind
+#endif
+#else
+ real, private, parameter :: small_fac = 1._r8_kind
+#endif
+
+real,         public, parameter :: RADIUS = 6371.0e+3_r8_kind * small_fac   !< Radius of the Earth [m]
+real(kind=8), public, parameter :: PI_8   = 3.14159265358979323846_r8_kind  !< Ratio of circle circumference to diameter [N/A]
+real,         public, parameter :: PI     = 3.14159265358979323846_r8_kind  !< Ratio of circle circumference to diameter [N/A]
+real,         public, parameter :: OMEGA  = 7.292e-5_r8_kind / small_fac    !< Rotation rate of the Earth [1/s]
+real,         public, parameter :: GRAV   = 9.80_r8_kind             !< Acceleration due to gravity [m/s^2]
+real,         public, parameter :: RDGAS  = 287.04_r8_kind           !< Gas constant for dry air [J/kg/deg]
+real,         public, parameter :: RVGAS  = 461.50_r8_kind           !< Gas constant for water vapor [J/kg/deg]
+! Extra:
+real,         public, parameter :: HLV = 2.500e6_r8_kind             !< Latent heat of evaporation [J/kg]
+real,         public, parameter :: HLF = 3.34e5_r8_kind              !< Latent heat of fusion [J/kg]
+real,         public, parameter :: KAPPA  = 2.0_r8_kind/7.0_r8_kind  !< RDGAS / CP_AIR [dimensionless]
+real,         public, parameter :: CP_AIR = RDGAS/KAPPA              !< Specific heat capacity of dry air at constant pressure [J/kg/deg]
+real,         public, parameter :: TFREEZE = 273.16_r8_kind          !< Freezing temperature of fresh water [K]
+#endif
+
+real, public, parameter :: STEFAN  = 5.6734e-8_r8_kind !< Stefan-Boltzmann constant [W/m^2/deg^4]
+
+real, public, parameter :: CP_VAPOR = 4.0_r8_kind*RVGAS      !< Specific heat capacity of water vapor at constant pressure [J/kg/deg]
+real, public, parameter :: CP_OCEAN = 3989.24495292815_r8_kind !< Specific heat capacity taken from McDougall (2002) 
+                                                               !! "Potential Enthalpy ..." [J/kg/deg]
+real, public, parameter :: RHO0    = 1.035e3_r8_kind  !< Average density of sea water [kg/m^3]
+real, public, parameter :: RHO0R   = 1.0_r8_kind/RHO0 !< Reciprocal of average density of sea water [m^3/kg]
+real, public, parameter :: RHO_CP  = RHO0*CP_OCEAN    !< (kg/m^3)*(cal/kg/deg C)(joules/cal) = (joules/m^3/deg C) [J/m^3/deg]
+
+real, public, parameter :: ES0 = 1.0_r8_kind        !< Humidity factor. Controls the humidity content of the atmosphere through
+                                                    !! the Saturation Vapour Pressure expression when using DO_SIMPLE. [dimensionless]
+real, public, parameter :: DENS_H2O = 1000._r8_kind !< Density of liquid water [kg/m^3]
+real, public, parameter :: HLS = HLV + HLF          !< Latent heat of sublimation [J/kg]
+
+real, public, parameter :: WTMAIR   = 2.896440E+01_r8_kind   !< Molecular weight of air [AMU]
+real, public, parameter :: WTMH2O   = WTMAIR*(RDGAS/RVGAS)   !< Molecular weight of water [AMU]
+real, public, parameter :: WTMOZONE =  47.99820_r8_kind      !< Molecular weight of ozone [AMU]
+real, public, parameter :: WTMC     =  12.00000_r8_kind      !< Molecular weight of carbon [AMU]
+real, public, parameter :: WTMCO2   =  44.00995_r8_kind      !< Molecular weight of carbon dioxide [AMU]
+real, public, parameter :: WTMCH4   =  16.0425_r8_kind       !< Molecular weight of methane [AMU]
+real, public, parameter :: WTMO2    =  31.9988_r8_kind       !< Molecular weight of molecular oxygen [AMU]
+real, public, parameter :: WTMCFC11 = 137.3681_r8_kind       !< Molecular weight of CFC-11 (CCl3F) [AMU]
+real, public, parameter :: WTMCFC12 = 120.9135_r8_kind       !< Molecular weight of CFC-21 (CCl2F2) [AMU]
+real, public, parameter :: WTMN     =  14.0067_r8_kind       !< Molecular weight of Nitrogen [AMU]
+real, public, parameter :: DIFFAC   = 1.660000E+00_r8_kind   !< Diffusivity factor [dimensionless]
+real, public, parameter :: AVOGNO   = 6.023000E+23_r8_kind   !< Avogadro's number [atoms/mole]
+real, public, parameter :: PSTD     = 1.013250E+06_r8_kind   !< Mean sea level pressure [dynes/cm^2]
+real, public, parameter :: PSTD_MKS = 101325.0_r8_kind       !< Mean sea level pressure [N/m^2]
+
+real, public, parameter :: SECONDS_PER_DAY    = 8.640000E+04_r8_kind !< Seconds in a day [s]
+real, public, parameter :: SECONDS_PER_HOUR   = 3600._r8_kind        !< Seconds in an hour [s]
+real, public, parameter :: SECONDS_PER_MINUTE = 60._r8_kind          !< Seconds in a minute [s]
+real, public, parameter :: RAD_TO_DEG         = 180._r8_kind/PI      !< Degrees per radian [deg/rad]
+real, public, parameter :: DEG_TO_RAD         = PI/180._r8_kind      !< Radians per degree [rad/deg]
+real, public, parameter :: RADIAN             = RAD_TO_DEG           !< Equal to RAD_TO_DEG for backward compatability. [rad/deg]
+real, public, parameter :: ALOGMIN            = -50.0_r8_kind        !< Minimum value allowed as argument to log function [N/A]
+real, public, parameter :: EPSLN              = 1.0e-40_r8_kind      !< A small number to prevent divide by zero exceptions [N/A]
+
+real, public, parameter :: RADCON = ((1.0E+02*GRAV)/(1.0E+04*CP_AIR))*SECONDS_PER_DAY !< Factor used to convert flux divergence to
+                                                                                      !! heating rate in degrees per day [deg sec/(cm day)]
+real, public, parameter :: RADCON_MKS  = (GRAV/CP_AIR)*SECONDS_PER_DAY !< Factor used to convert flux divergence to
+                                                                       !! heating rate in degrees per day [deg sec/(m day)]
+real, public, parameter :: O2MIXRAT    = 2.0953E-01_r8_kind !< Mixing ratio of molecular oxygen in air [dimensionless]
+real, public, parameter :: RHOAIR      = 1.292269_r8_kind   !< Reference atmospheric density [kg/m^3]
+real, public, parameter :: VONKARM     = 0.40_r8_kind       !< Von Karman constant [dimensionless]
+real, public, parameter :: C2DBARS     = 1.e-4_r8_kind      !< Converts rho*g*z (in mks) to dbars: 1dbar = 10^4 (kg/m^3)(m/s^2)m [dbars]
+real, public, parameter :: KELVIN      = 273.15_r8_kind     !< Degrees Kelvin at zero Celsius [K]
+
 public :: constants_init
 
 contains
 
+!> \brief dummy routine.
 subroutine constants_init
-
-! dummy routine.
 
 end subroutine constants_init
 
 end module constants_mod
 
-! <INFO>
-
-!   <FUTURE>               
+!   <FUTURE>
 !   1.  Renaming of constants.
-!   </FUTURE>               
-!   <FUTURE>               
+!   </FUTURE>
+!   <FUTURE>
 !   2.  Additional constants.
 !   </FUTURE>
 !   <NOTE>
@@ -252,7 +159,7 @@ end module constants_mod
 !    The name given to a particular constant may be changed.<br><br>
 !
 !    Constants can be used on the right side on an assignment statement
-!    (their value can not be reassigned). 
+!    (their value can not be reassigned).
 !
 !
 !<TESTPROGRAM NAME="EXAMPLE">
@@ -264,6 +171,3 @@ end module constants_mod
 !</PRE>
 !</TESTPROGRAM>
 !   </NOTE>
-
-! </INFO>
-

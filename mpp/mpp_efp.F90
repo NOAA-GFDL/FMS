@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module mpp_efp_mod
 #include <fms_platform.h>
 
@@ -19,17 +37,17 @@ integer, parameter :: NUMINT = 6   ! The number of long integers to use to repre
                                    ! a real number.
 
 integer(LONG_KIND), parameter :: prec=2_8**NUMBIT ! The precision of each integer.
-real(DOUBLE_KIND), parameter :: r_prec=2.0**NUMBIT  ! A real version of prec.
-real(DOUBLE_KIND), parameter :: I_prec=1.0/(2.0**NUMBIT) ! The inverse of prec.
+real(DOUBLE_KIND), parameter :: r_prec=2.0_8**NUMBIT  ! A real version of prec.
+real(DOUBLE_KIND), parameter :: I_prec=1.0_8/(2.0_8**NUMBIT) ! The inverse of prec.
 integer, parameter :: max_count_prec=2**(63-NUMBIT)-1
                               ! The number of values that can be added together
                               ! with the current value of prec before there will
                               ! be roundoff problems.
 
 real(DOUBLE_KIND), parameter, dimension(NUMINT) :: &
-  pr = (/ r_prec**2, r_prec, 1.0, 1.0/r_prec, 1.0/r_prec**2, 1.0/r_prec**3 /)
+  pr = (/ r_prec**2, r_prec, 1.0_8, 1.0_8/r_prec, 1.0_8/r_prec**2, 1.0_8/r_prec**3 /)
 real(DOUBLE_KIND), parameter, dimension(NUMINT) :: &
-  I_pr = (/ 1.0/r_prec**2, 1.0/r_prec, 1.0, r_prec, r_prec**2, r_prec**3 /)
+  I_pr = (/ 1.0_8/r_prec**2, 1.0_8/r_prec, 1.0_8, r_prec, r_prec**2, r_prec**3 /)
 
 logical :: overflow_error = .false., NaN_error = .false.
 logical :: debug = .false.    ! Making this true enables debugging output.
@@ -149,7 +167,7 @@ function mpp_reproducing_sum_r8_2d(array, isr, ier, jsr, jer, EFP_sum, reproduci
       if (err > 0) then ; do n=1,NUMINT ; ints_sum(n) = 0 ; enddo ; endif
     else
       if (NaN_error) then
-        call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_2d).")
+        call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_2d), this indicates numerical instability")
       endif
       if (abs(max_mag_term) >= prec_error*pr(1)) then
         write(mesg, '(ES13.5)') max_mag_term
@@ -301,7 +319,8 @@ function mpp_reproducing_sum_r8_3d(array, isr, ier, jsr, jer, sums, EFP_sum, err
       if (NaN_error) err = err+2
       if (err > 0) then ; do k=1,ke ; do n=1,NUMINT ; ints_sums(n,k) = 0 ; enddo ; enddo ; endif
     else
-      if (NaN_error) call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_3d).")
+      if (NaN_error) call mpp_error(FATAL, &
+             "NaN in input field of mpp_reproducing_sum(_3d), this indicates numerical instability")
       if (abs(max_mag_term) >= prec_error*pr(1)) then
         write(mesg, '(ES13.5)') max_mag_term
         call mpp_error(FATAL,"Overflow in mpp_reproducing_sum(_3d) conversion of "//trim(mesg))
@@ -359,7 +378,8 @@ function mpp_reproducing_sum_r8_3d(array, isr, ier, jsr, jer, sums, EFP_sum, err
       if (NaN_error) err = err+2
       if (err > 0) then ; do n=1,NUMINT ; ints_sum(n) = 0 ; enddo ; endif
     else
-      if (NaN_error) call mpp_error(FATAL, "NaN in input field of mpp_reproducing_sum(_3d).")
+      if (NaN_error) call mpp_error(FATAL, &
+          "NaN in input field of mpp_reproducing_sum(_3d), this indicates numerical instability")
       if (abs(max_mag_term) >= prec_error*pr(1)) then
         write(mesg, '(ES13.5)') max_mag_term
         call mpp_error(FATAL,"Overflow in mpp_reproducing_sum(_3d) conversion of "//trim(mesg))

@@ -1,7 +1,24 @@
-
 ! -*-f90-*-
-! $Id$
 
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
   !  <IN NAME="global_indices" TYPE="integer" DIM="(4)"></IN>
@@ -646,6 +663,7 @@
     integer              :: jbegin(0:layout(2)-1), jend(0:layout(2)-1)
     character(len=8)     :: text
     type(overlapSpec), pointer :: update=>NULL()
+    type(overlapSpec), pointer :: check_T => NULL()
     character(len=1)     :: position
     integer              :: msgsize, l, p, is, ie, js, je, from_pe
     integer              :: outunit
@@ -715,7 +733,14 @@
     !--- the position of current pe is changed due to mosaic, because  pes 
     !--- is only part of the pelist in mosaic (pesall). We assume the pe 
     !--- distribution are contious in mosaic.
-    pos = mpp_pe() - mpp_root_pe()
+    pos = -1
+    do n = 0, size(pesall(:))-1
+       if(pesall(n) == mpp_pe() ) then
+          pos = n
+          exit
+       endif
+    enddo
+    if(pos<0) call  mpp_error(FATAL, 'MPP_DEFINE_DOMAINS2D: mpp_pe() is not in the pesall list')
 
     domain%symmetry = .FALSE.
     if(present(symmetry)) domain%symmetry = symmetry
@@ -992,6 +1017,10 @@
        domain%whalo = whalosz; domain%ehalo = ehalosz
        domain%shalo = shalosz; domain%nhalo = nhalosz
        allocate(domain%update_T, domain%update_E, domain%update_C, domain%update_N)
+       domain%update_T%next => NULL()
+       domain%update_E%next => NULL()
+       domain%update_C%next => NULL()
+       domain%update_N%next => NULL()
        allocate(domain%check_E,  domain%check_C,  domain%check_N )
        domain%update_T%nsend = 0
        domain%update_T%nrecv = 0
@@ -1018,10 +1047,14 @@
           call compute_overlaps_fold_east(domain, EAST,   ishift,      0)
           call compute_overlaps_fold_east(domain, NORTH,       0, jshift)
        else
-          call compute_overlaps(domain, CENTER,      0,      0, x_offset, y_offset)
-          call compute_overlaps(domain, CORNER, ishift, jshift, x_offset, y_offset)
-          call compute_overlaps(domain, EAST,   ishift,      0, x_offset, y_offset)
-          call compute_overlaps(domain, NORTH,       0, jshift, x_offset, y_offset)
+          call compute_overlaps(domain, CENTER, domain%update_T, check_T,             0,      0, x_offset, y_offset, &
+                                domain%whalo, domain%ehalo, domain%shalo, domain%nhalo)
+          call compute_overlaps(domain, CORNER, domain%update_C, domain%check_C, ishift, jshift, x_offset, y_offset, &
+                                domain%whalo, domain%ehalo, domain%shalo, domain%nhalo)
+          call compute_overlaps(domain, EAST,   domain%update_E, domain%check_E,  ishift,     0, x_offset, y_offset, &
+                                domain%whalo, domain%ehalo, domain%shalo, domain%nhalo)
+          call compute_overlaps(domain, NORTH,  domain%update_N, domain%check_N,      0, jshift, x_offset, y_offset, &
+                                domain%whalo, domain%ehalo, domain%shalo, domain%nhalo)
        endif
        call check_overlap_pe_order(domain, domain%update_T, trim(domain%name)//" update_T in mpp_define_domains")
        call check_overlap_pe_order(domain, domain%update_C, trim(domain%name)//" update_C in mpp_define_domains")
@@ -1292,6 +1325,12 @@ end subroutine check_message_size
        endif
     endif
     allocate(tile_id_local(num_tile))
+
+!These directives are a work-around for a bug in the CCE compiler, which
+!causes a segmentation fault when the compiler attempts to vectorize a
+!loop containing an optional argument (when -g is included).
+
+!DIR$ NOVECTOR
     do n = 1, num_tile
        if(PRESENT(tile_id)) then
           tile_id_local(n) = tile_id(n)
@@ -1299,6 +1338,8 @@ end subroutine check_message_size
           tile_id_local(n) = n
        endif
     enddo
+!DIR$ VECTOR
+
     do n = 1, num_tile
        if( pe .GE. pe_start(n) .AND. pe .LE. pe_end(n)) then
           pos = pos + 1
@@ -1511,31 +1552,34 @@ end subroutine check_message_size
   end function mpp_mosaic_defined
 !#####################################################################
 
-  subroutine compute_overlaps( domain, position, ishift, jshift, x_cyclic_offset, y_cyclic_offset )
+  subroutine compute_overlaps( domain, position, update, check, ishift, jshift, x_cyclic_offset, y_cyclic_offset, &
+                               whalo, ehalo, shalo, nhalo )
     !computes remote domain overlaps
     !assumes only one in each direction
     !will calculate the overlapping for T,E,C,N-cell seperately.
     type(domain2D), intent(inout) :: domain
+    type(overlapSpec), intent(inout), pointer :: update
+    type(overlapSpec), intent(inout), pointer :: check
     integer, intent(in)           :: position, ishift, jshift
     integer, intent(in)           :: x_cyclic_offset, y_cyclic_offset
+    integer, intent(in)           :: whalo, ehalo, shalo, nhalo
 
     integer                          :: i, m, n, nlist, tMe, tNbr, dir
     integer                          :: is, ie, js, je, isc, iec, jsc, jec, isd, ied, jsd, jed
     integer                          :: isg, ieg, jsg, jeg, ioff, joff
     integer                          :: list, middle, ni, nj, isgd, iegd, jsgd, jegd
-    integer                          :: ism, iem, jsm, jem, whalo, ehalo, shalo, nhalo
+    integer                          :: ism, iem, jsm, jem
     integer                          :: is2, ie2, js2, je2
     integer                          :: is3, ie3, js3, je3
     integer                          :: isd2, ied2, jsd2, jed2
     logical                          :: folded, need_adjust_1, need_adjust_2, need_adjust_3, folded_north
     type(overlap_type)               :: overlap
-    type(overlapSpec),   pointer     :: update=>NULL()
     type(overlap_type),  pointer     :: overlapList(:)=>NULL()
     type(overlap_type),  pointer     :: checkList(:)=>NULL()
-    type(overlapSpec),   pointer     :: check =>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
     integer                          :: unit
+    logical                          :: set_check
 
     !--- since we restrict that if multiple tiles on one pe, all the tiles are limited to this pe. 
     !--- In this case, if ntiles on this pe is greater than 1, no overlapping between processor within each tile
@@ -1543,31 +1587,14 @@ end subroutine check_message_size
     if(size(domain%x(:)) > 1) return
 
     !--- if there is no halo, no need to compute overlaps.
-    if(domain%whalo==0 .AND. domain%ehalo==0 .AND. domain%shalo==0 .AND. domain%nhalo==0) return
+    if(whalo==0 .AND. ehalo==0 .AND. shalo==0 .AND. nhalo==0) return
 
     !--- when there is only one tile, n will equal to np
     nlist = size(domain%list(:))
-
-    select case(position)
-    case (CENTER)
-       update => domain%update_T
-       check  => NULL()
-    case (CORNER)
-       update => domain%update_C
-       check  => domain%check_C
-    case (EAST)
-       update => domain%update_E
-       check  => domain%check_E
-    case (NORTH)
-       update => domain%update_N
-       check  => domain%check_N
-    case default
-       call mpp_error(FATAL, &
-        "mpp_domains_define.inc(compute_overlaps): the value of position should be CENTER, EAST, CORNER or NORTH")
-    end select
-
+    set_check = .false.
+    if(ASSOCIATED(check)) set_check = .true.
     allocate(overlapList(MAXLIST) )
-    allocate(checkList(MAXLIST)   )
+    if(set_check) allocate(checkList(MAXLIST)   )
 
     !--- overlap is used to store the overlapping temporarily.
     call allocate_update_overlap( overlap, MAXOVERLAP)
@@ -1578,14 +1605,12 @@ end subroutine check_message_size
 
     update%xbegin = ism; update%xend = iem
     update%ybegin = jsm; update%yend = jem
-    if(ASSOCIATED(check)) then
+    if(set_check) then
        check%xbegin  = ism; check%xend  = iem
        check%ybegin  = jsm; check%yend  = jem
     endif
-    update%whalo  = domain%whalo; update%ehalo = domain%ehalo
-    update%shalo  = domain%shalo; update%nhalo = domain%nhalo
-    whalo         = domain%whalo; ehalo        = domain%ehalo
-    shalo         = domain%shalo; nhalo        = domain%nhalo
+    update%whalo  = whalo; update%ehalo = ehalo
+    update%shalo  = shalo; update%nhalo = nhalo
 
     ioff = ni - ishift
     joff = nj - jshift
@@ -1964,7 +1989,7 @@ end subroutine check_message_size
                 call insert_update_overlap(overlap, domain%list(m)%pe, & 
                      is, ie, js, je, isc, iec, jsc, jec, dir, .true.) 
              endif
-             if(debug_update_level .NE. NO_CHECK) then
+             if(debug_update_level .NE. NO_CHECK .AND. set_check) then
                 je = domain%list(m)%y(tNbr)%compute%end+jshift;
                 if(je == jeg) then
                    is = max(is, isc); ie = min(ie, iec)
@@ -2118,7 +2143,7 @@ end subroutine check_message_size
        call deallocate_overlap_type(overlapList(m))
     enddo
 
-    if(debug_update_level .NE. NO_CHECK) then
+    if(debug_update_level .NE. NO_CHECK .AND. set_check) then
        do m = 1,size(checkList(:))
           call deallocate_overlap_type(checkList(m))
        enddo
@@ -2139,7 +2164,7 @@ end subroutine check_message_size
           jsc = domain%list(m)%y(1)%compute%begin; jec = domain%list(m)%y(1)%compute%end+jshift
           !recv_e  
           dir = 1
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%compute%end+ehalo+ishift
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( domain%symmetry .AND. (position == NORTH .OR. position == CORNER ) &
@@ -2170,8 +2195,8 @@ end subroutine check_message_size
 
           !recv_se     
           dir = 2 
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%compute%end+ehalo+ishift
+          jsd = domain%y(tMe)%compute%begin-shalo;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           !--- divide into two parts, one part is x_cyclic_offset/y_cyclic_offset is non-zeor,
           !--- the other part is both are zero.
@@ -2227,7 +2252,7 @@ end subroutine check_message_size
           !recv_s      
           dir = 3
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%compute%begin-shalo;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           js2 = 0; je2 = -1
           if( jed .LT. jsg) then ! jsd < jsg
@@ -2247,8 +2272,8 @@ end subroutine check_message_size
 
           !recv_sw 
           dir = 4
-          isd = domain%x(tMe)%data%begin; ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%data%begin; jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%compute%begin-whalo; ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%compute%begin-shalo; jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           is2 = 0; ie2 = -1; js2 = 0; je2 = -1
           if(x_cyclic_offset == 0 .AND. y_cyclic_offset == 0) then  
@@ -2315,7 +2340,7 @@ end subroutine check_message_size
 
           !recv_w      
           dir = 5
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
+          isd = domain%x(tMe)%compute%begin-whalo;    ied = domain%x(tMe)%compute%begin-1
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
 
@@ -2343,8 +2368,8 @@ end subroutine check_message_size
           !recv_nw     
           dir = 6
           folded = .false.
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%compute%begin-whalo;    ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%compute%end+nhalo+jshift
           is=isc; ie=iec; js=jsc; je=jec
           is2 = 0; ie2 = -1; js2 = 0; je2 = -1
           if(x_cyclic_offset == 0 .AND. y_cyclic_offset == 0) then
@@ -2439,7 +2464,7 @@ end subroutine check_message_size
           dir = 7
           folded = .false.
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%compute%end+nhalo+jshift
           is=isc; ie=iec; js=jsc; je=jec
 
           !--- when domain symmetry and position is EAST or CORNER, the point at i=isd will 
@@ -2522,7 +2547,7 @@ end subroutine check_message_size
                 call insert_update_overlap(overlap, domain%list(m)%pe, & 
                      is, ie, js, je, isd, ied, jsd, jed, dir, .true.)                 
              endif
-             if(debug_update_level .NE. NO_CHECK) then
+             if(debug_update_level .NE. NO_CHECK .AND. set_check) then
                 jsd = domain%y(tMe)%compute%end+jshift;   jed = jsd
                 if(jed == jeg) then
                    is = max(is, isd); ie = min(ie, ied)
@@ -2544,8 +2569,8 @@ end subroutine check_message_size
           !recv_ne     
           dir = 8
           folded = .false.
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%compute%end+ehalo+ishift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%compute%end+nhalo+jshift
           is=isc; ie=iec; js=jsc; je=jec
           is2 = 0; ie2=-1; js2=0; je2=-1
           if(x_cyclic_offset == 0 .AND. y_cyclic_offset == 0) then
@@ -2681,16 +2706,14 @@ end subroutine check_message_size
        call deallocate_overlap_type(overlapList(m))
     enddo
 
-    if(debug_update_level .NE. NO_CHECK) then
+    if(debug_update_level .NE. NO_CHECK .AND. set_check) then
        do m = 1,size(checkList(:))
           call deallocate_overlap_type(checkList(m))
        enddo
     endif
 
     deallocate(overlapList)
-    deallocate(checkList)
-    update=>NULL()
-    check=>NULL()
+    if(set_check) deallocate(checkList)
     domain%initialized = .true.
 
   end subroutine compute_overlaps
@@ -5012,6 +5035,8 @@ end subroutine check_message_size
        do n = 1, nsend
           call add_update_overlap(overlap_out%send(n), send(n) )
        enddo
+    else
+       overlap_out%nsend = 0
     endif
 
     !--------------------------------------------------
@@ -5099,6 +5124,8 @@ end subroutine check_message_size
        do n = 1, nrecv
           call add_update_overlap(overlap_out%recv(n), recv(n) )
        enddo
+    else
+       overlap_out%nrecv = 0
     endif
 
     call deallocate_overlap_type(overlap)
@@ -7983,34 +8010,55 @@ subroutine check_overlap_pe_order(domain, overlap, name)
   type(domain2d),    intent(in) :: domain
   type(overlapSpec), intent(in) :: overlap
   character(len=*),  intent(in) :: name
-  integer                       :: nlist, m
-  integer                       :: pos1, pos2
+  integer                       :: m
+  integer                       :: pe1, pe2
 
-  nlist = size(domain%list(:))
+  !---make sure overlap%nsend and overlap%nrecv is no larger than MAXLIST
+  if( overlap%nsend > MAXLIST) call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): overlap%nsend > MAXLIST, increase MAXLIST")
+  if( overlap%nrecv > MAXLIST) call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): overlap%nrecv > MAXLIST, increase MAXLIST")
 
   do m = 2, overlap%nsend
-     pos1 = overlap%send(m-1)%pe - domain%pe
-     if(pos1 .LT.0) pos1 = pos1 + nlist
-     pos2 = overlap%send(m)%pe - domain%pe
-     if(pos2 .LT.0) pos2 = pos2 + nlist
-     if(pos2 .LE. pos1) then
-        print*, trim(name)//" at pe = ", domain%pe, &
-                ": send pe is ", overlap%send(m-1)%pe, overlap%send(m)%pe
+     pe1 = overlap%send(m-1)%pe
+     pe2 = overlap%send(m)%pe
+     !-- when p1 == domain%pe, pe2 could be any value except domain%pe
+     if( pe2 == domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
         call mpp_error(FATAL, &
-             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send")
+             "mpp_domains_define.inc(check_overlap_pe_order): send pe2 can not equal to domain%pe")
+     else if( (pe1 > domain%pe .AND. pe2 > domain%pe) .OR. (pe1 < domain%pe .AND. pe2 < domain%pe)) then
+        if( pe2 < pe1 ) then
+           print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
+           call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 1")
+        endif
+     else if ( pe2 > domain%pe .AND. pe1 < domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
+        call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 2")
      endif
   enddo
 
 
   do m = 2, overlap%nrecv
-     pos1 = overlap%recv(m-1)%pe - domain%pe
-     if(pos1 .LE.0) pos1 = pos1 + nlist
-     pos2 = overlap%recv(m)%pe - domain%pe
-     if(pos2 .LE.0) pos2 = pos2 + nlist
-     if(pos2 .GE. pos1) then
-        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", overlap%recv(m-1)%pe, overlap%recv(m)%pe
+     pe1 = overlap%recv(m-1)%pe
+     pe2 = overlap%recv(m)%pe
+     !-- when p1 == domain%pe, pe2 could be any value except domain%pe
+     if( pe2 == domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
         call mpp_error(FATAL, &
-             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv")
+             "mpp_domains_define.inc(check_overlap_pe_order): recv pe2 can not equal to domain%pe")
+     else if( (pe1 > domain%pe .AND. pe2 > domain%pe) .OR. (pe1 < domain%pe .AND. pe2 < domain%pe)) then
+        if( pe2 > pe1 ) then
+           print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
+           call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 1")
+        endif
+     else if ( pe2 < domain%pe .AND. pe1 > domain%pe ) then
+        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
+        call mpp_error(FATAL, &
+             "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 2")
      endif
   enddo
 

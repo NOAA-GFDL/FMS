@@ -1,6 +1,24 @@
 ! -*-f90-*-
-! $Id$
 
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 !#############################################################################
 ! Currently the contact will be limited to overlap contact.
@@ -150,6 +168,10 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   nest_domain%domain_coarse => domain_coarse
 
   allocate( nest_domain%C2F_T, nest_domain%C2F_C, nest_domain%C2F_E, nest_domain%C2F_N )
+  nest_domain%C2F_T%next => NULL()
+  nest_domain%C2F_C%next => NULL()
+  nest_domain%C2F_N%next => NULL()
+  nest_domain%C2F_E%next => NULL()
   allocate( nest_domain%F2C_T, nest_domain%F2C_C, nest_domain%F2C_E, nest_domain%F2C_N )
 
   call compute_overlap_fine_to_coarse(nest_domain, nest_domain%F2C_T, CENTER, trim(nest_domain%name)//" T-cell")

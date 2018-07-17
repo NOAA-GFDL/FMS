@@ -1,5 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
-! $Id$
 
 #include <fms_platform.h>
 #include "fms_switches.h"
@@ -110,7 +127,8 @@ module drifters_mod
   public :: drifters_print_checksums, drifters_save, drifters_write_restart, drifters_distribute
 
   integer, parameter, private :: MAX_STR_LEN = 128
-  character(len=MAX_STR_LEN), parameter, private :: version = '$Id$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
   real :: DRFT_EMPTY_ARRAY(0)
 
   type drifters_type

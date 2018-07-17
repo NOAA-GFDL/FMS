@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 MODULE diag_table_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -152,7 +171,7 @@ MODULE diag_table_mod
   !           The data reduction method to perform prior to writing data to disk.  Valid options are (redundant names are
   !           separated with commas):
   !           <DL>
-  !             <DT><TT>.TRUE.</TT>, average</DT>
+  !             <DT><TT>.TRUE.</TT>, average, avg, mean</DT>
   !             <DD>Average from the last time written to the current time.</DD>
   !             <DT><TT>.FALSE.</TT>, none</DT>
   !             <DD>No reduction performed.  Write current time step value only.</DD>
@@ -457,8 +476,8 @@ CONTAINS
                         & CALL error_mesg("diag_table_mod::parse_diag_table",&
                         & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").", WARNING)
                    CYCLE parser
-                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_file%file_name)) == 0).OR.&
-                     &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_file%file_name)) /= 0) ) THEN
+                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_file%file_name), "ocean") .NE. 0).OR.&
+                     &    (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_file%file_name), "ocean") .EQ. 0) ) THEN
                    CYCLE parser
                 ELSE IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1' is for the tile_count
                    CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
@@ -485,8 +504,8 @@ CONTAINS
                         & CALL error_mesg("diag_table_mod::Parse_diag_table",&
                         & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",WARNING)
                    CYCLE parser
-                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. VERIFY('ocean', lowercase(temp_field%file_name)) == 0).OR.&
-                     &    (diag_subset_output == DIAG_OCEAN .AND. VERIFY('ocean', lowercase(temp_field%file_name)) /= 0) ) THEN
+                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_field%file_name), "ocean") .NE. 0).OR.&
+                     &    (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_field%file_name), "ocean") .EQ. 0) ) THEN
                    CYCLE parser
                 ELSE IF ( lowercase(TRIM(temp_field%spatial_ops)) == 'none' ) THEN
                    CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)

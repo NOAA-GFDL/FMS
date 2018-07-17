@@ -1,6 +1,23 @@
-
 ! -*-f90-*-
-! $Id$
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 #ifdef use_libSMA
 #include <mpp_comm_sma.inc>
@@ -311,6 +328,18 @@
 #endif
 
 !#################################################
+#undef MPP_GATHER_1D_
+#undef MPP_GATHER_1DV_
+#undef MPP_TYPE_
+#define MPP_TYPE_ logical
+#define MPP_GATHER_1D_ mpp_gather_logical_1d
+#define MPP_GATHER_1DV_ mpp_gather_logical_1dv
+#undef  MPP_GATHER_PELIST_2D_
+#undef  MPP_GATHER_PELIST_3D_
+#define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_logical_2d
+#define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_logical_3d
+#include <mpp_gather.h>
+
 #undef MPP_GATHER_1D_
 #undef MPP_GATHER_1DV_
 #undef MPP_TYPE_

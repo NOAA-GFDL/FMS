@@ -1,7 +1,24 @@
-
 ! -*-f90-*-
-! $Id$
 
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -162,16 +179,18 @@
   iunit = stdlog()  ! workaround for lf95.
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
   if( pe.EQ.root_pe )then
-     write( iunit,'(/a)' )'MPP module '//trim(version)//trim(tagname)
+     write( iunit,'(/a)' )'MPP module '//trim(version)
      write( iunit,'(a,i6)' )'MPP started with NPES=', npes
      write( iunit,'(a)' )'Using MPI library for message passing...'
      write( iunit, '(a,es12.4,a,i10,a)' ) &
           'Realtime clock resolution=', tick_rate, ' sec (', ticks_per_sec, ' ticks/sec)'
      write( iunit, '(a,es12.4,a,i20,a)' ) &
           'Clock rolls over after ', max_ticks*tick_rate, ' sec (', max_ticks, ' ticks)'
-     write( iunit,'(/a)' )'MPP module '//trim(mpp_parameter_version)//trim(mpp_parameter_tagname)
-     write( iunit,'(/a)' )'MPP module '//trim(mpp_data_version)//trim(mpp_data_tagname)
+     write( iunit,'(/a)' )'MPP Parameter module '//trim(mpp_parameter_version)
+     write( iunit,'(/a)' )'MPP Data module '//trim(mpp_data_version)
   end if
+
+  stdout_unit = stdout()
 
   call mpp_clock_begin(clock0)
 
@@ -383,8 +402,7 @@ end subroutine mpp_gsm_free
       if( debug )then
           call SYSTEM_CLOCK(tick)
           if(mpp_pe() == mpp_root_pe()) then
-            out_unit = stdout()
-            write( out_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
+            write( stdout_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
                'T=',tick, ' PE=',pe, 'mpp_broadcast_text begin: from_pe, length=', from_pe, length
           endif
       end if
@@ -867,8 +885,10 @@ end subroutine mpp_gsm_free
 !            GLOBAL REDUCTION ROUTINES: mpp_max, mpp_sum, mpp_min             !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_real8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_real8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_real8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -880,8 +900,10 @@ end subroutine mpp_gsm_free
 #include <mpp_reduce_mpi.h>
 
 #ifdef OVERLOAD_R4
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_real4
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_real4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_real4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -894,8 +916,10 @@ end subroutine mpp_gsm_free
 #endif
 
 #ifndef no_8byte_integers
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_int8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_int8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_int8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -907,8 +931,10 @@ end subroutine mpp_gsm_free
 #include <mpp_reduce_mpi.h>
 #endif
 
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_max_int4
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_max_int4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_max_int4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -919,8 +945,10 @@ end subroutine mpp_gsm_free
 #define MPI_REDUCE_ MPI_MAX
 #include <mpp_reduce_mpi.h>
 
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_real8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_real8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_real8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -932,8 +960,10 @@ end subroutine mpp_gsm_free
 #include <mpp_reduce_mpi.h>
 
 #ifdef OVERLOAD_R4
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_real4
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_real4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_real4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -946,8 +976,10 @@ end subroutine mpp_gsm_free
 #endif
 
 #ifndef no_8byte_integers
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_int8
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_int8_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_int8_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_TYPE_BYTELEN_
@@ -958,9 +990,11 @@ end subroutine mpp_gsm_free
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
 #endif       
-             
-#undef MPP_REDUCE_
-#define MPP_REDUCE_ mpp_min_int4
+
+#undef MPP_REDUCE_0D_
+#define MPP_REDUCE_0D_ mpp_min_int4_0d
+#undef MPP_REDUCE_1D_
+#define MPP_REDUCE_1D_ mpp_min_int4_1d             
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_TYPE_BYTELEN_

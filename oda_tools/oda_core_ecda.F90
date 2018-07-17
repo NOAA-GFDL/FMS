@@ -1,4 +1,22 @@
 ! -*- f90 -*-
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module oda_core_ecda_mod
   ! FMS Shared modules
   use fms_mod, only : file_exist, read_data
@@ -19,7 +37,7 @@ module oda_core_ecda_mod
   use time_manager_mod, only : time_type, set_time, set_date, get_date, get_time
   use time_manager_mod, only : operator( <= ), operator( - ), operator( > ), operator ( < )
   use get_cal_time_mod, only : get_cal_time
-  use axis_utils_mod, only : frac_index  
+  use axis_utils_mod, only : frac_index
   use horiz_interp_type_mod, only: horiz_interp_type
   use horiz_interp_bilinear_mod, only : horiz_interp_bilinear_new
   use constants_mod, only : DEG_TO_RAD
@@ -29,7 +47,7 @@ module oda_core_ecda_mod
   use oda_types_mod, only : DROP_PROFILER, MOORING, SATELLITE, DRIFTER, SHIP, TEMP_ID, SALT_ID, MISSING_VALUE
   use oda_types_mod, only : UNKNOWN, TAO
   use xbt_adjust, only : xbt_drop_rate_adjust
-  
+
   implicit none
 
   private
@@ -57,9 +75,9 @@ module oda_core_ecda_mod
 
   integer :: max_prflvs = 200 ! for vd test
 
-  type(ocean_profile_type), target, dimension(:), allocatable :: profiles  
+  type(ocean_profile_type), target, dimension(:), allocatable :: profiles
 
-  integer :: num_profiles, no_sst, no_prf, no_temp, no_salt, no_suv, no_eta ! total number of observations 
+  integer :: num_profiles, no_sst, no_prf, no_temp, no_salt, no_suv, no_eta ! total number of observations
   integer :: no_woa05
 
   integer :: isc, iec, jsc, jec, isd, ied, jsd, jed  ! indices for local domain on model grid
@@ -76,7 +94,7 @@ module oda_core_ecda_mod
   real, allocatable, save :: obs_woa05t(:,:,:), obs_woa05s(:,:,:)
   integer ::  nlon, nlat, nlev
   integer ::  nlon_woa, nlat_woa, nlev_woa
-  
+
   ! time window for DROP, MOORING and SATELLITE data respectively
 
   type(time_type) , dimension(0:100), public :: time_window
@@ -97,10 +115,10 @@ module oda_core_ecda_mod
        character(len=16)  :: file_type
     end type obs_entry_type
 
- 
+
 contains
 
-  subroutine init_observations(time_s, time_e, filt_domain, localize)  
+  subroutine init_observations(time_s, time_e, filt_domain, localize)
     type(time_type), intent(in) :: time_s, time_e
     type(domain2d), intent(in) :: filt_domain
     logical, intent(in), optional :: localize
@@ -109,7 +127,7 @@ contains
 
     ! ocean_obs_nml variables
     integer :: mooring_window = 5
-    integer :: satellite_window = 10 
+    integer :: satellite_window = 10
     integer :: drop_window = 30
     integer :: drifter_window = 30
     integer :: ship_window = 30
@@ -119,9 +137,9 @@ contains
     logical :: temp_obs_argo, salt_obs_argo, temp_obs_gtspp
     logical :: temp_obs_woa05, salt_obs_woa05
     integer :: eta_obs_td = 10
-    integer :: max_files = 30 
-    integer :: max_files_argo = 10 
-    integer :: max_files_gtspp = 10 
+    integer :: max_files = 30
+    integer :: max_files_argo = 10
+    integer :: max_files_gtspp = 10
     namelist /ocean_obs_nml/ mooring_window, satellite_window, drop_window,&
          & drifter_window, ship_window, unknown_window,&
          & prfs_obs, salt_obs, sst_obs, eta_obs, suv_obs,&
@@ -157,7 +175,7 @@ contains
     ioun = open_namelist_file()
     read(UNIT=ioun, NML=ocean_obs_nml, IOSTAT=io_status)
     ierr = check_nml_error(io_status,'ocean_obs_nml')
-    call close_file(ioun)    
+    call close_file(ioun)
 #endif
     write (UNIT=stdlog_unit, NML=ocean_obs_nml)
 
@@ -191,7 +209,7 @@ contains
     time_window(SATELLITE:SATELLITE+9) = set_time(0,satellite_window)
     time_window(DRIFTER:DRIFTER+9) = set_time(0,drifter_window)
     time_window(SHIP:SHIP+9) = set_time(0,ship_window)
-    
+
     nfiles = 0
     nrecs=0
     call mpp_open(unit, 'ocean_obs_table', action=MPP_RDONLY)
@@ -210,7 +228,7 @@ contains
           else if ( io_status > 0 ) then
              cycle read_obs
           else
-             nfiles = nfiles + 1       
+             nfiles = nfiles + 1
              input_files(nfiles) = tbl_entry%filename
              select case ( trim(tbl_entry%file_type) )
              case ('profiles')
@@ -227,7 +245,7 @@ contains
        call error_mesg('oda_core_mod::init_observations', 'number of obs files exceeds max_files parameter', FATAL)
     end if
     CALL mpp_close(unit)
-    
+
     nfiles_argo = 0
     nrecs_argo = 0
     call mpp_open(unit_argo, 'ocean_obs_argo_table', action=MPP_RDONLY)
@@ -237,7 +255,7 @@ contains
           exit read_obs_argo
        else if ( io_status > 0 ) then
           cycle read_obs_argo
-       else 
+       else
           nrecs_argo = nrecs_argo + 1
           if ( record(1:1) == '#' ) cycle read_obs_argo
           read (UNIT=record, FMT=*, IOSTAT=io_status) tbl_entry
@@ -245,8 +263,8 @@ contains
              exit read_obs_argo
           else if ( io_status > 0 ) then
              cycle read_obs_argo
-          else 
-             nfiles_argo = nfiles_argo + 1       
+          else
+             nfiles_argo = nfiles_argo + 1
              input_files_argo(nfiles_argo) = tbl_entry%filename
              select case ( trim(tbl_entry%file_type) )
              case ('profiles')
@@ -282,7 +300,7 @@ contains
           else if ( io_status > 0 ) then
              cycle read_obs_gtspp
           else
-             nfiles_gtspp = nfiles_gtspp + 1       
+             nfiles_gtspp = nfiles_gtspp + 1
              input_files_gtspp(nfiles_gtspp) = tbl_entry%filename
              select case ( trim(tbl_entry%file_type) )
              case ('profiles')
@@ -344,7 +362,7 @@ contains
        do n=1, nfiles
           select case ( filetype(n) )
           case (PROFILE_FILE)
-             call open_profile_dataset(trim(input_files(n)), time_s, time_e, obs_variable, localize)           
+             call open_profile_dataset(trim(input_files(n)), time_s, time_e, obs_variable, localize)
           case default
              call error_mesg('oda_core_mod::init_observations', 'filetype not currently supported for prfs_obs', FATAL)
           end select
@@ -473,7 +491,7 @@ contains
     deallocate(filetype_gtspp, input_files_gtspp)
   end subroutine init_observations
 
-  subroutine open_profile_dataset(filename, time_start, time_end, obs_variable, localize)  
+  subroutine open_profile_dataset(filename, time_start, time_end, obs_variable, localize)
     character(len=*), intent(in) :: filename
     type(time_type), intent(in) :: time_start, time_end
     integer, intent(in) :: obs_variable
@@ -564,7 +582,7 @@ contains
              field_lon => fields(i)
           case ('latitude')
              field_lat => fields(i)
-          case ('profile_flag') 
+          case ('profile_flag')
              field_flag => fields(i)
           case ('time')
              field_time => fields(i)
@@ -587,7 +605,7 @@ contains
              field_lon => fields(i)
           case ('latitude')
              field_lat => fields(i)
-          case ('profile_flag_s') 
+          case ('profile_flag_s')
              field_flag => fields(i)
           case ('time')
              field_time => fields(i)
@@ -609,7 +627,7 @@ contains
 
     call mpp_get_atts(depth_axis, len=nlevs)
 
-    if ( nlevs > MAX_LEVELS ) then 
+    if ( nlevs > MAX_LEVELS ) then
        call error_mesg('oda_core_mod::open_profile_dataset', 'increase parameter MAX_LEVELS', FATAL)
     else if (nlevs < 1) then
        call error_mesg('oda_core_mod::open_profile_dataset', 'Value of nlevs is less than 1.', FATAL)
@@ -623,7 +641,7 @@ contains
 
     write(UNIT=stdout_unit, FMT='("There are ",I8," records in this dataset.")') nstation
     write(UNIT=stdout_unit, FMT='("Searching for profiles . . .")')
-    
+
     call mpp_get_atts(field_time, units=time_units)
 
     bad_point = 0
@@ -631,7 +649,7 @@ contains
 
     i = 1
     cont = .true.
-    
+
     do while ( cont )
        prof_in_filt_domain = .false.
        depth = missing_value  ! snz add
@@ -661,7 +679,7 @@ contains
 
        if ( lon .lt. 0.0 ) lon = lon + 360.0
        if ( lon .gt. 360.0 ) lon = lon - 360.0
-       if ( lon .lt. 80.0 ) lon = lon + 360.0 
+       if ( lon .lt. 80.0 ) lon = lon + 360.0
 
        if ( lat > ass_start_lat .and. lat < ass_end_lat ) data_is_local = .true.
 
@@ -710,7 +728,7 @@ contains
              no_temp = no_temp + 1
              no_prf = no_prf + 1
           end if
-          if ( var_id == SALT_ID .and. flag_s == 0.0 ) then 
+          if ( var_id == SALT_ID .and. flag_s == 0.0 ) then
              num_profiles = num_profiles + 1
              no_salt = no_salt + 1
              no_prf = no_prf + 1
@@ -763,7 +781,7 @@ contains
              data_bfr(nlinks,:) = missing_value
              call mpp_read(unit, field_depth, depth_bfr(nlinks,1:nlevs), tindex=ii)
              call mpp_read(unit, field_data, data_bfr(nlinks,1:nlevs), tindex=ii)
-             if ( var_id == TEMP_ID ) then 
+             if ( var_id == TEMP_ID ) then
                 call mpp_read(unit, field_t_flag, t_flag_bfr(nlinks,1:nlevs), tindex=ii)
              else if ( var_id == SALT_ID ) then
                 call mpp_read(unit, field_s_flag, s_flag_bfr(nlinks,1:nlevs), tindex=ii)
@@ -819,7 +837,7 @@ contains
              profiles(num_profiles)%lat = lat
              profiles(num_profiles)%lon = lon
 !             allocate(profiles(num_profiles)%ms(num_levs))
-!             allocate(profiles(num_profiles)%ms_inv(num_levs))           
+!             allocate(profiles(num_profiles)%ms_inv(num_levs))
 !             profiles(num_profiles)%ms(:) = 0.5
              kk = 1
              do k=1, MAX_LEVELS
@@ -830,7 +848,7 @@ contains
                    end if
                    profiles(num_profiles)%depth(kk) = depth(k)
                    profiles(num_profiles)%data(kk) = data(k)
-!                   profiles(num_profiles)%ms_inv(kk) = 1./profiles(num_profiles)%ms(kk)                  
+!                   profiles(num_profiles)%ms_inv(kk) = 1./profiles(num_profiles)%ms(kk)
                    kk = kk + 1
                 end if
              end do
@@ -849,9 +867,9 @@ contains
                    end if
                 end do
              end do
-           
+
              profiles(num_profiles)%time = profile_time
-           
+
              ! calculate interpolation coefficients (make sure to account for grid offsets here!)
              if ( lat < 65.0 ) then ! regular grids
                 ri0 = frac_index(lon, x_grid(:,1))
@@ -1061,7 +1079,7 @@ contains
                                Profiles(num_profiles)%flag(k) = .false.
                             end if
                          end if
-                        
+
                          if ( abs(Profiles(num_profiles)%data(k)) > 1.e4 &
                               & .or. abs(Profiles(num_profiles)%depth(k)) > 1.e4 ) then
                             Profiles(num_profiles)%flag(k) = .false.
@@ -1069,7 +1087,7 @@ contains
                       end if ! flag
                    end if ! snz add
                 end do
-             end if ! accepted         
+             end if ! accepted
           endif ! 05 Nov 2012
        else ! localize
           i = i+1
@@ -1114,7 +1132,7 @@ contains
     return
   end subroutine open_profile_dataset_gtspp
 
-  subroutine open_profile_dataset_argo(filename, time_start, time_end, obs_variable, localize)  
+  subroutine open_profile_dataset_argo(filename, time_start, time_end, obs_variable, localize)
     character(len=*), intent(in) :: filename
     type(time_type), intent(in) :: time_start, time_end
     integer, intent(in) :: obs_variable
@@ -1140,7 +1158,7 @@ contains
     logical :: data_is_local, localize_data, cont
     logical :: data_in_period
     logical :: prof_in_filt_domain
-    logical, dimension(MAX_LEVELS) :: flag 
+    logical, dimension(MAX_LEVELS) :: flag
     logical, dimension(MAX_LNKS, MAX_LEVELS) :: flag_bfr
 
     type(time_type) :: profile_time
@@ -1204,7 +1222,7 @@ contains
              field_lon => fields(i)
           case ('latitude')
              field_lat => fields(i)
-          case ('dens_flag') 
+          case ('dens_flag')
              field_flag => fields(i)
           case ('time')
              field_time => fields(i)
@@ -1223,7 +1241,7 @@ contains
              field_lon => fields(i)
           case ('latitude')
              field_lat => fields(i)
-          case ('dens_flag') 
+          case ('dens_flag')
              field_flag => fields(i)
           case ('time')
              field_time => fields(i)
@@ -1241,7 +1259,7 @@ contains
 
     call mpp_get_atts(depth_axis, len=nlevs)
 
-    if ( nlevs > MAX_LEVELS ) then 
+    if ( nlevs > MAX_LEVELS ) then
        call error_mesg('oda_core_mod::open_profile_dataset_argo', 'increase parameter MAX_LEVELS', FATAL)
     else if (nlevs < 1) then
        call error_mesg('oda_core_mod::open_profile_dataset_argo', 'nlevs less than 1.', FATAL)
@@ -1255,14 +1273,14 @@ contains
 
     write (UNIT=stdout_unit, FMT='("There are ",I8," records in this dataset")') nstation
     write (UNIT=stdout_unit, FMT='("Searching for profiles . . .")')
-    
+
     call mpp_get_atts(field_time, units=time_units)
 
     out_bound_point = 0
 
     i=1
     cont=.true.
-    
+
     do while (cont)
        prof_in_filt_domain = .false.
        depth = missing_value  ! snz add
@@ -1283,7 +1301,7 @@ contains
 
        if ( lon .lt. 0.0 ) lon = lon + 360.0
        if ( lon .gt. 360.0 ) lon = lon - 360.0
-       if ( lon .lt. 80.0 ) lon = lon + 360.0 
+       if ( lon .lt. 80.0 ) lon = lon + 360.0
 
        if ( lat > ass_start_lat .and. lat < ass_end_lat ) data_is_local = .true.
 
@@ -1427,7 +1445,7 @@ contains
           profiles(num_profiles)%lat = lat
           profiles(num_profiles)%lon = lon
 !          allocate(profiles(num_profiles)%ms(num_levs))
-!          allocate(profiles(num_profiles)%ms_inv(num_levs))           
+!          allocate(profiles(num_profiles)%ms_inv(num_levs))
 !          profiles(num_profiles)%ms(:) = 0.5
 
           kk= 1
@@ -1439,7 +1457,7 @@ contains
                 end if
                 profiles(num_profiles)%depth(kk) = depth(k)
                 profiles(num_profiles)%data(kk) = data(k)
-!                profiles(num_profiles)%ms_inv(kk) = 1./profiles(num_profiles)%ms(kk)                  
+!                profiles(num_profiles)%ms_inv(kk) = 1./profiles(num_profiles)%ms(kk)
                 kk = kk + 1
              end if
           end do
@@ -1458,9 +1476,9 @@ contains
                 end if
              end do
           end do
-           
+
           profiles(num_profiles)%time = profile_time
-           
+
 ! snz uses the following to test excluding the coast area salt profiles
 !          if (profiles(num_profiles)%variable == SALT_ID .and. &
 !              profiles(num_profiles)%depth(num_levs) < 900.0) profiles(num_profiles)%accepted = .false.
@@ -1610,7 +1628,7 @@ contains
                  else
                     Profiles(num_profiles)%k_index(k) = Profiles(num_profiles)%k_index(k) - 1
                  end if
-                 if ( Profiles(num_profiles)%k_index(k) > nk ) then 
+                 if ( Profiles(num_profiles)%k_index(k) > nk ) then
                     call error_mesg('oda_core_mod::open_profile_dataset_argo', 'Profile k_index is greater than nk', FATAL)
                  else if ( Profiles(num_profiles)%k_index(k) < 0 ) then
                     call error_mesg('oda_core_mod::open_profile_dataset_argo', 'Profile k_index is less than 0', FATAL)
@@ -1630,16 +1648,16 @@ contains
                           if ( Grd%mask(i0,j0,k0) == 0.0 .or.&
                                & Grd%mask(1,j0,k0) == 0.0 .or.&
                                & Grd%mask(i0,j0+1,k0) == 0.0 .or.&
-                               & Grd%mask(1,j0+1,k0) == 0.0 ) then 
+                               & Grd%mask(1,j0+1,k0) == 0.0 ) then
                              Profiles(num_profiles)%flag(k) = .false.
                           end if
                        else if ( i0 /= ieg .and. j0 == jeg ) then
                           if ( Grd%mask(i0,j0,k0) == 0.0 .or.&
-                               & Grd%mask(i0+1,j0,k0) == 0.0 ) then 
+                               & Grd%mask(i0+1,j0,k0) == 0.0 ) then
                              Profiles(num_profiles)%flag(k) = .false.
                           end if
-                       else 
-                          if ( Grd%mask(i0,j0,k0) == 0.0 ) then 
+                       else
+                          if ( Grd%mask(i0,j0,k0) == 0.0 ) then
                              Profiles(num_profiles)%flag(k) = .false.
                           end if
                        end if
@@ -1664,7 +1682,7 @@ contains
                              Profiles(num_profiles)%flag(k) = .false.
                           end if
                        else
-                          if ( Grd%mask(i0,j0,k0+1) == 0.0 ) then 
+                          if ( Grd%mask(i0,j0,k0+1) == 0.0 ) then
                              Profiles(num_profiles)%flag(k) = .false.
                           end if
                        end if
@@ -1676,7 +1694,7 @@ contains
                     end if ! flag
                  end if ! snz add
               end do
-           end if  ! accepted 
+           end if  ! accepted
 
            end if ! 05 Nov 2012
 
@@ -1754,7 +1772,7 @@ contains
           call copy_obs(Profiles(i:i), Prof(nprof:nprof))
 
           Prof(nprof)%tdiff = tdiff
-          
+
           ! snz add the following few lines for increasing deep water data
           if ( Prof(nprof)%levels > max_prflvs ) then
              k_interval = (Prof(nprof)%levels-max_prflvs+50)/50 + 1
@@ -1803,7 +1821,7 @@ contains
     write(stdlog_unit, NML=oda_core_nml)
 
     Grd => Grid
-    
+
     call mpp_get_compute_domain(Domain, isc, iec, jsc, jec)
     call mpp_get_data_domain(Domain, isd, ied, jsd, jed)
     call mpp_get_global_domain(Domain, isg, ieg, jsg, jeg)
@@ -1818,7 +1836,7 @@ contains
 
     call init_observations(time_s, time_e, filt_domain, localize)
   end subroutine oda_core_init
-    
+
   subroutine copy_obs(obs_in, obs_out)
     type(ocean_profile_type), dimension(:), intent(in) :: obs_in
     type(ocean_profile_type), dimension(:), intent(inout) :: obs_out
@@ -1853,7 +1871,7 @@ contains
           nullify(Obs_out(n)%flag)
        end if
        allocate(Obs_out(n)%flag(Obs_in(n)%levels))
-       Obs_out(n)%flag(:) = Obs_in(n)%flag(:)          
+       Obs_out(n)%flag(:) = Obs_in(n)%flag(:)
        Obs_out(n)%time = Obs_in(n)%time
        Obs_out(n)%yyyy = Obs_in(n)%yyyy
        Obs_out(n)%mmdd = Obs_in(n)%mmdd
@@ -1863,21 +1881,21 @@ contains
           deallocate(Obs_out(n)%k_index)
           nullify(Obs_out(n)%k_index)
        end if
-       allocate(Obs_out(n)%k_index(Obs_in(n)%levels))          
+       allocate(Obs_out(n)%k_index(Obs_in(n)%levels))
        Obs_out(n)%k_index = Obs_in(n)%k_index
 
 !       if ( associated(Obs_out(n)%ms) ) then
 !          deallocate(Obs_out(n)%ms)
 !          nullify(Obs_out(n)%ms)
 !       end if
-!       allocate(Obs_out(n)%ms(Obs_in(n)%levels))          
+!       allocate(Obs_out(n)%ms(Obs_in(n)%levels))
 !       Obs_out(n)%ms = Obs_in(n)%ms
 !       if ( associated(Obs_out(n)%ms_inv) ) then
 !          deallocate(Obs_out(n)%ms_inv)
 !          nullify(Obs_out(n)%ms_inv)
 !       end if
-!       allocate(Obs_out(n)%ms_inv(Obs_in(n)%levels))          
-!       Obs_out(n)%ms_inv = 1./Obs_in(n)%ms    
+!       allocate(Obs_out(n)%ms_inv(Obs_in(n)%levels))
+!       Obs_out(n)%ms_inv = 1./Obs_in(n)%ms
 
        Obs_out(n)%tdiff = Obs_in(n)%tdiff
        if ( associated(Obs_out(n)%Forward_model%wgt) ) then
@@ -1887,7 +1905,7 @@ contains
     end do
   end subroutine copy_obs
 
-  subroutine open_profile_dataset_sst(filename, obs_variable, localize)  
+  subroutine open_profile_dataset_sst(filename, obs_variable, localize)
     character(len=*), intent(in) :: filename
     integer, intent(in) :: obs_variable
     logical, intent(in), optional :: localize
@@ -2098,7 +2116,7 @@ contains
     write (UNIT=stdout_unit, FMT='("A final total @sst of ",I8," prfs within global domain")') num_profiles
   end subroutine open_profile_dataset_sst
 
-  subroutine open_profile_dataset_woa05t(filename, obs_variable, localize)  
+  subroutine open_profile_dataset_woa05t(filename, obs_variable, localize)
     character(len=*), intent(in) :: filename
     integer, intent(in) :: obs_variable
     logical, intent(in), optional :: localize
@@ -2258,7 +2276,7 @@ contains
              profiles(num_profiles)%levels = num_levs
              profiles(num_profiles)%lat = lat
              profiles(num_profiles)%lon = lon
-             
+
              kk = 1
              do k=1, nlev
                 if ( flag(k) ) then
@@ -2302,7 +2320,7 @@ contains
                         & 'i0,j0 out of bounds in woat03. '//trim(emsg_local), FATAL)
                 end if
                 Profiles(num_profiles)%i_index = ri0
-                Profiles(num_profiles)%j_index = rj0 
+                Profiles(num_profiles)%j_index = rj0
              else ! tripolar grids
                 lon_out(1,1) = lon*DEG_TO_RAD
                 lat_out(1,1) = lat*DEG_TO_RAD
@@ -2338,7 +2356,7 @@ contains
                    Profiles(num_profiles)%j_index =Interp%j_lat(1,1,2)
                 end if
              end if ! grids
-           
+
              Profiles(num_profiles)%accepted = .true.
              if ( i0 < 1 .or. j0 < 1 ) then
                 Profiles(num_profiles)%accepted = .false.
@@ -2373,7 +2391,7 @@ contains
                    end if
                 end if
              end if ! here
-             
+
              if ( Profiles(num_profiles)%accepted ) then ! accepted
                 Profiles(num_profiles)%flag(:) = .true.
                 allocate(Profiles(num_profiles)%k_index(Profiles(num_profiles)%levels))
@@ -2388,7 +2406,7 @@ contains
                            & 'Profile k_index is greater than nk', FATAL)
                    end if
                    k0 = floor(Profiles(num_profiles)%k_index(k))
-                   
+
                    if ( k0 >= 1 ) then ! snz add
                       if ( Profiles(num_profiles)%flag(k) ) then ! flag
                          if ( i0 /= ieg .and. j0 /= jeg ) then
@@ -2415,7 +2433,7 @@ contains
                                Profiles(num_profiles)%flag(k) = .false.
                             end if
                          end if
-                         
+
                          if ( i0 /= ieg .and. j0 /= jeg ) then
                             if ( Grd%mask(i0,j0,k0+1) == 0.0 .or.&
                                  & Grd%mask(i0+1,j0,k0+1) == 0.0 .or.&
@@ -2440,7 +2458,7 @@ contains
                                Profiles(num_profiles)%flag(k) = .false.
                             end if
                          end if
-                         
+
                          if ( abs(Profiles(num_profiles)%data(k)) > 1.e4 &
                               & .or. abs(Profiles(num_profiles)%depth(k)) > 1.e4 ) then
                             Profiles(num_profiles)%flag(k) = .false.
@@ -2463,7 +2481,7 @@ contains
 
   end subroutine open_profile_dataset_woa05t
 
-  subroutine open_profile_dataset_woa05s(filename, obs_variable, localize)  
+  subroutine open_profile_dataset_woa05s(filename, obs_variable, localize)
     character(len=*), intent(in) :: filename
     integer, intent(in) :: obs_variable
     logical, intent(in), optional :: localize
@@ -2660,7 +2678,7 @@ contains
                         & 'i0,j0 out of bounds in woas03. '//trim(emsg_local), FATAL)
                 end if
                 Profiles(num_profiles)%i_index = ri0
-                Profiles(num_profiles)%j_index = rj0 
+                Profiles(num_profiles)%j_index = rj0
              else ! tripolar grids
                 lon_out(1,1) = lon*DEG_TO_RAD
                 lat_out(1,1) = lat*DEG_TO_RAD
@@ -2696,7 +2714,7 @@ contains
                    Profiles(num_profiles)%j_index =Interp%j_lat(1,1,2)
                 end if
              end if ! grids
-           
+
              Profiles(num_profiles)%accepted = .true.
              if ( i0 < 1 .or. j0 < 1 ) then
                 Profiles(num_profiles)%accepted = .false.
@@ -2856,7 +2874,7 @@ contains
     call get_time(time1, seconds1, days1)
     time_idx = days-days1+1
 
-    ! daily data 
+    ! daily data
 
     if ( mpp_pe() == mpp_root_pe() ) then
        write (UNIT=stdout_unit, FMT='("time_idx = ",I8)') time_idx
@@ -2868,7 +2886,7 @@ contains
     call mpp_get_info(unit, ndim, nvar, natt, ntime)
 
     allocate(fields(nvar), STAT=istat)
-    if ( istat .ne. 0 ) then 
+    if ( istat .ne. 0 ) then
        call error_mesg('oda_core_mod::get_obs_sst', 'Unable to allocate fields', FATAL)
     end if
 
@@ -2907,7 +2925,7 @@ contains
 
        if ( Profiles(i)%accepted ) then
           nprof = nprof + 1
-          if ( nprof > size(Prof,1) ) then 
+          if ( nprof > size(Prof,1) ) then
              call error_mesg('oda_core_mod::get_obs_sst',&
                   & 'Passed in array "Prof" is smaller than number of profiles, increase size of Prof before call.',&
                   & FATAL)
@@ -2956,14 +2974,14 @@ contains
 
     time_idx = in0
 
-    ! daily data 
+    ! daily data
     woa05t_filename = "INPUT/woa05_temp.nc"
-    
+
     call mpp_open(unit, trim(woa05t_filename), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE)
     call mpp_get_info(unit, ndim, nvar, natt, ntime)
 
     allocate(fields(nvar), STAT=istat)
-    if ( istat .ne. 0 ) then 
+    if ( istat .ne. 0 ) then
        call error_mesg('oda_core_mod::get_obs_woa05t', 'Unable to allocate fields', FATAL)
     end if
 
@@ -3051,14 +3069,14 @@ contains
 
     time_idx = in0
 
-    ! climatological data 
+    ! climatological data
     woa05s_filename = "INPUT/woa05_salt.nc"
 
     call mpp_open(unit, trim(woa05s_filename), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE)
     call mpp_get_info(unit, ndim, nvar, natt, ntime)
 
     allocate(fields(nvar), STAT=istat)
-    if ( istat .ne. 0 ) then 
+    if ( istat .ne. 0 ) then
        call error_mesg('oda_core_mod::get_obs_woa05s', 'Unable to allocate fields', FATAL)
     end if
 
@@ -3120,7 +3138,7 @@ contains
     call mpp_close(unit)
   end subroutine get_obs_woa05s
 
-  subroutine open_profile_dataset_eta(filename, obs_variable, localize)  
+  subroutine open_profile_dataset_eta(filename, obs_variable, localize)
     character(len=*), intent(in) :: filename
     integer, intent(in) :: obs_variable
     logical, intent(in), optional :: localize
@@ -3163,7 +3181,7 @@ contains
 
           if ( lon .lt. 0.0 ) lon = lon + 360.0
           if ( lon .gt. 360.0 ) lon = lon - 360.0
-          if ( lon .lt. 80.0 ) lon = lon + 360.0 
+          if ( lon .lt. 80.0 ) lon = lon + 360.0
 
           if ( lat < eta_obs_start_lat .or. lat > eta_obs_end_lat ) data_is_local = .false.
           if ( abs(lat) < 20.0 .and.&
@@ -3217,10 +3235,10 @@ contains
                       kk = kk + 1
                    end if
                 end do
-           
+
                 ! calculate interpolation coefficients (make sure to account for grid offsets here!)
                 Profiles(num_profiles)%i_index = ri0
-                Profiles(num_profiles)%j_index = rj0           
+                Profiles(num_profiles)%j_index = rj0
                 Profiles(num_profiles)%accepted = .true.
                 if ( i0 < 1 .or. j0 < 1 ) then
                    Profiles(num_profiles)%accepted = .false.
@@ -3254,7 +3272,7 @@ contains
     write (UNIT=stdout_unit, FMT='("A final total @eta of ",I8," prfs within global domain")') num_profiles
   end subroutine open_profile_dataset_eta
 
-  subroutine open_profile_dataset_suv(filename, obs_variable, localize)  
+  subroutine open_profile_dataset_suv(filename, obs_variable, localize)
     character(len=*), intent(in) :: filename
     integer, intent(in) :: obs_variable
     logical, intent(in), optional :: localize
@@ -3297,7 +3315,7 @@ contains
 
           if ( lon .lt. 0.0 ) lon = lon + 360.0
           if ( lon .gt. 360.0 ) lon = lon - 360.0
-          if ( lon .lt. 80.0 ) lon = lon + 360.0 
+          if ( lon .lt. 80.0 ) lon = lon + 360.0
 
           if ( lat < -40.0 .or. lat > 40.0 ) data_is_local = .false.
           if ( abs(lat) < 20.0 .and.&
@@ -3351,10 +3369,10 @@ contains
                       kk = kk + 1
                    end if
                 end do
-           
+
                 ! calculate interpolation coefficients (make sure to account for grid offsets here!)
                 Profiles(num_profiles)%i_index = ri0
-                Profiles(num_profiles)%j_index = rj0           
+                Profiles(num_profiles)%j_index = rj0
                 Profiles(num_profiles)%accepted = .true.
                 if ( i0 < 1 .or. j0 < 1 ) then
                    Profiles(num_profiles)%accepted = .false.
@@ -3392,16 +3410,16 @@ contains
     type(time_type), intent(in) :: model_time
     type(ocean_profile_type), dimension(:), intent(inout) :: Prof
     integer, intent(inout) :: nprof
-    integer, intent(in) :: no_prf0   
+    integer, intent(in) :: no_prf0
 
     ! get sst data and put into profiles
-    ! only current day                 
+    ! only current day
 
     real :: sfc_lon, sfc_lat, ri0, rj0
     real, dimension(1440,1070,1) :: sfc_u, sfc_v
 
     integer :: i, k, i_m, i0, j0
-    integer :: unit, time_idx, ndim, nvar, natt, ntime 
+    integer :: unit, time_idx, ndim, nvar, natt, ntime
     integer :: iy0, in0, id0, ih0, im0, is0
     integer :: stdout_unit, istat
     integer, dimension(12) :: n_days
@@ -3417,10 +3435,10 @@ contains
     stdout_unit = stdout()
 
     call get_date(model_time, iy0, in0, id0, ih0, im0, is0)
-                                                                                 
-    !monthly    
+
+    !monthly
 !!$    time_idx = (iy0-1984)*12+in0
-    ! daily    
+    ! daily
     if ( in0 == 1 ) then
        time_idx = (iy0-1984)*365 + id0
     else
@@ -3441,9 +3459,9 @@ contains
 
     call mpp_open(unit, trim(sfc_filename), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE)
     call mpp_get_info(unit, ndim, nvar, natt, ntime)
-    
+
     allocate(fields(nvar), STAT=istat)
-    if ( istat .ne. 0 ) then 
+    if ( istat .ne. 0 ) then
        call error_mesg('oda_core_mod::get_obs_sst', 'Unable to allocate fields', FATAL)
     end if
 
@@ -3456,21 +3474,21 @@ contains
           call mpp_read(unit, fields(i), sfc_v, tindex=time_idx)
        end select
     end do
-    
+
     do i=no_prf+no_sst+no_eta+1, no_prf+no_sst+no_eta+no_suv
        Profiles(i)%time = sfc_time0
 
        tdiff = model_time - Profiles(i)%time
 
-       sfc_lon = Profiles(i)%lon     
+       sfc_lon = Profiles(i)%lon
        ri0 = frac_index(sfc_lon, x_grid_uv(:,1))
        i0 = floor(ri0)
-       if ( i0 < 1 .or. i0 > 1440 ) then  
+       if ( i0 < 1 .or. i0 > 1440 ) then
           write (UNIT=emsg_local, FMT='("Profiles(",I8,")%lon = ",I4,", i0 = ",I8)') i, Profiles(i)%lon, i0
           call error_mesg('oda_core_mod::get_obs_suv',&
                & 'Profile longitude index outside range [1,1440].  '//trim(emsg_local), FATAL)
        end if
-                 
+
        sfc_lat = Profiles(i)%lat
        rj0 = frac_index(sfc_lat, y_grid_uv(90,:))
        j0 = floor(rj0)
@@ -3480,9 +3498,9 @@ contains
                & 'Profile latitude index outside range [1,1070].  '//trim(emsg_local), FATAL)
        end if
 
-       if ( Profiles(i)%accepted ) then 
+       if ( Profiles(i)%accepted ) then
           nprof = nprof + 1
-          if ( nprof > size(Prof,1) ) then 
+          if ( nprof > size(Prof,1) ) then
              call error_mesg('oda_core_mod::get_obs_suv',&
                   & 'Passed in array "Prof" is smaller than number of profiles, increase size of Prof before call',&
                   & FATAL)
@@ -3492,7 +3510,7 @@ contains
 
           call copy_obs(Profiles(i:i),Prof(nprof+no_prf0:nprof+no_prf0))
 
-          Prof(nprof+no_prf0)%tdiff = tdiff  
+          Prof(nprof+no_prf0)%tdiff = tdiff
        end if
     end do
 
@@ -3504,10 +3522,10 @@ contains
     type(time_type), intent(in) :: model_time
     type(ocean_profile_type), dimension(:), intent(inout) :: Prof
     integer, intent(inout) :: nprof
-    integer, intent(in) :: no_prf0   
+    integer, intent(in) :: no_prf0
 
     ! get sst data and put into profiles
-    ! only current day                 
+    ! only current day
 
     real :: eta_lon, eta_lat, ri0, rj0
     real, dimension(1440,1070) :: eta_t
@@ -3520,7 +3538,7 @@ contains
 
     character(len=80) :: eta_filename
     character(len=256) :: emsg_local
-    
+
     type(fieldtype), dimension(:), allocatable :: fields
     type(time_type) :: tdiff, sfc_time0
 
@@ -3530,9 +3548,9 @@ contains
 
     call get_date(model_time, iy0, in0, id0, ih0, im0, is0)
 
-    !monthly    
+    !monthly
 !!$    time_idx = (iy0-1984)*12+in0
-    ! daily    
+    ! daily
     if ( in0 == 1 ) then
        time_idx = (iy0-1976)*365 + id0 - 1
     else
@@ -3553,9 +3571,9 @@ contains
 
     call mpp_open(unit, trim(eta_filename), MPP_RDONLY, MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE)
     call mpp_get_info(unit, ndim, nvar, natt, ntime)
-    
+
     allocate(fields(nvar), STAT=istat)
-    if ( istat .ne. 0 ) then 
+    if ( istat .ne. 0 ) then
        call error_mesg('oda_core_mod::get_obs_sst', 'Unable to allocate fields', FATAL)
     end if
 
@@ -3575,12 +3593,12 @@ contains
        eta_lon = Profiles(i)%lon
        ri0 = frac_index(eta_lon, x_grid(:,1))
        i0 = floor(ri0)
-       if ( i0 < 1 .or. i0 > 1440 ) then  
+       if ( i0 < 1 .or. i0 > 1440 ) then
           write (UNIT=emsg_local, FMT='("Profiles(",I8,")%lon = ",I4,", i0 = ",I8)') i, Profiles(i)%lon, i0
           call error_mesg('oda_core_mod::get_obs_eta',&
                & 'Profile longitude index outside range [1,1440].  '//trim(emsg_local), FATAL)
        end if
-                 
+
        eta_lat = Profiles(i)%lat
        rj0 = frac_index(eta_lat, y_grid(90,:))
        j0 = floor(rj0)
@@ -3590,10 +3608,10 @@ contains
                & 'Profile latitude index outside range [1,1070].  '//trim(emsg_local), FATAL)
        end if
 
-       if ( Profiles(i)%accepted ) then 
+       if ( Profiles(i)%accepted ) then
           if ( eta_t(i0,j0) > -9.9 ) then !!! excluding missing values
-             nprof = nprof + 1              
-             if ( nprof > size(Prof,1) ) then 
+             nprof = nprof + 1
+             if ( nprof > size(Prof,1) ) then
                 call error_mesg('oda_core_mod::get_obs_eta',&
                      & 'Passed in array "Prof" is smaller than number of profiles, increase size of Prof before call.',&
                      & FATAL)
@@ -3602,7 +3620,7 @@ contains
 
              call copy_obs(Profiles(i:i),Prof(nprof+no_prf0:nprof+no_prf0))
 
-             Prof(nprof+no_prf0)%tdiff = tdiff  
+             Prof(nprof+no_prf0)%tdiff = tdiff
           end if
        end if
     end do

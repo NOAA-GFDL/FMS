@@ -1,39 +1,33 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!                                                                   !!
-!!                   GNU General Public License                      !!
-!!                                                                   !!
-!! This file is part of the Flexible Modeling System (FMS).          !!
-!!                                                                   !!
-!! FMS is free software; you can redistribute it and/or modify       !!
-!! it and are expected to follow the terms of the GNU General Public !!
-!! License as published by the Free Software Foundation.             !!
-!!                                                                   !!
-!! FMS is distributed in the hope that it will be useful,            !!
-!! but WITHOUT ANY WARRANTY; without even the implied warranty of    !!
-!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     !!
-!! GNU General Public License for more details.                      !!
-!!                                                                   !!
-!! You should have received a copy of the GNU General Public License !!
-!! along with FMS; if not, write to:                                 !!
-!!          Free Software Foundation, Inc.                           !!
-!!          59 Temple Place, Suite 330                               !!
-!!          Boston, MA  02111-1307  USA                              !!
-!! or see:                                                           !!
-!!          http://www.gnu.org/licenses/gpl.txt                      !!
-!!                                                                   !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module horiz_interp_type_mod
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
 
 ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
 
 ! <OVERVIEW>
-!     define derived data type that contains indices and weights used for subsequent 
+!     define derived data type that contains indices and weights used for subsequent
 !      interpolations.
 ! </OVERVIEW>
 
 ! <DESCRIPTION>
-!     define derived data type that contains indices and weights used for subsequent 
+!     define derived data type that contains indices and weights used for subsequent
 !      interpolations.
 ! </DESCRIPTION>
 
@@ -66,12 +60,12 @@ end interface
    real,    dimension(:,:), pointer   :: area_src =>NULL()              !area of the source grid
    real,    dimension(:,:), pointer   :: area_dst =>NULL()              !area of the destination grid
    real,    dimension(:,:,:), pointer :: wti =>NULL(),wtj =>NULL()      !weights for bilinear interpolation
-                                                                        !wti ist used for derivative "weights" in bicubic 
-   integer, dimension(:,:,:), pointer :: i_lon =>NULL(), j_lat =>NULL() !indices for bilinear interpolation 
+                                                                        !wti ist used for derivative "weights" in bicubic
+   integer, dimension(:,:,:), pointer :: i_lon =>NULL(), j_lat =>NULL() !indices for bilinear interpolation
                                                                         !and spherical regrid
-   real,    dimension(:,:,:), pointer :: src_dist =>NULL()              !distance between destination grid and 
+   real,    dimension(:,:,:), pointer :: src_dist =>NULL()              !distance between destination grid and
                                                                         !neighbor source grid.
-   logical, dimension(:,:), pointer   :: found_neighbors =>NULL()       !indicate whether destination grid 
+   logical, dimension(:,:), pointer   :: found_neighbors =>NULL()       !indicate whether destination grid
                                                                         !has some source grid around it.
    real                               :: max_src_dist
    integer, dimension(:,:), pointer   :: num_found => NULL()
@@ -92,7 +86,7 @@ end interface
    integer, dimension(:), pointer     :: i_src=>NULL(), j_src=>NULL()       !indices in source grid.
    integer, dimension(:), pointer     :: i_dst=>NULL(), j_dst=>NULL()       !indices in destination grid.
    real,    dimension(:), pointer     :: area_frac_dst=>NULL()              !area fraction in destination grid.
-   real,    dimension(:,:), pointer   :: mask_in=>NULL() 
+   real,    dimension(:,:), pointer   :: mask_in=>NULL()
  end type
 !</PUBLICTYPE>
 
@@ -134,7 +128,7 @@ contains
       dsum = sum(dat(:,:))
    endif
    avg = 0.0
-   
+
    npts = size(dat(:,:)) - miss
    if(pe == root_pe) then
       do p = 1, npes - 1  ! root_pe receive data from other pe
@@ -146,7 +140,7 @@ contains
          call mpp_recv(buffer_int(1), glen=2, from_pe=p+root_pe, tag=COMM_TAG_2)
          miss = miss + buffer_int(1)
          npts = npts + buffer_int(2)
-      enddo         
+      enddo
       if(npts == 0.) then
          print*, 'Warning: no points is valid'
       else

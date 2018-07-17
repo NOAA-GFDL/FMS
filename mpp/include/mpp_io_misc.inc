@@ -1,6 +1,23 @@
-
 ! -*-f90-*-
-! $Id$
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -44,7 +61,7 @@
       npes = mpp_npes()
       call mpp_domains_init(flags)
 
-      maxunits = 1024
+      maxunits = _MAX_FILE_UNITS
       if( PRESENT(maxunit) )maxunits = maxunit
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG
@@ -54,7 +71,7 @@
 !set range of allowed fortran unit numbers: could be compiler-dependent (should not overlap stdin/out/err)
       call mpp_set_unit_range( 103, maxunits )
 
-      !--- namelist 
+      !--- namelist
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, mpp_io_nml, iostat=io_status)
 #else
@@ -86,7 +103,7 @@
 
 ! determine the pack_size
       pack_size = size(transfer(doubledata, realarray))
-      if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'mpp_io_mod(mpp_io_init): pack_size should be 1 or 2')  
+      if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'mpp_io_mod(mpp_io_init): pack_size should be 1 or 2')
 
 !initialize default_field
       default_field%name = 'noname'
@@ -124,7 +141,7 @@
       default_att%type = -1
       default_att%len = -1
       default_att%catt = 'none'
-      
+
 !up to MAXUNITS fortran units and MAXUNITS netCDF units are supported
 !file attributes (opened, format, access, threading, fileset) are saved against the unit number
 !external handles to netCDF units are saved from maxunits+1:2*maxunits
@@ -143,7 +160,7 @@
       mpp_file(:)%time_level = 0
       mpp_file(:)%time = NULLTIME
       mpp_file(:)%id = -1
-      mpp_file(:)%valid = .FALSE.     
+      mpp_file(:)%valid = .FALSE.
       mpp_file(:)%ndim = -1
       mpp_file(:)%nvar = -1
 !NULLUNIT "file" is always single-threaded, open and initialized (to pass checks in mpp_write)
@@ -156,22 +173,21 @@
       mpp_file(logunit)%opened = .TRUE.
       inunit  = stdin()  ; mpp_file(inunit)%opened  = .TRUE.
       errunit = stderr() ; mpp_file(errunit)%opened = .TRUE.
-      
+
       if( pe.EQ.mpp_root_pe() )then
           iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
           write( iunit,'(/a)' )'MPP_IO module '//trim(version)
-          write( iunit,'( a)' )'MPP_IO module '//trim(tagname)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
           write( iunit,'(/a)' )'Using netCDF library version '//trim(text)
-#endif    
+#endif
       endif
-      
+
 #ifdef CRAYPVP
 !we require every file to be assigned threadwise: PVPs default to global, and are reset here
       call ASSIGN( 'assign -P thread p:%', error )
 #endif
-      
+
       call mpp_io_set_stack_size(131072) ! default initial value
       call mpp_sync()
       if( io_clocks_on )then
@@ -204,7 +220,7 @@
       character(len=*), optional :: string
       integer :: unit,istat
       logical :: dosync
-      
+
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_IO_EXIT: must first call mpp_io_init.' )
       dosync = .TRUE.
       if( PRESENT(string) )then
@@ -223,10 +239,10 @@
       do unit = maxunits+1,2*maxunits
          if( mpp_file(unit)%opened )error = NF_CLOSE(mpp_file(unit)%ncid)
       end do
-#endif   
-      
+#endif
+
 !      call mpp_max(mpp_io_stack_hwm)
-      
+
       if( pe.EQ.mpp_root_pe() )then
 !          write( stdout,'(/a)' )'Exiting MPP_IO module...'
 !          write( stdout,* )'MPP_IO_STACK high water mark=', mpp_io_stack_hwm
@@ -280,4 +296,16 @@
       return
     end subroutine mpp_flush
 
+   !> Return the maximum number of MPP file units available.
+   !!
+   !! maxunits is a mpp_io_mod module variable and defines the maximum number
+   !! of Fortran file units that can be open simultaneously.  mpp_get_maxunits
+   !! simply returns this number.
+   integer function mpp_get_maxunits()
+      mpp_get_maxunits = maxunits
+   end function mpp_get_maxunits
+
+    logical function do_cf_compliance()
+      do_cf_compliance = cf_compliance
+    end function do_cf_compliance
 

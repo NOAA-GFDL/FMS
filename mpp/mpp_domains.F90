@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 !-----------------------------------------------------------------------
 !   Domain decomposition and domain update for message-passing codes
 !
@@ -129,6 +147,7 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY, MAX_TILES
   use mpp_parameter_mod,      only : EVENT_SEND, EVENT_RECV, ROOT_GLOBAL
   use mpp_parameter_mod,      only : NONBLOCK_UPDATE_TAG, EDGEONLY, EDGEUPDATE
+  use mpp_parameter_mod,      only : NONSYMEDGE, NONSYMEDGEUPDATE
   use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stack
   use mpp_data_mod,           only : mpp_domains_stack_nonblock, ptr_domains_stack_nonblock
   use mpp_mod,                only : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING, NOTE
@@ -136,7 +155,7 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
   use mpp_mod,                only : mpp_max, mpp_min, mpp_sum, mpp_get_current_pelist, mpp_broadcast
   use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc, lowercase
-  use mpp_mod,                only : input_nml_file
+  use mpp_mod,                only : input_nml_file, mpp_alltoall
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_pset_mod,           only : mpp_pset_init
@@ -150,7 +169,7 @@ module mpp_domains_mod
 #endif
 
   !--- public paramters imported from mpp_domains_parameter_mod
-  public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW
+  public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW, AGRID
   public :: DGRID_NE, DGRID_SW, FOLD_WEST_EDGE, FOLD_EAST_EDGE, FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE
   public :: WUPDATE, EUPDATE, SUPDATE, NUPDATE, XUPDATE, YUPDATE
   public :: NON_BITWISE_EXACT_SUM, BITWISE_EXACT_SUM, MPP_DOMAIN_TIME, BITWISE_EFP_SUM
@@ -158,7 +177,7 @@ module mpp_domains_mod
   public :: NORTH, NORTH_EAST, EAST, SOUTH_EAST
   public :: SOUTH, SOUTH_WEST, WEST, NORTH_WEST
   public :: ZERO, NINETY, MINUS_NINETY, ONE_HUNDRED_EIGHTY 
-  public :: EDGEUPDATE
+  public :: EDGEUPDATE, NONSYMEDGEUPDATE
 
   !--- public data imported from mpp_data_mod
   public :: NULL_DOMAIN1D, NULL_DOMAIN2D
@@ -198,24 +217,89 @@ module mpp_domains_mod
   public :: mpp_reset_group_update_field
   public :: mpp_update_nest_fine, mpp_update_nest_coarse
   public :: mpp_get_boundary
+  public :: mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   !--- public interface from mpp_domains_define.h
   public :: mpp_define_layout, mpp_define_domains, mpp_modify_domain, mpp_define_mosaic
   public :: mpp_define_mosaic_pelist, mpp_define_null_domain, mpp_mosaic_defined
   public :: mpp_define_io_domain, mpp_deallocate_domain
   public :: mpp_compute_extent, mpp_compute_block_extent
 
+  !--- public interface for unstruct domain
+  public :: mpp_define_unstruct_domain, domainUG, mpp_get_UG_io_domain
+  public :: mpp_get_UG_domain_npes, mpp_get_UG_compute_domain, mpp_get_UG_domain_tile_id
+  public :: mpp_get_UG_domain_pelist, mpp_get_ug_domain_grid_index
+  public :: mpp_get_UG_domain_ntiles, mpp_get_UG_global_domain
+  public :: mpp_global_field_ug, mpp_get_ug_domain_tile_list, mpp_get_UG_compute_domains
+  public :: mpp_define_null_UG_domain, NULL_DOMAINUG, mpp_get_UG_domains_index
+  public :: mpp_get_UG_SG_domain, mpp_get_UG_domain_tile_pe_inf
+
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
 
+!----------
+!ug support
+  public :: mpp_domain_UG_is_tile_root_pe
+  public :: mpp_deallocate_domainUG
+  public :: mpp_get_io_domain_UG_layout
+!----------
+
   integer, parameter :: NAME_LENGTH = 64
-  integer, parameter :: MAXLIST = 24
-  integer, parameter :: MAXOVERLAP = 100
+  integer, parameter :: MAXLIST = 100
+  integer, parameter :: MAXOVERLAP = 200
   integer, parameter :: FIELD_S = 0
   integer, parameter :: FIELD_X = 1
   integer, parameter :: FIELD_Y = 2
 
 
   !--- data types used mpp_domains_mod.
+  type unstruct_axis_spec
+     private
+     integer :: begin, end, size, max_size
+     integer :: begin_index, end_index
+  end type unstruct_axis_spec
+
+  type unstruct_domain_spec
+     private
+     type(unstruct_axis_spec) :: compute
+     integer :: pe
+     integer :: pos
+     integer :: tile_id
+  end type unstruct_domain_spec
+
+  type unstruct_overlap_type
+     private
+     integer :: count = 0
+     integer :: pe
+     integer, pointer :: i(:)=>NULL()
+     integer, pointer :: j(:)=>NULL()
+  end type unstruct_overlap_type
+
+  type unstruct_pass_type
+     private
+     integer :: nsend, nrecv
+     type(unstruct_overlap_type), pointer :: recv(:)=>NULL()
+     type(unstruct_overlap_type), pointer :: send(:)=>NULL()
+  end type unstruct_pass_type
+
+  type domainUG
+     private
+     type(unstruct_axis_spec) :: compute, global
+     type(unstruct_domain_spec), pointer :: list(:)=>NULL()
+     type(domainUG), pointer :: io_domain=>NULL()
+     type(unstruct_pass_type) :: SG2UG
+     type(unstruct_pass_type) :: UG2SG
+     integer, pointer :: grid_index(:) => NULL()    ! on current pe
+     type(domain2d), pointer :: SG_domain => NULL()
+     integer :: pe 
+     integer :: pos
+     integer :: ntiles
+     integer :: tile_id
+     integer :: tile_root_pe
+     integer :: tile_npes
+     integer :: npes_io_group
+     integer(INT_KIND) :: io_layout
+  end type domainUG
+
   type domain_axis_spec        !type used to specify index limits along an axis of a domain
      private
      integer :: begin, end, size, max_size      !start, end of domain axis, size, max size in set
@@ -275,7 +359,7 @@ module mpp_domains_mod
      integer                     :: sendsize, recvsize
      type(overlap_type), pointer :: send(:) => NULL()
      type(overlap_type), pointer :: recv(:) => NULL()
-     type(overlapSpec),  pointer :: next
+     type(overlapSpec),  pointer :: next => NULL()
   end type overlapSpec
 
   type tile_type
@@ -351,7 +435,7 @@ module mpp_domains_mod
      integer                     :: extra_halo
      type(overlap_type), pointer :: send(:) => NULL()
      type(overlap_type), pointer :: recv(:) => NULL()
-     type(nestSpec),     pointer :: next
+     type(nestSpec),     pointer :: next => NULL()
 
   end type nestSpec
 
@@ -458,6 +542,7 @@ module mpp_domains_mod
      private
      logical            :: initialized = .FALSE.
      logical            :: k_loop_inside = .TRUE.
+     logical            :: nonsym_edge = .FALSE.
      integer            :: nscalar = 0
      integer            :: nvector = 0
      integer            :: flags_s=0, flags_v=0
@@ -467,7 +552,7 @@ module mpp_domains_mod
      integer            :: isize_x=0, jsize_x=0, ksize_v=1
      integer            :: isize_y=0, jsize_y=0
      integer            :: position=0, gridtype=0
-     logical            :: recv_s(8), recv_v(8)
+     logical            :: recv_s(8), recv_x(8), recv_y(8)
      integer            :: is_s=0, ie_s=0, js_s=0, je_s=0
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
@@ -523,6 +608,7 @@ module mpp_domains_mod
   integer              :: mpp_domains_stack_hwm=0
   type(domain1D),save  :: NULL_DOMAIN1D
   type(domain2D),save  :: NULL_DOMAIN2D
+  type(domainUG),save  :: NULL_DOMAINUG
   integer              :: current_id_update = 0
   integer                         :: num_update = 0
   integer                         :: num_nonblock_group_update = 0
@@ -609,7 +695,7 @@ module mpp_domains_mod
 ! </NAMELIST>
   character(len=32) :: debug_update_domain = "none"
   logical           :: debug_message_passing = .false.
-  integer           :: nthread_control_loop = 4
+  integer           :: nthread_control_loop = 8
   logical           :: efp_sum_overflow_check = .false.
   namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop, &
                              efp_sum_overflow_check
@@ -1682,6 +1768,7 @@ module mpp_domains_mod
 interface mpp_broadcast_domain
   module procedure mpp_broadcast_domain_1
   module procedure mpp_broadcast_domain_2
+  module procedure mpp_broadcast_domain_ug
 end interface
 
 
@@ -1721,6 +1808,33 @@ end interface
      module procedure mpp_do_check_c4_3d
 #endif
      module procedure mpp_do_check_i4_3d
+  end interface
+
+
+  interface mpp_pass_SG_to_UG
+     module procedure mpp_pass_SG_to_UG_r8_2d
+     module procedure mpp_pass_SG_to_UG_r8_3d
+#ifdef OVERLOAD_R4
+     module procedure mpp_pass_SG_to_UG_r4_2d
+     module procedure mpp_pass_SG_to_UG_r4_3d
+#endif
+     module procedure mpp_pass_SG_to_UG_i4_2d
+     module procedure mpp_pass_SG_to_UG_i4_3d
+     module procedure mpp_pass_SG_to_UG_l4_2d
+     module procedure mpp_pass_SG_to_UG_l4_3d
+  end interface
+
+  interface mpp_pass_UG_to_SG
+     module procedure mpp_pass_UG_to_SG_r8_2d
+     module procedure mpp_pass_UG_to_SG_r8_3d
+#ifdef OVERLOAD_R4
+     module procedure mpp_pass_UG_to_SG_r4_2d
+     module procedure mpp_pass_UG_to_SG_r4_3d
+#endif
+     module procedure mpp_pass_UG_to_SG_i4_2d
+     module procedure mpp_pass_UG_to_SG_i4_3d
+     module procedure mpp_pass_UG_to_SG_l4_2d
+     module procedure mpp_pass_UG_to_SG_l4_3d
   end interface
 
 
@@ -1995,6 +2109,30 @@ end interface
      module procedure mpp_do_global_field2D_l4_3d
   end interface
 
+  interface mpp_global_field_ug
+     module procedure mpp_global_field2D_ug_r8_2d
+     module procedure mpp_global_field2D_ug_r8_3d
+     module procedure mpp_global_field2D_ug_r8_4d
+     module procedure mpp_global_field2D_ug_r8_5d
+#ifndef no_8byte_integers
+     module procedure mpp_global_field2D_ug_i8_2d
+     module procedure mpp_global_field2D_ug_i8_3d
+     module procedure mpp_global_field2D_ug_i8_4d
+     module procedure mpp_global_field2D_ug_i8_5d
+#endif
+#ifdef OVERLOAD_R4
+     module procedure mpp_global_field2D_ug_r4_2d
+     module procedure mpp_global_field2D_ug_r4_3d
+     module procedure mpp_global_field2D_ug_r4_4d
+     module procedure mpp_global_field2D_ug_r4_5d
+#endif
+     module procedure mpp_global_field2D_ug_i4_2d
+     module procedure mpp_global_field2D_ug_i4_3d
+     module procedure mpp_global_field2D_ug_i4_4d
+     module procedure mpp_global_field2D_ug_i4_5d
+  end interface
+
+
 ! <INTERFACE NAME="mpp_global_max">
 !  <OVERVIEW>
 !    Global max/min of domain-decomposed arrays.
@@ -2203,11 +2341,13 @@ end interface
   interface operator(.EQ.)
      module procedure mpp_domain1D_eq
      module procedure mpp_domain2D_eq
+     module procedure mpp_domainUG_eq
   end interface
 
   interface operator(.NE.)
      module procedure mpp_domain1D_ne
      module procedure mpp_domain2D_ne
+     module procedure mpp_domainUG_ne
   end interface
 
   ! <INTERFACE NAME="mpp_get_compute_domain">
@@ -2421,11 +2561,9 @@ end interface
      module procedure nullify_domain2d_list
   end interface  
 
-  !--- version information variables
-  character(len=128), public :: version= &
-       '$Id$'
-  character(len=128), public :: tagname= &
-       '$Name$'
+  ! Include variable "version" to be written to log file.
+#include<file_version.h>
+  public version
 
 
 contains
@@ -2436,7 +2574,7 @@ contains
 #include <mpp_domains_define.inc>
 #include <mpp_domains_misc.inc>
 #include <mpp_domains_reduce.inc>
-
+#include <mpp_unstruct_domain.inc>
 
 end module mpp_domains_mod
 

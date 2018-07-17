@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 module field_manager_mod
 #ifndef MAXFIELDS_ 
 #define MAXFIELDS_ 150
@@ -181,9 +200,8 @@ use    fms_mod, only : lowercase,   &
 implicit none
 private
 
-
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -652,7 +670,7 @@ endif
 
 call mpp_open(iunit,file=trim(tbl_name), form=MPP_ASCII, action=MPP_RDONLY)
 !write_version_number should precede all writes to stdlog from field_manager
-call write_version_number (version, tagname)
+call write_version_number("FIELD_MANAGER_MOD", version)
 log_unit = stdlog()
 do while (.TRUE.)
    read(iunit,'(a)',end=89,err=99) record
@@ -1302,7 +1320,7 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 
 integer :: unit 
 
-call write_version_number (version, tagname)
+call write_version_number("FIELD_MANAGER_MOD", version)
 if ( mpp_pe() == mpp_root_pe() ) then
    unit = stdlog()
    write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'

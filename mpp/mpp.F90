@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 !-----------------------------------------------------------------------
 !                 Communication for message-passing codes
 !
@@ -167,7 +185,7 @@ module mpp_mod
   use mpp_parameter_mod, only : MAXPES, EVENT_WAIT, EVENT_ALLREDUCE, EVENT_BROADCAST
   use mpp_parameter_mod, only : EVENT_ALLTOALL
   use mpp_parameter_mod, only : EVENT_RECV, EVENT_SEND, MPP_READY, MPP_WAIT
-  use mpp_parameter_mod, only : mpp_parameter_version=>version, mpp_parameter_tagname=>tagname
+  use mpp_parameter_mod, only : mpp_parameter_version=>version
   use mpp_parameter_mod, only : DEFAULT_TAG
   use mpp_parameter_mod, only : COMM_TAG_1,  COMM_TAG_2,  COMM_TAG_3,  COMM_TAG_4
   use mpp_parameter_mod, only : COMM_TAG_5,  COMM_TAG_6,  COMM_TAG_7,  COMM_TAG_8
@@ -177,7 +195,7 @@ module mpp_mod
   use mpp_parameter_mod, only : MPP_FILL_INT,MPP_FILL_DOUBLE
   use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync  
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
-  use mpp_data_mod,      only : mpp_data_version=>version, mpp_data_tagname=>tagname
+  use mpp_data_mod,      only : mpp_data_version=>version
 
 implicit none
 private
@@ -550,25 +568,33 @@ private
   ! </INTERFACE>
 
   interface mpp_max
-     module procedure mpp_max_real8
+     module procedure mpp_max_real8_0d
+     module procedure mpp_max_real8_1d
 #ifndef no_8byte_integers
-     module procedure mpp_max_int8
+     module procedure mpp_max_int8_0d
+     module procedure mpp_max_int8_1d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_max_real4
+     module procedure mpp_max_real4_0d
+     module procedure mpp_max_real4_1d
 #endif
-     module procedure mpp_max_int4
+     module procedure mpp_max_int4_0d
+     module procedure mpp_max_int4_1d
   end interface
 
   interface mpp_min
-     module procedure mpp_min_real8
+     module procedure mpp_min_real8_0d
+     module procedure mpp_min_real8_1d
 #ifndef no_8byte_integers
-     module procedure mpp_min_int8
+     module procedure mpp_min_int8_0d
+     module procedure mpp_min_int8_1d
 #endif
 #ifdef OVERLOAD_R4
-     module procedure mpp_min_real4
+     module procedure mpp_min_real4_0d
+     module procedure mpp_min_real4_1d
 #endif
-     module procedure mpp_min_int4
+     module procedure mpp_min_int4_0d
+     module procedure mpp_min_int4_1d
   end interface
 
 
@@ -659,12 +685,16 @@ private
   !  </OVERVIEW>
   ! </INTERFACE>
   interface mpp_gather
+     module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4_1d
      module procedure mpp_gather_real4_1d
      module procedure mpp_gather_real8_1d
+     module procedure mpp_gather_logical_1dv
      module procedure mpp_gather_int4_1dv
      module procedure mpp_gather_real4_1dv
      module procedure mpp_gather_real8_1dv
+     module procedure mpp_gather_pelist_logical_2d
+     module procedure mpp_gather_pelist_logical_3d
      module procedure mpp_gather_pelist_int4_2d
      module procedure mpp_gather_pelist_int4_3d
      module procedure mpp_gather_pelist_real4_2d
@@ -1198,6 +1228,8 @@ private
   integer :: in_unit=5, out_unit=6, err_unit=0
 #endif
 
+  integer :: stdout_unit
+
   !--- variables used in mpp_util.h
   type(Summary_Struct) :: clock_summary(MAX_CLOCKS)
   logical              :: warnings_are_fatal = .FALSE.
@@ -1237,14 +1269,13 @@ private
 ! parameter defining length of character variables 
   integer, parameter :: INPUT_STR_LENGTH = 256
 ! public variable needed for reading input.nml from an internal file
-  character(len=INPUT_STR_LENGTH), dimension(:), allocatable, public :: input_nml_file
+  character(len=INPUT_STR_LENGTH), dimension(:), allocatable, target, public :: input_nml_file
   logical :: read_ascii_file_on = .FALSE.
 !***********************************************************************
 
-  character(len=128), public :: version= &
-       '$Id mpp.F90 $'
-  character(len=128), public :: tagname= &
-       '$Name$'
+! Include variable "version" to be written to log file.
+#include<file_version.h>
+  public version
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
   integer            :: request_multiply = 20
