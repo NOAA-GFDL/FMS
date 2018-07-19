@@ -1004,6 +1004,9 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   data_file_is_2D = .false.
   if((dims(3) == 1) .and. (size(data,3)>1)) data_file_is_2D = .true. 
 
+  if(dims(3) .NE. 1 .and. (size(data,3) .NE. dims(3))) &
+      call mpp_error(FATAL, "data_override: dims(3) .NE. 1 and size(data,3) .NE. dims(3)")
+
   if(ongrid) then
 !10 do time interp to get data in compute_domain
      if(data_file_is_2D) then        
