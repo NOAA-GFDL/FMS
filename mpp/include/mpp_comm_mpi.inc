@@ -1157,6 +1157,134 @@ end subroutine mpp_gsm_free
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_mpi.h>
+!--------------------------------
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_real8_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_real8_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_real8_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_real8_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_real8_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_real8_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL8
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 8
+#include <mpp_sum_mpi_ad.h>
+
+#ifdef OVERLOAD_C8
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_cmplx8_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_cmplx8_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_cmplx8_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_cmplx8_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_cmplx8_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_cmplx8_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_DOUBLE_COMPLEX
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 16
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#ifdef OVERLOAD_R4
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_real4_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_real4_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_real4_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_real4_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_real4_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_real4_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL4
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 4
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#ifdef OVERLOAD_C4
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_cmplx4_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_cmplx4_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_cmplx4_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_cmplx4_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_cmplx4_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_cmplx4_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_COMPLEX
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 8
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#ifndef no_8byte_integers
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_int8_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_int8_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_int8_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_int8_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_int8_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_int8_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER8
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 8
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_int4_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_int4_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_int4_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_int4_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_int4_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_int4_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER4
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 4
+#include <mpp_sum_mpi_ad.h>
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
