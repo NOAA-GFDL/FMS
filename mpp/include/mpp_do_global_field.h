@@ -161,20 +161,27 @@
              rpos = mod(domain%x(1)%pos   +n,nd)
              from_pe = domain%x(1)%list(rpos)%pe
              rpos = from_pe - root_pe ! for concurrent run, root_pe may not be 0.
-             nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             if (from_pe == NULL_PE) then
+                nwords = 0
+             else
+                nwords = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                       * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             endif
            ! Force use of scalar, integer ptr interface
              call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%x(1)%list(lpos)%pe, &
                                 get_data=cremote(1), glen=nwords, from_pe=from_pe )
              m = 0
-             is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
-             do k = 1, ke
-                do j = jsc, jec
-                   do i = is, ie
-                      m = m + 1
-                      global(i,j+jpos,k) = cremote(m)
+             if (from_pe /= NULL_PE) then
+                is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
+                do k = 1, ke
+                   do j = jsc, jec
+                      do i = is, ie
+                         m = m + 1
+                         global(i,j+jpos,k) = cremote(m)
+                      end do
                    end do
                 end do
-             end do
+             endif
              call mpp_sync_self()  !-ensure MPI_ISEND is done.
           end do
       else if( yonly )then
@@ -184,21 +191,27 @@
              rpos = mod(domain%y(1)%pos   +n,nd)
              from_pe = domain%y(1)%list(rpos)%pe
              rpos = from_pe - root_pe
-             nwords = (domain%list(rpos)%x(1)%compute%size+ishift) &
-                    * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             if (from_pe == NULL_PE) then
+                nwords = 0
+             else
+                nwords = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                       * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             endif
            ! Force use of scalar, integer pointer interface
              call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%y(1)%list(lpos)%pe, &
                                 get_data=cremote(1), glen=nwords, from_pe=from_pe )
              m = 0
-             js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
-             do k = 1,ke
-                do j = js, je
-                   do i = isc, iec
-                      m = m + 1
-                      global(i+ipos,j,k) = cremote(m)
-                   end do
-                end do
-             end do
+             if (from_pe /= NULL_PE) then
+                 js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
+                 do k = 1,ke
+                    do j = js, je
+                       do i = isc, iec
+                          m = m + 1
+                          global(i+ipos,j,k) = cremote(m)
+                       end do
+                    end do
+                 end do
+             endif
              call mpp_sync_self()  !-ensure MPI_ISEND is done.
           end do
       else
