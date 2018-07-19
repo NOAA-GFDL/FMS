@@ -143,7 +143,7 @@ build:ncrc:pgi:debug:
   variables:
     COMP_FAMILY: pgi
     COMP_NAME: pgi
-    COMP_VERSION: 16.5.0
+    COMP_VERSION: 17.7.0
     COMP_mkTemplate: pgi
     TARGET: OPENMP=on DEBUG=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
@@ -161,7 +161,7 @@ build:ncrc:pgi:repro:
   variables:
     COMP_FAMILY: pgi
     COMP_NAME: pgi
-    COMP_VERSION: 16.5.0
+    COMP_VERSION: 17.7.0
     COMP_mkTemplate: pgi
     TARGET: OPENMP=on REPRO=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
@@ -179,7 +179,7 @@ build:ncrc:pgi:prod:
   variables:
     COMP_FAMILY: pgi
     COMP_NAME: pgi
-    COMP_VERSION: 16.5.0
+    COMP_VERSION: 17.7.0
     COMP_mkTemplate: pgi
     TARGET: OPENMP=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML"
@@ -200,7 +200,7 @@ build:ncrc:cce:debug:
   variables:
     COMP_FAMILY: cray
     COMP_NAME: cce
-    COMP_VERSION: 8.5.0
+    COMP_VERSION: 8.6.5
     COMP_mkTemplate: cce
     TARGET: OPENMP=on DEBUG=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
@@ -218,7 +218,7 @@ build:ncrc:cce:repro:
   variables:
     COMP_FAMILY: cray
     COMP_NAME: cce
-    COMP_VERSION: 8.5.0
+    COMP_VERSION: 8.6.5
     COMP_mkTemplate: cce
     TARGET: OPENMP=on REPRO=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
@@ -236,7 +236,7 @@ build:ncrc:cce:prod:
   variables:
     COMP_FAMILY: cray
     COMP_NAME: cce
-    COMP_VERSION: 8.5.0
+    COMP_VERSION: 8.6.5
     COMP_mkTemplate: cce
     TARGET: OPENMP=on
     CPPFLAGS: "-Duse_netCDF -Duse_libMPI -DINTERNAL_FILE_NML -D_F2000"
