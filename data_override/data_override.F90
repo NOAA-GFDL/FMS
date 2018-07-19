@@ -1252,7 +1252,7 @@ subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
   allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),nlevel_max))
   allocate(data_UG(size(data,1), nlevel_max))
   data_SG = 0.0
-  call data_override_3d(gridname,fieldname,data_SG(:,:,1:nlevel),time,override)    
+  call data_override_3d(gridname,fieldname,data_SG,time,override)    
 
   call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:,:), data_UG(:,:))
   data(:,1:nlevel) = data_UG(:,1:nlevel)  
