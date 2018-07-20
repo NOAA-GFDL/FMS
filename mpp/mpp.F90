@@ -167,6 +167,11 @@ module mpp_mod
 !  <TT>MPP_TYPE_</TT> is treated in this way.
 ! </PUBLIC>
 
+! Define rank(X) for PGI compiler
+#ifdef __PGI
+#define rank(X) size(shape(X))
+#endif
+
 #include <fms_platform.h>
 
 #if defined(use_libSMA) && defined(sgi_mipspro)
