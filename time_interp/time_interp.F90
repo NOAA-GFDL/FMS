@@ -372,8 +372,9 @@ contains
     ! current time is after mid point of current month
            year1  = year;  month1 = month
            year2  = year;  month2 = month+1
-           if (month2 > monyear)  year2 = year2+1
-           if (month2 > monyear) month2 = 1
+           if (month2 > monyear)  then
+              year2 = year2+1;  month2 = 1
+           endif
            mid1 = mid_month
            mid2 = days_in_month(set_date(year2,month2,2)) * halfday
            weight = real(cur_month - mid1) / real(mid1+mid2)
@@ -381,9 +382,17 @@ contains
     ! current time is before mid point of current month
            year2  = year;  month2 = month
            year1  = year;  month1 = month-1
-           if (month1 < 1)  year1 = year1-1
-           if (month1 < 1) month1 = monyear
-           mid1 = days_in_month(set_date(year1,month1,2)) * halfday
+           if (month1 < 1)  then
+              year1 = year1-1;  month1 = monyear
+           endif
+           if (year1>0) then
+              mid1 = days_in_month(set_date(year1,month1,2)) * halfday
+           else
+              ! this can happen if we are at the beginning of year 1. In this case
+              ! use December 0001 to calculate the duration of December 0000.
+              ! This should work for all calendars
+              mid1 = days_in_month(set_date(1,month1,2)) * halfday
+           endif
            mid2 = mid_month
            weight = real(cur_month + mid1) / real(mid1+mid2)
       endif

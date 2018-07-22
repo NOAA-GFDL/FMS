@@ -129,7 +129,6 @@
         pe_end(n) = te
         ioff = ioff+ npts_tile(n)
      enddo
-
      allocate(UG_domain%list(0:ndivs-1))
      do p = 0, ndivs-1
         UG_domain%list(p)%compute%begin = ibegin(p)
@@ -579,7 +578,7 @@ return
       logical :: native         !true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer :: n
-      integer, dimension(5) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(7) :: msg, info         !pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -609,6 +608,8 @@ return
           domain%ntiles = -1
           domain%compute%begin =  1
           domain%compute%end   = -1
+          domain%compute%begin_index =  1
+          domain%compute%end_index   = -1
           domain%global %begin = -1
           domain%global %end   = -1
           domain%tile_id       = -1
@@ -619,12 +620,14 @@ return
       info(2) = domain%pos
       info(3) = domain%tile_id
       call mpp_get_UG_compute_domain( domain, info(4), info(5))
+      info(6) = domain%compute%begin_index
+      info(7) = domain%compute%end_index
 !broadcast your info across current pelist and unpack if needed
       listpos = 0
       do n = 0,mpp_npes()-1
          msg = info
          if( mpp_pe().EQ.pes(n) .AND. debug )write( errunit,* )'PE ', mpp_pe(), 'broadcasting msg ', msg
-         call mpp_broadcast( msg, 5, pes(n) )
+         call mpp_broadcast( msg, 7, pes(n) )
 !no need to unpack message if native
 !no need to unpack message from non-native PE
          if( .NOT.native .AND. msg(1).NE.NULL_PE )then
@@ -633,6 +636,8 @@ return
              domain%list(listpos)%tile_id       = msg(3)
              domain%list(listpos)%compute%begin = msg(4)
              domain%list(listpos)%compute%end   = msg(5)
+             domain%list(listpos)%compute%begin_index = msg(6)
+             domain%list(listpos)%compute%end_index   = msg(7)
              listpos = listpos + 1
              if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'ls,le=', msg(4:5)
          end if
