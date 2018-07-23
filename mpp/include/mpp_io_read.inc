@@ -389,7 +389,7 @@
 !
            select case (type)
               case (NF_CHAR)
-                 if (len.gt.512) then
+                 if (len.gt.MAX_ATT_LENGTH) then
                     call mpp_error(NOTE,'GLOBAL ATT too long - not reading this metadata')
                     len=7
                     mpp_file(unit)%Att(i)%len=len
@@ -642,7 +642,7 @@
 
                  select case (type)
                  case (NF_CHAR)
-                    if (len.gt.512) call mpp_error(FATAL,'DIM ATT too long')
+                    if (len.gt.MAX_ATT_LENGTH) call mpp_error(FATAL,'DIM ATT too long')
                     error=NF_GET_ATT_TEXT(ncid,i,trim(attname),mpp_file(unit)%Axis(dimid)%Att(j)%catt);
                     call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%Axis(dimid)%att(j) )
                     if( verbose .and. pe == 0 ) &
