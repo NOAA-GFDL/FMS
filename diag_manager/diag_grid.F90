@@ -18,6 +18,7 @@
 !***********************************************************************
 
 MODULE diag_grid_mod
+#include <fms_platform.h>
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -78,7 +79,6 @@ MODULE diag_grid_mod
 
   ! Parameters
   ! Include variable "version" to be written to log file.
-#include <fms_platform.h>
 #include<file_version.h>
 
   ! Derived data types

@@ -16,10 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#include <fms_platform.h>
 #include "fms_switches.h"
 
 module drifters_comm_mod
+#include <fms_platform.h>
 
 #ifdef _SERIAL
 

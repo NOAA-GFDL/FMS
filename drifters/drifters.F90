@@ -18,11 +18,11 @@
 !***********************************************************************
 !FDOC_TAG_GFDL fdoc.pl generated xml skeleton
 
-#include <fms_platform.h>
 #include "fms_switches.h"
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 module drifters_mod
+#include <fms_platform.h>
 ! <CONTACT EMAIL="Alexander.Pletzer@noaa.gov">
 !   Alexander Pletzer
 ! </CONTACT>

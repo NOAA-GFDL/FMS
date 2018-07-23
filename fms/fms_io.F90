@@ -16,9 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#include <fms_platform.h>
 
 module fms_io_mod
+#include <fms_platform.h>
 
 !
 !
