@@ -157,6 +157,8 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_sum_ad
   use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc, lowercase
   use mpp_mod,                only : input_nml_file, mpp_alltoall
+  use mpp_mod,                only : mpp_type, mpp_byte
+  use mpp_mod,                only : mpp_type_create, mpp_type_free
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_pset_mod,           only : mpp_pset_init
@@ -700,8 +702,9 @@ module mpp_domains_mod
   logical           :: debug_message_passing = .false.
   integer           :: nthread_control_loop = 8
   logical           :: efp_sum_overflow_check = .false.
+  logical           :: use_alltoallw = .false.
   namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop, &
-                             efp_sum_overflow_check
+                             efp_sum_overflow_check, use_alltoallw
 
   !***********************************************************************
 
@@ -2208,6 +2211,25 @@ end interface
 #endif
      module procedure mpp_do_global_field2D_i4_3d
      module procedure mpp_do_global_field2D_l4_3d
+  end interface
+
+  interface mpp_do_global_field_a2a
+     module procedure mpp_do_global_field2D_a2a_r8_3d
+#ifdef OVERLOAD_C8
+     module procedure mpp_do_global_field2D_a2a_c8_3d
+#endif
+#ifndef no_8byte_integers
+     module procedure mpp_do_global_field2D_a2a_i8_3d
+     module procedure mpp_do_global_field2D_a2a_l8_3d
+#endif
+#ifdef OVERLOAD_R4
+     module procedure mpp_do_global_field2D_a2a_r4_3d
+#endif
+#ifdef OVERLOAD_C4
+     module procedure mpp_do_global_field2D_a2a_c4_3d
+#endif
+     module procedure mpp_do_global_field2D_a2a_i4_3d
+     module procedure mpp_do_global_field2D_a2a_l4_3d
   end interface
 
   interface mpp_global_field_ug
