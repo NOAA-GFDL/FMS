@@ -154,11 +154,6 @@
  logical  :: use_exact_qs
  logical  :: module_is_initialized = .false.
 
- public compute_qs_check
- interface compute_qs_check
-
- end interface compute_qs_check
-
  contains
 
  subroutine sat_vapor_pres_init_k(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
