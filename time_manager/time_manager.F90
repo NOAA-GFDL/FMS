@@ -161,6 +161,9 @@ integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregor
 integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian
 integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian
 integer, parameter :: invalid_date=-1                     ! Used only for gregorian
+integer,parameter :: do_floor = 0
+integer,parameter :: do_nearest = 1
+
 
 ! time_type is implemented as seconds and days to allow for larger intervals
 type time_type
@@ -1288,25 +1291,52 @@ end function time_type_to_real
 !   <OUT NAME="real_to_time_type"  TYPE="time_type">
 !   </OUT>
 
- function real_to_time_type(x, err_msg)
- type(time_type)  :: real_to_time_type
- real, intent(in) :: x
- character(len=*), intent(out), optional :: err_msg
- integer          :: seconds, days, ticks
- real             :: real_ticks
- character(len=128) :: err_msg_local
+function real_to_time_type(x,err_msg) result(t)
+  real,intent(in) :: x
+  character(len=*),intent(out),optional :: err_msg
+  type(time_type) :: t
+  integer :: days
+  integer :: seconds
+  integer :: ticks
+  character(len=128) :: err_msg_local
+  real,parameter :: spd = real(86400)
+  real :: tps
+  real :: a
+  tps = real(ticks_per_second)
+  a = x/spd
+  days = safe_rtoi(a,do_floor)
+  a = x - real(days)*spd
+  seconds = safe_rtoi(a,do_floor)
+  a = (a - real(seconds))*tps
+  ticks = safe_rtoi(a,do_nearest)
+  if (.not. set_time_private(seconds,days,ticks,t,err_msg_local)) then
+    if (error_handler('function real_to_time_type',err_msg_local,err_msg)) then
+      return
+    endif
+  endif
+end function real_to_time_type
 
- if(.not.module_is_initialized) call time_manager_init
+function safe_rtoi(rval,mode) result(ival)
+  real,intent(in) :: rval
+  integer,intent(in) :: mode
+  integer :: ival
+  real :: big
+  big = real(huge(ival))
+  if (rval .le. big .and. -1.*rval .ge. -1.*big) then
+    if (mode .eq. do_floor) then
+      ival = floor(rval)
+    elseif (mode .eq. do_nearest) then
+      ival = nint(rval)
+    else
+      call mpp_error(FATAL,"safe_rtoi: mode must be either do_floor" &
+                     //" or do_nearest.")
+    endif
+  else
+    call mpp_error(FATAL,"safe_rtoi: input value cannot be safely" &
+                   //" converted to a 32-bit integer.")
+  endif
+end function safe_rtoi
 
- days = floor(x/86400.)
- seconds = int(x - 86400.*days)
- real_ticks = x - int(x)
- ticks = nint(real_ticks * ticks_per_second)
- if(.not.set_time_private(seconds, days, ticks, real_to_time_type, err_msg_local)) then
-   if(error_handler('function real_to_time_type', err_msg_local, err_msg)) return
- endif
-
- end function real_to_time_type
 ! </FUNCTION>
 
 !-------------------------------------------------------------------------
