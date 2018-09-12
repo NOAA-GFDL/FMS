@@ -1211,7 +1211,7 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_logical4
 #define MPP_ALLTOALLV_ mpp_alltoall_logical4_v
 #define MPP_ALLTOALLW_ mpp_alltoall_logical4_w
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ logical(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_alltoall_nocomm.h>
@@ -1225,7 +1225,7 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_logical8
 #define MPP_ALLTOALLV_ mpp_alltoall_logical8_v
 #define MPP_ALLTOALLW_ mpp_alltoall_logical8_w
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ logical(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_alltoall_nocomm.h>
