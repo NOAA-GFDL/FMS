@@ -415,12 +415,6 @@ contains
   !! \throw FATAL, "Problem dumping fluxes tracer tree"
   !! \throw FATAL, "Number of fluxes does not match across the processors: [gas_fluxes%num_bcs] fluxes"
   subroutine atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, verbosity)
-#ifdef __APPLE__
-    ! This directive is needed for compilation with -O2 using ifort 15.0.3 20150408 (Mac OSX)
-    ! because otherwise the model crashes with error "malloc: pointer being freed was not allocated"
-    ! at the end of this subroutine.
-!DIR$ OPTIMIZE:0
-#endif
 
     type(coupler_1d_bc_type), intent(inout) :: gas_fluxes !< Structure containing the gas fluxes between
                                                           !! the atmosphere and the ocean and parameters
@@ -516,7 +510,7 @@ contains
     do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))
       if (typ .ne. 'list') then
         call mpp_error(FATAL, trim(error_header) // ' ' // trim(name) // ' is not a list')
-      else
+      endif
 
         n = n + 1  ! increment the array index
 
@@ -692,7 +686,6 @@ contains
         gas_fluxes%bc(n)%pass_through_ice = fm_util_get_logical(trim(flux_list) // '/pass_through_ice')
         gas_fields_atm%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
         gas_fields_ice%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
-      endif
     enddo ! while loop
 
     if (verbose >= 5) then
