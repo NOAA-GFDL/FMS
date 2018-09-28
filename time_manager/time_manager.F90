@@ -1264,36 +1264,13 @@ time_type_to_real = dble(time%days) * 86400.d0 + dble(time%seconds) + &
      dble(time%ticks)/dble(ticks_per_second)
 
 end function time_type_to_real
-! </FUNCTION>
 
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="real_to_time_type">
-!   <OVERVIEW>
-!       Converts a real number of seconds to a time_type variable
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Converts a real number of seconds to a time_type variable
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     real_to_time_type(x, err_msg)
-!   </TEMPLATE>
-!   <IN NAME="x" UNITS="" TYPE="real" DIM="">
-!      A real number of seconds
-!   </IN>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <OUT NAME="real_to_time_type"  TYPE="time_type">
-!   </OUT>
-
+!> @brief Convert a real number of seconds into a time_type variable.
+!! @return A filled time type variable, and an error message if an
+!!         error occurs.
 function real_to_time_type(x,err_msg) result(t)
-  real,intent(in) :: x
-  character(len=*),intent(out),optional :: err_msg
+  real,intent(in) :: x !< Number of seconds.
+  character(len=*),intent(out),optional :: err_msg !< Error message.
   type(time_type) :: t
   integer :: days
   integer :: seconds
@@ -1316,9 +1293,12 @@ function real_to_time_type(x,err_msg) result(t)
   endif
 end function real_to_time_type
 
+!> @brief Convert a floating point value to an integer value.
+!! @return The integer value, using the input rounding mode.
 function safe_rtoi(rval,mode) result(ival)
-  real,intent(in) :: rval
-  integer,intent(in) :: mode
+  real,intent(in) :: rval !< A floating point value.
+  integer,intent(in) :: mode !< A rouding mode (either "do_floor" or
+                             !! "do_nearest")
   integer :: ival
   real :: big
   big = real(huge(ival))
@@ -1336,8 +1316,6 @@ function safe_rtoi(rval,mode) result(ival)
                    //" converted to a 32-bit integer.")
   endif
 end function safe_rtoi
-
-! </FUNCTION>
 
 !-------------------------------------------------------------------------
 ! <FUNCTION NAME="time_scalar_divide; operator(/)">
