@@ -18,11 +18,10 @@
 !***********************************************************************
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_CLOUD_INTERPOLATOR -D_F95 cloud_interpolator.F90
 
-#include <fms_platform.h>
-
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 MODULE cloud_interpolator_mod
+#include <fms_platform.h>
   implicit none
   private
 
