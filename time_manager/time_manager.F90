@@ -1308,12 +1308,12 @@ function safe_rtoi(rval,mode) result(ival)
     elseif (mode .eq. do_nearest) then
       ival = nint(rval)
     else
-      call mpp_error(FATAL,"safe_rtoi: mode must be either do_floor" &
-                     //" or do_nearest.")
+      call error_mesg("safe_rtoi","mode must be either do_floor" &
+                      //" or do_nearest.",FATAL)
     endif
   else
-    call mpp_error(FATAL,"safe_rtoi: input value cannot be safely" &
-                   //" converted to a 32-bit integer.")
+    call error_mesg("safe_rtoi","input value cannot be safely" &
+                   //" converted to a 32-bit integer.",FATAL)
   endif
 end function safe_rtoi
 
