@@ -126,10 +126,11 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
    isize=size(field,1); jsize=size(field,2); ksize = size(field,3)
 
    !---check data is on data domain or compute domain
-   if( nest_domain%is_coarse_pe ) then
-      call mpp_get_data_domain(nest_domain%domain_coarse, xbegin, xend, ybegin, yend, position=update_position)
+   if( nest_domain%nest(nest_level)%is_coarse_pe ) then
+      call mpp_get_data_domain(nest_domain%nest(nest_level)%domain_coarse, xbegin, xend, ybegin, yend, position=update_position)
       if(isize .NE. xend-xbegin+1 .OR. jsize .NE. yend-ybegin+1) then
-         call mpp_get_compute_domain(nest_domain%domain_coarse, xbegin, xend, ybegin, yend, position=update_position)
+         call mpp_get_compute_domain(nest_domain%nest(nest_level)%domain_coarse, xbegin, xend, ybegin, yend, &
+                                     position=update_position)
          if(isize .NE. xend-xbegin+1 .OR. jsize .NE. yend-ybegin+1) then
             call mpp_error(FATAL,'MPP_UPDATE_NEST_FINE_3D_: field is neither on data domain nor on compute domain')
          endif
@@ -171,7 +172,7 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
       
    if(is_complete)then
       update => search_C2F_nest_overlap(nest_domain, nest_level, add_halo, update_position)
-      call mpp_do_update_nest_fine(f_addrs(1:l_size), nest_domain, update, d_type, ksize, &
+      call mpp_do_update_nest_fine(f_addrs(1:l_size), nest_domain%nest(nest_level), update, d_type, ksize, &
             wb_addrs(1:l_size), eb_addrs(1:l_size), sb_addrs(1:l_size), nb_addrs(1:l_size), update_flags, &
             xbegin, xend, ybegin, yend )
    endif
