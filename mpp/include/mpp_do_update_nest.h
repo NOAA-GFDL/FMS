@@ -20,7 +20,7 @@
 subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke, wb_addrs, eb_addrs, &
                                    sb_addrs, nb_addrs, flags, xbegin, xend, ybegin, yend)
   integer(LONG_KIND),         intent(in) :: f_addrs(:)
-  type(nest_domain_type),     intent(in) :: nest_domain
+  type(nest_level_type),      intent(in) :: nest_domain
   type(nestSpec),          intent(in) :: update
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
   integer,                    intent(in) :: ke
@@ -78,7 +78,6 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
            msgsize = msgsize + (ie-is+1)*(je-js+1)
         end if
      end do
-
      msgsize = msgsize*ke*l_size
      if( msgsize.GT.0 )then
         from_pe = overPtr%pe
@@ -262,7 +261,7 @@ end subroutine MPP_DO_UPDATE_NEST_FINE_3D_
 subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update_x, update_y, d_type, ke, wb_addrsx, wb_addrsy, &
                                    eb_addrsx, eb_addrsy, sb_addrsx, sb_addrsy, nb_addrsx, nb_addrsy, flags)
   integer(LONG_KIND),         intent(in) :: f_addrsx(:), f_addrsy(:)
-  type(nest_domain_type),     intent(in) :: nest_domain
+  type(nest_level_type),      intent(in) :: nest_domain
   type(nestSpec),             intent(in) :: update_x, update_y
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
   integer,                    intent(in) :: ke
@@ -693,7 +692,6 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs_in, f_addrs_out, nest_domain, u
   integer   :: buffer_pos, msgsize
   integer   :: buffer_recv_size, pos
   MPP_TYPE_ :: field_in(update%xbegin_c:update%xend_c, update%ybegin_c:update%yend_c,ke)  
-!  MPP_TYPE_ :: field_out(update%xbegin_c:update%xend_c, update%ybegin_c:update%yend_c,ke)
   MPP_TYPE_ :: field_out(update%xbegin:update%xend, update%ybegin:update%yend,ke)
   MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
 
@@ -855,10 +853,11 @@ end subroutine MPP_DO_UPDATE_NEST_COARSE_3D_
 #ifdef VECTOR_FIELD_
 !###############################################################################
 subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_out, f_addrsy_out, &
-                                           nest_domain, update_x, update_y, d_type, ke, flags)
+                                           nest_domain, nest, update_x, update_y, d_type, ke, flags)
   integer(LONG_KIND),         intent(in) :: f_addrsx_in(:), f_addrsy_in(:)
   integer(LONG_KIND),         intent(in) :: f_addrsx_out(:), f_addrsy_out(:)
   type(nest_domain_type),     intent(in) :: nest_domain
+  type(nest_level_type),      intent(in) :: nest
   type(nestSpec),             intent(in) :: update_x, update_y
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
   integer,                    intent(in) :: ke
@@ -892,8 +891,8 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   ptr_buffer = LOC(mpp_domains_stack)
   l_size = size(f_addrsx_in(:))
 
-  nrecv = get_nest_vector_recv(nest_domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pelist)
-  nsend = get_nest_vector_send(nest_domain, update_x, update_y, ind_send_x, ind_send_y, start_pos_send, to_pelist)
+  nrecv = get_nest_vector_recv(nest, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pelist)
+  nsend = get_nest_vector_send(nest, update_x, update_y, ind_send_x, ind_send_y, start_pos_send, to_pelist)
   !--- pre-post receiving
   buffer_pos = 0  
   call mpp_clock_begin(nest_recv_clock)

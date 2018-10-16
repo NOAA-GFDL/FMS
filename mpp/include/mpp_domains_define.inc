@@ -799,7 +799,9 @@
        domain%tileList(1)%yend   = global_indices(4)
        allocate(domain%x(1), domain%y(1) )
        allocate(domain%tile_id(1))
+       allocate(domain%tile_id_all(1))
        domain%tile_id        = cur_tile_id
+       domain%tile_id_all    = cur_tile_id
        domain%ntiles         = 1
        domain%max_ntile_pe   = 1
        domain%ncontacts      = 0
@@ -1346,6 +1348,9 @@ end subroutine check_message_size
           domain%tile_id(pos) = tile_id_local(n)
        end if
     end do
+
+    allocate(domain%tile_id_all(num_tile))
+    domain%tile_id_all(:) = tile_id_local(:)
 
     domain%initialized    = .true.
     domain%rotated_ninety = .FALSE.
