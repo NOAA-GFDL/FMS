@@ -2681,21 +2681,26 @@ subroutine set_comm_put1(xmap)
      enddo
   endif
 
+
   mypos = mpp_pe()-mpp_root_pe()
-  do n = 0, npes-1
-     p = mod(mypos+npes-n, npes)
-     call mpp_recv(recv_size(p), glen=1, from_pe=pelist(p), block=.false., tag=COMM_TAG_5)
-  enddo
 
-  !--- send data
-  do n = 0, npes-1
-     p = mod(mypos+n, npes)
-     call mpp_send(send_size(p), plen=1, to_pe=pelist(p), tag=COMM_TAG_5)
-  enddo
+  if (do_alltoall) then
+     call mpp_alltoall(send_size, 1, recv_size, 1)
+  else
+     do n = 0, npes-1
+        p = mod(mypos+npes-n, npes)
+        call mpp_recv(recv_size(p), glen=1, from_pe=pelist(p), block=.false., tag=COMM_TAG_5)
+     enddo
 
-  call mpp_sync_self(check=EVENT_RECV)
-  call mpp_sync_self()
+     !--- send data
+     do n = 0, npes-1
+        p = mod(mypos+n, npes)
+        call mpp_send(send_size(p), plen=1, to_pe=pelist(p), tag=COMM_TAG_5)
+     enddo
 
+     call mpp_sync_self(check=EVENT_RECV)
+     call mpp_sync_self()
+  endif
   !--- recv for put_1_to_xgrid
   nrecv = count( send_size> 0)  
   comm%nrecv = nrecv
@@ -5383,7 +5388,7 @@ logical function in_box_me(i, j, grid)
   integer :: g
 
   if(grid%is_ug) then
-     g = (j-1)*grid%im + i
+     g = (j-1)*grid%ni + i
      in_box_me = (g>=grid%gs_me) .and. (g<=grid%ge_me)
   else
      in_box_me = (i>=grid%is_me) .and. (i<=grid%ie_me) .and. (j>=grid%js_me) .and. (j<=grid%je_me)
@@ -5398,24 +5403,13 @@ logical function in_box_nbr(i, j, grid, p)
   integer :: g
 
   if(grid%is_ug) then
-     g = (j-1)*grid%im + i
+     g = (j-1)*grid%ni + i
      in_box_nbr = (g>=grid%gs(p)) .and. (g<=grid%ge(p))
   else
      in_box_nbr = (i>=grid%is(p)) .and. (i<=grid%ie(p)) .and. (j>=grid%js(p)) .and. (j<=grid%je(p))
   endif
 
 end function in_box_nbr
-
-!######################################################################
-logical function in_box_ug(i, j, gs, ge, ni)
-  integer, intent(in) :: i, j, gs, ge, ni
-  integer :: g  
-
-  g = (j-1)*ni + i
-  in_box_ug = (g>=gs) .and. (g<=ge)
-
-end function in_box_ug
-
 
 
 end module xgrid_mod

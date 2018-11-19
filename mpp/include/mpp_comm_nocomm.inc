@@ -56,6 +56,25 @@ subroutine mpp_init( flags,localcomm )
   tick_rate = 1./ticks_per_sec
   clock0 = mpp_clock_id( 'Total runtime', flags=MPP_CLOCK_SYNC )
 
+  ! Initialize mpp_datatypes
+  ! NOTE: mpp_datatypes is unused in serial mode; this is an empty list
+  datatypes%head => null()
+  datatypes%tail => null()
+  datatypes%length = 0
+
+  ! Create the bytestream (default) mpp_datatype
+  ! NOTE: mpp_byte is unused in serial mode
+  mpp_byte%counter = -1
+  mpp_byte%ndims = -1
+  allocate(mpp_byte%sizes(0))
+  allocate(mpp_byte%subsizes(0))
+  allocate(mpp_byte%starts(0))
+  mpp_byte%etype = -1
+  mpp_byte%id = -1
+
+  mpp_byte%prev => null()
+  mpp_byte%next => null()
+
   if( PRESENT(flags) )then
      debug   = flags.EQ.MPP_DEBUG
      verbose = flags.EQ.MPP_VERBOSE .OR. debug
@@ -1046,3 +1065,55 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_alltoall_nocomm.h>
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!            DATA TRANSFER TYPES: mpp_type_create, mpp_type_free              !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#define MPP_TYPE_CREATE_ mpp_type_create_int4
+#define MPP_TYPE_ integer(INT_KIND)
+#define MPI_TYPE_ MPI_INTEGER4
+#include <mpp_type_nocomm.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_int8
+#define MPP_TYPE_ integer(LONG_KIND)
+#define MPI_TYPE_ MPI_INTEGER8
+#include <mpp_type_nocomm.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_real4
+#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPI_TYPE_ MPI_REAL4
+#include <mpp_type_nocomm.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_real8
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPI_TYPE_ MPI_REAL8
+#include <mpp_type_nocomm.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_logical4
+#define MPP_TYPE_ logical(INT_KIND)
+#define MPI_TYPE_ MPI_INTEGER4
+#include <mpp_type_nocomm.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_logical8
+#define MPP_TYPE_ logical(LONG_KIND)
+#define MPI_TYPE_ MPI_INTEGER8
+#include <mpp_type_nocomm.h>
+
+! Clear preprocessor flags
+#undef MPI_TYPE_
+#undef MPP_TYPE_
+#undef MPP_TYPE_CREATE_
+
+subroutine mpp_type_free(dtype)
+    type(mpp_type), pointer, intent(inout) :: dtype
+
+    call mpp_error(NOTE, 'MPP_TYPE_FREE: ' &
+                         'This function should not be used in serial mode.')
+
+    ! For consistency with MPI, we deallocate the pointer
+    deallocate(dtype)
+
+end subroutine mpp_type_free
