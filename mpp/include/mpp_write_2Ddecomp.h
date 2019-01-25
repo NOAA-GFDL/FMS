@@ -46,8 +46,6 @@
       integer :: subdomain(4)
       integer :: packed_data(nwords)
       integer :: i, is, ie, js, je
-!ccyr
-       real :: tstart, tfinish
       real(FLOAT_KIND) :: data_r4(nwords)
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
@@ -73,12 +71,13 @@
                  endif
               endif
               call netcdf_err( error, mpp_file(unit) )
-!ccyr
-	      if (parallel_netcdf) then
-           error = nf_var_par_access(mpp_file(unit)%ncid, field%id, nf_collective)
-	  if(mpp_pe() == mpp_root_pe()) print *, 'WRITE_RECORD: PE= ',pe,'set nf_collective'
-              call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access in subroutine mpp_def_dim')
-	   endif
+
+              if (parallel_netcdf) then
+                  error = nf_var_par_access(mpp_file(unit)%ncid, field%id, nf_collective)
+                  if(mpp_pe() == mpp_root_pe()) &
+                      print *, 'WRITE_RECORD: PE= ',pe,'set nf_collective'
+                  call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access in subroutine mpp_def_dim')
+              endif
 #endif
           else
               call mpp_write_meta( unit, 'END', cval='metadata' )
@@ -132,29 +131,18 @@
              if( i.EQ.field%time_axis_index )start(i) = mpp_file(unit)%time_level
              start(i) = max(start(i),1)
           end do
-          if( PRESENT(domain) .AND. parallel_netcdf)then
-!ccy this is actually io_domain
+          if (PRESENT(domain) .AND. parallel_netcdf) then
+             ! NOTE: this is actually io_domain
              call mpp_get_global_domain(domain, is, ie, js, je)
-             ! X axis (?)
-             start(1) = is
-             axsiz(1) = ie - is + 1
-
-             ! Y axis (?)
-             start(2) = js
-             axsiz(2) = je - js + 1
+             start(1:2) = [is, js]
+             axsiz(1:2) = [ie - is + 1, je - js + 1]
           end if
 
-!	   print *, 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' start= ', start,' axsiz= ', axsiz
+!     print *, 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' start= ', start,' axsiz= ', axsiz
 !          if( debug )print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
-!	  print '(a,i4,a,a,a8,i,a8,i)', 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' start= ', start,' axsiz= ', axsiz
+!     print '(a,i4,a,a,a8,i,a8,i)', 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' start= ', start,' axsiz= ', axsiz
 !          print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
 #ifdef use_netCDF
-
-          call cpu_time(tstart)
-!	  if(mpp_pe() == mpp_root_pe()) print *, 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' start'
-
-
-
 !write time information if new time
           if( newtime )then
               if( KIND(time).EQ.DOUBLE_KIND )then
@@ -177,8 +165,6 @@
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           end if
           call netcdf_err( error, mpp_file(unit), field=field )
-          call cpu_time(tfinish)
-!      if(mpp_pe() == mpp_root_pe()) print *, 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' use ',tfinish-tstart
 #endif
       else                      !non-netCDF
           ptr1 = LOC(mpp_io_stack(1))
@@ -308,13 +294,13 @@
               else
                   allocate( gdata(1,1,1))
               endif
-!ccyr
+
               if (parallel_netcdf) then
                   ! TODO: This is a temporary fix, replace with per-domain writes
                   call mpp_global_field(domain, data, gdata, position=position, &
                                         flags=XUPDATE+YUPDATE, &
                                         default_data=default_data)
-		else if(global_field_on_root_pe) then
+        else if(global_field_on_root_pe) then
                  call mpp_global_field( domain, data, gdata, position = position, &
                                         flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,   &
                                         default_data=default_data)
@@ -342,33 +328,37 @@
               else
                  allocate( gdata(1,1,1))
               endif
+
               if (parallel_netcdf) then
+                  call mpp_global_field(io_domain, data, gdata, &
+                      position = position, &
+                      flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY, &
+                      default_data=default_data &
+                  )
+                  ! Domain check
+                  if(mpp_file(unit)%write_on_this_pe ) &
+                      call WRITE_RECORD_(unit, field, size(gdata(:,:,:)), &
+                                         gdata, tstamp, io_domain)
 
-!	    if(mpp_pe() == mpp_root_pe()) print *, "CALL mpp_global_field at mpp_write_2Ddecomp_4D"
-                    call mpp_global_field( io_domain, data, gdata, position = position, &
-                                           flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,      &
-                                           default_data=default_data)
-!	    if(mpp_pe() == mpp_root_pe()) print *, "CALL mpp_global_field at mpp_write_2Ddecomp DONE"
-
-                ! Domain check
-              if(mpp_file(unit)%write_on_this_pe ) then
-		    call WRITE_RECORD_( unit, field, size(gdata(:,:,:)), gdata, tstamp,io_domain)
-		 endif
-                 io_domain => NULL()    ! TODO: move outside conditional?
-	    else 
-	      if(global_field_on_root_pe) then
-                 call mpp_global_field( io_domain, data, gdata, position = position, &
-                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,      &
-                                        default_data=default_data)
-              else
-                 call mpp_global_field( io_domain, data, gdata, position = position, &
-                                        default_data=default_data)
+                  io_domain => NULL()   ! TODO: move outside conditional?
+              else 
+                  if(global_field_on_root_pe) then
+                      call mpp_global_field(io_domain, data, gdata, &
+                          position=position, &
+                          flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY, &
+                          default_data=default_data &
+                      )
+                  else
+                      call mpp_global_field(io_domain, data, gdata, &
+                          position=position, &
+                          default_data=default_data &
+                      )
+                  endif
+                  io_domain => NULL()
+                  if(mpp_file(unit)%write_on_this_pe ) &
+                      call WRITE_RECORD_(unit, field, size(gdata(:,:,:)), &
+                                         gdata, tstamp)
               endif
-              io_domain => NULL()
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(gdata(:,:,:)), gdata, tstamp)
-						     endif
-						     endif
               deallocate( gdata )
           endif
       else if( data_has_halos )then
@@ -447,26 +437,23 @@
 !ccyr
               if (parallel_netcdf) then
                   ! TODO: This is a temporary fix, replace with per-domain writes
-                  call mpp_global_field(domain, data, gdata, position=position, &
-                                        flags=XUPDATE+YUPDATE, &
-                                        default_data=default_data)
+                  call mpp_global_field(domain, data, gdata, &
+                      position=position, &
+                      flags=XUPDATE+YUPDATE, &
+                      default_data=default_data &
+                  )
               else if(global_field_on_root_pe) then
-                 call mpp_global_field( domain, data, gdata, position = position, &
-                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,   &
-                                        default_data=default_data)
+                 call mpp_global_field(domain, data, gdata, &
+                     position=position, &
+                     flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY, &
+                     default_data=default_data &
+                 )
               else
-                 call mpp_global_field( domain, data, gdata, position = position, &
-                                        default_data=default_data)
+                 call mpp_global_field(domain, data, gdata, &
+                     position=position, &
+                     default_data=default_data &
+                 )
               endif
-
-!              if(global_field_on_root_pe) then
-!                 call mpp_global_field( domain, data, gdata, position = position, &
-!                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY, &
-!                                        default_data=default_data)
-!             else
-!                 call mpp_global_field( domain, data, gdata, position = position, &
-!                                        default_data=default_data)
-!              endif
 
 !all non-0 PEs have passed their data to PE 0 and may now exit
               if(mpp_file(unit)%write_on_this_pe ) then
@@ -474,7 +461,7 @@
               endif
               deallocate(gdata)
           end if
-     else if(mpp_file(unit)%io_domain_exist ) then
+      else if (mpp_file(unit)%io_domain_exist) then
           if( halos_are_global )then
               if(npes .GT. 1) call mpp_update_domains( data, domain, position = position )
               if(mpp_file(unit)%write_on_this_pe ) then
@@ -484,38 +471,44 @@
               io_domain=>mpp_get_io_domain(mpp_file(unit)%domain) 
               call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
               if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
-	       if(mpp_pe() == mpp_root_pe()) print *,"gdata:",PE,isg,ieg,jsg,ieg
+                 ! TODO: Delete this?
+                 if(mpp_pe() == mpp_root_pe()) &
+                     print *, "gdata:", PE, isg, ieg, jsg, ieg
                  allocate( gdata(isg:ieg,jsg:jeg,size(data,3),size(data,4)) )
               else
                  allocate( gdata(1,1,1,1))
               endif
-!ccyr
-	     if (parallel_netcdf) then
-	    if(mpp_pe() == mpp_root_pe()) print *, "CALL mpp_global_field at mpp_write_2Ddecomp_4D"
-	    call mpp_global_field( io_domain, data, gdata, position = position, &
-                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,      &
-                                        default_data=default_data)
-	    if(mpp_pe() == mpp_root_pe()) print *, "CALL mpp_global_field at mpp_write_2Ddecomp DONE"
-              if(mpp_file(unit)%write_on_this_pe ) then
-	      call WRITE_RECORD_( unit, field, size(gdata(:,:,:,:)), gdata, tstamp,io_domain)
-              endif
-              io_domain => NULL()
-	     else
-              if(global_field_on_root_pe) then
-                 call mpp_global_field( io_domain, data, gdata, position = position, &
-                                        flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,      &
-                                        default_data=default_data)
+
+              if (parallel_netcdf) then
+                  call mpp_global_field(io_domain, data, gdata, &
+                      position=position, &
+                      flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY, &
+                      default_data=default_data &
+                  )
+                  if (mpp_file(unit)%write_on_this_pe ) &
+                      call WRITE_RECORD_(unit, field, size(gdata(:,:,:,:)), &
+                                         gdata, tstamp,io_domain)
+                  io_domain => NULL()
               else
-                 call mpp_global_field( io_domain, data, gdata, position = position, &
-                                        default_data=default_data)
-              endif
-              io_domain => NULL()
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(gdata(:,:,:,:)), gdata, tstamp)
-              endif
-	endif
-              deallocate( gdata )
-          endif
+                  if (global_field_on_root_pe) then
+                      call mpp_global_field(io_domain, data, gdata, &
+                          position=position, &
+                          flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY, &
+                          default_data=default_data &
+                      )
+                  else
+                      call mpp_global_field(io_domain, data, gdata, &
+                          position=position, &
+                          default_data=default_data &
+                      )
+                  end if
+                  io_domain => NULL()
+                  if (mpp_file(unit)%write_on_this_pe ) &
+                      call WRITE_RECORD_(unit, field, size(gdata(:,:,:,:)), &
+                                         gdata, tstamp)
+              end if
+              deallocate(gdata)
+          end if
       else if( data_has_halos )then
 !store compute domain as contiguous data and pass to write_record
           allocate( cdata(is:ie,js:je,size(data,3),size(data,4)) )
@@ -527,7 +520,4 @@
       end if
 
       call mpp_clock_end(mpp_write_clock)
-
-      return
     end subroutine MPP_WRITE_2DDECOMP_4D_
-
