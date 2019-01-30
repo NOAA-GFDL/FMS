@@ -316,9 +316,9 @@
       if (.not. parallel_netcdf .and. form_flag == MPP_NETCDF .and. &
               action_flag /= MPP_RDONLY) then
           if (fileset_flag == MPP_SINGLE .and. threading_flag == MPP_MULTI) &
-              call mpp_error(FATAL, "mpp_io_connect.inc(mpp_open): " &
-                  "multiple thread and single file writing/appending is not " &
-                  "supported for netCDF file")
+              call mpp_error(FATAL, "mpp_io_connect.inc(mpp_open): "// &
+                  "multiple thread and single file writing/appending is "// &
+                  "not supported for netCDF file")
           if (fileset_flag == MPP_SINGLE .and. .not. on_root_pe) then
               write_on_this_pe = .false.
               read_on_this_pe = .false.
@@ -417,7 +417,7 @@
           io_layout = mpp_get_io_domain_layout(domain)
 
           if (parallel_netcdf .and. all(io_layout == [1, 1])) &
-              call mpp_error(FATAL, 'MPP_OPEN: Parallel_netcdf conficts ' &
+              call mpp_error(FATAL, 'MPP_OPEN: Parallel_netcdf conficts '// &
                                     'with iolayout (1,1).')
 
       elseif (present(domain_ug)) then

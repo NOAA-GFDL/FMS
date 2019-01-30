@@ -296,10 +296,10 @@
 
       if (parallel_netcdf .and. .not. pnetcdf) then
           error = NF_DEF_VAR_FILL(mpp_file(unit)%ncid, id, NF_NOFILL, 1)
-          call netcdf_err(error, mpp_file(unit),
+          call netcdf_err(error, mpp_file(unit), &
               string='NF_DEF_VAR_FILL:LN282')
           error = nf_var_par_access(mpp_file(unit)%ncid, id, nf_collective)
-          call netcdf_err(error, mpp_file(unit),
+          call netcdf_err(error, mpp_file(unit), &
               string=' nf_var_par_access in subroutine mpp_def_dim_int')
       endif
 
@@ -891,7 +891,7 @@
                               ' chunk_layout=', chunk_layout
                       end do
                       if (size(axes(:)) > 3) then
-                          error = NF_DEF_VAR_CHUNKING(
+                          error = NF_DEF_VAR_CHUNKING( &
                               mpp_file(unit)%ncid, &
                               field%id, &
                               NF_CHUNKED, &

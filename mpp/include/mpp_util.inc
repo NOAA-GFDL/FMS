@@ -549,14 +549,14 @@ end function rarray_to_char
   !############################################################################
   ! TODO: Documentation block?
 
-  subroutine mpp_declare_pelist_id( pelist, id,npe,name)
+  subroutine mpp_declare_pelist_id(pelist, id, npe, name)
     integer,          intent(in)           :: pelist(:)
     integer,          intent(out)          :: id,npe
     character(len=*), intent(in), optional :: name
 
     integer :: i
 
-    if (.NOT.module_is_initialized ) &
+    if (.NOT. module_is_initialized) &
         call mpp_error(FATAL, 'MPP_DECLARE_PELIST_ID: '// &
                               'You must first call mpp_init.')
     i = get_peset(pelist)
