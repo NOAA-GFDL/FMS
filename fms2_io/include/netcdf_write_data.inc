@@ -38,6 +38,10 @@ subroutine netcdf_write_data_0d(fileobj, &
             endif
             c(unlim_dim_index) = unlim_dim_level
         endif
+        call register_variable_attribute(fileobj, &
+                                         variable_name, &
+                                         "checksum", &
+                                         get_checksum(variable_data))
         call set_netcdf_mode(fileobj%ncid, &
                              data_mode)
         varid = get_variable_id(fileobj%ncid, &
@@ -125,6 +129,10 @@ e(:) = 1
             endif
             c(unlim_dim_index) = unlim_dim_level
         endif
+        call register_variable_attribute(fileobj, &
+                                         variable_name, &
+                                         "checksum", &
+                                         get_checksum(variable_data))
         call set_netcdf_mode(fileobj%ncid, &
                              data_mode)
         varid = get_variable_id(fileobj%ncid, &
@@ -212,6 +220,10 @@ e(:) = 1
             endif
             c(unlim_dim_index) = unlim_dim_level
         endif
+        call register_variable_attribute(fileobj, &
+                                         variable_name, &
+                                         "checksum", &
+                                         get_checksum(variable_data))
         call set_netcdf_mode(fileobj%ncid, &
                              data_mode)
         varid = get_variable_id(fileobj%ncid, &
@@ -299,6 +311,10 @@ e(:) = 1
             endif
             c(unlim_dim_index) = unlim_dim_level
         endif
+        call register_variable_attribute(fileobj, &
+                                         variable_name, &
+                                         "checksum", &
+                                         get_checksum(variable_data))
         call set_netcdf_mode(fileobj%ncid, &
                              data_mode)
         varid = get_variable_id(fileobj%ncid, &
@@ -386,6 +402,10 @@ e(:) = 1
             endif
             c(unlim_dim_index) = unlim_dim_level
         endif
+        call register_variable_attribute(fileobj, &
+                                         variable_name, &
+                                         "checksum", &
+                                         get_checksum(variable_data))
         call set_netcdf_mode(fileobj%ncid, &
                              data_mode)
         varid = get_variable_id(fileobj%ncid, &
@@ -473,6 +493,10 @@ e(:) = 1
             endif
             c(unlim_dim_index) = unlim_dim_level
         endif
+        call register_variable_attribute(fileobj, &
+                                         variable_name, &
+                                         "checksum", &
+                                         get_checksum(variable_data))
         call set_netcdf_mode(fileobj%ncid, &
                              data_mode)
         varid = get_variable_id(fileobj%ncid, &

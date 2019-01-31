@@ -3,6 +3,7 @@ module fms_netcdf_compressed_io_mod
 use,intrinsic :: iso_fortran_env
 use netcdf
 use fms_io_utils_mod
+use mpp_mod
 use netcdf_io_mod
 implicit none
 private
@@ -59,6 +60,7 @@ public :: compressed_write_3d
 public :: compressed_write_4d
 public :: compressed_write_5d
 public :: save_compressed_restart
+public :: compressed_start_and_count
 
 
 contains
@@ -406,6 +408,36 @@ subroutine save_compressed_restart(fileobj, &
         endif
     enddo
 end subroutine save_compressed_restart
+
+
+!> @brief Gathers a compressed arrays size and offset for each pe.
+subroutine compressed_start_and_count(fileobj, nelems, npes_start, npes_count)
+
+  class(FmsNetcdfCompressedFile_t), intent(in) :: fileobj !< File object.
+  integer, intent(in) :: nelems !< Number of elements on the current pe.
+  integer, dimension(:), allocatable, intent(out) :: npes_start !< Offset for each pe.
+  integer, dimension(:), allocatable, intent(out) :: npes_count !< Number of elements for
+                                                                !! each pe.
+
+  integer :: i
+
+  allocate(npes_start(size(fileobj%pelist)))
+  allocate(npes_count(size(fileobj%pelist)))
+  do i = 1, size(fileobj%pelist)
+    if (fileobj%pelist(i) .eq. mpp_pe()) then
+      npes_count(i) = nelems
+    else
+      call mpp_recv(npes_count(i), fileobj%pelist(i), block=.false.)
+      call mpp_send(nelems, fileobj%pelist(i))
+    endif
+  enddo
+  call mpp_sync_self(check=EVENT_RECV)
+  call mpp_sync_self(check=EVENT_SEND)
+  npes_start(1) = 1
+  do i = 1, size(fileobj%pelist)-1
+    npes_start(i+1) = npes_start(i) + npes_count(i)
+  enddo
+end subroutine compressed_start_and_count
 
 
 include "register_compressed_restart_variable.inc"

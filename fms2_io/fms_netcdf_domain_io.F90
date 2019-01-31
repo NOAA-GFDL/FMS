@@ -71,6 +71,8 @@ public :: domain_write_4d
 public :: domain_write_5d
 public :: save_domain_restart
 public :: restore_domain_state
+public :: add_domain_decomposition_attribute
+public :: get_compute_domain_dimension_indices
 
 
 contains
@@ -580,6 +582,70 @@ subroutine restore_domain_state(fileobj, &
         endif
     enddo
 end subroutine restore_domain_state
+
+
+!> @brief Add a legacy "domain_decomposition attribute to a dimension variable.
+subroutine add_domain_decomposition_attribute(fileobj, dimname)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object
+  character(len=*), intent(in) :: dimname !< Name of dimension variable.
+
+  type(domain2d), pointer :: io_domain
+  integer :: sg
+  integer :: eg
+  integer :: s
+  integer :: e
+
+  io_domain => mpp_get_io_domain(fileobj%domain)
+  if (.not. associated(io_domain)) then
+    call error("io domain is required.")
+  endif
+  if (is_in_list(fileobj%xdims, dimname)) then
+    call mpp_get_global_domain(fileobj%domain, xbegin=sg, xend=eg)
+    call mpp_get_global_domain(io_domain, xbegin=s, xend=e)
+  elseif (is_in_list(fileobj%ydims, dimname)) then
+    call mpp_get_global_domain(fileobj%domain, ybegin=sg, yend=eg)
+    call mpp_get_global_domain(io_domain, ybegin=s, yend=e)
+  else
+    call error("input dimension is not associated with the domain.")
+  endif
+  call register_variable_attribute(fileobj, dimname, &
+                                   "domain_decomposition", &
+                                   (/sg, eg, s, e/))
+end subroutine add_domain_decomposition_attribute
+
+
+!> @brief Return an array of compute domain indices.
+subroutine get_compute_domain_dimension_indices(fileobj, dimname, indices)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimname !< Name of dimension variable.
+  integer, dimension(:), allocatable, intent(inout) :: indices !< Compute domain indices.
+
+  type(domain2d), pointer :: io_domain
+  integer :: s
+  integer :: e
+  integer :: i
+
+  io_domain => mpp_get_io_domain(fileobj%domain)
+  if (.not. associated(io_domain)) then
+    call error("io domain is required.")
+  endif
+  if (is_in_list(fileobj%xdims, dimname)) then
+    call mpp_get_compute_domain(io_domain, xbegin=s, xend=e)
+  elseif (is_in_list(fileobj%ydims, dimname)) then
+    call mpp_get_compute_domain(io_domain, ybegin=s, yend=e)
+  else
+    call error("input dimension is not associated with the domain.")
+  endif
+  if (allocated(indices)) then
+    deallocate(indices)
+  endif
+  allocate(indices(e-s+1))
+  do i = s, e
+    indices(i-s+1) = i
+  enddo
+end subroutine get_compute_domain_dimension_indices
 
 
 include "register_domain_restart_variable.inc"

@@ -68,7 +68,9 @@ use fms_netcdf_domain_io_mod, only: FmsNetcdfDomainFile_t, &
                                     domain_write_4d, &
                                     domain_write_5d, &
                                     save_domain_restart, &
-                                    restore_domain_state
+                                    restore_domain_state, &
+                                    add_domain_decomposition_attribute, &
+                                    get_compute_domain_dimension_indices
 use fms_netcdf_compressed_io_mod, only: FmsNetcdfCompressedFile_t, &
                                         open_compressed_file, &
                                         close_compressed_file, &
@@ -92,7 +94,8 @@ use fms_netcdf_compressed_io_mod, only: FmsNetcdfCompressedFile_t, &
                                         compressed_write_3d, &
                                         compressed_write_4d, &
                                         compressed_write_5d, &
-                                        save_compressed_restart
+                                        save_compressed_restart, &
+                                        compressed_start_and_count
 use fms_netcdf_unstructured_domain_io_mod, only: FmsNetcdfUnstructuredDomainFile_t, &
                                                  open_unstructured_domain_file, &
                                                  register_unstructured_dimension
@@ -131,6 +134,9 @@ public :: variable_exists
 public :: get_variable_num_dimensions
 public :: get_variable_dimension_names
 public :: get_variable_size
+public :: compressed_start_and_count
+public :: add_domain_decomposition_attribute
+public :: get_compute_domain_dimension_indices
 
 
 interface open_file
