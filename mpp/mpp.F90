@@ -209,6 +209,12 @@ private
 !sgi_mipspro gets this from 'use mpi'
 #endif
 
+! Parallel netCDF support
+#if defined(use_netCDF)
+#include <netcdf.inc>
+#endif
+
+
   !--- public paramters  -----------------------------------------------
   public :: MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, NOTE, WARNING, FATAL
   public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT
@@ -231,7 +237,7 @@ private
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
-  public :: get_ascii_file_num_lines, mpp_declare_pelist_id
+  public :: get_ascii_file_num_lines
   public :: mpp_record_time_start, mpp_record_time_end
 
   !--- public interface from mpp_comm.h ------------------------------
@@ -240,6 +246,9 @@ private
   public :: mpp_gather, mpp_scatter, mpp_alltoall
 #ifdef use_MPI_GSM
   public :: mpp_gsm_malloc, mpp_gsm_free
+#endif
+#if defined(use_libMPI) && defined(use_netCDF)
+  public :: mpp_nc_create, mpp_nc_open
 #endif
 
   !*********************************************************************
@@ -1290,6 +1299,10 @@ private
 #include <mpp_util.inc>
 #include <mpp_comm.inc>
 
+! TODO: Where to put this...?
+#if defined(use_libMPI) && defined(use_netCDF)
+#include <mpp_netcdf.inc>
+#endif
   end module mpp_mod
 
 
