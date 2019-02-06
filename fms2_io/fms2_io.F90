@@ -17,7 +17,8 @@ use netcdf_io_mod, only: unlimited, &
                          get_variable_num_dimensions, &
                          get_variable_dimension_names, &
                          get_variable_size, &
-                         get_variable_unlimited_dimension_index
+                         get_variable_unlimited_dimension_index, &
+                         Valid_t, get_valid, is_valid
 use fms_netcdf_io_mod, only: FmsNetcdfFile_t, &
                              open_netcdf_file, &
                              close_netcdf_file, &
@@ -137,6 +138,9 @@ public :: get_variable_size
 public :: compressed_start_and_count
 public :: add_domain_decomposition_attribute
 public :: get_compute_domain_dimension_indices
+public :: Valid_t
+public :: get_valid
+public :: is_valid
 
 
 interface open_file

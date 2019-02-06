@@ -16,10 +16,17 @@ subroutine get_variable_attribute_0d(fileobj, &
                                              !! by default.
     integer :: varid
     integer :: err
+    character(len=1024),dimension(1) :: buffer
+
     if (fileobj%is_root) then
         varid = get_variable_id(fileobj%ncid, &
                                 trim(variable_name))
         select type(attribute_value)
+            type is (character(len=*))
+                err = nf90_get_att(fileobj%ncid, &
+                                   varid, &
+                                   trim(attribute_name), &
+                                   buffer(1))
             type is (integer(kind=int32))
                 err = nf90_get_att(fileobj%ncid, &
                                    varid, &
@@ -51,6 +58,10 @@ subroutine get_variable_attribute_0d(fileobj, &
         endif
     endif
     select type(attribute_value)
+        type is (character(len=*))
+            call mpp_broadcast(buffer, len_trim(buffer(1)), &
+                               fileobj%io_root, pelist=fileobj%pelist)
+            call string_copy(attribute_value, buffer(1))
         type is (integer(kind=int32))
             call mpp_broadcast(attribute_value, &
                                

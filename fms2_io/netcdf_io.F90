@@ -3,7 +3,7 @@
 !> @brief Create an "abstract" netcdf type, which can be extended to meet
 !!        our various I/O needs.
 module netcdf_io_mod
-use,intrinsic :: iso_fortran_env
+use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
@@ -12,46 +12,56 @@ private
 
 
 !Module constants.
-integer,parameter :: variable_missing = -1
-integer,parameter :: dimension_missing = -1
-integer,parameter,public :: no_unlimited_dimension = -1
-character(len=1),parameter :: missing_path = ""
-integer,parameter :: missing_ncid = -1
-integer,parameter :: missing_rank = -1
-integer,parameter :: define_mode = 0
-integer,parameter :: data_mode = 1
-integer,parameter :: max_num_restart_vars = 200
-integer,parameter,public :: unlimited = nf90_unlimited
+integer, parameter :: variable_missing = -1
+integer, parameter :: dimension_missing = -1
+integer, parameter, public :: no_unlimited_dimension = -1
+character(len=1), parameter :: missing_path = ""
+integer, parameter :: missing_ncid = -1
+integer, parameter :: missing_rank = -1
+integer, parameter :: define_mode = 0
+integer, parameter :: data_mode = 1
+integer, parameter :: max_num_restart_vars = 200
+integer, parameter, public :: unlimited = nf90_unlimited
 
 
 !> @brief Restart variable.
 type :: RestartVariable_t
-    character(len=256) :: varname
-    class(*),pointer :: data0d => null()
-    class(*),dimension(:),pointer :: data1d => null()
-    class(*),dimension(:,:),pointer :: data2d => null()
-    class(*),dimension(:,:,:),pointer :: data3d => null()
-    class(*),dimension(:,:,:,:),pointer :: data4d => null()
-    class(*),dimension(:,:,:,:,:),pointer :: data5d => null()
+  character(len=256) :: varname
+  class(*), pointer :: data0d => null()
+  class(*), dimension(:), pointer :: data1d => null()
+  class(*), dimension(:,:), pointer :: data2d => null()
+  class(*), dimension(:,:,:), pointer :: data3d => null()
+  class(*), dimension(:,:,:,:), pointer :: data4d => null()
+  class(*), dimension(:,:,:,:,:), pointer :: data5d => null()
 endtype RestartVariable_t
 
 
-!> @brief netcdf file type.
-type,public :: NetcdfFile_t
-    character(len=256) :: path !< File path.
-    logical :: is_readonly !< Flag telling if the file is readonly.
-    integer :: ncid !< Netcdf file id.
-    integer,dimension(:),allocatable :: pelist !< List of ranks who will
+!> @brief Netcdf file type.
+type, public :: NetcdfFile_t
+  character(len=256) :: path !< File path.
+  logical :: is_readonly !< Flag telling if the file is readonly.
+  integer :: ncid !< Netcdf file id.
+  integer, dimension(:), allocatable :: pelist !< List of ranks who will
                                                !! communicate.
-    integer :: io_root !< I/O root rank of the pelist.
-    logical :: is_root !< Flag telling if the current rank is the
-                       !! I/O root.
-    logical :: is_restart !< Flag telling if the this file is a restart
-                          !! file (that has internal pointers to data).
-    type(RestartVariable_t),dimension(:),allocatable :: restart_vars !< Array of registered
+  integer :: io_root !< I/O root rank of the pelist.
+  logical :: is_root !< Flag telling if the current rank is the
+                     !! I/O root.
+  logical :: is_restart !< Flag telling if the this file is a restart
+                        !! file (that has internal pointers to data).
+  type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
-    integer :: num_restart_vars !< Number of registered restart variables.
+  integer :: num_restart_vars !< Number of registered restart variables.
 endtype NetcdfFile_t
+
+
+!> @brief Range type for a netcdf variable.
+type :: Valid_t
+  logical :: has_range !< Flag that's true if both min/max exist for a variable.
+  logical :: has_fill !< Flag that's true a user defined fill value.
+  real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
+  real(kind=real64) :: min_val !< Unpacked minimum value allowed for a variable.
+  real(kind=real64) :: max_val !< Unpacked maximum value allowed for a variable.
+endtype Valid_t
 
 
 public :: netcdf_file_open
@@ -81,59 +91,62 @@ public :: netcdf_read_data
 public :: netcdf_write_data
 public :: netcdf_save_restart
 public :: netcdf_restore_state
+public :: Valid_t
+public :: get_valid
+public :: is_valid
 
 
 interface netcdf_add_restart_variable
-    module procedure netcdf_add_restart_variable_0d
-    module procedure netcdf_add_restart_variable_1d
-    module procedure netcdf_add_restart_variable_2d
-    module procedure netcdf_add_restart_variable_3d
-    module procedure netcdf_add_restart_variable_4d
-    module procedure netcdf_add_restart_variable_5d
+  module procedure netcdf_add_restart_variable_0d
+  module procedure netcdf_add_restart_variable_1d
+  module procedure netcdf_add_restart_variable_2d
+  module procedure netcdf_add_restart_variable_3d
+  module procedure netcdf_add_restart_variable_4d
+  module procedure netcdf_add_restart_variable_5d
 end interface netcdf_add_restart_variable
 
 
 interface netcdf_read_data
-    module procedure netcdf_read_data_0d
-    module procedure netcdf_read_data_1d
-    module procedure netcdf_read_data_2d
-    module procedure netcdf_read_data_3d
-    module procedure netcdf_read_data_4d
-    module procedure netcdf_read_data_5d
+  module procedure netcdf_read_data_0d
+  module procedure netcdf_read_data_1d
+  module procedure netcdf_read_data_2d
+  module procedure netcdf_read_data_3d
+  module procedure netcdf_read_data_4d
+  module procedure netcdf_read_data_5d
 end interface netcdf_read_data
 
 
 interface netcdf_write_data
-    module procedure netcdf_write_data_0d
-    module procedure netcdf_write_data_1d
-    module procedure netcdf_write_data_2d
-    module procedure netcdf_write_data_3d
-    module procedure netcdf_write_data_4d
-    module procedure netcdf_write_data_5d
+  module procedure netcdf_write_data_0d
+  module procedure netcdf_write_data_1d
+  module procedure netcdf_write_data_2d
+  module procedure netcdf_write_data_3d
+  module procedure netcdf_write_data_4d
+  module procedure netcdf_write_data_5d
 end interface netcdf_write_data
 
 
 interface register_global_attribute
-    module procedure register_global_attribute_0d
-    module procedure register_global_attribute_1d
+  module procedure register_global_attribute_0d
+  module procedure register_global_attribute_1d
 end interface register_global_attribute
 
 
 interface register_variable_attribute
-    module procedure register_variable_attribute_0d
-    module procedure register_variable_attribute_1d
+  module procedure register_variable_attribute_0d
+  module procedure register_variable_attribute_1d
 end interface register_variable_attribute
 
 
 interface get_global_attribute
-    module procedure get_global_attribute_0d
-    module procedure get_global_attribute_1d
+  module procedure get_global_attribute_0d
+  module procedure get_global_attribute_1d
 end interface get_global_attribute
 
 
 interface get_variable_attribute
-    module procedure get_variable_attribute_0d
-    module procedure get_variable_attribute_1d
+  module procedure get_variable_attribute_0d
+  module procedure get_variable_attribute_1d
 end interface get_variable_attribute
 
 
@@ -143,90 +156,317 @@ contains
 !> @brief Check for errors returned by netcdf.
 !! @internal
 subroutine check_netcdf_code(err)
-    integer,intent(in) :: err !< Code returned by netcdf.
-    character(len=80) :: buf
-    if (err .ne. nf90_noerr) then
-        buf = nf90_strerror(err)
-        call error(trim(buf))
-    endif
+
+  integer, intent(in) :: err !< Code returned by netcdf.
+
+  character(len=80) :: buf
+
+  if (err .ne. nf90_noerr) then
+    buf = nf90_strerror(err)
+    call error(trim(buf))
+  endif
 end subroutine check_netcdf_code
 
 
 !> @brief Switch to the correct netcdf mode.
-subroutine set_netcdf_mode(ncid, &
-                           mode)
-    integer,intent(in) :: ncid !< Netcdf file id.
-    integer,intent(in) :: mode !< Netcdf file mode.
-    integer :: err
-    if (mode .eq. define_mode) then
-        err = nf90_redef(ncid)
-        if (err .eq. nf90_eindefine .or. err .eq. nf90_eperm) then
-            return
-        endif
-    elseif (mode .eq. data_mode) then
-        err = nf90_enddef(ncid)
-        if (err .eq. nf90_enotindefine .or. err .eq. nf90_eperm) then
-            return
-        endif
-    else
-        call error("mode must be either define_mode or data_mode.")
+!! @internal
+subroutine set_netcdf_mode(ncid, mode)
+
+  integer, intent(in) :: ncid !< Netcdf file id.
+  integer, intent(in) :: mode !< Netcdf file mode.
+
+  integer :: err
+
+  if (mode .eq. define_mode) then
+    err = nf90_redef(ncid)
+    if (err .eq. nf90_eindefine .or. err .eq. nf90_eperm) then
+      return
     endif
-    call check_netcdf_code(err)
+  elseif (mode .eq. data_mode) then
+    err = nf90_enddef(ncid)
+    if (err .eq. nf90_enotindefine .or. err .eq. nf90_eperm) then
+      return
+    endif
+  else
+    call error("mode must be either define_mode or data_mode.")
+  endif
+  call check_netcdf_code(err)
 end subroutine set_netcdf_mode
 
 
 !> @brief Get the id of a dimension from its name.
 !! @return Dimension id, or dimension_missing if it doesn't exist.
 !! @internal
-function get_dimension_id(ncid, &
-                          dimension_name, &
-                          allow_failure) &
-    result(dimid)
-    integer,intent(in) :: ncid !< Netcdf file id.
-    character(len=*),intent(in) :: dimension_name !< Dimension name.
-    logical,intent(in),optional :: allow_failure !< Flag that prevents
+function get_dimension_id(ncid, dimension_name, allow_failure) &
+  result(dimid)
+
+  integer, intent(in) :: ncid !< Netcdf file id.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+  logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if dimension
                                                  !! does not exist.
-    integer :: dimid
-    integer :: err
-    err = nf90_inq_dimid(ncid, &
-                         trim(dimension_name), &
-                         dimid)
-    if (present(allow_failure)) then
-        if (allow_failure .and. err .eq. nf90_ebaddim) then
-            dimid = dimension_missing
-            return
-        endif
+  integer :: dimid
+
+  integer :: err
+
+  err = nf90_inq_dimid(ncid, trim(dimension_name), dimid)
+  if (present(allow_failure)) then
+    if (allow_failure .and. err .eq. nf90_ebaddim) then
+      dimid = dimension_missing
+      return
     endif
-    call check_netcdf_code(err)
+  endif
+  call check_netcdf_code(err)
 end function get_dimension_id
 
 
 !> @brief Get the id of a variable from its name.
 !! @return Variable id, or variable_missing if it doesn't exist.
 !! @internal
-function get_variable_id(ncid, &
-                         variable_name, &
-                         allow_failure) &
-    result(varid)
-    integer,intent(in) :: ncid !< Netcdf file object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    logical,intent(in),optional :: allow_failure !< Flag that prevents
+function get_variable_id(ncid, variable_name, allow_failure) &
+  result(varid)
+
+  integer, intent(in) :: ncid !< Netcdf file object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if variable does
                                                  !! not exist.
-    integer :: varid
-    integer :: err
-    err = nf90_inq_varid(ncid, &
-                         trim(variable_name), &
-                         varid)
-    if (present(allow_failure)) then
-        if (allow_failure .and. err .eq. nf90_enotvar) then
-            varid = variable_missing
-            return
-        endif
+  integer :: varid
+
+  integer :: err
+
+  err = nf90_inq_varid(ncid, trim(variable_name), varid)
+  if (present(allow_failure)) then
+    if (allow_failure .and. err .eq. nf90_enotvar) then
+      varid = variable_missing
+      return
     endif
-    call check_netcdf_code(err)
+  endif
+  call check_netcdf_code(err)
 end function get_variable_id
+
+
+!> @brief Determine if an attribute exists.
+!! @return Flag telling if the attribute exists.
+!! @internal
+function attribute_exists(ncid, varid, attribute_name) &
+  result(att_exists)
+
+  integer, intent(in) :: ncid !< Netcdf file id.
+  integer, intent(in) :: varid !< Variable id.
+  character(len=*), intent(in) :: attribute_name !< Attribute name.
+  logical :: att_exists
+
+  integer :: err
+
+  err = nf90_inquire_attribute(ncid, varid, trim(attribute_name))
+  if (err .eq. nf90_enotatt) then
+    att_exists = .false.
+  else
+    call check_netcdf_code(err)
+    att_exists = .true.
+  endif
+end function attribute_exists
+
+
+!> @brief Determine if a netcdf variable is "packed".
+!! @return Flag telling if the variable is "packed".
+!! @internal
+function is_variable_packed(ncid, varid) &
+  result(is_packed)
+
+  integer, intent(in) :: ncid !< Netcdf file id.
+  integer, intent(in) :: varid !< Variable id.
+
+  logical :: is_packed
+
+  is_packed = attribute_exists(ncid, varid, "scale_factor") .or. &
+              attribute_exists(ncid, varid, "add_offset")
+end function is_variable_packed
+
+
+!> @brief Get the type of a netcdf attribute.
+!! @return The netcdf type of the attribute.
+!! @internal
+function get_attribute_type(ncid, varid, attname) &
+  result(xtype)
+
+  integer, intent(in) :: ncid !< Netcdf file id.
+  integer, intent(in) :: varid !< Variable id.
+  character(len=*), intent(in) :: attname !< Attribute name.
+  integer :: xtype
+
+  integer :: err
+
+  err = nf90_inquire_attribute(ncid, varid, attname, xtype=xtype)
+  call check_netcdf_code(err)
+end function get_attribute_type
+
+
+!> @brief Get the type of a netcdf variable.
+!! @return The netcdf type of the variable.
+!! @internal
+function get_variable_type(ncid, varid) &
+  result(xtype)
+
+  integer, intent(in) :: ncid !< Netcdf file id.
+  integer, intent(in) :: varid !< Variable id.
+  integer :: xtype
+
+  integer :: err
+
+  err = nf90_inquire_variable(ncid, varid, xtype=xtype)
+  call check_netcdf_code(err)
+end function get_variable_type
+
+
+!> @brief Store the valid range for a variable.
+!! @return A ValidType_t object containing data about the valid
+!!         range data for this variable can take.
+function get_valid(fileobj, variable_name) &
+  result(valid)
+
+  class(NetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  type(Valid_t) :: valid
+
+  integer :: varid
+  real(kind=real64) :: scale_factor
+  real(kind=real64) :: add_offset
+  real(kind=real64), dimension(2) :: buffer
+  logical :: has_max
+  logical :: has_min
+  integer :: xtype
+
+  if (fileobj%is_root) then
+    varid = get_variable_id(fileobj%ncid, variable_name)
+    has_max = .false.
+    has_min = .false.
+    valid%has_fill = .false.
+
+    !This routine makes use of netcdf's automatic type conversion to
+    !store all range information in double precision.
+    if (attribute_exists(fileobj%ncid, varid, "scale_factor")) then
+      call get_variable_attribute(fileobj, variable_name, "scale_factor", scale_factor)
+    else
+      scale_factor = 1._real64
+    endif
+    if (attribute_exists(fileobj%ncid, varid, "add_offset")) then
+      call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset)
+    else
+      add_offset = 0._real64
+    endif
+
+    !Get default max/min from _Fillvalue.  These could be overwritten by
+    !vaild_range/valid_min/valid_max.
+    if (attribute_exists(fileobj%ncid, varid, "_FillValue")) then
+      call get_variable_attribute(fileobj, variable_name, "_FillValue", buffer(1))
+      valid%fill_val = buffer(1)*scale_factor + add_offset
+      valid%has_fill = .true.
+      xtype = get_variable_type(fileobj%ncid, varid)
+      if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
+        if (buffer(1) .gt. 0) then
+          valid%max_val = (buffer(1) - 1._real64)*scale_factor + add_offset
+          has_max = .true.
+        else
+          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
+          has_min = .true.
+        endif
+      elseif (xtype .eq. nf90_float .and. xtype .eq. nf90_double) then
+        if (buffer(1) .gt. 0) then
+          valid%max_val = (nearest(nearest(buffer(1), -1._real64), -1._real64)) &
+                          *scale_factor + add_offset
+          has_max = .true.
+        else
+          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
+                          *scale_factor + add_offset
+          has_min = .true.
+        endif
+      else
+        call error("unsupported type.")
+      endif
+    endif
+
+    !Override fill value max/min with using "valid" attributes.
+    if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
+      call get_variable_attribute(fileobj, variable_name, "valid_range", buffer)
+      valid%max_val = buffer(2)*scale_factor + add_offset
+      has_max = .true.
+      valid%min_val = buffer(1)*scale_factor + add_offset
+      has_min = .true.
+    else
+      if (attribute_exists(fileobj%ncid, varid, "valid_max")) then
+        call get_variable_attribute(fileobj, variable_name, "valid_max", buffer(1))
+        valid%max_val = buffer(1)*scale_factor + add_offset
+        has_max = .true.
+      endif
+      if (attribute_exists(fileobj%ncid, varid, "valid_min")) then
+        call get_variable_attribute(fileobj, variable_name, "valid_min", buffer(1))
+        valid%min_val = buffer(1)*scale_factor + add_offset
+        has_min = .true.
+      endif
+    endif
+    valid%has_range = has_min .and. has_max
+  endif
+
+  call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
+  if (valid%has_range) then
+    call mpp_broadcast(valid%max_val, fileobj%io_root, pelist=fileobj%pelist)
+    call mpp_broadcast(valid%min_val, fileobj%io_root, pelist=fileobj%pelist)
+  else
+    call mpp_broadcast(valid%has_fill, fileobj%io_root, pelist=fileobj%pelist)
+    if (valid%has_fill) then
+      call mpp_broadcast(valid%fill_val, fileobj%io_root, pelist=fileobj%pelist)
+    endif
+  endif
+end function get_valid
+
+
+!> @brief Determine if a piece of data is "valid" (in the correct range.)
+!! @return A flag telling if the data element is "valid."
+elemental function is_valid(datum, validobj) &
+  result(valid_data)
+
+  class(*), intent(in) :: datum !< Unpacked data element.
+  type(Valid_t), intent(in) :: validobj !< Valid object.
+  logical :: valid_data
+
+  real(kind=real64) :: rdatum
+
+  select type (datum)
+    type is (integer(kind=int32))
+      rdatum = real(datum, kind=real64)
+    type is (real(kind=real32))
+      rdatum = real(datum, kind=real64)
+    type is (real(kind=real64))
+      rdatum = real(datum, kind=real64)
+ !  class default
+ !    call error("unsupported type.")
+  end select
+
+  valid_data = .true.
+  if (validobj%has_range) then
+    valid_data = rdatum .ge. validobj%min_val .and. rdatum .le. validobj%max_val
+  elseif (validobj%has_fill) then
+    valid_data = rdatum .ne. validobj%fill_val
+  endif
+end function is_valid
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 !> @brief Add a restart variable to a NetcdfFile_t type.
@@ -576,30 +816,6 @@ subroutine netcdf_restore_state(fileobj, &
         endif
     enddo
 end subroutine netcdf_restore_state
-
-
-!> @brief Determine if an attribute exists.
-!! @return Flag telling if the attribute exists.
-!! @internal
-function attribute_exists(ncid, &
-                          varid, &
-                          attribute_name) &
-    result(att_exists)
-    integer,intent(in) :: ncid !< Netcdf file id.
-    integer,intent(in) :: varid !< Variable id.
-    character(len=*),intent(in) :: attribute_name !< Attribute name.
-    logical :: att_exists
-    integer :: err
-    err = nf90_inquire_attribute(ncid, &
-                                 varid, &
-                                 trim(attribute_name))
-    if (err .eq. nf90_enotatt) then
-        att_exists = .false.
-    else
-        call check_netcdf_code(err)
-        att_exists = .true.
-    endif
-end function attribute_exists
 
 
 !> @brief Determine if a global attribute exists.
@@ -1205,6 +1421,31 @@ function get_variable_unlimited_dimension_index(fileobj, &
                        fileobj%io_root, &
                        pelist=fileobj%pelist)
 end function get_variable_unlimited_dimension_index
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 include "netcdf_add_restart_variable.inc"
