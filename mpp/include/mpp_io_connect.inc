@@ -187,7 +187,7 @@
 !----------
 
       use mpp_mod, only: mpp_alltoall, mpp_declare_pelist
-      use mpp_mod, only: mpp_declare_pelist_id, mpp_set_current_pelist
+      use mpp_mod, only: mpp_set_current_pelist
       use mpp_mod, only: mpp_get_current_pelist_name, mpp_get_current_pelist
       use mpp_mod, only: mpp_nc_create, mpp_nc_open
  
