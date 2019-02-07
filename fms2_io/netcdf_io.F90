@@ -372,7 +372,7 @@ function get_valid(fileobj, variable_name) &
           valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
           has_min = .true.
         endif
-      elseif (xtype .eq. nf90_float .and. xtype .eq. nf90_double) then
+      elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
         if (buffer(1) .gt. 0) then
           valid%max_val = (nearest(nearest(buffer(1), -1._real64), -1._real64)) &
                           *scale_factor + add_offset
