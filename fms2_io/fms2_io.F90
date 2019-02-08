@@ -1,5 +1,6 @@
 module fms2_io_mod
 use netcdf_io_mod, only: unlimited, &
+                         NetcdfFile_t, &
                          global_att_exists, &
                          variable_att_exists, &
                          register_global_attribute, &
@@ -105,6 +106,7 @@ private
 
 
 public :: unlimited
+public :: NetcdfFile_t
 public :: FmsNetcdfFile_t
 public :: FmsNetcdfDomainFile_t
 public :: FmsNetcdfCompressedFile_t
