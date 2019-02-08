@@ -203,6 +203,7 @@ public :: mpp_error, NOTE, WARNING, FATAL, &
           mpp_pe, mpp_npes, mpp_root_pe,   &
           stdin, stdout, stderr, stdlog,   &
           mpp_chksum
+public :: input_nml_file
 public :: mpp_clock_id, mpp_clock_begin, mpp_clock_end
 public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &

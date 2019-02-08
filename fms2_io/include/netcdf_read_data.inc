@@ -123,7 +123,7 @@ edge_lengths, &
                                          broadcast)
     class(NetcdfFile_t),intent(in) :: fileobj !< File object.
     character(len=*),intent(in) :: variable_name !< Variable name.
-    class(*),dimension(:), intent(inout) :: buf !< Array that the data
+    class(*),dimension(:), intent(inout), target :: buf !< Array that the data
                                                         !! will be read into.
     integer,intent(in),optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
@@ -147,6 +147,12 @@ integer,dimension(:),intent(in),optional :: edge_lengths !< The number of
     integer :: unlim_dim_index
     integer,dimension(2) :: c
 integer,dimension(2) :: e
+    character, dimension(:,:), allocatable :: charbuf
+    character(len=1024), pointer :: charptr
+    integer, dimension(:), allocatable :: dim_sizes
+    integer :: i
+    integer :: j
+
     if (present(broadcast)) then
         bcast = broadcast
     else
@@ -204,6 +210,26 @@ e(:) = 1
                                    start=c &
 ,count=e &
                                   )
+            type is (character(len=*))
+                call get_variable_size(fileobj, variable_name, dim_sizes, .false.)
+                allocate(charbuf(dim_sizes(1), dim_sizes(2)))
+                charbuf(:,:) = ""
+                err = nf90_get_var(fileobj%ncid, varid, charbuf, start=(/1,1/), count=dim_sizes)
+                if (len(buf(1)) .lt. dim_sizes(1)) then
+                  call error("character buffer is too small; increase length.")
+                endif
+                if (size(buf) .lt. dim_sizes(2)) then
+                  call error("incorrect buffer array size.")
+                endif
+                do i = 1, dim_sizes(2)
+                  buf(i) = ""
+                  do j = 1, dim_sizes(1)
+                    charptr => buf(i)
+                    charptr(j:j) = charbuf(j, i)
+                  enddo
+                enddo
+                deallocate(charbuf)
+                deallocate(dim_sizes)
             class default
                 call error("unsupported type.")
         end select
@@ -230,6 +256,9 @@ size(buf), &
                 call mpp_broadcast(buf, &
 size(buf), &
                                    fileobj%io_root, &
+                                   pelist=fileobj%pelist)
+            type is (character(len=*))
+                call mpp_broadcast(buf, len(buf(1)), fileobj%io_root, &
                                    pelist=fileobj%pelist)
             class default
                 call error("unsupported type.")
