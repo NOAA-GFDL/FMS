@@ -94,6 +94,7 @@ public :: netcdf_restore_state
 public :: Valid_t
 public :: get_valid
 public :: is_valid
+public :: get_unlimited_dimension_name
 
 
 interface netcdf_add_restart_variable
@@ -1046,6 +1047,39 @@ function is_dimension_unlimited(fileobj, &
                        fileobj%io_root, &
                        pelist=fileobj%pelist)
 end function is_dimension_unlimited
+
+
+!> @brief Get the name of the unlimited dimension.
+subroutine get_unlimited_dimension_name(fileobj, dimension_name, broadcast)
+
+  class(NetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(out) :: dimension_name !< Dimension name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+
+  integer :: err
+  integer :: dimid
+
+  dimension_name = ""
+  if (fileobj%is_root) then
+    err = nf90_inquire(fileobj%ncid, unlimitedDimId=dimid)
+    call check_netcdf_code(err)
+    call nf90_inquire_dimension(fileobj%ncid, dimid, dimension_name)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast((/dimension_name/), &
+                     len(dimension_name), &
+                     fileobj%io_root, &
+                     pelist=fileobj%pelist)
+end subroutine get_unlimited_dimension_name
 
 
 !> @brief Get the length of a dimension.
