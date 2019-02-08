@@ -1,4 +1,5 @@
 module fms2_io_mod
+use fms_io_utils_mod, only: file_exists
 use netcdf_io_mod, only: unlimited, &
                          NetcdfFile_t, &
                          global_att_exists, &
@@ -145,6 +146,8 @@ public :: Valid_t
 public :: get_valid
 public :: is_valid
 public :: get_unlimited_dimension_name
+public :: file_exists
+
 
 interface open_file
     module procedure open_netcdf_file

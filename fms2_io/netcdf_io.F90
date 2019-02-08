@@ -1063,22 +1063,26 @@ subroutine get_unlimited_dimension_name(fileobj, dimension_name, broadcast)
 
   integer :: err
   integer :: dimid
+  character(len=nf90_max_name), dimension(1) :: buffer
 
   dimension_name = ""
   if (fileobj%is_root) then
     err = nf90_inquire(fileobj%ncid, unlimitedDimId=dimid)
     call check_netcdf_code(err)
-    call nf90_inquire_dimension(fileobj%ncid, dimid, dimension_name)
+    err = nf90_inquire_dimension(fileobj%ncid, dimid, dimension_name)
+    call check_netcdf_code(err)
+    call string_copy(buffer(1), dimension_name)
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
       return
     endif
   endif
-  call mpp_broadcast((/dimension_name/), &
-                     len(dimension_name), &
+  call mpp_broadcast(buffer, &
+                     nf90_max_name, &
                      fileobj%io_root, &
                      pelist=fileobj%pelist)
+  call string_copy(dimension_name, buffer(1))
 end subroutine get_unlimited_dimension_name
 
 
