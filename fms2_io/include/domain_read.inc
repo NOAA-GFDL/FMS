@@ -44,6 +44,8 @@ end subroutine domain_read_0d
 subroutine domain_read_1d(fileobj, &
                                     variable_name, &
                                     vdata, &
+                                    corner, &
+                                    edge_lengths, &
                                     unlim_dim_level)
 
     !Inputs/outputs
@@ -52,6 +54,14 @@ subroutine domain_read_1d(fileobj, &
     class(*),dimension(:), intent(inout) :: vdata !< Data that will
                                                           !! be written out
                                                           !! to the netcdf file.
+    integer,dimension(:),intent(in),optional :: corner !< Array of starting
+                                                       !! indices describing
+                                                       !! where the data
+                                                       !! will be read from.
+    integer,dimension(:),intent(in),optional :: edge_lengths !< The number of
+                                                             !! elements that
+                                                             !! will be read
+                                                             !! in each dimension.
     integer,intent(in),optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
 
@@ -67,6 +77,8 @@ subroutine domain_read_1d(fileobj, &
                               variable_name, &
                               vdata, &
                               unlim_dim_level=unlim_dim_level, &
+                              corner=corner, &
+                              edge_lengths=edge_lengths, &
                               broadcast=.true.)
         return
 else
@@ -82,6 +94,8 @@ end subroutine domain_read_1d
 subroutine domain_read_2d(fileobj, &
                                     variable_name, &
                                     vdata, &
+                                    corner, &
+                                    edge_lengths, &
                                     unlim_dim_level)
 
     !Inputs/outputs
@@ -90,6 +104,14 @@ subroutine domain_read_2d(fileobj, &
     class(*),dimension(:,:), intent(inout) :: vdata !< Data that will
                                                           !! be written out
                                                           !! to the netcdf file.
+    integer,dimension(:),intent(in),optional :: corner !< Array of starting
+                                                       !! indices describing
+                                                       !! where the data
+                                                       !! will be read from.
+    integer,dimension(:),intent(in),optional :: edge_lengths !< The number of
+                                                             !! elements that
+                                                             !! will be read
+                                                             !! in each dimension.
     integer,intent(in),optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
 
@@ -123,6 +145,8 @@ type(domain2d),pointer :: io_domain
                               variable_name, &
                               vdata, &
                               unlim_dim_level=unlim_dim_level, &
+                              corner=corner, &
+                              edge_lengths=edge_lengths, &
                               broadcast=.true.)
         return
 
@@ -335,6 +359,8 @@ end subroutine domain_read_2d
 subroutine domain_read_3d(fileobj, &
                                     variable_name, &
                                     vdata, &
+                                    corner, &
+                                    edge_lengths, &
                                     unlim_dim_level)
 
     !Inputs/outputs
@@ -343,6 +369,14 @@ subroutine domain_read_3d(fileobj, &
     class(*),dimension(:,:,:), intent(inout) :: vdata !< Data that will
                                                           !! be written out
                                                           !! to the netcdf file.
+    integer,dimension(:),intent(in),optional :: corner !< Array of starting
+                                                       !! indices describing
+                                                       !! where the data
+                                                       !! will be read from.
+    integer,dimension(:),intent(in),optional :: edge_lengths !< The number of
+                                                             !! elements that
+                                                             !! will be read
+                                                             !! in each dimension.
     integer,intent(in),optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
 
@@ -376,6 +410,8 @@ type(domain2d),pointer :: io_domain
                               variable_name, &
                               vdata, &
                               unlim_dim_level=unlim_dim_level, &
+                              corner=corner, &
+                              edge_lengths=edge_lengths, &
                               broadcast=.true.)
         return
 
@@ -588,6 +624,8 @@ end subroutine domain_read_3d
 subroutine domain_read_4d(fileobj, &
                                     variable_name, &
                                     vdata, &
+                                    corner, &
+                                    edge_lengths, &
                                     unlim_dim_level)
 
     !Inputs/outputs
@@ -596,6 +634,14 @@ subroutine domain_read_4d(fileobj, &
     class(*),dimension(:,:,:,:), intent(inout) :: vdata !< Data that will
                                                           !! be written out
                                                           !! to the netcdf file.
+    integer,dimension(:),intent(in),optional :: corner !< Array of starting
+                                                       !! indices describing
+                                                       !! where the data
+                                                       !! will be read from.
+    integer,dimension(:),intent(in),optional :: edge_lengths !< The number of
+                                                             !! elements that
+                                                             !! will be read
+                                                             !! in each dimension.
     integer,intent(in),optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
 
@@ -629,6 +675,8 @@ type(domain2d),pointer :: io_domain
                               variable_name, &
                               vdata, &
                               unlim_dim_level=unlim_dim_level, &
+                              corner=corner, &
+                              edge_lengths=edge_lengths, &
                               broadcast=.true.)
         return
 
@@ -841,6 +889,8 @@ end subroutine domain_read_4d
 subroutine domain_read_5d(fileobj, &
                                     variable_name, &
                                     vdata, &
+                                    corner, &
+                                    edge_lengths, &
                                     unlim_dim_level)
 
     !Inputs/outputs
@@ -849,6 +899,14 @@ subroutine domain_read_5d(fileobj, &
     class(*),dimension(:,:,:,:,:), intent(inout) :: vdata !< Data that will
                                                           !! be written out
                                                           !! to the netcdf file.
+    integer,dimension(:),intent(in),optional :: corner !< Array of starting
+                                                       !! indices describing
+                                                       !! where the data
+                                                       !! will be read from.
+    integer,dimension(:),intent(in),optional :: edge_lengths !< The number of
+                                                             !! elements that
+                                                             !! will be read
+                                                             !! in each dimension.
     integer,intent(in),optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
 
@@ -882,6 +940,8 @@ type(domain2d),pointer :: io_domain
                               variable_name, &
                               vdata, &
                               unlim_dim_level=unlim_dim_level, &
+                              corner=corner, &
+                              edge_lengths=edge_lengths, &
                               broadcast=.true.)
         return
 
