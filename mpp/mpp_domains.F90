@@ -198,6 +198,7 @@ module mpp_domains_mod
   public :: mpp_get_tile_npes, mpp_get_domain_root_pe, mpp_get_tile_pelist, mpp_get_tile_compute_domains
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
+  public :: mpp_get_num_io_domains, mpp_get_io_root_pes
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
   public :: mpp_copy_domain, mpp_set_domain_symmetry
   public :: mpp_get_update_pelist, mpp_get_update_size
@@ -405,6 +406,9 @@ module mpp_domains_mod
      type(overlapSpec),  pointer :: update_C      => NULL() ! send and recv information for halo update of C-cell.
      type(overlapSpec),  pointer :: update_N      => NULL() ! send and recv information for halo update of N-cell.
      type(domain2d),     pointer :: io_domain     => NULL() ! domain for IO, will be set through calling mpp_set_io_domain ( this will be changed).
+
+     integer, pointer :: io_root_pes(:) => NULL()           ! List of root PEs
+                                                            ! for IO domains
   end type domain2D     
 
   !--- the following type is used to reprsent the contact between tiles.

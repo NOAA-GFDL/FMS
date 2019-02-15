@@ -190,7 +190,7 @@
       use mpp_mod, only: mpp_set_current_pelist
       use mpp_mod, only: mpp_get_current_pelist_name, mpp_get_current_pelist
       use mpp_mod, only: mpp_nc_create, mpp_nc_open
- 
+      use mpp_domains_mod, only: mpp_get_io_root_pes, mpp_get_num_io_domains
 
 
       integer,         intent(out)           :: unit   
@@ -239,6 +239,7 @@
       character(len=128)                    :: f_test
 
       integer, dimension(:), allocatable    :: iowridx, iope, io_pelist, n
+
       
 !----------
 !ug support
@@ -335,26 +336,11 @@
               write_on_this_pe = mpp_domain_UG_is_tile_root_pe(io_domain_ug)
           endif
 !----------
-          ! TODO: Simplify this block
           if (parallel_netcdf) then
-              if (write_on_this_pe) then
-                  iowridx = mpp_pe()
-              else
-                  iowridx = -1
-              endif
-              npes = mpp_npes()
-              call mpp_alltoall(iowridx, 1, iope, 1)
-              niopes = count(iope > -1, dim=1)
-              allocate(io_pelist(niopes))
-              niopes = 0
-              do idx = 0, npes - 1
-                  if (iope(idx) > -1) then
-                      niopes = niopes + 1
-                      io_pelist(niopes) = iope(idx)
-                  endif
-              end do
-              totiopes = 0
-              call mpp_declare_pelist(io_pelist, "io_comm")
+              ! Set up the parallel IO communicator
+              allocate(io_pelist(mpp_get_num_io_domains(domain)))
+              io_pelist = mpp_get_io_root_pes(domain)
+              call mpp_declare_pelist(io_pelist, "I/O PEs")
           endif
       endif 
 
@@ -390,7 +376,6 @@
       if( PRESENT(domain) ) then
           allocate(mpp_file(unit)%domain)
           mpp_file(unit)%domain = domain
-          ! TODO: Do not explicitly store the Communicator ID
 !----------
 !ug support
       elseif (present(domain_ug)) then
