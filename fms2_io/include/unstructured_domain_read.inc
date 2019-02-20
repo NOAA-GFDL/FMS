@@ -12,10 +12,10 @@ subroutine unstructured_domain_read_0d(fileobj, &
                                                        !! will be read into.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
-  integer, dimension(:), intent(in), optional :: corner !< Array of starting
-                                                        !! indices describing
-                                                        !! where the data
-                                                        !! will be read from.
+  integer, intent(in), optional :: corner !< Array of starting
+                                          !! indices describing
+                                          !! where the data
+                                          !! will be read from.
 
   logical, intent(in), optional :: broadcast !< Flag controlling whether or
                                              !! not the data will be

@@ -46,6 +46,7 @@ public :: get_valid
 public :: is_valid
 public :: get_unlimited_dimension_name
 public :: file_exists
+public :: compressed_start_and_count
 
 
 interface open_file

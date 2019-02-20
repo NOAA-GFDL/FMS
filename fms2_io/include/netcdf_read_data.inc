@@ -62,7 +62,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
         charbuf(:) = ""
         if (ndims .eq. 2) then
           if (present(corner)) then
-            start(2) = corner(1)
+            start(2) = corner
           endif
         elseif (ndims .gt. 2) then
           call error("Only scalar and 1d string values are currently supported.")
@@ -156,7 +156,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
   if (present(edge_lengths)) then
     e(1) = edge_lengths(1)
   else
-    e(1) = shape(buf)
+    e(1) = size(buf)
   endif
   if (present(unlim_dim_level)) then
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &

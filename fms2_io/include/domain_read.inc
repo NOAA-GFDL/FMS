@@ -20,10 +20,10 @@ subroutine domain_read_0d(fileobj, &
                                                          !! to the netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
-  integer, dimension(0), intent(in), optional :: corner !< Array of starting
-                                                               !! indices describing
-                                                               !! where the data
-                                                               !! will be written to.
+  integer, intent(in), optional :: corner !< Array of starting
+                                          !! indices describing
+                                          !! where the data
+                                          !! will be written to.
 
 
 

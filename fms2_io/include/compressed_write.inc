@@ -125,11 +125,11 @@ subroutine compressed_write_1d(fileobj, &
   endif
   !Gather the data onto the I/O root and write it out.
   if (fileobj%is_root) then
-    ndims = get_num_dimensions(fileobj, broadcast=.false.)
+    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dimension_sizes(ndims))
     allocate(dimension_names(ndims))
     call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
-    call get_dimension_names(fileobj, dimension_names, broadcast=.false.)
+    call get_variable_dimension_names(fileobj, variable_name, dimension_names, broadcast=.false.)
     do i = 1, size(dimension_names)
       cindex = get_compressed_dimension_index(fileobj, dimension_names(i))
       if (cindex .ne. dimension_not_found) then
@@ -315,11 +315,11 @@ subroutine compressed_write_2d(fileobj, &
   endif
   !Gather the data onto the I/O root and write it out.
   if (fileobj%is_root) then
-    ndims = get_num_dimensions(fileobj, broadcast=.false.)
+    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dimension_sizes(ndims))
     allocate(dimension_names(ndims))
     call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
-    call get_dimension_names(fileobj, dimension_names, broadcast=.false.)
+    call get_variable_dimension_names(fileobj, variable_name, dimension_names, broadcast=.false.)
     do i = 1, size(dimension_names)
       cindex = get_compressed_dimension_index(fileobj, dimension_names(i))
       if (cindex .ne. dimension_not_found) then
@@ -505,11 +505,11 @@ subroutine compressed_write_3d(fileobj, &
   endif
   !Gather the data onto the I/O root and write it out.
   if (fileobj%is_root) then
-    ndims = get_num_dimensions(fileobj, broadcast=.false.)
+    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dimension_sizes(ndims))
     allocate(dimension_names(ndims))
     call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
-    call get_dimension_names(fileobj, dimension_names, broadcast=.false.)
+    call get_variable_dimension_names(fileobj, variable_name, dimension_names, broadcast=.false.)
     do i = 1, size(dimension_names)
       cindex = get_compressed_dimension_index(fileobj, dimension_names(i))
       if (cindex .ne. dimension_not_found) then
@@ -695,11 +695,11 @@ subroutine compressed_write_4d(fileobj, &
   endif
   !Gather the data onto the I/O root and write it out.
   if (fileobj%is_root) then
-    ndims = get_num_dimensions(fileobj, broadcast=.false.)
+    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dimension_sizes(ndims))
     allocate(dimension_names(ndims))
     call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
-    call get_dimension_names(fileobj, dimension_names, broadcast=.false.)
+    call get_variable_dimension_names(fileobj, variable_name, dimension_names, broadcast=.false.)
     do i = 1, size(dimension_names)
       cindex = get_compressed_dimension_index(fileobj, dimension_names(i))
       if (cindex .ne. dimension_not_found) then
@@ -885,11 +885,11 @@ subroutine compressed_write_5d(fileobj, &
   endif
   !Gather the data onto the I/O root and write it out.
   if (fileobj%is_root) then
-    ndims = get_num_dimensions(fileobj, broadcast=.false.)
+    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dimension_sizes(ndims))
     allocate(dimension_names(ndims))
     call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
-    call get_dimension_names(fileobj, dimension_names, broadcast=.false.)
+    call get_variable_dimension_names(fileobj, variable_name, dimension_names, broadcast=.false.)
     do i = 1, size(dimension_names)
       cindex = get_compressed_dimension_index(fileobj, dimension_names(i))
       if (cindex .ne. dimension_not_found) then

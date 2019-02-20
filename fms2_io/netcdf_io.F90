@@ -133,6 +133,7 @@ public :: netcdf_add_restart_variable_2d_wrap
 public :: netcdf_add_restart_variable_3d_wrap
 public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
+public :: compressed_start_and_count
 
 
 interface netcdf_add_restart_variable
@@ -518,7 +519,9 @@ subroutine netcdf_file_close(fileobj)
       deallocate(fileobj%compressed_dims(i)%npes_nelems)
     endif
   enddo
-  deallocate(fileobj%compressed_dims)
+  if (allocated(fileobj%compressed_dims)) then
+    deallocate(fileobj%compressed_dims)
+  endif
 end subroutine netcdf_file_close
 
 
@@ -736,22 +739,24 @@ function get_variable_compressed_dimension_index(fileobj, variable_name, broadca
   compressed_dimension_index = dimension_not_found
   if (fileobj%is_root) then
     ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-    allocate(dim_names(ndims))
-    call get_variable_dimension_names(fileobj, variable_name, dim_names, broadcast=.false.)
-    do i = 1, size(dim_names)
-      if (get_compressed_dimension_index(fileobj,dim_names(i)) .ne. dimension_not_found) then
-        compressed_dimension_index = i
-        exit
-      endif
-    enddo
-    deallocate(dim_names)
+    if (ndims .gt. 0) then
+      allocate(dim_names(ndims))
+      call get_variable_dimension_names(fileobj, variable_name, dim_names, broadcast=.false.)
+      do i = 1, size(dim_names)
+        if (get_compressed_dimension_index(fileobj,dim_names(i)) .ne. dimension_not_found) then
+          compressed_dimension_index = i
+          exit
+        endif
+      enddo
+      deallocate(dim_names)
+    endif
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
       return
     endif
   endif
-    call mpp_broadcast(compressed_dimension_index, fileobj%io_root, pelist=fileobj%pelist)
+  call mpp_broadcast(compressed_dimension_index, fileobj%io_root, pelist=fileobj%pelist)
 end function get_variable_compressed_dimension_index
 
 
@@ -1582,6 +1587,36 @@ elemental function is_valid(datum, validobj) &
     valid_data = rdatum .ne. validobj%fill_val
   endif
 end function is_valid
+
+
+!> @brief Gathers a compressed arrays size and offset for each pe.
+subroutine compressed_start_and_count(fileobj, nelems, npes_start, npes_count)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  integer, intent(in) :: nelems !< Number of elements on the current pe.
+  integer, dimension(:), allocatable, intent(out) :: npes_start !< Offset for each pe.
+  integer, dimension(:), allocatable, intent(out) :: npes_count !< Number of elements for
+                                                                !! each pe.
+
+  integer :: i
+
+  allocate(npes_start(size(fileobj%pelist)))
+  allocate(npes_count(size(fileobj%pelist)))
+  do i = 1, size(fileobj%pelist)
+    if (fileobj%pelist(i) .eq. mpp_pe()) then
+      npes_count(i) = nelems
+    else
+      call mpp_recv(npes_count(i), fileobj%pelist(i), block=.false.)
+      call mpp_send(nelems, fileobj%pelist(i))
+    endif
+  enddo
+  call mpp_sync_self(check=EVENT_RECV)
+  call mpp_sync_self(check=EVENT_SEND)
+  npes_start(1) = 1
+  do i = 1, size(fileobj%pelist)-1
+    npes_start(i+1) = npes_start(i) + npes_count(i)
+  enddo
+end subroutine compressed_start_and_count
 
 
 include "netcdf_add_restart_variable.inc"
