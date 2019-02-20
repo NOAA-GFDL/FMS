@@ -22,6 +22,7 @@ subroutine axis_edges(fileobj, name, edge_data)
   character(len=*), intent(in) :: name
   class(*), dimension(:), intent(out) :: edge_data
 
+  integer :: ndims
   character(len=nf90_max_name) :: buffer
   integer, dimension(:), allocatable :: dim_sizes
   real(kind=real32), dimension(:), allocatable :: r32
@@ -31,6 +32,8 @@ subroutine axis_edges(fileobj, name, edge_data)
   integer :: i
   integer :: n
 
+  ndims = get_variable_num_dimensions(fileobj, name)
+  allocate(dim_sizes(ndims))
   call get_variable_size(fileobj, name, dim_sizes)
   n = dim_sizes(1)
   if (size(edge_data) .ne. n+1) then
@@ -45,6 +48,8 @@ subroutine axis_edges(fileobj, name, edge_data)
     call get_variable_attribute(fileobj, name, "bounds", buffer)
   endif
   if (trim(buffer) .ne. "") then
+    ndims = get_variable_num_dimensions(fileobj, buffer)
+    allocate(dim_sizes(ndims))
     call get_variable_size(fileobj, buffer, dim_sizes)
     if (size(dim_sizes) .eq. 1) then
       if (dim_sizes(1) .ne. n+1) then

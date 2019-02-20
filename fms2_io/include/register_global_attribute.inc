@@ -2,7 +2,7 @@
 subroutine register_global_attribute_0d(fileobj, &
                                                   attribute_name, &
                                                   attribute_value)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
+    class(FmsNetcdfFile_t),intent(in) :: fileobj !< File object.
     character(len=*),intent(in) :: attribute_name !< Attribute name.
     class(*), intent(in) :: attribute_value !< Attribute value
     integer :: err
@@ -45,7 +45,7 @@ end subroutine register_global_attribute_0d
 subroutine register_global_attribute_1d(fileobj, &
                                                   attribute_name, &
                                                   attribute_value)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
+    class(FmsNetcdfFile_t),intent(in) :: fileobj !< File object.
     character(len=*),intent(in) :: attribute_name !< Attribute name.
     class(*),dimension(:), intent(in) :: attribute_value !< Attribute value
     integer :: err

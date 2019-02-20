@@ -1,6 +1,6 @@
 !> @file
 
-!> @brief Create an "abstract" netcdf type, which can be extended to meet
+!> @brief Create a netcdf type, which can be extended to meet
 !!        our various I/O needs.
 module netcdf_io_mod
 use, intrinsic :: iso_fortran_env
@@ -22,22 +22,36 @@ integer, parameter :: define_mode = 0
 integer, parameter :: data_mode = 1
 integer, parameter :: max_num_restart_vars = 200
 integer, parameter, public :: unlimited = nf90_unlimited
+integer, parameter :: dimension_not_found = 0
+integer, parameter, public :: max_num_compressed_dims = 10
 
 
 !> @brief Restart variable.
 type :: RestartVariable_t
-  character(len=256) :: varname
-  class(*), pointer :: data0d => null()
-  class(*), dimension(:), pointer :: data1d => null()
-  class(*), dimension(:,:), pointer :: data2d => null()
-  class(*), dimension(:,:,:), pointer :: data3d => null()
-  class(*), dimension(:,:,:,:), pointer :: data4d => null()
-  class(*), dimension(:,:,:,:,:), pointer :: data5d => null()
+  character(len=256) :: varname !< Variable name.
+  class(*), pointer :: data0d => null() !< Scalar data pointer.
+  class(*), dimension(:), pointer :: data1d => null() !< 1d data pointer.
+  class(*), dimension(:,:), pointer :: data2d => null() !< 2d data pointer.
+  class(*), dimension(:,:,:), pointer :: data3d => null() !< 3d data pointer.
+  class(*), dimension(:,:,:,:), pointer :: data4d => null() !< 4d data pointer.
+  class(*), dimension(:,:,:,:,:), pointer :: data5d => null() !< 5d data pointer.
 endtype RestartVariable_t
 
 
+!> @brief Compressed dimension.
+type :: CompressedDimension_t
+  character(len=256) :: dimname !< Dimension name.
+  integer, dimension(:), allocatable :: npes_corner !< Array of starting
+                                                    !! indices for each rank.
+  integer, dimension(:), allocatable :: npes_nelems !< Number of elements
+                                                    !! associated with each
+                                                    !! rank.
+  integer :: nelems !< Total size of the dimension.
+endtype CompressedDimension_t
+
+
 !> @brief Netcdf file type.
-type, public :: NetcdfFile_t
+type, public :: FmsNetcdfFile_t
   character(len=256) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
@@ -51,11 +65,13 @@ type, public :: NetcdfFile_t
   type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
   integer :: num_restart_vars !< Number of registered restart variables.
-endtype NetcdfFile_t
+  type(CompressedDimension_t), dimension(:), allocatable :: compressed_dims !< "Compressed" dimension.
+  integer :: num_compressed_dims !< Number of compressed dimensions.
+endtype FmsNetcdfFile_t
 
 
 !> @brief Range type for a netcdf variable.
-type :: Valid_t
+type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_fill !< Flag that's true a user defined fill value.
   real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
@@ -89,12 +105,34 @@ public :: get_variable_size
 public :: get_variable_unlimited_dimension_index
 public :: netcdf_read_data
 public :: netcdf_write_data
+public :: compressed_write
 public :: netcdf_save_restart
+public :: netcdf_save_restart_wrap
 public :: netcdf_restore_state
-public :: Valid_t
 public :: get_valid
 public :: is_valid
 public :: get_unlimited_dimension_name
+public :: netcdf_file_close_wrap
+public :: netcdf_add_variable_wrap
+public :: compressed_write_0d_wrap
+public :: compressed_write_1d_wrap
+public :: compressed_write_2d_wrap
+public :: compressed_write_3d_wrap
+public :: compressed_write_4d_wrap
+public :: compressed_write_5d_wrap
+public :: compressed_read_0d
+public :: compressed_read_1d
+public :: compressed_read_2d
+public :: compressed_read_3d
+public :: compressed_read_4d
+public :: compressed_read_5d
+public :: register_compressed_dimension
+public :: netcdf_add_restart_variable_0d_wrap
+public :: netcdf_add_restart_variable_1d_wrap
+public :: netcdf_add_restart_variable_2d_wrap
+public :: netcdf_add_restart_variable_3d_wrap
+public :: netcdf_add_restart_variable_4d_wrap
+public :: netcdf_add_restart_variable_5d_wrap
 
 
 interface netcdf_add_restart_variable
@@ -125,6 +163,16 @@ interface netcdf_write_data
   module procedure netcdf_write_data_4d
   module procedure netcdf_write_data_5d
 end interface netcdf_write_data
+
+
+interface compressed_write
+  module procedure compressed_write_0d
+  module procedure compressed_write_1d
+  module procedure compressed_write_2d
+  module procedure compressed_write_3d
+  module procedure compressed_write_4d
+  module procedure compressed_write_5d
+end interface compressed_write
 
 
 interface register_global_attribute
@@ -321,13 +369,1095 @@ function get_variable_type(ncid, varid) &
 end function get_variable_type
 
 
+!> @brief Open a netcdf file.
+!! @return .true. if open succeeds, or else .false.
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
+                          is_restart) &
+  result(success)
+
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  character(len=*), intent(in) :: path !< File path.
+  character(len=*), intent(in) :: mode !< File mode.  Allowed values are:
+                                       !! "read", "append", "write", or
+                                       !! "overwrite".
+  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
+                                                     !! new files are written
+                                                     !! as.  Allowed values
+                                                     !! are: "64bit", "classic",
+                                                     !! or "netcdf4". Defaults to
+                                                     !! "64bit".
+  integer, dimension(:), intent(in), optional :: pelist !< List of ranks associated
+                                                        !! with this file.  If not
+                                                        !! provided, only the current
+                                                        !! rank will be able to
+                                                        !! act on the file.
+  logical, intent(in), optional :: is_restart !< Flag telling if this file
+                                              !! is a restart file.  Defaults
+                                              !! to false.
+  logical :: success
+
+  integer :: nc_format_param
+  integer :: err
+  character(len=256) :: buf
+  logical :: is_res
+
+  !Add ".res" to the file path if necessary.
+  call string_copy(buf, trim(path))
+  is_res = .false.
+  if (present(is_restart)) then
+    is_res = is_restart
+  endif
+  if (is_res) then
+    call restart_filepath_mangle(buf, buf)
+  endif
+
+  !Check if the file exists.
+  success = .true.
+  if (string_compare(mode, "read", .true.) .or. &
+      string_compare(mode, "append", .true.)) then
+    success = file_exists(buf)
+    if (.not. success) then
+      return
+    endif
+  endif
+
+  !Store properties in the derived type.
+  call string_copy(fileobj%path, trim(buf))
+  if (allocated(fileobj%pelist)) then
+    deallocate(fileobj%pelist)
+  endif
+  if (present(pelist)) then
+    allocate(fileobj%pelist(size(pelist)))
+    fileobj%pelist(:) = pelist(:)
+  else
+    allocate(fileobj%pelist(1))
+    fileobj%pelist(1) = mpp_pe()
+  endif
+  fileobj%io_root = fileobj%pelist(1)
+  if (mpp_pe() .eq. fileobj%io_root) then
+    fileobj%is_root = .true.
+  else
+    fileobj%is_root = .false.
+  endif
+  fileobj%is_restart = is_res
+  if (fileobj%is_restart) then
+    allocate(fileobj%restart_vars(max_num_restart_vars))
+    fileobj%num_restart_vars = 0
+  endif
+  if (string_compare(mode, "read", .true.)) then
+    fileobj%is_readonly = .true.
+  else
+    fileobj%is_readonly = .false.
+  endif
+  allocate(fileobj%compressed_dims(max_num_compressed_dims))
+  fileobj%num_compressed_dims = 0
+
+  !Open the file with netcdf if this rank is the I/O root.
+  if (fileobj%is_root) then
+    nc_format_param = nf90_64bit_offset
+    if (present(nc_format)) then
+      if (string_compare(nc_format, "64bit", .true.)) then
+        nc_format_param = nf90_64bit_offset
+      elseif (string_compare(nc_format, "classic", .true.)) then
+        nc_format_param = nf90_classic_model
+      elseif (string_compare(nc_format, "netcdf4", .true.)) then
+        nc_format_param = nf90_hdf5
+      else
+        call error("unrecognized netcdf file format "//trim(nc_format)//".")
+      endif
+    endif
+    if (string_compare(mode, "read", .true.)) then
+      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+    elseif (string_compare(mode, "append", .true.)) then
+      err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid)
+    elseif (string_compare(mode, "write", .true.)) then
+      err = nf90_create(trim(fileobj%path), &
+                        ior(nf90_noclobber, nc_format_param), fileobj%ncid)
+    elseif (string_compare(mode,"overwrite",.true.)) then
+      err = nf90_create(trim(fileobj%path), &
+                        ior(nf90_clobber,nc_format_param), fileobj%ncid)
+    else
+      call error("unrecognized file mode "//trim(mode)//".")
+    endif
+    call check_netcdf_code(err)
+  else
+    fileobj%ncid = missing_ncid
+  endif
+end function netcdf_file_open
+
+
+!> @brief Close a netcdf file.
+subroutine netcdf_file_close(fileobj)
+
+  class(FmsNetcdfFile_t),intent(inout) :: fileobj !< File object.
+
+  integer :: err
+  integer :: i
+
+  if (fileobj%is_root) then
+    err = nf90_close(fileobj%ncid)
+    call check_netcdf_code(err)
+  endif
+  fileobj%path = missing_path
+  fileobj%ncid = missing_ncid
+  if (allocated(fileobj%pelist)) then
+    deallocate(fileobj%pelist)
+  endif
+  fileobj%io_root = missing_rank
+  fileobj%is_root = .false.
+  if (allocated(fileobj%restart_vars)) then
+    deallocate(fileobj%restart_vars)
+  endif
+  fileobj%is_restart = .false.
+  fileobj%num_restart_vars = 0
+  do i = 1, fileobj%num_compressed_dims
+    if (allocated(fileobj%compressed_dims(i)%npes_corner)) then
+      deallocate(fileobj%compressed_dims(i)%npes_corner)
+    endif
+    if (allocated(fileobj%compressed_dims(i)%npes_nelems)) then
+      deallocate(fileobj%compressed_dims(i)%npes_nelems)
+    endif
+  enddo
+  deallocate(fileobj%compressed_dims)
+end subroutine netcdf_file_close
+
+
+!> @brief Get the index of a compressed dimension in a file object.
+!! @return Index of the compressed dimension.
+!! @internal
+function get_compressed_dimension_index(fileobj, dim_name) &
+  result(dindex)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dim_name !< Dimension name.
+
+  integer :: dindex
+  integer :: i
+
+  dindex = dimension_not_found
+  do i = 1, fileobj%num_compressed_dims
+    if (string_compare(fileobj%compressed_dims(i)%dimname, dim_name)) then
+      dindex = i
+      return
+    endif
+  enddo
+end function get_compressed_dimension_index
+
+
+!> @brief Add a compressed dimension to a file object.
+!! @internal
+subroutine append_compressed_dimension(fileobj, dim_name, npes_corner, &
+                                       npes_nelems)
+
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  character(len=*), intent(in) :: dim_name !< Dimension name.
+  integer, dimension(:), intent(in) :: npes_corner !< Array of starting
+                                                   !! indices for each rank.
+  integer, dimension(:), intent(in) :: npes_nelems !< Number of elements
+                                                   !! associated with each
+                                                   !! rank.
+
+  integer :: n
+
+  if (get_compressed_dimension_index(fileobj, dim_name) .ne. dimension_not_found) then
+    call error("dimension "//trim(dim_name)//" already registered" &
+               //" to file "//trim(fileobj%path)//".")
+  endif
+  fileobj%num_compressed_dims = fileobj%num_compressed_dims + 1
+  n = fileobj%num_compressed_dims
+  if (n .gt. max_num_compressed_dims) then
+    call error("number of compressed dimensions exceeds limit.")
+  endif
+  call string_copy(fileobj%compressed_dims(n)%dimname, dim_name)
+  if (size(npes_corner) .ne. size(fileobj%pelist) .or. &
+      size(npes_nelems) .ne. size(fileobj%pelist)) then
+    call error("incorrect size for input npes_corner or npes_nelems arrays.")
+  endif
+  allocate(fileobj%compressed_dims(n)%npes_corner(size(fileobj%pelist)))
+  fileobj%compressed_dims(n)%npes_corner(:) = npes_corner(:)
+  allocate(fileobj%compressed_dims(n)%npes_nelems(size(fileobj%pelist)))
+  fileobj%compressed_dims(n)%npes_nelems(:) = npes_nelems(:)
+  fileobj%compressed_dims(n)%nelems = sum(fileobj%compressed_dims(n)%npes_nelems)
+end subroutine append_compressed_dimension
+
+
+!> @brief Add a dimension to a file.
+subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
+                                is_compressed)
+
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+  integer, intent(in) :: dimension_length !< Dimension length.
+  logical, intent(in), optional :: is_compressed !< Changes the meaning of dim_len from
+                                                 !! referring to the total size of the
+                                                 !! dimension (when false) to the local
+                                                 !! size for the current rank (when true).
+
+  integer :: dim_len
+  integer, dimension(:), allocatable :: npes_start
+  integer, dimension(:), allocatable :: npes_count
+  integer :: i
+  integer :: err
+  integer :: dimid
+
+  dim_len = dimension_length
+  if (present(is_compressed)) then
+    if (is_compressed) then
+      !Gather all local dimension lengths on the I/O root pe.
+      allocate(npes_start(size(fileobj%pelist)))
+      allocate(npes_count(size(fileobj%pelist)))
+      do i = 1, size(fileobj%pelist)
+        if (fileobj%pelist(i) .eq. mpp_pe()) then
+          npes_count(i) = dim_len
+        else
+          call mpp_recv(npes_count(i), fileobj%pelist(i), block=.false.)
+          call mpp_send(dim_len, fileobj%pelist(i))
+        endif
+      enddo
+      call mpp_sync_self(check=event_recv)
+      call mpp_sync_self(check=event_send)
+      npes_start(1) = 1
+      do i = 1, size(fileobj%pelist)-1
+        npes_start(i+1) = npes_start(i) + npes_count(i)
+      enddo
+      call append_compressed_dimension(fileobj, dimension_name, npes_start, &
+                                       npes_count)
+      dim_len = sum(npes_count)
+    endif
+  endif
+  if (fileobj%is_root) then
+    call set_netcdf_mode(fileobj%ncid, define_mode)
+    err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
+    call check_netcdf_code(err)
+  endif
+end subroutine netcdf_add_dimension
+
+
+!> @brief Add a compressed dimension.
+subroutine register_compressed_dimension(fileobj, dimension_name, &
+                                         npes_corner, npes_nelems)
+
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+  integer, dimension(:), intent(in) :: npes_corner !< Array of starting
+                                                   !! indices for each rank.
+  integer, dimension(:), intent(in) :: npes_nelems !< Number of elements
+                                                   !! associated with each
+                                                   !! rank.
+
+  integer :: dsize
+  integer :: fdim_size
+
+  call append_compressed_dimension(fileobj, dimension_name, npes_corner, &
+                                   npes_nelems)
+  dsize = sum(npes_nelems)
+  if (fileobj%is_readonly) then
+    call get_dimension_size(fileobj, dimension_name, fdim_size, &
+                            broadcast=.true.)
+    if (fdim_size .ne. dsize) then
+      call error("dimension "//trim(dimension_name)//" does not match" &
+                 //" the size of the associated compressed axis.")
+    endif
+  else
+    call netcdf_add_dimension(fileobj, dimension_name, dsize)
+  endif
+end subroutine register_compressed_dimension
+
+
+!> @brief Add a variable to a file.
+subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
+                                                !! values are: "char", "int", "int64",
+                                                !! "float", or "double".
+  character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+
+  integer :: err
+  integer, dimension(:), allocatable :: dimids
+  integer :: vtype
+  integer :: varid
+  integer :: i
+
+  if (fileobj%is_root) then
+    call set_netcdf_mode(fileobj%ncid, define_mode)
+    if (string_compare(variable_type, "int", .true.)) then
+      vtype = nf90_int
+    elseif (string_compare(variable_type, "int64", .true.)) then
+      vtype = nf90_int64
+    elseif (string_compare(variable_type, "float", .true.)) then
+      vtype = nf90_float
+    elseif (string_compare(variable_type, "double", .true.)) then
+      vtype = nf90_double
+    elseif (string_compare(variable_type, "char", .true.)) then
+      vtype = nf90_char
+      if (.not. present(dimensions)) then
+        call error("string variables require a string length dimension.")
+      endif
+    else
+      call error("unsupported type.")
+    endif
+    if (present(dimensions)) then
+      allocate(dimids(size(dimensions)))
+      do i = 1, size(dimids)
+        dimids(i) = get_dimension_id(fileobj%ncid, trim(dimensions(i)))
+      enddo
+      err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
+      deallocate(dimids)
+    else
+      err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
+    endif
+    call check_netcdf_code(err)
+  endif
+end subroutine netcdf_add_variable
+
+
+!> @brief Given a compressed variable, get the index of the compressed
+!!        dimension.
+!! @return Index of the compressed dimension or dimension_not_found.
+function get_variable_compressed_dimension_index(fileobj, variable_name, broadcast) &
+  result(compressed_dimension_index)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  integer :: compressed_dimension_index
+
+  integer :: ndims
+  character(len=nf90_max_name), dimension(:), allocatable :: dim_names
+  integer :: i
+
+  compressed_dimension_index = dimension_not_found
+  if (fileobj%is_root) then
+    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+    allocate(dim_names(ndims))
+    call get_variable_dimension_names(fileobj, variable_name, dim_names, broadcast=.false.)
+    do i = 1, size(dim_names)
+      if (get_compressed_dimension_index(fileobj,dim_names(i)) .ne. dimension_not_found) then
+        compressed_dimension_index = i
+        exit
+      endif
+    enddo
+    deallocate(dim_names)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+    call mpp_broadcast(compressed_dimension_index, fileobj%io_root, pelist=fileobj%pelist)
+end function get_variable_compressed_dimension_index
+
+
+!> @brief Add a restart variable to a FmsNetcdfFile_t type.
+!! @internal
+subroutine add_restart_var_to_array(fileobj, variable_name)
+
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Netcdf file object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+
+  integer :: i
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+  do i = 1, fileobj%num_restart_vars
+    if (string_compare(fileobj%restart_vars(i)%varname, variable_name, .true.)) then
+      call error("variable "//trim(variable_name)//" has already" &
+                 //" been added to restart file "//trim(fileobj%path)//".")
+    endif
+  enddo
+  fileobj%num_restart_vars = fileobj%num_restart_vars + 1
+  if (fileobj%num_restart_vars .gt. max_num_restart_vars) then
+    call error("Number of restart variables exceeds limit.")
+  endif
+  call string_copy(fileobj%restart_vars(fileobj%num_restart_vars)%varname, &
+                   variable_name)
+end subroutine add_restart_var_to_array
+
+
+!> @brief Loop through registered restart variables and write them to
+!!        a netcdf file.
+subroutine netcdf_save_restart(fileobj, unlim_dim_level)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+
+  integer :: i
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+  do i = 1, fileobj%num_restart_vars
+    if (associated(fileobj%restart_vars(i)%data0d)) then
+      call compressed_write(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data0d, &
+                            unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data1d)) then
+      call compressed_write(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data1d, &
+                            unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data2d)) then
+      call compressed_write(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data2d, &
+                            unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data3d)) then
+      call compressed_write(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data3d, &
+                            unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data4d)) then
+      call compressed_write(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data4d, &
+                            unlim_dim_level=unlim_dim_level)
+    else
+      call error("this branch should not be reached.")
+    endif
+  enddo
+end subroutine netcdf_save_restart
+
+
+!> @brief Loop through registered restart variables and read them from
+!!        a netcdf file.
+subroutine netcdf_restore_state(fileobj, unlim_dim_level)
+
+  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                   !! level.
+
+  integer :: i
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+  do i = 1, fileobj%num_restart_vars
+    if (associated(fileobj%restart_vars(i)%data0d)) then
+      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data0d, &
+                            unlim_dim_level=unlim_dim_level, &
+                            broadcast=.true.)
+    elseif (associated(fileobj%restart_vars(i)%data1d)) then
+      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data1d, &
+                            unlim_dim_level=unlim_dim_level, &
+                            broadcast=.true.)
+    elseif (associated(fileobj%restart_vars(i)%data2d)) then
+      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data2d, &
+                            unlim_dim_level=unlim_dim_level, &
+                            broadcast=.true.)
+    elseif (associated(fileobj%restart_vars(i)%data3d)) then
+      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data3d, &
+                            unlim_dim_level=unlim_dim_level, &
+                            broadcast=.true.)
+    elseif (associated(fileobj%restart_vars(i)%data4d)) then
+      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%data4d, &
+                            unlim_dim_level=unlim_dim_level, &
+                            broadcast=.true.)
+    else
+      call error("this branch should not be reached.")
+    endif
+  enddo
+end subroutine netcdf_restore_state
+
+
+!> @brief Determine if a global attribute exists.
+!! @return Flag telling if a global attribute exists.
+function global_att_exists(fileobj, attribute_name, broadcast) &
+  result(att_exists)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: attribute_name !< Attribute name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  logical :: att_exists
+
+  if (fileobj%is_root) then
+    att_exists = attribute_exists(fileobj%ncid, nf90_global, trim(attribute_name))
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(att_exists, fileobj%io_root, pelist=fileobj%pelist)
+end function global_att_exists
+
+
+!> @brief Determine if a variable's attribute exists.
+!! @return Flag telling if the variable's attribute exists.
+function variable_att_exists(fileobj, variable_name, attribute_name, &
+                             broadcast) &
+  result(att_exists)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), intent(in) :: attribute_name !< Attribute name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  logical :: att_exists
+
+  integer :: varid
+
+  if (fileobj%is_root) then
+    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    att_exists = attribute_exists(fileobj%ncid, varid, trim(attribute_name))
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(att_exists, fileobj%io_root, pelist=fileobj%pelist)
+end function variable_att_exists
+
+
+!> @brief Determine the number of dimensions in a file.
+!! @return The number of dimensions in the file.
+function get_num_dimensions(fileobj, broadcast) &
+  result(ndims)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  integer :: ndims
+
+  integer :: err
+
+  if (fileobj%is_root) then
+    err = nf90_inquire(fileobj%ncid, nDimensions=ndims)
+    call check_netcdf_code(err)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(ndims, fileobj%io_root, pelist=fileobj%pelist)
+end function get_num_dimensions
+
+
+!> @brief Get the names of the dimensions in a file.
+subroutine get_dimension_names(fileobj, names, broadcast)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), dimension(:), intent(inout) :: names !< Names of the
+                                                         !! dimensions.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+
+  integer :: ndims
+  integer :: i
+  integer :: err
+
+  if (fileobj%is_root) then
+    ndims = get_num_dimensions(fileobj, broadcast=.false.)
+    if (ndims .gt. 0) then
+      if (size(names) .ne. ndims) then
+        call error("incorrect size of names array.")
+      endif
+    else
+      call error("there are no dimensions in this file.")
+    endif
+    names(:) = ""
+    do i = 1, ndims
+      err = nf90_inquire_dimension(fileobj%ncid, i, name=names(i))
+      call check_netcdf_code(err)
+    enddo
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(ndims, fileobj%io_root, pelist=fileobj%pelist)
+  if (.not. fileobj%is_root) then
+    if (ndims .gt. 0) then
+      if (size(names) .ne. ndims) then
+        call error("incorrect size of names array.")
+      endif
+    else
+      call error("there are no dimensions in this file.")
+    endif
+    names(:) = ""
+  endif
+  call mpp_broadcast(names, len(names(ndims)), fileobj%io_root, &
+                     pelist=fileobj%pelist)
+end subroutine get_dimension_names
+
+
+!> @brief Determine if a dimension exists.
+!! @return Flag telling if the dimension exists.
+function dimension_exists(fileobj, dimension_name, broadcast) &
+  result(dim_exists)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  logical :: dim_exists
+
+  integer :: dimid
+
+  if (fileobj%is_root) then
+    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), &
+                             allow_failure=.true.)
+    if (dimid .eq. dimension_missing) then
+      dim_exists = .false.
+    else
+      dim_exists = .true.
+    endif
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(dim_exists, fileobj%io_root, pelist=fileobj%pelist)
+end function dimension_exists
+
+
+!> @brief Determine where or not the dimension is unlimited.
+!! @return True if the dimension is unlimited, or else false.
+function is_dimension_unlimited(fileobj, dimension_name, broadcast) &
+  result(is_unlimited)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  logical :: is_unlimited
+
+  integer :: dimid
+  integer :: err
+  integer :: ulim_dimid
+
+  if (fileobj%is_root) then
+    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name))
+    err = nf90_inquire(fileobj%ncid, unlimitedDimId=ulim_dimid)
+    call check_netcdf_code(err)
+    is_unlimited = dimid .eq. ulim_dimid
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(is_unlimited, fileobj%io_root, pelist=fileobj%pelist)
+end function is_dimension_unlimited
+
+
+!> @brief Get the name of the unlimited dimension.
+subroutine get_unlimited_dimension_name(fileobj, dimension_name, broadcast)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(out) :: dimension_name !< Dimension name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+
+  integer :: err
+  integer :: dimid
+  character(len=nf90_max_name), dimension(1) :: buffer
+
+  dimension_name = ""
+  if (fileobj%is_root) then
+    err = nf90_inquire(fileobj%ncid, unlimitedDimId=dimid)
+    call check_netcdf_code(err)
+    err = nf90_inquire_dimension(fileobj%ncid, dimid, dimension_name)
+    call check_netcdf_code(err)
+    call string_copy(buffer(1), dimension_name)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(buffer, nf90_max_name, fileobj%io_root, &
+                     pelist=fileobj%pelist)
+  call string_copy(dimension_name, buffer(1))
+end subroutine get_unlimited_dimension_name
+
+
+!> @brief Get the length of a dimension.
+subroutine get_dimension_size(fileobj, dimension_name, dim_size, broadcast)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+  integer, intent(inout) :: dim_size !< Dimension size.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+
+  integer :: dimid
+  integer :: err
+
+  if (fileobj%is_root) then
+    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name))
+    err = nf90_inquire_dimension(fileobj%ncid, dimid, len=dim_size)
+    call check_netcdf_code(err)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(dim_size, fileobj%io_root, pelist=fileobj%pelist)
+end subroutine get_dimension_size
+
+
+!> @brief Determine the number of variables in a file.
+!! @return The number of variables in the file.
+function get_num_variables(fileobj, broadcast) &
+  result(nvars)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  integer :: nvars
+
+  integer :: err
+
+  if (fileobj%is_root) then
+    err = nf90_inquire(fileobj%ncid, nVariables=nvars)
+    call check_netcdf_code(err)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(nvars, fileobj%io_root, pelist=fileobj%pelist)
+end function get_num_variables
+
+
+!> @brief Get the names of the variables in a file.
+subroutine get_variable_names(fileobj, names, broadcast)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), dimension(:), intent(inout) :: names !< Names of the
+                                                         !! variables.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+
+  integer :: nvars
+  integer :: i
+  integer :: err
+
+  if (fileobj%is_root) then
+    nvars = get_num_variables(fileobj, broadcast=.false.)
+    if (nvars .gt. 0) then
+      if (size(names) .ne. nvars) then
+        call error("names array has incorrect size.")
+      endif
+    else
+      call error("there are no variables in this file.")
+    endif
+    names(:) = ""
+    do i = 1, nvars
+      err = nf90_inquire_variable(fileobj%ncid, i, name=names(i))
+      call check_netcdf_code(err)
+    enddo
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(nvars, fileobj%io_root, pelist=fileobj%pelist)
+  if (.not. fileobj%is_root) then
+    if (nvars .gt. 0) then
+      if (size(names) .ne. nvars) then
+        call error("names array has incorrect size.")
+      endif
+    else
+      call error("there are no variables in this file.")
+    endif
+    names(:) = ""
+  endif
+  call mpp_broadcast(names, len(names(nvars)), fileobj%io_root, &
+                     pelist=fileobj%pelist)
+end subroutine get_variable_names
+
+
+!> @brief Determine if a variable exists.
+!! @return Flag telling if the variable exists.
+function variable_exists(fileobj, variable_name, broadcast) &
+  result(var_exists)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  logical :: var_exists
+
+  integer :: varid
+
+  if (fileobj%is_root) then
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+                            allow_failure=.true.)
+    var_exists = varid .ne. variable_missing
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(var_exists, fileobj%io_root, pelist=fileobj%pelist)
+end function variable_exists
+
+
+!> @brief Get the number of dimensions a variable depends on.
+!! @return Number of dimensions that the variable depends on.
+function get_variable_num_dimensions(fileobj, variable_name, broadcast) &
+  result(ndims)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  integer :: ndims
+
+  integer :: varid
+  integer :: err
+
+  if (fileobj%is_root) then
+    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims)
+    call check_netcdf_code(err)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(ndims, fileobj%io_root, pelist=fileobj%pelist)
+end function get_variable_num_dimensions
+
+
+!> @brief Get the name of a variable's dimensions.
+subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
+                                        broadcast)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), dimension(:), intent(inout) :: dim_names !< Array of
+                                                             !! dimension
+                                                             !! names.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+
+  integer :: varid
+  integer :: err
+  integer :: ndims
+  integer,dimension(nf90_max_var_dims) :: dimids
+  integer :: i
+
+
+
+  if (fileobj%is_root) then
+    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims, &
+                                dimids=dimids)
+    call check_netcdf_code(err)
+    if (ndims .gt. 0) then
+      if (size(dim_names) .ne. ndims) then
+        call error("incorrect size of dim_names array.")
+      endif
+    else
+      call error("this variable is a scalar.")
+    endif
+    dim_names(:) = ""
+    do i = 1, ndims
+      err = nf90_inquire_dimension(fileobj%ncid, dimids(i), name=dim_names(i))
+      call check_netcdf_code(err)
+    enddo
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(ndims, fileobj%io_root, pelist=fileobj%pelist)
+  if (.not. fileobj%is_root) then
+    if (ndims .gt. 0) then
+      if (size(dim_names) .ne. ndims) then
+        call error("incorrect size of dim_names array.")
+      endif
+    else
+      call error("this variable is a scalar.")
+    endif
+    dim_names(:) = ""
+  endif
+  call mpp_broadcast(dim_names, len(dim_names(ndims)), fileobj%io_root, &
+                     pelist=fileobj%pelist)
+end subroutine get_variable_dimension_names
+
+
+!> @brief Get the size of a variable's dimensions.
+subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  integer, dimension(:), intent(inout) :: dim_sizes !< Array of dimension
+                                                    !! sizes.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+
+  integer :: varid
+  integer :: err
+  integer :: ndims
+  integer,dimension(nf90_max_var_dims) :: dimids
+  integer :: i
+
+  if (fileobj%is_root) then
+    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims, dimids=dimids)
+    call check_netcdf_code(err)
+    if (ndims .gt. 0) then
+      if (size(dim_sizes) .ne. ndims) then
+        call error("incorrect size of dim_sizes array.")
+      endif
+    else
+      call error("this variable is a scalar.")
+    endif
+    do i = 1, ndims
+      err = nf90_inquire_dimension(fileobj%ncid, dimids(i), len=dim_sizes(i))
+      call check_netcdf_code(err)
+    enddo
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(ndims, fileobj%io_root, pelist=fileobj%pelist)
+  if (.not. fileobj%is_root) then
+    if (ndims .gt. 0) then
+      if (size(dim_sizes) .ne. ndims) then
+        call error("incorrect size of dim_names array.")
+      endif
+    else
+      call error("this variable is a scalar.")
+    endif
+  endif
+  call mpp_broadcast(dim_sizes, ndims, fileobj%io_root, pelist=fileobj%pelist)
+end subroutine get_variable_size
+
+
+!> @brief Get the index of a variable's unlimited dimensions.
+!! @return The index of the unlimited dimension, or else
+!!         no_unlimited_dimension.
+function get_variable_unlimited_dimension_index(fileobj, variable_name, &
+                                                broadcast) &
+  result(unlim_dim_index)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  integer :: unlim_dim_index
+
+  integer :: ndims
+  character(len=nf90_max_name), dimension(:), allocatable :: dim_names
+  integer :: i
+
+  unlim_dim_index = no_unlimited_dimension
+  if (fileobj%is_root) then
+    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+    allocate(dim_names(ndims))
+    call get_variable_dimension_names(fileobj, variable_name, dim_names, &
+                                      broadcast=.false.)
+    do i = 1, size(dim_names)
+      if (is_dimension_unlimited(fileobj, dim_names(i), .false.)) then
+        unlim_dim_index = i
+        exit
+      endif
+    enddo
+    deallocate(dim_names)
+  endif
+  if (present(broadcast)) then
+    if (.not. broadcast) then
+      return
+    endif
+  endif
+  call mpp_broadcast(unlim_dim_index, fileobj%io_root, pelist=fileobj%pelist)
+end function get_variable_unlimited_dimension_index
+
+
 !> @brief Store the valid range for a variable.
 !! @return A ValidType_t object containing data about the valid
 !!         range data for this variable can take.
 function get_valid(fileobj, variable_name) &
   result(valid)
 
-  class(NetcdfFile_t), intent(in) :: fileobj !< File object.
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   type(Valid_t) :: valid
 
@@ -454,1038 +1584,6 @@ elemental function is_valid(datum, validobj) &
 end function is_valid
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!> @brief Add a restart variable to a NetcdfFile_t type.
-subroutine add_restart_var_to_array(fileobj, &
-                                    variable_name)
-    class(NetcdfFile_t),intent(inout) :: fileobj !< Netcdf file object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    integer :: i
-    if (.not. fileobj%is_restart) then
-        call error("file "//trim(fileobj%path)//" is not a restart file.")
-    endif
-    do i = 1,fileobj%num_restart_vars
-        if (string_compare(fileobj%restart_vars(i)%varname,variable_name,.true.)) then
-            call error("variable "//trim(variable_name)//" has already" &
-                       //" been added to restart file " &
-                       //trim(fileobj%path)//".")
-        endif
-    enddo
-    fileobj%num_restart_vars = fileobj%num_restart_vars + 1
-    if (fileobj%num_restart_vars .gt. max_num_restart_vars) then
-        call error("Number of restart variables exceeds limit.")
-    endif
-    call string_copy(fileobj%restart_vars(fileobj%num_restart_vars)%varname, &
-                     variable_name)
-end subroutine add_restart_var_to_array
-
-
-!> @brief Open a netcdf file.
-!! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, &
-                          path, &
-                          mode, &
-                          nc_format, &
-                          pelist, &
-                          is_restart) &
-    result(success)
-
-    !Inputs/outputs.
-    class(NetcdfFile_t),intent(inout) :: fileobj !< File object.
-    character(len=*),intent(in) :: path !< File path.
-    character(len=*),intent(in) :: mode !< File mode.  Allowed values are:
-                                        !! "read", "append", "write", or
-                                        !! "overwrite".
-    character(len=*),intent(in),optional :: nc_format !< Netcdf format that
-                                                      !! new files are written
-                                                      !! as.  Allowed values
-                                                      !! are: "64bit", "classic",
-                                                      !! or "netcdf4". Defaults to
-                                                      !! "64bit".
-    integer,dimension(:),intent(in),optional :: pelist !< List of ranks associated
-                                                       !! with this file.  If not
-                                                       !! provided, only the current
-                                                       !! rank will be able to
-                                                       !! act on the file.
-    logical,intent(in),optional :: is_restart !< Flag telling if this file
-                                              !! is a restart file.  Defaults
-                                              !! to false.
-    logical :: success
-
-    !Local variables.
-    integer :: nc_format_param
-    integer :: err
-    character(len=256) :: buf
-    logical :: is_res
-
-    !Add ".res" to the file path if necessary.
-    call string_copy(buf, &
-                     trim(path))
-    if (present(is_restart)) then
-        is_res = is_restart
-    else
-        is_res = .false.
-    endif
-    if (is_res) then
-        call restart_filepath_mangle(buf, &
-                                     buf)
-    endif
-
-    !Check if the file exists.
-    if (string_compare(mode,"read",.true.) .or. &
-        string_compare(mode,"append",.true.)) then
-        success = file_exists(buf)
-        if (.not. success) then
-            return
-        endif
-    else
-        success = .true.
-    endif
-
-    !Store properties in the derived type.
-    call string_copy(fileobj%path, &
-                     trim(buf))
-    if (allocated(fileobj%pelist)) then
-        deallocate(fileobj%pelist)
-    endif
-    if (present(pelist)) then
-        allocate(fileobj%pelist(size(pelist)))
-        fileobj%pelist = pelist
-    else
-        allocate(fileobj%pelist(1))
-        fileobj%pelist(1) = mpp_pe()
-    endif
-    fileobj%io_root = fileobj%pelist(1)
-    if (mpp_pe() .eq. fileobj%io_root) then
-        fileobj%is_root = .true.
-    else
-        fileobj%is_root = .false.
-    endif
-    fileobj%is_restart = is_res
-    if (fileobj%is_restart) then
-        allocate(fileobj%restart_vars(max_num_restart_vars))
-        fileobj%num_restart_vars = 0
-    endif
-    if (string_compare(mode,"read",.true.)) then
-        fileobj%is_readonly = .true.
-    else
-        fileobj%is_readonly = .false.
-    endif
-
-    !Open the file with netcdf if this rank is the I/O root.
-    if (fileobj%is_root) then
-        if (present(nc_format)) then
-            if (string_compare(nc_format,"64bit",.true.)) then
-                nc_format_param = nf90_64bit_offset
-            elseif (string_compare(nc_format,"classic",.true.)) then
-                nc_format_param = nf90_classic_model
-            elseif (string_compare(nc_format,"netcdf4",.true.)) then
-                nc_format_param = nf90_hdf5
-            else
-                call error("unrecognized netcdf file format " &
-                           //trim(nc_format)//".")
-            endif
-        else
-            nc_format_param = nf90_64bit_offset
-        endif
-        if (string_compare(mode,"read",.true.)) then
-            err = nf90_open(trim(fileobj%path), &
-                            nf90_nowrite, &
-                            fileobj%ncid)
-        elseif (string_compare(mode,"append",.true.)) then
-            err = nf90_open(trim(fileobj%path), &
-                            nf90_write, &
-                            fileobj%ncid)
-        elseif (string_compare(mode,"write",.true.)) then
-            err = nf90_create(trim(fileobj%path), &
-                              ior(nf90_noclobber,nc_format_param), &
-                              fileobj%ncid)
-        elseif (string_compare(mode,"overwrite",.true.)) then
-            err = nf90_create(trim(fileobj%path), &
-                              ior(nf90_clobber,nc_format_param), &
-                              fileobj%ncid)
-        else
-            call error("unrecognized file mode "//trim(mode)//".")
-        endif
-        call check_netcdf_code(err)
-    else
-        fileobj%ncid = missing_ncid
-    endif
-end function netcdf_file_open
-
-
-!> @brief Close a netcdf file.
-subroutine netcdf_file_close(fileobj)
-    class(NetcdfFile_t),intent(inout) :: fileobj !< File object.
-    integer :: err
-    if (fileobj%is_root) then
-        err = nf90_close(fileobj%ncid)
-        call check_netcdf_code(err)
-    endif
-    fileobj%path = missing_path
-    fileobj%ncid = missing_ncid
-    if (allocated(fileobj%pelist)) then
-        deallocate(fileobj%pelist)
-    endif
-    fileobj%io_root = missing_rank
-    fileobj%is_root = .false.
-    if (allocated(fileobj%restart_vars)) then
-        deallocate(fileobj%restart_vars)
-    endif
-    fileobj%is_restart = .false.
-    fileobj%num_restart_vars = 0
-end subroutine netcdf_file_close
-
-
-!> @brief Add a dimension to a file.
-subroutine netcdf_add_dimension(fileobj, &
-                                dimension_name, &
-                                dim_len)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: dimension_name !< Dimension name.
-    integer,intent(in) :: dim_len !< Dimension length.
-    integer :: err
-    integer :: dimid
-    if (fileobj%is_root) then
-        call set_netcdf_mode(fileobj%ncid, &
-                             define_mode)
-        err = nf90_def_dim(fileobj%ncid, &
-                           trim(dimension_name), &
-                           dim_len, &
-                           dimid)
-        call check_netcdf_code(err)
-    endif
-end subroutine netcdf_add_dimension
-
-
-!> @brief Add a variable to a file.
-subroutine netcdf_add_variable(fileobj, &
-                               variable_name, &
-                               variable_type, &
-                               dimensions)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    character(len=*),intent(in) :: variable_type !< Variable type.  Allowed
-                                                 !! values are: "int", "int64",
-                                                 !! "float", or "double".
-    character(len=*),dimension(:),intent(in),optional :: dimensions !< Dimension names.
-    integer :: err
-    integer,dimension(:),allocatable :: dimids
-    integer :: vtype
-    integer :: varid
-    integer :: i
-    if (fileobj%is_root) then
-        call set_netcdf_mode(fileobj%ncid, &
-                             define_mode)
-        if (string_compare(variable_type,"int",.true.)) then
-            vtype = nf90_int
-        elseif (string_compare(variable_type,"int64",.true.)) then
-            vtype = nf90_int64
-        elseif (string_compare(variable_type,"float",.true.)) then
-            vtype = nf90_float
-        elseif (string_compare(variable_type,"double",.true.)) then
-            vtype = nf90_double
-        else
-            call error("unsupported type.")
-        endif
-        if (present(dimensions)) then
-            allocate(dimids(size(dimensions)))
-            do i = 1,size(dimids)
-                dimids(i) = get_dimension_id(fileobj%ncid, &
-                                             trim(dimensions(i)))
-            enddo
-            err = nf90_def_var(fileobj%ncid, &
-                               trim(variable_name), &
-                               vtype, &
-                               dimids, &
-                               varid)
-            deallocate(dimids)
-        else
-            err = nf90_def_var(fileobj%ncid, &
-                               trim(variable_name), &
-                               vtype, &
-                               varid)
-        endif
-        call check_netcdf_code(err)
-    endif
-end subroutine netcdf_add_variable
-
-
-!> @brief Loop through registered restart variables and write them to
-!!        a netcdf file.
-subroutine netcdf_save_restart(fileobj, &
-                               unlim_dim_level)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    integer,intent(in),optional :: unlim_dim_level !< Unlimited dimension
-                                                   !! level.
-    integer :: i
-    if (.not. fileobj%is_restart) then
-        call error("file "//trim(fileobj%path)//" is not a restart file.")
-    endif
-    do i = 1,fileobj%num_restart_vars
-        if (associated(fileobj%restart_vars(i)%data0d)) then
-            call netcdf_write_data(fileobj, &
-                                   fileobj%restart_vars(i)%varname, &
-                                   fileobj%restart_vars(i)%data0d, &
-                                   unlim_dim_level=unlim_dim_level)
-        elseif (associated(fileobj%restart_vars(i)%data1d)) then
-            call netcdf_write_data(fileobj, &
-                                   fileobj%restart_vars(i)%varname, &
-                                   fileobj%restart_vars(i)%data1d, &
-                                   unlim_dim_level=unlim_dim_level)
-        elseif (associated(fileobj%restart_vars(i)%data2d)) then
-            call netcdf_write_data(fileobj, &
-                                   fileobj%restart_vars(i)%varname, &
-                                   fileobj%restart_vars(i)%data2d, &
-                                   unlim_dim_level=unlim_dim_level)
-        elseif (associated(fileobj%restart_vars(i)%data3d)) then
-            call netcdf_write_data(fileobj, &
-                                   fileobj%restart_vars(i)%varname, &
-                                   fileobj%restart_vars(i)%data3d, &
-                                   unlim_dim_level=unlim_dim_level)
-        elseif (associated(fileobj%restart_vars(i)%data4d)) then
-            call netcdf_write_data(fileobj, &
-                                   fileobj%restart_vars(i)%varname, &
-                                   fileobj%restart_vars(i)%data4d, &
-                                   unlim_dim_level=unlim_dim_level)
-        else
-            call error("this branch should not be reached.")
-        endif
-    enddo
-end subroutine netcdf_save_restart
-
-
-!> @breif Loop through registered restart variables and read them from
-!!        a netcdf file.
-subroutine netcdf_restore_state(fileobj, &
-                                unlim_dim_level)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    integer,intent(in),optional :: unlim_dim_level !< Unlimited dimension
-                                                   !! level.
-    integer :: i
-    if (.not. fileobj%is_restart) then
-        call error("file "//trim(fileobj%path)//" is not a restart file.")
-    endif
-    do i = 1,fileobj%num_restart_vars
-        if (associated(fileobj%restart_vars(i)%data0d)) then
-            call netcdf_read_data(fileobj, &
-                                  fileobj%restart_vars(i)%varname, &
-                                  fileobj%restart_vars(i)%data0d, &
-                                  unlim_dim_level=unlim_dim_level, &
-                                  broadcast=.true.)
-        elseif (associated(fileobj%restart_vars(i)%data1d)) then
-            call netcdf_read_data(fileobj, &
-                                  fileobj%restart_vars(i)%varname, &
-                                  fileobj%restart_vars(i)%data1d, &
-                                  unlim_dim_level=unlim_dim_level, &
-                                  broadcast=.true.)
-        elseif (associated(fileobj%restart_vars(i)%data2d)) then
-            call netcdf_read_data(fileobj, &
-                                  fileobj%restart_vars(i)%varname, &
-                                  fileobj%restart_vars(i)%data2d, &
-                                  unlim_dim_level=unlim_dim_level, &
-                                  broadcast=.true.)
-        elseif (associated(fileobj%restart_vars(i)%data3d)) then
-            call netcdf_read_data(fileobj, &
-                                  fileobj%restart_vars(i)%varname, &
-                                  fileobj%restart_vars(i)%data3d, &
-                                  unlim_dim_level=unlim_dim_level, &
-                                  broadcast=.true.)
-        elseif (associated(fileobj%restart_vars(i)%data4d)) then
-            call netcdf_read_data(fileobj, &
-                                  fileobj%restart_vars(i)%varname, &
-                                  fileobj%restart_vars(i)%data4d, &
-                                  unlim_dim_level=unlim_dim_level, &
-                                  broadcast=.true.)
-        else
-            call error("this branch should not be reached.")
-        endif
-    enddo
-end subroutine netcdf_restore_state
-
-
-!> @brief Determine if a global attribute exists.
-!! @return Flag telling if a global attribute exists.
-function global_att_exists(fileobj, &
-                           attribute_name, &
-                           broadcast) &
-    result(att_exists)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: attribute_name !< Attribute name.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    logical :: att_exists
-    if (fileobj%is_root) then
-        att_exists = attribute_exists(fileobj%ncid, &
-                                      nf90_global, &
-                                      trim(attribute_name))
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(att_exists, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function global_att_exists
-
-
-!> @brief Determine if a variable's attribute exists.
-!! @return Flag telling if the variable's attribute exists.
-function variable_att_exists(fileobj, &
-                             variable_name, &
-                             attribute_name, &
-                             broadcast) &
-    result(att_exists)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    character(len=*),intent(in) :: attribute_name !< Attribute name.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    logical :: att_exists
-    integer :: varid
-    if (fileobj%is_root) then
-        varid = get_variable_id(fileobj%ncid, &
-                                trim(variable_name))
-        att_exists = attribute_exists(fileobj%ncid, &
-                                      varid, &
-                                      trim(attribute_name))
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(att_exists, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function variable_att_exists
-
-
-!> @brief Determine the number of dimensions in a file.
-!! @return The number of dimensions in the file.
-function get_num_dimensions(fileobj, &
-                            broadcast) &
-    result(ndims)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: ndims
-    integer :: err
-    if (fileobj%is_root) then
-        err = nf90_inquire(fileobj%ncid, &
-                           nDimensions=ndims)
-        call check_netcdf_code(err)
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(ndims, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function get_num_dimensions
-
-
-!> @brief Get the names of the dimensions in a file.
-subroutine get_dimension_names(fileobj, &
-                               names, &
-                               broadcast)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),dimension(:),allocatable,intent(inout) :: names !< Names of the
-                                                                     !! dimensions.
-                                                                     !! This routine will
-                                                                     !! reallocate this
-                                                                     !! array to the
-                                                                     !! correct number
-                                                                     !! of elements.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: ndims
-    integer :: i
-    integer :: err
-    if (allocated(names)) then
-        deallocate(names)
-    endif
-    if (fileobj%is_root) then
-        ndims = get_num_dimensions(fileobj, &
-                                   broadcast=.false.)
-        if (ndims .gt. 0) then
-            allocate(names(ndims))
-            names(:) = ""
-            do i = 1,ndims
-                err = nf90_inquire_dimension(fileobj%ncid, &
-                                             i, &
-                                             name=names(i))
-                call check_netcdf_code(err)
-            enddo
-        endif
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(ndims, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-    if (ndims .gt. 0) then
-        if (.not. fileobj%is_root) then
-            allocate(names(ndims))
-            names(:) = ""
-        endif
-        call mpp_broadcast(names, &
-                           len(names(ndims)), &
-                           fileobj%io_root, &
-                           pelist=fileobj%pelist)
-    endif
-end subroutine get_dimension_names
-
-
-!> @brief Determine if a dimension exists.
-!! @return Flag telling if the dimension exists.
-function dimension_exists(fileobj, &
-                          dimension_name, &
-                          broadcast) &
-    result(dim_exists)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: dimension_name !< Dimension name.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    logical :: dim_exists
-    integer :: dimid
-    if (fileobj%is_root) then
-        dimid = get_dimension_id(fileobj%ncid, &
-                                 trim(dimension_name), &
-                                 allow_failure=.true.)
-        if (dimid .eq. dimension_missing) then
-            dim_exists = .false.
-        else
-            dim_exists = .true.
-        endif
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(dim_exists, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function dimension_exists
-
-
-!> @breif Determine where or not the dimension is unlimited.
-!! @return True if the dimension is unlimited, or else false.
-function is_dimension_unlimited(fileobj, &
-                                dimension_name, &
-                                broadcast) &
-    result(is_unlimited)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: dimension_name !< Dimension name.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    logical :: is_unlimited
-    integer :: dimid
-    integer :: err
-    integer :: ulim_dimid
-    if (fileobj%is_root) then
-        dimid = get_dimension_id(fileobj%ncid, &
-                                 trim(dimension_name))
-        err = nf90_inquire(fileobj%ncid, &
-                           unlimitedDimId=ulim_dimid)
-        call check_netcdf_code(err)
-        is_unlimited = dimid .eq. ulim_dimid
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(is_unlimited, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function is_dimension_unlimited
-
-
-!> @brief Get the name of the unlimited dimension.
-subroutine get_unlimited_dimension_name(fileobj, dimension_name, broadcast)
-
-  class(NetcdfFile_t), intent(in) :: fileobj !< File object.
-  character(len=*), intent(out) :: dimension_name !< Dimension name.
-  logical, intent(in), optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-
-  integer :: err
-  integer :: dimid
-  character(len=nf90_max_name), dimension(1) :: buffer
-
-  dimension_name = ""
-  if (fileobj%is_root) then
-    err = nf90_inquire(fileobj%ncid, unlimitedDimId=dimid)
-    call check_netcdf_code(err)
-    err = nf90_inquire_dimension(fileobj%ncid, dimid, dimension_name)
-    call check_netcdf_code(err)
-    call string_copy(buffer(1), dimension_name)
-  endif
-  if (present(broadcast)) then
-    if (.not. broadcast) then
-      return
-    endif
-  endif
-  call mpp_broadcast(buffer, &
-                     nf90_max_name, &
-                     fileobj%io_root, &
-                     pelist=fileobj%pelist)
-  call string_copy(dimension_name, buffer(1))
-end subroutine get_unlimited_dimension_name
-
-
-!> @brief Get the length of a dimension.
-subroutine get_dimension_size(fileobj, &
-                              dimension_name, &
-                              dim_size, &
-                              broadcast)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: dimension_name !< Dimension name.
-    integer,intent(inout) :: dim_size !< Dimension size.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: dimid
-    integer :: err
-    if (fileobj%is_root) then
-        dimid = get_dimension_id(fileobj%ncid, &
-                                 trim(dimension_name))
-        err = nf90_inquire_dimension(fileobj%ncid, &
-                                     dimid, &
-                                     len=dim_size)
-        call check_netcdf_code(err)
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(dim_size, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end subroutine get_dimension_size
-
-
-!> @brief Determine the number of variables in a file.
-!! @return The number of variables in the file.
-function get_num_variables(fileobj, &
-                           broadcast) &
-    result(nvars)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: nvars
-    integer :: err
-    if (fileobj%is_root) then
-        err = nf90_inquire(fileobj%ncid, &
-                           nVariables=nvars)
-        call check_netcdf_code(err)
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(nvars, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function get_num_variables
-
-
-!> @brief Get the names of the variables in a file.
-subroutine get_variable_names(fileobj, &
-                              names, &
-                              broadcast)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),dimension(:),allocatable,intent(inout) :: names !< Names of the
-                                                                     !! variables.
-                                                                     !! This routine will
-                                                                     !! reallocate this
-                                                                     !! array to the
-                                                                     !! correct number
-                                                                     !! of elements.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: nvars
-    integer :: i
-    integer :: err
-    if (allocated(names)) then
-        deallocate(names)
-    endif
-    if (fileobj%is_root) then
-        nvars = get_num_variables(fileobj, &
-                                  broadcast=.false.)
-        if (nvars .gt. 0) then
-            allocate(names(nvars))
-            names(:) = ""
-            do i = 1,nvars
-                err = nf90_inquire_variable(fileobj%ncid, &
-                                            i, &
-                                            name=names(i))
-                call check_netcdf_code(err)
-            enddo
-        endif
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(nvars, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-    if (nvars .gt. 0) then
-        if (.not. fileobj%is_root) then
-            allocate(names(nvars))
-            names(:) = ""
-        endif
-        call mpp_broadcast(names, &
-                           len(names(nvars)), &
-                           fileobj%io_root, &
-                           pelist=fileobj%pelist)
-    endif
-end subroutine get_variable_names
-
-
-!> @brief Determine if a variable exists.
-!! @return Flag telling if the variable exists.
-function variable_exists(fileobj, &
-                         variable_name, &
-                         broadcast) &
-    result(var_exists)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    logical :: var_exists
-    integer :: varid
-    if (fileobj%is_root) then
-        varid = get_variable_id(fileobj%ncid, &
-                                trim(variable_name), &
-                                allow_failure=.true.)
-        if (varid .eq. variable_missing) then
-            var_exists = .false.
-        else
-            var_exists = .true.
-        endif
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(var_exists, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function variable_exists
-
-
-!> @brief Get the number of dimensions a variable depends on.
-!! @return Number of dimensions that the variable depends on.
-function get_variable_num_dimensions(fileobj, &
-                                     variable_name, &
-                                     broadcast) &
-    result(ndims)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: ndims
-    integer :: varid
-    integer :: err
-    if (fileobj%is_root) then
-        varid = get_variable_id(fileobj%ncid, &
-                                trim(variable_name))
-        err = nf90_inquire_variable(fileobj%ncid, &
-                                    varid, &
-                                    ndims=ndims)
-        call check_netcdf_code(err)
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(ndims, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function get_variable_num_dimensions
-
-
-!> @brief Get the name of a variable's dimensions.
-subroutine get_variable_dimension_names(fileobj, &
-                                        variable_name, &
-                                        dim_names, &
-                                        broadcast)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    character(len=*),dimension(:),allocatable,intent(inout) :: dim_names !< Array of
-                                                                         !! dimension
-                                                                         !! names.
-                                                                         !! This routine will
-                                                                         !! reallocate this
-                                                                         !! array to the
-                                                                         !! correct number
-                                                                         !! of elements.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: varid
-    integer :: err
-    integer :: ndims
-    integer,dimension(nf90_max_var_dims) :: dimids
-    integer :: i
-    if (allocated(dim_names)) then
-        deallocate(dim_names)
-    endif
-    if (fileobj%is_root) then
-        varid = get_variable_id(fileobj%ncid, &
-                                trim(variable_name))
-        err = nf90_inquire_variable(fileobj%ncid, &
-                                    varid, &
-                                    ndims=ndims, &
-                                    dimids=dimids)
-        call check_netcdf_code(err)
-        if (ndims .gt. 0) then
-            allocate(dim_names(ndims))
-            dim_names(:) = ""
-            do i = 1,ndims
-                err = nf90_inquire_dimension(fileobj%ncid, &
-                                             dimids(i), &
-                                             name=dim_names(i))
-                call check_netcdf_code(err)
-            enddo
-        endif
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(ndims, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-    if (ndims .gt. 0) then
-        if (.not. fileobj%is_root) then
-            allocate(dim_names(ndims))
-            dim_names(:) = ""
-        endif
-        call mpp_broadcast(dim_names, &
-                           len(dim_names(ndims)), &
-                           fileobj%io_root, &
-                           pelist=fileobj%pelist)
-    endif
-end subroutine get_variable_dimension_names
-
-
-!> @brief Get the size of a variable's dimensions.
-subroutine get_variable_size(fileobj, &
-                             variable_name, &
-                             dim_sizes, &
-                             broadcast)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    integer,dimension(:),allocatable,intent(inout) :: dim_sizes !< Array of dimension
-                                                                !! sizes.
-                                                                !! This routine will
-                                                                !! reallocate this
-                                                                !! array to the
-                                                                !! correct number
-                                                                !! of elements.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: varid
-    integer :: err
-    integer :: ndims
-    integer,dimension(nf90_max_var_dims) :: dimids
-    integer :: i
-    if (allocated(dim_sizes)) then
-        deallocate(dim_sizes)
-    endif
-    if (fileobj%is_root) then
-        varid = get_variable_id(fileobj%ncid, &
-                                trim(variable_name))
-        err = nf90_inquire_variable(fileobj%ncid, &
-                                    varid, &
-                                    ndims=ndims, &
-                                    dimids=dimids)
-        call check_netcdf_code(err)
-        if (ndims .gt. 0) then
-            allocate(dim_sizes(ndims))
-            do i = 1,ndims
-                err = nf90_inquire_dimension(fileobj%ncid, &
-                                             dimids(i), &
-                                             len=dim_sizes(i))
-                call check_netcdf_code(err)
-            enddo
-        endif
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(ndims, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-    if (ndims .gt. 0) then
-        if (.not. fileobj%is_root) then
-            allocate(dim_sizes(ndims))
-        endif
-        call mpp_broadcast(dim_sizes, &
-                           ndims, &
-                           fileobj%io_root, &
-                           pelist=fileobj%pelist)
-    endif
-end subroutine get_variable_size
-
-
-!> @brief Get the index of a variable's unlimited dimensions.
-!! @return The index of the unlimited dimension, or else
-!!         no_unlimited_dimension.
-function get_variable_unlimited_dimension_index(fileobj, &
-                                                variable_name, &
-                                                broadcast) &
-    result(unlim_dim_index)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
-    character(len=*),intent(in) :: variable_name !< Variable name.
-    logical,intent(in),optional :: broadcast !< Flag controlling whether or
-                                             !! not the data will be
-                                             !! broadcasted to non
-                                             !! "I/O root" ranks.
-                                             !! The broadcast will be done
-                                             !! by default.
-    integer :: unlim_dim_index
-    character(len=nf90_max_name),dimension(:),allocatable :: dim_names
-    integer :: i
-    unlim_dim_index = no_unlimited_dimension
-    if (fileobj%is_root) then
-        call get_variable_dimension_names(fileobj, &
-                                          variable_name, &
-                                          dim_names, &
-                                          broadcast=.false.)
-        do i = 1,size(dim_names)
-            if (is_dimension_unlimited(fileobj,dim_names(i),.false.)) then
-                unlim_dim_index = i
-                exit
-            endif
-        enddo
-        deallocate(dim_names)
-    endif
-    if (present(broadcast)) then
-        if (.not. broadcast) then
-            return
-        endif
-    endif
-    call mpp_broadcast(unlim_dim_index, &
-                       fileobj%io_root, &
-                       pelist=fileobj%pelist)
-end function get_variable_unlimited_dimension_index
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 include "netcdf_add_restart_variable.inc"
 include "netcdf_read_data.inc"
 include "netcdf_write_data.inc"
@@ -1493,6 +1591,43 @@ include "register_global_attribute.inc"
 include "register_variable_attribute.inc"
 include "get_global_attribute.inc"
 include "get_variable_attribute.inc"
+include "compressed_write.inc"
+include "compressed_read.inc"
+
+
+!> @brief Wrapper to distinguish interfaces.
+subroutine netcdf_file_close_wrap(fileobj)
+
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+
+  call netcdf_file_close(fileobj)
+end subroutine netcdf_file_close_wrap
+
+
+!> @brief Wrapper to distinguish interfaces.
+subroutine netcdf_add_variable_wrap(fileobj, variable_name, &
+                                    variable_type, dimensions)
+
+  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
+                                                !! values are: "int", "int64",
+                                                !! "float", or "double".
+  character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+
+  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+end subroutine netcdf_add_variable_wrap
+
+
+!> @brief Wrapper to distinguish interfaces.
+subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level)
+
+  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                   !! level.
+
+  call netcdf_save_restart(fileobj, unlim_dim_level)
+end subroutine netcdf_save_restart_wrap
 
 
 end module netcdf_io_mod

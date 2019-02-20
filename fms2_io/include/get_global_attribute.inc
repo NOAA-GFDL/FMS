@@ -3,7 +3,7 @@ subroutine get_global_attribute_0d(fileobj, &
                                              attribute_name, &
                                              attribute_value, &
                                              broadcast)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
+    class(FmsNetcdfFile_t),intent(in) :: fileobj !< File object.
     character(len=*),intent(in) :: attribute_name !< Attribute name.
     class(*), intent(inout) :: attribute_value !< Attribute value
     logical,intent(in),optional :: broadcast !< Flag controlling whether or
@@ -75,7 +75,7 @@ subroutine get_global_attribute_1d(fileobj, &
                                              attribute_name, &
                                              attribute_value, &
                                              broadcast)
-    class(NetcdfFile_t),intent(in) :: fileobj !< File object.
+    class(FmsNetcdfFile_t),intent(in) :: fileobj !< File object.
     character(len=*),intent(in) :: attribute_name !< Attribute name.
     class(*),dimension(:), intent(inout) :: attribute_value !< Attribute value
     logical,intent(in),optional :: broadcast !< Flag controlling whether or
