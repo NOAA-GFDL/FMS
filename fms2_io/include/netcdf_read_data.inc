@@ -64,10 +64,11 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
           if (present(corner)) then
             start(2) = corner
           endif
+          dimsizes(2) = 1
         elseif (ndims .gt. 2) then
           call error("Only scalar and 1d string values are currently supported.")
         endif
-        err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes(1:1))
+        err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
         if (len(buf) .lt. dimsizes(1)) then
           call error("character buffer is too small; increase length.")
         endif
@@ -195,7 +196,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
         if (size(buf) .lt. dimsizes(2)) then
           call error("incorrect buffer array size.")
         endif
-        do i = start(2), start(2)+dimsizes(2)
+        do i = start(2), start(2)+dimsizes(2)-1
           charptr => buf(i-start(2)+1)
           charptr = ""
           do j = 1, dimsizes(1)
