@@ -200,8 +200,8 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
           call error("incorrect buffer array size.")
         endif
         do i = start(2), start(2)+dimsizes(2)-1
+          buf(i-start(2)+1) = ""
           charptr => buf(i-start(2)+1)
-          charptr = ""
           do j = 1, dimsizes(1)
             if (charbuf(j, i-start(2)+1) .eq. char(0)) then
               exit
