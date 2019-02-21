@@ -75,6 +75,9 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
         buf = ""
         charptr => buf
         do i = 1, dimsizes(1)
+          if (charbuf(i) .eq. char(0)) then
+            exit
+          endif
           charptr(i:i) = charbuf(i)
         enddo
         deallocate(charbuf)
@@ -200,6 +203,9 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
           charptr => buf(i-start(2)+1)
           charptr = ""
           do j = 1, dimsizes(1)
+            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
+              exit
+            endif
             charptr(j:j) = charbuf(j, i-start(2)+1)
           enddo
         enddo
