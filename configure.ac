@@ -40,5 +40,33 @@ AC_SYS_LARGEFILE
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
-                 ])
+        amip_interp/Makefile
+        time_interp/Makefile
+        time_manager/Makefile
+        constants/Makefile
+        platform/Makefile
+        fms/Makefile
+        mpp/Makefile
+        tridiagonal/Makefile
+        tracer_manager/Makefile
+        topography/Makefile
+        station_data/Makefile
+        oda_tools/Makefile
+        mosaic/Makefile
+        monin_obukhov/Makefile
+        memutils/Makefile
+        interpolator/Makefile
+        horiz_interp/Makefile
+        field_manager/Makefile
+        fft/Makefile
+        exchange/Makefile
+        drifters/Makefile
+        diag_manager/Makefile
+        diag_integral/Makefile
+        data_override/Makefile
+        column_diagnostics/Makefile
+        block_control/Makefile
+        axis_utils/Makefile
+        astronomy/Makefile
+        ])
 AC_OUTPUT()
