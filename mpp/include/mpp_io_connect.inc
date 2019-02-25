@@ -191,6 +191,7 @@
       use mpp_mod, only: mpp_get_current_pelist_name, mpp_get_current_pelist
       use mpp_mod, only: mpp_nc_create, mpp_nc_open
       use mpp_domains_mod, only: mpp_get_io_root_pes, mpp_get_num_io_domains
+      use mpp_domains_mod, only: mpp_domain_is_missing_io_domain
 
 
       integer,         intent(out)           :: unit   
@@ -734,8 +735,11 @@
                                         io_pelist, mpp_file(unit)%ncid)
                   call netcdf_err(error, mpp_file(unit))
 
-                  error = nf_set_fill(mpp_file(unit)%ncid, NF_NOFILL, omode)
-                  call netcdf_err(error, mpp_file(unit))
+                  ! Enable pre-filling if IO domains do not fill the domain
+                  if (.not. mpp_domain_is_missing_io_domain(domain)) then
+                      error = nf_set_fill(mpp_file(unit)%ncid, NF_NOFILL, omode)
+                      call netcdf_err(error, mpp_file(unit))
+                  end if
 
                   if( verbose ) &
                       print '(a, i6, i16, a)', &
@@ -757,8 +761,11 @@
                                         io_pelist, mpp_file(unit)%ncid)
                   call netcdf_err(error, mpp_file(unit))
 
-                  error = nf_set_fill(mpp_file(unit)%ncid, NF_NOFILL, omode)
-                  call netcdf_err(error, mpp_file(unit))
+                  ! Enable pre-filling if IO domains do not fill the domain
+                  if (.not. mpp_domain_is_missing_io_domain(domain)) then
+                      error = nf_set_fill(mpp_file(unit)%ncid, NF_NOFILL, omode)
+                      call netcdf_err(error, mpp_file(unit))
+                  end if
 
                   ! NOTE: after setting clobber, there is no further distinction
                   !       between MPP_WRONLY and MPP_OVERWR

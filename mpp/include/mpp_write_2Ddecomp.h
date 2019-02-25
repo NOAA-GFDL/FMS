@@ -62,7 +62,6 @@
           if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
 !NOFILL is probably required for parallel: any circumstances in which not advisable?
-              error = NF_SET_FILL( mpp_file(unit)%ncid, NF_NOFILL, i ); call netcdf_err( error, mpp_file(unit) )
               if( mpp_file(unit)%action.EQ.MPP_WRONLY )then
                  if(header_buffer_val>0) then
                     error = NF__ENDDEF(mpp_file(unit)%ncid,header_buffer_val,4,0,4)
@@ -300,8 +299,8 @@
                   call mpp_global_field(domain, data, gdata, position=position, &
                                         flags=XUPDATE+YUPDATE, &
                                         default_data=default_data)
-        else if(global_field_on_root_pe) then
-                 call mpp_global_field( domain, data, gdata, position = position, &
+              else if(global_field_on_root_pe) then
+                  call mpp_global_field(domain, data, gdata, position = position, &
                                         flags=XUPDATE+YUPDATE+GLOBAL_ROOT_ONLY,   &
                                         default_data=default_data)
               else
@@ -471,9 +470,6 @@
               io_domain=>mpp_get_io_domain(mpp_file(unit)%domain) 
               call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
               if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
-                 ! TODO: Delete this?
-                 if(mpp_pe() == mpp_root_pe()) &
-                     print *, "gdata:", PE, isg, ieg, jsg, ieg
                  allocate( gdata(isg:ieg,jsg:jeg,size(data,3),size(data,4)) )
               else
                  allocate( gdata(1,1,1,1))

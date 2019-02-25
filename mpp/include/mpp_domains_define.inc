@@ -636,6 +636,9 @@
     allocate(domain%io_root_pes(count(io_root_pes /= NULL_PE)))
     domain%io_root_pes = pack(io_root_pes, mask=(io_root_pes /= NULL_PE))
 
+    if (size(domain%io_root_pes) < io_layout(1) * io_layout(2)) &
+        domain%missing_io_domains = .true.
+
     deallocate(io_root_pes)
     deallocate(io_pearray)
   end subroutine mpp_define_io_domain

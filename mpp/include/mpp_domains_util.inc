@@ -591,6 +591,14 @@ function mpp_get_io_root_pes(domain) result(io_root_pes)
 end function mpp_get_io_root_pes
 
 
+function mpp_domain_is_missing_io_domain(domain) result(missing)
+    type(domain2d), intent(in) :: domain
+    logical :: missing
+
+    missing = domain%missing_io_domains
+end function mpp_domain_is_missing_io_domain
+
+
 !#####################################################################
 ! <SUBROUTINE NAME="mpp_get_pelist1D" INTERFACE="mpp_get_pelist">
 !  <IN NAME="domain" TYPE="type(domain1D)"></IN>
