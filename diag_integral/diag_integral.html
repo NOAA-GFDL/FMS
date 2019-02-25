@@ -1,0 +1,630 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+<title>Module diag_integral_mod</title>
+<link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
+<STYLE TYPE="text/css">
+          .fixed {
+            font-size:medium;
+            font-family:monospace;
+            border-style:none;
+            border-width:0.1em;
+            padding:0.1em;
+            color:#663366;
+          }
+        </STYLE>
+</head>
+<body>
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+          <a href="#NAMELIST">NAMELIST </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#NOTES">NOTES</a></font>
+<hr>
+<h2>Module diag_integral_mod</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+<b>Contact:&nbsp;</b><a href="mailto:Fei.Liu@noaa.gov">   fil </a>
+<br>
+<b>Reviewers:&nbsp;</b><a href="mailto:"> </a>
+<br>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/atmos/param/diag_integral">WebCVS Log</a>
+<br>
+<br>
+</div>
+<!-- END HEADER -->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<p class="text">   diag_integral_mod computes and outputs global and / or 
+   hemispheric physics integrals. </p>
+<!-- END OVERVIEW -->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div> 
+</div>
+<br>
+<!-- END DESCRIPTION -->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div>
+<pre>time_manager_mod<br>         fms_mod<br>   constants_mod<br>         mpp_mod</pre>
+</div>
+<!-- END OTHER MODULES USED -->
+<!-- BEGIN PUBLIC INTERFACE -->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<div>
+<dl>
+<dt>
+<a href="#diag_integral_init">diag_integral_init</a>:</dt>
+<dd>   diag_integral_init is the constructor for diag_integral_mod. </dd>
+<dt>
+<a href="#diag_integral_field_init">diag_integral_field_init</a>:</dt>
+<dd>   diag_integral_field_init registers and intializes an integral field </dd>
+<dt>
+<a href="#sum_field_2d">sum_field_2d</a>:</dt>
+<dd>   Perform a 2 dimensional summation of named field </dd>
+<dt>
+<a href="#sum_field_3d">sum_field_3d</a>:</dt>
+<dd>   Perform a 3 dimensional summation of named field </dd>
+<dt>
+<a href="#sum_field_wght_3d">sum_field_wght_3d</a>:</dt>
+<dd>   Perform a 3 dimensional weighted summation of named field </dd>
+<dt>
+<a href="#sum_field_2d_hemi">sum_field_2d_hemi</a>:</dt>
+<dd>   Perform a 2 dimensional hemispherical summation of named field </dd>
+<dt>
+<a href="#diag_integral_output">diag_integral_output</a>:</dt>
+<dd>   diag_integral_output determines if this is a timestep on which
+   integrals are to be written. if not, it returns; if so, it calls
+   write_field_averages. </dd>
+<dt>
+<a href="#diag_integral_end">diag_integral_end</a>:</dt>
+<dd>   diag_integral_end is the destructor for diag_integral_mod. </dd>
+<dt>
+<a href="#set_axis_time">set_axis_time</a>:</dt>
+<dd>   Function to convert input time to a time_type </dd>
+<dt>
+<a href="#get_field_index">get_field_index</a>:</dt>
+<dd>   get_field_index returns returns the index associated with an 
+   integral name. </dd>
+<dt>
+<a href="#write_field_averages">write_field_averages</a>:</dt>
+<dd>   Subroutine to sum multiple fields, average them and then write the result
+   to an output file. </dd>
+<dt>
+<a href="#format_text_init">format_text_init</a>:</dt>
+<dd>   format_text_init generates the header records to be output in the
+   integrals file. </dd>
+<dt>
+<a href="#format_data_init">format_data_init</a>:</dt>
+<dd>   format_text_init generates the format to be output in the
+   integrals file. </dd>
+<dt>
+<a href="#get_axis_time">get_axis_time</a>:</dt>
+<dd>   Function to convert the time_type input variable into units of
+   units and returns it in atime. </dd>
+<dt>
+<a href="#diag_integral_alarm">diag_integral_alarm</a>:</dt>
+<dd>   Function to check if it is time to write integrals. 
+   if not writing integrals, return. </dd>
+<dt>
+<a href="#vert_diag_integral">vert_diag_integral</a>:</dt>
+<dd>   Function to perform a weighted integral in the vertical 
+   direction of a 3d data field </dd>
+</dl>
+</div>
+<br>
+<!-- END PUBLIC INTERFACE -->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN PUBLIC DATA -->
+<div>None.<br>
+<br>
+</div>
+<!-- END PUBLIC DATA -->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN PUBLIC ROUTINES -->
+<ol type="a">
+<li>
+<a name="diag_integral_init"></a>
+<h4>diag_integral_init</h4>
+<pre>
+<b>call diag_integral_init </b>(Time_init, Time, blon, blat)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   diag_integral_init is the constructor for diag_integral_mod. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>Time_init&nbsp;&nbsp;&nbsp;</tt></td><td>   Initial time to start the integral <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>Time&nbsp;&nbsp;&nbsp;</tt></td><td>   current time <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>latb&nbsp;&nbsp;&nbsp;</tt></td><td>   array of model latitudes at cell boundaries [radians] <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>lonb&nbsp;&nbsp;&nbsp;</tt></td><td>   array of model longitudes at cell boundaries [radians] <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="diag_integral_field_init"></a>
+<h4>diag_integral_field_init</h4>
+<pre>
+<b>call diag_integral_field_init </b>(name, format)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   diag_integral_field_init registers and intializes an integral field </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   Name of the field to be integrated <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>format&nbsp;&nbsp;&nbsp;</tt></td><td>   Output format of the field to be integrated <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="sum_field_2d"></a>
+<h4>sum_field_2d</h4>
+<pre>
+<b>call sum_field_2d </b>(name, data, is, js)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Perform a 2 dimensional summation of named field </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   Name of the field to be integrated <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   field of integrands to be summed over <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is 
+   to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="sum_field_3d"></a>
+<h4>sum_field_3d</h4>
+<pre>
+<b>call sum_field_3d </b>(name, data, is, js)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Perform a 3 dimensional summation of named field </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   Name of the field to be integrated <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   field of integrands to be summed over <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is 
+   to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="sum_field_wght_3d"></a>
+<h4>sum_field_wght_3d</h4>
+<pre>
+<b>call sum_field_wght_3d </b>(name, data, wt, is, js)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Perform a 3 dimensional weighted summation of named field </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   Name of the field to be integrated <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   field of integrands to be summed over <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>wt&nbsp;&nbsp;&nbsp;</tt></td><td>   the weight function to be evaluated at summation <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is 
+   to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="sum_field_2d_hemi"></a>
+<h4>sum_field_2d_hemi</h4>
+<pre>
+<b>call sum_field_2d_hemi </b>(name, data, is, ie, js, je)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Perform a 2 dimensional hemispherical summation of named field </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   Name of the field to be integrated <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   field of integrands to be summed over <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>is, js, ie, je&nbsp;&nbsp;&nbsp;</tt></td><td>   starting/ending i,j indices over which summation is 
+   to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="diag_integral_output"></a>
+<h4>diag_integral_output</h4>
+<pre>
+<b>call diag_integral_output </b>(Time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   diag_integral_output determines if this is a timestep on which
+   integrals are to be written. if not, it returns; if so, it calls
+   write_field_averages. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>Time&nbsp;&nbsp;&nbsp;</tt></td><td>   integral time stamp at the current time <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="diag_integral_end"></a>
+<h4>diag_integral_end</h4>
+<pre>
+<b>call diag_integral_end </b>(Time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   diag_integral_end is the destructor for diag_integral_mod. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>Time&nbsp;&nbsp;&nbsp;</tt></td><td>   integral time stamp at the current time <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="set_axis_time"></a>
+<h4>set_axis_time</h4>
+<pre>time = <b>set_axis_time</b> (atime, units)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Function to convert input time to a time_type </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>atime&nbsp;&nbsp;&nbsp;</tt></td><td>   integral time stamp at the current time <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>   input units, not used <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="get_field_index"></a>
+<h4>get_field_index</h4>
+<pre>index = <b>get_field_index</b> (name)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   get_field_index returns returns the index associated with an 
+   integral name. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>name&nbsp;&nbsp;&nbsp;</tt></td><td>   Name associated with an integral <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="write_field_averages"></a>
+<h4>write_field_averages</h4>
+<pre>
+<b>call write_field_averages </b>(Time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Subroutine to sum multiple fields, average them and then write the result
+   to an output file. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>Time&nbsp;&nbsp;&nbsp;</tt></td><td>   integral time stamp at the current time <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="format_text_init"></a>
+<h4>format_text_init</h4>
+<pre>
+<b>call format_text_init </b>(nst_in, nend_in)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   format_text_init generates the header records to be output in the
+   integrals file. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>nst_in, nend_in&nbsp;&nbsp;&nbsp;</tt></td><td>   starting/ending integral index which will be included
+   in this format statement <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="format_data_init"></a>
+<h4>format_data_init</h4>
+<pre>
+<b>call format_data_init </b>(nst_in, nend_in)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   format_text_init generates the format to be output in the
+   integrals file. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>nst_in, nend_in&nbsp;&nbsp;&nbsp;</tt></td><td>   starting/ending integral index which will be included
+   in this format statement <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="get_axis_time"></a>
+<h4>get_axis_time</h4>
+<pre>atime = <b>get_axis_time</b> (Time, units)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Function to convert the time_type input variable into units of
+   units and returns it in atime. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>Time&nbsp;&nbsp;&nbsp;</tt></td><td>   integral time stamp <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>units&nbsp;&nbsp;&nbsp;</tt></td><td>   input units of time_type <br>&nbsp;&nbsp;&nbsp;<span class="type">[character]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="diag_integral_alarm"></a>
+<h4>diag_integral_alarm</h4>
+<pre>result = <b>diag_integral_alarm</b> (Time)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Function to check if it is time to write integrals. 
+   if not writing integrals, return. </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>Time&nbsp;&nbsp;&nbsp;</tt></td><td>   current time <br>&nbsp;&nbsp;&nbsp;<span class="type">[time_type]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+<li>
+<a name="vert_diag_integral"></a>
+<h4>vert_diag_integral</h4>
+<pre>data2 = <b>vert_diag_integral</b> (data, wt)</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   Function to perform a weighted integral in the vertical 
+   direction of a 3d data field </dd>
+<br>
+<br>
+<dt>
+<b>INPUT</b>
+</dt>
+<dd>
+<table border="0">
+<tr>
+<td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   integral field data arrays <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+<tr>
+<td valign="top" align="left"><tt>wt&nbsp;&nbsp;&nbsp;</tt></td><td>   integral field weighting functions <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
+</tr>
+</table>
+</dd>
+<br>
+</dl>
+</li>
+</ol>
+<!-- END PUBLIC ROUTINES -->
+<a name="PUBLIC TYPES"></a>
+<!-- BEGIN PUBLIC TYPES -->
+<!-- END PUBLIC TYPES --><a name="NAMELIST"></a>
+<!-- BEGIN NAMELIST -->
+<!-- END NAMELIST --><a name="DIAGNOSTIC FIELDS"></a>
+<!-- BEGIN DIAGNOSTIC FIELDS -->
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- BEGIN DATA SETS -->
+<hr>
+<h4>DATA SETS</h4>
+<div>None.<br>
+<br>
+</div>
+<!-- END DATA SETS -->
+<a name="PUBLIC CODE"></a>
+<!-- BEGIN PUBLIC CODE -->
+<!-- END PUBLIC CODE --><a name="ERROR MESSAGES"></a>
+<!-- BEGIN ERROR MESSAGES -->
+<hr>
+<h4>ERROR MESSAGES</h4>
+<div>None.<br>
+<br>
+</div>
+<!-- END ERROR MESSAGES -->
+<hr>
+<div align="right">
+<font size="-1"><a href="#TOP">top</a></font>
+</div>
+</body>
+</html>

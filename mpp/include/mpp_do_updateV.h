@@ -35,14 +35,14 @@
 
       integer :: update_flags
       integer :: l_size, l, i, j, k, is, ie, js, je, n, m
-      integer :: pos, nlist, msgsize
+      integer :: pos, nlist, msgsize, isd, ied, jsd, jed
       integer :: to_pe, from_pe, midpoint
       integer :: tMe, dir
 
       integer :: send_start_pos, nsend
       integer :: send_msgsize(2*MAXLIST)
       integer :: send_pe(2*MAXLIST)
-      integer,    allocatable :: msg1(:), msg2(:)
+      integer,    allocatable :: msg1(:), msg2(:), msg3(:)
       logical :: send(8), recv(8), update_edge_only
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer(ptr,buffer )
@@ -101,9 +101,10 @@
       nrecv_y = update_y%nrecv
 
       if(debug_message_passing) then
-         allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
+         allocate(msg1(0:nlist-1), msg2(0:nlist-1), msg3(0:nlist-1) )
          msg1 = 0
          msg2 = 0
+         msg3 = 0
          cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
 
          do while (ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y)
@@ -146,7 +147,6 @@
             endif
             cur_rank = max(rank_x, rank_y)
             m = from_pe-mpp_root_pe()
-            call mpp_recv( msg1(m), glen=1, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1)
             msg2(m) = msgsize
          end do
 
@@ -189,10 +189,12 @@
                   rank_y = nlist+1
                endif
             endif
+            m = to_pe-mpp_root_pe()
+            msg3(m) = msgsize
             cur_rank = min(rank_x, rank_y)
-            call mpp_send( msgsize, plen=1, to_pe=to_pe, tag=COMM_TAG_1)   
          enddo
-         call mpp_sync_self(check=EVENT_RECV)
+         call mpp_alltoall(msg3, 1, msg1, 1)
+!         call mpp_sync_self(check=EVENT_RECV)
          do m = 0, nlist-1
             if(msg1(m) .NE. msg2(m)) then
                print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%name), ",from pe=", &
@@ -201,10 +203,10 @@
             endif
          enddo
 
-         call mpp_sync_self()
+!         call mpp_sync_self()
          write(outunit,*)"NOTE from mpp_do_updateV: message sizes are matched between send and recv for domain " &
               //trim(domain%name)
-         deallocate(msg1, msg2)
+         deallocate(msg1, msg2, msg3)
       endif
 
       !--- recv
@@ -799,8 +801,13 @@
       shift = 0
       if(domain%symmetry) shift = 1
       if( BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then
+         isd = domain%x(1)%compute%begin - update_x%whalo;
+         ied = domain%x(1)%compute%end + update_x%ehalo;
+         jsd = domain%y(1)%compute%begin - update_y%shalo;
+         jed = domain%y(1)%compute%end + update_y%nhalo;
+
          j = domain%y(1)%global%end+shift
-         if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
+         if( jsd .LE. j .AND. j.LE.jed+shift )then !fold is within domain
             !poles set to 0: BGRID only
             if( gridtype.EQ.BGRID_NE )then
                midpoint = (domain%x(1)%global%begin+domain%x(1)%global%end-1+shift)/2
@@ -808,7 +815,7 @@
                is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
                if( .NOT. domain%symmetry ) is = is - 1
                do i = is ,ie, midpoint
-                  if( domain%x(1)%data%begin.LE.i .AND. i.LE. domain%x(1)%data%end+shift )then
+                  if( isd.LE.i .AND. i.LE. ied+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)   
@@ -833,15 +840,14 @@
                   else
                      is = domain%x(1)%global%begin - 1
                   end if
-                  if( is.GT.domain%x(1)%data%begin )then
-
-                     if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift ) &
+                  if( is.GT.isd )then
+                     if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift  ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)   
                         do k = 1,ke
-                           do i = domain%x(1)%data%begin,is-1
+                           do i = isd,is-1
                               fieldx(i,j,k) = fieldx(2*is-i,j,k)
                               fieldy(i,j,k) = fieldy(2*is-i,j,k)
                            end do
@@ -850,13 +856,13 @@
                   end if
                case(CGRID_NE)
                   is = domain%x(1)%global%begin
-                  if( is.GT.domain%x(1)%data%begin )then
+                  if( is.GT.isd )then
                      if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldy = f_addrsy(l, 1)   
                         do k = 1,ke
-                           do i = domain%x(1)%data%begin,is-1
+                           do i = isd,is-1
                               fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
                            end do
                         end do
@@ -867,8 +873,8 @@
 
             !off east edge
             is = domain%x(1)%global%end
-            if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
-               ie = domain%x(1)%data%end
+            if(domain%x(1)%cyclic .AND. is.LT.ied )then
+               ie = ied
                is = is + 1
                select case(gridtype)
                case(BGRID_NE)
