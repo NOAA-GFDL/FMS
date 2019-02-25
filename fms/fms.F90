@@ -161,7 +161,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        read_data, write_data, read_compressed, read_distributed, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
                        set_domain, get_domain_decomp, nullify_domain, &
-                       open_file, open_direct_file, string, get_mosaic_tile_grid, &
+                       open_file, open_direct_file, string, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
                        write_version_number
 
@@ -186,7 +186,7 @@ public :: get_domain_decomp, field_size, nullify_domain
 public :: get_global_att_value
 
 ! routines for get mosaic information
-public :: get_mosaic_tile_grid, get_mosaic_tile_file
+public :: get_mosaic_tile_file
 
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error, field_exist,     &

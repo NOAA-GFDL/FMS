@@ -24,7 +24,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: ndims
   character, dimension(:), allocatable :: charbuf
   character(len=1024), pointer :: charptr
-  integer, dimension(:), allocatable :: dimsizes
+  integer, dimension(2) :: dimsizes
   integer :: i
   character(len=1024), dimension(1) :: buf1d
 
@@ -56,8 +56,8 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (character(len=*))
         start(:) = 1
         ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-        allocate(dimsizes(ndims))
-        call get_variable_size(fileobj, variable_name, dimsizes, broadcast=.false.)
+        if(ndims>2) call error("ndims should be no larger than 2")
+        call get_variable_size(fileobj, variable_name, dimsizes(1:ndims), broadcast=.false.)
         allocate(charbuf(dimsizes(1)))
         charbuf(:) = ""
         if (ndims .eq. 2) then
@@ -65,8 +65,6 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
             start(2) = corner
           endif
           dimsizes(2) = 1
-        elseif (ndims .gt. 2) then
-          call error("Only scalar and 1d string values are currently supported.")
         endif
         err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
         if (len(buf) .lt. dimsizes(1)) then
@@ -75,13 +73,10 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
         buf = ""
         charptr => buf
         do i = 1, dimsizes(1)
-          if (charbuf(i) .eq. char(0)) then
-            exit
-          endif
+           if(charbuf(i) == CHAR(0) ) exit
           charptr(i:i) = charbuf(i)
         enddo
         deallocate(charbuf)
-        deallocate(dimsizes)
       class default
         call error("unsupported type.")
     end select
@@ -190,7 +185,8 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
         start(2) = c(1)
         call get_variable_size(fileobj, variable_name, dimsizes, .false.)
         dimsizes(2) = dimsizes(2) - start(2) + 1
-        call allocate_array(charbuf, dimsizes)
+        allocate(charbuf(dimsizes(1), dimsizes(2)))
+!        call allocate_array(charbuf, dimsizes)
         charbuf(:,:) = ""
         err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
         if (len(buf(1)) .lt. dimsizes(1)) then
@@ -203,9 +199,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
           buf(i-start(2)+1) = ""
           charptr => buf(i-start(2)+1)
           do j = 1, dimsizes(1)
-            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
-              exit
-            endif
+            if(charbuf(j, i-start(2)+1) == CHAR(0) ) exit
             charptr(j:j) = charbuf(j, i-start(2)+1)
           enddo
         enddo

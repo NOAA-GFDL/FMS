@@ -505,7 +505,7 @@ public  :: open_namelist_file, open_restart_file, open_ieee32_file, close_file
 public  :: set_domain, nullify_domain, get_domain_decomp, return_domain
 public  :: open_file, open_direct_file
 public  :: get_restart_io_mode, get_tile_string, string
-public  :: get_mosaic_tile_grid, get_mosaic_tile_file, get_file_name, get_mosaic_tile_file_ug
+public  :: get_mosaic_tile_file, get_file_name, get_mosaic_tile_file_ug
 public  :: get_global_att_value, get_var_att_value
 public  :: file_exist, field_exist
 public  :: register_restart_field, register_restart_axis, save_restart, restore_state
@@ -7846,25 +7846,6 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
 
 
   !#############################################################################
-  subroutine get_mosaic_tile_grid(grid_file, mosaic_file, domain, tile_count)
-    character(len=*), intent(out)          :: grid_file
-    character(len=*), intent(in)           :: mosaic_file
-    type(domain2D),   intent(in)           :: domain
-    integer,          intent(in), optional :: tile_count
-    integer                                :: tile, ntileMe
-    integer, dimension(:), allocatable     :: tile_id
-
-    tile = 1
-    if(present(tile_count)) tile = tile_count
-    ntileMe = mpp_get_current_ntile(domain)
-    allocate(tile_id(ntileMe))
-    tile_id = mpp_get_tile_id(domain)
-    call read_data(mosaic_file, "gridfiles", grid_file, level=tile_id(tile) )
-    grid_file = 'INPUT/'//trim(grid_file)
-    deallocate(tile_id)
-
-  end subroutine get_mosaic_tile_grid
-
   subroutine get_var_att_value_text(file, varname, attname, attvalue)
     character(len=*), intent(in)    :: file
     character(len=*), intent(in)    :: varname

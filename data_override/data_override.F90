@@ -86,7 +86,7 @@ use time_interp_external_mod, only:time_interp_external_init, time_interp_extern
                                    init_external_field, get_external_field_size, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    set_override_region, reset_src_data_region
-use fms_io_mod, only: field_size, read_data, fms_io_init,get_mosaic_tile_grid, get_mosaic_tile_file
+use fms_io_mod, only: field_size, read_data, fms_io_init,get_mosaic_tile_file
 use fms_mod, only: write_version_number, field_exist, lowercase, file_exist, open_namelist_file, check_nml_error, close_file
 use axis_utils_mod, only: get_axis_bounds, nearest_index
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
@@ -1421,7 +1421,8 @@ subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec,
   else
      solo_mosaic_file = mosaic_file
   end if
-  call get_mosaic_tile_grid(grid_file, solo_mosaic_file, domain)
+  call mpp_error(FATAL, "data_override_mod(get_grid_version_2): this routine should not be called")
+!  call get_mosaic_tile_grid(grid_file, solo_mosaic_file, domain)
 
   call field_size(grid_file, 'area', siz)
   nlon_super = siz(1); nlat_super = siz(2)
