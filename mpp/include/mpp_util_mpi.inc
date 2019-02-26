@@ -127,8 +127,7 @@ function get_peset(pelist)
   call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted-mpp_root_pe(), peset(i)%group, error )
 !  call MPI_COMM_CREATE( peset(current_peset_num)%id, peset(i)%group, peset(i)%id, error )
   call MPI_COMM_CREATE_GROUP(peset(current_peset_num)%id, peset(i)%group, &
-                             0, peset(i)%id, error )
-
+                             DEFAULT_TAG, peset(i)%id, error )
 #ifdef use_MPI_SMA
   n = size(sorted(:))
   write( text, '(20i6)' )( sorted(l), l=1,min(n,20) )
