@@ -37,8 +37,10 @@ AC_PROG_INSTALL
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
+# Require MPI.
+AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
+
 AC_DEFINE([use_netCDF], [1])
-AC_DEFINE([use_libMPI], [1])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
