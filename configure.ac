@@ -70,6 +70,7 @@ AC_CONFIG_FILES([Makefile
         block_control/Makefile
         axis_utils/Makefile
         astronomy/Makefile
+        coupler/Makefile
         libFMS/Makefile
         ])
 AC_OUTPUT()
