@@ -4,11 +4,12 @@
 # Ed Hartnett 2/22/19
 
 AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -Iinclude
+AM_CPPFLAGS += -I${top_srcdir}/mpp/include
+#AM_CPPFLAGS += -I${top_builddir}/mpp
 
-noinst_LTLIBRARIES = libmpp_parameter.la libmpp.la libmpp_data.la	\
-libmpp_utilities.la libmpp_domains.la libmpp_io.la libmpp_c.la		\
-libmpp_pset.la libmpp_efp.la
+noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la	\
+libmpp_utilities.la libmpp_memutils.la libmpp_pset.la libmpp_efp.la	\
+libmpp_domains.la libmpp_io.la libmpp_c.la
 
 libmpp_parameter_la_SOURCES = mpp_parameter.F90
 libmpp_la_SOURCES = mpp.F90
@@ -19,6 +20,7 @@ libmpp_io_la_SOURCES = mpp_io.F90
 libmpp_pset_la_SOURCES = mpp_pset.F90
 libmpp_efp_la_SOURCES = mpp_efp.F90
 libmpp_c_la_SOURCES = nsclock.c affinity.c threadloc.c
+libmpp_memutils_la_SOURCES = mpp_memutils.F90
 
 SUBDIRS = include
 
@@ -27,3 +29,5 @@ SUBDIRS = include
 # test_mpp_SOURCES = test_mpp.F90
 
 #test_mpp_domains.F90 test_mpp.F90 test_mpp_io.F90 test_mpp_pset.F90
+
+CLEANFILES = *.mod
