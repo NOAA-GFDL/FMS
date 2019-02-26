@@ -20,6 +20,8 @@ libmpp_pset_la_SOURCES = mpp_pset.F90
 libmpp_efp_la_SOURCES = mpp_efp.F90
 libmpp_c_la_SOURCES = nsclock.c affinity.c threadloc.c
 
+SUBDIRS = include
+
 # check_PROGRAMS = test_mpp
 # TESTS = test_mpp
 # test_mpp_SOURCES = test_mpp.F90

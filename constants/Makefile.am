@@ -4,7 +4,7 @@
 # Ed Hartnett 2/22/19
 
 AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_srcdir}/platform
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 noinst_LTLIBRARIES = libconstants.la
 

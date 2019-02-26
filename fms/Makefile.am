@@ -10,6 +10,7 @@ AM_CPPFLAGS += -I${top_builddir}/platform
 AM_CPPFLAGS += -I${top_builddir}/memutils
 
 noinst_LTLIBRARIES = libfms_io.la libfms.la
+include_HEADERS = fms_io_mod.mod fms_mod.mod
 
 libfms_la_SOURCES = fms.F90
 libfms_io_la_SOURCES = fms_io.F90

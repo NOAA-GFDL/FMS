@@ -41,6 +41,7 @@ AC_SYS_LARGEFILE
 AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
 
 AC_DEFINE([use_netCDF], [1])
+AC_DEFINE([use_libMPI], [1])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
@@ -52,6 +53,7 @@ AC_CONFIG_FILES([Makefile
         platform/Makefile
         fms/Makefile
         mpp/Makefile
+        mpp/include/Makefile
         tridiagonal/Makefile
         tracer_manager/Makefile
         topography/Makefile
