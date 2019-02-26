@@ -44,6 +44,7 @@ AC_DEFINE([use_netCDF], [1])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
+        include/Makefile
         amip_interp/Makefile
         time_interp/Makefile
         time_manager/Makefile
