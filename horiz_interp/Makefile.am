@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Turn off parallel builds in this directory.
+.NOTPARALLEL:
+
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
