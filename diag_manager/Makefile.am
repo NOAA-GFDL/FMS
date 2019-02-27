@@ -42,7 +42,7 @@ diag_util_mod.mod: diag_util.$(OBJEXT)
 MODFILES = diag_data_mod.mod diag_axis_mod.mod diag_grid_mod.mod	\
 diag_output_mod.mod diag_util_mod.mod diag_manifest_mod.mod		\
 diag_table_mod.mod diag_manager_mod.mod
-include_HEADER = $(MODFILES)
+include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod
