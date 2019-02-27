@@ -18,10 +18,13 @@ noinst_LTLIBRARIES = libmonin_obukhov.la libmonin_obukhov_kernel.la
 libmonin_obukhov_la_SOURCES = monin_obukhov.F90
 libmonin_obukhov_kernel_la_SOURCES = monin_obukhov_kernel.F90
 
+# Note that the name of the mod is different from the name of the F90
+# code for monin_obukhov_kernel.F90. Also note that the mod file for
+# this one does not have "_mod" in the name.
 monin_obukhov_mod.mod: monin_obukhov.$(OBJEXT)
-monin_obukhov_kernel_mod.mod: monin_obukhov_kernel.$(OBJEXT)
+monin_obukhov_inter.mod: monin_obukhov_kernel.$(OBJEXT)
 
-MODFILES = monin_obukhov_mod.mod monin_obukhov_kernel_mod.mod
+MODFILES = monin_obukhov_mod.mod monin_obukhov_inter.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
