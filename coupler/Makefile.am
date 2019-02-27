@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Turn off parallel builds in this directory.
+.NOTPARALLEL:
+
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -17,5 +20,15 @@ libatmos_ocean_fluxes.la
 libcoupler_types_la_SOURCES = coupler_types.F90
 libensemble_manager_la_SOURCES = ensemble_manager.F90
 libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90
+
+coupler_types_mod.mod: coupler_types.$(OBJEXT)
+ensemble_manager_mod.mod: ensemble_manager.$(OBJEXT)
+atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.$(OBJEXT)
+
+MODFILES = coupler_types_mod.mod ensemble_manager_mod.mod	\
+atmos_ocean_fluxes_mod.mod
+include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
+
 
 CLEANFILES = *.mod

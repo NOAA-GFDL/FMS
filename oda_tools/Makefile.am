@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Turn off parallel builds in this directory.
+.NOTPARALLEL:
+
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -19,5 +22,14 @@ liboda_types_la_SOURCES = oda_types.F90
 #liboda_core_ecda_la_SOURCES = oda_core_ecda.F90
 liboda_core_la_SOURCES = oda_core.F90
 libwrite_ocean_data_la_SOURCES = write_ocean_data.F90
+
+oda_types_mod.mod: oda_types.$(OBJEXT)
+write_ocean_data_mod.mod: write_ocean_data.$(OBJEXT)
+oda_core_mod.mod: oda_core.$(OBJEXT)
+
+MODFILES = oda_types_mod.mod write_ocean_data_mod.mod	\
+oda_core_mod.mod
+include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod

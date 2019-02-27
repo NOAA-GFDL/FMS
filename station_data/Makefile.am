@@ -14,4 +14,8 @@ noinst_LTLIBRARIES = libstation_data.la
 
 libstation_data_la_SOURCES = station_data.F90
 
+station_data_mod.mod: station_data.$(OBJEXT)
+BUILT_SOURCES = station_data_mod.mod
+include_HEADERS = station_data_mod.mod
+
 CLEANFILES = *.mod

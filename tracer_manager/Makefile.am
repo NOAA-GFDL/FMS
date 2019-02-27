@@ -12,4 +12,8 @@ noinst_LTLIBRARIES = libtracer_manager.la
 
 libtracer_manager_la_SOURCES = tracer_manager.F90
 
+tracer_manager_mod.mod: tracer_manager.$(OBJEXT)
+BUILT_SOURCES = tracer_manager_mod.mod
+include_HEADERS = tracer_manager_mod.mod
+
 CLEANFILES = *.mod
