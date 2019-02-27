@@ -3,6 +3,7 @@
 
 # Ed Hartnett 2/22/19
 
+# This builds the FMS library file.
 lib_LTLIBRARIES = libFMS.la
 
 # These linker flags specify libtool version info.
@@ -10,6 +11,7 @@ lib_LTLIBRARIES = libFMS.la
 # for information regarding incrementing `-version-info`.
 libFMS_la_LDFLAGS = -version-info 2:0:0
 
+# Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = ${top_builddir}/platform/libplatform.la
 libFMS_la_LIBADD += ${top_builddir}/constants/libconstants.la
 libFMS_la_LIBADD += ${top_builddir}/tridiagonal/libtridiagonal.la
@@ -79,10 +81,5 @@ libFMS_la_LIBADD += ${top_builddir}/topography/libtopography.la
 libFMS_la_LIBADD += ${top_builddir}/tracer_manager/libtracer_manager.la
 libFMS_la_LIBADD += ${top_builddir}/station_data/libstation_data.la
 
-
-
-
-
-
-# At least one source file must be included.
+# At least one source file must be included to please Automake.
 libFMS_la_SOURCES = ${top_builddir}/include/file_version.h

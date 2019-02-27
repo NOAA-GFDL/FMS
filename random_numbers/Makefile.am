@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/28/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/time_manager
@@ -20,6 +17,9 @@ libMersenneTwister_la_SOURCES = MersenneTwister.F90
 # Each mod file depends on the .o file.
 random_numbers_mod.mod: random_numbers.$(OBJEXT)
 mersennetwister_mod.mod: MersenneTwister.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+random_numbers.$(OBJEXT): MersenneTwister.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = mersennetwister_mod.mod random_numbers_mod.mod
