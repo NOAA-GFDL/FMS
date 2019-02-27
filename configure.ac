@@ -91,6 +91,7 @@ AC_CONFIG_FILES([Makefile
         astronomy/Makefile
         coupler/Makefile
         sat_vapor_pres/Makefile
+        random_numbers/Makefile
         libFMS/Makefile
         test_fms/Makefile
         ])
