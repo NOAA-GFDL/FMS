@@ -19,10 +19,10 @@ libMersenneTwister_la_SOURCES = MersenneTwister.F90
 
 # Each mod file depends on the .o file.
 random_numbers_mod.mod: random_numbers.$(OBJEXT)
-MersenneTwister_mod.mod: MersenneTwister.$(OBJEXT)
+mersennetwister_mod.mod: MersenneTwister.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = MersenneTwister_mod.mod random_numbers_mod.mod
+MODFILES = mersennetwister_mod.mod random_numbers_mod.mod
 BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
 
