@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Turn off parallel builds in this directory.
+.NOTPARALLEL:
+
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_srcdir}/mpp/include
 #AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -29,5 +32,9 @@ SUBDIRS = include
 # test_mpp_SOURCES = test_mpp.F90
 
 #test_mpp_domains.F90 test_mpp.F90 test_mpp_io.F90 test_mpp_pset.F90
+
+include_HEADER = mpp_data_mod.mod mpp_domains_mod.mod mpp_efp_mod.mod	\
+mpp_io_mod.mod mpp_memutils_mod.mod mpp_mod.mod mpp_parameter_mod.mod	\
+mpp_pset_mod.mod mpp_utilities_mod.mod
 
 CLEANFILES = *.mod
