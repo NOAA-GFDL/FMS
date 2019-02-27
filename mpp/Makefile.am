@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-#.NOTPARALLEL:
-
 # Descend into include directory.
 SUBDIRS = include
 

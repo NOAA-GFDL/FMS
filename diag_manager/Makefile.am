@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -28,7 +25,7 @@ libdiag_output_la_SOURCES = diag_output.F90
 libdiag_table_la_SOURCES = diag_table.F90
 libdiag_util_la_SOURCES = diag_util.F90
 
-# These headers are in the drifters directory.
+# Each mod file depends on the .o file.
 diag_axis_mod.mod: diag_axis.$(OBJEXT)
 diag_grid_mod.mod: diag_grid.$(OBJEXT)
 diag_manifest_mod.mod: diag_manifest.$(OBJEXT)
@@ -37,6 +34,14 @@ diag_data_mod.mod: diag_data.$(OBJEXT)
 diag_manager_mod.mod: diag_manager.$(OBJEXT)
 diag_output_mod.mod: diag_output.$(OBJEXT)
 diag_util_mod.mod: diag_util.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+diag_axis.$(OBJEXT): diag_data.$(OBJEXT)
+diag_manifest.$(OBJEXT): diag_data.$(OBJEXT)
+diag_output.$(OBJEXT): diag_axis.$(OBJEXT) diag_data.$(OBJEXT)
+diag_util.$(OBJEXT): diag_data.$(OBJEXT) diag_axis.$(OBJEXT) diag_output.$(OBJEXT) diag_grid.$(OBJEXT)
+diag_table.$(OBJEXT): diag_data.$(OBJEXT) diag_util.$(OBJEXT)
+diag_manager.$(OBJEXT): diag_axis.$(OBJEXT) diag_data.$(OBJEXT) diag_util.$(OBJEXT) diag_output.$(OBJEXT) diag_grid.$(OBJEXT) diag_table.$(OBJEXT) diag_manifest.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = diag_data_mod.mod diag_axis_mod.mod diag_grid_mod.mod	\
