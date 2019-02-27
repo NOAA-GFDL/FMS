@@ -10,6 +10,8 @@ noinst_LTLIBRARIES = libtridiagonal.la
 
 libtridiagonal_la_SOURCES = tridiagonal.F90
 
+tridiagonal_mod.mod: tridiagonal.$(OBJEXT)
+BUILT_SOURCES = tridiagonal_mod.mod
 include_HEADERS = tridiagonal_mod.mod
 
 CLEANFILES = *.mod
