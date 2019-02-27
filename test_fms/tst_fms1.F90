@@ -1,7 +1,7 @@
 ! This is a sample test program for the FMS library.
 
       program tst_fms1
-!      use netcdf4_f03
+      use fms_mod
       implicit none
 
       print *, ''

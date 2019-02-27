@@ -3,6 +3,8 @@
 
 # Ed Hartnett 2/22/19
 
+AM_CPPFLAGS = -I${top_builddir}/fms
+
 check_PROGRAMS = tst_fms1
 TESTS = tst_fms1
 
