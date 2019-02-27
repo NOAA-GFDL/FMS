@@ -1066,13 +1066,15 @@ type :: atttype
 
   ! TODO: Move parallel_netcdf to fms_io.F90 (also rename?)
   logical            :: parallel_netcdf = .false.
+  logical            :: parallel_read = .false.
   logical            :: pnetcdf = .false.
   logical            :: parallel_chunk = .false.
   integer            :: chunk_layout(2) = [1, 1]
 
   namelist /mpp_io_nml/ header_buffer_val, global_field_on_root_pe, &
                         io_clocks_on, shuffle, deflate_level, cf_compliance, &
-                        parallel_netcdf, parallel_chunk, pnetcdf, chunk_layout
+                        parallel_netcdf, parallel_read, pnetcdf, &
+                        parallel_chunk, chunk_layout
 
   real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components

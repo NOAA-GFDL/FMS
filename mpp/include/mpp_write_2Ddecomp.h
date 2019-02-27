@@ -433,7 +433,7 @@
               else
                   allocate( gdata(1,1,1,1))
               endif
-!ccyr
+
               if (parallel_netcdf) then
                   ! TODO: This is a temporary fix, replace with per-domain writes
                   call mpp_global_field(domain, data, gdata, &

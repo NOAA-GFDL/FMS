@@ -212,7 +212,6 @@
       character(len=256) :: text2
       integer :: action_flag, form_flag, access_flag, threading_flag, fileset_flag, length
       integer :: nfiles, tile_id(1), io_layout(2)
-      integer :: niopes, totiopes
 
       logical :: exists, on_root_pe, dist_file
       logical :: write_on_this_pe, read_on_this_pe, io_domain_exist
@@ -228,7 +227,7 @@
 !----------
       integer*8                             :: lenp
       integer                               :: comm
-      integer                               :: mode, omode, idx
+      integer                               :: mode, omode
 
       integer                               :: info, ierror
       integer,dimension(:), allocatable     :: glist(:)  
@@ -239,7 +238,7 @@
       integer                               ::fsize, inital = 0
       character(len=128)                    :: f_test
 
-      integer, dimension(:), allocatable    :: iowridx, iope, io_pelist, n
+      integer, dimension(:), allocatable    :: io_pelist, n
 
       
 !----------
@@ -255,7 +254,6 @@
       io_domain_ug => null()
 !----------
       call mpp_clock_begin(mpp_open_clock)
-      totiopes = mpp_npes()
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_OPEN: must first call mpp_io_init.' )
       on_root_pe = mpp_pe() == mpp_root_pe()
@@ -292,13 +290,6 @@
       if( PRESENT(domain) ) then
          io_domain => mpp_get_io_domain(domain)
          if(associated(io_domain)) io_domain_exist = .true.
-
-         ! TODO: Move; we don't use this until much later
-         if (parallel_netcdf) then
-             npes = mpp_npes()
-             allocate(iowridx(0:npes-1))
-             allocate(iope(0:npes-1))
-         endif
 !----------
 !ug support
       elseif (present(domain_ug)) then
@@ -532,7 +523,7 @@
       end if  
           
 !threading: SINGLE or MULTI
-      if(threading_flag == MPP_MULTI .and. .not. parallel_netcdf) then
+      if (threading_flag == MPP_MULTI .and. .not. parallel_netcdf) then
 !fileset: MULTI or SINGLE (only for multi-threaded I/O
           if( fileset_flag.EQ.MPP_SINGLE )then
               if( form_flag.EQ.MPP_NETCDF .AND. act.EQ.'WRITE' ) &
@@ -545,7 +536,7 @@
           else if( fileset_flag.NE.MPP_MULTI )then
               call mpp_error( FATAL, 'MPP_OPEN: fileset must be one of MPP_MULTI or MPP_SINGLE.' )
           end if
-      else if( threading_flag.NE.MPP_SINGLE .and. .not. parallel_netcdf ) then
+      else if (threading_flag /= MPP_SINGLE .and. .not. parallel_netcdf) then
           call mpp_error( FATAL, 'MPP_OPEN: threading must be one of MPP_SINGLE or MPP_MULTI.' )
       end if
           
@@ -624,17 +615,6 @@
 
                   if(debug) write(*,*) 'Blocksize for ', trim(mpp_file(unit)%name),' is ', fsize
                  !ends addition from fmi - oct.22.2008
-
-      if (io_domain_exist) then
-          if (pe .eq. mpp_root_pe()) &
-              print '(a,i4,a,2i4,a,a)', "    IO_DOMAIN_EXIST IO uses ", &
-                    totiopes, " ranks with the layout ", io_layout, &
-                    " for file ", trim(mpp_file(unit)%name)
-      else
-          if (pe .eq. mpp_root_pe()) &
-              print '(a,i4,a,a)', "IO_DOMAIN_NON_EXIST IO uses ", totiopes, &
-                    " ranks for file ", trim(mpp_file(unit)%name)
-      endif
 
 #ifdef use_netCDF
 #ifdef use_netCDF3
@@ -720,7 +700,7 @@
 #else
           ! TODO: Combine with the non-parallel block
           if (parallel_netcdf) then
-              if( action_flag.EQ.MPP_WRONLY )then
+              if (action_flag .eq. MPP_WRONLY) then
                   if(debug) &
                       write (*,*) 'Blocksize for create of ', &
                                   trim(mpp_file(unit)%name), ' is ', fsize
@@ -741,12 +721,12 @@
                       call netcdf_err(error, mpp_file(unit))
                   end if
 
-                  if( verbose ) &
+                  if (verbose) &
                       print '(a, i6, i16, a)', &
                           'MPP_OPEN: create_par netCDF file: pe, ncid=', pe, &
                           mpp_file(unit)%ncid, trim(mpp_file(unit)%name)
 
-              else if(action_flag .eq. MPP_OVERWR) then
+              else if (action_flag .eq. MPP_OVERWR) then
                   if(debug) write (*,*) &
                       'Blocksize for create of ', trim(mpp_file(unit)%name), &
                       ' is ', fsize
@@ -776,7 +756,7 @@
                           'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, &
                           mpp_file(unit)%ncid, trim(mpp_file(unit)%name)
 
-              else if( action_flag.EQ.MPP_APPEND )then
+              else if (action_flag .eq. MPP_APPEND) then
                   inquire(file=trim(mpp_file(unit)%name), EXIST=exists)
 
                   if (.not. exists) &
@@ -793,17 +773,17 @@
                                       io_pelist, mpp_file(unit)%ncid)
                   call netcdf_err(error, mpp_file(unit))
 
-                  ! Get the current time level of the file: writes to this file
-                  ! will be at next time level
-                  error = NF_INQ_UNLIMDIM( mpp_file(unit)%ncid, unlim%did )
+                  ! Get the current time level of the file
+                  ! Writes to this file will be at next time level
+                  error = nf_inq_unlimdim(mpp_file(unit)%ncid, unlim%did)
                   if (error .eq. NF_NOERR) then
                       error = NF_INQ_DIM(mpp_file(unit)%ncid, unlim%did, &
                                          unlim%name, mpp_file(unit)%time_level)
 
                       call netcdf_err(error, mpp_file(unit))
-                      error = NF_INQ_VARID(mpp_file(unit)%ncid, unlim%name, &
+                      error = nf_inq_varid(mpp_file(unit)%ncid, unlim%name, &
                                            mpp_file(unit)%id)
-                      call netcdf_err( error, mpp_file(unit), unlim )
+                      call netcdf_err(error, mpp_file(unit), unlim)
                   end if
 
                   if (verbose) print '(a, i6, i16, i4, a)', &
@@ -813,30 +793,24 @@
 
                   mpp_file(unit)%format = form_flag ! need this for mpp_read
 
-              else if(action_flag .eq. MPP_RDONLY) then
+              else if (action_flag .eq. MPP_RDONLY) then
                   inquire(file=trim(mpp_file(unit)%name), exist=exists)
                   if (.not. exists) &
                       call mpp_error(FATAL, 'MPP_OPEN:'// &
                           trim(mpp_file(unit)%name)//' does not exist.')
 
-                  ! Serial read
-                  if(pe .eq. mpp_root_pe()) &
-                      print '(a,a)', &
-                          " SERIAL OPEN FILE ", trim(mpp_file(unit)%name)
-                  error = NF__OPEN(trim(mpp_file(unit)%name), NF_NOWRITE, &
-                                   fsize, mpp_file(unit)%ncid)
-                  call netcdf_err(error, mpp_file(unit))
-
-                  ! Parallel read
-                  ! NOTE: Parallel read I/O performance is currently poor due
-                  !       to metadata access, but may improve in the future.
-                  !mode = IOR(NF_NOWRITE, NF_MPIIO)
-                  !if (pe.EQ.mpp_root_pe()) &
-                  !    print '(a,a)', &
-                  !        " PARALLEL OPEN FILE ", trim(mpp_file(unit)%name)
-                  !error = mpp_nc_open(trim(mpp_file(unit)%name), mode, &
-                  !                    io_pelist, mpp_file(unit)%ncid)
-                  !call netcdf_err(error,mpp_file(unit))
+                  if (parallel_read) then
+                      ! NOTE: Parallel read I/O performance is currently poor
+                      ! due to metadata access, but may improve in the future.
+                      mode = IOR(NF_NOWRITE, NF_MPIIO)
+                      error = mpp_nc_open(trim(mpp_file(unit)%name), mode, &
+                                          io_pelist, mpp_file(unit)%ncid)
+                      call netcdf_err(error,mpp_file(unit))
+                  else
+                      error = NF__OPEN(trim(mpp_file(unit)%name), NF_NOWRITE, &
+                                       fsize, mpp_file(unit)%ncid)
+                      call netcdf_err(error, mpp_file(unit))
+                  end if
 
                   if (verbose) &
                       print '(a, i6, i16, i4, a)', &
@@ -983,6 +957,9 @@
           io_domain_ug => null()
       endif
 !----------
+
+      if (parallel_netcdf) &
+          deallocate(io_pelist)
 
       call mpp_clock_end(mpp_open_clock)              
       return
