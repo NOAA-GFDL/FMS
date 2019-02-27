@@ -9,6 +9,8 @@ noinst_LTLIBRARIES = libplatform.la
 
 libplatform_la_SOURCES = platform.F90
 
+platform_mod.mod: platform.$(OBJEXT)
+BUILT_SOURCES = platform_mod.mod
 include_HEADERS = platform_mod.mod
 
 CLEANFILES = *.mod

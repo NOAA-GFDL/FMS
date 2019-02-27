@@ -10,6 +10,8 @@ noinst_LTLIBRARIES = libconstants.la
 
 libconstants_la_SOURCES = constants.F90
 
+constants_mod.mod: constants.$(OBJEXT)
+BUILT_SOURCES = constants_mod.mod
 include_HEADERS = constants_mod.mod
 
 CLEANFILES = *.mod
