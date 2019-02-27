@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -33,6 +30,14 @@ horiz_interp_bilinear_mod.mod: horiz_interp_bilinear.$(OBJEXT)
 horiz_interp_conserve_mod.mod: horiz_interp_conserve.$(OBJEXT)
 horiz_interp_spherical_mod.mod: horiz_interp_spherical.$(OBJEXT)
 horiz_interp_mod.mod: horiz_interp.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+horiz_interp_bicubic.$(OBJEXT): horiz_interp_type.$(OBJEXT)
+horiz_interp_bilinear.$(OBJEXT): horiz_interp_type.$(OBJEXT)
+horiz_interp_conserve.$(OBJEXT): horiz_interp_type.$(OBJEXT)
+horiz_interp_spherical.$(OBJEXT): horiz_interp_type.$(OBJEXT)
+horiz_interp.$(OBJEXT): horiz_interp_bicubic.$(OBJEXT) horiz_interp_type.$(OBJEXT) \
+	horiz_interp_bilinear.$(OBJEXT) horiz_interp_conserve.$(OBJEXT) horiz_interp_spherical.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = horiz_interp_type_mod.mod horiz_interp_bicubic_mod.mod	\
