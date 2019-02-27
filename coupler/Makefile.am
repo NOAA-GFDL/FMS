@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/fms
@@ -27,7 +24,7 @@ libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90
 # Each mod file depends on the .o file.
 coupler_types_mod.mod: coupler_types.$(OBJEXT)
 ensemble_manager_mod.mod: ensemble_manager.$(OBJEXT)
-atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.$(OBJEXT)
+atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.$(OBJEXT) coupler_types_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = coupler_types_mod.mod ensemble_manager_mod.mod	\
