@@ -11,4 +11,8 @@ noinst_LTLIBRARIES = libaxis_utils.la
 
 libaxis_utils_la_SOURCES = axis_utils.F90
 
+axis_utils_mod.mod: axis_utils.$(OBJEXT)
+include_HEADERS = axis_utils_mod.mod
+BUILT_SOURCES = axis_utils_mod.mod
+
 CLEANFILES = *.mod
