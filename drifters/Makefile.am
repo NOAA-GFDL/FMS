@@ -18,4 +18,10 @@ libdrifters_io_la_SOURCES = drifters_io.F90
 libcloud_interpolator_la_SOURCES = cloud_interpolator.F90
 libquicksort_la_SOURCES = quicksort.F90
 
+MODFILES = drifters_core_mod.mod drifters_input_mod.mod			\
+drifters_comm_mod.mod drifters_io_mod.mod cloud_interpolator_mod.mod	\
+drifters_mod.mod
+include_HEADER = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
+
 CLEANFILES = *.mod

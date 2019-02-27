@@ -17,4 +17,8 @@ libmosaic_c_la_SOURCES = create_xgrid.c gradient_c2l.c interp.c		\
 mosaic_util.c read_mosaic.c constant.h create_xgrid.h gradient_c2l.h	\
 interp.h mosaic_util.h read_mosaic.h
 
+MODFILES = mosaic_mod.mod grid_mod.mod gradient_mod.mod
+include_HEADER = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
+
 CLEANFILES = *.mod
