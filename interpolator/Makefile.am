@@ -15,3 +15,5 @@ AM_CPPFLAGS += -I${top_builddir}/constants
 noinst_LTLIBRARIES = libinterpolator.la
 
 libinterpolator_la_SOURCES = interpolator.F90
+
+CLEANFILES = *.mod

@@ -14,3 +14,5 @@ noinst_LTLIBRARIES = libmonin_obukhov.la libmonin_obukhov_kernel.la
 
 libmonin_obukhov_la_SOURCES = monin_obukhov.F90
 libmonin_obukhov_kernel_la_SOURCES = monin_obukhov_kernel.F90
+
+CLEANFILES = *.mod

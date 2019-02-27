@@ -12,3 +12,5 @@ noinst_LTLIBRARIES = libfield_manager.la
 libfield_manager_la_SOURCES = field_manager.F90 fm_util.F90
 
 EXTRA_DIST = parse.inc
+
+CLEANFILES = *.mod

@@ -9,3 +9,5 @@ AM_CPPFLAGS += -I${top_builddir}/mpp
 noinst_LTLIBRARIES = libmemutils.la
 
 libmemutils_la_SOURCES = memutils.F90
+
+CLEANFILES = *.mod

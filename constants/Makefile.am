@@ -9,3 +9,5 @@ AM_CPPFLAGS += -I${top_builddir}/platform
 noinst_LTLIBRARIES = libconstants.la
 
 libconstants_la_SOURCES = constants.F90
+
+CLEANFILES = *.mod

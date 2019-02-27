@@ -17,3 +17,5 @@ libatmos_ocean_fluxes.la
 libcoupler_types_la_SOURCES = coupler_types.F90
 libensemble_manager_la_SOURCES = ensemble_manager.F90
 libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90
+
+CLEANFILES = *.mod

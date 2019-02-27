@@ -19,3 +19,5 @@ libhoriz_interp_conserve_la_SOURCES = horiz_interp_conserve.F90
 libhoriz_interp_la_SOURCES = horiz_interp.F90
 libhoriz_interp_spherical_la_SOURCES = horiz_interp_spherical.F90
 libhoriz_interp_type_la_SOURCES = horiz_interp_type.F90
+
+CLEANFILES = *.mod

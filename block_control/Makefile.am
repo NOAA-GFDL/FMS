@@ -9,3 +9,5 @@ AM_CPPFLAGS += -I${top_builddir}/mpp
 noinst_LTLIBRARIES = libblock_control.la
 
 libblock_control_la_SOURCES = block_control.F90
+
+CLEANFILES = *.mod

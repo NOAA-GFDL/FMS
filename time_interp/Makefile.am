@@ -15,3 +15,5 @@ noinst_LTLIBRARIES = libtime_interp.la libtime_interp_external.la
 
 libtime_interp_la_SOURCES = time_interp.F90
 libtime_interp_external_la_SOURCES = time_interp_external.F90
+
+CLEANFILES = *.mod

@@ -11,3 +11,5 @@ AM_CPPFLAGS += -I${top_builddir}/field_manager
 noinst_LTLIBRARIES = libtracer_manager.la
 
 libtracer_manager_la_SOURCES = tracer_manager.F90
+
+CLEANFILES = *.mod

@@ -12,3 +12,5 @@ AM_CPPFLAGS += -I${top_builddir}/constants
 noinst_LTLIBRARIES = libcolumn_diagnostics.la
 
 libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90
+
+CLEANFILES = *.mod

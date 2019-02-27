@@ -15,3 +15,5 @@ noinst_LTLIBRARIES = libstock_constants.la libxgrid.la
 
 libstock_constants_la_SOURCES = stock_constants.F90
 libxgrid_la_SOURCES = xgrid.F90
+
+CLEANFILES = *.mod

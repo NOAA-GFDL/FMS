@@ -13,3 +13,5 @@ AM_CPPFLAGS += -I${top_builddir}/time_manager
 noinst_LTLIBRARIES = libstation_data.la
 
 libstation_data_la_SOURCES = station_data.F90
+
+CLEANFILES = *.mod

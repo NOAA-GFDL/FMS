@@ -15,3 +15,5 @@ AM_CPPFLAGS += -I${top_builddir}/platform
 noinst_LTLIBRARIES = libamip_interp.la
 
 libamip_interp_la_SOURCES = amip_interp.F90
+
+CLEANFILES = *.mod

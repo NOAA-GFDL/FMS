@@ -9,3 +9,5 @@ AM_CPPFLAGS += -I${top_srcdir}/platform
 noinst_LTLIBRARIES = libtridiagonal.la
 
 libtridiagonal_la_SOURCES = tridiagonal.F90
+
+CLEANFILES = *.mod

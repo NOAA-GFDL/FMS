@@ -14,3 +14,5 @@ noinst_LTLIBRARIES = libdiag_integral.la
 libdiag_integral_la_SOURCES = diag_integral.F90
 
 EXTRA_DIST = diag_integral.html
+
+CLEANFILES = *.mod

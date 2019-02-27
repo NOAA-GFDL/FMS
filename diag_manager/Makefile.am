@@ -21,3 +21,5 @@ libdiag_manifest_la_SOURCES = diag_manifest.F90
 libdiag_output_la_SOURCES = diag_output.F90
 libdiag_table_la_SOURCES = diag_table.F90
 libdiag_util_la_SOURCES = diag_util.F90
+
+CLEANFILES = *.mod

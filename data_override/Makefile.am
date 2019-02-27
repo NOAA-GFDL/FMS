@@ -16,3 +16,5 @@ AM_CPPFLAGS += -I${top_builddir}/axis_utils
 noinst_LTLIBRARIES = libdata_override.la
 
 libdata_override_la_SOURCES = data_override.F90
+
+CLEANFILES = *.mod

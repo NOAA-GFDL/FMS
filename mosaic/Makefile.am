@@ -16,3 +16,5 @@ libgradient_la_SOURCES = gradient.F90
 libmosaic_c_la_SOURCES = create_xgrid.c gradient_c2l.c interp.c		\
 mosaic_util.c read_mosaic.c constant.h create_xgrid.h gradient_c2l.h	\
 interp.h mosaic_util.h read_mosaic.h
+
+CLEANFILES = *.mod

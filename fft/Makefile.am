@@ -13,3 +13,5 @@ noinst_LTLIBRARIES = libfft99.la libfft.la
 
 libfft_la_SOURCES = fft.F90
 libfft99_la_SOURCES = fft99.F90
+
+CLEANFILES = *.mod

@@ -10,3 +10,5 @@ AM_CPPFLAGS += -I${top_builddir}/fms
 noinst_LTLIBRARIES = libaxis_utils.la
 
 libaxis_utils_la_SOURCES = axis_utils.F90
+
+CLEANFILES = *.mod

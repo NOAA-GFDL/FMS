@@ -5,10 +5,10 @@
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = include platform constants tridiagonal mpp memutils fms	\
-mosaic coupler drifters axis_utils horiz_interp time_manager		\
-time_interp diag_manager diag_integral data_override			\
-column_diagnostics block_control astronomy field_manager		\
-monin_obukhov interpolator fft amip_interp oda_tools exchange		\
-topography tracer_manager station_data libFMS
+mosaic time_manager diag_manager drifters axis_utils horiz_interp	\
+time_interp diag_integral column_diagnostics block_control		\
+data_override astronomy field_manager coupler monin_obukhov		\
+interpolator fft amip_interp oda_tools exchange topography		\
+tracer_manager station_data libFMS
 
 EXTRA_DIST = README.md

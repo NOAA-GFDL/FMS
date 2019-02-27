@@ -14,3 +14,5 @@ include_HEADERS = fms_io_mod.mod fms_mod.mod
 
 libfms_la_SOURCES = fms.F90
 libfms_io_la_SOURCES = fms_io.F90
+
+CLEANFILES = *.mod

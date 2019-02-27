@@ -8,3 +8,5 @@ AM_CPPFLAGS = -I${top_srcdir}/include
 noinst_LTLIBRARIES = libplatform.la
 
 libplatform_la_SOURCES = platform.F90
+
+CLEANFILES = *.mod

@@ -13,3 +13,5 @@ noinst_LTLIBRARIES = libgaussian_topog.la libtopography.la
 
 libtopography_la_SOURCES = topography.F90
 libgaussian_topog_la_SOURCES = gaussian_topog.F90
+
+CLEANFILES = *.mod

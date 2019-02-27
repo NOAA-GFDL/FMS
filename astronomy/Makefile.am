@@ -14,3 +14,5 @@ noinst_LTLIBRARIES = libastronomy.la
 libastronomy_la_SOURCES = astronomy.F90
 
 EXTRA_DIST = astronomy.tech.ps
+
+CLEANFILES = *.mod
