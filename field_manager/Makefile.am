@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -21,6 +18,9 @@ libfm_util_la_SOURCES = fm_util.F90
 # Each mod file depends on the .o file.
 field_manager_mod.mod: field_manager.$(OBJEXT)
 fm_util_mod.mod: fm_util.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+fm_util.$(OBJEXT): field_manager.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = field_manager_mod.mod fm_util_mod.mod
