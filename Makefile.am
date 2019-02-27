@@ -9,6 +9,6 @@ mosaic time_manager diag_manager drifters axis_utils horiz_interp	\
 time_interp diag_integral column_diagnostics block_control		\
 data_override astronomy field_manager coupler monin_obukhov		\
 interpolator fft amip_interp oda_tools exchange topography		\
-tracer_manager station_data libFMS test_fms
+tracer_manager station_data sat_vapor_pres libFMS test_fms
 
 EXTRA_DIST = README.md

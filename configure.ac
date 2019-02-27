@@ -90,6 +90,7 @@ AC_CONFIG_FILES([Makefile
         axis_utils/Makefile
         astronomy/Makefile
         coupler/Makefile
+        sat_vapor_pres/Makefile
         libFMS/Makefile
         test_fms/Makefile
         ])
