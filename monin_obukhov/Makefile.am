@@ -25,7 +25,7 @@ monin_obukhov_mod.mod: monin_obukhov.$(OBJEXT)
 monin_obukhov_inter.mod: monin_obukhov_kernel.$(OBJEXT)
 
 MODFILES = monin_obukhov_mod.mod monin_obukhov_inter.mod
-include_HEADERS = $(MODFILES)
+include_HEADERS = $(MODFILES) monin_obukhov_interfaces.h
 BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod

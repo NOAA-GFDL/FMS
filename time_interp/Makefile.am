@@ -20,7 +20,7 @@ time_interp_mod.mod: time_interp.$(OBJEXT)
 time_interp_external_mod.mod: time_interp_external.$(OBJEXT)
 
 MODFILES = time_interp_mod.mod time_interp_external_mod.mod
-include_HEADER = $(MODFILES)
+include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod
