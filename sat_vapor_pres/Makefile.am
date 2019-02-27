@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/28/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/constants
@@ -22,6 +19,9 @@ libsat_vapor_pres_k_la_SOURCES = sat_vapor_pres_k.F90
 # Each mod file depends on the .o file.
 sat_vapor_pres_mod.mod: sat_vapor_pres.$(OBJEXT)
 sat_vapor_pres_k_mod.mod: sat_vapor_pres_k.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+sat_vapor_pres.$(OBJEXT): sat_vapor_pres_k.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = sat_vapor_pres_k_mod.mod sat_vapor_pres_mod.mod
