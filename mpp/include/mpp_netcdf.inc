@@ -12,7 +12,6 @@ function mpp_nc_create(name, mode, pelist, ncid) result(error_code)
     ! NOTE: nf_create never takes NF_NOWRITE
     call MPI_Info_create(io_info, error_code)
     call set_hint(io_info, 'WR')
-    ! TODO: Check error_code
 
     idx = get_peset(pelist)
     error_code = nf_create_par(name, mode, peset(idx)%id, io_info, ncid)
@@ -31,13 +30,12 @@ function mpp_nc_open(name, mode, pelist, ncid) result(error_code)
     integer :: error_code
 
     if (IAND(mode, NF_NOWRITE)) then
-        call MPI_INFO_CREATE(io_info, error_code)
+        call MPI_Info_create(io_info, error_code)
         call set_hint(io_info, 'RD')
     else
-        call MPI_INFO_CREATE(io_info, error_code)
+        call MPI_Info_create(io_info, error_code)
         call set_hint(io_info, 'WR')
     end if
-    ! TODO: Check error_code
 
     idx = get_peset(pelist)
     error_code = nf_open_par(name, mode, peset(idx)%id, io_info, ncid)
