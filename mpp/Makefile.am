@@ -4,7 +4,7 @@
 # Ed Hartnett 2/22/19
 
 # Turn off parallel builds in this directory.
-.NOTPARALLEL:
+#.NOTPARALLEL:
 
 # Descend into include directory.
 SUBDIRS = include
@@ -32,14 +32,24 @@ libmpp_memutils_la_SOURCES = mpp_memutils.F90
 
 # Each mod file depends on the .o file.
 mpp_parameter_mod.mod: mpp_parameter.$(OBJEXT)
-mpp_data_mod.mod: mpp_data.$(OBJEXT) mpp_parameter_mod.mod
+mpp_data_mod.mod: mpp_data.$(OBJEXT)
 mpp_mod.mod: mpp.$(OBJEXT)
 mpp_pset_mod.mod: mpp_pset.$(OBJEXT)
-mpp_utilities_mod.mod: mpp_utilities.$(OBJEXT) mpp_mod.mod mpp_efp_mod.mod
-mpp_memutils_mod.mod: mpp_memutils.$(OBJEXT) mpp_mod.mod
-mpp_efp_mod.mod: mpp_efp.$(OBJEXT) mpp_parameter_mod.mod mpp_mod.mod
-mpp_domains_mod.mod: mpp_domains.$(OBJEXT) mpp_data_mod.mod mpp_parameter_mod.mod mpp_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
-mpp_io_mod.mod: mpp_io.$(OBJEXT) mpp_mod.mod mpp_parameter_mod.mod mpp_domains_mod.mod
+mpp_utilities_mod.mod: mpp_utilities.$(OBJEXT)
+mpp_memutils_mod.mod: mpp_memutils.$(OBJEXT)
+mpp_efp_mod.mod: mpp_efp.$(OBJEXT)
+mpp_domains_mod.mod: mpp_domains.$(OBJEXT)
+mpp_io_mod.mod: mpp_io.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+mpp_data.$(OBJEXT): mpp_parameter.$(OBJEXT)
+mpp.$(OBJEXT): mpp_data.$(OBJEXT)
+mpp_utilities.$(OBJEXT): mpp.$(OBJEXT) mpp_efp.$(OBJEXT)
+mpp_memutils.$(OBJEXT): mpp.$(OBJEXT)
+mpp_pset.$(OBJEXT): mpp.$(OBJEXT)
+mpp_efp.$(OBJEXT): mpp_efp.$(OBJEXT) mpp_parameter.$(OBJEXT) mpp.$(OBJEXT)
+mpp_domains.$(OBJEXT): mpp_data.$(OBJEXT) mpp_parameter.$(OBJEXT) mpp.$(OBJEXT) mpp_memutils.$(OBJEXT) mpp_pset.$(OBJEXT) mpp_efp.$(OBJEXT)
+mpp_io.$(OBJEXT): mpp_parameter.$(OBJEXT) mpp.$(OBJEXT) mpp_domains.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod	\

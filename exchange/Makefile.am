@@ -22,6 +22,8 @@ libxgrid_la_SOURCES = xgrid.F90 stock_constants_mod.mod
 # Each mod file depends on the .o file.
 stock_constants_mod.mod: stock_constants.$(OBJEXT)
 xgrid_mod.mod: xgrid.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
 xgrid.$(OBJEXT): stock_constants.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
