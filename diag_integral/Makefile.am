@@ -13,6 +13,11 @@ noinst_LTLIBRARIES = libdiag_integral.la
 
 libdiag_integral_la_SOURCES = diag_integral.F90
 
+diag_integral_mod.mod: diag_integral.$(OBJEXT)
+
+include_HEADERS = diag_integral_mod.mod
+BUILT_SOURCES = diag_integral_mod.mod
+
 EXTRA_DIST = diag_integral.html
 
 CLEANFILES = *.mod

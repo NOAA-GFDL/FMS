@@ -20,4 +20,17 @@ libhoriz_interp_la_SOURCES = horiz_interp.F90
 libhoriz_interp_spherical_la_SOURCES = horiz_interp_spherical.F90
 libhoriz_interp_type_la_SOURCES = horiz_interp_type.F90
 
+horiz_interp_type_mod.mod: horiz_interp_type.$(OBJEXT)
+horiz_interp_bicubic_mod.mod: horiz_interp_bicubic.$(OBJEXT)
+horiz_interp_bilinear_mod.mod: horiz_interp_bilinear.$(OBJEXT)
+horiz_interp_conserve_mod.mod: horiz_interp_conserve.$(OBJEXT)
+horiz_interp_spherical_mod.mod: horiz_interp_spherical.$(OBJEXT)
+horiz_interp_mod.mod: horiz_interp.$(OBJEXT)
+
+MODFILES = horiz_interp_type_mod.mod horiz_interp_bicubic_mod.mod	\
+horiz_interp_bilinear_mod.mod horiz_interp_conserve_mod.mod		\
+horiz_interp_spherical_mod.mod horiz_interp_mod.mod
+include_HEADER = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
+
 CLEANFILES = *.mod

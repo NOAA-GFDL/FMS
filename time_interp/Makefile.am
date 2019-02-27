@@ -16,4 +16,11 @@ noinst_LTLIBRARIES = libtime_interp.la libtime_interp_external.la
 libtime_interp_la_SOURCES = time_interp.F90
 libtime_interp_external_la_SOURCES = time_interp_external.F90
 
+time_interp_mod.mod: time_interp.$(OBJEXT)
+time_interp_external_mod.mod: time_interp_external.$(OBJEXT)
+
+MODFILES = time_interp_mod.mod time_interp_external_mod.mod
+include_HEADER = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
+
 CLEANFILES = *.mod

@@ -46,7 +46,7 @@ mpp_utilities_mod.mod: mpp_utilities.$(OBJEXT)
 MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod	\
 mpp_utilities_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod	\
 mpp_efp_mod.mod mpp_domains_mod.mod mpp_io_mod.mod
-include_HEADER = $(MODFILES)
+include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod
