@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/constants
@@ -35,6 +32,9 @@ read_data_3d.inc
 # Each mod file depends on the .o file.
 fms_io_mod.mod: fms_io.$(OBJEXT)
 fms_mod.mod: fms.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+fms.$(OBJEXT): fms_io.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = fms_io_mod.mod fms_mod.mod

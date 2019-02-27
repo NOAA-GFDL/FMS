@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/constants
@@ -22,6 +19,9 @@ libget_cal_time_la_SOURCES = get_cal_time.F90
 # Each mod file depends on the .o file.
 time_manager_mod.mod: time_manager.$(OBJEXT)
 get_cal_time_mod.mod: get_cal_time.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
+get_cal_time.$(OBJEXT): time_manager.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = time_manager_mod.mod get_cal_time_mod.mod
