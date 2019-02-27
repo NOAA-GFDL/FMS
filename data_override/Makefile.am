@@ -17,4 +17,8 @@ noinst_LTLIBRARIES = libdata_override.la
 
 libdata_override_la_SOURCES = data_override.F90
 
+data_override_mod.mod: data_override.$(OBJEXT)
+BUILT_SOURCES = data_override_mod.mod
+include_HEADERS = data_override_mod.mod
+
 CLEANFILES = *.mod

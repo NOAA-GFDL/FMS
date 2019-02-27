@@ -13,4 +13,8 @@ noinst_LTLIBRARIES = libcolumn_diagnostics.la
 
 libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90
 
+column_diagnostics_mod.mod: column_diagnostics.$(OBJEXT)
+BUILT_SOURCES = column_diagnostics_mod.mod
+include_HEADERS = column_diagnostics_mod.mod
+
 CLEANFILES = *.mod

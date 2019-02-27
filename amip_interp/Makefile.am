@@ -16,4 +16,8 @@ noinst_LTLIBRARIES = libamip_interp.la
 
 libamip_interp_la_SOURCES = amip_interp.F90
 
+amip_interp_mod.mod: amip_interp.$(OBJEXT)
+BUILT_SOURCES = amip_interp_mod.mod
+include_HEADERS = amip_interp_mod.mod
+
 CLEANFILES = *.mod

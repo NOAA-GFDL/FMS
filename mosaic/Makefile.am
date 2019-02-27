@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Turn off parallel builds in this directory.
+.NOTPARALLEL:
+
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/constants
@@ -17,8 +20,12 @@ libmosaic_c_la_SOURCES = create_xgrid.c gradient_c2l.c interp.c		\
 mosaic_util.c read_mosaic.c constant.h create_xgrid.h gradient_c2l.h	\
 interp.h mosaic_util.h read_mosaic.h
 
+mosaic_mod.mod: mosaic.$(OBJEXT)
+grid_mod.mod: grid.$(OBJEXT)
+gradient_mod.mod: gradient.$(OBJEXT)
+
 MODFILES = mosaic_mod.mod grid_mod.mod gradient_mod.mod
-include_HEADER = $(MODFILES)
+include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod

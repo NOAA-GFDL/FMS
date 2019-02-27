@@ -16,4 +16,8 @@ noinst_LTLIBRARIES = libinterpolator.la
 
 libinterpolator_la_SOURCES = interpolator.F90
 
+interpolator_mod.mod: interpolator.$(OBJEXT)
+BUILT_SOURCES = interpolator_mod.mod
+include_HEADERS = interpolator_mod.mod
+
 CLEANFILES = *.mod

@@ -13,6 +13,10 @@ noinst_LTLIBRARIES = libastronomy.la
 
 libastronomy_la_SOURCES = astronomy.F90
 
+astronomy_mod.mod: astronomy.$(OBJEXT)
+BUILT_SOURCES = astronomy_mod.mod
+include_HEADERS = astronomy_mod.mod
+
 EXTRA_DIST = astronomy.tech.ps
 
 CLEANFILES = *.mod

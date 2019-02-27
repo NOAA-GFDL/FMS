@@ -10,4 +10,8 @@ noinst_LTLIBRARIES = libblock_control.la
 
 libblock_control_la_SOURCES = block_control.F90
 
+block_control_mod.mod: block_control.$(OBJEXT)
+BUILT_SOURCES = block_control_mod.mod
+include_HEADERS = block_control_mod.mod
+
 CLEANFILES = *.mod
