@@ -41,11 +41,13 @@ AC_SYS_LARGEFILE
 AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
 
 # Check for netCDF C library.
-AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find or link to the netcdf C library.])])
+AC_SEARCH_LIBS([nc_create], [netcdf], [],
+                            [AC_MSG_ERROR([Can't find or link to the netcdf C library, set CPPFLAGS/LDFLAGS.])])
 
 # Check for netCDF Fortran library.
 AC_LANG_PUSH(Fortran)
-AC_SEARCH_LIBS([nf_create], [netcdff], [], [AC_MSG_ERROR([Can't find or link to the netcdf Fortran library.])])
+AC_SEARCH_LIBS([nf_create], [netcdff], [],
+                            [AC_MSG_ERROR([Can't find or link to the netcdf Fortran library, set CPPFLAGS/LDFLAGS.])])
 AC_LANG_POP(Fortran)
 
 # Require netCDF.
