@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/fms
@@ -24,6 +21,7 @@ libmonin_obukhov_kernel_la_SOURCES = monin_obukhov_kernel.F90
 monin_obukhov_mod.mod: monin_obukhov.$(OBJEXT)
 monin_obukhov_inter.mod: monin_obukhov_kernel.$(OBJEXT)
 
+# Mod files are built and then installed as headers.
 MODFILES = monin_obukhov_mod.mod monin_obukhov_inter.mod
 include_HEADERS = $(MODFILES) monin_obukhov_interfaces.h
 BUILT_SOURCES = $(MODFILES)

@@ -25,6 +25,8 @@ libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90
 coupler_types_mod.mod: coupler_types.$(OBJEXT)
 ensemble_manager_mod.mod: ensemble_manager.$(OBJEXT)
 atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.$(OBJEXT)
+
+# Some mods are dependant on other mods in this dir.
 atmos_ocean_fluxes.$(OBJEXT): coupler_types.$(OBJEXT)
 
 # Mod files are built and then installed as headers.

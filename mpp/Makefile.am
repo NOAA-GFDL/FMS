@@ -45,7 +45,8 @@ mpp_utilities.$(OBJEXT): mpp.$(OBJEXT) mpp_efp.$(OBJEXT)
 mpp_memutils.$(OBJEXT): mpp.$(OBJEXT)
 mpp_pset.$(OBJEXT): mpp.$(OBJEXT)
 mpp_efp.$(OBJEXT): mpp_efp.$(OBJEXT) mpp_parameter.$(OBJEXT) mpp.$(OBJEXT)
-mpp_domains.$(OBJEXT): mpp_data.$(OBJEXT) mpp_parameter.$(OBJEXT) mpp.$(OBJEXT) mpp_memutils.$(OBJEXT) mpp_pset.$(OBJEXT) mpp_efp.$(OBJEXT)
+mpp_domains.$(OBJEXT): mpp_data.$(OBJEXT) mpp_parameter.$(OBJEXT) \
+	mpp.$(OBJEXT) mpp_memutils.$(OBJEXT) mpp_pset.$(OBJEXT) mpp_efp.$(OBJEXT)
 mpp_io.$(OBJEXT): mpp_parameter.$(OBJEXT) mpp.$(OBJEXT) mpp_domains.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
