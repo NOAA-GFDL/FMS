@@ -40,6 +40,7 @@ AC_SYS_LARGEFILE
 # Require MPI.
 AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
 
+# These defines are required for the build.
 AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
 
@@ -77,5 +78,6 @@ AC_CONFIG_FILES([Makefile
         astronomy/Makefile
         coupler/Makefile
         libFMS/Makefile
+        test_fms/Makefile
         ])
 AC_OUTPUT()
