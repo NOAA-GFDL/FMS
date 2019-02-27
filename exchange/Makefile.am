@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Turn off parallel builds in this directory.
-.NOTPARALLEL:
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -24,7 +21,7 @@ libxgrid_la_SOURCES = xgrid.F90
 
 # Each mod file depends on the .o file.
 stock_constants_mod.mod: stock_constants.$(OBJEXT)
-xgrid_mod.mod: xgrid.$(OBJEXT)
+xgrid_mod.mod: xgrid.$(OBJEXT) stock_constants_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = stock_constants_mod.mod xgrid_mod.mod
