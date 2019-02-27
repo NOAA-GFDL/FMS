@@ -10,6 +10,8 @@ noinst_LTLIBRARIES = libmemutils.la
 
 libmemutils_la_SOURCES = memutils.F90
 
+memutils_mod.mod: memutils.$(OBJEXT)
+BUILT_SOURCES = memutils_mod.mod
 include_HEADERS = memutils_mod.mod
 
 CLEANFILES = *.mod

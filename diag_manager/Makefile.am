@@ -25,8 +25,19 @@ libdiag_output_la_SOURCES = diag_output.F90
 libdiag_table_la_SOURCES = diag_table.F90
 libdiag_util_la_SOURCES = diag_util.F90
 
-include_HEADERS = diag_axis_mod.mod diag_grid_mod.mod		\
-diag_manifest_mod.mod diag_table_mod.mod diag_data_mod.mod	\
-diag_manager_mod.mod diag_output_mod.mod diag_util_mod.mod
+diag_axis_mod.mod: diag_axis.$(OBJEXT)
+diag_grid_mod.mod: diag_grid.$(OBJEXT)
+diag_manifest_mod.mod: diag_manifest.$(OBJEXT)
+diag_table_mod.mod: diag_table.$(OBJEXT)
+diag_data_mod.mod: diag_data.$(OBJEXT)
+diag_manager_mod.mod: diag_manager.$(OBJEXT)
+diag_output_mod.mod: diag_output.$(OBJEXT)
+diag_util_mod.mod: diag_util.$(OBJEXT)
+
+MODFILES = diag_data_mod.mod diag_axis_mod.mod diag_grid_mod.mod	\
+diag_output_mod.mod diag_util_mod.mod diag_manifest_mod.mod		\
+diag_table_mod.mod diag_manager_mod.mod
+include_HEADER = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod
