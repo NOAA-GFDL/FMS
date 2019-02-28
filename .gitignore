@@ -2,6 +2,6 @@
 *.o
 *.mod
 *.s
-Makefile*
-pathnames*
-
+*__genmod.f90
+*.a
+*.x
