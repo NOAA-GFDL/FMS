@@ -42,19 +42,19 @@ management systems. (Ex. yum install automake autoconf libtool).
 
 The process of building FMS from the repo is:
 
-1 - Clone repo and cd into repo directory.
-2 - Run autoreconf -i to build the developer build system.
-3 - Run ./configure to configure.
-4 - Run make to build.
+1. Clone repo and cd into repo directory.
+2. Run autoreconf -i to build the developer build system.
+3. Run ./configure to configure.
+4. Run make to build.
 
 ## As an FMS User
 
 Users start with a tarball, not the git repo. They do not have to have
 any of the autotools installed. Thier build process is:
 
-1 - Unpack the tarball and cd into the directory.
-2 - Run ./configure --prefix=/my/installdir
-3 - Run make install
+1. Unpack the tarball and cd into the directory.
+2. Run ./configure --prefix=/my/installdir
+3. Run make install
 
 ## Precious Flags for configure
 
