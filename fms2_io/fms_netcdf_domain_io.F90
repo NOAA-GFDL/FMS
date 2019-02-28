@@ -264,6 +264,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   integer, dimension(:), allocatable :: pelist
   integer, dimension(2) :: io_layout
   character(len=256) :: buf
+  character(len=256) :: buf2
   integer, dimension(1) :: tile_id
 
   !Make sure the input domain has an I/O domain and get its pelist.
@@ -280,7 +281,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   call string_copy(buf, path)
   if (mpp_get_ntile_count(domain) .gt. 1) then
     tile_id = mpp_get_tile_id(domain)
-    call domain_tile_filepath_mangle(buf, buf, tile_id(1))
+    call string_copy(buf2, buf)
+    call domain_tile_filepath_mangle(buf, buf2, tile_id(1))
   endif
 
   success = .false.
@@ -292,7 +294,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
     !Add the domain tile id to the file name (if necessary).
     if (io_layout(1)*io_layout(2) .gt. 1) then
       tile_id = mpp_get_tile_id(io_domain)
-      call io_domain_tile_filepath_mangle(buf, buf, tile_id(1))
+      call string_copy(buf2, buf)
+      call io_domain_tile_filepath_mangle(buf, buf2, tile_id(1))
     endif
 
     !Open distributed files.

@@ -403,13 +403,14 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
   logical :: is_res
 
   !Add ".res" to the file path if necessary.
-  call string_copy(buf, trim(path))
   is_res = .false.
   if (present(is_restart)) then
     is_res = is_restart
   endif
   if (is_res) then
-    call restart_filepath_mangle(buf, buf)
+    call restart_filepath_mangle(buf, trim(path))
+  else
+    call string_copy(buf, trim(path))
   endif
 
   !Check if the file exists.

@@ -4,7 +4,7 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*),  intent(in), target :: variable_data !< Data that will be written.
+  class(*),  intent(in) :: variable_data !< Data that will be written.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
   integer, dimension(0), intent(in), optional :: corner !< Array of starting
                                                         !! indices describing
@@ -19,7 +19,6 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
   integer, dimension(:), allocatable :: start
   integer, dimension(:), allocatable :: dimsizes
   character, dimension(:), allocatable :: charbuf
-  character(len=1024), pointer :: charptr
   integer :: i
   integer :: j
   integer :: tlen
@@ -63,9 +62,8 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
         if (tlen .gt. dimsizes(1)) then
           call error("character buffer is too big; decrease length.")
         endif
-        charptr => variable_data
         do i = 1, tlen
-          charbuf(i) = charptr(i:i)
+          charbuf(i) = variable_data(i:i)
         enddo
         err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
         deallocate(charbuf)
@@ -85,7 +83,7 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*), dimension(:), intent(in), target :: variable_data !< Data that will be written.
+  class(*), dimension(:), intent(in) :: variable_data !< Data that will be written.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
   integer, dimension(1), intent(in), optional :: corner !< Array of starting
                                                         !! indices describing
@@ -105,7 +103,7 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
   integer, dimension(:), allocatable :: start
   integer, dimension(:), allocatable :: dimsizes
   character, dimension(:,:), allocatable :: charbuf
-  character(len=1024), pointer :: charptr
+  character(len=1024) :: sbuf
   integer :: i
   integer :: j
   integer :: tlen
@@ -159,9 +157,9 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
           call error("incorrect size of variable_data array.")
         endif
         do j = 1, dimsizes(2)
-          charptr => variable_data(j)
+          call string_copy(sbuf, variable_data(j))
           do i = 1, tlen
-            charbuf(i,j) = charptr(i:i)
+            charbuf(i,j) = sbuf(i:i)
           enddo
         enddo
         err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)

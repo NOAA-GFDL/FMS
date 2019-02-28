@@ -1,5 +1,5 @@
 FC = ftn
-FFLAGS = -g -O0 -r8 -i4 -traceback -qopenmp
+#FFLAGS = -g -O0 -r8 -i4 -traceback -qopenmp
 INCLUDE = -I../..
 LDFLAGS = ../../libfms.a
 RPATH = 

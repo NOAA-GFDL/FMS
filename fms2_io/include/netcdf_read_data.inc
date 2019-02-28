@@ -4,7 +4,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*),  intent(inout), target :: buf !< Array that the data will be read into.
+  class(*),  intent(inout) :: buf !< Array that the data will be read into.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
   integer, intent(in), optional :: corner !< Index of the string to read if the variable
                                           !! contains a 1D array of strings.
@@ -23,7 +23,6 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(2) :: start
   integer :: ndims
   character, dimension(:), allocatable :: charbuf
-  character(len=1024), pointer :: charptr
   integer, dimension(:), allocatable :: dimsizes
   integer :: i
   character(len=1024), dimension(1) :: buf1d
@@ -73,12 +72,11 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
           call error("character buffer is too small; increase length.")
         endif
         buf = ""
-        charptr => buf
         do i = 1, dimsizes(1)
           if (charbuf(i) .eq. char(0)) then
             exit
           endif
-          charptr(i:i) = charbuf(i)
+          buf(i:i) = charbuf(i)
         enddo
         deallocate(charbuf)
         deallocate(dimsizes)
@@ -114,8 +112,8 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*), dimension(:), intent(inout), target :: buf !< Array that the data
-                                                       !! will be read into.
+  class(*), dimension(:), intent(inout) :: buf !< Array that the data
+                                               !! will be read into.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
   integer, dimension(:), intent(in), optional :: corner !< Array of starting
@@ -143,7 +141,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(2) :: start
   integer, dimension(2) :: dimsizes
   character, dimension(:,:), allocatable :: charbuf
-  character(len=1024), pointer :: charptr
+  character(len=1024) :: sbuf
   integer :: i
   integer :: j
 
@@ -200,14 +198,14 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
           call error("incorrect buffer array size.")
         endif
         do i = start(2), start(2)+dimsizes(2)-1
-          buf(i-start(2)+1) = ""
-          charptr => buf(i-start(2)+1)
+          sbuf = ""
           do j = 1, dimsizes(1)
             if (charbuf(j, i-start(2)+1) .eq. char(0)) then
               exit
             endif
-            charptr(j:j) = charbuf(j, i-start(2)+1)
+            sbuf(j:j) = charbuf(j, i-start(2)+1)
           enddo
+          call string_copy(buf(i-start(2)+1), sbuf)
         enddo
         deallocate(charbuf)
       class default

@@ -66,7 +66,7 @@ end subroutine domain_read_1d
 !> @brief Utility routine that retrieves domain indices.
 !! @internal
 subroutine domain_offsets(data_xsize, data_ysize, io_domain, dpos, &
-                          isd, isc, xc_size, jsd, jsc, yc_size)
+                          isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
 
   integer, intent(in) :: data_xsize !< Size of buffer's domain "x" dimension.
   integer, intent(in) :: data_ysize !< Size of buffer's domain "y" dimension.
@@ -78,21 +78,18 @@ subroutine domain_offsets(data_xsize, data_ysize, io_domain, dpos, &
   integer, intent(out) :: jsd !< Starting index for y dimension of data domain.
   integer, intent(out) :: jsc !< Starting index for y dimension of compute domain.
   integer, intent(out) :: yc_size !< Size of y dimension of compute domain.
+  logical, intent(out) :: buffer_includes_halos !< Flag telling if input buffer includes space for halos.
 
   integer :: xd_size
   integer :: yd_size
 
   call mpp_get_data_domain(io_domain, xbegin=isd, xsize=xd_size, position=dpos)
   call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=xc_size, position=dpos)
-  if (data_xsize .ne. xd_size .and. data_xsize .ne. xc_size) then
+  buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
+  if (.not. buffer_includes_halos .and. data_xsize .ne. xc_size .and. data_ysize &
+      .ne. yc_size) then
     call error("size of x dimension of input buffer does not match size" &
                //" of x dimension of data or compute domain.")
-  endif
-  call mpp_get_data_domain(io_domain, ybegin=jsd, ysize=yd_size, position=dpos)
-  call mpp_get_compute_domain(io_domain, ybegin=jsc, ysize=yc_size, position=dpos)
-  if (data_ysize .eq. yd_size .and. data_ysize .ne. yc_size) then
-    call error("size of y dimension of input buffer does not match size" &
-               //" of y dimension of data or compute domain.")
   endif
 end subroutine domain_offsets
 
@@ -124,7 +121,6 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: ndims
   integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
@@ -144,10 +140,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer(kind=int64), dimension(:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:), allocatable :: buf_real64
-  integer(kind=int32), dimension(:,:), allocatable :: lbuf_int32
-  integer(kind=int64), dimension(:,:), allocatable :: lbuf_int64
-  real(kind=real32), dimension(:,:), allocatable :: lbuf_real32
-  real(kind=real64), dimension(:,:), allocatable :: lbuf_real64
+  logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index)) then
@@ -155,85 +148,108 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
     return
-
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size)
+                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+  c(:) = 1
+  e(:) = shape(vdata)
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
-    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-    allocate(dimension_sizes(ndims))
-    call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
     allocate(pe_isc(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
                                  ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
-    pe_isc(:) = pe_isc(:) - pe_isc(1) + 1
-    pe_jsc(:) = pe_jsc(:) - pe_jsc(1) + 1
-    c(xdim_index) = pe_isc(1) - isd + 1
-    c(ydim_index) = pe_jsc(1) - jsd + 1
-    e(xdim_index) = pe_icsize(1)
-    e(ydim_index) = pe_jcsize(1)
-    select type(vdata)
-      type is (integer(kind=int32))
-        call allocate_array(buf_int32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int32, c, e)
-      type is (integer(kind=int64))
-        call allocate_array(buf_int64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int64, c, e)
-      type is (real(kind=real32))
-        call allocate_array(buf_real32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real32, c, e)
-      type is (real(kind=real64))
-        call allocate_array(buf_real64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real64, c, e)
-      class default
-        call error("unsupported type.")
-    end select
-    deallocate(dimension_sizes)
-    do i = 2, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i)
-      c(ydim_index) = pe_jsc(i)
+    do i = 1, size(fileobj%pelist)
+      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
+      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
         type is (integer(kind=int32))
-          call allocate_array(lbuf_int32, e)
-          call get_array_section(lbuf_int32, buf_int32, c, e)
-          call mpp_send(lbuf_int32, size(lbuf_int32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int32)
         type is (integer(kind=int64))
-          call allocate_array(lbuf_int64, e)
-          call get_array_section(lbuf_int64, buf_int64, c, e)
-          call mpp_send(lbuf_int64, size(lbuf_int64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int64)
         type is (real(kind=real32))
-          call allocate_array(lbuf_real32, e)
-          call get_array_section(lbuf_real32, buf_real32, c, e)
-          call mpp_send(lbuf_real32, size(lbuf_real32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real32)
         type is (real(kind=real64))
-          call allocate_array(lbuf_real64, e)
-          call get_array_section(lbuf_real64, buf_real64, c, e)
-          call mpp_send(lbuf_real64, size(lbuf_real64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real64)
         class default
           call error("unsupported type.")
       end select
@@ -242,18 +258,6 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_icsize)
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
-    if (allocated(buf_int32)) then
-      deallocate(buf_int32)
-    endif
-    if (allocated(buf_int64)) then
-      deallocate(buf_int64)
-    endif
-    if (allocated(buf_real32)) then
-      deallocate(buf_real32)
-    endif
-    if (allocated(buf_real64)) then
-      deallocate(buf_real64)
-    endif
   else
     c(xdim_index) = isc - isd + 1
     c(ydim_index) = jsc - jsd + 1
@@ -261,25 +265,25 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(ydim_index) = yc_size
     select type(vdata)
       type is (integer(kind=int32))
-        call allocate_array(lbuf_int32, e)
-        call mpp_recv(lbuf_int32, size(lbuf_int32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int32, vdata, c, e)
-        deallocate(lbuf_int32)
+        call allocate_array(buf_int32, e)
+        call mpp_recv(buf_int32, size(buf_int32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int32, vdata, c, e)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
-        call allocate_array(lbuf_int64, e)
-        call mpp_recv(lbuf_int64, size(lbuf_int64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int64, vdata, c, e)
-        deallocate(lbuf_int64)
+        call allocate_array(buf_int64, e)
+        call mpp_recv(buf_int64, size(buf_int64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int64, vdata, c, e)
+        deallocate(buf_int64)
       type is (real(kind=real32))
-        call allocate_array(lbuf_real32, e)
-        call mpp_recv(lbuf_real32, size(lbuf_real32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real32, vdata, c, e)
-        deallocate(lbuf_real32)
+        call allocate_array(buf_real32, e)
+        call mpp_recv(buf_real32, size(buf_real32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real32, vdata, c, e)
+        deallocate(buf_real32)
       type is (real(kind=real64))
-        call allocate_array(lbuf_real64, e)
-        call mpp_recv(lbuf_real64, size(lbuf_real64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real64, vdata, c, e)
-        deallocate(lbuf_real64)
+        call allocate_array(buf_real64, e)
+        call mpp_recv(buf_real64, size(buf_real64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real64, vdata, c, e)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select
@@ -314,7 +318,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: ndims
   integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
@@ -334,10 +337,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer(kind=int64), dimension(:,:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:), allocatable :: buf_real64
-  integer(kind=int32), dimension(:,:,:), allocatable :: lbuf_int32
-  integer(kind=int64), dimension(:,:,:), allocatable :: lbuf_int64
-  real(kind=real32), dimension(:,:,:), allocatable :: lbuf_real32
-  real(kind=real64), dimension(:,:,:), allocatable :: lbuf_real64
+  logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index)) then
@@ -349,82 +349,104 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size)
+                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
-    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-    allocate(dimension_sizes(ndims))
-    call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
     allocate(pe_isc(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
                                  ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
-    pe_isc(:) = pe_isc(:) - pe_isc(1) + 1
-    pe_jsc(:) = pe_jsc(:) - pe_jsc(1) + 1
-    c(xdim_index) = pe_isc(1) - isd + 1
-    c(ydim_index) = pe_jsc(1) - jsd + 1
-    e(xdim_index) = pe_icsize(1)
-    e(ydim_index) = pe_jcsize(1)
-    select type(vdata)
-      type is (integer(kind=int32))
-        call allocate_array(buf_int32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int32, c, e)
-      type is (integer(kind=int64))
-        call allocate_array(buf_int64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int64, c, e)
-      type is (real(kind=real32))
-        call allocate_array(buf_real32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real32, c, e)
-      type is (real(kind=real64))
-        call allocate_array(buf_real64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real64, c, e)
-      class default
-        call error("unsupported type.")
-    end select
-    deallocate(dimension_sizes)
-    do i = 2, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i)
-      c(ydim_index) = pe_jsc(i)
+    do i = 1, size(fileobj%pelist)
+      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
+      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
         type is (integer(kind=int32))
-          call allocate_array(lbuf_int32, e)
-          call get_array_section(lbuf_int32, buf_int32, c, e)
-          call mpp_send(lbuf_int32, size(lbuf_int32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int32)
         type is (integer(kind=int64))
-          call allocate_array(lbuf_int64, e)
-          call get_array_section(lbuf_int64, buf_int64, c, e)
-          call mpp_send(lbuf_int64, size(lbuf_int64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int64)
         type is (real(kind=real32))
-          call allocate_array(lbuf_real32, e)
-          call get_array_section(lbuf_real32, buf_real32, c, e)
-          call mpp_send(lbuf_real32, size(lbuf_real32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real32)
         type is (real(kind=real64))
-          call allocate_array(lbuf_real64, e)
-          call get_array_section(lbuf_real64, buf_real64, c, e)
-          call mpp_send(lbuf_real64, size(lbuf_real64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real64)
         class default
           call error("unsupported type.")
       end select
@@ -433,18 +455,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_icsize)
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
-    if (allocated(buf_int32)) then
-      deallocate(buf_int32)
-    endif
-    if (allocated(buf_int64)) then
-      deallocate(buf_int64)
-    endif
-    if (allocated(buf_real32)) then
-      deallocate(buf_real32)
-    endif
-    if (allocated(buf_real64)) then
-      deallocate(buf_real64)
-    endif
   else
     c(xdim_index) = isc - isd + 1
     c(ydim_index) = jsc - jsd + 1
@@ -452,25 +462,25 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(ydim_index) = yc_size
     select type(vdata)
       type is (integer(kind=int32))
-        call allocate_array(lbuf_int32, e)
-        call mpp_recv(lbuf_int32, size(lbuf_int32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int32, vdata, c, e)
-        deallocate(lbuf_int32)
+        call allocate_array(buf_int32, e)
+        call mpp_recv(buf_int32, size(buf_int32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int32, vdata, c, e)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
-        call allocate_array(lbuf_int64, e)
-        call mpp_recv(lbuf_int64, size(lbuf_int64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int64, vdata, c, e)
-        deallocate(lbuf_int64)
+        call allocate_array(buf_int64, e)
+        call mpp_recv(buf_int64, size(buf_int64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int64, vdata, c, e)
+        deallocate(buf_int64)
       type is (real(kind=real32))
-        call allocate_array(lbuf_real32, e)
-        call mpp_recv(lbuf_real32, size(lbuf_real32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real32, vdata, c, e)
-        deallocate(lbuf_real32)
+        call allocate_array(buf_real32, e)
+        call mpp_recv(buf_real32, size(buf_real32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real32, vdata, c, e)
+        deallocate(buf_real32)
       type is (real(kind=real64))
-        call allocate_array(lbuf_real64, e)
-        call mpp_recv(lbuf_real64, size(lbuf_real64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real64, vdata, c, e)
-        deallocate(lbuf_real64)
+        call allocate_array(buf_real64, e)
+        call mpp_recv(buf_real64, size(buf_real64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real64, vdata, c, e)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select
@@ -505,7 +515,6 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: ndims
   integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
@@ -525,10 +534,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer(kind=int64), dimension(:,:,:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:,:), allocatable :: buf_real64
-  integer(kind=int32), dimension(:,:,:,:), allocatable :: lbuf_int32
-  integer(kind=int64), dimension(:,:,:,:), allocatable :: lbuf_int64
-  real(kind=real32), dimension(:,:,:,:), allocatable :: lbuf_real32
-  real(kind=real64), dimension(:,:,:,:), allocatable :: lbuf_real64
+  logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index)) then
@@ -540,82 +546,104 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size)
+                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
-    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-    allocate(dimension_sizes(ndims))
-    call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
     allocate(pe_isc(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
                                  ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
-    pe_isc(:) = pe_isc(:) - pe_isc(1) + 1
-    pe_jsc(:) = pe_jsc(:) - pe_jsc(1) + 1
-    c(xdim_index) = pe_isc(1) - isd + 1
-    c(ydim_index) = pe_jsc(1) - jsd + 1
-    e(xdim_index) = pe_icsize(1)
-    e(ydim_index) = pe_jcsize(1)
-    select type(vdata)
-      type is (integer(kind=int32))
-        call allocate_array(buf_int32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int32, c, e)
-      type is (integer(kind=int64))
-        call allocate_array(buf_int64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int64, c, e)
-      type is (real(kind=real32))
-        call allocate_array(buf_real32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real32, c, e)
-      type is (real(kind=real64))
-        call allocate_array(buf_real64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real64, c, e)
-      class default
-        call error("unsupported type.")
-    end select
-    deallocate(dimension_sizes)
-    do i = 2, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i)
-      c(ydim_index) = pe_jsc(i)
+    do i = 1, size(fileobj%pelist)
+      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
+      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
         type is (integer(kind=int32))
-          call allocate_array(lbuf_int32, e)
-          call get_array_section(lbuf_int32, buf_int32, c, e)
-          call mpp_send(lbuf_int32, size(lbuf_int32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int32)
         type is (integer(kind=int64))
-          call allocate_array(lbuf_int64, e)
-          call get_array_section(lbuf_int64, buf_int64, c, e)
-          call mpp_send(lbuf_int64, size(lbuf_int64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int64)
         type is (real(kind=real32))
-          call allocate_array(lbuf_real32, e)
-          call get_array_section(lbuf_real32, buf_real32, c, e)
-          call mpp_send(lbuf_real32, size(lbuf_real32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real32)
         type is (real(kind=real64))
-          call allocate_array(lbuf_real64, e)
-          call get_array_section(lbuf_real64, buf_real64, c, e)
-          call mpp_send(lbuf_real64, size(lbuf_real64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real64)
         class default
           call error("unsupported type.")
       end select
@@ -624,18 +652,6 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_icsize)
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
-    if (allocated(buf_int32)) then
-      deallocate(buf_int32)
-    endif
-    if (allocated(buf_int64)) then
-      deallocate(buf_int64)
-    endif
-    if (allocated(buf_real32)) then
-      deallocate(buf_real32)
-    endif
-    if (allocated(buf_real64)) then
-      deallocate(buf_real64)
-    endif
   else
     c(xdim_index) = isc - isd + 1
     c(ydim_index) = jsc - jsd + 1
@@ -643,25 +659,25 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(ydim_index) = yc_size
     select type(vdata)
       type is (integer(kind=int32))
-        call allocate_array(lbuf_int32, e)
-        call mpp_recv(lbuf_int32, size(lbuf_int32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int32, vdata, c, e)
-        deallocate(lbuf_int32)
+        call allocate_array(buf_int32, e)
+        call mpp_recv(buf_int32, size(buf_int32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int32, vdata, c, e)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
-        call allocate_array(lbuf_int64, e)
-        call mpp_recv(lbuf_int64, size(lbuf_int64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int64, vdata, c, e)
-        deallocate(lbuf_int64)
+        call allocate_array(buf_int64, e)
+        call mpp_recv(buf_int64, size(buf_int64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int64, vdata, c, e)
+        deallocate(buf_int64)
       type is (real(kind=real32))
-        call allocate_array(lbuf_real32, e)
-        call mpp_recv(lbuf_real32, size(lbuf_real32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real32, vdata, c, e)
-        deallocate(lbuf_real32)
+        call allocate_array(buf_real32, e)
+        call mpp_recv(buf_real32, size(buf_real32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real32, vdata, c, e)
+        deallocate(buf_real32)
       type is (real(kind=real64))
-        call allocate_array(lbuf_real64, e)
-        call mpp_recv(lbuf_real64, size(lbuf_real64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real64, vdata, c, e)
-        deallocate(lbuf_real64)
+        call allocate_array(buf_real64, e)
+        call mpp_recv(buf_real64, size(buf_real64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real64, vdata, c, e)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select
@@ -696,7 +712,6 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: ndims
   integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
@@ -716,10 +731,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer(kind=int64), dimension(:,:,:,:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:,:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:,:,:), allocatable :: buf_real64
-  integer(kind=int32), dimension(:,:,:,:,:), allocatable :: lbuf_int32
-  integer(kind=int64), dimension(:,:,:,:,:), allocatable :: lbuf_int64
-  real(kind=real32), dimension(:,:,:,:,:), allocatable :: lbuf_real32
-  real(kind=real64), dimension(:,:,:,:,:), allocatable :: lbuf_real64
+  logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index)) then
@@ -731,82 +743,104 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size)
+                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
-    ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-    allocate(dimension_sizes(ndims))
-    call get_variable_size(fileobj, variable_name, dimension_sizes, broadcast=.false.)
     allocate(pe_isc(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
                                  ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
-    pe_isc(:) = pe_isc(:) - pe_isc(1) + 1
-    pe_jsc(:) = pe_jsc(:) - pe_jsc(1) + 1
-    c(xdim_index) = pe_isc(1) - isd + 1
-    c(ydim_index) = pe_jsc(1) - jsd + 1
-    e(xdim_index) = pe_icsize(1)
-    e(ydim_index) = pe_jcsize(1)
-    select type(vdata)
-      type is (integer(kind=int32))
-        call allocate_array(buf_int32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int32, c, e)
-      type is (integer(kind=int64))
-        call allocate_array(buf_int64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_int64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_int64, c, e)
-      type is (real(kind=real32))
-        call allocate_array(buf_real32, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real32, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real32, c, e)
-      type is (real(kind=real64))
-        call allocate_array(buf_real64, dimension_sizes)
-        call netcdf_read_data(fileobj, variable_name, buf_real64, &
-                              unlim_dim_level=unlim_dim_level, broadcast=.false.)
-        call get_array_section(vdata, buf_real64, c, e)
-      class default
-        call error("unsupported type.")
-    end select
-    deallocate(dimension_sizes)
-    do i = 2, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i)
-      c(ydim_index) = pe_jsc(i)
+    do i = 1, size(fileobj%pelist)
+      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
+      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
         type is (integer(kind=int32))
-          call allocate_array(lbuf_int32, e)
-          call get_array_section(lbuf_int32, buf_int32, c, e)
-          call mpp_send(lbuf_int32, size(lbuf_int32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int32)
         type is (integer(kind=int64))
-          call allocate_array(lbuf_int64, e)
-          call get_array_section(lbuf_int64, buf_int64, c, e)
-          call mpp_send(lbuf_int64, size(lbuf_int64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_int64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_int64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_int64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_int64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_int64)
         type is (real(kind=real32))
-          call allocate_array(lbuf_real32, e)
-          call get_array_section(lbuf_real32, buf_real32, c, e)
-          call mpp_send(lbuf_real32, size(lbuf_real32), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real32)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real32, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real32, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real32, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real32)
         type is (real(kind=real64))
-          call allocate_array(lbuf_real64, e)
-          call get_array_section(lbuf_real64, buf_real64, c, e)
-          call mpp_send(lbuf_real64, size(lbuf_real64), fileobj%pelist(i))
-          call mpp_sync_self(check=EVENT_SEND)
-          deallocate(lbuf_real64)
+          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
+          call allocate_array(buf_real64, e)
+          call netcdf_read_data(fileobj, variable_name, buf_real64, &
+                                unlim_dim_level=unlim_dim_level, &
+                                corner=c, edge_lengths=e, broadcast=.false.)
+          if (i .eq. 1) then
+            !Root rank stores data directly.
+            if (buffer_includes_halos) then
+              !Adjust if the input buffer has room for halos.
+              c(xdim_index) = isc - isd + 1
+              c(ydim_index) = jsc - jsd + 1
+            endif
+            call put_array_section(vdata, buf_real64, c, e)
+          else
+            !Send data to non-root ranks.
+            call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
+            call mpp_sync_self(check=EVENT_SEND)
+          endif
+          deallocate(buf_real64)
         class default
           call error("unsupported type.")
       end select
@@ -815,18 +849,6 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_icsize)
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
-    if (allocated(buf_int32)) then
-      deallocate(buf_int32)
-    endif
-    if (allocated(buf_int64)) then
-      deallocate(buf_int64)
-    endif
-    if (allocated(buf_real32)) then
-      deallocate(buf_real32)
-    endif
-    if (allocated(buf_real64)) then
-      deallocate(buf_real64)
-    endif
   else
     c(xdim_index) = isc - isd + 1
     c(ydim_index) = jsc - jsd + 1
@@ -834,25 +856,25 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(ydim_index) = yc_size
     select type(vdata)
       type is (integer(kind=int32))
-        call allocate_array(lbuf_int32, e)
-        call mpp_recv(lbuf_int32, size(lbuf_int32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int32, vdata, c, e)
-        deallocate(lbuf_int32)
+        call allocate_array(buf_int32, e)
+        call mpp_recv(buf_int32, size(buf_int32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int32, vdata, c, e)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
-        call allocate_array(lbuf_int64, e)
-        call mpp_recv(lbuf_int64, size(lbuf_int64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_int64, vdata, c, e)
-        deallocate(lbuf_int64)
+        call allocate_array(buf_int64, e)
+        call mpp_recv(buf_int64, size(buf_int64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_int64, vdata, c, e)
+        deallocate(buf_int64)
       type is (real(kind=real32))
-        call allocate_array(lbuf_real32, e)
-        call mpp_recv(lbuf_real32, size(lbuf_real32), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real32, vdata, c, e)
-        deallocate(lbuf_real32)
+        call allocate_array(buf_real32, e)
+        call mpp_recv(buf_real32, size(buf_real32), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real32, vdata, c, e)
+        deallocate(buf_real32)
       type is (real(kind=real64))
-        call allocate_array(lbuf_real64, e)
-        call mpp_recv(lbuf_real64, size(lbuf_real64), fileobj%io_root, block=.true.)
-        call put_array_section(lbuf_real64, vdata, c, e)
-        deallocate(lbuf_real64)
+        call allocate_array(buf_real64, e)
+        call mpp_recv(buf_real64, size(buf_real64), fileobj%io_root, block=.true.)
+        call put_array_section(buf_real64, vdata, c, e)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select

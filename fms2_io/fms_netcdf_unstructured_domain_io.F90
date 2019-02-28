@@ -71,6 +71,7 @@ function open_unstructured_domain_file(fileobj, path, mode, domain, nc_format, &
   integer :: pelist_size
   integer, dimension(:), allocatable :: pelist
   character(len=256) :: buf
+  character(len=256) :: buf2
   integer :: tile_id
 
   !Get the input domain's I/O domain pelist.
@@ -98,7 +99,8 @@ function open_unstructured_domain_file(fileobj, path, mode, domain, nc_format, &
     !Add the domain tile id to the file name (if necessary).
     if (mpp_get_io_domain_ug_layout(domain) .gt. 1) then
       tile_id = mpp_get_ug_domain_tile_id(io_domain)
-      call io_domain_tile_filepath_mangle(buf, buf, tile_id)
+      call string_copy(buf2, buf)
+      call io_domain_tile_filepath_mangle(buf, buf2, tile_id)
     endif
 
     !Open distributed files.

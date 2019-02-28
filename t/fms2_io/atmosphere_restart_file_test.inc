@@ -7,12 +7,21 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
 
   type(FmsNetcdfDomainFile_t) :: fileobj
   type(domain2d), pointer :: io_domain
+  integer :: isc
   integer :: nx
+  integer :: jsc
   integer :: ny
+  integer :: isd
+  integer :: nxd
+  integer :: jsd
+  integer :: nyd
+  integer :: ioff
+  integer :: joff
   real(kind=real64), dimension(:), allocatable :: lon_data
   real(kind=real64), dimension(:), allocatable :: lat_data
   real(kind=real64), dimension(:), allocatable :: lev_data
   real(kind=real64), dimension(:,:,:), allocatable :: temperature_data
+  real(kind=real64), dimension(:,:,:), allocatable :: temperature_data_with_halos
   real(kind=real64), dimension(:), allocatable :: avg_t_data
   integer(kind=int32), dimension(:,:), allocatable :: surf_t_data
   integer :: ndims
@@ -20,6 +29,7 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   integer(kind=int64), dimension(3) :: out_chksum
   integer(kind=int64), dimension(3) :: in_chksum
   integer, dimension(3) :: chksum_unlim_level
+  character(len=256) :: att
   character(len=256), dimension(:), allocatable :: buffer
   character(len=256), dimension(:), allocatable :: buffer2
   logical :: debug
@@ -43,18 +53,19 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
     !Tell which test is running.
     if (mpp_pe() .eq. 0) then
       write(error_unit,'(/a)') &
-          "Running atmosphere (6-tile domain decomposed) restart file test ... "
+        "Running atmosphere (6-tile domain decomposed) restart file test ... "
     endif
   endif
   call mpi_barrier(mpi_comm_world, err)
   call mpi_check(err)
 
-  !Get the sizes of the I/O compute domain and allocate buffer.
+  !Get the sizes of the I/O compute and data domains.
   io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
     call mpp_error(fatal, "I/O domain is not associated.")
   endif
-  call mpp_get_compute_domain(io_domain, xsize=nx, ysize=ny)
+  call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=nx, ybegin=jsc, ysize=ny)
+  call mpp_get_data_domain(io_domain, xbegin=isd, xsize=nxd, ybegin=jsd, ysize=nyd)
 
   !Write a restart file.
   !Open a restart file and initialize the file object.
@@ -152,7 +163,7 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
 
   !Add scalar and 1D string variables.
   call register_field(fileobj, "filename", "char", (/"strlen"/))
-  call register_field(fileobj, "strings", "char", (/"strlen", "lev"/))
+  call register_field(fileobj, "strings", "char", (/"strlen", "lev   "/))
   call write_data(fileobj, "filename", "file1.nc")
   allocate(buffer(nz))
   do i = 1, nz
@@ -258,6 +269,14 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
     endif
     write(6,*) trim(buffer(i)), trim(buffer2(i))
   enddo
+  call read_data(fileobj, "strings", buffer2(1), corner=ndims)
+  if (trim(buffer2(1)) .ne. trim(buffer(ndims))) then
+    call mpp_error(fatal, "Scalar from array of strings read failed.")
+  endif
+  call read_data(fileobj, "filename", buffer2(ndims))
+  if (trim(buffer2(ndims)) .ne. "file1.nc") then
+    call mpp_error(fatal, "Did not read in filename variable correctly.")
+  endif
   deallocate(buffer)
   deallocate(buffer2)
 
@@ -266,8 +285,10 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   allocate(dim_sizes(ndims))
   call get_variable_size(fileobj, "temperature", dim_sizes, broadcast=.true.)
   allocate(temperature_data(nx, ny, dim_sizes(3)))
+  temperature_data(:,:,:) = 0.
+  allocate(temperature_data_with_halos(nxd, nyd, dim_sizes(3)))
+  temperature_data_with_halos(:,:,:) = 0.
   deallocate(dim_sizes)
-  temperature_data(:, :, :) = 0.
 
   ndims = get_variable_num_dimensions(fileobj, "avg_layer_temperature", broadcast=.true.)
   allocate(dim_sizes(ndims))
@@ -282,12 +303,24 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   !allocated buffer.
   call register_restart_field(fileobj, "temperature", temperature_data)
 
+  !Read in variable attribute.
+  call get_variable_attribute(fileobj, "temperature", "units", att)
+  if (trim(att) .ne. "K") then
+    call mpp_error(fatal, "failed to read in string variable attribute.")
+  endif
+
   !Read in the restart variable and checksum.
   call read_restart(fileobj, unlim_dim_level=chksum_unlim_level(1))
   in_chksum(1) = mpp_chksum(temperature_data, pelist=(/mpp_pe()/))
   call chksum_match(out_chksum(1), in_chksum(1), "temperature", debug)
 
   !Read in the non-restart variables and checksum.
+  call read_data(fileobj, "temperature", temperature_data_with_halos)
+  ioff = isc-isd+1
+  joff = jsc-jsd+1
+  in_chksum(1) = mpp_chksum(temperature_data_with_halos(ioff:ioff+nx,joff:joff+ny,:), &
+                            pelist=(/mpp_pe()/))
+  call chksum_match(out_chksum(1), in_chksum(1), "temperature", debug)
   call read_data(fileobj, "avg_layer_temperature", avg_t_data, &
                  unlim_dim_level=chksum_unlim_level(2))
 ! in_chksum(2) = mpp_chksum(avg_t_data, pelist=(/mpp_pe()/))
