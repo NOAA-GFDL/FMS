@@ -306,7 +306,7 @@ xgrid.o: exchange/xgrid.F90 include/fms_platform.h include/file_version.h fms.o 
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude exchange/xgrid.F90
 
 clean: neat
-	-rm -f .libfms.a.cppdefs $(OBJ) libfms.a
+	-rm -f .libfms.a.cppdefs $(OBJ) libfms.a *.mod *__genmod.f90
 
 neat:
 	-rm -f $(TMPFILES)
