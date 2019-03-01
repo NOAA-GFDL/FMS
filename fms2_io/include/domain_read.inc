@@ -83,8 +83,10 @@ subroutine domain_offsets(data_xsize, data_ysize, io_domain, dpos, &
   integer :: xd_size
   integer :: yd_size
 
-  call mpp_get_data_domain(io_domain, xbegin=isd, xsize=xd_size, position=dpos)
-  call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=xc_size, position=dpos)
+  call mpp_get_data_domain(io_domain, xbegin=isd, xsize=xd_size, ybegin=jsd, &
+                           ysize=yd_size, position=dpos)
+  call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=xc_size, ybegin=jsc, &
+                              ysize=yc_size, position=dpos)
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
   if (.not. buffer_includes_halos .and. data_xsize .ne. xc_size .and. data_ysize &
       .ne. yc_size) then
@@ -183,7 +185,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int32, c, e)
+            call put_array_section(buf_int32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
@@ -203,7 +205,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int64, c, e)
+            call put_array_section(buf_int64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
@@ -223,7 +225,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real32, c, e)
+            call put_array_section(buf_real32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
@@ -243,7 +245,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real64, c, e)
+            call put_array_section(buf_real64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
@@ -259,8 +261,10 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
   else
-    c(xdim_index) = isc - isd + 1
-    c(ydim_index) = jsc - jsd + 1
+    if (buffer_includes_halos) then
+      c(xdim_index) = isc - isd + 1
+      c(ydim_index) = jsc - jsd + 1
+    endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
     select type(vdata)
@@ -380,7 +384,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int32, c, e)
+            call put_array_section(buf_int32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
@@ -400,7 +404,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int64, c, e)
+            call put_array_section(buf_int64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
@@ -420,7 +424,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real32, c, e)
+            call put_array_section(buf_real32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
@@ -440,7 +444,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real64, c, e)
+            call put_array_section(buf_real64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
@@ -456,8 +460,10 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
   else
-    c(xdim_index) = isc - isd + 1
-    c(ydim_index) = jsc - jsd + 1
+    if (buffer_includes_halos) then
+      c(xdim_index) = isc - isd + 1
+      c(ydim_index) = jsc - jsd + 1
+    endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
     select type(vdata)
@@ -577,7 +583,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int32, c, e)
+            call put_array_section(buf_int32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
@@ -597,7 +603,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int64, c, e)
+            call put_array_section(buf_int64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
@@ -617,7 +623,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real32, c, e)
+            call put_array_section(buf_real32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
@@ -637,7 +643,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real64, c, e)
+            call put_array_section(buf_real64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
@@ -653,8 +659,10 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
   else
-    c(xdim_index) = isc - isd + 1
-    c(ydim_index) = jsc - jsd + 1
+    if (buffer_includes_halos) then
+      c(xdim_index) = isc - isd + 1
+      c(ydim_index) = jsc - jsd + 1
+    endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
     select type(vdata)
@@ -774,7 +782,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int32, c, e)
+            call put_array_section(buf_int32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int32, size(buf_int32), fileobj%pelist(i))
@@ -794,7 +802,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_int64, c, e)
+            call put_array_section(buf_int64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_int64, size(buf_int64), fileobj%pelist(i))
@@ -814,7 +822,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real32, c, e)
+            call put_array_section(buf_real32, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real32, size(buf_real32), fileobj%pelist(i))
@@ -834,7 +842,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
             endif
-            call put_array_section(vdata, buf_real64, c, e)
+            call put_array_section(buf_real64, vdata, c, e)
           else
             !Send data to non-root ranks.
             call mpp_send(buf_real64, size(buf_real64), fileobj%pelist(i))
@@ -850,8 +858,10 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
   else
-    c(xdim_index) = isc - isd + 1
-    c(ydim_index) = jsc - jsd + 1
+    if (buffer_includes_halos) then
+      c(xdim_index) = isc - isd + 1
+      c(ydim_index) = jsc - jsd + 1
+    endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
     select type(vdata)

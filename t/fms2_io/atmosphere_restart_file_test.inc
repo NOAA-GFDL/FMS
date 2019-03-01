@@ -315,7 +315,8 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   call chksum_match(out_chksum(1), in_chksum(1), "temperature", debug)
 
   !Read in the non-restart variables and checksum.
-  call read_data(fileobj, "temperature", temperature_data_with_halos)
+  call read_data(fileobj, "temperature", temperature_data_with_halos, &
+                 unlim_dim_level=chksum_unlim_level(1))
   ioff = isc-isd+1
   joff = jsc-jsd+1
   in_chksum(1) = mpp_chksum(temperature_data_with_halos(ioff:ioff+nx,joff:joff+ny,:), &
