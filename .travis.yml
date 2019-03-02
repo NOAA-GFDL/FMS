@@ -40,6 +40,5 @@ env:
 script:
   - autoreconf -i
   - ./configure
-  - make
-  - make check
+  - make -j distcheck
  
