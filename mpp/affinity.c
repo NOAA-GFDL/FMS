@@ -74,8 +74,9 @@ void set_cpu_affinity( int cpu )
   CPU_ZERO(&coremask);
   CPU_SET(cpu,&coremask);
   if (sched_setaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
-    fprintf(stderr,"Unable to set thread %d affinity. %s\n",gettid(),strerror(errno));
+    return -1;
   }
+  return 0;
 }
 
-void set_cpu_affinity_(int *cpu) { set_cpu_affinity(*cpu); }	/* Fortran interface */
+void set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */
