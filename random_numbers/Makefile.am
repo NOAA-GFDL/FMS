@@ -19,7 +19,7 @@ random_numbers_mod.mod: random_numbers.$(OBJEXT)
 mersennetwister_mod.mod: MersenneTwister.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-random_numbers.$(OBJEXT): MersenneTwister.$(OBJEXT)
+random_numbers.$(OBJEXT): mersennetwister_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = mersennetwister_mod.mod random_numbers_mod.mod

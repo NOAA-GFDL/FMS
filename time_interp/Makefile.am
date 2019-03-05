@@ -25,7 +25,7 @@ time_interp_mod.mod: time_interp.$(OBJEXT)
 time_interp_external_mod.mod: time_interp_external.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-time_interp_external.$(OBJEXT):  time_interp.$(OBJEXT)
+time_interp_external.$(OBJEXT):  time_interp_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = time_interp_mod.mod time_interp_external_mod.mod

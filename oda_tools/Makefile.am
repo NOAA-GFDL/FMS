@@ -32,8 +32,8 @@ write_ocean_data_mod.mod: write_ocean_data.$(OBJEXT)
 oda_core_mod.mod: oda_core.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-write_ocean_data.$(OBJEXT): oda_types.$(OBJEXT)
-oda_core.$(OBJEXT): oda_types.$(OBJEXT) write_ocean_data.$(OBJEXT)
+write_ocean_data.$(OBJEXT): oda_types_mod.mod
+oda_core.$(OBJEXT): oda_types_mod.mod write_ocean_data_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = oda_types_mod.mod write_ocean_data_mod.mod	\

@@ -34,7 +34,7 @@ fms_io_mod.mod: fms_io.$(OBJEXT)
 fms_mod.mod: fms.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-fms.$(OBJEXT): fms_io.$(OBJEXT)
+fms.$(OBJEXT): fms_io_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = fms_io_mod.mod fms_mod.mod

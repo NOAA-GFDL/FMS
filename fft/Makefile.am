@@ -22,7 +22,7 @@ fft99_mod.mod: fft99.$(OBJEXT)
 fft_mod.mod: fft.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-fft.$(OBJEXT): fft99.$(OBJEXT)
+fft.$(OBJEXT): fft99_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = fft99_mod.mod fft_mod.mod
