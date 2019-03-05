@@ -22,7 +22,7 @@ gaussian_topog_mod.mod: gaussian_topog.$(OBJEXT)
 topography_mod.mod: topography.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-topography.$(OBJEXT): gaussian_topog.$(OBJEXT)
+topography.$(OBJEXT): gaussian_topog_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = gaussian_topog_mod.mod topography_mod.mod

@@ -21,7 +21,7 @@ time_manager_mod.mod: time_manager.$(OBJEXT)
 get_cal_time_mod.mod: get_cal_time.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-get_cal_time.$(OBJEXT): time_manager.$(OBJEXT)
+get_cal_time.$(OBJEXT): time_manager_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = time_manager_mod.mod get_cal_time_mod.mod

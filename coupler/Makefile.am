@@ -28,7 +28,7 @@ ensemble_manager_mod.mod: ensemble_manager.$(OBJEXT)
 atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-atmos_ocean_fluxes.$(OBJEXT): coupler_types.$(OBJEXT)
+atmos_ocean_fluxes.$(OBJEXT): coupler_types_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = coupler_types_mod.mod ensemble_manager_mod.mod	\

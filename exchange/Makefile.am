@@ -24,7 +24,7 @@ stock_constants_mod.mod: stock_constants.$(OBJEXT)
 xgrid_mod.mod: xgrid.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-xgrid.$(OBJEXT): stock_constants.$(OBJEXT)
+xgrid.$(OBJEXT): stock_constants_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = stock_constants_mod.mod xgrid_mod.mod

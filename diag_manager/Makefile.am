@@ -36,12 +36,12 @@ diag_output_mod.mod: diag_output.$(OBJEXT)
 diag_util_mod.mod: diag_util.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-diag_axis.$(OBJEXT): diag_data.$(OBJEXT)
-diag_manifest.$(OBJEXT): diag_data.$(OBJEXT)
-diag_output.$(OBJEXT): diag_axis.$(OBJEXT) diag_data.$(OBJEXT)
-diag_util.$(OBJEXT): diag_data.$(OBJEXT) diag_axis.$(OBJEXT) diag_output.$(OBJEXT) diag_grid.$(OBJEXT)
-diag_table.$(OBJEXT): diag_data.$(OBJEXT) diag_util.$(OBJEXT)
-diag_manager.$(OBJEXT): diag_axis.$(OBJEXT) diag_data.$(OBJEXT) diag_util.$(OBJEXT) diag_output.$(OBJEXT) diag_grid.$(OBJEXT) diag_table.$(OBJEXT) diag_manifest.$(OBJEXT)
+diag_axis.$(OBJEXT): diag_data_mod.mod
+diag_manifest.$(OBJEXT): diag_data_mod.mod
+diag_output.$(OBJEXT): diag_axis_mod.mod diag_data_mod.mod
+diag_util.$(OBJEXT): diag_data_mod.mod diag_axis_mod.mod diag_output_mod.mod diag_grid_mod.mod
+diag_table.$(OBJEXT): diag_data_mod.mod diag_util_mod.mod
+diag_manager.$(OBJEXT): diag_axis_mod.mod diag_data_mod.mod diag_util_mod.mod diag_output_mod.mod diag_grid_mod.mod diag_table_mod.mod diag_manifest_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = diag_data_mod.mod diag_axis_mod.mod diag_grid_mod.mod	\

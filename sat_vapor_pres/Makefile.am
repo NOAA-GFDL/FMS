@@ -21,7 +21,7 @@ sat_vapor_pres_mod.mod: sat_vapor_pres.$(OBJEXT)
 sat_vapor_pres_k_mod.mod: sat_vapor_pres_k.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-sat_vapor_pres.$(OBJEXT): sat_vapor_pres_k.$(OBJEXT)
+sat_vapor_pres.$(OBJEXT): sat_vapor_pres_k_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = sat_vapor_pres_k_mod.mod sat_vapor_pres_mod.mod

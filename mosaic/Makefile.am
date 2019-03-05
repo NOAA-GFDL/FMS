@@ -28,7 +28,7 @@ grid_mod.mod: grid.$(OBJEXT)
 gradient_mod.mod: gradient.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
-grid.$(OBJEXT): mosaic.$(OBJEXT)
+grid.$(OBJEXT): mosaic_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = mosaic_mod.mod grid_mod.mod gradient_mod.mod
