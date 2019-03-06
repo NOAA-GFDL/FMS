@@ -67,7 +67,7 @@ int get_cpu_affinity_(void) { return get_cpu_affinity(); }	/* Fortran interface 
 /*
  * Set CPU affinity to one core.
  */
-void set_cpu_affinity( int cpu )
+int set_cpu_affinity( int cpu )
 {
   cpu_set_t coremask;		/* core affinity mask */
 
@@ -79,4 +79,4 @@ void set_cpu_affinity( int cpu )
   return 0;
 }
 
-void set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */
+int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */
