@@ -29,7 +29,7 @@ function mpp_nc_open(name, mode, pelist, ncid) result(error_code)
     integer :: io_info
     integer :: error_code
 
-    if (IAND(mode, NF_NOWRITE)) then
+    if (IAND(mode, NF_NOWRITE) /= 0) then
         call MPI_Info_create(io_info, error_code)
         call set_hint(io_info, 'RD')
     else
