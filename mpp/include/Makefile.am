@@ -33,4 +33,5 @@ mpp_domains_comm.inc mpp_domains_util.inc				\
 mpp_io_unstructured_read.inc mpp_read_distributed_ascii.inc		\
 mpp_unstruct_domain.inc mpp_util_sma.inc mpp_comm_mpi.inc		\
 mpp_data_nocomm.inc mpp_domains_define.inc mpp_io_connect.inc		\
-mpp_io_unstructured_write.inc mpp_sum_ad.inc mpp_util.inc
+mpp_io_unstructured_write.inc mpp_sum_ad.inc mpp_util.inc		\
+mpp_netcdf.inc
