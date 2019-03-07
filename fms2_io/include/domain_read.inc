@@ -123,7 +123,6 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
   integer :: isd
@@ -322,7 +321,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
   integer :: isd
@@ -521,7 +519,6 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
   integer :: isd
@@ -720,7 +717,6 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer, dimension(:), allocatable :: dimension_sizes
   integer :: dpos
   integer :: i
   integer :: isd

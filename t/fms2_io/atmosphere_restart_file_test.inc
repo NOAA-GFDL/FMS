@@ -267,7 +267,6 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
     if (trim(buffer2(i)) .ne. trim(buffer(i))) then
       call mpp_error(fatal, "Did not read in strings correctly.")
     endif
-    write(6,*) trim(buffer(i)), trim(buffer2(i))
   enddo
   call read_data(fileobj, "strings", buffer2(1), corner=ndims)
   if (trim(buffer2(1)) .ne. trim(buffer(ndims))) then
