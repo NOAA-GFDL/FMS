@@ -9,6 +9,7 @@ SUBDIRS = include
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_srcdir}/mpp/include
+AM_CPPFLAGS += -I${top_builddir}/sort
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la	\

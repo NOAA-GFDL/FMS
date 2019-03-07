@@ -64,6 +64,7 @@ AC_CONFIG_FILES([Makefile
         time_interp/Makefile
         time_manager/Makefile
         constants/Makefile
+        sort/Makefile
         platform/Makefile
         fms/Makefile
         mpp/Makefile
