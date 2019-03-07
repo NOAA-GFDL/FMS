@@ -252,4 +252,3 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
   if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
   return
 end subroutine mpp_sync_self
-

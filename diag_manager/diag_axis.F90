@@ -18,6 +18,7 @@
 !***********************************************************************
 
 MODULE diag_axis_mod
+#include <fms_platform.h>
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -58,7 +59,6 @@ MODULE diag_axis_mod
   ! Module variables
   ! Parameters
   ! Include variable "version" to be written to log file.
-#include <fms_platform.h>
 #include<file_version.h>
 
 !----------

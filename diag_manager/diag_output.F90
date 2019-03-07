@@ -18,6 +18,7 @@
 !***********************************************************************
 
 MODULE diag_output_mod
+#include <fms_platform.h>
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -77,7 +78,6 @@ MODULE diag_output_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   ! Include variable "version" to be written to log file.
-#include <fms_platform.h>
 #include<file_version.h>
 
 CONTAINS
