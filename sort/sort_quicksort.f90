@@ -23,7 +23,7 @@
 !   (https://en.wikipedia.org/w/index.php?title=Quicksort&oldid=883205571)
 !   Notes:
 !       - In-place sort; the original order is not preserved.
-!       - Pivot is the median value
+!       - Pivot is the middle value
 !       - Hoare partitioning
 !       - Unstable sort (like most Quicksort implementations)
 

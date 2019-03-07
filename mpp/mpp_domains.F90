@@ -408,7 +408,7 @@ module mpp_domains_mod
      type(overlapSpec),  pointer :: update_N      => NULL() ! send and recv information for halo update of N-cell.
      type(domain2d),     pointer :: io_domain     => NULL() ! domain for IO, will be set through calling mpp_set_io_domain ( this will be changed).
 
-     ! IO domain metadata used for parllel I/O
+     ! IO domain metadata used for parallel I/O
      integer, pointer :: io_root_pes(:) => NULL()           ! List of root PEs for IO domains
      logical :: missing_io_domains = .false.                ! True if any IO domain is fully masked
   end type domain2D     

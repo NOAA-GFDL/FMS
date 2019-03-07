@@ -73,8 +73,6 @@
 
               if (parallel_netcdf) then
                   error = nf_var_par_access(mpp_file(unit)%ncid, field%id, nf_collective)
-                  if(mpp_pe() == mpp_root_pe()) &
-                      print *, 'WRITE_RECORD: PE= ',pe,'set nf_collective'
                   call netcdf_err( error, mpp_file(unit), string=' nf_var_par_access in subroutine mpp_def_dim')
               endif
 #endif
@@ -137,10 +135,7 @@
              axsiz(1:2) = [ie - is + 1, je - js + 1]
           end if
 
-!     print *, 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' start= ', start,' axsiz= ', axsiz
-!          if( debug )print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
-!     print '(a,i4,a,a,a8,i,a8,i)', 'WRITE_RECORD: PE= ',pe, ' name= ',trim(field%name),' start= ', start,' axsiz= ', axsiz
-!          print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
+          if( debug )print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
 #ifdef use_netCDF
 !write time information if new time
           if( newtime )then

@@ -1064,7 +1064,7 @@ type :: atttype
   logical            :: cf_compliance = .false.
 
 
-  ! TODO: Move parallel_netcdf to fms_io.F90 (also rename?)
+  ! Parallel netCDF support
   logical            :: parallel_netcdf = .false.
   logical            :: parallel_read = .false.
   logical            :: pnetcdf = .false.

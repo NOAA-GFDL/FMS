@@ -1299,7 +1299,6 @@ private
 #include <mpp_util.inc>
 #include <mpp_comm.inc>
 
-! TODO: Where to put this...?
 #if defined(use_libMPI) && defined(use_netCDF)
 #include <mpp_netcdf.inc>
 #endif
