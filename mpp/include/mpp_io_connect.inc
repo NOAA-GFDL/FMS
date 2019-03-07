@@ -236,7 +236,7 @@
       integer                               ::fsize, inital = 0
       character(len=128)                    :: f_test
 
-      integer, dimension(:), allocatable    :: io_pelist, n
+      integer, dimension(:), allocatable    :: io_pelist
 
       
 !----------
