@@ -13,8 +13,8 @@ noinst_LTLIBRARIES = libsort_quicksort.la
 libsort_quicksort_la_SOURCES = sort_quicksort.f90
 
 # Mod file depends on its o file, is built and then installed.
-sort_quicksort_mod.mod: sort_quicksort.$(OBJEXT)
-BUILT_SOURCES = sort_quicksort_mod.mod
-include_HEADERS = sort_quicksort_mod.mod
+quicksort_mod.mod: sort_quicksort.$(OBJEXT)
+BUILT_SOURCES = quicksort_mod.mod
+include_HEADERS = quicksort_mod.mod
 
 CLEANFILES = *.mod
