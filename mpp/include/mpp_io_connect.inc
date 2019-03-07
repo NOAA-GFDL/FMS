@@ -186,9 +186,7 @@
                          domain_ug)
 !----------
 
-      use mpp_mod, only: mpp_alltoall, mpp_declare_pelist
-      use mpp_mod, only: mpp_set_current_pelist
-      use mpp_mod, only: mpp_get_current_pelist_name, mpp_get_current_pelist
+      use mpp_mod, only: mpp_declare_pelist
       use mpp_mod, only: mpp_nc_create, mpp_nc_open
       use mpp_domains_mod, only: mpp_get_io_root_pes, mpp_get_num_io_domains
       use mpp_domains_mod, only: mpp_domain_is_missing_io_domain
@@ -270,8 +268,14 @@
            call mpp_error( FATAL, 'MPP_OPEN: To open a file with form=MPP_NETCDF, you must compile mpp_io with -Duse_netCDF.' )
 
       if (parallel_netcdf) &
-           call mpp_error(FATAL, 'MPP_OPEN: To use parallel netCDF, you ' &
-                                 'must compile mpp_io with -Duse_netCDF.' )
+          call mpp_error(FATAL, 'MPP_OPEN: To use parallel netCDF, you '// &
+                                'must compile mpp_io with -Duse_netCDF.' )
+#elif use_netCDF3
+      if (parallel_netcdf) &
+          call mpp_error(FATAL, &
+              'MPP_OPEN: To use parallel netCDF, you must use netCDF4 and '// &
+              'compile without -Duse_netCDF3.' &
+          )
 #endif     
       access_flag = MPP_SEQUENTIAL
       if( PRESENT(access) )access_flag = access
@@ -334,6 +338,11 @@
               io_pelist = mpp_get_io_root_pes(domain)
               call mpp_declare_pelist(io_pelist, "I/O PEs")
           endif
+      else
+          if (present(domain) .and. parallel_netcdf) then
+              call mpp_error(FATAL, &
+                  'Parallel netCDF requires an explicit I/O domain layout.')
+          end if
       endif 
 
       if( action_flag == MPP_RDONLY) write_on_this_pe = .false.
@@ -393,7 +402,7 @@
 
           if (parallel_netcdf .and. all(io_layout == [1, 1])) &
               call mpp_error(FATAL, 'MPP_OPEN: Parallel_netcdf conficts '// &
-                                    'with iolayout (1,1).')
+                                    'with io_layout (1,1).')
 
       elseif (present(domain_ug)) then
           io_layout_ug = mpp_get_io_domain_UG_layout(domain_ug)
@@ -958,7 +967,7 @@
       endif
 !----------
 
-      if (parallel_netcdf) &
+      if (io_domain_exist .and. parallel_netcdf) &
           deallocate(io_pelist)
 
       call mpp_clock_end(mpp_open_clock)              
