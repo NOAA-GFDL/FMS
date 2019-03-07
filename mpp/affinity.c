@@ -67,15 +67,16 @@ int get_cpu_affinity_(void) { return get_cpu_affinity(); }	/* Fortran interface 
 /*
  * Set CPU affinity to one core.
  */
-void set_cpu_affinity( int cpu )
+int set_cpu_affinity( int cpu )
 {
   cpu_set_t coremask;		/* core affinity mask */
 
   CPU_ZERO(&coremask);
   CPU_SET(cpu,&coremask);
   if (sched_setaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
-    fprintf(stderr,"Unable to set thread %d affinity. %s\n",gettid(),strerror(errno));
+    return -1;
   }
+  return 0;
 }
 
-void set_cpu_affinity_(int *cpu) { set_cpu_affinity(*cpu); }	/* Fortran interface */
+int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */
