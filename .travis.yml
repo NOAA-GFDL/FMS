@@ -1,0 +1,44 @@
+# This Travis-CI file for testing the build, and eventually the
+# functionality of the libfms library.
+#
+# This Travis-CI file was created based off the NOAA-GFDL/MOM6
+# Travis-CI file.
+
+# FMS is not a c-language project, although there are a few c-language
+# sources.  However, this is the best choice.
+language: c
+dist: trusty
+sudo: false
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - pkg-config netcdf-bin libnetcdf-dev openmpi-bin libopenmpi-dev gfortran
+
+before_install:
+  - test -n $CC && unset CC
+  - test -n $FC && unset FC
+  - test -n $CPPFLAGS && unset CPPFLAGS
+  - test -n FCFLAGS && unset FCFLAGS
+
+before_script:
+  - export CC=mpicc
+  - export FC=mpif90
+  - export CPPFLAGS='-I/usr/include'
+  - export FCFLAGS='-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check'
+
+env:
+  global:
+    - CC=mpicc
+    - FC=mpif90
+    - CPPFLAGS='-I/usr/include'
+    - FCFLAGS='-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check'
+    - LDFLAGS='-L/usr/lib'
+  
+script:
+  - autoreconf -i
+  - ./configure
+  - make -j distcheck
+ 
