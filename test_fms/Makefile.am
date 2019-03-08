@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Use any Fortran flags set by configure.
+AM_FCFLAGS = ${FMS_FCFLAGS}
+
 # Find the fms_mod.mod file.
 AM_CPPFLAGS = -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/constants

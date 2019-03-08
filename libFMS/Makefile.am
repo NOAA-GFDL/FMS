@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Use any Fortran flags set by configure.
+AM_FCFLAGS = ${FMS_FCFLAGS}
+
 # This builds the FMS library file.
 lib_LTLIBRARIES = libFMS.la
 

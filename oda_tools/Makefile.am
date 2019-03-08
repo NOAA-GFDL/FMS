@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Use any Fortran flags set by configure.
+AM_FCFLAGS = ${FMS_FCFLAGS}
+
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/fms

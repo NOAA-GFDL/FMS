@@ -37,6 +37,13 @@ AC_PROG_INSTALL
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
+# Does the user want to turn off flags?
+AC_MSG_CHECKING([whether we should set fortran flags])
+AC_ARG_ENABLE([fortran-flags], [AS_HELP_STRING([--disable-fortran-flags],
+              [do not attempt to set any Fortran flags])])
+test "x$enable_fortran_flags" = xno || enable_fortran_flags=yes
+AC_MSG_RESULT([$enable_fortran_flags])
+
 # Require MPI.
 AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
 
@@ -50,12 +57,18 @@ AC_SEARCH_LIBS([nf_create], [netcdff], [],
                             [AC_MSG_ERROR([Can't find or link to the netcdf Fortran library, set CPPFLAGS/LDFLAGS.])])
 AC_LANG_POP(Fortran)
 
-# Require netCDF.
-#AC_CHECK_FUNC([nf_open], [], [AC_MSG_ERROR([NetCDF Fortran library required to build FMS])])
-
 # These defines are required for the build.
 AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
+
+# It's a bad idea for the build system to set flags for the
+# user. However, this is a replacement for a build system that did
+# exactly that, so we will reproduce existing functionality.
+AC_MSG_CHECKING([what Fortran flags should be used])
+if test "$enable_fortran_flags" = yes; then
+   AC_SUBST([FMS_FCFLAGS], ["-fcray-pointer -fdefault-double-8 -fdefault-real-8 -ffree-line-length-none -fno-range-check"])
+fi
+AC_MSG_RESULT([$FMS_FCFLAGS])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile

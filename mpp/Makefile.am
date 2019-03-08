@@ -3,6 +3,9 @@
 
 # Ed Hartnett 2/22/19
 
+# Use any Fortran flags set by configure.
+AM_FCFLAGS = ${FMS_FCFLAGS}
+
 # Descend into include directory.
 SUBDIRS = include
 
