@@ -63,12 +63,13 @@ AC_DEFINE([use_libMPI], [1])
 
 # It's a bad idea for the build system to set flags for the
 # user. However, this is a replacement for a build system that did
-# exactly that, so we will reproduce existing functionality.
+# exactly that, so we will reproduce existing functionality. Whatever
+# the user sets as FCFLAGS will be appended to these flags.
 AC_MSG_CHECKING([what Fortran flags should be used])
 if test "$enable_fortran_flags" = yes; then
    AC_SUBST([FMS_FCFLAGS], ["-fcray-pointer -fdefault-double-8 -fdefault-real-8 -ffree-line-length-none -fno-range-check"])
 fi
-AC_MSG_RESULT([$FMS_FCFLAGS])
+AC_MSG_RESULT([$FMS_FCFLAGS $FCFLAGS])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
