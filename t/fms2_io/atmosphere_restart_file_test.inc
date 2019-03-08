@@ -173,6 +173,11 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   enddo
   call write_data(fileobj, "strings", buffer)
 
+  !Add a variable whose user-level buffers include space for halos.
+  allocate(temperature_data_with_halos(nxd, nyd, nz))
+  call register_field(fileobj, "temperature_ignore_halos", "double", &
+                      (/"lon", "lat", "lev"/))
+
   !Initialize some random temperature data.
   do j = 1, nz
     do k = 1, ny
@@ -222,6 +227,10 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
     !Write out the times of each "time step".
     call write_data(fileobj, "time", 1950. + real(i,kind=real32), unlim_dim_level=i)
   enddo
+  ioff = isc-isd+1
+  joff = jsc-jsd+1
+  temperature_data_with_halos(ioff:ioff+nx,joff:joff+ny,:) = temperature_data(:,:,:)
+  call write_data(fileobj, "temperature_ignore_halos", temperature_data_with_halos)
 
   !Write out the restart file.
   call write_restart(fileobj, unlim_dim_level=nt)
@@ -240,6 +249,7 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   deallocate(temperature_data)
   deallocate(avg_t_data)
   deallocate(surf_t_data)
+  deallocate(temperature_data_with_halos)
 
   !Check if a non-existent file exists (just to see if this feature
   !works.
@@ -314,13 +324,12 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   call chksum_match(out_chksum(1), in_chksum(1), "temperature", debug)
 
   !Read in the non-restart variables and checksum.
-  call read_data(fileobj, "temperature", temperature_data_with_halos, &
-                 unlim_dim_level=chksum_unlim_level(1))
+  call read_data(fileobj, "temperature_ignore_halos", temperature_data_with_halos)
   ioff = isc-isd+1
   joff = jsc-jsd+1
   in_chksum(1) = mpp_chksum(temperature_data_with_halos(ioff:ioff+nx,joff:joff+ny,:), &
                             pelist=(/mpp_pe()/))
-  call chksum_match(out_chksum(1), in_chksum(1), "temperature", debug)
+  call chksum_match(out_chksum(1), in_chksum(1), "temperature_ignore_halos", debug)
   call read_data(fileobj, "avg_layer_temperature", avg_t_data, &
                  unlim_dim_level=chksum_unlim_level(2))
 ! in_chksum(2) = mpp_chksum(avg_t_data, pelist=(/mpp_pe()/))
