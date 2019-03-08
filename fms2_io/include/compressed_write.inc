@@ -109,28 +109,28 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
           type is (integer(kind=int32))
             call allocate_array(buf_int32, e)
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int32)
           type is (integer(kind=int64))
             call allocate_array(buf_int64, e)
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int64)
           type is (real(kind=real32))
             call allocate_array(buf_real32, e)
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real32)
           type is (real(kind=real64))
             call allocate_array(buf_real64, e)
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real64)
@@ -214,28 +214,28 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
           type is (integer(kind=int32))
             call allocate_array(buf_int32, e)
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int32)
           type is (integer(kind=int64))
             call allocate_array(buf_int64, e)
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int64)
           type is (real(kind=real32))
             call allocate_array(buf_real32, e)
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real32)
           type is (real(kind=real64))
             call allocate_array(buf_real64, e)
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real64)
@@ -319,28 +319,28 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
           type is (integer(kind=int32))
             call allocate_array(buf_int32, e)
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int32)
           type is (integer(kind=int64))
             call allocate_array(buf_int64, e)
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int64)
           type is (real(kind=real32))
             call allocate_array(buf_real32, e)
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real32)
           type is (real(kind=real64))
             call allocate_array(buf_real64, e)
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real64)
@@ -424,28 +424,28 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
           type is (integer(kind=int32))
             call allocate_array(buf_int32, e)
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int32)
           type is (integer(kind=int64))
             call allocate_array(buf_int64, e)
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int64)
           type is (real(kind=real32))
             call allocate_array(buf_real32, e)
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real32)
           type is (real(kind=real64))
             call allocate_array(buf_real64, e)
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real64)
@@ -529,28 +529,28 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
           type is (integer(kind=int32))
             call allocate_array(buf_int32, e)
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int32)
           type is (integer(kind=int64))
             call allocate_array(buf_int64, e)
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_int64)
           type is (real(kind=real32))
             call allocate_array(buf_real32, e)
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real32)
           type is (real(kind=real64))
             call allocate_array(buf_real64, e)
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, cdata, &
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
             deallocate(buf_real64)
