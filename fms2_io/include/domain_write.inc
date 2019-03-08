@@ -145,6 +145,10 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -165,6 +169,10 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -185,6 +193,10 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -205,6 +217,10 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
@@ -339,6 +355,10 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -359,6 +379,10 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -379,6 +403,10 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -399,6 +427,10 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
@@ -533,6 +565,10 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -553,6 +589,10 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -573,6 +613,10 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -593,6 +637,10 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
@@ -727,6 +775,10 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -747,6 +799,10 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_int64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -767,6 +823,10 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real32, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -787,6 +847,10 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               c(ydim_index) = jsc - jsd + 1
             endif
             call get_array_section(buf_real64, vdata, c, e)
+            if (buffer_includes_halos) then
+              c(xdim_index) = 1
+              c(ydim_index) = 1
+            endif
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
