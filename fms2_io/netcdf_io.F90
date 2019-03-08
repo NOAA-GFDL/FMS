@@ -319,22 +319,6 @@ function attribute_exists(ncid, varid, attribute_name) &
 end function attribute_exists
 
 
-!> @brief Determine if a netcdf variable is "packed".
-!! @return Flag telling if the variable is "packed".
-!! @internal
-function is_variable_packed(ncid, varid) &
-  result(is_packed)
-
-  integer, intent(in) :: ncid !< Netcdf file id.
-  integer, intent(in) :: varid !< Variable id.
-
-  logical :: is_packed
-
-  is_packed = attribute_exists(ncid, varid, "scale_factor") .or. &
-              attribute_exists(ncid, varid, "add_offset")
-end function is_variable_packed
-
-
 !> @brief Get the type of a netcdf attribute.
 !! @return The netcdf type of the attribute.
 !! @internal

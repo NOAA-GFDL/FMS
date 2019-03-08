@@ -20,7 +20,6 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
   integer, dimension(:), allocatable :: dimsizes
   character, dimension(:), allocatable :: charbuf
   integer :: i
-  integer :: j
   integer :: tlen
 
   if (fileobj%is_root) then
