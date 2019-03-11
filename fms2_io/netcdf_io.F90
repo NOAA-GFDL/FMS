@@ -134,6 +134,7 @@ public :: netcdf_add_restart_variable_3d_wrap
 public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
 public :: compressed_start_and_count
+public :: get_fill_value
 
 
 interface netcdf_add_restart_variable
@@ -905,6 +906,7 @@ function variable_att_exists(fileobj, variable_name, attribute_name, &
 
   integer :: varid
 
+  att_exists = .false.
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     att_exists = attribute_exists(fileobj%ncid, varid, trim(attribute_name))
@@ -1648,6 +1650,46 @@ subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level)
 
   call netcdf_save_restart(fileobj, unlim_dim_level)
 end subroutine netcdf_save_restart_wrap
+
+
+!> @brief Returns a variable's fill value if it exists in the file.
+!! @return Flag telling if a fill value exists.
+function get_fill_value(fileobj, variable_name, fill_value, broadcast) &
+  result(fill_exists)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), intent(out) :: fill_value !< Fill value.
+  logical, intent(in), optional :: broadcast !< Flag controlling whether or
+                                             !! not the data will be
+                                             !! broadcasted to non
+                                             !! "I/O root" ranks.
+                                             !! The broadcast will be done
+                                             !! by default.
+  logical :: fill_exists
+
+  character(len=32), dimension(2) :: attribute_names
+  logical :: bcast
+  integer :: i
+
+  fill_exists = .false.
+  call string_copy(attribute_names(1), "_FillValue")
+  call string_copy(attribute_names(2), "missing_value")
+  if (present(broadcast)) then
+    bcast = broadcast
+  else
+    bcast = .true.
+  endif
+  do i = 1, size(attribute_names)
+    fill_exists = variable_att_exists(fileobj, variable_name, attribute_names(i), &
+                                      broadcast=bcast)
+    if (fill_exists) then
+      call get_variable_attribute(fileobj, variable_name, attribute_names(i), &
+                                  fill_value, broadcast=bcast)
+      exit
+    endif
+  enddo
+end function get_fill_value
 
 
 end module netcdf_io_mod

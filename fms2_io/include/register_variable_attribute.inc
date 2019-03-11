@@ -40,13 +40,16 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
     end select
     call check_netcdf_code(err)
 
+    !The missing_value attribute is not NUG compliant, but is included here to support
+    !legacy model component code.
     axtype = get_attribute_type(fileobj%ncid, varid, attribute_name)
     xtype = get_variable_type(fileobj%ncid, varid)
     if (string_compare(attribute_name, "_FillValue") .or. &
         string_compare(attribute_name, "valid_min") .or. &
         string_compare(attribute_name, "valid_max") .or. &
         string_compare(attribute_name, "scale_factor") .or. &
-        string_compare(attribute_name, "add_offset")) then
+        string_compare(attribute_name, "add_offset") .or. &
+        string_compare(attribute_name, "missing_value")) then
       if (axtype .ne. xtype) then
         call error("type mismatch for "//trim(attribute_name))
       endif
@@ -136,7 +139,8 @@ subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name
         string_compare(attribute_name, "valid_min") .or. &
         string_compare(attribute_name, "valid_max") .or. &
         string_compare(attribute_name, "scale_factor") .or. &
-        string_compare(attribute_name, "add_offset")) then
+        string_compare(attribute_name, "add_offset") .or. &
+        string_compare(attribute_name, "missing_value")) then
       call error(trim(attribute_name)//" must be a scalar.")
     elseif (string_compare(attribute_name, "valid_range")) then
       if (attribute_exists(fileobj%ncid, varid, "valid_min") .or. &

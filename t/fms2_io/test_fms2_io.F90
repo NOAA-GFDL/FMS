@@ -162,42 +162,6 @@ call destroy_parser(parser)
 contains
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 include "create_atmosphere_domain.inc"
 include "create_land_domain.inc"
 include "create_ocean_domain.inc"

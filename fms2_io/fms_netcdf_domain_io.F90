@@ -75,6 +75,13 @@ public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 
 
+interface compute_global_checksum
+  module procedure compute_global_checksum_2d
+  module procedure compute_global_checksum_3d
+  module procedure compute_global_checksum_4d
+end interface compute_global_checksum
+
+
 contains
 
 
@@ -419,6 +426,7 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                                    !! level.
 
   integer :: i
+  character(len=32) :: chksum
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
@@ -436,14 +444,32 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
       call domain_write_2d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data2d, &
                            unlim_dim_level=unlim_dim_level)
+      if (is_variable_domain_decomposed(fileobj, fileobj%restart_vars(i)%varname)) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data2d)
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                         "checksum", chksum)
+      endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       call domain_write_3d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data3d, &
                            unlim_dim_level=unlim_dim_level)
+      if (is_variable_domain_decomposed(fileobj, fileobj%restart_vars(i)%varname)) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data3d)
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                         "checksum", chksum)
+      endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data4d, &
                            unlim_dim_level=unlim_dim_level)
+      if (is_variable_domain_decomposed(fileobj, fileobj%restart_vars(i)%varname)) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data4d)
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                         "checksum", chksum)
+      endif
     else
       call error("this branch should not be reached.")
     endif
@@ -460,6 +486,8 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
                                                    !! level.
 
   integer :: i
+  character(len=32) :: chksum_in_file
+  character(len=32) :: chksum
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
@@ -477,14 +505,44 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
       call domain_read_2d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data2d, &
                           unlim_dim_level=unlim_dim_level)
+      if (is_variable_domain_decomposed(fileobj, fileobj%restart_vars(i)%varname) .and. &
+          variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum")) then
+        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                    "checksum", chksum_in_file)
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data2d)
+        if (.not. string_compare(chksum_in_file, chksum)) then
+          call error("checksum attribute does not match data in file.")
+        endif
+      endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       call domain_read_3d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data3d, &
                           unlim_dim_level=unlim_dim_level)
+      if (is_variable_domain_decomposed(fileobj, fileobj%restart_vars(i)%varname) .and. &
+          variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum")) then
+        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                    "checksum", chksum_in_file)
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data3d)
+        if (.not. string_compare(chksum_in_file, chksum)) then
+          call error("checksum attribute does not match data in file.")
+        endif
+      endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       call domain_read_4d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data4d, &
                           unlim_dim_level=unlim_dim_level)
+      if (is_variable_domain_decomposed(fileobj, fileobj%restart_vars(i)%varname) .and. &
+          variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum")) then
+        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                    "checksum", chksum_in_file)
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data4d)
+        if (.not. string_compare(chksum_in_file, chksum)) then
+          call error("checksum attribute does not match data in file.")
+        endif
+      endif
     else
       call error("this branch should not be reached.")
     endif
@@ -522,9 +580,43 @@ subroutine get_compute_domain_dimension_indices(fileobj, dimname, indices)
 end subroutine get_compute_domain_dimension_indices
 
 
+!> @brief Utility routine that retrieves domain indices.
+!! @internal
+subroutine domain_offsets(data_xsize, data_ysize, io_domain, dpos, &
+                          isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+
+  integer, intent(in) :: data_xsize !< Size of buffer's domain "x" dimension.
+  integer, intent(in) :: data_ysize !< Size of buffer's domain "y" dimension.
+  type(domain2d), intent(in) :: io_domain !< I/O domain variable is decomposed over.
+  integer, intent(in) :: dpos !< Variable's domain position.
+  integer, intent(out) :: isd !< Starting index for x dimension of data domain.
+  integer, intent(out) :: isc !< Starting index for x dimension of compute domain.
+  integer, intent(out) :: xc_size !< Size of x dimension of compute domain.
+  integer, intent(out) :: jsd !< Starting index for y dimension of data domain.
+  integer, intent(out) :: jsc !< Starting index for y dimension of compute domain.
+  integer, intent(out) :: yc_size !< Size of y dimension of compute domain.
+  logical, intent(out) :: buffer_includes_halos !< Flag telling if input buffer includes space for halos.
+
+  integer :: xd_size
+  integer :: yd_size
+
+  call mpp_get_data_domain(io_domain, xbegin=isd, xsize=xd_size, ybegin=jsd, &
+                           ysize=yd_size, position=dpos)
+  call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=xc_size, ybegin=jsc, &
+                              ysize=yc_size, position=dpos)
+  buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
+  if (.not. buffer_includes_halos .and. data_xsize .ne. xc_size .and. data_ysize &
+      .ne. yc_size) then
+    call error("size of x dimension of input buffer does not match size" &
+               //" of x dimension of data or compute domain.")
+  endif
+end subroutine domain_offsets
+
+
 include "register_domain_restart_variable.inc"
 include "domain_read.inc"
 include "domain_write.inc"
+include "compute_global_checksum.inc"
 
 
 end module fms_netcdf_domain_io_mod

@@ -175,8 +175,9 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
 
   !Add a variable whose user-level buffers include space for halos.
   allocate(temperature_data_with_halos(nxd, nyd, nz))
-  call register_field(fileobj, "temperature_ignore_halos", "double", &
-                      (/"lon", "lat", "lev"/))
+  call register_restart_field(fileobj, "temperature_ignore_halos", &
+                              temperature_data_with_halos, &
+                              (/"lon ", "lat ", "lev ", "time"/))
 
   !Initialize some random temperature data.
   do j = 1, nz
@@ -230,7 +231,6 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   ioff = isc-isd+1
   joff = jsc-jsd+1
   temperature_data_with_halos(ioff:ioff+nx,joff:joff+ny,:) = temperature_data(:,:,:)
-  call write_data(fileobj, "temperature_ignore_halos", temperature_data_with_halos)
 
   !Write out the restart file.
   call write_restart(fileobj, unlim_dim_level=nt)
@@ -311,6 +311,8 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   !Register the restart variable (so a pointer can point at the newly
   !allocated buffer.
   call register_restart_field(fileobj, "temperature", temperature_data)
+  call register_restart_field(fileobj, "temperature_ignore_halos", &
+                              temperature_data_with_halos)
 
   !Read in variable attribute.
   call get_variable_attribute(fileobj, "temperature", "units", att)
@@ -324,11 +326,6 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   call chksum_match(out_chksum(1), in_chksum(1), "temperature", debug)
 
   !Read in the non-restart variables and checksum.
-  call read_data(fileobj, "temperature_ignore_halos", temperature_data_with_halos)
-  ioff = isc-isd+1
-  joff = jsc-jsd+1
-  in_chksum(1) = mpp_chksum(temperature_data_with_halos(ioff:ioff+nx,joff:joff+ny,:), &
-                            pelist=(/mpp_pe()/))
   call chksum_match(out_chksum(1), in_chksum(1), "temperature_ignore_halos", debug)
   call read_data(fileobj, "avg_layer_temperature", avg_t_data, &
                  unlim_dim_level=chksum_unlim_level(2))

@@ -63,39 +63,6 @@ subroutine domain_read_1d(fileobj, variable_name, vdata, unlim_dim_level, &
 end subroutine domain_read_1d
 
 
-!> @brief Utility routine that retrieves domain indices.
-!! @internal
-subroutine domain_offsets(data_xsize, data_ysize, io_domain, dpos, &
-                          isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
-
-  integer, intent(in) :: data_xsize !< Size of buffer's domain "x" dimension.
-  integer, intent(in) :: data_ysize !< Size of buffer's domain "y" dimension.
-  type(domain2d), intent(in) :: io_domain !< I/O domain variable is decomposed over.
-  integer, intent(in) :: dpos !< Variable's domain position.
-  integer, intent(out) :: isd !< Starting index for x dimension of data domain.
-  integer, intent(out) :: isc !< Starting index for x dimension of compute domain.
-  integer, intent(out) :: xc_size !< Size of x dimension of compute domain.
-  integer, intent(out) :: jsd !< Starting index for y dimension of data domain.
-  integer, intent(out) :: jsc !< Starting index for y dimension of compute domain.
-  integer, intent(out) :: yc_size !< Size of y dimension of compute domain.
-  logical, intent(out) :: buffer_includes_halos !< Flag telling if input buffer includes space for halos.
-
-  integer :: xd_size
-  integer :: yd_size
-
-  call mpp_get_data_domain(io_domain, xbegin=isd, xsize=xd_size, ybegin=jsd, &
-                           ysize=yd_size, position=dpos)
-  call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=xc_size, ybegin=jsc, &
-                              ysize=yc_size, position=dpos)
-  buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
-  if (.not. buffer_includes_halos .and. data_xsize .ne. xc_size .and. data_ysize &
-      .ne. yc_size) then
-    call error("size of x dimension of input buffer does not match size" &
-               //" of x dimension of data or compute domain.")
-  endif
-end subroutine domain_offsets
-
-
 !> @brief I/O domain root reads in  a domain decomposed variable at a
 !!        specific unlimited dimension level and scatters the data to the
 !!        rest of the ranks using its I/O compute domain indices. This
