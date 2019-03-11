@@ -228,9 +228,15 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
     !Write out the times of each "time step".
     call write_data(fileobj, "time", 1950. + real(i,kind=real32), unlim_dim_level=i)
   enddo
-  ioff = isc-isd+1
-  joff = jsc-jsd+1
-  temperature_data_with_halos(ioff:ioff+nx,joff:joff+ny,:) = temperature_data(:,:,:)
+  ioff = isc-isd
+  joff = jsc-jsd
+  do k = 1, nz
+    do j = 1, ny
+      do i = 1, nx
+        temperature_data_with_halos(i+ioff,j+joff,k) = temperature_data(i,j,k)
+      enddo
+    enddo
+  enddo
 
   !Write out the restart file.
   call write_restart(fileobj, unlim_dim_level=nt)
