@@ -30,6 +30,7 @@ integer, dimension(2,ntiles) :: layout
 integer, dimension(2) :: ocn_layout
 integer, dimension(2) :: io_layout
 integer, dimension(2) :: ocn_io_layout
+integer :: npes_group
 integer, dimension(ntiles) :: pe_start
 integer, dimension(ntiles) :: pe_end
 type(domain2d) :: ocean_domain
@@ -70,6 +71,7 @@ ny = 96
 nz = 30
 io_layout(:) = 1
 ocn_io_layout(:) = 1
+npes_group = 1
 debug = .false.
 
 !Parse command line arguments.
@@ -105,6 +107,8 @@ call get_argument(parser, "-d", buf)
 if (trim(buf) .eq. "present") then
   io_layout(2) = npes/ntiles
   ocn_io_layout(2) = npes
+else
+  npes_group = npes/ntiles
 endif
 call get_argument(parser, "-v", buf)
 if (trim(buf) .eq. "present") then
@@ -142,7 +146,7 @@ if (tests(land)) then
                                   global_indices, layout, pe_start, pe_end, &
                                   io_layout, atmosphere_domain)
   endif
-  call create_land_domain(atmosphere_domain, nx, ny, ntiles, land_domain)
+  call create_land_domain(atmosphere_domain, nx, ny, ntiles, land_domain, npes_group)
   call land_unstructured_restart_file(land_domain, nz, 2, debug)
   call land_compressed_restart_file(nz, 4, debug)
 endif

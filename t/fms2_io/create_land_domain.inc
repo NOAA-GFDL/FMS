@@ -1,11 +1,12 @@
 !> @brief Create an unstructured land-like domain.
-subroutine create_land_domain(atmos_domain, nx, ny, ntiles, land_domain)
+subroutine create_land_domain(atmos_domain, nx, ny, ntiles, land_domain, npes_group)
 
   type(domain2d), intent(in) :: atmos_domain
   integer, intent(in) :: nx
   integer, intent(in) :: ny
   integer, intent(in) :: ntiles
   type(domainug), intent(inout) :: land_domain
+  integer, intent(in) :: npes_group
 
   integer :: isc
   integer :: iec
@@ -80,7 +81,7 @@ subroutine create_land_domain(atmos_domain, nx, ny, ntiles, land_domain)
   allocate(ntiles_grid(ntotal_land))
   ntiles_grid = 1
   call mpp_define_unstruct_domain(land_domain, atmos_domain, npts_tile, ntiles_grid, &
-                                  mpp_npes(), 1, grid_index, name="Unstructured domain")
+                                  mpp_npes(), npes_group, grid_index, name="Unstructured domain")
   deallocate(npts_tile)
   deallocate(grid_index)
   deallocate(ntiles_grid)
