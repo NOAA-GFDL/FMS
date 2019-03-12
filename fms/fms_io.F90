@@ -4567,6 +4567,8 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
      call mpp_error(FATAL, "fms_io(setup_one_field): each entry of field_size should be a non-negative integer")
   end if
 
+  default_data = 0.0
+
   if(PRESENT(data_default))then
      default_data=data_default
   else
