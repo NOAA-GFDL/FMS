@@ -2993,7 +2993,7 @@ subroutine save_default_restart(fileObj,restartpath)
   integer :: ishift, jshift, iadd, jadd, cpack_size
   logical :: write_on_this_pe
   type(domain2d), pointer :: io_domain =>NULL()
-
+  real :: default_data
   if (.not.associated(fileObj%var)) call mpp_error(FATAL, "fms_io(save_restart): " // &
       "restart_file_type data must be initialized by calling register_restart_field before using it")
 
@@ -3256,6 +3256,9 @@ subroutine save_default_restart(fileObj,restartpath)
   do j = 1, naxes_a
      call mpp_write(unit,a_axes(a_axes_indx(j)))
   enddo
+  
+  !initialize default_data
+  default_data = 0.0
 
   ! write data of each field
   do k = 1, fileObj%max_ntime
@@ -3264,36 +3267,43 @@ subroutine save_default_restart(fileObj,restartpath)
         if(cur_var%read_only) cycle
         tlev =k
         tlev_r8=k
+        ! set default data attribute to MPP_FILL_DOUBLE if it is undefined
+        if (isnan(cur_var%default_data)) then
+           default_data = MPP_FILL_DOUBLE
+        else
+           default_data = cur_var%default_data
+        endif
+
         ! If some fields only have one time level, we do not need to write the second level, just keep
         ! the data missing.
         if(k <= cur_var%siz(4)) then
            if(cur_var%domain_present) then  ! one 2-D or 3-D case possible present domain
               if( Associated(fileObj%p2dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p2dr(k,j)%p, tlev, &
-                                default_data=cur_var%default_data)
+                                default_data=default_data)
               else if( Associated(fileObj%p3dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p3dr(k,j)%p, tlev, &
-                                default_data=cur_var%default_data)
+                                default_data=default_data)
               else if( Associated(fileObj%p2dr8(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p2dr8(k,j)%p, tlev_r8, &
-                                default_data=real(cur_var%default_data,kind=DOUBLE_KIND))
+                                default_data=real(default_data,kind=DOUBLE_KIND))
               else if( Associated(fileObj%p3dr8(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p3dr8(k,j)%p, tlev_r8, &
-                                default_data=real(cur_var%default_data,kind=DOUBLE_KIND))
+                                default_data=real(default_data,kind=DOUBLE_KIND))
               else if( Associated(fileObj%p4dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p4dr(k,j)%p, tlev, &
-                                default_data=cur_var%default_data)
+                                default_data=default_data)
               else if( Associated(fileObj%p2di(k,j)%p) ) then
                  allocate(r2d(cur_var%siz(1), cur_var%siz(2)) )
                  r2d = fileObj%p2di(k,j)%p
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), r2d, tlev, &
-                                default_data=cur_var%default_data)
+                                default_data=default_data)
                  deallocate(r2d)
               else if( Associated(fileObj%p3di(k,j)%p) ) then
                  allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
                  r3d = fileObj%p3di(k,j)%p
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), r3d, tlev, &
-                                default_data=cur_var%default_data)
+                                default_data=default_data)
                  deallocate(r3d)
               else
                  call mpp_error(FATAL, "fms_io(save_restart): domain is present, "// &
