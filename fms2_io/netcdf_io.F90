@@ -135,6 +135,10 @@ public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
 public :: compressed_start_and_count
 public :: get_fill_value
+public :: get_variable_sense
+public :: get_variable_missing
+public :: get_variable_units
+public :: get_time_calendar
 
 
 interface netcdf_add_restart_variable
@@ -1690,6 +1694,76 @@ function get_fill_value(fileobj, variable_name, fill_value, broadcast) &
     endif
   enddo
 end function get_fill_value
+
+
+function get_variable_sense(fileobj, variable_name) &
+  result (variable_sense)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj
+  character(len=*), intent(in) :: variable_name
+  integer :: variable_sense
+
+  character(len=256) :: buf
+
+  variable_sense = 0
+  if (variable_att_exists(fileobj, variable_name, "positive")) then
+    call get_variable_attribute(fileobj, variable_name, "positive", buf)
+    if (string_compare(buf, "down") then
+      variable_sense = -1
+    elseif (string_compare(buf, "up") then
+      variable_sense = 1
+    endif
+  endif
+end function get_variable_sense
+
+
+function get_variable_missing(fileobj, variable_name) &
+  result(variable_missing)
+
+  type(FmsNetcdfFile_t), intent(in) :: fileobj
+  character(len=*), intent(in) :: variable_name
+  real(kind=real64) :: variable_missing
+
+  if (variable_att_exists(fileobj, variable_name, "_FillValue")) then
+    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing)
+  elseif (variable_att_exists(fileobj, variable_name, "missing_value")) then
+    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing)
+  elseif (variable_att_exists(fileobj, variable_name, "missing")) then
+    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing)
+  else
+    variable_missing = MPP_FILL_DOUBLE
+  endif
+end function get_variable_missing
+
+
+subroutine get_variable_units(fileobj, variable_name, units)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj
+  character(len=*), intent(in) :: variable_name
+  character(len=*), intent(out) :: units
+
+  if (variable_att_exists(fileobj, variable_name, "units")) then
+    call get_variable_attribute(fileobj, variable_name, "units", units)
+  else
+    units = "nounits"
+  endif
+end subroutine get_variable_units
+
+
+subroutine get_time_calendar(fileobj, time_name, calendar_type)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj
+  character(len=*), intent(in) :: time_name
+  character(len=*), intent(out) :: calendar_type
+
+  if (variable_att_exists(fileobj, time_name, "calendar")) then
+    call get_variable_attribute(fileobj, time_name, "calendar", calendar_type)
+  elseif (variable_att_exists(fileobj, time_name, "calendar_type")) then
+    call get_variable_attribute(fileobj, time_name, "calendar_type", calendar_type)
+  else
+    calendar_type = "unspecified"
+  endif
+end subroutine get_time_calendar
 
 
 end module netcdf_io_mod
