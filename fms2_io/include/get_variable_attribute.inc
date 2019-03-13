@@ -42,7 +42,7 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   endif
   select type(attribute_value)
     type is (character(len=*))
-      call mpp_broadcast(buffer, len_trim(buffer(1)), fileobj%io_root, pelist=fileobj%pelist)
+      call mpp_broadcast(buffer, len(buffer(1)), fileobj%io_root, pelist=fileobj%pelist)
       call string_copy(attribute_value, buffer(1))
     type is (integer(kind=int32))
       call mpp_broadcast(attribute_value, fileobj%io_root, pelist=fileobj%pelist)

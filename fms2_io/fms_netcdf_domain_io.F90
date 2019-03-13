@@ -321,7 +321,7 @@ subroutine close_domain_file(fileobj)
   call netcdf_file_close(fileobj)
   call destroy_list(fileobj%xdims)
   call destroy_list(fileobj%ydims)
-  deallocate(fileobj%domain_decomposed_vars)
+  if(allocated(fileobj%domain_decomposed_vars))deallocate(fileobj%domain_decomposed_vars)
   fileobj%n = 0
 end subroutine close_domain_file
 

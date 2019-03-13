@@ -47,7 +47,10 @@ public :: is_valid
 public :: get_unlimited_dimension_name
 public :: file_exists
 public :: compressed_start_and_count
-
+public :: get_variable_sense
+public :: get_variable_missing
+public :: get_variable_units
+public :: get_time_calendar
 
 interface open_file
   module procedure netcdf_file_open

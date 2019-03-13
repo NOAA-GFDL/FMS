@@ -160,7 +160,7 @@ use stock_constants_mod, only: ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, STOCK_NAM
 use gradient_mod,        only: gradient_cubic
 use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
 use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
-use fms2_io_mod,         only: get_variable_attribute
+use fms2_io_mod,         only: get_variable_units
 
 implicit none
 private
@@ -766,7 +766,7 @@ logical,        intent(in)             :: use_higher_order
         allocate(tmp(isc:iec,1) )
         call read_data(fileobj, "xgrid_area", tmp(:,1:1), corner=start, edge_lengths=nread)
         ! check the units of "xgrid_area 
-        call get_variable_attribute(fileobj, "xgrid_area", "units", attvalue)
+        call get_variable_units(fileobj, "xgrid_area", attvalue)
         if( trim(attvalue) == 'm2' ) then
            garea = 4.0*PI*RADIUS*RADIUS;
            area_tmp = tmp(:,1)/garea
