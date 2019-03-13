@@ -1708,9 +1708,9 @@ function get_variable_sense(fileobj, variable_name) &
   variable_sense = 0
   if (variable_att_exists(fileobj, variable_name, "positive")) then
     call get_variable_attribute(fileobj, variable_name, "positive", buf)
-    if (string_compare(buf, "down") then
+    if (string_compare(buf, "down")) then
       variable_sense = -1
-    elseif (string_compare(buf, "up") then
+    elseif (string_compare(buf, "up")) then
       variable_sense = 1
     endif
   endif

@@ -12,6 +12,7 @@ AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/axis_utils
 AM_CPPFLAGS += -I${top_builddir}/platform
 AM_CPPFLAGS += -I${top_builddir}/horiz_interp
+AM_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libtime_interp.la libtime_interp_external.la
