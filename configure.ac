@@ -66,6 +66,8 @@ AC_CONFIG_FILES([Makefile
         constants/Makefile
         platform/Makefile
         fms/Makefile
+        fms2_io/Makefile
+        fms2_io/include/Makefile
         mpp/Makefile
         mpp/include/Makefile
         tridiagonal/Makefile
@@ -94,5 +96,6 @@ AC_CONFIG_FILES([Makefile
         random_numbers/Makefile
         libFMS/Makefile
         test_fms/diag_manager/Makefile
+        test_fms/fms2_io/Makefile
         ])
 AC_OUTPUT()
