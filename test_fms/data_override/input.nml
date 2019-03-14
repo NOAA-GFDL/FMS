@@ -1,6 +1,4 @@
 &test_data_override_nml
-  nx_latlon=144
-  ny_latlon=90
 /
 
 &data_override_nml

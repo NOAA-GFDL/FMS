@@ -95,5 +95,6 @@ AC_CONFIG_FILES([Makefile
         libFMS/Makefile
         test_fms/diag_manager/Makefile
         test_fms/data_override/Makefile
+        test_fms/exchange/Makefile
         ])
 AC_OUTPUT()
