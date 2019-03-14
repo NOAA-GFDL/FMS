@@ -97,5 +97,6 @@ AC_CONFIG_FILES([Makefile
         test_fms/data_override/Makefile
         test_fms/exchange/Makefile
         test_fms/mpp/Makefile
+        test_fms/mpp_io/Makefile
         ])
 AC_OUTPUT()

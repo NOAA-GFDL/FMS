@@ -16,7 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifdef test_mpp_io
 program test
 #include <fms_platform.h>
 
@@ -579,8 +578,3 @@ program test
   end subroutine test_netcdf_io_mosaic
 
 end program test
-
-#else
-module null_mpp_io_test
-end module
-#endif
