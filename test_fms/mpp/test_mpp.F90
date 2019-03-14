@@ -16,7 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifdef test_mpp
 #ifdef SYSTEM_CLOCK
 #undef SYSTEM_CLOCK
 #endif
@@ -538,9 +537,3 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
     return
   end subroutine test_shared_pointers
 end program test
-
-#else
-module null_mpp_test
-end module  
-
-#endif /* test_mpp */
