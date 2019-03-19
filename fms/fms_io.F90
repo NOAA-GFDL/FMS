@@ -1733,7 +1733,7 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
   is_compressed = .false.
   if(present(compressed)) is_compressed=compressed
   if(present(data_default)) then
-     data_default_r4=data_default
+     data_default_r4=REAL(data_default, FLOAT_KIND)
      call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
                           index_field, domain, mandatory, no_domain, is_compressed, &
                           position, tile_count, data_default_r4, longname, units, compressed_axis, &
@@ -1782,7 +1782,7 @@ function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain,
   is_compressed = .false.
   if(present(compressed)) is_compressed=compressed
   if(present(data_default)) then
-     data_default_r4=data_default
+     data_default_r4=REAL(data_default, FLOAT_KIND)
      call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
                           index_field, domain, mandatory, no_domain, is_compressed, &
                           position, tile_count, data_default_r4, longname, units, compressed_axis, &
