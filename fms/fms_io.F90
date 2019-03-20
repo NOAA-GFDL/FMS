@@ -1741,7 +1741,7 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
   else
      call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
                           index_field, domain, mandatory, no_domain, is_compressed, &
-                          position, tile_count, longname=longname, units=units, compress_axis=compressed_axis, &
+                          position, tile_count, longname=longname, units=units, compressed_axis=compressed_axis, &
                           read_only=read_only, owns_data=restart_owns_data)
   endif
   
