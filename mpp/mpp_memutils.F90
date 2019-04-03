@@ -34,7 +34,7 @@ contains
 
   !#######################################################################
   subroutine mpp_memuse_begin
-#if defined(__sgi) || defined(__aix) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     integer :: memuse
 #endif
 
@@ -43,7 +43,7 @@ contains
     endif
     memuse_started = .true.
 
-#if defined(__sgi) || defined(__aix) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     begin_memuse = memuse()*1e-3
 #else
     call mpp_mem_dump(begin_memuse)
@@ -58,7 +58,7 @@ contains
     integer, intent(in), optional :: unit
     real    :: m, mmin, mmax, mavg, mstd, end_memuse
     integer :: mu
-#if defined(__sgi) || defined(__aix) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     integer :: memuse
 #endif
 
@@ -67,7 +67,7 @@ contains
     endif
     memuse_started = .false.
 
-#if defined(__sgi) || defined(__aix) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     end_memuse = memuse()*1e-3
 #else
     call mpp_mem_dump(end_memuse)
@@ -96,12 +96,12 @@ contains
     integer :: mu
 !memuse is an external function: works on SGI
 !use #ifdef to generate equivalent on other platforms.
-#if defined(__sgi) || defined(__aix) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     integer :: memuse !default integer OK?
 #endif 
 
     mu = stderr(); if( PRESENT(unit) )mu = unit
-#if defined(__sgi) || defined(__aix) || defined(__SX)
+#if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     m = memuse()*1e-3
 #else
     call mpp_mem_dump(m)
