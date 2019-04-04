@@ -181,7 +181,12 @@ subroutine string_copy(dest, source)
                  //" to hold the input source string.")
   endif
   dest = ""
-  dest = source
+  length = len_trim(source)
+  do i = 1, length
+     if(source(i:i) == CHAR(0) ) exit
+     dest(i:i) = source(i:i)
+  enddo
+
 end subroutine string_copy
 
 
