@@ -185,6 +185,7 @@
 !!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
 !!"UG_unit_test", "unstructured_real_2D_field_data", "unstructured_real_2D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
 !--------------------------------------------------------------------------------------------------
+#ifdef test_diag_manager
 PROGRAM test
   ! This program runs only one of many possible tests with each execution.
   ! Each test ends with an intentional fatal error.
@@ -1656,3 +1657,8 @@ ENDIF !L.ne.1
   END SUBROUTINE unstruct_test
 
 END PROGRAM test
+#else
+module null_diag_manager_test
+end module
+#endif
+
