@@ -315,6 +315,11 @@ subroutine restart_filepath_mangle(dest, source)
   integer :: i
   integer :: j
   integer :: k
+
+  if (index(trim(source), ".res.", back=.true.) .ne. 0) then
+    call string_copy(dest, source)
+    return
+  endif
   i = index(trim(source), ".tile", back=.true.)
   if (i .eq. 0) then
     i = index(trim(source), ".nc", back=.true.)

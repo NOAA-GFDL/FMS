@@ -139,6 +139,7 @@ public :: get_variable_sense
 public :: get_variable_missing
 public :: get_variable_units
 public :: get_time_calendar
+public :: is_registered_to_restart
 
 
 interface netcdf_add_restart_variable
@@ -1307,8 +1308,6 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   integer,dimension(nf90_max_var_dims) :: dimids
   integer :: i
 
-
-
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims, &
@@ -1764,6 +1763,30 @@ subroutine get_time_calendar(fileobj, time_name, calendar_type)
     calendar_type = "unspecified"
   endif
 end subroutine get_time_calendar
+
+
+!> @brief Determine if a variable has been registered to a restart file..
+!! @return Flag telling if the variable has been registered to a restart file.
+function is_registered_to_restart(fileobj, variable_name) &
+  result(is_registered)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical :: is_registered
+
+  integer :: i
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+  is_registered = .false.
+  do i = 1, fileobj%num_restart_vars
+    if (string_compare(fileobj%restart_vars(i)%varname, variable_name, .true.)) then
+      is_registered = .true.
+      exit
+    endif
+  enddo
+end function is_registered_to_restart
 
 
 end module netcdf_io_mod

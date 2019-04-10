@@ -51,6 +51,7 @@ public :: get_variable_sense
 public :: get_variable_missing
 public :: get_variable_units
 public :: get_time_calendar
+public :: is_registered_to_restart
 
 
 interface open_file
