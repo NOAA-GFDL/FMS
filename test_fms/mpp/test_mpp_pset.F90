@@ -16,14 +16,14 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifdef test_mpp_pset
-#include <fms_platform.h>
-program test
+
+
+program test_mpp_pset
   use mpp_mod, only: mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
        mpp_clock_id, mpp_clock_begin, mpp_clock_end
-  use mpp_pset_mod, only: mpp_pset_type, mpp_pset_create, mpp_pset_root, &
-       mpp_pset_broadcast_ptr, mpp_pset_segment_array, mpp_pset_sync, &
-       mpp_pset_stack_push, mpp_pset_print_chksum, mpp_pset_delete
+  use mpp_pset_mod !, only: mpp_pset_type, mpp_pset_create, mpp_pset_root, &
+!       mpp_pset_broadcast_ptr, mpp_pset_segment_array, mpp_pset_sync, &
+!       mpp_pset_stack_push, mpp_pset_print_chksum, mpp_pset_delete
   implicit none
 !test program demonstrates how to create PSETs
 !  how to distribute allocatable arrays
@@ -34,7 +34,7 @@ program test
 #ifdef use_CRI_pointers
   pointer( ptr_c, c )
 #endif
-  integer(POINTER_KIND) :: ptr !useless declaration, but it will compile
+  integer, pointer :: ptr !useless declaration, but it will compile
   integer :: i, j, k, ks, ke
 !MPP
   integer :: pe, npes
@@ -66,7 +66,9 @@ program test
       ptr = LOC(cc)
 #endif
   end if
-  call mpp_pset_broadcast_ptr( pset, ptr )
+
+!  call mpp_pset_broadcast_ptr( pset, ptr )
+
 #ifdef use_CRI_pointers
   ptr_c = ptr
 #endif
@@ -129,8 +131,4 @@ contains
     call mpp_pset_print_chksum( pset, 'test_auto ', d(:,js:je,:) )
   end subroutine test_auto
     
-end program test
-#else
-module null_mpp_pset_test
-end module
-#endif
+end program test_mpp_pset

@@ -16,8 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifdef test_mpp_domains
-program test
+program test_mpp_domains
   use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
@@ -125,7 +124,7 @@ program test
   outunit = stdout()
   errunit = stderr()
 #ifdef INTERNAL_FILE_NML
-  read (input_nml_file, test_mpp_domains_nml, status=io_status)
+  read (input_nml_file, test_mpp_domains_nml, iostat=io_status)
 #else
   do
      inquire( unit=unit, opened=opened )
@@ -384,7 +383,7 @@ contains
     end if
 #endif
     return
-  end subroutine test_openmp
+end subroutine test_openmp
 
   subroutine test_redistribute( type )
 !test redistribute between two domains
@@ -8158,8 +8157,4 @@ end subroutine test_modify_domain
 
   end subroutine test_global_reduce_ad
 
-end program test
-#else
-module null_mpp_domains_test
-end module
-#endif
+end program test_mpp_domains
