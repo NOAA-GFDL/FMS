@@ -98,6 +98,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/exchange/Makefile
         test_fms/mpp/Makefile
         test_fms/mpp_io/Makefile
+	test_fms/time_interp/Makefile
 	test_fms/time_manager/Makefile
 	test_fms/interpolator/Makefile
 	test_fms/horiz_interp/Makefile
