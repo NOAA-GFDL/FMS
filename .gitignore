@@ -2,7 +2,10 @@
 *.o
 *.mod
 *.s
+*.out
 pathnames*
+/*.zip
+/*.tar.gz
 
 Makefile
 # From https://github.com/github/gitignore/blob/master/Autotools.gitignore
