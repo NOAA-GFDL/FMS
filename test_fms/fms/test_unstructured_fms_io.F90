@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifdef TEST_UNSTRUCTURED_FMS_IO
+
 program test_unstructured_fms_io
 #include <fms_platform.h>
     use,intrinsic :: iso_fortran_env, only: output_unit
@@ -2601,4 +2601,3 @@ contains
    !--------------------------------------------------------------------------
 
 end program test_unstructured_fms_io
-#endif

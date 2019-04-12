@@ -16,9 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifdef test_fms_io
 
- program fms_io_test
+ program test_fms_io
 #include <fms_platform.h>
 
  use mpp_mod,         only: mpp_pe, mpp_npes, mpp_root_pe, mpp_init, mpp_exit
@@ -698,10 +697,4 @@ contains
 
   end subroutine compare_data_i1d
 
-end program fms_io_test
-
-#else
-module null_fms_io_test
-end module  
-
-#endif  /* test_fms_io */
+end program test_fms_io
