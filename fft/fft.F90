@@ -1078,6 +1078,7 @@ function fft_grid_to_fourier_float_2d (grid) result (fourier)
       if (allocated(table4))  deallocate (table4)
       if (allocated(table8))  deallocate (table8)
       if (allocated(table99)) deallocate (table99)
+      if (allocated(ifax)) deallocate (ifax)
 
       module_is_initialized = .false.
 

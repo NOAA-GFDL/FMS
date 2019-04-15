@@ -16,6 +16,7 @@ integer :: ntrans(2) = (/ 60, 90 /)
     aout(1:n,:) = ain(1:n,:)
 
     call fft_init (n)
+
   ! transform grid to fourier and back
     four = fft_grid_to_fourier (aout)
     aout = fft_fourier_to_grid (four)
