@@ -1,0 +1,1 @@
+Note: the interpolator unit test needs the aerosol.climatology.nc and o3.climatology.nc files to run. They must be in a directory /INPUT/

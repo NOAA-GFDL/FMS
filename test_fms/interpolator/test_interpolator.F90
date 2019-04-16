@@ -178,6 +178,7 @@ enddo
 
 call ozone_init(o3,lonb_mod(isd:ied+1,jsd:jed+1), latb_mod(isd:ied+1,jsd:jed+1), axes, model_time, &
                 data_out_of_bounds=out_of_bounds)
+
 call init_clim_diag(o3, axes, model_time)
 call sulfate_init(aerosol,lonb_mod(isd:ied+1,jsd:jed+1), latb_mod(isd:ied+1,jsd:jed+1), names, &
                 data_out_of_bounds=(/CONSTANT/) )
