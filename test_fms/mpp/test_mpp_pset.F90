@@ -28,7 +28,7 @@ program test_mpp_pset
 !test program demonstrates how to create PSETs
 !  how to distribute allocatable arrays
 !  how to distribute automatic arrays
-  integer, parameter :: n=96 !divisible by lots of numbers
+  integer, parameter :: n=48 !divisible by lots of numbers
   real, allocatable, dimension(:,:,:) :: a, b, cc
   real :: c(n,n,n)
 #ifdef use_CRI_pointers
@@ -111,10 +111,12 @@ contains
     integer, intent(in) :: m
     real :: d(m,m,m)
     integer :: js, je
+
 #ifdef use_CRI_pointers
     pointer( pd, d )
     call mpp_pset_stack_push( pset, pd, size(d) )
 #endif
+
     call mpp_pset_segment_array( pset, 1, m, js, je )
     call mpp_clock_begin(id_auto)
     do k = 1,m
