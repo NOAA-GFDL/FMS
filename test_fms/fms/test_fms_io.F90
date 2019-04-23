@@ -85,6 +85,7 @@
 
  call mpp_init
  npes = mpp_npes()
+ print *, 'The npes is ', npes
 
  call mpp_domains_init  
 

@@ -75,12 +75,12 @@ program test_drifters_comm
   
   ! create drifters
   call drifters_core_new(drfts, nd, npmax, ermsg)
-  if(ermsg /= '') print *,ermsg
+  if(ermsg /= '') print *,'ERROR',ermsg
 
   pe = mpp_pe()
   ids = (/ (i+100*pe, i=1,npmax) /)
   call drifters_core_set_ids(drfts, ids, ermsg)
-  if(ermsg /= '') print *,ermsg
+  if(ermsg /= '') print *,'ERROR', ermsg
 
   ! position particles
   if(pe == 0) then
@@ -88,7 +88,7 @@ program test_drifters_comm
           &               (drfts_com%ycmin + drfts_com%ycmax)/2. /)
      !positions(:, 2) = (/0.,0.01/)
      call drifters_core_set_positions(drfts, positions(:, 1:1), ermsg)
-     if(ermsg /= '') print *,ermsg
+     if(ermsg /= '') print *,'ERROR',ermsg
   endif
 
   ! push drifters
@@ -111,9 +111,9 @@ program test_drifters_comm
 
   ! clean up
   call drifters_core_del(drfts, ermsg)
-  if(ermsg /= '') print *,ermsg
+  if(ermsg /= '') print *,ermsg, '<--- THIS'
   call drifters_comm_del(drfts_com)
   call mpp_domains_exit
   call mpp_exit
-
+  
 end program test_drifters_comm
