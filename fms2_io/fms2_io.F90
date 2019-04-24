@@ -41,6 +41,7 @@ public :: get_variable_num_dimensions
 public :: get_variable_dimension_names
 public :: get_variable_size
 public :: get_compute_domain_dimension_indices
+public :: get_global_io_domain_indices
 public :: Valid_t
 public :: get_valid
 public :: is_valid
@@ -48,6 +49,7 @@ public :: get_unlimited_dimension_name
 public :: file_exists
 public :: compressed_start_and_count
 public :: open_check
+public :: is_registered_to_restart
 
 
 interface open_file

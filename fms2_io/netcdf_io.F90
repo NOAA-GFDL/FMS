@@ -136,6 +136,7 @@ public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
 public :: compressed_start_and_count
 public :: get_fill_value
+public :: is_registered_to_restart
 
 
 interface netcdf_add_restart_variable
@@ -1702,6 +1703,30 @@ function get_fill_value(fileobj, variable_name, fill_value, broadcast) &
     endif
   enddo
 end function get_fill_value
+
+
+!> @brief Determine if a variable has been registered to a restart file..
+!! @return Flag telling if the variable has been registered to a restart file.
+function is_registered_to_restart(fileobj, variable_name) &
+  result(is_registered)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical :: is_registered
+
+  integer :: i
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+  is_registered = .false.
+  do i = 1, fileobj%num_restart_vars
+    if (string_compare(fileobj%restart_vars(i)%varname, variable_name, .true.)) then
+      is_registered = .true.
+      exit
+    endif
+  enddo
+end function is_registered_to_restart
 
 
 end module netcdf_io_mod

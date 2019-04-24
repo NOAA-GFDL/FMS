@@ -73,6 +73,7 @@ public :: domain_write_5d
 public :: save_domain_restart
 public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
+public :: get_global_io_domain_indices
 
 
 interface compute_global_checksum
@@ -611,6 +612,28 @@ subroutine domain_offsets(data_xsize, data_ysize, io_domain, dpos, &
                //" of x dimension of data or compute domain.")
   endif
 end subroutine domain_offsets
+
+
+!> @brief Get starting/ending global indices of the I/O domain for a domain decomposed
+!!        file.
+subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimname !< Name of dimension variable.
+  integer, intent(out) :: is !< Staring index of I/O global domain.
+  integer, intent(out) :: ie !< Ending index of I/O global domain.
+
+  type(domain2d), pointer :: io_domain
+
+  io_domain => mpp_get_io_domain(fileobj%domain)
+  if (is_in_list(fileobj%xdims, dimname)) then
+    call mpp_get_global_domain(io_domain, xbegin=is, xend=ie)
+  elseif (is_in_list(fileobj%ydims, dimname)) then
+    call mpp_get_global_domain(io_domain, ybegin=is, yend=ie)
+  else
+    call error("input dimension is not associated with the domain.")
+  endif
+end subroutine get_global_io_domain_indices
 
 
 include "register_domain_restart_variable.inc"
