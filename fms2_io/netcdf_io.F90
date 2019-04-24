@@ -62,6 +62,7 @@ type, public :: FmsNetcdfFile_t
                      !! I/O root.
   logical :: is_restart !< Flag telling if the this file is a restart
                         !! file (that has internal pointers to data).
+  logical, allocatable :: is_open !< Allocated and set to true if opened.  
   type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
   integer :: num_restart_vars !< Number of registered restart variables.
@@ -387,6 +388,12 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
   character(len=256) :: buf
   logical :: is_res
 
+  if (allocated(fileobj%is_open)) then
+    if (fileobj%is_open) then
+      success = .true.
+      return
+    endif
+  endif 
   !Add ".res" to the file path if necessary.
   is_res = .false.
   if (present(is_restart)) then
@@ -467,6 +474,10 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
       call error("unrecognized file mode "//trim(mode)//".")
     endif
     call check_netcdf_code(err)
+    if (err == NF90_NOERR) then
+      if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
+      fileobj%is_open = .true.
+    endif
   else
     fileobj%ncid = missing_ncid
   endif
@@ -484,6 +495,7 @@ subroutine netcdf_file_close(fileobj)
   if (fileobj%is_root) then
     err = nf90_close(fileobj%ncid)
     call check_netcdf_code(err)
+    if (allocated(fileobj%is_open)) fileobj%is_open = .false.
   endif
   fileobj%path = missing_path
   fileobj%ncid = missing_ncid
