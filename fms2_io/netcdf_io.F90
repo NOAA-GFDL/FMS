@@ -55,6 +55,7 @@ type, public :: FmsNetcdfFile_t
   character(len=256) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
+  character(len=256) :: nc_format !< Netcdf file format.
   integer, dimension(:), allocatable :: pelist !< List of ranks who will
                                                !! communicate.
   integer :: io_root !< I/O root rank of the pelist.
@@ -82,6 +83,7 @@ endtype Valid_t
 
 public :: netcdf_file_open
 public :: netcdf_file_close
+public :: netcdf_new_file
 public :: netcdf_add_dimension
 public :: netcdf_add_variable
 public :: netcdf_add_restart_variable
@@ -358,8 +360,7 @@ end function get_variable_type
 
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
-                          is_restart) &
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -443,6 +444,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
     nc_format_param = nf90_64bit_offset
+    call string_copy(fileobj%nc_format, "64bit")
     if (present(nc_format)) then
       if (string_compare(nc_format, "64bit", .true.)) then
         nc_format_param = nf90_64bit_offset
@@ -453,6 +455,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
       else
         call error("unrecognized netcdf file format "//trim(nc_format)//".")
       endif
+      call string_copy(fileobj%nc_format, nc_format)
     endif
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
@@ -510,6 +513,167 @@ subroutine netcdf_file_close(fileobj)
     deallocate(fileobj%compressed_dims)
   endif
 end subroutine netcdf_file_close
+
+
+!> @brief Make a copy of a file's metadata to support "intermediate restarts".
+!! @internal
+subroutine netcdf_new_file(fileobj, path, mode, new_fileobj)
+
+  class(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
+  character(len=*), intent(in) :: path !< Name of new file.
+  character(len=*), intent(in) :: mode !< File mode.  Allowed values are:
+                                       !! "read", "append", "write", or
+                                       !! "overwrite".
+  class(FmsNetcdfFile_t), intent(out) :: new_fileobj !< New file object.
+
+  logical :: success
+  integer :: err
+  integer :: natt
+  integer :: ndim
+  integer :: varndim
+  integer :: nvar
+  character(len=nf90_max_name) :: n
+  character(len=nf90_max_name) :: varname
+  character(len=nf90_max_name), dimension(nf90_max_dims) :: dimnames
+  integer, dimension(nf90_max_dims) :: dimlens
+  integer :: xtype
+  integer, dimension(nf90_max_var_dims) :: dimids
+  integer, dimension(nf90_max_var_dims) :: d
+  integer :: varid
+  integer :: i
+  integer :: j
+  integer :: k
+  integer(kind=int32), dimension(:), allocatable :: buf_int
+  real(kind=real32), dimension(:), allocatable :: buf_float
+  real(kind=real64), dimension(:), allocatable :: buf_double
+
+  !Open the new file.
+  success = netcdf_file_open(new_fileobj, path, mode, fileobj%nc_format, &
+                             fileobj%pelist, fileobj%is_restart)
+  if (.not. success) then
+    call error("failed to open file "//trim(path)//".")
+  endif
+
+  if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
+    !Copy global attributes to the new file.
+    err = nf90_inquire(fileobj%ncid, nattributes=natt)
+    call check_netcdf_code(err)
+    do i = 1, natt
+      err = nf90_inq_attname(fileobj%ncid, nf90_global, i, n)
+      call check_netcdf_code(err)
+      err = nf90_copy_att(fileobj%ncid, nf90_global, n, new_fileobj%ncid, nf90_global)
+      call check_netcdf_code(err)
+    enddo
+
+    !Copy the dimensions to the new file.
+    err = nf90_inquire(fileobj%ncid, ndimensions=ndim)
+    call check_netcdf_code(err)
+    do i = 1, ndim
+      err = nf90_inquire_dimension(fileobj%ncid, i, dimnames(i), dimlens(i))
+      call check_netcdf_code(err)
+      err = nf90_def_dim(new_fileobj%ncid, dimnames(i), dimlens(i), dimids(i))
+      call check_netcdf_code(err)
+    enddo
+
+    !Copy the variables to the new file.
+    err = nf90_inquire(fileobj%ncid, nvariables=nvar)
+    call check_netcdf_code(err)
+    do i = 1, nvar
+      err = nf90_inquire_variable(fileobj%ncid, i, varname, xtype, varndim, d, natt)
+      call check_netcdf_code(err)
+
+      !Map to new dimension ids.
+      do j = 1, varndim
+        err = nf90_inquire_dimension(fileobj%ncid, d(j), n)
+        call check_netcdf_code(err)
+        do k = 1, ndim
+          if (string_compare(n, dimnames(k))) then
+            d(j) = dimids(k)
+            exit
+          endif
+        enddo
+      enddo
+
+      !Define variable in new file.
+      err = nf90_def_var(new_fileobj%ncid, varname, xtype, d, varid)
+      call check_netcdf_code(err)
+
+      !If the variable is an "axis", copy its data to the new file.
+      if (varndim .eq. 1) then
+        do k = 1, ndim
+          if (string_compare(varname, dimnames(k))) then
+            if (xtype .eq. nf90_int) then
+              allocate(buf_int(dimlens(k)))
+              err = nf90_get_var(fileobj%ncid, i, buf_int)
+              call check_netcdf_code(err)
+              err = nf90_put_var(fileobj%ncid, varid, buf_int)
+              deallocate(buf_int)
+            elseif (xtype .eq. nf90_float) then
+              allocate(buf_float(dimlens(k)))
+              err = nf90_get_var(fileobj%ncid, i, buf_float)
+              call check_netcdf_code(err)
+              err = nf90_put_var(fileobj%ncid, varid, buf_float)
+              deallocate(buf_float)
+            elseif (xtype .eq. nf90_double) then
+              allocate(buf_double(dimlens(k)))
+              err = nf90_get_var(fileobj%ncid, i, buf_double)
+              call check_netcdf_code(err)
+              err = nf90_put_var(fileobj%ncid, varid, buf_double)
+              deallocate(buf_double)
+            else
+              call error("this branch should not be reached.")
+            endif
+            call check_netcdf_code(err)
+            exit
+          endif
+        enddo
+      endif
+
+      !Copy variable attributes to the new file.
+      do j = 1, natt
+        err = nf90_inq_attname(fileobj%ncid, i, j, n)
+        call check_netcdf_code(err)
+        err = nf90_copy_att(fileobj%ncid, i, n, new_fileobj%ncid, varid)
+        call check_netcdf_code(err)
+      enddo
+    enddo
+  endif
+
+  if (new_fileobj%is_restart) then
+    !Copy pointers to buffers (this is aliasing!).
+    do i = 1, fileobj%num_restart_vars
+      new_fileobj%restart_vars(i)%varname = fileobj%restart_vars(i)%varname
+      if (associated(fileobj%restart_vars(i)%data0d)) then
+        new_fileobj%restart_vars(i)%data0d => fileobj%restart_vars(i)%data0d
+      elseif (associated(fileobj%restart_vars(i)%data1d)) then
+        new_fileobj%restart_vars(i)%data1d => fileobj%restart_vars(i)%data1d
+      elseif (associated(fileobj%restart_vars(i)%data2d)) then
+        new_fileobj%restart_vars(i)%data2d => fileobj%restart_vars(i)%data2d
+      elseif (associated(fileobj%restart_vars(i)%data3d)) then
+        new_fileobj%restart_vars(i)%data3d => fileobj%restart_vars(i)%data3d
+      elseif (associated(fileobj%restart_vars(i)%data4d)) then
+        new_fileobj%restart_vars(i)%data4d => fileobj%restart_vars(i)%data4d
+      else
+        call error("this branch should not be reached.")
+      endif
+    enddo
+    new_fileobj%num_restart_vars = fileobj%num_restart_vars
+  endif
+
+  !Copy compressed dimension metadata.
+  do i = 1, fileobj%num_compressed_dims
+    new_fileobj%compressed_dims(i)%dimname = fileobj%compressed_dims(i)%dimname
+    k = size(fileobj%compressed_dims(i)%npes_corner)
+    allocate(new_fileobj%compressed_dims(i)%npes_corner(k))
+    allocate(new_fileobj%compressed_dims(i)%npes_nelems(k))
+    do j = 1, k
+      new_fileobj%compressed_dims(i)%npes_corner(j) = fileobj%compressed_dims(i)%npes_corner(j)
+      new_fileobj%compressed_dims(i)%npes_nelems(j) = fileobj%compressed_dims(i)%npes_nelems(j)
+    enddo
+    new_fileobj%compressed_dims(i)%nelems = fileobj%compressed_dims(i)%nelems
+  enddo
+  new_fileobj%num_compressed_dims = fileobj%num_compressed_dims
+end subroutine netcdf_new_file
 
 
 !> @brief Get the index of a compressed dimension in a file object.
