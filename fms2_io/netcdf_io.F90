@@ -542,7 +542,7 @@ end subroutine new_netcdf_file
 subroutine copy_metadata(fileobj, new_fileobj)
 
   class(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
-  class(FmsNetcdfFile_t), intent(out) :: new_fileobj !< New file object.
+  class(FmsNetcdfFile_t), intent(inout) :: new_fileobj !< New file object.
 
   integer :: err
   integer :: natt
