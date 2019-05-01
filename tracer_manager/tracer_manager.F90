@@ -1369,8 +1369,9 @@ end subroutine set_tracer_profile
  logical                                 :: query_method
 
  integer :: n1
- character(len=256) :: list_name, control_tr
- character(len=11)  :: chn
+ character(len=256) :: list_name
+ character(len=1024):: control_tr
+ character(len=16)  :: chn,chn1
  character(len=128) :: err_msg_local
 
  if(.not.module_is_initialized) call tracer_manager_init
@@ -1404,7 +1405,18 @@ end subroutine set_tracer_profile
  control_tr = ''
  query_method = fm_query_method(list_name, name, control_tr)
 
- if ( present(control)) control = trim(control_tr)
+ if ( present(control) ) then
+    if ( len_trim(control_tr)>len(control) ) then
+       write(chn,*)len(control)
+       write(chn1,*)len_trim(control_tr)
+       if(error_handler('query_method', &
+           ' Output string length ('//trim(adjustl(chn)) &
+               // ') is not enough to return all "control" parameters ("'//trim(control_tr) &
+               // '", length='//trim(adjustl(chn1))//')', &
+           err_msg)) return
+    endif
+    control = trim(control_tr)
+ endif
 
  end function query_method
 !</FUNCTION>

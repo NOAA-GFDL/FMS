@@ -19,9 +19,9 @@
 !
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
 
-#include <fms_platform.h>
 
 module drifters_core_mod
+#include <fms_platform.h>
   implicit none
   private
 

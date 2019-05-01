@@ -412,11 +412,12 @@ private
   !--- mpp_io data types
   !-----------------------------------------------------------------------------
 integer FILE_TYPE_USED
+integer, parameter :: MAX_ATT_LENGTH = 1280
 type :: atttype
      private
      integer             :: type, len
      character(len=128)  :: name
-     character(len=1280) :: catt
+     character(len=MAX_ATT_LENGTH) :: catt
      real, pointer       :: fatt(:) =>NULL() ! just use type conversion for integers
   end type atttype
 
