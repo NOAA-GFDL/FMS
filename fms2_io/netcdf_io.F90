@@ -83,7 +83,7 @@ endtype Valid_t
 
 public :: netcdf_file_open
 public :: netcdf_file_close
-public :: netcdf_new_file
+public :: copy_metadata
 public :: netcdf_add_dimension
 public :: netcdf_add_variable
 public :: netcdf_add_restart_variable
@@ -517,7 +517,7 @@ end subroutine netcdf_file_close
 
 !> @brief Make a copy of a file's metadata to support "intermediate restarts".
 !! @internal
-subroutine netcdf_new_file(fileobj, path, mode, new_fileobj)
+subroutine new_netcdf_file(fileobj, path, mode, new_fileobj)
 
   class(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
   character(len=*), intent(in) :: path !< Name of new file.
@@ -527,6 +527,23 @@ subroutine netcdf_new_file(fileobj, path, mode, new_fileobj)
   class(FmsNetcdfFile_t), intent(out) :: new_fileobj !< New file object.
 
   logical :: success
+
+  !Open the new file.
+  success = netcdf_file_open(new_fileobj, path, mode, fileobj%nc_format, &
+                             fileobj%pelist, fileobj%is_restart)
+  if (.not. success) then
+    call error("error opening file "//trim(path)//".")
+  endif
+  call copy_metadata(fileobj, new_fileobj)
+end subroutine new_netcdf_file
+
+
+!> @brief Copy metadata from one file object to another.
+subroutine copy_metadata(fileobj, new_fileobj)
+
+  class(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
+  class(FmsNetcdfFile_t), intent(out) :: new_fileobj !< New file object.
+
   integer :: err
   integer :: natt
   integer :: ndim
@@ -547,15 +564,10 @@ subroutine netcdf_new_file(fileobj, path, mode, new_fileobj)
   real(kind=real32), dimension(:), allocatable :: buf_float
   real(kind=real64), dimension(:), allocatable :: buf_double
 
-  !Open the new file.
-  success = netcdf_file_open(new_fileobj, path, mode, fileobj%nc_format, &
-                             fileobj%pelist, fileobj%is_restart)
-  if (.not. success) then
-    call error("failed to open file "//trim(path)//".")
-  endif
-
   if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
     !Copy global attributes to the new file.
+    call set_netcdf_mode(fileobj%ncid, define_mode)
+    call set_netcdf_mode(new_fileobj%ncid, define_mode)
     err = nf90_inquire(fileobj%ncid, nattributes=natt)
     call check_netcdf_code(err)
     do i = 1, natt
@@ -595,35 +607,39 @@ subroutine netcdf_new_file(fileobj, path, mode, new_fileobj)
       enddo
 
       !Define variable in new file.
-      err = nf90_def_var(new_fileobj%ncid, varname, xtype, d, varid)
+      err = nf90_def_var(new_fileobj%ncid, varname, xtype, d(1:varndim), varid)
       call check_netcdf_code(err)
 
       !If the variable is an "axis", copy its data to the new file.
       if (varndim .eq. 1) then
         do k = 1, ndim
           if (string_compare(varname, dimnames(k))) then
+            call set_netcdf_mode(fileobj%ncid, data_mode)
+            call set_netcdf_mode(new_fileobj%ncid, data_mode)
             if (xtype .eq. nf90_int) then
               allocate(buf_int(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_int)
               call check_netcdf_code(err)
-              err = nf90_put_var(fileobj%ncid, varid, buf_int)
+              err = nf90_put_var(new_fileobj%ncid, varid, buf_int)
               deallocate(buf_int)
             elseif (xtype .eq. nf90_float) then
               allocate(buf_float(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_float)
               call check_netcdf_code(err)
-              err = nf90_put_var(fileobj%ncid, varid, buf_float)
+              err = nf90_put_var(new_fileobj%ncid, varid, buf_float)
               deallocate(buf_float)
             elseif (xtype .eq. nf90_double) then
               allocate(buf_double(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_double)
               call check_netcdf_code(err)
-              err = nf90_put_var(fileobj%ncid, varid, buf_double)
+              err = nf90_put_var(new_fileobj%ncid, varid, buf_double)
               deallocate(buf_double)
             else
               call error("this branch should not be reached.")
             endif
             call check_netcdf_code(err)
+            call set_netcdf_mode(fileobj%ncid, define_mode)
+            call set_netcdf_mode(new_fileobj%ncid, define_mode)
             exit
           endif
         enddo
@@ -673,7 +689,7 @@ subroutine netcdf_new_file(fileobj, path, mode, new_fileobj)
     new_fileobj%compressed_dims(i)%nelems = fileobj%compressed_dims(i)%nelems
   enddo
   new_fileobj%num_compressed_dims = fileobj%num_compressed_dims
-end subroutine netcdf_new_file
+end subroutine copy_metadata
 
 
 !> @brief Get the index of a compressed dimension in a file object.
@@ -981,47 +997,67 @@ end subroutine netcdf_save_restart
 
 !> @brief Loop through registered restart variables and read them from
 !!        a netcdf file.
-subroutine netcdf_restore_state(fileobj, unlim_dim_level)
+subroutine netcdf_restore_state(fileobj, unlim_dim_level, directory, timestamp, &
+                                filename)
 
-  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  type(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
+  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
+  character(len=*), intent(in), optional :: timestamp !< Model time.
+  character(len=*), intent(in), optional :: filename !< New name for the file.
 
   integer :: i
+  character(len=256) :: new_name
+  type(FmsNetcdfFile_t), target :: new_fileobj
+  type(FmsNetcdfFile_t), pointer :: p
+  logical :: close_new_file
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
   endif
-  do i = 1, fileobj%num_restart_vars
-    if (associated(fileobj%restart_vars(i)%data0d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data0d, &
+  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%path, new_name)) then
+    p => fileobj
+    close_new_file = .false.
+  else
+    call new_netcdf_file(fileobj, new_name, "read", new_fileobj)
+    p => new_fileobj
+    close_new_file = .true.
+  endif
+  do i = 1, p%num_restart_vars
+    if (associated(p%restart_vars(i)%data0d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data0d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data1d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data1d, &
+    elseif (associated(p%restart_vars(i)%data1d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data1d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data2d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data2d, &
+    elseif (associated(p%restart_vars(i)%data2d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data2d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data3d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data3d, &
+    elseif (associated(p%restart_vars(i)%data3d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data3d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data4d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data4d, &
+    elseif (associated(p%restart_vars(i)%data4d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data4d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
     else
       call error("this branch should not be reached.")
     endif
   enddo
+  if (close_new_file) then
+    call netcdf_file_close(p)
+  endif
 end subroutine netcdf_restore_state
 
 
@@ -1807,13 +1843,34 @@ end subroutine netcdf_add_variable_wrap
 
 
 !> @brief Wrapper to distinguish interfaces.
-subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level)
+subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level, directory, timestamp, &
+                               filename)
 
-  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  type(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
+  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
+  character(len=*), intent(in), optional :: timestamp !< Model time.
+  character(len=*), intent(in), optional :: filename !< New name for the file.
 
-  call netcdf_save_restart(fileobj, unlim_dim_level)
+  character(len=256) :: new_name
+  type(FmsNetcdfFile_t), target :: new_fileobj
+  type(FmsNetcdfFile_t), pointer :: p
+  logical :: close_new_file
+
+  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%path, new_name)) then
+    p => fileobj
+    close_new_file = .false.
+  else
+    call new_netcdf_file(fileobj, new_name, "read", new_fileobj)
+    p => new_fileobj
+    close_new_file = .true.
+  endif
+  call netcdf_save_restart(p, unlim_dim_level)
+  if (close_new_file) then
+    call netcdf_file_close(p)
+  endif
 end subroutine netcdf_save_restart_wrap
 
 

@@ -128,6 +128,27 @@ subroutine close_unstructured_domain_file(fileobj)
 end subroutine close_unstructured_domain_file
 
 
+!> @brief Make a copy of a file's metadata to support "intermediate restarts".
+!! @internal
+subroutine new_unstructured_domain_file(fileobj, path, mode, new_fileobj)
+
+  type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: path !< Name of new file.
+  character(len=*), intent(in) :: mode !< File mode.  Allowed values are:
+                                       !! "read", "append", "write", or "overwrite."
+  type(FmsNetcdfUnstructuredDomainFile_t), intent(out) :: new_fileobj !< New file object.
+
+  logical :: success
+
+  success = open_unstructured_domain_file(new_fileobj, path, mode, fileobj%domain, &
+                                          fileobj%nc_format, fileobj%is_restart)
+  if (.not. success) then
+    call error("error while opening file "//trim(path)//".")
+  endif
+  call copy_metadata(fileobj, new_fileobj)
+end subroutine new_unstructured_domain_file
+
+
 !> @brief Add an unstructured dimension.
 subroutine register_unstructured_dimension(fileobj, dim_name)
 
@@ -167,13 +188,26 @@ end subroutine register_unstructured_domain_variable
 
 
 !> @brief Wrapper to distinguish interfaces.
-subroutine unstructured_write_restart(fileobj, unlim_dim_level)
+subroutine unstructured_write_restart(fileobj, unlim_dim_level, directory, timestamp, &
+                                      filename)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
-  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
-                                                   !! level.
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
+  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
+  character(len=*), intent(in), optional :: timestamp !< Model time.
+  character(len=*), intent(in), optional :: filename !< New name for the file.
 
-  call netcdf_save_restart(fileobj, unlim_dim_level)
+  character(len=256) :: new_name
+  type(FmsNetcdfUnstructuredDomainFile_t) :: new_fileobj
+
+  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%path, new_name)) then
+    call netcdf_save_restart(fileobj, unlim_dim_level)
+  else
+    call new_unstructured_domain_file(fileobj, new_name, "write", new_fileobj)
+    call netcdf_save_restart(new_fileobj, unlim_dim_level)
+    call close_unstructured_domain_file(new_fileobj)
+  endif
 end subroutine unstructured_write_restart
 
 
