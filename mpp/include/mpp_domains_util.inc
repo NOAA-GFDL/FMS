@@ -553,6 +553,7 @@ function mpp_get_domain_tile_root_pe(domain)
 
 end function mpp_get_domain_tile_root_pe
 
+
 function mpp_get_io_domain(domain)
    type(domain2d), intent(in) :: domain
    type(domain2d), pointer    :: mpp_get_io_domain
@@ -564,6 +565,39 @@ function mpp_get_io_domain(domain)
    endif
 
 end function mpp_get_io_domain
+
+
+function mpp_get_num_io_domains(domain)
+    type(domain2d), intent(in) :: domain
+    integer :: mpp_get_num_io_domains
+
+    if (associated(domain%io_root_pes)) then
+        mpp_get_num_io_domains = size(domain%io_root_pes)
+    else
+        mpp_get_num_io_domains = 1
+    end if
+end function mpp_get_num_io_domains
+
+
+function mpp_get_io_root_pes(domain) result(io_root_pes)
+    type(domain2d), intent(in) :: domain
+    integer :: io_root_pes(max(size(domain%io_root_pes), 1))
+
+    if (associated(domain%io_root_pes)) then
+        io_root_pes(:) = domain%io_root_pes(:)
+    else
+        io_root_pes = domain%tile_root_pe
+    end if
+end function mpp_get_io_root_pes
+
+
+function mpp_domain_is_missing_io_domain(domain) result(missing)
+    type(domain2d), intent(in) :: domain
+    logical :: missing
+
+    missing = domain%missing_io_domains
+end function mpp_domain_is_missing_io_domain
+
 
 !#####################################################################
 ! <SUBROUTINE NAME="mpp_get_pelist1D" INTERFACE="mpp_get_pelist">

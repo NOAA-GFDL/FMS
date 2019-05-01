@@ -467,6 +467,8 @@
   !################################################################################
   !--- define the IO domain. 
   subroutine mpp_define_io_domain(domain, io_layout)
+    use quicksort_mod, only : quicksort
+
     type(domain2D), intent(inout) :: domain
     integer,        intent(in   ) :: io_layout(2)
     integer                       :: layout(2)
@@ -478,6 +480,8 @@
     integer                       :: whalo, ehalo, shalo, nhalo
     integer                       :: npes_x, npes_y, ndivx, ndivy
     integer, allocatable          :: posarray(:,:)
+    integer, allocatable          :: io_pearray(:,:)
+    integer, allocatable          :: io_root_pes(:)
 
     if(io_layout(1) * io_layout(2) .LE. 0) then
        call mpp_error(NOTE,  &
@@ -602,10 +606,41 @@
     ehalo = domain%ehalo
     shalo = domain%shalo
     nhalo = domain%nhalo
-    
+
     io_domain=>NULL()
 
+    ! We span each I/O domain and determine the root PE for each rank.
+    ! The lowest rank in each IO domain is set as the root PE.
+    ! If all tiles are masked, then we skip over the IO domain.
 
+    ! NOTE: This presumes that io_layout evenly divides layout.
+    allocate(io_pearray(0:npes_x - 1, 0:npes_y - 1))
+
+    ! For now we over-allocate using the maximum number of possible PEs
+    allocate(io_root_pes(0:(io_layout(1) * io_layout(2) - 1)))
+    io_root_pes(:) = NULL_PE
+
+    n = 0
+    do j = 0, layout(2) - 1, npes_y
+        do i = 0, layout(1) - 1, npes_x
+            io_pearray = domain%pearray(i:(i + npes_x - 1), j:(j + npes_y - 1))
+            if (any(io_pearray /= NULL_PE)) then
+                io_root_pes(n) = minval(pack(io_pearray, &
+                                             mask=(io_pearray /= NULL_PE)))
+                n = n + 1
+            end if
+        end do
+    end do
+    call quicksort(io_root_pes)
+
+    allocate(domain%io_root_pes(count(io_root_pes /= NULL_PE)))
+    domain%io_root_pes = pack(io_root_pes, mask=(io_root_pes /= NULL_PE))
+
+    if (size(domain%io_root_pes) < io_layout(1) * io_layout(2)) &
+        domain%missing_io_domains = .true.
+
+    deallocate(io_root_pes)
+    deallocate(io_pearray)
   end subroutine mpp_define_io_domain
 
   ! <SUBROUTINE NAME="mpp_define_domains2D" INTERFACE="mpp_define_domains">
@@ -7608,6 +7643,7 @@ subroutine mpp_deallocate_domain2D(domain)
   if(ASSOCIATED(domain%io_domain) ) then
      call deallocate_domain2D_local(domain%io_domain) 
      deallocate(domain%io_domain)
+     deallocate(domain%io_root_pes)
   endif
 
 end subroutine mpp_deallocate_domain2D
