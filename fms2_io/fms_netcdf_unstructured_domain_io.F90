@@ -12,7 +12,8 @@ private
 !> @brief netcdf unstructured domain file type.
 type, extends(FmsNetcdfFile_t), public :: FmsNetcdfUnstructuredDomainFile_t
   private
-  type(domainug) :: domain
+  type(domainug) :: domain !< Unstructured domain.
+  character(len=256) :: non_mangled_path !< Non-domain-mangled path.
 endtype FmsNetcdfUnstructuredDomainFile_t
 
 
@@ -116,6 +117,7 @@ function open_unstructured_domain_file(fileobj, path, mode, domain, nc_format, &
 
   !Store/initialize necessary properties.
   fileobj%domain = domain
+  call string_copy(fileobj%non_mangled_path, path)
 end function open_unstructured_domain_file
 
 
@@ -200,8 +202,8 @@ subroutine unstructured_write_restart(fileobj, unlim_dim_level, directory, times
   character(len=256) :: new_name
   type(FmsNetcdfUnstructuredDomainFile_t) :: new_fileobj
 
-  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
-  if (string_compare(fileobj%path, new_name)) then
+  call get_new_filename(fileobj%non_mangled_path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%non_mangled_path, new_name)) then
     call netcdf_save_restart(fileobj, unlim_dim_level)
   else
     call new_unstructured_domain_file(fileobj, new_name, "write", new_fileobj)

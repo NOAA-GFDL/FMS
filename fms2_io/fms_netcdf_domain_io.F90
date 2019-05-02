@@ -45,6 +45,7 @@ type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
                                                                               !! on dimensions associated
                                                                               !! with a 2d domain.
   integer :: n !< Number of domain decomposed variables.
+  character(len=256) :: non_mangled_path !< Non-domain-mangled file path.
 endtype FmsNetcdfDomainFile_t
 
 
@@ -321,6 +322,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   fileobj%domain = domain
   allocate(fileobj%domain_decomposed_vars(max_num_domain_decomposed_vars))
   fileobj%n = 0
+  call string_copy(fileobj%non_mangled_path, path)
 end function open_domain_file
 
 
@@ -478,8 +480,8 @@ subroutine save_domain_restart(fileobj, unlim_dim_level, directory, timestamp, &
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
   endif
-  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
-  if (string_compare(fileobj%path, new_name)) then
+  call get_new_filename(fileobj%non_mangled_path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%non_mangled_path, new_name)) then
     p => fileobj
     close_new_file = .false.
   else
@@ -547,8 +549,8 @@ subroutine restore_domain_state(fileobj, unlim_dim_level, directory, timestamp, 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
   endif
-  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
-  if (string_compare(fileobj%path, new_name)) then
+  call get_new_filename(fileobj%non_mangled_path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%non_mangled_path, new_name)) then
     p => fileobj
     close_new_file = .false.
   else

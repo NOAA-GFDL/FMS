@@ -273,15 +273,48 @@ subroutine destroy_list(list)
 end subroutine destroy_list
 
 
+!> @brief Determine if the "domain tile string" (.tilex.) exists in the input filename.
+!! @internal
+function has_domain_tile_string(string) &
+  result(has_string)
+
+  character(len=*), intent(in) :: string !< Input string.
+  logical :: has_string
+
+  integer :: l
+  integer :: i
+
+  has_string = .false.
+  i = index(trim(string), ".tile", back=.true.)
+  if (i .ne. 0) then
+    l = len_trim(string)
+    i = i + 1
+    do while (i .le. l)
+      if (verify(string(i:i), ".")) then
+        has_string = .true.
+        exit
+      elseif (verify(string(i:i), "0123456789") .ne. 0) then
+        exit
+      endif
+      i = i + 1
+    enddo
+  endif
+end function has_domain_tile_string
+
+
 !> @brief Add the domain tile id to an input filepath.
 !! @internal
 subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
+
   character(len=*), intent(inout) :: dest !< Output filepath.
   character(len=*), intent(in) :: source !< Input filepath.
   integer, intent(in) :: domain_tile_id !< Domain tile id.
 
   integer :: i
 
+  if (has_domain_tile_string(source)) then
+    call error("this file has already had a domain tile id added.")
+  endif
   i = index(trim(source), ".nc", back=.true.)
   if (i .eq. 0) then
     call error("file "//trim(source)//" does not contain .nc")
@@ -289,6 +322,33 @@ subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
   write(dest, '(a,i1,a)') source(1:i-1)//".tile", &
                           domain_tile_id, source(i:len_trim(source))
 end subroutine domain_tile_filepath_mangle
+
+
+!> @brief Determine if the "I/O domain tile string" (.nc.xxxx) exists in the input filename.
+!! @internal
+function has_io_domain_tile_string(string) &
+  result (has_string)
+
+  character(len=*), intent(in) :: string !< Input string.
+  logical :: has_string
+
+  integer :: i
+  integer :: l
+
+  has_string = .false.
+  i = index(trim(string), ".nc.", back=.true.)
+  if (i .ne. 0) then
+    l = len_trim(string)
+    i = i + 1
+    do while (i .le. l)
+      if (verify(string(i:i), "0123456789") .ne. 0) then
+        return
+      endif
+      i = i + 1
+    enddo
+    has_string = .true.
+  endif
+end function has_io_domain_tile_string
 
 
 !> @brief Add the I/O domain tile id to an input filepath.
@@ -299,8 +359,23 @@ subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
   character(len=*), intent(in) :: source !< Input filepath.
   integer, intent(in) :: io_domain_tile_id !< I/O domain tile id.
 
+  if (has_io_domain_tile_string(source)) then
+    call error("this file has already had a domain tile id added.")
+  endif
   write(dest,'(a,i4.4)') trim(source)//".", io_domain_tile_id
 end subroutine io_domain_tile_filepath_mangle
+
+
+!> @brief Determine if the "restart string" (.res.) exists in the input filename.
+!! @internal
+function has_restart_string(string) &
+  result (has_string)
+
+  character(len=*), intent(in) :: string !< Input string.
+  logical :: has_string
+
+  has_string = index(trim(string), ".res.", back=.true.) .ne. 0
+end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
@@ -310,32 +385,19 @@ subroutine restart_filepath_mangle(dest, source)
   character(len=*), intent(inout) :: dest
   character(len=*), intent(in) :: source
 
-  character(len=512) :: buf
   integer :: i
-  integer :: j
-  integer :: k
 
-  if (index(trim(source), ".res.", back=.true.) .ne. 0) then
+  if (has_restart_string(source)) then
     call string_copy(dest, source)
     return
   endif
-  i = index(trim(source), ".tile", back=.true.)
-  if (i .eq. 0) then
+  if (has_domain_tile_string(source)) then
+    i = index(trim(source), ".tile", back=.true.)
+  else
     i = index(trim(source), ".nc", back=.true.)
     if (i .eq. 0) then
       call error("file "//trim(source)//" does not contain .nc")
     endif
-  else
-    buf = trim(source(i+5:len(source)))
-    j = index(trim(buf),".")
-    if (j .eq. 0) then
-      call error("file "//trim(source)//" does not contain .tilex.")
-    endif
-    do k = 1, j-1
-      if (verify(buf(k:k), "0123456789") .ne. 0) then
-        call error("file "//trim(source)//" does not contain .tilex.")
-      endif
-    enddo
   endif
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
 end subroutine restart_filepath_mangle
