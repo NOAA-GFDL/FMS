@@ -34,6 +34,7 @@
   logical                       :: opened, existed
   integer                       :: unit_begin, unit_end, unit_nml, io_status
   character(len=5) :: this_pe
+  type(mpp_type), pointer :: dtype
 
   if( module_is_initialized )return
 
@@ -78,6 +79,23 @@
   call SYSTEM_CLOCK( count=tick0, count_rate=ticks_per_sec, count_max=max_ticks )
   tick_rate = 1./ticks_per_sec
   clock0 = mpp_clock_id( 'Total runtime', flags=MPP_CLOCK_SYNC )
+
+  ! Create the bytestream (default) mpp_datatype
+  mpp_byte%counter = 1
+  mpp_byte%ndims = 0
+  allocate(mpp_byte%sizes(0))
+  allocate(mpp_byte%subsizes(0))
+  allocate(mpp_byte%starts(0))
+  mpp_byte%etype = MPI_BYTE
+  mpp_byte%id = MPI_BYTE
+
+  mpp_byte%prev => null()
+  mpp_byte%next => null()
+
+  ! Initialize datatype list with mpp_byte
+  datatypes%head => mpp_byte
+  datatypes%tail => mpp_byte
+  datatypes%length = 0
 
   if( PRESENT(flags) )then
      debug   = flags.EQ.MPP_DEBUG
@@ -204,6 +222,7 @@ subroutine mpp_exit()
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
   logical :: opened
+  type(mpp_type), pointer :: dtype
 
   if( .NOT.module_is_initialized )return
   call mpp_set_current_pelist()
@@ -291,13 +310,19 @@ subroutine mpp_exit()
    close(etc_unit)
   endif
 
+  ! Clear derived data types (skipping list head, mpp_byte)
+  dtype => datatypes%head
+  do while (.not. associated(dtype))
+      dtype => dtype%next
+      dtype%counter = 1         ! Force deallocation
+      call mpp_type_free(dtype)
+  end do
+
   call mpp_set_current_pelist()
   call mpp_sync()
   call mpp_max(mpp_stack_hwm)
   if( pe.EQ.root_pe )write( out_unit,* )'MPP_STACK high water mark=', mpp_stack_hwm
   if(mpp_comm_private == MPI_COMM_WORLD ) call MPI_FINALIZE(error)
-
-
 
   return
 end subroutine mpp_exit
@@ -1132,6 +1157,134 @@ end subroutine mpp_gsm_free
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_mpi.h>
+!--------------------------------
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_real8_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_real8_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_real8_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_real8_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_real8_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_real8_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL8
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 8
+#include <mpp_sum_mpi_ad.h>
+
+#ifdef OVERLOAD_C8
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_cmplx8_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_cmplx8_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_cmplx8_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_cmplx8_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_cmplx8_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_cmplx8_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_DOUBLE_COMPLEX
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 16
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#ifdef OVERLOAD_R4
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_real4_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_real4_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_real4_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_real4_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_real4_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_real4_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL4
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 4
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#ifdef OVERLOAD_C4
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_cmplx4_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_cmplx4_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_cmplx4_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_cmplx4_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_cmplx4_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_cmplx4_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_COMPLEX
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 8
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#ifndef no_8byte_integers
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_int8_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_int8_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_int8_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_int8_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_int8_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_int8_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(LONG_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER8
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 8
+#include <mpp_sum_mpi_ad.h>
+#endif
+
+#undef MPP_SUM_AD_
+#define MPP_SUM_AD_ mpp_sum_int4_ad
+#undef MPP_SUM_SCALAR_AD_
+#define MPP_SUM_SCALAR_AD_ mpp_sum_int4_scalar_ad
+#undef MPP_SUM_2D_AD_
+#define MPP_SUM_2D_AD_ mpp_sum_int4_2d_ad
+#undef MPP_SUM_3D_AD_
+#define MPP_SUM_3D_AD_ mpp_sum_int4_3d_ad
+#undef MPP_SUM_4D_AD_
+#define MPP_SUM_4D_AD_ mpp_sum_int4_4d_ad
+#undef MPP_SUM_5D_AD_
+#define MPP_SUM_5D_AD_ mpp_sum_int4_5d_ad
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(INT_KIND)
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER4
+#undef MPP_TYPE_BYTELEN_
+#define MPP_TYPE_BYTELEN_ 4
+#include <mpp_sum_mpi_ad.h>
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1141,11 +1294,13 @@ end subroutine mpp_gsm_free
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
 #undef MPP_TYPE_
 #undef MPP_TYPE_BYTELEN_
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_int4
 #define MPP_ALLTOALLV_ mpp_alltoall_int4_v
+#define MPP_ALLTOALLW_ mpp_alltoall_int4_w
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
@@ -1153,11 +1308,13 @@ end subroutine mpp_gsm_free
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
 #undef MPP_TYPE_
 #undef MPP_TYPE_BYTELEN_
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_int8
 #define MPP_ALLTOALLV_ mpp_alltoall_int8_v
+#define MPP_ALLTOALLW_ mpp_alltoall_int8_w
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
@@ -1165,11 +1322,13 @@ end subroutine mpp_gsm_free
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
 #undef MPP_TYPE_
 #undef MPP_TYPE_BYTELEN_
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_real4
 #define MPP_ALLTOALLV_ mpp_alltoall_real4_v
+#define MPP_ALLTOALLW_ mpp_alltoall_real4_w
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
@@ -1177,12 +1336,120 @@ end subroutine mpp_gsm_free
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
 #undef MPP_TYPE_
 #undef MPP_TYPE_BYTELEN_
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_real8
 #define MPP_ALLTOALLV_ mpp_alltoall_real8_v
+#define MPP_ALLTOALLW_ mpp_alltoall_real8_w
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_alltoall_mpi.h>
+
+#undef MPP_ALLTOALL_
+#undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
+#undef MPP_TYPE_
+#undef MPP_TYPE_BYTELEN_
+#undef MPI_TYPE_
+#define MPP_ALLTOALL_ mpp_alltoall_logical4
+#define MPP_ALLTOALLV_ mpp_alltoall_logical4_v
+#define MPP_ALLTOALLW_ mpp_alltoall_logical4_w
+#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_BYTELEN_ 4
+#define MPI_TYPE_ MPI_INTEGER4
+#include <mpp_alltoall_mpi.h>
+
+#undef MPP_ALLTOALL_
+#undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
+#undef MPP_TYPE_
+#undef MPP_TYPE_BYTELEN_
+#undef MPI_TYPE_
+#define MPP_ALLTOALL_ mpp_alltoall_logical8
+#define MPP_ALLTOALLV_ mpp_alltoall_logical8_v
+#define MPP_ALLTOALLW_ mpp_alltoall_logical8_w
+#define MPP_TYPE_ logical(LONG_KIND)
+#define MPP_TYPE_BYTELEN_ 8
+#define MPI_TYPE_ MPI_INTEGER8
+#include <mpp_alltoall_mpi.h>
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!            DATA TRANSFER TYPES: mpp_type_create, mpp_type_free              !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#define MPP_TYPE_CREATE_ mpp_type_create_int4
+#define MPP_TYPE_ integer(INT_KIND)
+#define MPI_TYPE_ MPI_INTEGER4
+#include <mpp_type_mpi.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_int8
+#define MPP_TYPE_ integer(LONG_KIND)
+#define MPI_TYPE_ MPI_INTEGER8
+#include <mpp_type_mpi.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_real4
+#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPI_TYPE_ MPI_REAL4
+#include <mpp_type_mpi.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_real8
+#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPI_TYPE_ MPI_REAL8
+#include <mpp_type_mpi.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_logical4
+#define MPP_TYPE_ logical(INT_KIND)
+#define MPI_TYPE_ MPI_INTEGER4
+#include <mpp_type_mpi.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_logical8
+#define MPP_TYPE_ logical(LONG_KIND)
+#define MPI_TYPE_ MPI_INTEGER8
+#include <mpp_type_mpi.h>
+
+! Clear preprocessor flags
+#undef MPI_TYPE_
+#undef MPP_TYPE_
+#undef MPP_TYPE_CREATE_
+
+! NOTE: This should probably not take a pointer, but for now we do this.
+subroutine mpp_type_free(dtype)
+    type(mpp_type), pointer, intent(inout) :: dtype
+
+    if (.NOT. module_is_initialized) &
+        call mpp_error(FATAL, 'MPP_TYPE_FREE: You must first call mpp_init.')
+
+    if (current_clock .NE. 0) &
+        call SYSTEM_CLOCK(start_tick)
+
+    if (verbose) &
+        call mpp_error(NOTE, 'MPP_TYPE_FREE: using MPI_Type_free...')
+
+    ! Decrement the reference counter
+    dtype%counter = dtype%counter - 1
+
+    if (dtype%counter < 1) then
+        ! De-register the datatype in MPI runtime
+        call MPI_Type_free(dtype%id, error)
+
+        ! Remove from list
+        dtype%prev => dtype%next
+
+        ! Remove from memory
+        if (allocated(dtype%sizes)) deallocate(dtype%sizes)
+        if (allocated(dtype%subsizes)) deallocate(dtype%subsizes)
+        if (allocated(dtype%starts)) deallocate(dtype%starts)
+        deallocate(dtype)
+
+        datatypes%length = datatypes%length - 1
+    end if
+
+    if (current_clock .NE. 0) &
+        call increment_current_clock(EVENT_TYPE_FREE, MPP_TYPE_BYTELEN_)
+
+end subroutine mpp_type_free
