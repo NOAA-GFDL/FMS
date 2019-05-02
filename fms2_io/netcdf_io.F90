@@ -556,6 +556,7 @@ subroutine copy_metadata(fileobj, new_fileobj)
   integer :: xtype
   integer, dimension(nf90_max_var_dims) :: dimids
   integer, dimension(nf90_max_var_dims) :: d
+  integer :: ulim_dimid
   integer :: varid
   integer :: i
   integer :: j
@@ -580,10 +581,17 @@ subroutine copy_metadata(fileobj, new_fileobj)
     !Copy the dimensions to the new file.
     err = nf90_inquire(fileobj%ncid, ndimensions=ndim)
     call check_netcdf_code(err)
+    err = nf90_inquire(fileobj%ncid, unlimiteddimid=ulim_dimid)
+    call check_netcdf_code(err)
     do i = 1, ndim
       err = nf90_inquire_dimension(fileobj%ncid, i, dimnames(i), dimlens(i))
       call check_netcdf_code(err)
-      err = nf90_def_dim(new_fileobj%ncid, dimnames(i), dimlens(i), dimids(i))
+      if (i .eq. ulim_dimid) then
+        err = nf90_def_dim(new_fileobj%ncid, dimnames(i), nf90_unlimited, dimids(i))
+        ulim_dimid = dimids(i)
+      else
+        err = nf90_def_dim(new_fileobj%ncid, dimnames(i), dimlens(i), dimids(i))
+      endif
       call check_netcdf_code(err)
     enddo
 
@@ -611,7 +619,7 @@ subroutine copy_metadata(fileobj, new_fileobj)
       call check_netcdf_code(err)
 
       !If the variable is an "axis", copy its data to the new file.
-      if (varndim .eq. 1) then
+      if (varndim .eq. 1 .and. d(1) .ne. ulim_dimid) then
         do k = 1, ndim
           if (string_compare(varname, dimnames(k))) then
             call set_netcdf_mode(fileobj%ncid, data_mode)
