@@ -157,6 +157,7 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc, lowercase
   use mpp_mod,                only : input_nml_file, mpp_alltoall
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
+  use mpp_mod,                only : mpp_declare_pelist, mpp_set_current_pelist
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_pset_mod,           only : mpp_pset_init
   use mpp_efp_mod,            only : mpp_reproducing_sum
@@ -204,6 +205,7 @@ module mpp_domains_mod
   public :: mpp_get_domain_npes, mpp_get_domain_pelist
   public :: mpp_clear_group_update
   public :: mpp_group_update_initialized, mpp_group_update_is_set
+  public :: mpp_get_global_domains
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
@@ -235,6 +237,10 @@ module mpp_domains_mod
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
+  public :: mpp_get_nest_coarse_domain, mpp_get_nest_fine_domain
+  public :: mpp_is_nest_coarse, mpp_is_nest_fine
+  public :: mpp_get_nest_pelist, mpp_get_nest_npes
+  public :: mpp_get_nest_fine_pelist, mpp_get_nest_fine_npes
 
 !----------
 !ug support
@@ -319,6 +325,7 @@ module mpp_domains_mod
   type domain1D_spec
      private
      type(domain_axis_spec) :: compute
+     type(domain_axis_spec) :: global
      integer                :: pos
   end type domain1D_spec
        
@@ -389,7 +396,8 @@ module mpp_domains_mod
      integer                     :: io_layout(2)            ! io_layout, will be set through mpp_define_io_domain
                                                             ! default = domain layout
      integer,            pointer :: pearray(:,:)  => NULL() ! pe of each layout position 
-     integer,            pointer :: tile_id(:)    => NULL() ! tile id of each tile
+     integer,            pointer :: tile_id(:)    => NULL() ! tile id of each tile on current processor
+     integer,            pointer :: tile_id_all(:)=> NULL() ! tile id of all the tiles of domain
      type(domain1D),     pointer :: x(:)          => NULL() ! x-direction domain decomposition
      type(domain1D),     pointer :: y(:)          => NULL() ! y-direction domain decomposition
      type(domain2D_spec),pointer :: list(:)       => NULL() ! domain decomposition on pe list
@@ -442,10 +450,20 @@ module mpp_domains_mod
 
   end type nestSpec
 
-
-
   type nest_domain_type
+     character(len=NAME_LENGTH)     :: name
+     integer                        :: num_level
+     type(nest_level_type), pointer :: nest(:) => NULL()
+     integer                        :: num_nest
+     integer,               pointer :: tile_fine(:), tile_coarse(:)
+     integer,               pointer :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
+     integer,               pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
+  end type nest_domain_type
+
+  type nest_level_type
      private
+     logical                    :: on_level
+     logical                    :: is_fine, is_coarse
      integer                    :: num_nest
      integer                    :: my_num_nest
      integer,           pointer :: my_nest_id(:)
@@ -454,9 +472,9 @@ module mpp_domains_mod
      integer,           pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
      integer                    :: x_refine, y_refine
      logical                    :: is_fine_pe, is_coarse_pe
+     integer,           pointer :: pelist(:) => NULL()
      integer,           pointer :: pelist_fine(:) => NULL()
      integer,           pointer :: pelist_coarse(:) => NULL()
-     character(len=NAME_LENGTH) :: name
      type(nestSpec), pointer :: C2F_T => NULL()
      type(nestSpec), pointer :: C2F_C => NULL()
      type(nestSpec), pointer :: C2F_E => NULL()
@@ -467,7 +485,7 @@ module mpp_domains_mod
      type(nestSpec), pointer :: F2C_N => NULL()
      type(domain2d), pointer :: domain_fine   => NULL()
      type(domain2d), pointer :: domain_coarse => NULL()
-  end type nest_domain_type
+  end type nest_level_type
 
 
 
@@ -1796,6 +1814,8 @@ interface mpp_broadcast_domain
   module procedure mpp_broadcast_domain_1
   module procedure mpp_broadcast_domain_2
   module procedure mpp_broadcast_domain_ug
+  module procedure mpp_broadcast_domain_nest_fine
+  module procedure mpp_broadcast_domain_nest_coarse
 end interface
 
 
@@ -2415,6 +2435,12 @@ end interface
      module procedure mpp_get_compute_domains1D
      module procedure mpp_get_compute_domains2D
   end interface
+
+  interface mpp_get_global_domains
+     module procedure mpp_get_global_domains1D
+     module procedure mpp_get_global_domains2D
+  end interface
+
 
   ! <INTERFACE NAME="mpp_get_data_domain">
   !  <OVERVIEW>
