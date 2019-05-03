@@ -24,6 +24,7 @@ public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
 public :: get_checksum
+public :: tempfile
 
 
 !> @brief A linked list of strings.
@@ -431,6 +432,27 @@ subroutine get_new_filename(path, new_path, directory, timestamp, new_name)
   endif
   call string_copy(new_path, trim(dir)//trim(tstamp)//trim(nname))
 end subroutine get_new_filename
+
+
+!> @brief Create a unique filename (poor man's version of mktemp).
+!! @internal
+subroutine tempfile(filename)
+
+  character(len=*), intent(out) :: filename !< New unique filename.
+
+  real :: numr
+  integer :: numi
+
+  do while(.true.)
+    call random_number(numr)
+    numi = transfer(numr, numi)
+    numi = iand(numi, z'FFFFFF')
+    write(filename, '(a,z6.6)') "tmp", numi
+    if (.not. file_exists(filename)) then
+      exit
+    endif
+  enddo
+end subroutine tempfile
 
 
 include "array_utils.inc"

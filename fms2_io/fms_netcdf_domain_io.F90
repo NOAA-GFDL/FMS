@@ -75,6 +75,7 @@ public :: save_domain_restart
 public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
+public :: create_diskless_domain_file
 
 
 interface compute_global_checksum
@@ -326,6 +327,37 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
 end function open_domain_file
 
 
+!> @brief Create a "diskless" netcdf file to act as a buffer to support our "register
+!!        data to a file without knowing its name" legacy restart I/O workflow.
+!! @return Flag telling whether the creation of the buffer was successful.
+function create_diskless_domain_file(fileobj, domain, path) &
+  result(success)
+
+  type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
+  type(domain2d), intent(in) :: domain !< Two-dimensional domain.
+  character(len=*), intent(in), optional :: path !< File path.
+  logical :: success
+
+  type(domain2d), pointer :: io_domain
+  integer :: pelist_size
+  integer, dimension(:), allocatable :: pelist
+
+  io_domain => mpp_get_io_domain(domain)
+  if (.not. associated(io_domain)) then
+    call error("input domain does not have an io_domain.")
+  endif
+  pelist_size = mpp_get_domain_npes(io_domain)
+  allocate(pelist(pelist_size))
+  call mpp_get_pelist(io_domain, pelist)
+  success = create_diskless_netcdf_file(fileobj, pelist, path)
+  deallocate(pelist)
+  fileobj%domain = domain
+  allocate(fileobj%domain_decomposed_vars(max_num_domain_decomposed_vars))
+  fileobj%n = 0
+  call string_copy(fileobj%non_mangled_path, fileobj%path)
+end function create_diskless_domain_file
+
+
 !> @brief Close a domain netcdf file.
 subroutine close_domain_file(fileobj)
 
@@ -341,19 +373,25 @@ end subroutine close_domain_file
 
 !> @brief Make a copy of a file's metadata to support "intermediate restarts".
 !! @internal
-subroutine new_domain_file(fileobj, path, mode, new_fileobj)
+subroutine new_domain_file(fileobj, path, mode, new_fileobj, nc_format)
 
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: path !< Name of new file.
   character(len=*), intent(in) :: mode !< File mode.  Allowed values are:
                                        !! "read", "append", "write", or "overwrite".
   type(FmsNetcdfDomainFile_t), intent(out) :: new_fileobj !< File object.
+  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
+                                                     !! new files are written
+                                                     !! as.  Allowed values
+                                                     !! are: "64bit", "classic",
+                                                     !! or "netcdf4". Defaults to
+                                                     !! "64bit".
 
   logical :: success
   type(char_linked_list), pointer :: p
   integer :: i
 
-  success = open_domain_file(new_fileobj, path, mode, fileobj%domain, fileobj%nc_format, &
+  success = open_domain_file(new_fileobj, path, mode, fileobj%domain, nc_format, &
                              fileobj%is_restart)
   if (.not. success) then
     call error("error opening file "//trim(path)//".")
@@ -462,13 +500,19 @@ end subroutine register_domain_variable
 !> @brief Loop through registered restart variables and write them to
 !!        a netcdf file.
 subroutine save_domain_restart(fileobj, unlim_dim_level, directory, timestamp, &
-                               filename)
+                               filename, nc_format)
 
   type(FmsNetcdfDomainFile_t), intent(in), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
   character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
   character(len=*), intent(in), optional :: timestamp !< Model time.
   character(len=*), intent(in), optional :: filename !< New name for the file.
+  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
+                                                     !! new files are written
+                                                     !! as.  Allowed values
+                                                     !! are: "64bit", "classic",
+                                                     !! or "netcdf4". Defaults to
+                                                     !! "64bit".
 
   integer :: i
   character(len=32) :: chksum
@@ -485,7 +529,7 @@ subroutine save_domain_restart(fileobj, unlim_dim_level, directory, timestamp, &
     p => fileobj
     close_new_file = .false.
   else
-    call new_domain_file(fileobj, new_name, "write", new_fileobj)
+    call new_domain_file(fileobj, new_name, "write", new_fileobj, nc_format)
     p => new_fileobj
     close_new_file = .true.
   endif
