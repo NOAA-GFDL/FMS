@@ -59,7 +59,7 @@ MODULE diag_data_mod
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
-
+use fms2_io_mod
   IMPLICIT NONE
 
   PUBLIC
@@ -320,6 +320,8 @@ MODULE diag_data_mod
      logical(INT_KIND) :: use_domainUG = .false.
      logical(INT_KIND) :: use_domain2D = .false.
 !----------
+!Check if time axis was already registered
+     logical, allocatable :: is_time_axis_registered
   END TYPE file_type
   ! </TYPE>
 
@@ -780,6 +782,9 @@ MODULE diag_data_mod
   TYPE(file_type), SAVE, ALLOCATABLE :: files(:)
   TYPE(input_field_type), ALLOCATABLE :: input_fields(:)
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
+    type(FmsNetcdfUnstructuredDomainFile_t),allocatable :: fileobjU(:)
+    type(FmsNetcdfDomainFile_t),allocatable :: fileobj(:)
+    character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
 
   ! <!-- Even More Variables -->
   ! <DATA NAME="time_zero" TYPE="TYPE(time_type)" />
