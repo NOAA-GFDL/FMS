@@ -18,7 +18,37 @@
 !***********************************************************************
 
 MODULE diag_util_mod
-#include <fms_platform.h>
+!#include <fms_platform.h>
+#define QUAD_KIND real128
+#define DOUBLE_KIND c_double
+#define FLOAT_KIND c_float
+#define LONG_KIND c_int64_t
+#define INT_KIND c_int32_t
+#define SHORT_KIND c_int16_t
+#define POINTER_KIND c_intptr_t
+#define _PURE pure
+#define _ALLOCATABLE allocatable
+#define _NULL
+#define _ALLOCATED allocated
+!DEC$ MESSAGE:'Using allocatable derived type array members.'
+
+
+!Control use of cray pointers.
+#define use_CRI_pointers
+!DEC$ MESSAGE:'Using cray pointers.'
+!If you want to use quad-precision.
+
+  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
+  !   Seth Underwood
+  ! </CONTACT>
+
+  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of
+  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
+  !   field-meta-data and field data
+  ! </OVERVIEW>
+use,intrinsic :: iso_fortran_env, only: real128
+use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
+                                      c_int32_t,c_int16_t,c_intptr_t
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -53,7 +83,7 @@ MODULE diag_util_mod
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
        & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
-       & DIAG_FIELD_NOT_FOUND, diag_init_time
+       & DIAG_FIELD_NOT_FOUND, diag_init_time, fileobjU, fileobj, fnum_for_domain
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
@@ -75,7 +105,7 @@ MODULE diag_util_mod
   USE mpp_mod, ONLY: mpp_npes
   USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-
+use fms2_io_mod
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
@@ -1805,7 +1835,8 @@ CONTAINS
     TYPE(domain2d) :: domain2
     TYPE(domainUG) :: domainU
     INTEGER :: is, ie, last, ind
-
+    character(len=2) :: fnum_domain
+    class(FmsNetcdfFile_t), pointer    :: fileob
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
@@ -1929,11 +1960,15 @@ CONTAINS
     IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
             & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
+            & fileobj(file),fileobjU(file), fnum_for_domain(file),&
             & attributes=files(file)%attributes(1:files(file)%num_attributes))
     ELSE
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-            & files(file)%file_unit, all_scalar_or_1d, domain2,domainU)
+            & files(file)%file_unit, all_scalar_or_1d, domain2,domainU, &
+            & fileobj(file),fileobjU(file),fnum_for_domain(file))
     END IF
+    !> update fnum_for_domain with the correct domain
+!     fnum_for_domain(file) = fnum_domain
     files(file)%bytes_written = 0
     ! Does this file contain time_average fields?
     time_ops = .FALSE.
@@ -2001,17 +2036,40 @@ CONTAINS
        END IF
 
        axes(num_axes + 1) = files(file)%time_axis_id
-       CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1), time_ops)
+!> Allocate the is_time_axis_registered field and set it to false for the first trip
+       if (.not. allocated(files(file)%is_time_axis_registered)) then
+          allocate(files(file)%is_time_axis_registered)
+          files(file)%is_time_axis_registered = .false.
+       endif
+       if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobj(file), time_ops=time_ops, &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+       elseif (fnum_for_domain(file) == "ug") then
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobjU(file), time_ops=time_ops, &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+       endif
        IF ( time_ops ) THEN
           axes(num_axes + 2) = files(file)%time_bounds_id
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2))
+          if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+              CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobj(file), &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+          elseif (fnum_for_domain(file) == "ug") then
+              CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobjU(file), &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+          endif
        END IF
        ! write metadata for axes used  in compression-by-gathering, e.g. for unstructured
        ! grid
        DO k = 1, num_axes
           IF (axis_is_compressed(axes(k))) THEN
              CALL get_compressed_axes_ids(axes(k), axesc) ! returns allocatable array
-             CALL write_axis_meta_data(files(file)%file_unit, axesc)
+             if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+                 CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobj(file), &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+             elseif (fnum_for_domain(file) == "ug") then
+                 CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobjU(file), &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+             endif
              DEALLOCATE(axesc)
           ENDIF
        ENDDO
@@ -2087,6 +2145,12 @@ CONTAINS
        ELSE
           avg = " "
        END IF
+! Use the correct file object
+       if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+          fileob => fileobj (file)
+       elseif (fnum_for_domain(file) == "ug") then
+          fileob => fileobjU(file)
+       endif
        IF ( input_fields(input_field_num)%missing_value_present ) THEN
           IF ( LEN_TRIM(input_fields(input_field_num)%interp_method) > 0 ) THEN
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
@@ -2100,7 +2164,8 @@ CONTAINS
                   & interp_method = input_fields(input_field_num)%interp_method,&
                   & attributes=output_fields(field_num)%attributes,&
                   & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
+                  & use_UGdomain=files(file)%use_domainUG , &
+                  & fileob=fileob)
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -2112,7 +2177,9 @@ CONTAINS
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & attributes=output_fields(field_num)%attributes,&
                   & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
+                  & use_UGdomain=files(file)%use_domainUG , &
+                  & fileob=fileob)
+
           END IF
           ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
        ELSE
@@ -2128,7 +2195,9 @@ CONTAINS
                   & interp_method = input_fields(input_field_num)%interp_method,&
                   & attributes=output_fields(field_num)%attributes,&
                   & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
+                  & use_UGdomain=files(file)%use_domainUG , &
+                  & fileob=fileob)
+
           ELSE
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
                   & output_fields(field_num)%output_name, axes(1:num_axes),&
@@ -2140,7 +2209,9 @@ CONTAINS
                   & standard_name = input_fields(input_field_num)%standard_name,&
                   & attributes=output_fields(field_num)%attributes,&
                   & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
+                  & use_UGdomain=files(file)%use_domainUG , &
+                  & fileob=fileob)
+
           END IF
        END IF
     END DO
@@ -2151,14 +2222,17 @@ CONTAINS
        time_axis_id(1) = files(file)%time_axis_id
        files(file)%f_avg_start = write_field_meta_data(files(file)%file_unit,&
             & avg_name // '_T1', time_axis_id, time_units,&
-            & "Start time for average period", pack=pack_size)
+            & "Start time for average period", pack=pack_size , &
+            & fileob=fileob)
        files(file)%f_avg_end = write_field_meta_data(files(file)%file_unit,&
             & avg_name // '_T2', time_axis_id, time_units,&
-            & "End time for average period", pack=pack_size)
+            & "End time for average period", pack=pack_size , &
+            & fileob=fileob)
        files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit,&
             & avg_name // '_DT', time_axis_id,&
             & TRIM(time_unit_list(files(file)%time_units)),&
-            & "Length of average period", pack=pack_size)
+            & "Length of average period", pack=pack_size , &
+            & fileob=fileob)
     END IF
 
     IF ( time_ops ) THEN
@@ -2172,12 +2246,14 @@ CONTAINS
           ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
           files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
                & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
+               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size , &
+               & fileob=fileob)
        ELSE
           files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
                & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
                & TRIM(time_unit_list(files(file)%time_units)),&
-               & TRIM(time_name)//' axis boundaries', pack=pack_size)
+               & TRIM(time_name)//' axis boundaries', pack=pack_size, &
+               & fileob=fileob)
        END IF
     END IF
     ! Let lower levels know that all meta data has been sent
@@ -2199,6 +2275,8 @@ CONTAINS
                   &'one axis has required fields ('//trim(req_fields)//') but the '// &
                   &'corresponding fields are NOT found in file '//TRIM(files(file)%name), FATAL)
     END IF
+    ! Clean up pointer
+    if (associated(fileob)) nullify(fileob)
   END SUBROUTINE opening_file
   ! </SUBROUTINE>
   ! </PRIVATE>
@@ -2572,6 +2650,13 @@ CONTAINS
       ! going to this file, and it was never opened (b/c diag_data_out was not
       ! called)
       CALL mpp_close(files(file)%file_unit)
+!! New FMS_IO close
+CALL error_mesg('CHECKFORTHIS_static',fnum_for_domain(file),note)
+      if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+          call close_file (fileobj(file) )
+      elseif (fnum_for_domain(file) == "ug") then
+          call close_file (fileobjU(file))
+      endif
       files(file)%file_unit = -1
     END IF
   END SUBROUTINE write_static
