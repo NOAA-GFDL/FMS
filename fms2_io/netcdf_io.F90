@@ -145,7 +145,7 @@ public :: get_fill_value
 public :: is_registered_to_restart
 public :: create_diskless_netcdf_file
 public :: create_diskless_netcdf_file_wrap
-
+public :: check_if_open
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
@@ -2028,5 +2028,20 @@ function create_diskless_netcdf_file_wrap(fileobj, pelist, path) &
   success = create_diskless_netcdf_file(fileobj, pelist, path)
 end function create_diskless_netcdf_file_wrap
 
+function check_if_open (fileobj,fname) result(is_open)
+  logical                               :: is_open !< True if the file in the file object is opened
+  type(FmsNetcdfFile_t), intent(in)     :: fileobj !< File object.
+  character(len=*),intent(in),optional  :: fname   !< Optional filename for checking
+!> Check if the is_open variable in the object has been allocated
+  if (allocated(fileobj%is_open)) then
+    is_open = fileobj%is_open !> Return the value of the fileobj%is_open
+  else
+    is_open = .false. !> If fileobj%is_open is not allocated, that the file has not been opened
+  endif
+
+  if (present(fname)) then !> If the filename does not match the name in path, 
+                           !! then this is considered not open
+     if (is_open .AND. trim(fname) .ne. trim(fileobj%path)) is_open = .false. 
+  endif
 
 end module netcdf_io_mod
