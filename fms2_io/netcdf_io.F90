@@ -2043,5 +2043,5 @@ function check_if_open (fileobj,fname) result(is_open)
                            !! then this is considered not open
      if (is_open .AND. trim(fname) .ne. trim(fileobj%path)) is_open = .false. 
   endif
-
+end function check_if_open
 end module netcdf_io_mod
