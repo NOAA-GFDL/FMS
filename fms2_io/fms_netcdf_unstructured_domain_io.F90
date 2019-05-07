@@ -12,7 +12,8 @@ private
 !> @brief netcdf unstructured domain file type.
 type, extends(FmsNetcdfFile_t), public :: FmsNetcdfUnstructuredDomainFile_t
   private
-  type(domainug) :: domain
+  type(domainug) :: domain !< Unstructured domain.
+  character(len=256) :: non_mangled_path !< Non-domain-mangled path.
 endtype FmsNetcdfUnstructuredDomainFile_t
 
 
@@ -39,6 +40,7 @@ public :: unstructured_domain_write_3d
 public :: unstructured_domain_write_4d
 public :: unstructured_domain_write_5d
 public :: unstructured_write_restart
+public :: create_diskless_unstructured_domain_file
 
 
 contains
@@ -116,7 +118,37 @@ function open_unstructured_domain_file(fileobj, path, mode, domain, nc_format, &
 
   !Store/initialize necessary properties.
   fileobj%domain = domain
+  call string_copy(fileobj%non_mangled_path, path)
 end function open_unstructured_domain_file
+
+
+!> @brief Create a "diskless" netcdf file to act as a buffer to support our "register
+!!        data to a file without knowing its name" legacy restart I/O workflow.
+!! @return Flag telling whether the creation of the buffer was successful.
+function create_diskless_unstructured_domain_file(fileobj, domain, path) &
+  result(success)
+
+  type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobj !< File object.
+  type(domainug), intent(in) :: domain !< Two-dimensional domain.
+  character(len=*), intent(in), optional :: path !< File path.
+  logical :: success
+
+  type(domainug), pointer :: io_domain
+  integer :: pelist_size
+  integer, dimension(:), allocatable :: pelist
+
+  io_domain => mpp_get_ug_io_domain(domain)
+  if (.not. associated(io_domain)) then
+    call error("input domain does not have an io_domain.")
+  endif
+  pelist_size = mpp_get_ug_domain_npes(io_domain)
+  allocate(pelist(pelist_size))
+  call mpp_get_ug_domain_pelist(io_domain, pelist)
+  success = create_diskless_netcdf_file(fileobj, pelist, path)
+  deallocate(pelist)
+  fileobj%domain = domain
+  call string_copy(fileobj%non_mangled_path, fileobj%path)
+end function create_diskless_unstructured_domain_file
 
 
 !> @brief Wrapper to distinguish interfaces.
@@ -126,6 +158,33 @@ subroutine close_unstructured_domain_file(fileobj)
 
   call netcdf_file_close(fileobj)
 end subroutine close_unstructured_domain_file
+
+
+!> @brief Make a copy of a file's metadata to support "intermediate restarts".
+!! @internal
+subroutine new_unstructured_domain_file(fileobj, path, mode, new_fileobj, nc_format)
+
+  type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: path !< Name of new file.
+  character(len=*), intent(in) :: mode !< File mode.  Allowed values are:
+                                       !! "read", "append", "write", or "overwrite."
+  type(FmsNetcdfUnstructuredDomainFile_t), intent(out) :: new_fileobj !< New file object.
+  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
+                                                     !! new files are written
+                                                     !! as.  Allowed values
+                                                     !! are: "64bit", "classic",
+                                                     !! or "netcdf4". Defaults to
+                                                     !! "64bit".
+
+  logical :: success
+
+  success = open_unstructured_domain_file(new_fileobj, path, mode, fileobj%domain, &
+                                          nc_format, fileobj%is_restart)
+  if (.not. success) then
+    call error("error while opening file "//trim(path)//".")
+  endif
+  call copy_metadata(fileobj, new_fileobj)
+end subroutine new_unstructured_domain_file
 
 
 !> @brief Add an unstructured dimension.
@@ -167,13 +226,32 @@ end subroutine register_unstructured_domain_variable
 
 
 !> @brief Wrapper to distinguish interfaces.
-subroutine unstructured_write_restart(fileobj, unlim_dim_level)
+subroutine unstructured_write_restart(fileobj, unlim_dim_level, directory, timestamp, &
+                                      filename, nc_format)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
-  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
-                                                   !! level.
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
+  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
+  character(len=*), intent(in), optional :: timestamp !< Model time.
+  character(len=*), intent(in), optional :: filename !< New name for the file.
+  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
+                                                     !! new files are written
+                                                     !! as.  Allowed values
+                                                     !! are: "64bit", "classic",
+                                                     !! or "netcdf4". Defaults to
+                                                     !! "64bit".
 
-  call netcdf_save_restart(fileobj, unlim_dim_level)
+  character(len=256) :: new_name
+  type(FmsNetcdfUnstructuredDomainFile_t) :: new_fileobj
+
+  call get_new_filename(fileobj%non_mangled_path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%non_mangled_path, new_name)) then
+    call netcdf_save_restart(fileobj, unlim_dim_level)
+  else
+    call new_unstructured_domain_file(fileobj, new_name, "write", new_fileobj, nc_format)
+    call netcdf_save_restart(new_fileobj, unlim_dim_level)
+    call close_unstructured_domain_file(new_fileobj)
+  endif
 end subroutine unstructured_write_restart
 
 

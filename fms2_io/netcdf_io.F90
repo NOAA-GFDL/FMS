@@ -14,16 +14,17 @@ private
 !Module constants.
 integer, parameter :: variable_missing = -1
 integer, parameter :: dimension_missing = -1
-integer, parameter, public :: no_unlimited_dimension = -1
+integer, parameter, public :: no_unlimited_dimension = -1 !> No unlimited dimension in file.
 character(len=1), parameter :: missing_path = ""
 integer, parameter :: missing_ncid = -1
 integer, parameter :: missing_rank = -1
 integer, parameter :: define_mode = 0
 integer, parameter :: data_mode = 1
 integer, parameter :: max_num_restart_vars = 200
-integer, parameter, public :: unlimited = nf90_unlimited
+integer, parameter, public :: unlimited = nf90_unlimited !> Wrapper to specify unlimited dimension.
 integer, parameter :: dimension_not_found = 0
-integer, parameter, public :: max_num_compressed_dims = 10
+integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of compressed
+                                                           !! dimensions allowed.
 
 
 !> @brief Restart variable.
@@ -35,6 +36,8 @@ type :: RestartVariable_t
   class(*), dimension(:,:,:), pointer :: data3d => null() !< 3d data pointer.
   class(*), dimension(:,:,:,:), pointer :: data4d => null() !< 4d data pointer.
   class(*), dimension(:,:,:,:,:), pointer :: data5d => null() !< 5d data pointer.
+  logical :: was_read !< Flag to support legacy "query_initialized" feature, which
+                      !! keeps track if a file was read.
 endtype RestartVariable_t
 
 
@@ -55,6 +58,7 @@ type, public :: FmsNetcdfFile_t
   character(len=256) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
+  character(len=256) :: nc_format !< Netcdf file format.
   integer, dimension(:), allocatable :: pelist !< List of ranks who will
                                                !! communicate.
   integer :: io_root !< I/O root rank of the pelist.
@@ -68,6 +72,7 @@ type, public :: FmsNetcdfFile_t
   integer :: num_restart_vars !< Number of registered restart variables.
   type(CompressedDimension_t), dimension(:), allocatable :: compressed_dims !< "Compressed" dimension.
   integer :: num_compressed_dims !< Number of compressed dimensions.
+  logical :: is_diskless !< Flag telling whether this is a diskless file.
 endtype FmsNetcdfFile_t
 
 
@@ -83,6 +88,7 @@ endtype Valid_t
 
 public :: netcdf_file_open
 public :: netcdf_file_close
+public :: copy_metadata
 public :: netcdf_add_dimension
 public :: netcdf_add_variable
 public :: netcdf_add_restart_variable
@@ -136,6 +142,9 @@ public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
 public :: compressed_start_and_count
 public :: get_fill_value
+public :: is_registered_to_restart
+public :: create_diskless_netcdf_file
+public :: create_diskless_netcdf_file_wrap
 
 
 interface netcdf_add_restart_variable
@@ -312,12 +321,8 @@ function attribute_exists(ncid, varid, attribute_name) &
   integer :: err
 
   err = nf90_inquire_attribute(ncid, varid, trim(attribute_name))
-  if (err .eq. nf90_enotatt) then
-    att_exists = .false.
-  else
-    call check_netcdf_code(err)
-    att_exists = .true.
-  endif
+  att_exists = err .ne. nf90_enotatt
+  call check_netcdf_code(err)
 end function attribute_exists
 
 
@@ -356,10 +361,60 @@ function get_variable_type(ncid, varid) &
 end function get_variable_type
 
 
+!> @brief Create a "diskless" netcdf file to act as a buffer to support our "register
+!!        data to a file without knowing its name" legacy restart I/O workflow.
+!! @return Flag telling whether the creation of the buffer was successful.
+function create_diskless_netcdf_file(fileobj, pelist, path) &
+  result(success)
+
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  integer, dimension(:), intent(in), optional :: pelist !< List of ranks associated
+                                                        !! with this file.  If not
+                                                        !! provided, only the current
+                                                        !! rank will be able to
+                                                        !! act on the file.
+  character(len=*), intent(in), optional :: path !< File path.
+  logical :: success
+
+  integer :: cmode
+  integer :: err
+
+  if (present(path)) then
+    call string_copy(fileobj%path, path)
+  else
+    call tempfile(fileobj%path)
+  endif
+  fileobj%nc_format = "classic"
+  fileobj%is_readonly = .false.
+  if (present(pelist)) then
+    allocate(fileobj%pelist(size(pelist)))
+    fileobj%pelist(:) = pelist(:)
+  else
+    allocate(fileobj%pelist(1))
+    fileobj%pelist(1) = mpp_pe()
+  endif
+  fileobj%io_root = fileobj%pelist(1)
+  fileobj%is_root = mpp_pe() .eq. fileobj%io_root
+  fileobj%is_restart = .true.
+  fileobj%is_diskless = .true.
+  cmode = ior(nf90_noclobber, nf90_classic_model)
+  cmode = ior(cmode, nf90_diskless)
+  err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid)
+  success = err .eq. nf90_noerr
+  if (.not. success) then
+    deallocate(fileobj%pelist)
+    return
+  endif
+  allocate(fileobj%restart_vars(max_num_restart_vars))
+  fileobj%num_restart_vars = 0
+  allocate(fileobj%compressed_dims(max_num_compressed_dims))
+  fileobj%num_compressed_dims = 0
+end function create_diskless_netcdf_file
+
+
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
-                          is_restart) &
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -407,8 +462,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
 
   !Check if the file exists.
   success = .true.
-  if (string_compare(mode, "read", .true.) .or. &
-      string_compare(mode, "append", .true.)) then
+  if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
     success = file_exists(buf)
     if (.not. success) then
       return
@@ -417,9 +471,6 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
 
   !Store properties in the derived type.
   call string_copy(fileobj%path, trim(buf))
-  if (allocated(fileobj%pelist)) then
-    deallocate(fileobj%pelist)
-  endif
   if (present(pelist)) then
     allocate(fileobj%pelist(size(pelist)))
     fileobj%pelist(:) = pelist(:)
@@ -428,27 +479,12 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
     fileobj%pelist(1) = mpp_pe()
   endif
   fileobj%io_root = fileobj%pelist(1)
-  if (mpp_pe() .eq. fileobj%io_root) then
-    fileobj%is_root = .true.
-  else
-    fileobj%is_root = .false.
-  endif
-  fileobj%is_restart = is_res
-  if (fileobj%is_restart) then
-    allocate(fileobj%restart_vars(max_num_restart_vars))
-    fileobj%num_restart_vars = 0
-  endif
-  if (string_compare(mode, "read", .true.)) then
-    fileobj%is_readonly = .true.
-  else
-    fileobj%is_readonly = .false.
-  endif
-  allocate(fileobj%compressed_dims(max_num_compressed_dims))
-  fileobj%num_compressed_dims = 0
+  fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
     nc_format_param = nf90_64bit_offset
+    call string_copy(fileobj%nc_format, "64bit")
     if (present(nc_format)) then
       if (string_compare(nc_format, "64bit", .true.)) then
         nc_format_param = nf90_64bit_offset
@@ -459,17 +495,16 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
       else
         call error("unrecognized netcdf file format "//trim(nc_format)//".")
       endif
+      call string_copy(fileobj%nc_format, nc_format)
     endif
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
     elseif (string_compare(mode, "append", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid)
     elseif (string_compare(mode, "write", .true.)) then
-      err = nf90_create(trim(fileobj%path), &
-                        ior(nf90_noclobber, nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid)
     elseif (string_compare(mode,"overwrite",.true.)) then
-      err = nf90_create(trim(fileobj%path), &
-                        ior(nf90_clobber,nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid)
     else
       call error("unrecognized file mode "//trim(mode)//".")
     endif
@@ -481,6 +516,18 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, &
   else
     fileobj%ncid = missing_ncid
   endif
+  fileobj%is_diskless = .false.
+
+  !Allocate memory.
+  fileobj%is_restart = is_res
+  if (fileobj%is_restart) then
+    allocate(fileobj%restart_vars(max_num_restart_vars))
+    fileobj%num_restart_vars = 0
+  endif
+  fileobj%is_readonly = string_compare(mode, "read", .true.)
+  allocate(fileobj%compressed_dims(max_num_compressed_dims))
+  fileobj%num_compressed_dims = 0
+
 end function netcdf_file_open
 
 
@@ -521,6 +568,197 @@ subroutine netcdf_file_close(fileobj)
     deallocate(fileobj%compressed_dims)
   endif
 end subroutine netcdf_file_close
+
+
+!> @brief Make a copy of a file's metadata to support "intermediate restarts".
+!! @internal
+subroutine new_netcdf_file(fileobj, path, mode, new_fileobj, nc_format)
+
+  class(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
+  character(len=*), intent(in) :: path !< Name of new file.
+  character(len=*), intent(in) :: mode !< File mode.  Allowed values are:
+                                       !! "read", "append", "write", or
+                                       !! "overwrite".
+  class(FmsNetcdfFile_t), intent(out) :: new_fileobj !< New file object.
+  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
+                                                     !! new files are written
+                                                     !! as.  Allowed values
+                                                     !! are: "64bit", "classic",
+                                                     !! or "netcdf4". Defaults to
+                                                     !! "64bit".
+
+  logical :: success
+
+  !Open the new file.
+  success = netcdf_file_open(new_fileobj, path, mode, nc_format, &
+                             fileobj%pelist, fileobj%is_restart)
+  if (.not. success) then
+    call error("error opening file "//trim(path)//".")
+  endif
+  call copy_metadata(fileobj, new_fileobj)
+end subroutine new_netcdf_file
+
+
+!> @brief Copy metadata from one file object to another.
+subroutine copy_metadata(fileobj, new_fileobj)
+
+  class(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
+  class(FmsNetcdfFile_t), intent(inout) :: new_fileobj !< New file object.
+
+  integer :: err
+  integer :: natt
+  integer :: ndim
+  integer :: varndim
+  integer :: nvar
+  character(len=nf90_max_name) :: n
+  character(len=nf90_max_name) :: varname
+  character(len=nf90_max_name), dimension(nf90_max_dims) :: dimnames
+  integer, dimension(nf90_max_dims) :: dimlens
+  integer :: xtype
+  integer, dimension(nf90_max_var_dims) :: dimids
+  integer, dimension(nf90_max_var_dims) :: d
+  integer :: ulim_dimid
+  integer :: varid
+  integer :: i
+  integer :: j
+  integer :: k
+  integer(kind=int32), dimension(:), allocatable :: buf_int
+  real(kind=real32), dimension(:), allocatable :: buf_float
+  real(kind=real64), dimension(:), allocatable :: buf_double
+
+  if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
+    !Copy global attributes to the new file.
+    call set_netcdf_mode(fileobj%ncid, define_mode)
+    call set_netcdf_mode(new_fileobj%ncid, define_mode)
+    err = nf90_inquire(fileobj%ncid, nattributes=natt)
+    call check_netcdf_code(err)
+    do i = 1, natt
+      err = nf90_inq_attname(fileobj%ncid, nf90_global, i, n)
+      call check_netcdf_code(err)
+      err = nf90_copy_att(fileobj%ncid, nf90_global, n, new_fileobj%ncid, nf90_global)
+      call check_netcdf_code(err)
+    enddo
+
+    !Copy the dimensions to the new file.
+    err = nf90_inquire(fileobj%ncid, ndimensions=ndim)
+    call check_netcdf_code(err)
+    err = nf90_inquire(fileobj%ncid, unlimiteddimid=ulim_dimid)
+    call check_netcdf_code(err)
+    do i = 1, ndim
+      err = nf90_inquire_dimension(fileobj%ncid, i, dimnames(i), dimlens(i))
+      call check_netcdf_code(err)
+      if (i .eq. ulim_dimid) then
+        err = nf90_def_dim(new_fileobj%ncid, dimnames(i), nf90_unlimited, dimids(i))
+        ulim_dimid = dimids(i)
+      else
+        err = nf90_def_dim(new_fileobj%ncid, dimnames(i), dimlens(i), dimids(i))
+      endif
+      call check_netcdf_code(err)
+    enddo
+
+    !Copy the variables to the new file.
+    err = nf90_inquire(fileobj%ncid, nvariables=nvar)
+    call check_netcdf_code(err)
+    do i = 1, nvar
+      err = nf90_inquire_variable(fileobj%ncid, i, varname, xtype, varndim, d, natt)
+      call check_netcdf_code(err)
+
+      !Map to new dimension ids.
+      do j = 1, varndim
+        err = nf90_inquire_dimension(fileobj%ncid, d(j), n)
+        call check_netcdf_code(err)
+        do k = 1, ndim
+          if (string_compare(n, dimnames(k))) then
+            d(j) = dimids(k)
+            exit
+          endif
+        enddo
+      enddo
+
+      !Define variable in new file.
+      err = nf90_def_var(new_fileobj%ncid, varname, xtype, d(1:varndim), varid)
+      call check_netcdf_code(err)
+
+      !If the variable is an "axis", copy its data to the new file.
+      if (varndim .eq. 1 .and. d(1) .ne. ulim_dimid) then
+        do k = 1, ndim
+          if (string_compare(varname, dimnames(k))) then
+            call set_netcdf_mode(fileobj%ncid, data_mode)
+            call set_netcdf_mode(new_fileobj%ncid, data_mode)
+            if (xtype .eq. nf90_int) then
+              allocate(buf_int(dimlens(k)))
+              err = nf90_get_var(fileobj%ncid, i, buf_int)
+              call check_netcdf_code(err)
+              err = nf90_put_var(new_fileobj%ncid, varid, buf_int)
+              deallocate(buf_int)
+            elseif (xtype .eq. nf90_float) then
+              allocate(buf_float(dimlens(k)))
+              err = nf90_get_var(fileobj%ncid, i, buf_float)
+              call check_netcdf_code(err)
+              err = nf90_put_var(new_fileobj%ncid, varid, buf_float)
+              deallocate(buf_float)
+            elseif (xtype .eq. nf90_double) then
+              allocate(buf_double(dimlens(k)))
+              err = nf90_get_var(fileobj%ncid, i, buf_double)
+              call check_netcdf_code(err)
+              err = nf90_put_var(new_fileobj%ncid, varid, buf_double)
+              deallocate(buf_double)
+            else
+              call error("this branch should not be reached.")
+            endif
+            call check_netcdf_code(err)
+            call set_netcdf_mode(fileobj%ncid, define_mode)
+            call set_netcdf_mode(new_fileobj%ncid, define_mode)
+            exit
+          endif
+        enddo
+      endif
+
+      !Copy variable attributes to the new file.
+      do j = 1, natt
+        err = nf90_inq_attname(fileobj%ncid, i, j, n)
+        call check_netcdf_code(err)
+        err = nf90_copy_att(fileobj%ncid, i, n, new_fileobj%ncid, varid)
+        call check_netcdf_code(err)
+      enddo
+    enddo
+  endif
+
+  if (new_fileobj%is_restart) then
+    !Copy pointers to buffers (this is aliasing!).
+    do i = 1, fileobj%num_restart_vars
+      new_fileobj%restart_vars(i)%varname = fileobj%restart_vars(i)%varname
+      if (associated(fileobj%restart_vars(i)%data0d)) then
+        new_fileobj%restart_vars(i)%data0d => fileobj%restart_vars(i)%data0d
+      elseif (associated(fileobj%restart_vars(i)%data1d)) then
+        new_fileobj%restart_vars(i)%data1d => fileobj%restart_vars(i)%data1d
+      elseif (associated(fileobj%restart_vars(i)%data2d)) then
+        new_fileobj%restart_vars(i)%data2d => fileobj%restart_vars(i)%data2d
+      elseif (associated(fileobj%restart_vars(i)%data3d)) then
+        new_fileobj%restart_vars(i)%data3d => fileobj%restart_vars(i)%data3d
+      elseif (associated(fileobj%restart_vars(i)%data4d)) then
+        new_fileobj%restart_vars(i)%data4d => fileobj%restart_vars(i)%data4d
+      else
+        call error("this branch should not be reached.")
+      endif
+    enddo
+    new_fileobj%num_restart_vars = fileobj%num_restart_vars
+  endif
+
+  !Copy compressed dimension metadata.
+  do i = 1, fileobj%num_compressed_dims
+    new_fileobj%compressed_dims(i)%dimname = fileobj%compressed_dims(i)%dimname
+    k = size(fileobj%compressed_dims(i)%npes_corner)
+    allocate(new_fileobj%compressed_dims(i)%npes_corner(k))
+    allocate(new_fileobj%compressed_dims(i)%npes_nelems(k))
+    do j = 1, k
+      new_fileobj%compressed_dims(i)%npes_corner(j) = fileobj%compressed_dims(i)%npes_corner(j)
+      new_fileobj%compressed_dims(i)%npes_nelems(j) = fileobj%compressed_dims(i)%npes_nelems(j)
+    enddo
+    new_fileobj%compressed_dims(i)%nelems = fileobj%compressed_dims(i)%nelems
+  enddo
+  new_fileobj%num_compressed_dims = fileobj%num_compressed_dims
+end subroutine copy_metadata
 
 
 !> @brief Get the index of a compressed dimension in a file object.
@@ -649,12 +887,10 @@ subroutine register_compressed_dimension(fileobj, dimension_name, &
   integer :: dsize
   integer :: fdim_size
 
-  call append_compressed_dimension(fileobj, dimension_name, npes_corner, &
-                                   npes_nelems)
+  call append_compressed_dimension(fileobj, dimension_name, npes_corner, npes_nelems)
   dsize = sum(npes_nelems)
   if (fileobj%is_readonly) then
-    call get_dimension_size(fileobj, dimension_name, fdim_size, &
-                            broadcast=.true.)
+    call get_dimension_size(fileobj, dimension_name, fdim_size, broadcast=.true.)
     if (fdim_size .ne. dsize) then
       call error("dimension "//trim(dimension_name)//" does not match" &
                  //" the size of the associated compressed axis.")
@@ -828,47 +1064,67 @@ end subroutine netcdf_save_restart
 
 !> @brief Loop through registered restart variables and read them from
 !!        a netcdf file.
-subroutine netcdf_restore_state(fileobj, unlim_dim_level)
+subroutine netcdf_restore_state(fileobj, unlim_dim_level, directory, timestamp, &
+                                filename)
 
-  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  type(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
+  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
+  character(len=*), intent(in), optional :: timestamp !< Model time.
+  character(len=*), intent(in), optional :: filename !< New name for the file.
 
   integer :: i
+  character(len=256) :: new_name
+  type(FmsNetcdfFile_t), target :: new_fileobj
+  type(FmsNetcdfFile_t), pointer :: p
+  logical :: close_new_file
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
   endif
-  do i = 1, fileobj%num_restart_vars
-    if (associated(fileobj%restart_vars(i)%data0d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data0d, &
+  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%path, new_name)) then
+    p => fileobj
+    close_new_file = .false.
+  else
+    call new_netcdf_file(fileobj, new_name, "read", new_fileobj)
+    p => new_fileobj
+    close_new_file = .true.
+  endif
+  do i = 1, p%num_restart_vars
+    if (associated(p%restart_vars(i)%data0d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data0d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data1d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data1d, &
+    elseif (associated(p%restart_vars(i)%data1d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data1d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data2d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data2d, &
+    elseif (associated(p%restart_vars(i)%data2d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data2d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data3d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data3d, &
+    elseif (associated(p%restart_vars(i)%data3d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data3d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
-    elseif (associated(fileobj%restart_vars(i)%data4d)) then
-      call netcdf_read_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%data4d, &
+    elseif (associated(p%restart_vars(i)%data4d)) then
+      call netcdf_read_data(p, p%restart_vars(i)%varname, &
+                            p%restart_vars(i)%data4d, &
                             unlim_dim_level=unlim_dim_level, &
                             broadcast=.true.)
     else
       call error("this branch should not be reached.")
     endif
   enddo
+  if (close_new_file) then
+    call netcdf_file_close(p)
+  endif
 end subroutine netcdf_restore_state
 
 
@@ -1654,13 +1910,40 @@ end subroutine netcdf_add_variable_wrap
 
 
 !> @brief Wrapper to distinguish interfaces.
-subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level)
+subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level, directory, timestamp, &
+                                    filename, nc_format)
 
-  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  type(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
+  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
+  character(len=*), intent(in), optional :: timestamp !< Model time.
+  character(len=*), intent(in), optional :: filename !< New name for the file.
+  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
+                                                     !! new files are written
+                                                     !! as.  Allowed values
+                                                     !! are: "64bit", "classic",
+                                                     !! or "netcdf4". Defaults to
+                                                     !! "64bit".
 
-  call netcdf_save_restart(fileobj, unlim_dim_level)
+  character(len=256) :: new_name
+  type(FmsNetcdfFile_t), target :: new_fileobj
+  type(FmsNetcdfFile_t), pointer :: p
+  logical :: close_new_file
+
+  call get_new_filename(fileobj%path, new_name, directory, timestamp, filename)
+  if (string_compare(fileobj%path, new_name)) then
+    p => fileobj
+    close_new_file = .false.
+  else
+    call new_netcdf_file(fileobj, new_name, "write", new_fileobj, nc_format)
+    p => new_fileobj
+    close_new_file = .true.
+  endif
+  call netcdf_save_restart(p, unlim_dim_level)
+  if (close_new_file) then
+    call netcdf_file_close(p)
+  endif
 end subroutine netcdf_save_restart_wrap
 
 
@@ -1702,6 +1985,48 @@ function get_fill_value(fileobj, variable_name, fill_value, broadcast) &
     endif
   enddo
 end function get_fill_value
+
+
+!> @brief Determine if a variable has been registered to a restart file..
+!! @return Flag telling if the variable has been registered to a restart file.
+function is_registered_to_restart(fileobj, variable_name) &
+  result(is_registered)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  logical :: is_registered
+
+  integer :: i
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+  is_registered = .false.
+  do i = 1, fileobj%num_restart_vars
+    if (string_compare(fileobj%restart_vars(i)%varname, variable_name, .true.)) then
+      is_registered = .true.
+      exit
+    endif
+  enddo
+end function is_registered_to_restart
+
+
+!> @brief Wrapper to distinguish interfaces.
+!! @return Flag telling whether the creation of the buffer was successful.
+function create_diskless_netcdf_file_wrap(fileobj, pelist, path) &
+  result(success)
+
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  integer, dimension(:), intent(in), optional :: pelist !< List of ranks associated
+                                                        !! with this file.  If not
+                                                        !! provided, only the current
+                                                        !! rank will be able to
+                                                        !! act on the file.
+  character(len=*), intent(in), optional :: path !< File path.
+  logical :: success
+
+  success = create_diskless_netcdf_file(fileobj, pelist, path)
+end function create_diskless_netcdf_file_wrap
 
 
 end module netcdf_io_mod

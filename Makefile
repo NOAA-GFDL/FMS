@@ -1,10 +1,10 @@
-CC = cc
-CPPDEFS = -DINTERNAL_FILE_NML -g -Duse_libMPI -Duse_netCDF -D_FILE_VERSION="`git-version-string $<`"
+#CC = cc
+#CPPDEFS = -DINTERNAL_FILE_NML -g -Duse_libMPI -Duse_netCDF -D_FILE_VERSION="foo"
 #CPPFLAGS = -D__IFC $(shell nc-config --cflags)
 #CFLAGS := -msse2 -sox -traceback -O0 -g -ftrapuv -qopenmp
 OTHERFLAGS =
 OTHER_CFLAGS =
-FC = ftn
+#FC = ftn
 #FPPFLAGS = -fpp -Wp,-w $(shell nf-config --fflags)
 #FFLAGS := -msse2 -fno-alias -auto -safe-cray-ptr -ftz -assume byterecl -i4 -r8 -nowarn -sox -traceback -g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv -qopenmp
 OTHER_FFLAGS =
