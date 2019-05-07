@@ -1,10 +1,10 @@
-FC = ftn
+#FC = ftn
 #FFLAGS = -g -O0 -r8 -i4 -traceback -qopenmp
-INCLUDE = -I../..
-LDFLAGS = ../../libfms.a
+INCLUDEADD = -I../..
+LDADD= ../../libfms.a
 RPATH = 
 
-all: test_fms2_io.x
+all: test_fms2_io.x new.x
 
 argparse.o: argparse.F90
 	${FC} ${FFLAGS} -o $@ -c $<
@@ -13,7 +13,10 @@ test_fms2_io.x: test_fms2_io.F90 argparse.o create_atmosphere_domain.inc create_
                 create_ocean_domain.inc atmosphere_restart_file_test.inc \
                 land_unstructured_restart_file_test.inc land_compressed_restart_file_test.inc \
                 ocean_restart_file_test.inc
-	${FC} ${FFLAGS} ${INCLUDE} -o $@ $< argparse.o ${LDFLAGS} ${RPATH}
+	${FC} ${FFLAGS} ${INCLUDEADD} -o $@ $< argparse.o ${LDFLAGS} ${RPATH} ${LDADD}
+
+new.x: new.F90
+	${FC} ${FFLAGS} ${INCLUDEADD} -o $@ $< ${LDFLAGS} ${LDADD}
 
 clean:
-	rm -f argparse.o argparse.mod test_fms2_io.x
+	rm -f argparse.o argparse.mod test_fms2_io.x new.x

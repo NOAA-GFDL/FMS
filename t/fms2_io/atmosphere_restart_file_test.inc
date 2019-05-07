@@ -38,6 +38,7 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   integer :: j
   integer :: k
   integer :: l
+  character(len=32) :: tstamp
 
   !Initialize.
   call mpi_barrier(mpi_comm_world, err)
@@ -224,18 +225,23 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
       out_chksum(3) = mpp_chksum(surf_t_data, pelist=(/mpp_pe()/))
       chksum_unlim_level(3) = i
     endif
+    ioff = isc-isd
+    joff = jsc-jsd
+    do j = 1, nz
+      do k = 1, ny
+        do l = 1, nx
+          temperature_data_with_halos(l+ioff,k+joff,j) = temperature_data(l,k,j)
+        enddo
+      enddo
+    enddo
 
     !Write out the times of each "time step".
     call write_data(fileobj, "time", 1950. + real(i,kind=real32), unlim_dim_level=i)
-  enddo
-  ioff = isc-isd
-  joff = jsc-jsd
-  do k = 1, nz
-    do j = 1, ny
-      do i = 1, nx
-        temperature_data_with_halos(i+ioff,j+joff,k) = temperature_data(i,j,k)
-      enddo
-    enddo
+
+    !Write out "intermdiate" restart files.
+    tstamp = ""
+    write(tstamp, *) i
+    call write_restart(fileobj, unlim_dim_level=1, timestamp=trim(tstamp))
   enddo
 
   !Write out the restart file.
