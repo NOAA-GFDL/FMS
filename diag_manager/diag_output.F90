@@ -852,6 +852,8 @@ character(len=128),dimension(size(axes)) :: axis_names
           CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
              & 'time_avg_info',&
              & cval=trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT')
+          if (present(fileob)) call register_variable_attribute(fileob,name,'time_avg_info',&
+             & trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT')
        END IF
     END IF
 
@@ -859,13 +861,15 @@ character(len=128),dimension(size(axes)) :: axis_names
     IF ( coord_present ) &
          CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
          & 'coordinates', cval=TRIM(coord_att))
+         if (present(fileob)) call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att))
     IF ( TRIM(standard_name2) /= 'none' ) CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
          & 'standard_name', cval=TRIM(standard_name2))
-
+         if (present(fileob)) call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2))
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
        CALL mpp_write_meta ( file_unit, mpp_get_id(Field%Field),&
             & 'interp_method', cval=TRIM(interp_method))
+       if (present(fileob)) call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method))
     END IF
 
     !---- get axis domain ----
@@ -939,27 +943,6 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
        END SELECT
     END DO
   END SUBROUTINE write_attribute_meta
-
-! subroutine write_attribute_meta_fmsio (fileob,varname,attname,attval)
-!   class(FmsNetcdfFile_t), intent(inout)    :: fileob
-!   character(len=*),intent(in)              :: varname
-!   character(len=*),intent(in)              :: attname
-!   class(*), intent(in)                     :: attval(:)
-!   call register_variable_attribute(fileob, varname,  attname, attval)
-
-! end subroutine write_attribute_meta_fmsio 
-
-
-! subroutine write_attribute_meta_fmsio_string (fileob,varname,attname,attval)
-!   class(FmsNetcdfFile_t), intent(inout)    :: fileob
-!   character(len=*),intent(in)              :: varname
-!   character(len=*),intent(in)              :: attname
-!   character(len=*), intent(in)                 :: attval
-
-!   call register_variable_attribute(fileob, varname,  attname, attval)
-
-! end subroutine write_attribute_meta_fmsio_string 
-
 
   ! <SUBROUTINE NAME="done_meta_data">
   !   <OVERVIEW>
