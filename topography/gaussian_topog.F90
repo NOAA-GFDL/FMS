@@ -37,8 +37,7 @@ module gaussian_topog_mod
 !   and ridge-width parameters.
 ! </DESCRIPTION>
 
-use  fms_mod, only: file_exist, open_namelist_file,  &
-                    check_nml_error, close_file,     &
+use  fms_mod, only: check_nml_error,                 &
                     stdlog, write_version_number,    &
                     mpp_pe, mpp_root_pe,             &
                     error_mesg, FATAL
@@ -266,19 +265,8 @@ subroutine read_namelist
 
 !  read namelist
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, gaussian_topog_nml, iostat=io)
-      ierr = check_nml_error(io,'gaussian_topog_nml')
-#else
-   if ( file_exist('input.nml')) then
-      unit = open_namelist_file ( )
-      ierr=1; do while (ierr /= 0)
-         read  (unit, nml=gaussian_topog_nml, iostat=io, end=10)
-         ierr = check_nml_error(io,'gaussian_topog_nml')
-      enddo
- 10   call close_file (unit)
-   endif
-#endif
+   read (input_nml_file, gaussian_topog_nml, iostat=io)
+   ierr = check_nml_error(io,'gaussian_topog_nml')
 
 !  write version and namelist to log file
 

@@ -139,13 +139,12 @@ subroutine get_grid_ntiles(component,ntiles)
   ! local vars
   character(len=MAX_FILE) :: component_mosaic
 
-  call error_mesg("xgrid_mod(get_grid_ntiles)", "This routine should not be called", FATAL)
   select case (get_grid_version())
   case(VERSION_0,VERSION_1)
      ntiles = 1
   case(VERSION_2)
      call read_data(grid_file,trim(lowercase(component))//'_mosaic_file',component_mosaic)
-!     ntiles = get_mosaic_ntiles(grid_dir//trim(component_mosaic))
+     ntiles = get_mosaic_ntiles(grid_dir//trim(component_mosaic))
   end select
 end subroutine get_grid_ntiles
 
@@ -162,7 +161,6 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
   character(len=MAX_NAME) :: varname1, varname2
   character(len=MAX_FILE) :: component_mosaic
 
-  call error_mesg("xgrid_mod(get_grid_size_for_all_tiles)", "This routine should not be called", FATAL)
   varname1 = 'AREA_'//trim(uppercase(component))
   varname2 = trim(lowercase(component))//'_mosaic_file'
 
@@ -172,7 +170,7 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
      nx(1) = siz(1); ny(1)=siz(2)
   case(VERSION_2) ! mosaic file
      call read_data(grid_file,varname2, component_mosaic)
-!     call get_mosaic_grid_sizes(grid_dir//trim(component_mosaic),nx,ny)
+     call get_mosaic_grid_sizes(grid_dir//trim(component_mosaic),nx,ny)
   end select
 end subroutine get_grid_size_for_all_tiles
 
@@ -335,8 +333,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
      call read_data(grid_file, 'atm_mosaic', mosaic_name)
      call read_data(grid_file,'atm_mosaic_file',mosaic_file)
      mosaic_file = grid_dir//trim(mosaic_file)
-     call error_mesg(module_name//'/get_grid_comp_area', "this routine should not be called", FATAL)
-!     ntiles = get_mosaic_ntiles(trim(mosaic_file))
+     ntiles = get_mosaic_ntiles(trim(mosaic_file))
      allocate(nest_tile_name(ntiles))
      num_nest_tile = 0
      do n = 1, ntiles
@@ -379,7 +376,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            if(is_nest) cycle
 
            ! finally read the exchange grid
-!           nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
+           nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
            if(nxgrid < BUFSIZE) then
               allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
            else
@@ -389,8 +386,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            do l = 1,nxgrid,BUFSIZE
               bsize = min(BUFSIZE, nxgrid-l+1)
               iend = ibegin + bsize - 1
-!              call get_mosaic_xgrid(grid_dir//xgrid_file, i1(1:bsize), j1(1:bsize), i2(1:bsize), j2(1:bsize), &
-!                                    xgrid_area(1:bsize), ibegin, iend)
+              call get_mosaic_xgrid(grid_dir//xgrid_file, i1(1:bsize), j1(1:bsize), i2(1:bsize), j2(1:bsize), &
+                                    xgrid_area(1:bsize), ibegin, iend)
               ! and sum the exchange grid areas
               do m = 1, bsize
                  i = i2(m); j = j2(m)
@@ -1008,14 +1005,14 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   varname=trim(lowercase(component))//'_mosaic_file'
   call read_data(grid_file,varname,mosaic_file)
   mosaic_file = grid_dir//mosaic_file
-  call error_mesg("grid_mod(define_cube_mosaic)", "this module should not be called", FATAL)
+
   ! get the contact information from mosaic file
-!  ncontacts = get_mosaic_ncontacts(mosaic_file)
+  ncontacts = get_mosaic_ncontacts(mosaic_file)
   allocate(tile1(ncontacts),tile2(ncontacts))
   allocate(is1(ncontacts),ie1(ncontacts),js1(ncontacts),je1(ncontacts))
   allocate(is2(ncontacts),ie2(ncontacts),js2(ncontacts),je2(ncontacts))
-!  call get_mosaic_contact(mosaic_file, tile1, tile2, &
-!       is1, ie1, js1, je1, is2, ie2, js2, je2)
+  call get_mosaic_contact(mosaic_file, tile1, tile2, &
+       is1, ie1, js1, je1, is2, ie2, js2, je2)
 
   ng = 0
   if(present(halo)) ng = halo

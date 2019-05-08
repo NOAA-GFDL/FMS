@@ -34,9 +34,9 @@
 !!   </tr>
 !!   <tr>
 !!     <td>fms_mod</td>
-!!     <td>open_namelist_file, fms_init, mpp_pe, mpp_root_pe, stdlog,
-!!         file_exist, write_version_number, check_nml_error, error_mesg,
-!!         FATAL, NOTE, WARNING, close_file</td>
+!!     <td>fms_init, mpp_pe, mpp_root_pe, stdlog,
+!!         write_version_number, check_nml_error, error_mesg,
+!!         FATAL, NOTE, WARNING</td>
 !!   </tr>
 !!   <tr>
 !!     <td>time_manager_mod</td>
@@ -56,11 +56,11 @@
                       module astronomy_mod
 
 
-use fms_mod,           only: open_namelist_file, fms_init, &
+use fms_mod,           only: fms_init, &
                              mpp_pe, mpp_root_pe, stdlog, &
-                             file_exist, write_version_number, &
+                             write_version_number, &
                              check_nml_error, error_mesg, &
-                             FATAL, NOTE, WARNING, close_file
+                             FATAL, NOTE, WARNING
 use time_manager_mod,  only: time_type, set_time, get_time, &
                              get_date_julian, set_date_julian, &
                              set_date, length_of_year, &
@@ -442,19 +442,8 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !-----------------------------------------------------------------------
 !>    Read namelist.
 !-----------------------------------------------------------------------
-#ifdef INTERNAL_FILE_NML
       read (input_nml_file, astronomy_nml, iostat=io)
       ierr = check_nml_error(io,'astronomy_nml')
-#else
-      if ( file_exist('input.nml')) then
-        unit =  open_namelist_file ( )
-        ierr=1; do while (ierr /= 0)
-        read  (unit, nml=astronomy_nml, iostat=io, end=10)
-        ierr = check_nml_error(io,'astronomy_nml')
-        end do
-10      call close_file (unit)
-      endif
-#endif
 !---------------------------------------------------------------------
 !>    Write version number and namelist to logfile.
 !---------------------------------------------------------------------

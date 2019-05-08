@@ -176,16 +176,12 @@ subroutine string_copy(dest, source)
   character(len=*), intent(inout) :: dest !< Destination string.
   character(len=*), intent(in) :: source !< Source string.
 
-  if (len_trim(source) .gt. len(dest)) then 
+  if (len_trim(source) .gt. len(dest)) then
     call error("The input destination string is not big enough to" &
                  //" to hold the input source string.")
   endif
   dest = ""
-  length = len_trim(source)
-  do i = 1, length
-     if(source(i:i) == CHAR(0) ) exit
-     dest(i:i) = source(i:i)
-  enddo
+  dest = source
 
 end subroutine string_copy
 

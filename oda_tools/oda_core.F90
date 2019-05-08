@@ -80,10 +80,9 @@ module oda_core_mod
 ! nominal salinity error rms error
 ! </DATA>
 !</NAMELIST>
-  use fms_mod, only : file_exist,read_data
   use mpp_mod, only : mpp_error, FATAL, NOTE, mpp_sum, stdout,&
                       mpp_sync_self, mpp_pe,mpp_npes,mpp_root_pe,&
-                      mpp_broadcast, input_nml_file
+                      mpp_broadcast, input_nml_file, get_unit
   use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, &
        domain2d, mpp_get_global_domain, mpp_update_domains
   use time_manager_mod, only : time_type, operator( <= ), operator( - ), &
@@ -94,6 +93,11 @@ module oda_core_mod
   use constants_mod, only : radian, pi
   use oda_types_mod
   use write_ocean_data_mod, only : write_ocean_data_init
+  use fms_mod,     only : check_nml_error
+  use fms2_io_mod, only : FmsNetcdfFile_t, open_file, close_file, read_data, &
+                          global_att_exists, variable_exists, file_exists,   &
+                          get_variable_missing
+
 
   implicit none
 
@@ -238,27 +242,12 @@ module oda_core_mod
 !    store internally.
 !    </DESCRIPTION>
 
-    use mpp_io_mod, only : mpp_open, mpp_get_atts, mpp_get_info, &
-         mpp_get_fields, mpp_read, MPP_SINGLE, MPP_MULTI, MPP_NETCDF,&
-         axistype, atttype, fieldtype, MPP_RDONLY, mpp_get_axes, mpp_close,&
-         mpp_get_att_char
-
     character(len=*), intent(in) :: filename
     logical, intent(in), optional :: localize
     logical :: found_neighbor,continue_looking
     integer, parameter :: max_levels=1000
-    integer :: unit, ndim, nvar, natt, nstation
+    integer :: nstation
     character(len=32) :: fldname, axisname
-    type(atttype), allocatable, dimension(:), target :: global_atts
-    type(atttype), pointer :: version => NULL()
-    type(axistype), pointer :: depth_axis => NULL(), station_axis => NULL()
-    type(axistype), allocatable, dimension(:), target :: axes
-    type(fieldtype), allocatable, dimension(:), target :: fields
-
-    type(fieldtype), pointer :: field_lon => NULL(), field_lat => NULL(), field_probe => NULL(),&
-         field_time => NULL(), field_depth => NULL()
-    type(fieldtype), pointer :: field_temp => NULL(), field_salt => NULL(), &
-                                field_error => NULL(), field_link => NULL()
     ! NOTE: fields are restricted to be in separate files
     real :: lon, lat, time, depth(max_levels), temp(max_levels), salt(max_levels),&
          error(max_levels), rprobe, profile_error, rlink
@@ -266,18 +255,19 @@ module oda_core_mod
     integer :: num_levs, num_levs_temp, num_levs_salt,&
                k, kk, ll, i, i0, j0, k0, nlevs, a, nn, ii, nlinks
     real :: ri0, rj0, rk0, dx1, dx2, dy1, dy2
-    character(len=128) :: time_units, attname, catt
+    character(len=128) :: time_units, attname, catt, unlim_dimname
     type(time_type) :: profile_time
     integer :: flag_t(max_levels), flag_s(max_levels), cpe
     logical :: data_is_local, &
                continue
     logical :: found_temp=.false., found_salt=.false.
+    logical :: found_error=.false., found_probe=.false., found_link=.false.
     real, dimension(max_links,max_levels) :: temp_bfr, salt_bfr, depth_bfr
     integer, dimension(max_links,max_levels) :: flag_t_bfr, flag_s_bfr
     real :: temp_missing=missing_value,salt_missing=missing_value,&
          depth_missing=missing_value
     real :: max_prof_depth, zdist
-
+    type(FmsNetcdfFile_t) :: fileobj
 
     ! read timeseries of local observational data from NetCDF files
     ! and allocate ocean_obs arrays.
@@ -307,104 +297,57 @@ module oda_core_mod
 
     if (PRESENT(localize)) localize_data = localize
 
-    call mpp_open(unit,filename,form=MPP_NETCDF,fileset=MPP_SINGLE,&
-         threading=MPP_MULTI,action=MPP_RDONLY)
-    call mpp_get_info(unit, ndim, nvar, natt, nstation)
+    if(.not. open_file(fileobj, trim(filename), 'read')) &
+        call mpp_error(FATAL, 'oda_core_mod: Error in opening file '//trim(filename))
 
     outunit = stdout()
     write(outunit,*) 'Opened profile dataset :',trim(filename)
 
     ! get version number of profiles
 
-    allocate(global_atts(natt))
-    call mpp_get_atts(unit,global_atts)
-
-    do i=1,natt
-       catt = mpp_get_att_char(global_atts(i))
-       select case (lowercase(trim(catt)))
-       case ('version')
-          version =>  global_atts(i)
-       end select
-    end do
-
-    if (.NOT.ASSOCIATED(version)) then
-        call mpp_error(NOTE,'no version number available for profile file, assuming v0.1a ')
+    if(global_att_exists(fileobj, 'version')) then
+       call get_global_attribute(fileobj, 'version', catt)
+       write(outunit,*) 'Reading profile dataset version = ',trim(catt)
     else
-        write(outunit,*) 'Reading profile dataset version = ',trim(catt)
+        call mpp_error(NOTE,'no version number available for profile file, assuming v0.1a ')
     endif
 
 
     ! get axis information
+    if(.not. variable_exists(fileobj, 'depth_axis') .or. .not. variable_exists(fileobj,'station_index') ) &
+       call mpp_error(FATAL,'depth and/or station axes do not exist in input file')
 
-    allocate (axes(ndim))
-    call mpp_get_axes(unit,axes)
-    do i=1,ndim
-       call mpp_get_atts(axes(i),name=axisname)
-       select case (lowercase(trim(axisname)))
-       case ('depth_index')
-          depth_axis => axes(i)
-       case ('station_index')
-          station_axis => axes(i)
-       end select
-    end do
-
-    if (.NOT.ASSOCIATED(depth_axis) .or. .NOT.ASSOCIATED(station_axis)) then
-        call mpp_error(FATAL,'depth and/or station axes do not exist in input file')
-    endif
-
-
-! get selected field information.
-! NOTE: not checking for all variables here.
-
-    allocate(fields(nvar))
-    call mpp_get_fields(unit,fields)
-    do i=1,nvar
-       call mpp_get_atts(fields(i),name=fldname)
-       select case (lowercase(trim(fldname)))
-       case ('longitude')
-           field_lon => fields(i)
-       case ('latitude')
-           field_lat => fields(i)
-       case ('probe')
-           field_probe => fields(i)
-       case ('time')
-           field_time => fields(i)
-       case ('temp')
-           field_temp => fields(i)
-       case ('salt')
-           field_salt => fields(i)
-       case ('depth')
-           field_depth => fields(i)
-       case ('link')
-           field_link => fields(i)
-       case ('error')
-           field_error => fields(i)
-       end select
-   enddo
-
-    call mpp_get_atts(depth_axis,len=nlevs)
+    call get_dimension_size(fileobj, 'depth_index', nlevs)
 
     if (nlevs > max_levels) call mpp_error(FATAL,'increase parameter max_levels ')
 
     if (nlevs < 1) call mpp_error(FATAL)
 
-    outunit = stdout()
-    write(outunit,*) 'There are ', nstation, ' records in this dataset'
-    write(outunit,*) 'Searching for profiles matching selection criteria ...'
+    call get_unlimited_dimension_name(fileobj, unlim_dimname)
+    call get_dimension_size(fileobj, unlim_dimname, nstation)
 
-    if (ASSOCIATED(field_temp)) found_temp=.true.
-    if (ASSOCIATED(field_salt)) found_salt=.true.
+! get selected field information.
+! NOTE: not checking for all variables here.
 
+    found_temp = variable_exists(fileobj, 'temp')
+    found_salt = variable_exists(fileobj, 'salt')
     if (.not. found_temp .and. .not. found_salt) then
         write(outunit,*) 'temp or salt not found in profile file'
         call mpp_error(FATAL)
     endif
+    found_error = variable_exists(fileobj, 'error')
+    found_probe = variable_exists(fileobj, 'probe')
+    found_link = variable_exists(fileobj, 'link')
 
-    call mpp_get_atts(field_time,units=time_units)
-    if (found_temp) call mpp_get_atts(field_temp,missing=temp_missing)
-    if (found_salt) call mpp_get_atts(field_salt,missing=salt_missing)
+    outunit = stdout()
+    write(outunit,*) 'There are ', nstation, ' records in this dataset'
+    write(outunit,*) 'Searching for profiles matching selection criteria ...'
 
-    call mpp_get_atts(field_depth,missing=depth_missing)
+    call get_variable_units(fileobj, 'time', time_units)
+
+    if (found_temp) temp_missing = get_variable_missing(fileobj, 'temp')
+    if (found_salt) salt_missing = get_variable_missing(fileobj, 'salt')
+    depth_missing = get_variable_missing(fileobj, 'depth')
 
     if (found_salt) then
         write(outunit,*) 'temperature and salinity where available'
@@ -422,21 +365,17 @@ module oda_core_mod
        temp(:)  = missing_value
        salt(:)  = missing_value
 ! required fields
-       call mpp_read(unit,field_lon,lon,tindex=i)
-       call mpp_read(unit,field_lat,lat, tindex=i)
-       call mpp_read(unit,field_time,time,tindex=i)
-       call mpp_read(unit,field_depth,depth(1:nlevs),tindex=i)
-       if (found_temp) call mpp_read(unit,field_temp,temp(1:nlevs),tindex=i)
-       if (found_salt) call mpp_read(unit,field_salt,salt(1:nlevs),tindex=i)
+       call read_data(fileobj, 'longitude', lon, unlim_dim_level=i)
+       call read_data(fileobj, 'latitude', lat, unlim_dim_level=i)
+       call read_data(fileobj, 'time', time, unlim_dim_level=i)
+       call read_data(fileobj, 'depth', depth(1:nlevs), unlim_dim_level=i)
+       if(found_temp) call read_data(fileobj, 'temp', temp(1:nlevs), unlim_dim_level=i)
+       if(found_salt) call read_data(fileobj, 'salt', salt(1:nlevs), unlim_dim_level=i)
 ! not required fields
-       if (ASSOCIATED(field_error)) then
-           call mpp_read(unit,field_error,profile_error,tindex=i)
-       endif
-       if (ASSOCIATED(field_probe)) then
-           call mpp_read(unit, field_probe, rprobe,tindex=i)
-       endif
-       if (ASSOCIATED(field_link)) then
-           call mpp_read(unit,field_link,rlink,tindex=i)
+       if(found_error) call read_data(fileobj, 'error', profile_error, unlim_dim_level=i)
+       if(found_probe) call read_data(fileobj, 'probe', rprobe, unlim_dim_level=i)
+       if(found_link ) then
+          call read_data(fileobj, 'link', rlink, unlim_dim_level=i)
        else
            rlink = 0.0
        endif
@@ -535,10 +474,10 @@ module oda_core_mod
               depth_bfr(nlinks,:) = missing_value
               temp_bfr(nlinks,:) = missing_value
               salt_bfr(nlinks,:) = missing_value
-              call mpp_read(unit,field_depth,depth_bfr(nlinks,1:nlevs),tindex=ii)
-              if (found_temp) call mpp_read(unit,field_temp,temp_bfr(nlinks,1:nlevs),tindex=ii)
-              if (found_salt) call mpp_read(unit,field_salt,salt_bfr(nlinks,1:nlevs),tindex=ii)
-              call mpp_read(unit,field_link,rlink,tindex=ii)
+              call read_data(fileobj,'depth',depth_bfr(nlinks,1:nlevs),unlim_dim_level=ii)
+              if (found_temp) call read_data(fileobj,'temp',temp_bfr(nlinks,1:nlevs),unlim_dim_level=ii)
+              if (found_salt) call read_data(fileobj,'salt', salt_bfr(nlinks,1:nlevs),unlim_dim_level=ii)
+              call read_data(fileobj,'link', rlink, unlim_dim_level=ii)
               ii=ii+1
            enddo
            i=ii ! set record counter to start of next profile
@@ -827,7 +766,7 @@ module oda_core_mod
 !    enddo
 
     call mpp_sync_self()
-    call mpp_close(unit)
+    call close_file(fileobj)
 
   end subroutine open_profile_dataset
 
@@ -920,24 +859,15 @@ module oda_core_mod
 
   subroutine oda_core_init(Domain, Grid, localize)
 
-    use fms_mod, only : open_namelist_file, check_nml_error, close_file
-
     type(domain2d), intent(in) :: Domain
     type(grid_type), target, intent(in) :: Grid
     logical, intent(in), optional :: localize
 
 
-    integer :: ioun, ierr, io_status
+    integer :: io_status, ierr
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, oda_core_nml, iostat=io_status)
-      ierr = check_nml_error(io_status,'oda_core_nml')
-#else
-    ioun = open_namelist_file()
-    read(ioun,nml=oda_core_nml,iostat = io_status)
+    read (input_nml_file, oda_core_nml, iostat=io_status)
     ierr = check_nml_error(io_status,'oda_core_nml')
-    call close_file(ioun)
-#endif
 
 !    allocate(nprof_in_comp_domain(0:mpp_npes()-1))
 !    nprof_in_comp_domain = 0
@@ -1426,10 +1356,6 @@ end subroutine copy_obs_prof
 
   subroutine init_observations(localize)
 
-    use fms_mod, only : open_namelist_file,close_file,check_nml_error
-    use mpp_io_mod, only : mpp_open, MPP_ASCII, MPP_RDONLY, MPP_MULTI, MPP_SINGLE
-    use mpp_domains_mod, only : mpp_global_field
-
     logical, intent(in), optional :: localize
 
     integer :: data_window = 15 ! default data half-window is 15 days
@@ -1450,22 +1376,18 @@ end subroutine copy_obs_prof
     character(len=256) :: record
     type(obs_entry_type) :: tbl_entry
 
-#ifdef INTERNAL_FILE_NML
       read (input_nml_file, ocean_obs_nml, iostat=io_status)
       ierr = check_nml_error(io_status,'ocean_obs_nml')
-#else
-    ioun = open_namelist_file()
-    read(ioun,nml=ocean_obs_nml,iostat = io_status)
-    ierr = check_nml_error(io_status,'ocean_obs_nml')
-    call close_file(ioun)
-#endif
 
     time_window(:) = set_time(0,data_window)
 
     nfiles=0
 
-    if (file_exist('ocean_obs_table') ) then
-        call mpp_open(unit,'ocean_obs_table',action=MPP_RDONLY)
+    if (file_exists('ocean_obs_table') ) then
+        unit = get_unit()
+        open(unit, file='ocean_obs_table', action='READ', iostat=io_status)
+        if(io_status/=0) call mpp_error(FATAL, 'oda_core_mod: Error in opening file ocean_obs_table')
+
         nfiles = 0;nrecs=0
         do while (nfiles <= max_files)
            read(unit,'(a)',end=99,err=98) record
@@ -1488,6 +1410,8 @@ end subroutine copy_obs_prof
         enddo
         call mpp_error(FATAL,' number of obs files exceeds max_files parameter')
 99      continue
+        close(unit, iostat=io_status)
+        if(io_status/=0) call mpp_error(FATAL, 'oda_core_mod: Error in closing file ocean_obs_table')
 
     endif
     num_profiles=0

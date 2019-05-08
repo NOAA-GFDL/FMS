@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-module mosaic_mod
+module mosaic2_mod
 
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
 !   Zhi Liang
@@ -37,9 +37,10 @@ module mosaic_mod
 
 use fms_mod,    only : write_version_number
 use mpp_mod,    only : mpp_error, FATAL, mpp_pe, mpp_root_pe
-use mpp_io_mod, only : MPP_MULTI
-use fms_io_mod, only : dimension_size, field_exist, read_data, read_compressed
+use mpp_domains_mod, only : domain2D, mpp_get_current_ntile, mpp_get_tile_id
 use constants_mod, only : PI, RADIUS
+use fms2_io_mod,   only : FmsNetcdfFile_t, open_file, close_file, get_dimension_size
+use fms2_io_mod,   only : read_data, variable_exists
 
 implicit none
 private
@@ -62,6 +63,7 @@ public :: get_mosaic_grid_sizes
 public :: get_mosaic_contact
 public :: get_mosaic_xgrid_size
 public :: get_mosaic_xgrid
+public :: get_mosaic_tile_grid
 public :: calc_mosaic_grid_area
 public :: calc_mosaic_grid_great_circle_area
 public :: is_inside_polygon
@@ -110,11 +112,11 @@ end subroutine mosaic_init
 !   <IN NAME="xgrid_file" TYPE="character(len=*)">
 !     The file that contains exchange grid information.
 !   </IN>
-  function get_mosaic_xgrid_size(xgrid_file)
-    character(len=*), intent(in)          :: xgrid_file
-    integer                               :: get_mosaic_xgrid_size
+  function get_mosaic_xgrid_size(fileobj)
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
+    integer                           :: get_mosaic_xgrid_size
 
-    get_mosaic_xgrid_size = dimension_size(xgrid_file, "ncells", no_domain=.TRUE.)
+    call get_dimension_size(fileobj, "ncells", get_mosaic_xgrid_size)
 
     return
 
@@ -129,7 +131,7 @@ end subroutine mosaic_init
 !     get exchange grid information from mosaic xgrid file.
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call get_mosaic_xgrid(xgrid_file, nxgrid, i1, j1, i2, j2, area)
+!     call get_mosaic_xgrid(fileobj, nxgrid, i1, j1, i2, j2, area)
 !   </TEMPLATE>
 !   <IN NAME="xgrid_file" TYPE="character(len=*)">
 !     The file that contains exchange grid information.
@@ -146,8 +148,8 @@ end subroutine mosaic_init
 !   <INOUT NAME="area" TYPE="real, dimension(:)">
 !     area of the exchange grid. The area is scaled to represent unit earth area.
 !   </INOUT>
-  subroutine get_mosaic_xgrid(xgrid_file, i1, j1, i2, j2, area, ibegin, iend)
-    character(len=*), intent(in) :: xgrid_file
+  subroutine get_mosaic_xgrid(fileobj, i1, j1, i2, j2, area, ibegin, iend)
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
     integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:)
     real,          intent(inout) :: area(:)
     integer, optional, intent(in) :: ibegin, iend
@@ -176,12 +178,12 @@ end subroutine mosaic_init
 
     start  = 1; nread = 1
     start(1) = istart; nread(1) = nxgrid
-    call read_compressed(xgrid_file, 'xgrid_area', area, start=start, nread=nread, threading=MPP_MULTI)
+    call read_data(fileobj, 'xgrid_area', area, corner=start, edge_lengths=nread)
     start = 1; nread = 1
     nread(1) = 2
     start(2) = istart; nread(2) = nxgrid
-    call read_compressed(xgrid_file, 'tile1_cell', tile1_cell, start=start, nread=nread, threading=MPP_MULTI)
-    call read_compressed(xgrid_file, 'tile2_cell', tile2_cell, start=start, nread=nread, threading=MPP_MULTI)
+    call read_data(fileobj, 'tile1_cell', tile1_cell, corner=start, edge_lengths=nread)
+    call read_data(fileobj, 'tile2_cell', tile2_cell, corner=start, edge_lengths=nread)
 
      do n = 1, nxgrid
        i1(n) = tile1_cell(1,n)
@@ -210,11 +212,11 @@ end subroutine mosaic_init
   !   <IN NAME="mosaic_file" TYPE="character(len=*)">
   !     The file that contains mosaic information.
   !   </IN>
-  function get_mosaic_ntiles(mosaic_file)
-    character(len=*), intent(in) :: mosaic_file
-    integer                      :: get_mosaic_ntiles
+  function get_mosaic_ntiles(fileobj)
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
+    integer                           :: get_mosaic_ntiles
 
-    get_mosaic_ntiles = dimension_size(mosaic_file, "ntiles")
+    call get_dimension_size(fileobj, "ntiles", get_mosaic_ntiles)
 
     return
 
@@ -235,16 +237,13 @@ end subroutine mosaic_init
   !   <IN NAME="mosaic_file" TYPE="character(len=*)">
   !     The file that contains mosaic information.
   !   </IN>
-  function get_mosaic_ncontacts( mosaic_file)
-    character(len=*), intent(in) :: mosaic_file
-    integer                      :: get_mosaic_ncontacts
+  function get_mosaic_ncontacts(fileobj)
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
+    integer                           :: get_mosaic_ncontacts
 
-    character(len=len_trim(mosaic_file)+1) :: mfile
-    integer                                :: strlen
-    integer                                :: read_mosaic_ncontacts
 
-    if(field_exist(mosaic_file, "contacts") ) then
-      get_mosaic_ncontacts = dimension_size(mosaic_file, "ncontact", no_domain=.TRUE.)
+    if(variable_exists(fileobj, "contacts") ) then
+      call get_dimension_size(fileobj, "ncontact", get_mosaic_ncontacts)
     else
       get_mosaic_ncontacts = 0
     endif
@@ -275,22 +274,29 @@ end subroutine mosaic_init
   !   <INOUT NAME="ny" TYPE="integer, dimension(:)">
   !     List of grid size in y-direction of each tile.
   !   </INOUT>
-  subroutine get_mosaic_grid_sizes( mosaic_file, nx, ny)
-    character(len=*),         intent(in) :: mosaic_file
+  subroutine get_mosaic_grid_sizes( fileobj, nx, ny)
+    type(FmsNetcdfFile_t), intent(in)    :: fileobj
     integer, dimension(:), intent(inout) :: nx, ny
 
     character(len=MAX_FILE) :: gridfile
     integer                 :: ntiles, n
+    type(FmsNetcdfFile_t)   :: gridobj
 
-    ntiles = get_mosaic_ntiles(mosaic_file)
+    ntiles = get_mosaic_ntiles(fileobj)
     if(ntiles .NE. size(nx(:)) .OR. ntiles .NE. size(ny(:)) ) then
       call mpp_error(FATAL, "get_mosaic_grid_sizes: size of nx/ny does not equal to ntiles")
     endif
+
     do n = 1, ntiles
-      call read_data(mosaic_file, 'gridfiles', gridfile, level=n)
+      call read_data(fileobj, 'gridfiles', gridfile, corner=n)
       gridfile = grid_dir//trim(gridfile)
-      nx(n) = dimension_size(gridfile, "nx")
-      ny(n) = dimension_size(gridfile, "ny")
+
+      if(.not. open_file(gridobj, gridfile, 'read')) then
+         call mpp_error(FATAL, 'mosaic_mod(get_mosaic_grid_sizes):Error in opening file '//trim(gridfile))
+      endif
+      call get_dimension_size(gridobj, "nx", nx(n))
+      call get_dimension_size(gridobj, "ny", ny(n))
+      call close_file(gridobj)
       if(mod(nx(n),x_refine) .NE. 0) call mpp_error(FATAL, "get_mosaic_grid_sizes: nx is not divided by x_refine");
       if(mod(ny(n),y_refine) .NE. 0) call mpp_error(FATAL, "get_mosaic_grid_sizes: ny is not divided by y_refine");
       nx(n) = nx(n)/x_refine;
@@ -347,30 +353,32 @@ end subroutine mosaic_init
   !   <INOUT NAME="jend2" TYPE="integer, dimension(:)">
   !     list ending j-index in tile 2 of each contact.
   !   </INOUT>
-  subroutine get_mosaic_contact( mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1, &
+  subroutine get_mosaic_contact( fileobj, tile1, tile2, istart1, iend1, jstart1, jend1, &
                                    istart2, iend2, jstart2, jend2)
-    character(len=*),         intent(in) :: mosaic_file
+    type(FmsNetcdfFile_t),    intent(in) :: fileobj
     integer, dimension(:), intent(inout) :: tile1, tile2
     integer, dimension(:), intent(inout) :: istart1, iend1, jstart1, jend1
     integer, dimension(:), intent(inout) :: istart2, iend2, jstart2, jend2
     character(len=MAX_NAME), allocatable :: gridtiles(:)
-    character(len=MAX_NAME)              :: contacts
+    character(len=MAX_NAME), allocatable :: contacts(:)
+    character(len=MAX_NAME), allocatable :: contacts_index(:)
     character(len=MAX_NAME)              :: strlist(8)
     integer :: ntiles, n, m, ncontacts, nstr, ios
     integer :: i1_type, j1_type, i2_type, j2_type
     logical :: found
 
-    ntiles = get_mosaic_ntiles(mosaic_file)
+    ntiles = get_mosaic_ntiles(fileobj)
     allocate(gridtiles(ntiles))
-    do n = 1, ntiles
-      call read_data(mosaic_file, 'gridtiles', gridtiles(n), level=n)
-    enddo
+    call read_data(fileobj, 'gridtiles', gridtiles)
 
-    ncontacts = get_mosaic_ncontacts(mosaic_file)
-
+    ncontacts = get_mosaic_ncontacts(fileobj)
+    if(ncontacts>0) then 
+       allocate(contacts(ncontacts), contacts_index(ncontacts))
+       call read_data(fileobj, "contacts", contacts)
+       call read_data(fileobj, "contact_index", contacts_index)
+    endif
     do n = 1, ncontacts
-      call read_data(mosaic_file, "contacts", contacts, level=n)
-      nstr = parse_string(contacts, ":", strlist)
+      nstr = parse_string(contacts(n), ":", strlist)
       if(nstr .NE. 4) call mpp_error(FATAL, &
          "mosaic_mod(get_mosaic_contact): number of elements in contact seperated by :/:: should be 4")
       found = .false.
@@ -397,12 +405,11 @@ end subroutine mosaic_init
       if(.not.found) call mpp_error(FATAL, &
          "mosaic_mod(get_mosaic_contact):the second tile name specified in contact is not found in tile list")
 
-      call read_data(mosaic_file, "contact_index", contacts, level=n)
-      nstr = parse_string(contacts, ":,", strlist)
+      nstr = parse_string(contacts_index(n), ":,", strlist)
       if(nstr .NE. 8) then
         if(mpp_pe()==mpp_root_pe()) then
           print*, "nstr is ", nstr
-          print*, "contacts is ", contacts
+          print*, "contacts is ", contacts_index(n)
           do m = 1, nstr
             print*, "strlist is ", trim(strlist(m))
           enddo
@@ -449,7 +456,8 @@ end subroutine mosaic_init
 
    enddo
 
-      deallocate(gridtiles)
+   deallocate(gridtiles)
+   if(ncontacts>0) deallocate(contacts, contacts_index)
 
   end subroutine get_mosaic_contact
 ! </SUBROUTINE>
@@ -637,9 +645,32 @@ end function transfer_to_model_index
 
   end function parse_string
 
+  !#############################################################################
+  subroutine get_mosaic_tile_grid(grid_file, fileobj, domain, tile_count)
+    character(len=*), intent(out)          :: grid_file
+    type(FmsNetcdfFile_t), intent(in)      :: fileobj
+    type(domain2D),   intent(in)           :: domain
+    integer,          intent(in), optional :: tile_count
+    integer                                :: tile, ntileMe
+    integer, dimension(:), allocatable     :: tile_id
+    character(len=256), allocatable        :: filelist(:)
+    integer :: ntiles
+
+    ntiles = get_mosaic_ntiles(fileobj)
+    allocate(filelist(ntiles))
+    tile = 1
+    if(present(tile_count)) tile = tile_count
+    ntileMe = mpp_get_current_ntile(domain)
+    allocate(tile_id(ntileMe))
+    tile_id = mpp_get_tile_id(domain)
+    call read_data(fileobj, "gridfiles", filelist)
+    grid_file = 'INPUT/'//trim(filelist(tile_id(tile)))
+    deallocate(tile_id, filelist)
+
+  end subroutine get_mosaic_tile_grid
 
 
-end module mosaic_mod
+end module mosaic2_mod
 
 
 #ifdef TEST_MOSAIC
@@ -656,15 +687,20 @@ integer, allocatable :: istart1(:), iend1(:), jstart1(:), jend1(:)
 integer, allocatable :: istart2(:), iend2(:), jstart2(:), jend2(:)
 character(len=128)   :: mosaic_file = "INPUT/mosaic.nc"
 
-ntiles = get_mosaic_ntiles(mosaic_file)
-ncontacts = get_mosaic_ncontacts(mosaic_file)
+if(.not. open_file(fileobj,trim(mosaic_file), "read")) then
+   call mpp_error('test_mosaic', 'Error when opening file'//trim(mosaic_file), FATAL)
+endif
+
+ntiles = get_mosaic_ntiles(fileobj)
+ncontacts = get_mosaic_ncontacts(fileobj)
 allocate(nx(ntiles), ny(ntiles))
 allocate(tile1(ncontacts), tile2(ncontacts) )
 allocate(istart1(ncontacts), iend1(ncontacts), jstart1(ncontacts), jend1(ncontacts) )
 allocate(istart2(ncontacts), iend2(ncontacts), jstart2(ncontacts), jend2(ncontacts) )
 
-call get_mosaic_grid_sizes(mosaic_file, nx, ny )
-call get_mosaic_contact(mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2)
+call get_mosaic_grid_sizes(fileobj, nx, ny )
+call get_mosaic_contact(fileobj, tile1, tile2, istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2)
+call close_file(fileobj)
 
 ! print out information
 

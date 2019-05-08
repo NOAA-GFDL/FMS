@@ -15,13 +15,21 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
 
   integer :: varid
   integer :: err
-  character(len=1024), dimension(1) :: buffer
+  integer :: j
+  character(len=1024) :: buffer(1), buffer2(1)
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(attribute_value)
       type is (character(len=*))
-        err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), buffer(1))
+        err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), buffer2(1))
+        buffer(1) = ''
+        do j = 1, len_trim(buffer2(1))
+           if (buffer2(1)(j:j) .eq. char(0)) then
+              exit
+          endif
+          buffer(1)(j:j) = buffer2(1)(j:j)
+        enddo
       type is (integer(kind=int32))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       type is (integer(kind=int64))

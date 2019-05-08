@@ -110,7 +110,8 @@ use fms2_io_mod,       only : FmsNetcdfFile_t, file_exists, dimension_exists, &
                               variable_exists, get_variable_num_dimensions, &
                               get_num_variables, get_dimension_size,   &
                               get_variable_units, get_variable_names,  &
-                              get_time_calendar, close_file
+                              get_time_calendar, close_file,           &
+                              get_variable_dimension_names, get_variable_sense
 
 use horiz_interp_mod,  only : horiz_interp_type, &
                               horiz_interp_new,  &
@@ -258,7 +259,6 @@ real, pointer            :: halflevs(:) =>NULL()     !< No description
 type(horiz_interp_type)  :: interph                         !< No description
 type(time_type), pointer :: time_slice(:) =>NULL() !< An array of the times within the climatology.
 type(FmsNetcdfFile_t)    :: fileobj       ! object that stores opened file information
-integer                  :: unit          !< Unit number on which file is being read.
 character(len=64)        :: file_name     !< Climatology filename
 integer                  :: TIME_FLAG     !< Linear or seaonal interpolation?
 integer                  :: level_type    !< Pressure or Sigma level
@@ -269,6 +269,7 @@ logical                  :: climatological_year !< Is data for year = 0000?
 
 !Field specific data  for nfields
 character(len=64), pointer :: field_name(:) =>NULL()   !< name of this field
+logical,           pointer :: has_level(:) =>NULL()    !< indicate if the variable has level dimension
 integer,           pointer :: time_init(:,:) =>NULL()  !< second index is the number of time_slices being kept. 2 or ntime.
 integer,           pointer :: mr(:) =>NULL()           !< Flag for conversion of climatology to mixing ratio.
 integer,           pointer :: out_of_bounds(:) =>NULL()!< Flag for when surface pressure is out of bounds.
@@ -311,7 +312,7 @@ integer ::          len, ntime_in, num_fields               !< No description
 ! pletzer real, allocatable :: time_in(:)
 ! sjs real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
-character(len=32) :: name, units                              !< No description
+character(len=64) :: name, units                              !< No description
 integer           :: sense                                        !< No description
 
 integer, parameter :: max_diag_fields = 30                    !< No description
@@ -393,7 +394,6 @@ type(interpolate_type), intent(inout) :: Out
 
      Out%interph = In%interph
      if (associated(In%time_slice)) Out%time_slice =>  In%time_slice
-     Out%unit = In%unit
      Out%file_name = In%file_name
      Out%time_flag = In%time_flag
      Out%level_type = In%level_type
@@ -403,6 +403,7 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
+     if (associated(In%has_level    )) Out%has_level     =>  In%has_level
      if (associated(In%field_name   )) Out%field_name    =>  In%field_name
      if (associated(In%time_init    )) Out%time_init     =>  In%time_init
      if (associated(In%mr           )) Out%mr            =>  In%mr
@@ -488,7 +489,9 @@ type(time_type)              :: base_time
 logical                      :: NAME_PRESENT
 integer                      :: fileday, filemon, fileyr, filehr, filemin,filesec, m,m1
 character(len= 20)           :: fileunits
+character(len=128)           :: var_dimname(6)
 character(len=128), allocatable :: var_names(:)
+integer,            allocatable :: var_ndims(:)
 integer   :: j, i
 logical :: non_monthly
 character(len=24) :: file_calendar
@@ -541,7 +544,17 @@ endif
 clim_type%file_name = trim(file_name)
 nvar = get_num_variables(fileobj)
 num_fields = nvar
-if(present(data_names)) num_fields= size(data_names(:))
+if(present(data_names)) then
+   num_fields= size(data_names(:))
+else
+   allocate(var_names(nvar), var_ndims(nvar))
+   call get_variable_names(fileobj, var_names)
+   !--- loop through all the vars to exclude scalar or 1-D array
+   do i=1,nvar
+      var_ndims(i) = get_variable_num_dimensions(fileobj, var_names(i))
+   enddo
+   num_fields = count(var_ndims>1)
+endif
 
 ! -------------------------------------------------------------------
 ! Allocate space for the number of axes in the data file.
@@ -589,6 +602,7 @@ if(dimension_exists(fileobj, "latb")) then
    allocate(clim_type%latb(nlatb))
    call get_axis_latlon_data(fileobj, 'latb', clim_type%latb)
 else
+   if(nlat == 1) call mpp_error(FATAL,'Interpolator_init : nlat is 1')
    ! In the case where only the grid midpoints of the latitudes are defined we force the
    ! definition of the boundaries to be half-way between the midpoints.
    allocate(clim_type%latb(nlat+1))
@@ -657,7 +671,6 @@ else if(dimension_exists(fileobj, "sigma_half")) then
    call fms_read_data(fileobj, "sigma_half", clim_type%halflevs)
    clim_type%level_type = SIGMA
 else
-   nlevh = 1
    allocate( clim_type%halflevs(nlev+1) )
    clim_type%halflevs(1) = 0.0
    if (clim_type%level_type == PRESSURE) then
@@ -1024,7 +1037,7 @@ end select
    clim_type%indexp(:)      = 0
    clim_type%climatology(:) = 0
 
-
+allocate(clim_type%has_level(num_fields))
 allocate(clim_type%field_name(num_fields))
 allocate(clim_type%mr(num_fields))
 allocate(clim_type%out_of_bounds(num_fields))
@@ -1048,6 +1061,12 @@ if(present(data_names)) then
       if(variable_exists(fileobj, data_names(j)) ) then 
          call get_variable_units(fileobj, data_names(j), units)
          ndim = get_variable_num_dimensions(fileobj, data_names(j))
+         clim_type%has_level(j) = .false.
+         if(ndim > 2) then
+            call get_variable_dimension_names(fileobj, data_names(j), var_dimname(1:ndim))
+            if(trim(var_dimname(3)) == "pfull" .OR. trim(var_dimname(3)) == "sigma_full") clim_type%has_level(j) = .true.
+         endif
+
          units=chomp(units)
          if (mpp_pe() == 0 ) write(*,*) 'Initializing src field : ',trim(data_names(j))
          clim_type%field_name(j) = data_names(j)
@@ -1071,8 +1090,6 @@ if(present(data_names)) then
       endif
    enddo
 else
-   allocate(var_names(nvar))
-   call get_variable_names(fileobj, var_names)
    if ( size(data_out_of_bounds(:)) /= nvar .and. size(data_out_of_bounds(:)) /= 1 ) &
       call mpp_error(FATAL,'interpolator_init : The size of the out of bounds array must be 1&
                            & or the number of fields in the climatology dataset')
@@ -1083,33 +1100,41 @@ else
    endif
 
 ! Read all the fields within the climatology data file.
+   j = 0
    do i=1,nvar
-      call get_variable_units(fileobj, var_names(i), units)
-      ndim = get_variable_num_dimensions(fileobj, var_names(i))
+      ndim = var_ndims(i)
+      if(ndim .LE. 1) cycle
+      j = j + 1
+      clim_type%has_level(j) = .false.
+      if(ndim > 2) then
+         call get_variable_dimension_names(fileobj, var_names(i), var_dimname(1:ndim))
+         if(trim(var_dimname(3)) == "pfull" .OR. trim(var_dimname(3)) == "sigma_full") clim_type%has_level(j) = .true.
+      endif
 
+      call get_variable_units(fileobj, var_names(i), units)
       if (mpp_pe() ==0 ) write(*,*) 'Initializing src field : ',trim(var_names(i))
-      clim_type%field_name(i) = lowercase(trim(var_names(i)))
-      clim_type%mr(i)         = check_climo_units(units)
-      if (present(clim_units)) clim_units(i) = units
-      clim_type%out_of_bounds(i) = data_out_of_bounds( MIN(i,SIZE(data_out_of_bounds(:))) )
-      if( clim_type%out_of_bounds(i) /= CONSTANT .and. &
-          clim_type%out_of_bounds(i) /= ZERO ) &
+      clim_type%field_name(j) = trim(var_names(i))
+      clim_type%mr(j)         = check_climo_units(units)
+      if (present(clim_units)) clim_units(j) = units
+      clim_type%out_of_bounds(j) = data_out_of_bounds( MIN(i,SIZE(data_out_of_bounds(:))) )
+      if( clim_type%out_of_bounds(j) /= CONSTANT .and. &
+          clim_type%out_of_bounds(j) /= ZERO ) &
          call mpp_error(FATAL,"Interpolator_init: data_out_of_bounds must be&
                               & set to ZERO or CONSTANT")
       if( present(vert_interp) ) then
-         clim_type%vert_interp(i) = vert_interp( MIN(i,SIZE(vert_interp(:))) )
-         if( clim_type%vert_interp(i) /= INTERP_WEIGHTED_P .and. &
-             clim_type%vert_interp(i) /= INTERP_LINEAR_P ) &
+         clim_type%vert_interp(j) = vert_interp( MIN(i,SIZE(vert_interp(:))) )
+         if( clim_type%vert_interp(j) /= INTERP_WEIGHTED_P .and. &
+             clim_type%vert_interp(j) /= INTERP_LINEAR_P ) &
             call mpp_error(FATAL,"Interpolator_init: vert_interp must be&
                                  & set to INTERP_WEIGHTED_P or INTERP_LINEAR_P")
       else
-         clim_type%vert_interp(i) = INTERP_WEIGHTED_P
+         clim_type%vert_interp(j) = INTERP_WEIGHTED_P
       end if
    end do
+   if(j .NE. num_fields) call mpp_error(FATAL,"Interpolator_init: j does not equal to num_fields")
+   deallocate(var_names, var_ndims)
 !--lwh
 endif
-
-
 
 if( clim_type%TIME_FLAG .eq. SEASONAL ) then
 ! Read all the data at this point.
@@ -1200,10 +1225,9 @@ subroutine get_axis_level_data(fileobj, name, data, level_type, vertical_indices
    ! Convert to Pa
    if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
       data = data * 100.
-   else
-      sense = 0
    endif
    nlev = size(data(:))
+   sense = get_variable_sense(fileobj, name)
 ! define the direction of the vertical data axis
 ! switch index order if necessary so that indx 1 is at lowest pressure,
 ! index nlev at highest pressure.
@@ -2316,7 +2340,6 @@ do i= 1,size(clim_type%field_name(:))
 !   stewp for this interpolate_type variable.
 !----------------------------------------------------------------------
 
-
 if ( .not. clim_type%separate_time_vary_calc) then
 !   print *, 'TIME INTERPOLATION NOT SEPARATED 3d--',  &
 !                                trim(clim_type%file_name), mpp_pe()
@@ -2555,6 +2578,8 @@ select case(clim_type%level_type)
     p_fact = maxval(phalf,3)! max pressure in the column !(:,:,size(phalf,3))
 end select
 
+
+
 col_data(:,:)=0.0
 select case(clim_type%mr(i))
   case(NO_CONV)
@@ -2625,7 +2650,6 @@ do j = 1, size(phalf,2)
       end select
    enddo
 enddo
-
 !--lwh
 
 select case(clim_type%mr(i))
@@ -2634,7 +2658,6 @@ select case(clim_type%mr(i))
        interp_data(:,:,k) = interp_data(:,:,k)*(phalf(:,:,k+1)-phalf(:,:,k))
     enddo
 end select
-
   endif !field_name
 enddo !End of i loop
 if( .not. found_field) then !field name is not in interpolator file.ERROR.
@@ -3439,6 +3462,7 @@ if (associated (clim_type%levs    )) deallocate(clim_type%levs)
 if (associated (clim_type%halflevs)) deallocate(clim_type%halflevs)
 call horiz_interp_del(clim_type%interph)
 if (associated (clim_type%time_slice)) deallocate(clim_type%time_slice)
+if (associated (clim_type%has_level))  deallocate(clim_type%has_level)
 if (associated (clim_type%field_name)) deallocate(clim_type%field_name)
 if (associated (clim_type%time_init )) deallocate(clim_type%time_init)
 if (associated (clim_type%mr        )) deallocate(clim_type%mr)
@@ -3495,7 +3519,7 @@ type(interpolate_type)   , intent(in)  :: clim_type
 character(len=*)         , intent(in)  :: field_name
 integer                  , intent(in)  :: nt
 real                     , intent(out) :: hdata(:,:,:)
-integer        , optional, intent(in)  :: i
+integer                  , intent(in)  :: i
 type(time_type), optional, intent(in)  :: Time
 
 integer   :: k, km
@@ -3504,8 +3528,11 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
       allocate(climdata(size(clim_type%lon(:)),size(clim_type%lat(:)), &
                         size(clim_type%levs(:))))
-
-      call fms_read_data(clim_type%fileobj,field_name, climdata,nt)
+      if(clim_type%has_level(i)) then ! has vertical level
+         call fms_read_data(clim_type%fileobj,field_name, climdata,nt)
+      else  ! no vertical level
+         call fms_read_data(clim_type%fileobj,field_name, climdata(:,:,1),nt)
+      endif
 
 !  if vertical index increases upward, flip the data so that lowest
 !  pressure level data is at index 1, rather than the highest pressure
@@ -3521,7 +3548,6 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
         climdata = climdata2
         deallocate (climdata2)
       endif
-
       call horiz_interp(clim_type%interph, climdata, hdata)
       if (clim_diag_initialized) &
         call diag_read_data(clim_type,climdata,i, Time)
@@ -3557,7 +3583,7 @@ subroutine read_data_no_time_axis(clim_type,field_name, hdata, i)
 type(interpolate_type)   , intent(in)  :: clim_type
 character(len=*)         , intent(in)  :: field_name
 real                     , intent(out) :: hdata(:,:,:)
-integer        , optional, intent(in)  :: i
+integer        , intent(in)  :: i
 
 integer   :: k, km
 ! sjs
@@ -3565,8 +3591,11 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
       allocate(climdata(size(clim_type%lon(:)),size(clim_type%lat(:)), size(clim_type%levs(:))))
 
-      call fms_read_data(clim_type%fileobj,field_name, climdata)
-
+      if(clim_type%has_level(i)) then ! has vertical level      
+         call fms_read_data(clim_type%fileobj,field_name, climdata)
+      else  ! no vertical level
+         call fms_read_data(clim_type%fileobj,field_name, climdata(:,:,1))      
+      endif
 !  if vertical index increases upward, flip the data so that lowest
 !  pressure level data is at index 1, rather than the highest pressure
 !  level data. the indices themselves were previously flipped.
