@@ -1,4 +1,3 @@
-#ifdef test_fms2_io
 program main
 use, intrinsic :: iso_fortran_env
 use argparse
@@ -228,10 +227,3 @@ end subroutine chksum_match
 
 
 end program main
-
-#else
-module null_fms2_io_test
-end module
-#endif
-
-
