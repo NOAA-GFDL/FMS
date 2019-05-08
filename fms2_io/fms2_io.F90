@@ -15,6 +15,7 @@ public :: FmsNetcdfFile_t
 public :: FmsNetcdfDomainFile_t
 public :: FmsNetcdfUnstructuredDomainFile_t
 public :: open_file
+public :: open_virtual_file
 public :: close_file
 public :: register_axis
 public :: register_field
@@ -41,6 +42,7 @@ public :: get_variable_num_dimensions
 public :: get_variable_dimension_names
 public :: get_variable_size
 public :: get_compute_domain_dimension_indices
+public :: get_global_io_domain_indices
 public :: Valid_t
 public :: get_valid
 public :: is_valid
@@ -59,6 +61,13 @@ interface open_file
   module procedure open_domain_file
   module procedure open_unstructured_domain_file
 end interface open_file
+
+
+interface open_virtual_file
+  module procedure create_diskless_netcdf_file_wrap
+  module procedure create_diskless_domain_file
+  module procedure create_diskless_unstructured_domain_file
+end interface open_virtual_file
 
 
 interface close_file
