@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-module axis_utils_mod
+module axis_utils2_mod
   !
   !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
   !
@@ -42,20 +42,19 @@ module axis_utils_mod
   !
   !</DESCRIPTION>
   !
-
-  use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
-                        mpp_get_atts, mpp_get_axis_data, mpp_modify_meta,     &
-                        mpp_get_att_name, mpp_get_att_type, mpp_get_att_char, &
-                        mpp_get_att_length, mpp_get_axis_bounds
+  use, intrinsic :: iso_fortran_env
   use mpp_mod,    only: mpp_error, FATAL, stdout
   use fms_mod,    only: lowercase, string_array_index, fms_error_handler
+  use fms2_io_mod, only: FmsNetcdfDomainFile_t, variable_att_exists, FmsNetcdfFile_t, &
+                         get_variable_num_dimensions, get_variable_attribute,  &
+                         get_variable_size, read_data
 
   implicit none
 
 # include <netcdf.inc>
 
-  public get_axis_cart, get_axis_bounds, get_axis_modulo, get_axis_fold, lon_in_range, &
-         tranlon, frac_index, nearest_index, interp_1d, get_axis_modulo_times
+  public get_axis_cart, get_axis_modulo, lon_in_range, &
+         tranlon, frac_index, nearest_index, interp_1d, get_axis_modulo_times, axis_edges
 
   private
 
@@ -75,10 +74,11 @@ module axis_utils_mod
 contains
 
 
-  subroutine get_axis_cart(axis, cart)      
-
-    type(axistype), intent(in) :: axis
+  subroutine get_axis_cart(fileobj, axisname, cart)      
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
+    character(len=*),     intent(out) :: axisname
     character(len=1), intent(out) :: cart
+
     character(len=1) :: axis_cart
     character(len=16), dimension(2) :: lon_names, lat_names
     character(len=16), dimension(3) :: z_names
@@ -98,17 +98,19 @@ contains
     z_units = (/'cm ','m  ','pa ','hpa'/)
     t_units = (/'sec', 'min','hou','day','mon','yea'/)
 
-    call mpp_get_atts(axis,cartesian=axis_cart)
-    cart = 'N'
 
-    if ( lowercase(axis_cart) == 'x' ) cart = 'X'
-    if ( lowercase(axis_cart) == 'y' ) cart = 'Y'
-    if ( lowercase(axis_cart) == 'z' ) cart = 'Z'
-    if ( lowercase(axis_cart) == 't' ) cart = 'T'
+    if(variable_att_exists(fileobj, axisname, "cartesian_axis")) then
+       call get_variable_attribute(fileobj, axisname, "cartesian_axis", axis_cart)
+       if ( lowercase(axis_cart) == 'x' ) cart = 'X'
+       if ( lowercase(axis_cart) == 'y' ) cart = 'Y'
+       if ( lowercase(axis_cart) == 'z' ) cart = 'Z'
+       if ( lowercase(axis_cart) == 't' ) cart = 'T'
+    else
+       cart = 'N'
+    endif
 
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
-       call mpp_get_atts(axis,name=name)
-       name = lowercase(name)
+       name = lowercase(axisname)
        do i=1,size(lon_names(:))
           if (trim(name(1:3)) == trim(lon_names(i))) cart = 'X'
        enddo
@@ -124,8 +126,7 @@ contains
     end if
 
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
-       call mpp_get_atts(axis,units=name)
-       name = lowercase(name)
+       name = lowercase(axisname)
        do i=1,size(lon_units(:))
           if (trim(name) == trim(lon_units(i))) cart = 'X'
        enddo
@@ -144,115 +145,131 @@ contains
 
   end subroutine get_axis_cart
 
+  subroutine axis_edges(fileobj, name, edge_data)
 
-  subroutine get_axis_bounds(axis,axis_bound,axes,bnd_name,err_msg)
+  class(FmsNetcdfFile_t), intent(in) :: fileobj
+  character(len=*), intent(in) :: name
+  class(*), dimension(:), intent(out) :: edge_data
 
-    type(axistype), intent(in) :: axis
-    type(axistype), intent(inout) :: axis_bound
-    type(axistype), intent(in), dimension(:) :: axes
-    character(len=*), intent(inout), optional :: bnd_name
-    character(len=*), intent(out), optional :: err_msg
+  integer :: ndims
+  character(len=128) :: buffer
+  integer, dimension(:), allocatable :: dim_sizes
+  real(kind=real32), dimension(:), allocatable :: r32
+  real(kind=real32), dimension(:,:), allocatable :: r322d
+  real(kind=real64), dimension(:), allocatable :: r64
+  real(kind=real64), dimension(:,:), allocatable :: r642d
+  integer :: i
+  integer :: n
 
-    real, dimension(:), allocatable :: data, tmp
+  ndims = get_variable_num_dimensions(fileobj, name)
+  allocate(dim_sizes(ndims))
+  call get_variable_size(fileobj, name, dim_sizes)
+  n = dim_sizes(1)
+  if (size(edge_data) .ne. n+1) then
+    call mpp_error(FATAL, "axis_edge: incorrect size of edge_data array.")
+  endif
+  deallocate(dim_sizes)
 
-    integer :: i, len
-    character(len=128) :: name, units
-    character(len=256) :: longname
-    character(len=1) :: cartesian
-    logical :: bounds_found
-
-    if(present(err_msg)) then
-      err_msg = ''
+  buffer = ""
+  if (variable_att_exists(fileobj, name, "edges")) then
+    call get_variable_attribute(fileobj, name, "edges", buffer)
+  elseif (variable_att_exists(fileobj, name, "bounds")) then
+    call get_variable_attribute(fileobj, name, "bounds", buffer)
+  endif
+  if (trim(buffer) .ne. "") then
+    ndims = get_variable_num_dimensions(fileobj, buffer)
+    allocate(dim_sizes(ndims))
+    call get_variable_size(fileobj, buffer, dim_sizes)
+    if (size(dim_sizes) .eq. 1) then
+      if (dim_sizes(1) .ne. n+1) then
+        call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
+      endif
+      select type (edge_data)
+        type is (real(kind=real32))
+          call read_data(fileobj, buffer, edge_data)
+        type is (real(kind=real64))
+          call read_data(fileobj, buffer, edge_data)
+        class default
+          call mpp_error(FATAL, "axis_edges: unsupported kind.")
+      end select
+    elseif (size(dim_sizes) .eq. 2) then
+      if (dim_sizes(1) .ne. 2) then
+        call mpp_error(FATAL, "axis_edges: first dimension of edge must be of size 2")
+      endif
+      if (dim_sizes(2) .ne. n) then
+        call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
+      endif
+      select type (edge_data)
+        type is (real(kind=real32))
+          allocate(r322d(dim_sizes(1), dim_sizes(2)))
+          call read_data(fileobj, buffer, r322d)
+          edge_data(1:dim_sizes(2)) = r322d(1,:)
+          edge_data(dim_sizes(2)+1) = r322d(2,dim_sizes(2))
+          deallocate(r322d)
+        type is (real(kind=real64))
+          allocate(r642d(dim_sizes(1), dim_sizes(2)))
+          call read_data(fileobj, buffer, r642d)
+          edge_data(1:dim_sizes(2)) = r642d(1,:)
+          edge_data(dim_sizes(2)+1) = r642d(2,dim_sizes(2))
+          deallocate(r642d)
+        class default
+          call mpp_error(FATAL, "axis_edges: unsupported kind.")
+      end select
     endif
-    axis_bound = default_axis
-    call mpp_get_atts(axis,units=units,longname=longname,&
-            cartesian=cartesian, len=len)
-    if(len .LE. 0) return
-    allocate(data(len+1))
+    deallocate(dim_sizes)
+  else
+    select type (edge_data)
+      type is (real(kind=real32))
+        allocate(r32(n))
+        call read_data(fileobj, name, r32)
+        do i = 2, n
+          edge_data(i) = r32(i-1) + 0.5_real32*(r32(i) - r32(i-1))
+        enddo
+        edge_data(1) = r32(1) - 0.5_real32*(r32(2) - r32(1))
+        if (abs(edge_data(1)) .lt. 1.e-10) then
+          edge_data(1) = 0._real32
+        endif
+        edge_data(n+1) = r32(n) + 0.5_real32*(r32(n) - r32(n-1))
+        deallocate(r32)
+      type is (real(kind=real64))
+        allocate(r64(n))
+        call read_data(fileobj, name, r64)
+        do i = 2, n
+          edge_data(i) = r64(i-1) + 0.5_real64*(r64(i) - r64(i-1))
+        enddo
+        edge_data(1) = r64(1) - 0.5_real64*(r64(2) - r64(1))
+        if (abs(edge_data(1)) .lt. 1.d-10) then
+          edge_data(1) = 0._real64
+        endif
+        edge_data(n+1) = r64(n) + 0.5_real64*(r64(n) - r64(n-1))
+        deallocate(r64)
+      class default
+        call mpp_error(FATAL, "axis_edges: unsupported kind.")
+    end select
+  endif
+end subroutine axis_edges
 
-    bounds_found = mpp_get_axis_bounds(axis, data, name=name)
-    longname = trim(longname)//' bounds'
 
-    if(.not.bounds_found .and. len>1 ) then
-       ! The following calculation can not be done for len=1
-       call mpp_get_atts(axis,name=name)
-       name = trim(name)//'_bnds'
-       allocate(tmp(len))
-       call mpp_get_axis_data(axis,tmp)
-       do i=2,len
-          data(i)= tmp(i-1)+fp5*(tmp(i)-tmp(i-1))
-       enddo
-       data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
-       if (abs(data(1)) < epsln) data(1) = 0.0
-       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))         
-       if (data(1) == 0.0) then
-          if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
-       endif
-    endif
-    if(bounds_found .OR. len>1) then
-       call mpp_modify_meta(axis_bound,name=name,units=units,longname=&
-                 longname,cartesian=cartesian,data=data)
-    endif
-    if(allocated(tmp)) deallocate(tmp)
-    deallocate(data)
-
-    return
-  end subroutine get_axis_bounds
-
-  function get_axis_modulo(axis)
-
-    type(axistype) :: axis
+  function get_axis_modulo(fileobj, axisname)
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
+    character(len=*),     intent(out) :: axisname
     logical :: get_axis_modulo
-    integer :: natt, i
-    type(atttype), dimension(:), allocatable :: atts
 
-
-    call mpp_get_atts(axis,natts=natt)
-    allocate(atts(natt))
-    call mpp_get_atts(axis,atts=atts)
-
-    get_axis_modulo=.false.
-    do i = 1,natt
-       if (lowercase(trim(mpp_get_att_name(atts(i)))) == 'modulo') get_axis_modulo = .true.
-    enddo
-
-    deallocate(atts)
+    get_axis_modulo = variable_att_exists(fileobj, axisname, "modulo")
 
     return
   end function get_axis_modulo
 
-  function get_axis_modulo_times(axis, tbeg, tend)
-
+  function get_axis_modulo_times(fileobj, axisname, tbeg, tend)
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
+    character(len=*),      intent(in) :: axisname
+    character(len=*),     intent(out) :: tbeg, tend
     logical :: get_axis_modulo_times
-    type(axistype), intent(in) :: axis
-    character(len=*), intent(out) :: tbeg, tend
-    integer :: natt, i
-    type(atttype), dimension(:), allocatable :: atts
     logical :: found_tbeg, found_tend
     
-    call mpp_get_atts(axis,natts=natt)
-    allocate(atts(natt))
-    call mpp_get_atts(axis,atts=atts)
   
-    found_tbeg = .false.
-    found_tend = .false.
-
-    do i = 1,natt
-      if(lowercase(trim(mpp_get_att_name(atts(i)))) == 'modulo_beg') then
-        if(mpp_get_att_length(atts(i)) > len(tbeg)) then
-          call mpp_error(FATAL,'error in get: len(tbeg) too small to hold attribute')
-        endif
-        tbeg = trim(mpp_get_att_char(atts(i)))
-        found_tbeg = .true.
-      endif
-      if(lowercase(trim(mpp_get_att_name(atts(i)))) == 'modulo_end') then
-        if(mpp_get_att_length(atts(i)) > len(tend)) then
-          call mpp_error(FATAL,'error in get: len(tend) too small to hold attribute')
-        endif
-        tend = trim(mpp_get_att_char(atts(i)))
-        found_tend = .true.
-      endif
-    enddo
+    found_tbeg = variable_att_exists(fileobj, axisname, "modulo_beg")
+    found_tend = variable_att_exists(fileobj, axisname, "modulo_end")
 
     if(found_tbeg .and. .not.found_tend) then
       call mpp_error(FATAL,'error in get: Found modulo_beg but not modulo_end')
@@ -261,31 +278,14 @@ contains
       call mpp_error(FATAL,'error in get: Found modulo_end but not modulo_beg')
     endif
 
+    if(found_tbeg) then
+       call get_variable_attribute(fileobj, axisname, "modulo_beg", tbeg)
+       call get_variable_attribute(fileobj, axisname, "modulo_end", tend)
+    endif
+
     get_axis_modulo_times = found_tbeg 
 
   end function get_axis_modulo_times
-
-  function get_axis_fold(axis)
-
-    type(axistype) :: axis
-    logical :: get_axis_fold
-    integer :: natt, i
-    type(atttype), dimension(:), allocatable :: atts
-
-
-    call mpp_get_atts(axis,natts=natt)
-    allocate(atts(natt))
-    call mpp_get_atts(axis,atts=atts)
-
-    get_axis_fold=.false.
-    do i = 1,natt
-       if (mpp_get_att_char(atts(i)) == 'fold_top') get_axis_fold = .true.
-    enddo
-
-    deallocate(atts)
-
-    return
-  end function get_axis_fold
 
   function lon_in_range(lon, l_strt)
     real :: lon, l_strt, lon_in_range, l_end
@@ -778,7 +778,7 @@ contains
 
   end subroutine find_index
 
-end module axis_utils_mod
+end module axis_utils2_mod
 
 #ifdef test_axis_utils
 

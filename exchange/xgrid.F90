@@ -150,7 +150,7 @@ use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            mpp_get_ug_domains_index, mpp_get_ug_domain_grid_index, &
                            mpp_get_ug_domain_tile_list, mpp_pass_sg_to_ug
 use constants_mod,   only: PI, RADIUS
-use mosaic_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size, &
+use mosaic2_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size, &
                                get_mosaic_ntiles, get_mosaic_ncontacts, &
                                get_mosaic_contact, get_mosaic_grid_sizes, &
                                get_mosaic_tile_grid

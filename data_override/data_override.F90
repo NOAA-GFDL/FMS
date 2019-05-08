@@ -81,14 +81,14 @@ use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NO
 use mpp_mod, only : input_nml_file, get_unit
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=), horiz_interp_del
-use time_interp_external_mod, only:time_interp_external_init, time_interp_external, &
+use time_interp_external2_mod, only:time_interp_external_init, time_interp_external, &
                                    init_external_field, get_external_field_size, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    set_override_region, reset_src_data_region,   &
                                    get_external_fileobj
 use fms_io_mod, only: fms_io_init,get_mosaic_tile_file
 use fms_mod, only: write_version_number, lowercase, check_nml_error
-use axis_utils_mod,  only : nearest_index, axis_edges
+use axis_utils2_mod,  only : nearest_index, axis_edges
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_copy_domain, mpp_get_global_domain
 use mpp_domains_mod, only : mpp_get_data_domain, mpp_set_compute_domain, mpp_set_data_domain
@@ -97,7 +97,7 @@ use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, N
 use time_manager_mod, only: time_type
 use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file, &
                             variable_exists, read_data, get_variable_size
-use mosaic_mod,      only : get_mosaic_tile_grid
+use mosaic2_mod,      only : get_mosaic_tile_grid
 implicit none
 private
 
