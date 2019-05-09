@@ -138,10 +138,12 @@ CONTAINS
     TYPE(domainUG), INTENT(in)    :: domainU
     type(FmsNetcdfUnstructuredDomainFile_t),intent(inout),target :: fileobjU
     type(FmsNetcdfDomainFile_t),intent(inout),target :: fileobj
-    class(FmsNetcdfFile_t), pointer :: fileob
+    class(FmsNetcdfFile_t), pointer :: fileob => NULL()
     character(*),intent(out) :: fnum_domain
     INTEGER :: form, threading, fileset, i
     TYPE(diag_global_att_type) :: gAtt
+    character(len=:),allocatable :: fname_no_tile
+    integer :: len_file_name
     !---- initialize mpp_io ----
     IF ( .NOT.module_is_initialized ) THEN
        CALL mpp_io_init ()
@@ -164,7 +166,15 @@ CONTAINS
        fileset   = MPP_SINGLE
     END IF
 
-
+    len_file_name = len(trim(file_name))
+    allocate(character(len=len_file_name) :: fname_no_tile)
+    if (lowercase(file_name(len_file_name-4:len_file_name-1)) .eq. "tile") then 
+       fname_no_tile = file_name(1:len_file_name-6)
+    elseif (lowercase(file_name(len_file_name-7:len_file_name-4)) .eq. "tile") then
+       fname_no_tile = file_name(1:len_file_name-9)
+    else
+       fname_no_tile = trim(file_name)
+    endif
 !> Check to make sure that only domain2D or domainUG is used.  If both are not null, then FATAL
     if (domain .NE. NULL_DOMAIN2D .AND. domainU .NE. NULL_DOMAINUG)&
           & CALL error_mesg('diag_output_init', "Domain2D and DomainUG can not be used at the same time in "//&
@@ -174,24 +184,24 @@ CONTAINS
     IF ( domain .NE. NULL_DOMAIN2D ) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset, domain=domain)
-       call open_check(open_file(fileobj, "TEST"//trim(file_name)//".nc", "overwrite", &
+       fileob => fileobj
+       if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, "TEST"//trim(fname_no_tile)//".nc", "overwrite", &
                             domain, nc_format="64bit", is_restart=.false.))
        fnum_domain = "2d" ! 2d domain
-       fileob => fileobj
     ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset, domain_UG=domainU)
-       call open_check(open_file(fileobjU, "UTEST"//trim(file_name)//".nc", "overwrite", &
+       fileob => fileobjU
+       if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, "UTEST"//trim(fname_no_tile)//".nc", "overwrite", &
                             domainU, nc_format="64bit", is_restart=.false.))
        fnum_domain = "ug" ! unstructured grid
-       fileob => fileobjU
     ELSE
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset)
-       call open_check(open_file(fileobj, "TESTND"//trim(file_name)//".nc", "overwrite", &
+       fileob => fileobj
+        if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, "TESTND"//trim(fname_no_tile)//".nc", "overwrite", &
                             nc_format="64bit", is_restart=.false.))
        fnum_domain = "nd" ! no domain
-       fileob => fileobj
     END IF
 
     !---- write global attributes ----
