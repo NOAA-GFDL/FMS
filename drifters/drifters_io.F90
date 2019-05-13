@@ -68,7 +68,7 @@ contains
     
 
     ! dimensions
-    ier = nf_def_dim(self%ncid, 'it_id', NF_UNLIMITED, nc_it_id)
+    ier = nf_def_dim(self%ncid, 'np', NF_UNLIMITED, nc_it_id)
     if(ier/=NF_NOERR) ermesg = 'drifters_io_new::nf_def_dim (it_id) '//nf_strerror(ier)
 
     ier = nf_def_dim(self%ncid, 'nf', nf, nc_nf)

@@ -1,6 +1,27 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 program test_drifters_io
 
   use drifters_io_mod
+  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init
+
   implicit none
   type(drifters_io_type) :: drfts_io
   character(len=128) :: ermesg
@@ -9,6 +30,8 @@ program test_drifters_io
   real :: dt, time, xmin, xmax, ymin, ymax, u, v, dr, x, y
   integer, allocatable :: ids(:)
   real, allocatable :: positions(:,:), fields(:,:)
+
+  call mpp_init()
 
   ! number of dimensions
   nd = 3
@@ -36,24 +59,38 @@ program test_drifters_io
   
   filename = 'test.nc'
   call drifters_io_new(drfts_io, filename, nd, nf, ermesg)
-  if(ermesg/='') print *,'ERROR after drifters_io_new: ', ermesg
-
+  if(ermesg/='') then 
+     print *,'ERROR after drifters_io_new: ', ermesg
+     call mpp_error(FATAL, ermesg)
+  endif
   ! set attributes
 
   call drifters_io_set_position_names(drfts_io, (/'x','y','z'/), ermesg)
-  if(ermesg/='') print *,'ERROR after drifters_io_position_names: ', ermesg
+  if(ermesg/='') then
+     print *,'ERROR after drifters_io_position_names: ', ermesg
+     call mpp_error(FATAL, ermesg)
+  endif
 
   ! note the trailing blanks in the first field, which are added here to 
   ! ensure that "salinity" will not be truncated (all names must have the 
   ! same length)
   call drifters_io_set_field_names(drfts_io, (/'temp    ','salinity'/), ermesg)
-  if(ermesg/='') print *,'ERROR after drifters_io_field_names: ', ermesg
+  if(ermesg/='') then 
+      print *,'ERROR after drifters_io_field_names: ', ermesg
+      call mpp_error(FATAL, ermesg)
+  endif
 
   call drifters_io_set_position_units(drfts_io, (/'deg east ','deg north','meters'/), ermesg)
-  if(ermesg/='') print *,'ERROR after drifters_io_position_units: ', ermesg
-  
+  if(ermesg/='') then
+      print *,'ERROR after drifters_io_position_units: ', ermesg
+      call mpp_error(FATAL, ermesg)
+  endif
+
   call drifters_io_set_field_units(drfts_io, (/'deg K ','ppm'/), ermesg)
-  if(ermesg/='') print *,'ERROR after drifters_io_field_units: ', ermesg
+  if(ermesg/='') then 
+      print *,'ERROR after drifters_io_field_units: ', ermesg
+      call mpp_error(FATAL, ermesg)
+  endif
 
   allocate(positions(nd, npmax), ids(npmax), fields(nf, npmax))
   dr = sqrt( (xmax-xmin)**2 + (ymax-ymin)**2 )/real(npmax)
@@ -80,7 +117,10 @@ program test_drifters_io
      if(x>=xmin .and. x<=xmax .and. y>=ymin .and. y<=ymax) then
         call drifters_io_write(drfts_io, time, np=1, nd=nd, nf=nf, &
              & ids=ids(i), positions=positions(:,i), fields=fields(:,i), ermesg=ermesg)
-        if(ermesg/='') print *,'ERROR after drifters_io_write: ', ermesg
+        if(ermesg/='') then 
+            print *,'ERROR after drifters_io_write: ', ermesg
+            call mpp_error(FATAL, ermesg)
+        endif
      endif
   enddo
 
@@ -99,7 +139,10 @@ program test_drifters_io
         if(x>=xmin .and. x<=xmax .and. y>=ymin .and. y<=ymax) then
            call drifters_io_write(drfts_io, time, np=1, nd=nd, nf=nf, &
                 & ids=ids(i), positions=positions(:,i), fields=fields(:,i), ermesg=ermesg)
-           if(ermesg/='') print *,'ERROR after drifters_io_write: ', ermesg
+           if(ermesg/='') then
+              print *,'ERROR after drifters_io_write: ', ermesg
+              call mpp_error(FATAL, ermesg)
+           endif
         endif
      enddo
      
@@ -108,7 +151,10 @@ program test_drifters_io
   deallocate(positions, ids, fields)
 
   call drifters_io_del(drfts_io, ermesg)
-  if(ermesg/='') print *,'ERROR after drifters_io_del: ', ermesg
+  if(ermesg/='') then
+      print *,'ERROR after drifters_io_del: ', ermesg
+      call mpp_error(FATAL, ermesg)
+  endif
 
 end program test_drifters_io
 

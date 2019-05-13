@@ -27,9 +27,9 @@ module drifters_core_mod
 
   public :: drifters_core_type, drifters_core_new, drifters_core_del, drifters_core_set_ids
   public :: drifters_core_remove_and_add, drifters_core_set_positions, assignment(=)
-#ifdef _TEST_DRIFTERS_CORE
-  public :: drifters_core_print  drifters_core_resize
-#endif
+!#ifdef _TEST_DRIFTERS_CORE
+  public :: drifters_core_print,  drifters_core_resize
+!#endif
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128

@@ -1,3 +1,23 @@
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!**********************************************************************
+
 program test_drifters_comm
 
   use drifters_core_mod
@@ -75,12 +95,18 @@ program test_drifters_comm
   
   ! create drifters
   call drifters_core_new(drfts, nd, npmax, ermsg)
-  if(ermsg /= '') print *,'ERROR',ermsg
+  if(ermsg /= '') then 
+      print *,'ERROR',ermsg
+      call mpp_error(FATAL, 'test_drifters_comm: Error')
+  endif
 
   pe = mpp_pe()
   ids = (/ (i+100*pe, i=1,npmax) /)
   call drifters_core_set_ids(drfts, ids, ermsg)
-  if(ermsg /= '') print *,'ERROR', ermsg
+  if(ermsg /= '') then 
+       print *,'ERROR', ermsg
+       call mpp_error(FATAL, 'test_drifters_comm: Error')
+  endif
 
   ! position particles
   if(pe == 0) then
@@ -88,7 +114,10 @@ program test_drifters_comm
           &               (drfts_com%ycmin + drfts_com%ycmax)/2. /)
      !positions(:, 2) = (/0.,0.01/)
      call drifters_core_set_positions(drfts, positions(:, 1:1), ermsg)
-     if(ermsg /= '') print *,'ERROR',ermsg
+     if(ermsg /= '') then 
+         print *,'ERROR',ermsg
+         call mpp_error(FATAL, 'test_drifters_comm: Error')
+     endif
   endif
 
   ! push drifters
@@ -111,7 +140,10 @@ program test_drifters_comm
 
   ! clean up
   call drifters_core_del(drfts, ermsg)
-  if(ermsg /= '') print *,ermsg, '<--- THIS'
+  if(ermsg /= '') then 
+       print *,ermsg, '<--- THIS'
+       call mpp_error(FATAL, 'test_drifters_comm: Error')
+  endif
   call drifters_comm_del(drfts_com)
   call mpp_domains_exit
   call mpp_exit

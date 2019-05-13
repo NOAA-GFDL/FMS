@@ -1,6 +1,28 @@
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!**********************************************************************
+
 program test_drifters_core
 
   use drifters_core_mod
+  use fms_mod, only : fms_init
+  use mpp_mod, only : mpp_error, FATAL, stdout
   implicit none
   type(drifters_core_type) :: drf
   integer :: ier, nd, npdim, i, j, np
@@ -8,21 +30,23 @@ program test_drifters_core
   integer :: npa
   real   , allocatable :: positions(:,:), positions_to_add(:,:)
 
+  call fms_init()
+
   ! c-tor/d-tor tests
   nd    = 3
   npdim = 2
   call drifters_core_new(drf, nd, npdim, ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_del(drf, ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_new(drf, nd, npdim, ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
 
   call drifters_core_print(drf, ermesg)
 
   npdim = 10
   call drifters_core_resize(drf, npdim, ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_print(drf, ermesg)
 
   np = 7
@@ -31,7 +55,7 @@ program test_drifters_core
   positions(2,:) = (/0.1, 1.1, 2.1, 3.1, 4.1, 5.1, 6.1/) ! y
   positions(3,:) = (/0.2, 1.2, 2.2, 3.2, 4.2, 5.2, 6.2/) ! z
   call drifters_core_set_positions(drf, positions, ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_print(drf, ermesg)
 
   ! remove more particles than are added
@@ -44,7 +68,7 @@ program test_drifters_core
      & (/ 1001, 1002 /), &
      & positions_to_add, &
      & ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_print(drf, ermesg)
   deallocate(positions_to_add)
 
@@ -58,7 +82,7 @@ program test_drifters_core
      & (/ 1003, 1004, 1005 /), &
      & positions_to_add,  &
      & ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_print(drf, ermesg)
   deallocate(positions_to_add)
   
@@ -72,7 +96,7 @@ program test_drifters_core
      & (/ (1010+i, i=1,npa) /), &
      & positions_to_add,  &
      & ermesg)
-  if(ermesg/='') print *,ermesg
+  if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_print(drf, ermesg)
   deallocate(positions_to_add)
 

@@ -1,6 +1,29 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 program test_cloud_interpolator
   use cloud_interpolator_mod
+  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init
+
   implicit none
+
+  call mpp_init()
 
   call test_expansion_contraction
   call test_linear_cell_interpolation
@@ -21,7 +44,7 @@ CONTAINS
          idiff = idiff + abs(ie1(j)-ie2(j))
       end do
       if(idiff/=0) then
-         print *,'ERROR: contraction/expansion test failed (ie1/=ie2)'
+         call mpp_error(FATAL,'ERROR: contraction/expansion test failed (ie1/=ie2)')
       endif
       print *,'ie1 = ', ie1
       print *,'ie2 = ', ie2
@@ -39,7 +62,10 @@ CONTAINS
       ts    = (/ 0.1, 0.2, 0.3 /)
       fx    = 1. + ts(1) + 2*ts(2) + 3*ts(3)
       call cld_ntrp_linear_cell_interp(fvals, ts, fi, ier)
-      if(ier/=0) print *,'ERROR flag ier=', ier
+      if(ier/=0) then 
+         print *,'ERROR flag ier=', ier
+         call mpp_error(FATAL,'ERROR: linear cell interpolation test failed (ier/=0)')    
+      endif
       print *,'fi, fx = ', fi, fx
     end subroutine test_linear_cell_interpolation
 
@@ -141,7 +167,10 @@ CONTAINS
       print *,' x=',x, ' index=', index, ' ==? ', -1
       ier_tot = ier_tot + abs(index - (-1))
 
-      print *,'Total error in test_cell_search: ', ier_tot
+      if(ier_tot /= 0) then
+         print *,'ERROR flag ier_tot=', ier_tot
+         call mpp_error(FATAL,'ERROR: cell search test failed (ier_tot/=0)')
+      endif
 
     end subroutine test_cell_search
 
@@ -162,7 +191,6 @@ CONTAINS
             enddo
          enddo
       enddo
-
       indices = (/1,1,1/)
       call cld_ntrp_get_cell_values((/n1,n2,n3/), pack(fnodes, .TRUE.) , indices, fvals, ier)
       fexact = (/0.0, 0.2, 0.0, 0.2, 0.0, 0.2, 0.5, 0.7/)
@@ -179,9 +207,11 @@ CONTAINS
       print *,'fvals=', fvals, ' ==? ', fexact
       error_tot = error_tot + abs(sum(fvals - fexact))
 
-      print *,'Total error in test_get_node_values: ', error_tot
+      if(error_tot /= 0) then
+         print *,'ERROR flag error_tot=', error_tot
+         call mpp_error(FATAL,'ERROR: get node values test failed (error_tot/=0)')
+      endif
 
-
-    end subroutine test_get_node_values
+end subroutine test_get_node_values
 
   end program test_cloud_interpolator
