@@ -1,6 +1,26 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 program test_monin_obukhov
 
   use monin_obukhov_inter
+  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
 
   implicit none
   integer, parameter :: i8 = selected_int_kind(18)
@@ -15,6 +35,8 @@ program test_monin_obukhov
   logical :: neutral
   integer :: stable_option
   logical :: new_mo_option
+
+  call mpp_init()
 
   grav          = 9.80
   vonkarm       = 0.4
@@ -55,10 +77,12 @@ program test_monin_obukhov
   ier_tot = ier_tot + ier
 
   if(ier_tot/=0) then
-     print *, ier_tot, '***ERRORS detected***'
+      call mpp_error(FATAL, 'test_monin_obukhov: result different from expected result')
   else
      print *,'No error detected.'
   endif
+
+  call mpp_exit()
 
   CONTAINS
 
@@ -115,7 +139,7 @@ program test_monin_obukhov
 
       print *,'chksum test_drag      : ', w, ' ref ', CHKSUM_DRAG
       ier = CHKSUM_DRAG - w
-
+      
     end subroutine test_drag
 
     subroutine test_stable_mix
