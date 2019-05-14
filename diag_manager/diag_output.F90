@@ -52,7 +52,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, mpp_open,  mpp_write_meta,&
        & mpp_write, mpp_flush, mpp_close, mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
-       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write
+       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write, mpp_get_field_name
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG,&
@@ -75,13 +75,15 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   use mpp_mod,         only: mpp_gather
   use mpp_mod,         only: uppercase,lowercase
 use fms2_io_mod
+use legacy_mod
 
 
   IMPLICIT NONE
 
   PRIVATE
   PUBLIC :: diag_output_init, write_axis_meta_data, write_field_meta_data, done_meta_data,&
-       & diag_field_out, diag_flush, diag_fieldtype, get_diag_global_att, set_diag_global_att
+       & diag_field_out, diag_flush, diag_fieldtype, get_diag_global_att, set_diag_global_att,&
+       & diag_field_write
 
   TYPE(diag_global_att_type), SAVE :: diag_global_att
 
@@ -346,21 +348,39 @@ CONTAINS
                          call register_field(fptr, axis_name, "double", (/axis_name/) )
                          call register_variable_attribute(fptr, axis_name, "units", axis_units)
                          call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
+                         call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     class default
                          call error_mesg("diag_output_mod::write_axis_meta_data", &
                               "The FmsNetcdfDomainFile_t file object is not the right type.", FATAL)
                   end select
-                else
-                         call error_mesg("CHECKFORTHIS", &
-                              "AXISNAMEIS "//uppercase(trim(axis_cart_name)), NOTE)
                 endif
              endif
+             
           ELSE
-             write (6,*)"CHECKFORTHIS: don't know which domain to put here ",trim(axis_cart_name)
              CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name,&
                   & axis_units, axis_long_name, axis_cart_name, axis_direction, Domain)
+             if (present(fileob))then
+               select type (fptr)
+                    type is (FmsNetcdfDomainFile_t)
+                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)) )
+                      if (allocated(fptr%pelist)) then
+                         call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
+                         call register_field(fptr, axis_name, "double", (/axis_name/) )
+                      endif
+                    type is (FmsNetcdfUnstructuredDomainFile_t)
+                        call register_axis(fptr, axis_name )
+                    class default
+                         call error_mesg("diag_output_mod::write_axis_meta_data", &
+                              "The FmsNetcdfDomain file object is not the right type.", FATAL)
+                end select
+                    call register_field(fileob, axis_name, "double", (/axis_name/) )
+                    call register_variable_attribute(fileob, axis_name, "long_name", axis_long_name)
+                    call register_variable_attribute(fileob, axis_name, "units", axis_units)
+                    call register_variable_attribute(fileob, axis_name, "cartesian_axis",trim(axis_cart_name))
+                    call write_data(fileob, axis_name, axis_data(istart:iend) )
+             endif
           END IF
        ELSE
           IF ( length > 0 ) THEN
@@ -433,12 +453,14 @@ CONTAINS
                         call register_field(fptr, axis_name, "double", (/axis_name/) )
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
+                        call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
                    type is (FmsNetcdfDomainFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "double", (/axis_name/) )
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
+                        call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
                         call write_data(fptr, axis_name, axis_data)
                     endif
                    class default
@@ -459,7 +481,9 @@ CONTAINS
                         call register_axis(fptr, trim(axis_name), unlimited )
                         call register_field(fptr, axis_name, "double", (/axis_name/) )
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
+
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
+                         call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
                         is_time_axis_registered = .true. 
                         if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
                    type is (FmsNetcdfUnstructuredDomainFile_t)
@@ -467,6 +491,7 @@ CONTAINS
                         call register_field(fptr, axis_name, "double", (/axis_name/) )
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
+                        call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
                         is_time_axis_registered = .true.
                    class default
                         call error_mesg("diag_output_mod::write_axis_meta_data", &
@@ -540,7 +565,7 @@ CONTAINS
        !  ---- write edges attribute to original axis ----
        CALL mpp_write_meta(file_unit, mpp_get_id(Axis_types(num_axis_in_file)),&
             & 'edges', cval=axis_name )
-!if (present(fileob)) call register_variable_attribute(fileob, axis_name, 'edges', trim(axis_name))
+!if (present(fileob)) call register_variable_attribute(fileob, mpp_get_id(Axis_types(num_axis_in_file)), 'edges', trim(axis_name))
        !  ---- add edges index to axis list ----
        !  ---- assume this is not a time axis ----
        num_axis_in_file = num_axis_in_file + 1
@@ -575,7 +600,7 @@ CONTAINS
           CALL mpp_write_meta(file_unit, Axis_types(num_axis_in_file), axis_name, axis_units,&
                & axis_long_name, axis_cart_name, axis_direction, DATA=axis_data)
        END IF
-
+!       call write_axis_edges(fileob, axis_name , axis_edges)
        ! Write edge axis attributes
        id_axis = mpp_get_id(Axis_types(num_axis_in_file))
        CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
@@ -820,6 +845,9 @@ character(len=128),dimension(size(axes)) :: axis_names
      IF ( use_range ) then
           call register_variable_attribute(fileob,name,"valid_range", RANGE)
      ENDIF
+     IF (present(time_method) ) then
+          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method))
+     ENDIF
   endif
  endif
     !---- write user defined attributes -----
@@ -868,13 +896,16 @@ character(len=128),dimension(size(axes)) :: axis_names
     END IF
 
     ! write coordinates attribute for CF compliance
-    IF ( coord_present ) &
+    IF ( coord_present ) then
          CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
          & 'coordinates', cval=TRIM(coord_att))
          if (present(fileob)) call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att))
-    IF ( TRIM(standard_name2) /= 'none' ) CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
+    ENDIF
+    IF ( TRIM(standard_name2) /= 'none' ) then
+         CALL mpp_write_meta(file_unit, mpp_get_id(Field%Field),&
          & 'standard_name', cval=TRIM(standard_name2))
          if (present(fileob)) call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2))
+    ENDIF
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
        CALL mpp_write_meta ( file_unit, mpp_get_id(Field%Field),&
@@ -900,7 +931,7 @@ character(len=128),dimension(size(axes)) :: axis_names
     TYPE(diag_atttype), DIMENSION(:), INTENT(in) :: attributes !< Array of attributes
     CHARACTER(len=*), INTENT(in), OPTIONAL :: time_method !< To include in cell_methods attribute if present
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Return error message
-    CHARACTER(len=*), INTENT(in), OPTIONAL :: varname !< The name of the variable
+    CHARACTER(len=*), INTENT(IN), OPTIONAL :: varname !< The name of the variable
 class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
 
     INTEGER :: i, att_len
@@ -943,7 +974,8 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
           END IF
           CALL mpp_write_meta(file_unit, id, TRIM(attributes(i)%name),&
                & cval=att_str(1:att_len))
-          if (present(fileob).and.present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len))
+          if (present(fileob).and.present(varname))&
+               call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len))
 
        CASE default
           IF ( fms_error_handler('diag_output_mod::write_attribute_meta', 'Invalid type for attribute '&
@@ -980,6 +1012,35 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
 
     num_axis_in_file = 0
   END SUBROUTINE done_meta_data
+
+  !> \description Outputs the diagnostic data to a file using fms2_io
+  subroutine diag_field_write (field, buffer, fileob, file_num, fileobjU, fileobj, fnum_for_domain)
+    TYPE(diag_fieldtype), INTENT(inout) :: Field
+    REAL , INTENT(inout) :: buffer(:,:,:,:)
+    class(FmsNetcdfFile_t), intent(inout),optional :: fileob 
+    integer, intent(in), optional  :: file_num
+    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout),optional :: fileobjU(:)
+    type(FmsNetcdfDomainFile_t),intent(inout),optional :: fileobj(:)
+    character(len=2), intent(in), optional :: fnum_for_domain
+     if (present(fileob)) then !> Write output to the fileob file
+          call write_data (fileob,trim(mpp_get_field_name(field%field)),buffer)
+     elseif (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fnum_for_domain)) then
+     !> Figure out which file object to write output to
+          if (fnum_for_domain == "2d" .or. fnum_for_domain == "nd") then
+               call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), buffer)
+          elseif (fnum_for_domain == "ug") then
+               call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), buffer)
+          else
+               call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
+          endif
+     elseif (present(file_num) ) then
+          call error_mesg("diag_field_write","When FILE_NUM is used to determine which file object to use,"&
+           //" You must also include fileobjU, fileobj, and fnum_for_domain",fatal)
+     else
+          call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
+     endif
+  end subroutine diag_field_write
+
   ! </SUBROUTINE>
 
   ! <SUBROUTINE NAME="diag_field_out">
