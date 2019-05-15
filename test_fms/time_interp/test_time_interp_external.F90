@@ -1,3 +1,23 @@
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 program test_time_interp_external
 
 use constants_mod, only: constants_init
@@ -20,7 +40,7 @@ implicit none
 
 
 integer :: id, i, io_status, unit, ierr
-character(len=128) :: filename, fieldname
+character(len=128) :: filename='INPUT/aerosol.climatology.nc', fieldname='so4_anthro'
 type(time_type) :: time
 real, allocatable, dimension(:,:,:) :: data_d, data_g
 logical, allocatable, dimension(:,:,:) :: mask_d
@@ -30,7 +50,7 @@ integer :: isc, iec, jsc, jec, isd, ied, jsd, jed
 integer :: yy, mm, dd, hh, ss
 real :: sm,mx,mn
 character(len=12) :: cal_type
-integer :: ntime=12,year0=1991,month0=1,day0=1,days_inc=31
+integer :: ntime=12,year0=1990,month0=1,day0=1,days_inc=31
 type(horiz_interp_type) :: Hinterp
 type(axistype) :: Axis_centers(4), Axis_bounds(4)
 real :: lon_out(180,89), lat_out(180,89)
