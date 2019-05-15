@@ -599,6 +599,9 @@ use fms2_io_mod
   !   <DATA NAME="num_attributes" TYPE="INTEGER" >
   !     Number of defined attibutes
   !   </DATA>
+  !   <DATA NAME="pos" TYPE="INTEGER" >
+  !     The position in the doman (NORTH or EAST or CENTER)
+  !   </DATA>
   TYPE diag_axis_type
      CHARACTER(len=128) :: name
      CHARACTER(len=256) :: units, long_name
@@ -616,6 +619,7 @@ use fms2_io_mod
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+     INTEGER :: pos !< The position in the doman (NORTH or EAST or CENTER)
   END TYPE diag_axis_type
   ! </TYPE>
 
