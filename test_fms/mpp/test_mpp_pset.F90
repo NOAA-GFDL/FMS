@@ -20,7 +20,8 @@
 
 program test_mpp_pset
   use mpp_mod, only: mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
-       mpp_clock_id, mpp_clock_begin, mpp_clock_end
+       mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_error, FATAL
+ use mpp_mod, only : input_nml_file
   use mpp_pset_mod !, only: mpp_pset_type, mpp_pset_create, mpp_pset_root, &
 !       mpp_pset_broadcast_ptr, mpp_pset_segment_array, mpp_pset_sync, &
 !       mpp_pset_stack_push, mpp_pset_print_chksum, mpp_pset_delete
@@ -28,7 +29,7 @@ program test_mpp_pset
 !test program demonstrates how to create PSETs
 !  how to distribute allocatable arrays
 !  how to distribute automatic arrays
-  integer, parameter :: n=48 !divisible by lots of numbers
+  integer, parameter :: n=96 !divisible by lots of numbers
   real, allocatable, dimension(:,:,:) :: a, b, cc
   real :: c(n,n,n)
 #ifdef use_CRI_pointers
@@ -42,10 +43,33 @@ program test_mpp_pset
   type(mpp_pset_type) :: pset
   logical :: root
 !clocks
-  integer :: id_full, id_alloc, id_auto
-  integer :: out_unit, errunit
+  integer :: id_full, id_alloc, id_auto, id
+  integer :: out_unit, errunit, io_status
+  integer :: test_number
+  integer :: unit=7
+
+namelist / test_mpp_pset_nml / test_number
 
   call mpp_init()
+
+#ifdef INTERNAL_FILE_NML
+  read (input_nml_file, test_mpp_pset_nml, iostat=io_status)
+#else
+  do
+     inquire( unit=unit, opened=opened )
+     if( .NOT.opened )exit
+     unit = unit + 1
+     if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
+  end do
+  open( unit=unit, file='input.nml', iostat=io_status )
+  read( unit,test_mpp_pset_nml, iostat=io_status )
+  close(unit)
+#endif
+
+      if (io_status > 0) then
+         call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
+endif
+
   pe = mpp_pe()
   npes = mpp_npes()
   out_unit = stdout()
@@ -59,19 +83,21 @@ program test_mpp_pset
 !allocate a and b
   allocate( a(n,n,n) )
   allocate( b(n,n,n) )
+
 !allocate shared array c
   if( root )then
       allocate( cc(n,n,n) )
 #ifdef use_CRI_pointers
       ptr = LOC(cc)
 #endif
-  end if
+end if
 
 !  call mpp_pset_broadcast_ptr( pset, ptr )
 
 #ifdef use_CRI_pointers
   ptr_c = ptr
 #endif
+
 !initialize a and b
   call RANDOM_NUMBER(a)
   call mpp_clock_begin(id_full)
@@ -83,10 +109,23 @@ program test_mpp_pset
      end do
   end do
   call mpp_clock_end(id_full)
+
+   if (test_number == 1) then
+      ! Testing how to distribute allocatable arrays
+      id = id_alloc
+   else if (test_number == 2) then
+          ! Testing how you create shared auto arrays
+#ifdef use_CRI_pointers
+    pointer( pd, c )
+    call mpp_pset_stack_push( pset, pd, size(c) )
+#endif
+          id = id_auto
+   endif
+
 !divide up among PSETs
   call mpp_pset_segment_array( pset, 1, n, ks, ke )
   write( errunit,'(a,4i6)' )'pe, n, ks, ke=', pe, n, ks, ke
-  call mpp_clock_begin(id_alloc)
+  call mpp_clock_begin(id)
   do k = ks,ke
      do j = 1,n
         do i = 1,n
@@ -95,42 +134,12 @@ program test_mpp_pset
      end do
   end do
   call mpp_pset_sync(pset)
-  call mpp_clock_end(id_alloc)
+  call mpp_clock_end(id)
+
   write( errunit,'(a,i6,2es23.15)' )'b, c should be equal: pe b c=', &
        pe, sum(b), sum(c)
   call mpp_pset_print_chksum( pset, 'test_alloc', c(:,:,ks:ke) )
-  call test_auto(n)
   call mpp_pset_delete(pset)
   call mpp_exit()
 
-contains
-
-  subroutine test_auto(m)
-!same test as above, on auto array d
-!this is how you create shared auto arrays
-    integer, intent(in) :: m
-    real :: d(m,m,m)
-    integer :: js, je
-
-#ifdef use_CRI_pointers
-    pointer( pd, d )
-    call mpp_pset_stack_push( pset, pd, size(d) )
-#endif
-
-    call mpp_pset_segment_array( pset, 1, m, js, je )
-    call mpp_clock_begin(id_auto)
-    do k = 1,m
-       do j = js,je
-          do i = 1,m
-             d(i,j,k) = 2*a(i,j,k)
-          end do
-       end do
-    end do
-    call mpp_pset_sync(pset)
-    call mpp_clock_end(id_auto)
-    write( errunit,'(a,i6,2es23.15)' )'b, d should be equal: pe b d=', &
-         pe, sum(b), sum(d)
-    call mpp_pset_print_chksum( pset, 'test_auto ', d(:,js:je,:) )
-  end subroutine test_auto
-    
 end program test_mpp_pset
