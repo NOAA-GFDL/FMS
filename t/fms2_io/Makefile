@@ -1,22 +1,22 @@
-#FC = ftn
-#FFLAGS = -g -O0 -r8 -i4 -traceback -qopenmp
 INCLUDEADD = -I../..
 LDADD= ../../libfms.a
 RPATH = 
 
-all: test_fms2_io.x new.x
+all: test_atmosphere_io.x
 
 argparse.o: argparse.F90
-	${FC} ${FFLAGS} -o $@ -c $<
+	$(FC) $(FFLAGS) -o $@ -c $<
 
-test_fms2_io.x: test_fms2_io.F90 argparse.o create_atmosphere_domain.inc create_land_domain.inc \
-                create_ocean_domain.inc atmosphere_restart_file_test.inc \
-                land_unstructured_restart_file_test.inc land_compressed_restart_file_test.inc \
-                ocean_restart_file_test.inc
-	${FC} ${FFLAGS} ${INCLUDEADD} -o $@ $< argparse.o ${LDFLAGS} ${RPATH} ${LDADD}
+setup.o: setup.F90 argparse.o
+	$(FC) $(FFLAGS) $(INCLUDEADD) -o $@ -c $<
 
-new.x: new.F90
-	${FC} ${FFLAGS} ${INCLUDEADD} -o $@ $< ${LDFLAGS} ${LDADD}
+test_atmosphere_io.x: test_atmosphere_io.F90 setup.o argparse.o
+	$(FC) $(FFLAGS) $(INCLUDEADD) -o $@ $^ $(LDFLAGS) $(RPATH) $(LDADD)
+
+check: test_atmosphere_io.x
+	rm -f *.nc
+	mpirun -n 12 ./test_atmosphere_io.x
 
 clean:
-	rm -f argparse.o argparse.mod test_fms2_io.x new.x
+	rm -f argparse.o argparse.mod setup.o setup.mod test_atmosphere_io.x
+	rm -f logfile.000000.out *.nc
