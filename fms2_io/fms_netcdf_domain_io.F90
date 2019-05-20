@@ -324,6 +324,11 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   allocate(fileobj%domain_decomposed_vars(max_num_domain_decomposed_vars))
   fileobj%n = 0
   call string_copy(fileobj%non_mangled_path, path)
+
+  if (string_compare(mode, "write", .true.) .or. string_compare(mode, "overwrite", .true.)) then
+    !Add global attribute needed by mppnccombine.
+    call register_global_attribute(fileobj, "NumFilesInSet", io_layout(1)*io_layout(2))
+  endif
 end function open_domain_file
 
 
@@ -459,17 +464,13 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
 end subroutine register_domain_decomposed_dimension
 
 
-!> @brief Add a domain decomposed variable.
-subroutine register_domain_variable(fileobj, variable_name, variable_type, &
-                                    dimensions, domain_position)
+!> @brief Add a "domain_decomposed" attribute to certain variables because it is
+!!        required by mppnccombine.
+!! @internal
+subroutine add_domain_attribute(fileobj, variable_name)
 
   type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
-                                                !! values are: "int", "int64",
-                                                !! "float", or "double".
-  character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
-  integer, intent(in), optional :: domain_position !< Domain position.
 
   type(domain2d), pointer :: io_domain
   integer :: sg
@@ -477,10 +478,6 @@ subroutine register_domain_variable(fileobj, variable_name, variable_type, &
   integer :: s
   integer :: e
 
-  if (.not. fileobj%is_readonly) then
-    call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
-  endif
-  call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
   if (is_in_list(fileobj%xdims, variable_name)) then
     io_domain => mpp_get_io_domain(fileobj%domain)
     call mpp_get_global_domain(fileobj%domain, xbegin=sg, xend=eg)
@@ -494,6 +491,26 @@ subroutine register_domain_variable(fileobj, variable_name, variable_type, &
     call register_variable_attribute(fileobj, variable_name, "domain_decomposition", &
                                      (/sg, eg, s, e/))
   endif
+end subroutine add_domain_attribute
+
+
+!> @brief Add a domain decomposed variable.
+subroutine register_domain_variable(fileobj, variable_name, variable_type, &
+                                    dimensions, domain_position)
+
+  type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
+                                                !! values are: "int", "int64",
+                                                !! "float", or "double".
+  character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+  integer, intent(in), optional :: domain_position !< Domain position.
+
+  if (.not. fileobj%is_readonly) then
+    call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+  endif
+  call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
+  call add_domain_attribute(fileobj, variable_name)
 end subroutine register_domain_variable
 
 

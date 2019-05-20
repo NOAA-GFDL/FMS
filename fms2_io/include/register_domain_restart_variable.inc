@@ -12,6 +12,7 @@ subroutine register_domain_restart_variable_0d(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
   call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
+  call add_domain_attribute(fileobj, variable_name)
 end subroutine register_domain_restart_variable_0d
 
 
@@ -29,6 +30,7 @@ subroutine register_domain_restart_variable_1d(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
   call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
+  call add_domain_attribute(fileobj, variable_name)
 end subroutine register_domain_restart_variable_1d
 
 
@@ -46,6 +48,7 @@ subroutine register_domain_restart_variable_2d(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
   call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
+  call add_domain_attribute(fileobj, variable_name)
 end subroutine register_domain_restart_variable_2d
 
 
@@ -63,6 +66,7 @@ subroutine register_domain_restart_variable_3d(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
   call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
+  call add_domain_attribute(fileobj, variable_name)
 end subroutine register_domain_restart_variable_3d
 
 
@@ -80,6 +84,7 @@ subroutine register_domain_restart_variable_4d(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
   call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
+  call add_domain_attribute(fileobj, variable_name)
 end subroutine register_domain_restart_variable_4d
 
 
@@ -97,4 +102,5 @@ subroutine register_domain_restart_variable_5d(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions,is_optional)
   call append_domain_decomposed_variable(fileobj, variable_name, domain_position)
+  call add_domain_attribute(fileobj, variable_name)
 end subroutine register_domain_restart_variable_5d
