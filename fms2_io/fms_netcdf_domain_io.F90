@@ -331,10 +331,12 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
                              is_restart)
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
     if (success) then
-      success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
-                                  is_restart)
-      if (success2) then
-        call error("you have both combined and distributed files.")
+      if (.not. string_compare(distributed_filepath, combined_filepath)) then
+        success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
+                                    is_restart)
+        if (success2) then
+          call error("you have both combined and distributed files.")
+        endif
       endif
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
