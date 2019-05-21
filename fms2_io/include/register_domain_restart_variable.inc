@@ -25,6 +25,9 @@ subroutine register_domain_restart_variable_1d(fileobj, variable_name, vdata, &
                                                !! if a variable does not exist.
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  if (.not. fileobj%is_readonly) then
+    call add_domain_attribute(fileobj, variable_name)
+  endif
 end subroutine register_domain_restart_variable_1d
 
 
