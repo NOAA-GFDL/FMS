@@ -293,13 +293,12 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   integer, dimension(2) :: io_layout
   integer, dimension(1) :: tile_id
   character(len=256) :: combined_filepath
-  logical :: found_combined_file
   type(domain2d), pointer :: io_domain
   character(len=256) :: distributed_filepath
-  logical :: found_distributed_file
-  character(len=256) :: filepath
   integer :: pelist_size
   integer, dimension(:), allocatable :: pelist
+  logical :: success2
+  type(FmsNetcdfDomainFile_t) :: fileobj2
 
   !Get the path of a "combined" file.
   io_layout = mpp_get_io_domain_layout(domain)
@@ -309,7 +308,6 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   else
     call string_copy(combined_filepath, path)
   endif
-  found_combined_file = file_exists(combined_filepath)
 
   !Get the path of a "distributed" file.
   io_domain => mpp_get_io_domain(domain)
@@ -322,39 +320,34 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   else
     call string_copy(distributed_filepath, combined_filepath)
   endif
-  found_distributed_file = file_exists(distributed_filepath)
-
-  !Make sure there are not distributed and combined files with the same basename.
-  if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
-    if (.not. string_compare(distributed_filepath, combined_filepath) .and. &
-        found_distributed_file .and. found_combined_file) then
-      call error("found both distributed and combined "//trim(path)//" files.")
-    endif
-    if (found_distributed_file) then
-      call string_copy(filepath, distributed_filepath)
-    else
-      call string_copy(filepath, combined_filepath)
-    endif
-  else
-    call string_copy(filepath, distributed_filepath)
-  endif
-
-  !Determine the correct file path.
-  call string_copy(fileobj%non_mangled_path, path)
 
   !Make sure the input domain has an I/O domain and get its pelist.
   pelist_size = mpp_get_domain_npes(io_domain)
   allocate(pelist(pelist_size))
   call mpp_get_pelist(io_domain, pelist)
 
-  !Attempt to open the file.
-  success = netcdf_file_open(fileobj, filepath, mode, nc_format, pelist, is_restart)
+  !Open the distibuted files.
+  success = netcdf_file_open(fileobj, distributed_filepath, mode, nc_format, pelist, &
+                             is_restart)
+  if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
+    if (success) then
+      success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
+                                  is_restart)
+      if (success2) then
+        call error("you have both combined and distributed files.")
+      endif
+    else
+      success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
+                                 is_restart)
+    endif
+  endif
   if (.not. success) then
     deallocate(pelist)
     return
   endif
 
   !Store/initialize necessary properties.
+  call string_copy(fileobj%non_mangled_path, path)
   fileobj%domain = domain
   allocate(fileobj%xdims(max_num_domain_decomposed_dims))
   fileobj%nx = 0
