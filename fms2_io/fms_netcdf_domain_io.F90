@@ -330,14 +330,16 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
         found_distributed_file .and. found_combined_file) then
       call error("found both distributed and combined "//trim(path)//" files.")
     endif
+    if (found_distributed_file) then
+      call string_copy(filepath, distributed_filepath)
+    else
+      call string_copy(filepath, combined_filepath)
+    endif
+  else
+    call string_copy(filepath, distributed_filepath)
   endif
 
   !Determine the correct file path.
-  if (found_distributed_file) then
-    call string_copy(filepath, distributed_filepath)
-  else
-    call string_copy(filepath, combined_filepath)
-  endif
   call string_copy(fileobj%non_mangled_path, path)
 
   !Make sure the input domain has an I/O domain and get its pelist.
