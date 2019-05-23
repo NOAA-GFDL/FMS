@@ -44,15 +44,15 @@ program test
 #endif
 
   !--- namelist definition
-  integer           :: nx=128, ny=128, nz=40, nt=2
-  integer           :: halo=2, stackmax=1500000, stackmaxd=500000
+  integer           :: nx=360, ny=200, nz=50, nt=2
+  integer           :: halo=2, stackmax=1500000, stackmaxd=2000000
   logical           :: debug=.FALSE.  
   character(len=64) :: file='test', iospec='-F cachea'
-  integer           :: layout(2) = (/0,0/)
+  integer           :: layout(2) = (/1,1/)
   integer           :: ntiles_x=1, ntiles_y=1  ! total number of tiles will be ntiles_x*ntiles_y,
                                                ! the grid size for each tile will be (nx/ntiles_x, ny/ntiles_y) 
                                                ! set ntiles > 1 to test the efficiency of mpp_io.
-  integer           :: io_layout(2) = (/0,0/)  ! set io_layout to divide each tile into io_layout(1)*io_layout(2)
+  integer           :: io_layout(2) = (/1,1/)  ! set io_layout to divide each tile into io_layout(1)*io_layout(2)
                                                ! group and write out data from the root pe of each group.
   integer           :: pack_size = 1
 
