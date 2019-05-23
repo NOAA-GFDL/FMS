@@ -291,7 +291,7 @@ function has_domain_tile_string(string) &
     l = len_trim(string)
     i = i + 1
     do while (i .le. l)
-      if (verify(string(i:i), ".")) then
+      if (verify(string(i:i), ".") .eq. 0) then
         has_string = .true.
         exit
       elseif (verify(string(i:i), "0123456789") .ne. 0) then

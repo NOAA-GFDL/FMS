@@ -321,8 +321,12 @@ function attribute_exists(ncid, varid, attribute_name) &
   integer :: err
 
   err = nf90_inquire_attribute(ncid, varid, trim(attribute_name))
-  att_exists = err .ne. nf90_enotatt
-  call check_netcdf_code(err)
+  if (err .eq. nf90_enotatt) then
+    att_exists = .false.
+  else
+    call check_netcdf_code(err)
+    att_exists = .true.
+  endif
 end function attribute_exists
 
 
