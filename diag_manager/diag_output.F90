@@ -55,9 +55,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write, mpp_get_field_name
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
-       & domainUG, null_domainUG,&
+       & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
        & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
-  USE mpp_mod, ONLY: mpp_npes, mpp_pe
+  USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
        & get_domainUG, get_diag_axis_name
@@ -105,6 +105,13 @@ use legacy_mod
 
   ! Include variable "version" to be written to log file.
   character(len=*), parameter :: version = 'unknown'
+
+
+  interface diag_field_write
+     module procedure diag_field_write_field
+     module procedure diag_field_write_varname
+  end interface
+
 CONTAINS
 
   ! <SUBROUTINE NAME="diag_output_init">
@@ -201,8 +208,11 @@ CONTAINS
        CALL mpp_open(file_unit, file_name, action=MPP_OVERWR, form=form,&
             & threading=threading, fileset=fileset)
        fileob => fileobj
-        if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, "TESTND"//trim(fname_no_tile)//".nc", "overwrite", &
+!        if (.not.check_if_open(fileob) .and. mpp_pe() == mpp_root_pe()) then
+        if (.not.check_if_open(fileob)) then
+               call open_check(open_file(fileobj, "TESTND"//trim(fname_no_tile)//".nc", "overwrite", &
                             nc_format="64bit", is_restart=.false.))
+        endif
        fnum_domain = "nd" ! no domain
     END IF
 
@@ -272,6 +282,7 @@ CONTAINS
     INTEGER              :: axis_direction, axis_edges
     REAL, ALLOCATABLE    :: axis_data(:)
     INTEGER, ALLOCATABLE :: axis_extent(:), pelist(:)
+integer :: domain_size, axis_length, axis_pos
     INTEGER              :: num_attributes
     TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE :: attributes
     INTEGER              :: calendar, id_axis, id_time_axis
@@ -331,7 +342,7 @@ CONTAINS
 
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
             & axis_cart_name, axis_direction, axis_edges, Domain, DomainU, axis_data,&
-            & num_attributes, attributes)
+            & num_attributes, attributes, pos=axis_pos)
 
        IF ( Domain .NE. null_domain1d ) THEN
           IF ( length > 0 ) THEN
@@ -342,13 +353,19 @@ CONTAINS
                 if (present(fileob))then
                   select type (fptr)
                     type is (FmsNetcdfDomainFile_t)
-                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)) )
+                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
                       if (allocated(fptr%pelist)) then
                          call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
                          call register_field(fptr, axis_name, "double", (/axis_name/) )
                          call register_variable_attribute(fptr, axis_name, "units", axis_units)
                          call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                          call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
+                         select case (axis_direction)
+                              case (1)
+                                   call register_variable_attribute(fptr, axis_name, "positive", "up")
+                              case (-1)
+                                   call register_variable_attribute(fptr, axis_name, "positive", "down")
+                         end select 
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     class default
@@ -364,7 +381,7 @@ CONTAINS
              if (present(fileob))then
                select type (fptr)
                     type is (FmsNetcdfDomainFile_t)
-                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)) )
+                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
                       if (allocated(fptr%pelist)) then
                          call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
                          call register_field(fptr, axis_name, "double", (/axis_name/) )
@@ -379,6 +396,12 @@ CONTAINS
                     call register_variable_attribute(fileob, axis_name, "long_name", axis_long_name)
                     call register_variable_attribute(fileob, axis_name, "units", axis_units)
                     call register_variable_attribute(fileob, axis_name, "cartesian_axis",trim(axis_cart_name))
+                    select case (axis_direction)
+                         case (1)
+                              call register_variable_attribute(fptr, axis_name, "positive", "up")
+                         case (-1)
+                              call register_variable_attribute(fptr, axis_name, "positive", "down")
+                    end select 
                     call write_data(fileob, axis_name, axis_data(istart:iend) )
              endif
           END IF
@@ -432,6 +455,7 @@ CONTAINS
                         call register_field(fptr, axis_name, "double", (/axis_name/) )
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
+                        call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
                         call write_data(fptr, axis_name, axis_data)
                    class default
                         call error_mesg("diag_output_mod::write_axis_meta_data", &
@@ -454,6 +478,13 @@ CONTAINS
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
+                        select case (axis_direction)
+                             case (1)
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                             case (-1)
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                        end select
+                        call write_data(fptr, axis_name, axis_data)
                    type is (FmsNetcdfDomainFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
@@ -461,6 +492,12 @@ CONTAINS
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
+                        select case (axis_direction)
+                             case (1)
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                             case (-1)
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                        end select 
                         call write_data(fptr, axis_name, axis_data)
                     endif
                    class default
@@ -483,7 +520,7 @@ CONTAINS
                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
 
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                         call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
+                        call register_variable_attribute(fptr, axis_name, "cartesian_axis",trim(axis_cart_name))
                         is_time_axis_registered = .true. 
                         if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
                    type is (FmsNetcdfUnstructuredDomainFile_t)
@@ -690,7 +727,6 @@ character(len=128),dimension(size(axes)) :: axis_names
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
     logical :: use_UGdomain_local
-
     !---- Initialize err_msg to bank ----
     err_msg = ''
 
@@ -832,18 +868,45 @@ character(len=128),dimension(size(axes)) :: axis_names
     END IF
  if (present(fileob)) then
   if (.not. variable_exists(fileob,name)) then
-     call register_field(fileob,name,"double",axis_names)
+  ! ipack Valid values:
+  !        1 = 64bit </LI>
+  !        2 = 32bit </LI>
+  !        4 = 16bit </LI>
+  !        8 =  8bit </LI>
+     select case (ipack)
+     case (1)
+          call register_field(fileob,name,"double",axis_names)
+          IF ( Field%miss_present ) THEN
+               call register_variable_attribute(fileob,name,"_FillValue",real(Field%miss_pack,8))
+               call register_variable_attribute(fileob,name,"missing_value",real(Field%miss_pack,8))
+          ELSE
+               call register_variable_attribute(fileob,name,"_FillValue",real(CMOR_MISSING_VALUE,8))
+               call register_variable_attribute(fileob,name,"missing_value",real(CMOR_MISSING_VALUE,8))
+          ENDIF
+     case (2) !default
+          call register_field(fileob,name,"float",axis_names)
+          IF ( Field%miss_present ) THEN
+               call register_variable_attribute(fileob,name,"_FillValue",real(Field%miss_pack,4))
+               call register_variable_attribute(fileob,name,"missing_value",real(Field%miss_pack,4))
+          ELSE
+               call register_variable_attribute(fileob,name,"_FillValue",real(CMOR_MISSING_VALUE,4))
+               call register_variable_attribute(fileob,name,"missing_value",real(CMOR_MISSING_VALUE,4))
+          ENDIF
+     case default
+          CALL error_mesg('diag_output_mod::write_field_meta_data',&
+               &"Pack values must be 1 or 2. Contact the developers.", FATAL)
+     end select
      call register_variable_attribute(fileob,name,"units",units)
      call register_variable_attribute(fileob,name,"long_name",long_name)
-     IF ( Field%miss_present ) THEN
-          call register_variable_attribute(fileob,name,"_FillValue",Field%miss_pack)
-          call register_variable_attribute(fileob,name,"missing_value",Field%miss_pack)
-     ELSE
-          call register_variable_attribute(fileob,name,"_FillValue",CMOR_MISSING_VALUE)
-          call register_variable_attribute(fileob,name,"missing_value",CMOR_MISSING_VALUE)
-     ENDIF
+!    IF ( Field%miss_present ) THEN
+!         call register_variable_attribute(fileob,name,"_FillValue",Field%miss_pack)
+!         call register_variable_attribute(fileob,name,"missing_value",Field%miss_pack)
+!    ELSE
+!         call register_variable_attribute(fileob,name,"_FillValue",CMOR_MISSING_VALUE)
+!         call register_variable_attribute(fileob,name,"missing_value",CMOR_MISSING_VALUE)
+!    ENDIF
      IF ( use_range ) then
-          call register_variable_attribute(fileob,name,"valid_range", RANGE)
+          call register_variable_attribute(fileob,name,"valid_range", real(RANGE,4))
      ENDIF
      IF (present(time_method) ) then
           call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method))
@@ -854,7 +917,7 @@ character(len=128),dimension(size(axes)) :: axis_names
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
-             CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg, fileob=fileob)
+             CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg, fileob=fileob, varname=name)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & TRIM(err_msg)//" Contact the developers.", FATAL)
@@ -963,7 +1026,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
           END IF
           CALL mpp_write_meta(file_unit, id, TRIM(attributes(i)%name),&
                & rval=attributes(i)%fatt)
-          if (present(fileob).and.present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , attributes(i)%fatt)
+          if (present(fileob).and.present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , real(attributes(i)%fatt,4) )
        CASE (NF90_CHAR)
           att_str = attributes(i)%catt
           att_len = attributes(i)%len
@@ -1013,8 +1076,8 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
     num_axis_in_file = 0
   END SUBROUTINE done_meta_data
 
-  !> \description Outputs the diagnostic data to a file using fms2_io
-  subroutine diag_field_write (field, buffer, fileob, file_num, fileobjU, fileobj, fnum_for_domain)
+  !> \description Outputs the diagnostic data to a file using fms2_io taking a field object as input
+  subroutine diag_field_write_field (field, buffer, fileob, file_num, fileobjU, fileobj, fnum_for_domain)
     TYPE(diag_fieldtype), INTENT(inout) :: Field
     REAL , INTENT(inout) :: buffer(:,:,:,:)
     class(FmsNetcdfFile_t), intent(inout),optional :: fileob 
@@ -1022,14 +1085,24 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
     type(FmsNetcdfUnstructuredDomainFile_t),intent(inout),optional :: fileobjU(:)
     type(FmsNetcdfDomainFile_t),intent(inout),optional :: fileobj(:)
     character(len=2), intent(in), optional :: fnum_for_domain
+    real(kind=4),allocatable :: local_buffer(:,:,:,:)
      if (present(fileob)) then !> Write output to the fileob file
           call write_data (fileob,trim(mpp_get_field_name(field%field)),buffer)
      elseif (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fnum_for_domain)) then
+          allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,3),size(buffer,4)))
+          local_buffer = real(buffer,4)
      !> Figure out which file object to write output to
-          if (fnum_for_domain == "2d" .or. fnum_for_domain == "nd") then
-               call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), buffer)
+!          if (fnum_for_domain == "2d" .or. fnum_for_domain == "nd") then
+          if (fnum_for_domain == "2d" ) then
+               if (check_if_open(fileobj(file_num))) then
+                    call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+               endif
+          elseif (fnum_for_domain == "nd") then
+               if (check_if_open(fileobj(file_num)) .and. mpp_pe() == mpp_root_pe() ) then
+                    call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+               endif
           elseif (fnum_for_domain == "ug") then
-               call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), buffer)
+               call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), local_buffer)
           else
                call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
           endif
@@ -1039,7 +1112,43 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
      else
           call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
      endif
-  end subroutine diag_field_write
+     if (allocated(local_buffer)) deallocate(local_buffer)
+  end subroutine diag_field_write_field
+!> \brief Writes diagnostic data out using fms2_io routine.
+  subroutine diag_field_write_varname (varname, buffer, fileob, file_num, fileobjU, fileobj, fnum_for_domain)
+    CHARACTER(len=*), INTENT(in) :: varname
+    REAL , INTENT(inout) :: buffer(:,:,:,:)
+    class(FmsNetcdfFile_t), intent(inout),optional :: fileob
+    integer, intent(in), optional  :: file_num
+    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout),optional :: fileobjU(:)
+    type(FmsNetcdfDomainFile_t),intent(inout),optional :: fileobj(:)
+    character(len=2), intent(in), optional :: fnum_for_domain
+    real(kind=4),allocatable :: local_buffer(:,:,:,:)
+     if (present(fileob)) then !> Write output to the fileob file
+          call write_data (fileob,trim(varname),buffer)
+     elseif (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fnum_for_domain)) then
+!          allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,3),size(buffer,4)))
+!          local_buffer = real(buffer,4)
+     !> Figure out which file object to write output to
+          if (fnum_for_domain == "2d" .or. fnum_for_domain == "nd") then
+               if (check_if_open(fileobj(file_num))) then
+                    call write_data (fileobj (file_num), trim(varname), buffer)
+!                    call write_data (fileobj (file_num), trim(varname), local_buffer)
+               endif
+          elseif (fnum_for_domain == "ug") then
+               call write_data (fileobjU(file_num), trim(varname), buffer)
+!               call write_data (fileobjU(file_num), trim(varname), local_buffer)
+          else
+               call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
+          endif
+     elseif (present(file_num) ) then
+          call error_mesg("diag_field_write","When FILE_NUM is used to determine which file object to use,"&
+           //" You must also include fileobjU, fileobj, and fnum_for_domain",fatal)
+     else
+          call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
+     endif
+!     if (allocated(local_buffer)) deallocate(local_buffer)
+  end subroutine diag_field_write_varname
 
   ! </SUBROUTINE>
 
