@@ -2511,8 +2511,8 @@ CONTAINS
     ! get file_unit, open new file and close curent file if necessary
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) CALL check_and_open(file, time, do_write)
     IF ( .NOT.do_write ) RETURN  ! no need to write data
-    CALL diag_field_out(files(file)%file_unit, output_fields(field)%f_type, dat, dif)
-    call diag_field_write (output_fields(field)%f_type, dat, file_num=file, fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
+!    CALL diag_field_out(files(file)%file_unit, output_fields(field)%f_type, dat, dif)
+    call diag_field_write (output_fields(field)%output_name, dat, file_num=file, fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
     ! record number of bytes written to this file
     files(file)%bytes_written = files(file)%bytes_written +&
          & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)
@@ -2535,20 +2535,20 @@ CONTAINS
           IF ( num == field ) THEN
              ! Output the axes if this is first time-averaged field
              time_data(1, 1, 1, 1) = start_dif
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_start, time_data(1:1,:,:,:), dif)
+!             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_start, time_data(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_start, time_data(1:1,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
              time_data(2, 1, 1, 1) = end_dif
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_end, time_data(2:2,:,:,:), dif)
+!             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_end, time_data(2:2,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_end, time_data(2:2,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
              ! Compute the length of the average
              dt_time(1, 1, 1, 1) = end_dif - start_dif
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
+!             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_nitems, dt_time(1:1,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
              ! Include boundary variable for CF compliance
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)
+!             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)
              call diag_field_write (files(file)%f_bounds, time_data(1:2,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
              EXIT
