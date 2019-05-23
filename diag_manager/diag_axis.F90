@@ -258,7 +258,7 @@ CONTAINS
        Axes(diag_axis_init)%cart_name = TRIM(uppercase(cart_name))
     ELSE
        ! <ERROR STATUS="FATAL">Invalid cart_name name.</ERROR>
-       CALL error_mesg('diag_axis_mod::diag_axis_init', 'Invalid cart_name name.', FATAL)
+       CALL error_mesg('diag_axis_mod::diag_axis_init', 'Invalid cart_name name. '//TRIM(uppercase(cart_name)), FATAL)
     END IF
 
     !---- allocate storage for coordinate values of axis ----
@@ -309,7 +309,6 @@ CONTAINS
     ELSE
        Axes(diag_axis_init)%pos = CENTER
     END IF
-
 
     !---- axis direction (-1, 0, or +1) ----
     IF ( PRESENT(direction) )THEN
