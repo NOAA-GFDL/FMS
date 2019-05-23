@@ -856,7 +856,7 @@ subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
       dim_len = sum(npes_count)
     endif
   endif
-  if (fileobj%is_root) then
+  if (fileobj%is_root .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
     call check_netcdf_code(err)
