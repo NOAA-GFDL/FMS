@@ -1,6 +1,25 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 program test_time_manager
 
- use          mpp_mod, only: input_nml_file
+ use          mpp_mod, only: input_nml_file, mpp_error, NOTE, FATAL
  use          fms_mod, only: fms_init, fms_end, stderr
  use          fms_mod, only: open_namelist_file, check_nml_error, close_file, open_file
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
@@ -27,6 +46,7 @@ program test_time_manager
  character(len=8),  allocatable, dimension(:) :: test_time
  character(len=23), allocatable, dimension(:) :: test_date
  character(len=8) :: test_name
+ character(len=256) :: out_msg
 
 logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true.,test8 =.true.
 logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true.,test16=.true.
@@ -83,13 +103,13 @@ logical :: test17=.true.,test18=.true.,test19=.true.
    if(err_msg /= '') then
      write(outunit,'(a)') ' test2.3 successful: '//trim(err_msg)
    else
-     write(outunit,'(a,i2,a,i8)') ' test2.3 fails. days=',day,' seconds=',sec
+     call mpp_error(FATAL, "ERROR: test2.3 fails, did not get expected error message")
    endif
    call get_time(Time, sec, err_msg=err_msg)
    if(err_msg /= '') then
      write(outunit,'(a)') ' test2.4 successful: '//trim(err_msg)
    else
-     write(outunit,'(a,i8)') ' test2.4 fails.  seconds=',sec
+     call mpp_error(FATAL, "ERROR: test2.4 fails, did not get expected error message")
    endif
  endif
  !==============================================================================================
@@ -128,10 +148,10 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     if(set_time(seconds=1, days=1, ticks=2) > set_time(seconds=1, days=1, ticks=1)) then
       write(outunit,'("test3.8 successful")')
     else
-      write(outunit,'("test3.8 fails")')
+      call mpp_error(FATAL, "ERROR: test3.8 fails, did not get expected result")
     endif
     if(set_time(seconds=1, days=1, ticks=2) > set_time(seconds=1, days=1, ticks=2)) then
-      write(outunit,'("test3.9 fails")')
+      call mpp_error(FATAL, "ERROR: test3.9 fails, did not get expected result")
     else
       write(outunit,'("test3.9 successful")')
     endif
@@ -140,10 +160,10 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     if(set_time(seconds=1, days=1, ticks=1) < set_time(seconds=1, days=1, ticks=2)) then
       write(outunit,'("test3.10 successful")')
     else
-      write(outunit,'("test3.10 fails")')
+      call mpp_error(FATAL, "ERROR: test3.10 fails, did not get expected result")
     endif
     if(set_time(seconds=1, days=1, ticks=2) < set_time(seconds=1, days=1, ticks=2)) then
-      write(outunit,'("test3.11 fails")')
+      call mpp_error(FATAL, "ERROR: test3.11 fails, did not get expected result")
     else
       write(outunit,'("test3.11 successful")')
     endif
@@ -152,10 +172,10 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     if(set_time(seconds=1, days=1, ticks=1) == set_time(seconds=1, days=1, ticks=1)) then
       write(outunit,'("test3.12 successful")')
     else
-      write(outunit,'("test3.12 fails")')
+      call mpp_error(FATAL, "ERROR: test3.12 fails, did not get expected result")
     endif
     if(set_time(seconds=1, days=1, ticks=1) == set_time(seconds=1, days=1, ticks=2)) then
-      write(outunit,'("test3.13 fails")')
+      call mpp_error(FATAL, "ERROR: test3.13 fails, did not get expected result")
     else
       write(outunit,'("test3.13 successful")')
     endif
@@ -176,7 +196,8 @@ logical :: test17=.true.,test18=.true.,test19=.true.
      if(err_msg == '') then
        call print_time(Time, test_name//':', unit=outunit)
      else
-       write(outunit,'(a)') test_name//' fails: '//trim(err_msg)
+       out_msg = test_name // ' fails: ' // trim(err_msg)
+       call mpp_error(FATAL, out_msg)
      endif
    enddo
 
@@ -187,7 +208,8 @@ logical :: test17=.true.,test18=.true.,test19=.true.
      if(err_msg /= '') then
        write(outunit,'(a)') test_name//' successful: '//trim(err_msg)
      else
-       write(outunit,'(a)') test_name//' fails '
+       out_msg = test_name // ' fails: did not get expected error message'
+       call mpp_error(FATAL, out_msg)
      endif
    enddo
  endif
@@ -203,7 +225,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
    call print_time(set_date(1980, 1, 2, tick=6),' test5.3:', unit=outunit)
    Time = set_date(1980, 1, 2, tick=10, err_msg=err_msg)
    if(err_msg == '') then
-     write(outunit,'(a)') ' test5.4 fails'
+     call mpp_error(FATAL, 'Test5.4 fails: did not get expected error')
    else
      write(outunit,'(a)') ' test5.4 successful: '//trim(err_msg)
    endif
@@ -224,21 +246,22 @@ logical :: test17=.true.,test18=.true.,test19=.true.
      if(err_msg == '') then
        call print_time(Time,test_name//' successful:', unit=outunit)
      else
-       write(outunit,'(a)') test_name//'fails: '//trim(err_msg)
+       out_msg = test_name // ' fails: ' // trim(err_msg)
+       call mpp_error(FATAL, out_msg)
      endif
    enddo
    call set_calendar_type(THIRTY_DAY_MONTHS)
    call print_time(set_date('1900-02-30 00:00:00'),'test6.7:', unit=outunit)
    Time = set_date('1900-01-31 00:00:00', err_msg=err_msg)
    if(err_msg == '') then
-     write(outunit,'(a)') 'test6.8 fails'
+     call mpp_error(FATAL, 'Test6.8 fails: did not get expected error')
    else
      write(outunit,'(a)') 'test6.8 successful '//trim(err_msg)
    endif
    call set_calendar_type(JULIAN)
    Time = set_date('1901-02-29 00:00:00', err_msg=err_msg)
    if(err_msg == '') then
-     write(outunit,'(a)') 'test6.9 fails'
+     call mpp_error(FATAL, 'Test6.9 fails: did not get expected error')
    else
      write(outunit,'(a)') 'test6.9 successful '//trim(err_msg)
    endif
@@ -310,13 +333,14 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     if(err_msg == '') then
       call print_time(Time, 'test8.1 successful', unit=outunit)
     else
-      write(outunit,'(a)') 'test8.1 fails: '//trim(err_msg)
+       out_msg = 'test8.1 fails: ' // trim(err_msg)
+       call mpp_error(FATAL, out_msg)
     endif
 
     call set_calendar_type(NOLEAP)
     Time = set_date('1904-02-29 00:00:00', err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test8.2 fails'
+       call mpp_error(FATAL, 'test8.2 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test8.2 successful: '//trim(err_msg)
     endif
@@ -324,7 +348,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     call set_calendar_type(GREGORIAN)
     Time = set_date('1900-02-29 00:00:00', err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test8.3 fails'
+       call mpp_error(FATAL, 'test8.3 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test8.3 successful: '//trim(err_msg)
     endif
@@ -332,7 +356,8 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     if(err_msg == '') then
       write(outunit,'(a)') 'test8.4 successful'
     else
-      write(outunit,'(a)') 'test8.4 fails: '//trim(err_msg)
+       out_msg = 'test8.4 fails: ' // trim(err_msg)
+       call mpp_error(FATAL, out_msg)
     endif
 
     call set_calendar_type(JULIAN)
@@ -340,11 +365,12 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     if(err_msg == '') then
       write(outunit,'(a)') 'test8.5 successful'
     else
-      write(outunit,'(a)') 'test8.5 fails: '//trim(err_msg)
+       out_msg = 'test8.5 fails: ' // trim(err_msg)
+       call mpp_error(FATAL, out_msg)
     endif
     Time = set_date('1901-02-29 00:00:00', err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test8.6 fails'
+       call mpp_error(FATAL, 'test8.6 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test8.6 successful: '//trim(err_msg)
     endif
@@ -367,7 +393,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     Time = set_time(seconds=2, days=1, ticks=1)
     call get_time(Time, seconds=sec, days=day, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test10.1 fails'
+       call mpp_error(FATAL, 'test10.1 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test10.1 successful: '//trim(err_msg)
     endif
@@ -375,7 +401,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     Time = set_time(seconds=2, days=1, ticks=1)
     call get_date(Time, yr, mo, day, hr, min, sec, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test10.2 fails'
+       call mpp_error(FATAL, 'test10.2 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test10.2 successful: '//trim(err_msg)
     endif
@@ -407,7 +433,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     write(outunit,'(/,a)') '#################################  test13  #################################'
     Time = set_time(seconds= 2, days=0, ticks=-21, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test13.1 fails'
+       call mpp_error(FATAL, 'test13.1 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test13.1 successful: '//trim(err_msg)
     endif
@@ -457,21 +483,21 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     call set_calendar_type(GREGORIAN)
     Time = set_date(1900, 1, 32, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.1 fails'
+       call mpp_error(FATAL, 'test16.1 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.1 successful: '//trim(err_msg)
     endif
 
     Time = set_date(1900, 4, 31, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.2 fails'
+       call mpp_error(FATAL, 'test16.2 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.2 successful: '//trim(err_msg)
     endif
 
     Time = set_date(1900, 2, 29, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.3 fails'
+       call mpp_error(FATAL, 'test16.3 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.3 successful: '//trim(err_msg)
     endif
@@ -479,7 +505,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     call set_calendar_type(JULIAN)
     Time = set_date(1900, 1, 0, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.4 fails'
+       call mpp_error(FATAL, 'test16.4 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.4 successful: '//trim(err_msg)
     endif
@@ -487,14 +513,14 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     call set_calendar_type(NOLEAP)
     Time = set_date(1900, 0, 1, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.5 fails'
+       call mpp_error(FATAL, 'test16.5 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.5 successful: '//trim(err_msg)
     endif
 
     Time = set_date(1900, 1, 1, tick=11, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.6 fails'
+       call mpp_error(FATAL, 'test16.6 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.6 successful: '//trim(err_msg)
     endif
@@ -502,14 +528,14 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     call set_calendar_type(THIRTY_DAY_MONTHS)
     Time = set_date(1900, 13, 1, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.7 fails'
+       call mpp_error(FATAL, 'test16.7 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.7 successful: '//trim(err_msg)
     endif
 
     Time = set_date(1900, 12, 31, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.8 fails'
+       call mpp_error(FATAL, 'test16.8 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.8 successful: '//trim(err_msg)
     endif
@@ -517,7 +543,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     call set_calendar_type(JULIAN)
     Time = set_date(1900, 4, 31, err_msg=err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test16.9 fails'
+       call mpp_error(FATAL, 'test16.9 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test16.9 successful: '//trim(err_msg)
     endif
@@ -571,7 +597,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     call print_time(real_to_time_type(86401.1), 'real_to_time_type(86401.1):', unit=outunit)
     Time = real_to_time_type(-1.0, err_msg)
     if(err_msg == '') then
-      write(outunit,'(a)') 'test of real_to_time_type fails'
+       call mpp_error(FATAL, 'test19.3 fails: did not get the expected error message')
     else
       write(outunit,'(a)') 'test successful: '//trim(err_msg)
     endif
