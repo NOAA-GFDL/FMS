@@ -83,7 +83,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
        & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
-       & DIAG_FIELD_NOT_FOUND, diag_init_time, fileobjU, fileobj, fnum_for_domain
+       & DIAG_FIELD_NOT_FOUND, diag_init_time, fileobjU, fileobj, fnum_for_domain, fileobjND
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
@@ -1960,12 +1960,12 @@ CONTAINS
     IF ( _ALLOCATED(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
             & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
-            & fileobj(file),fileobjU(file), fnum_for_domain(file),&
+            & fileobj(file),fileobjU(file), fileobjND(file), fnum_for_domain(file),&
             & attributes=files(file)%attributes(1:files(file)%num_attributes))
     ELSE
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
             & files(file)%file_unit, all_scalar_or_1d, domain2,domainU, &
-            & fileobj(file),fileobjU(file),fnum_for_domain(file))
+            & fileobj(file),fileobjU(file),fileobjND(file),fnum_for_domain(file))
     END IF
     !> update fnum_for_domain with the correct domain
 !     fnum_for_domain(file) = fnum_domain
@@ -2041,8 +2041,11 @@ CONTAINS
           allocate(files(file)%is_time_axis_registered)
           files(file)%is_time_axis_registered = .false.
        endif
-       if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+       if (fnum_for_domain(file) == "2d") then
           CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobj(file), time_ops=time_ops, &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+       elseif (fnum_for_domain(file) == "nd") then
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobjnd(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "ug") then
           CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobjU(file), time_ops=time_ops, &
@@ -2050,8 +2053,11 @@ CONTAINS
        endif
        IF ( time_ops ) THEN
           axes(num_axes + 2) = files(file)%time_bounds_id
-          if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+          if (fnum_for_domain(file) == "2d") then
               CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobj(file), &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+       elseif (fnum_for_domain(file) == "nd") then
+              CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobjND(file), &
                                    time_axis_registered=files(file)%is_time_axis_registered)
           elseif (fnum_for_domain(file) == "ug") then
               CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobjU(file), &
@@ -2063,8 +2069,11 @@ CONTAINS
        DO k = 1, num_axes
           IF (axis_is_compressed(axes(k))) THEN
              CALL get_compressed_axes_ids(axes(k), axesc) ! returns allocatable array
-             if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+             if (fnum_for_domain(file) == "2d" ) then
                  CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobj(file), &
+                                   time_axis_registered=files(file)%is_time_axis_registered)
+             elseif (fnum_for_domain(file) == "nd") then
+                 CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobjND(file), &
                                    time_axis_registered=files(file)%is_time_axis_registered)
              elseif (fnum_for_domain(file) == "ug") then
                  CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobjU(file), &
@@ -2146,8 +2155,10 @@ CONTAINS
           avg = " "
        END IF
 ! Use the correct file object
-       if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
+       if (fnum_for_domain(file) == "2d") then
           fileob => fileobj (file)
+       elseif (fnum_for_domain(file) == "nd") then
+          fileob => fileobjND(file)
        elseif (fnum_for_domain(file) == "ug") then
           fileob => fileobjU(file)
        endif
@@ -2512,7 +2523,8 @@ CONTAINS
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) CALL check_and_open(file, time, do_write)
     IF ( .NOT.do_write ) RETURN  ! no need to write data
 !    CALL diag_field_out(files(file)%file_unit, output_fields(field)%f_type, dat, dif)
-    call diag_field_write (output_fields(field)%output_name, dat, file_num=file, fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
+    call diag_field_write (output_fields(field)%output_name, dat, file_num=file, fileobjU=fileobjU, &
+                         fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
     ! record number of bytes written to this file
     files(file)%bytes_written = files(file)%bytes_written +&
          & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)
@@ -2537,20 +2549,20 @@ CONTAINS
              time_data(1, 1, 1, 1) = start_dif
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_start, time_data(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_start, time_data(1:1,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
              time_data(2, 1, 1, 1) = end_dif
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_end, time_data(2:2,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_end, time_data(2:2,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
              ! Compute the length of the average
              dt_time(1, 1, 1, 1) = end_dif - start_dif
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_nitems, dt_time(1:1,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
              ! Include boundary variable for CF compliance
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)
              call diag_field_write (files(file)%f_bounds, time_data(1:2,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
              EXIT
           END IF
        END IF
@@ -2659,10 +2671,14 @@ CONTAINS
       ! called)
       CALL mpp_close(files(file)%file_unit)
 !! New FMS_IO close
-      if (fnum_for_domain(file) == "2d" .or. fnum_for_domain(file) == "nd") then
-          call close_file (fileobj(file) )
+      if (fnum_for_domain(file) == "2d" )then!.or. (fnum_for_domain(file) == "nd" .and. mpp_pe() == mpp_root_pe()) ) then
+          if (check_if_open(fileobj(file))) call close_file (fileobj(file) )
+      elseif (fnum_for_domain(file) == "nd") then
+          if (check_if_open(fileobjND(file)) .and. mpp_pe() == mpp_root_pe() ) then
+               call close_file (fileobjND(file))
+          endif
       elseif (fnum_for_domain(file) == "ug") then
-          call close_file (fileobjU(file))
+          if (check_if_open(fileobjU(file))) call close_file (fileobjU(file))
       endif
       files(file)%file_unit = -1
     END IF

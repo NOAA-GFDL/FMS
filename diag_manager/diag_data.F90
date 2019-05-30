@@ -788,6 +788,7 @@ use fms2_io_mod
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
     type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
     type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
+    type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
     character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
 
   ! <!-- Even More Variables -->

@@ -230,7 +230,7 @@ MODULE diag_manager_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & write_manifest_file, fileobj, fileobjU, fnum_for_domain
+       & write_manifest_file, fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -3889,6 +3889,7 @@ CONTAINS
     ALLOCATE(files(max_files))
     ALLOCATE(fileobjU(max_files))
     ALLOCATE(fileobj(max_files))
+    ALLOCATE(fileobjND(max_files))
     ALLOCATE(fnum_for_domain(max_files))
     ALLOCATE(pelist(mpp_npes()))
     !> Initialize fnum_for_domain with "dn" which stands for done
