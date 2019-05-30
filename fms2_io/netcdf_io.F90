@@ -513,13 +513,10 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       call error("unrecognized file mode "//trim(mode)//".")
     endif
     call check_netcdf_code(err)
-    if (err == NF90_NOERR) then
-      if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
-      fileobj%is_open = .true.
-    endif
   else
     fileobj%ncid = missing_ncid
   endif
+
   fileobj%is_diskless = .false.
 
   !Allocate memory.
@@ -531,6 +528,10 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   fileobj%is_readonly = string_compare(mode, "read", .true.)
   allocate(fileobj%compressed_dims(max_num_compressed_dims))
   fileobj%num_compressed_dims = 0
+  ! Set the is_open flag to true for this file object.
+  if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
+  fileobj%is_open = .true.
+
 
 end function netcdf_file_open
 
@@ -546,8 +547,8 @@ subroutine netcdf_file_close(fileobj)
   if (fileobj%is_root) then
     err = nf90_close(fileobj%ncid)
     call check_netcdf_code(err)
-    if (allocated(fileobj%is_open)) fileobj%is_open = .false.
   endif
+  if (allocated(fileobj%is_open)) fileobj%is_open = .false.
   fileobj%path = missing_path
   fileobj%ncid = missing_ncid
   if (allocated(fileobj%pelist)) then
@@ -2034,7 +2035,7 @@ end function create_diskless_netcdf_file_wrap
 
 function check_if_open (fileobj,fname) result(is_open)
   logical                               :: is_open !< True if the file in the file object is opened
-  type(FmsNetcdfFile_t), intent(in)     :: fileobj !< File object.
+  class(FmsNetcdfFile_t), intent(in)     :: fileobj !< File object.
   character(len=*),intent(in),optional  :: fname   !< Optional filename for checking
 !> Check if the is_open variable in the object has been allocated
   if (allocated(fileobj%is_open)) then
