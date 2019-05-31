@@ -83,7 +83,7 @@ use legacy_mod
   PRIVATE
   PUBLIC :: diag_output_init, write_axis_meta_data, write_field_meta_data, done_meta_data,&
        & diag_field_out, diag_flush, diag_fieldtype, get_diag_global_att, set_diag_global_att,&
-       & diag_field_write
+       & diag_field_write, diag_write_time
 
   TYPE(diag_global_att_type), SAVE :: diag_global_att
 
@@ -1111,9 +1111,10 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
   END SUBROUTINE done_meta_data
 
   !> \description Outputs the diagnostic data to a file using fms2_io taking a field object as input
-  subroutine diag_field_write_field (field, buffer, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain)
+  subroutine diag_field_write_field (field, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
     TYPE(diag_fieldtype), INTENT(inout) :: Field
     REAL , INTENT(inout) :: buffer(:,:,:,:)
+    logical, intent(in), optional :: static
     class(FmsNetcdfFile_t), intent(inout),optional,target :: fileob 
     class(FmsNetcdfFile_t), pointer :: fptr => null()
     integer, intent(in), optional  :: file_num
@@ -1121,7 +1122,17 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
     type(FmsNetcdfDomainFile_t),intent(inout),optional :: fileobj(:)
     type(FmsNetcdfFile_t),intent(inout),optional :: fileobjND(:)
     character(len=2), intent(in), optional :: fnum_for_domain
+    INTEGER, OPTIONAL, INTENT(in) :: time_in
+    integer :: time
     real(kind=4),allocatable :: local_buffer(:,:,:,:)
+     if (present(static) .and. static) then
+          time = 0
+     elseif (present(time_in)) then
+          time = time_in
+     else
+          time = 0
+     endif
+
      if (present(fileob)) then !> Write output to the fileob file
           fptr => fileob
           select type (fptr)
@@ -1141,14 +1152,26 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
 !          if (fnum_for_domain == "2d" .or. fnum_for_domain == "nd") then
           if (fnum_for_domain == "2d" ) then
                if (check_if_open(fileobj(file_num))) then
-                    call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                    if (time == 0) then
+                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                    else
+                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), local_buffer, unlim_dim_level=time)
+                    endif
                endif
           elseif (fnum_for_domain == "nd") then
                if (check_if_open(fileobjND (file_num)) .and. mpp_pe() == mpp_root_pe() ) then
-                    call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                    if (time == 0) then
+                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                    else
+                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), local_buffer, unlim_dim_level=time)
+                    endif
                endif
           elseif (fnum_for_domain == "ug") then
-               call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                    if (time == 0) then
+                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                    else
+                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), local_buffer, unlim_dim_level=time)
+                    endif
           else
                call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
           endif
@@ -1162,9 +1185,10 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
      if (allocated(local_buffer)) deallocate(local_buffer)
   end subroutine diag_field_write_field
 !> \brief Writes diagnostic data out using fms2_io routine.
-  subroutine diag_field_write_varname (varname, buffer, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
+  subroutine diag_field_write_varname (varname, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
     CHARACTER(len=*), INTENT(in) :: varname
     REAL , INTENT(inout) :: buffer(:,:,:,:)
+    logical, intent(in), optional :: static
     class(FmsNetcdfFile_t), intent(inout),optional,target :: fileob
     class(FmsNetcdfFile_t), pointer :: fptr => null()
     integer, intent(in), optional  :: file_num
@@ -1172,14 +1196,18 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
     type(FmsNetcdfDomainFile_t),intent(inout),optional :: fileobj(:)
     type(FmsNetcdfFile_t),intent(inout),optional :: fileobjND(:)
     character(len=2), intent(in), optional :: fnum_for_domain
-    REAL, OPTIONAL, INTENT(in) :: time_in
-    real :: time
+    INTEGER, OPTIONAL, INTENT(in) :: time_in
+    integer :: time
     real(kind=4),allocatable :: local_buffer(:,:,:,:)
-     if (present(time_in)) then
+!> Set up the time.  Static field and default time is 0
+     if (present(static) .and. static) then
+          time = 0
+     elseif (present(time_in)) then
           time = time_in
      else
-          time = -1.0
+          time = 0
      endif
+
      if (present(fileob)) then !> Write output to the fileob file
           fptr => fileob
           select type (fptr)
@@ -1199,15 +1227,15 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
      !> Figure out which file object to write output to
           if (fnum_for_domain == "2d" ) then
                if (check_if_open(fileobj(file_num))) then
-                    call write_data (fileobj (file_num), trim(varname), buffer)
+                    call write_data (fileobj (file_num), trim(varname), buffer, unlim_dim_level=time )
 !                    call write_data (fileobj (file_num), trim(varname), local_buffer)
                endif
           elseif (fnum_for_domain == "nd") then
                if (check_if_open(fileobjND (file_num)) .and. mpp_pe() == mpp_root_pe() ) then
-                    call write_data (fileobjND (file_num), trim(varname), local_buffer)
+                    call write_data (fileobjND (file_num), trim(varname), local_buffer, unlim_dim_level=time)
                endif
           elseif (fnum_for_domain == "ug") then
-               call write_data (fileobjU(file_num), trim(varname), buffer)
+               call write_data (fileobjU(file_num), trim(varname), buffer, unlim_dim_level=time)
 !               call write_data (fileobjU(file_num), trim(varname), local_buffer)
           else
                call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
@@ -1220,7 +1248,27 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
      endif
 !     if (allocated(local_buffer)) deallocate(local_buffer)
   end subroutine diag_field_write_varname
-
+  subroutine diag_write_time (fileob,rtime_value,time_index,time_name)
+     class(FmsNetcdfFile_t), intent(inout),optional,target  :: fileob      !< fms2_io file object
+     class(FmsNetcdfFile_t), pointer                        :: fptr => null()
+     real, intent(in)                                       :: rtime_value !< The value of time to be written
+     integer, intent(in)                                    :: time_index  !< The index of the time variable
+     character(len=*),intent(in),optional                   :: time_name   !< The name of the time variable
+     character(len=:),allocatable                           :: name_time   !< The name of the time variable
+!> Get the name of the time variable
+     if (present(time_name)) then
+          allocate(character(len=len(time_name)) :: name_time)
+          name_time = time_name
+     else
+          allocate(character(len=4) :: name_time)
+          name_time = "time"
+     endif
+!> Write the time data
+     call write_data (fileob, trim(name_time), rtime_value, unlim_dim_level=time_index)
+!> Cleanup     
+     if (allocated(name_time)) deallocate(name_time)
+     if (associated(fptr)) nullify(fptr)
+  end subroutine diag_write_time 
   ! </SUBROUTINE>
 
   ! <SUBROUTINE NAME="diag_field_out">

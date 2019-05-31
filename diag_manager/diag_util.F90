@@ -89,7 +89,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
-       & write_field_meta_data, done_meta_data, diag_field_write
+       & write_field_meta_data, done_meta_data, diag_field_write, diag_write_time
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
@@ -1220,6 +1220,10 @@ CONTAINS
     files(num_files)%new_file_freq_units = new_file_freq_units1
     files(num_files)%duration = file_duration1
     files(num_files)%duration_units = file_duration_units1
+!> Initialize the times to 0
+    files(num_files)%rtime_current = -1.0
+    files(num_files)%time_index = 0
+
     IF ( PRESENT(start_time) ) THEN
        files(num_files)%start_time = start_time
     ELSE
@@ -2518,13 +2522,36 @@ CONTAINS
     IF ( PRESENT(final_call_in) ) final_call = final_call_in
     static_write = .FALSE.
     IF ( PRESENT(static_write_in) ) static_write = static_write_in
+!> dif is the time as a real that is evaluated 
     dif = get_date_dif(time, base_time, files(file)%time_units)
+
     ! get file_unit, open new file and close curent file if necessary
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) CALL check_and_open(file, time, do_write)
     IF ( .NOT.do_write ) RETURN  ! no need to write data
+
 !    CALL diag_field_out(files(file)%file_unit, output_fields(field)%f_type, dat, dif)
-    call diag_field_write (output_fields(field)%output_name, dat, file_num=file, fileobjU=fileobjU, &
-                         fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
+!> Set up the time index and write the correct time value to the time array
+    if (dif > files(file)%rtime_current) then
+     files(file)%time_index = files(file)%time_index + 1
+     files(file)%rtime_current = dif
+     if (fnum_for_domain(file) == "2d") then
+          call diag_write_time (fileobj(file), files(file)%rtime_current, files(file)%time_index)
+     elseif (fnum_for_domain(file) == "ug") then
+          call diag_write_time (fileobjU(file), files(file)%rtime_current, files(file)%time_index)
+     elseif (fnum_for_domain(file) == "nd") then
+          call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index)
+     else
+          call error_mesg("diag_util_mod::diag_data_out","Error opening the file "//files(file)%name,fatal)
+     endif
+!     call diag_field_write ("time", dif, file_num=file, fileobjU=fileobjU, &
+!                         fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+    elseif (dif < files(file)%rtime_current .and. .not.(static_write) ) then
+     call error_mesg("diag_util_mod::diag_data_out","The time for the file "//trim(files(file)%name)//&
+                    " has gone backwards.",FATAL)
+    endif
+!> Write data
+    call diag_field_write (output_fields(field)%output_name, dat, static=static_write, file_num=file, fileobjU=fileobjU, &
+                         fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
     ! record number of bytes written to this file
     files(file)%bytes_written = files(file)%bytes_written +&
          & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)
@@ -2549,20 +2576,24 @@ CONTAINS
              time_data(1, 1, 1, 1) = start_dif
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_start, time_data(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_start, time_data(1:1,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              time_data(2, 1, 1, 1) = end_dif
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_end, time_data(2:2,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_end, time_data(2:2,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              ! Compute the length of the average
              dt_time(1, 1, 1, 1) = end_dif - start_dif
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_nitems, dt_time(1:1,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              ! Include boundary variable for CF compliance
 !             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)
              call diag_field_write (files(file)%f_bounds, time_data(1:2,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file))
+                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              EXIT
           END IF
        END IF

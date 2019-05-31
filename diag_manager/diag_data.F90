@@ -322,6 +322,9 @@ use fms2_io_mod
 !----------
 !Check if time axis was already registered
      logical, allocatable :: is_time_axis_registered
+!Support for fms2_io time
+     real :: rtime_current
+     integer :: time_index
   END TYPE file_type
   ! </TYPE>
 
