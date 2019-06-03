@@ -53,6 +53,9 @@ atmos_ocean_fluxes.o: coupler/atmos_ocean_fluxes.F90 include/file_version.h mpp.
 axis_utils.o: axis_utils/axis_utils.F90 include/file_version.h mpp_io.o mpp.o fms.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude axis_utils/axis_utils.F90
 
+blackboxio.o: fms2_io/blackboxio.F90 fms_io_utils.o netcdf_io.o fms_netcdf_domain_io.o fms_netcdf_unstructured_domain_io.o
+	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c fms2_io/blackboxio.F90
+
 block_control.o: block_control/block_control.F90 include/fms_platform.h mpp.o mpp_domains.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude block_control/block_control.F90
 
@@ -134,7 +137,7 @@ fm_util.o: field_manager/fm_util.F90 include/file_version.h field_manager.o fms.
 fms.o: fms/fms.F90 include/file_version.h mpp.o mpp_domains.o mpp_io.o fms_io.o memutils.o constants.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude fms/fms.F90
 
-fms2_io.o: fms2_io/fms2_io.F90 fms_io_utils.o netcdf_io.o fms_netcdf_domain_io.o fms_netcdf_unstructured_domain_io.o
+fms2_io.o: fms2_io/fms2_io.F90 fms_io_utils.o netcdf_io.o fms_netcdf_domain_io.o fms_netcdf_unstructured_domain_io.o blackboxio.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c fms2_io/fms2_io.F90
 
 fms_io.o: fms/fms_io.F90 include/fms_platform.h include/file_version.h fms/read_data_2d.inc fms/read_data_3d.inc fms/read_data_4d.inc fms/write_data.inc fms/fms_io_unstructured_register_restart_axis.inc fms/fms_io_unstructured_setup_one_field.inc fms/fms_io_unstructured_register_restart_field.inc fms/fms_io_unstructured_save_restart.inc fms/fms_io_unstructured_read.inc fms/fms_io_unstructured_get_file_name.inc fms/fms_io_unstructured_get_file_unit.inc fms/fms_io_unstructured_file_unit.inc fms/fms_io_unstructured_get_field_size.inc fms/fms_io_unstructured_field_exist.inc mpp_io.o mpp_domains.o mpp.o platform.o mpp_parameter.o

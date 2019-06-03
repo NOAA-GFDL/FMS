@@ -24,7 +24,6 @@ public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
 public :: get_checksum
-public :: tempfile
 
 
 !> @brief A linked list of strings.
@@ -402,57 +401,6 @@ subroutine restart_filepath_mangle(dest, source)
   endif
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
 end subroutine restart_filepath_mangle
-
-
-!> @brief Create a new file path.
-!! @internal
-subroutine get_new_filename(path, new_path, directory, timestamp, new_name)
-
-  character(len=*), intent(in) :: path !< File path.
-  character(len=*), intent(out) :: new_path !< New file path.
-  character(len=*), intent(in), optional :: directory !< Directory
-  character(len=*), intent(in), optional :: timestamp !< Time.
-  character(len=*), intent(in), optional :: new_name !< New file basename.
-
-  character(len=256) :: dir
-  character(len=256) :: tstamp
-  character(len=256) :: nname
-
-  dir = ""
-  if (present(directory)) then
-    call string_copy(dir, trim(directory)//"/")
-  endif
-  tstamp = ""
-  if (present(timestamp)) then
-    call string_copy(tstamp, timestamp//".")
-  endif
-  call string_copy(nname, trim(path))
-  if (present(new_name)) then
-    call string_copy(nname, new_name)
-  endif
-  call string_copy(new_path, trim(dir)//trim(tstamp)//trim(nname))
-end subroutine get_new_filename
-
-
-!> @brief Create a unique filename (poor man's version of mktemp).
-!! @internal
-subroutine tempfile(filename)
-
-  character(len=*), intent(out) :: filename !< New unique filename.
-
-  real :: numr
-  integer :: numi
-
-  do while(.true.)
-    call random_number(numr)
-    numi = transfer(numr, numi)
-    numi = iand(numi, z'FFFFFF')
-    write(filename, '(a,z6.6)') "tmp", numi
-    if (.not. file_exists(filename)) then
-      exit
-    endif
-  enddo
-end subroutine tempfile
 
 
 include "array_utils.inc"

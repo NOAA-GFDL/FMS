@@ -6,6 +6,7 @@ use fms_io_utils_mod
 use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
+use blackboxio
 implicit none
 private
 
@@ -53,7 +54,7 @@ public :: is_registered_to_restart
 
 
 interface open_file
-  module procedure netcdf_file_open
+  module procedure netcdf_file_open_wrap
   module procedure open_domain_file
   module procedure open_unstructured_domain_file
 end interface open_file
@@ -161,10 +162,23 @@ interface write_restart
 end interface write_restart
 
 
+interface write_new_restart
+  module procedure netcdf_save_restart_wrap2
+  module procedure save_domain_restart_wrap
+  module procedure unstructured_write_restart_wrap
+end interface write_new_restart
+
+
 interface read_restart
   module procedure netcdf_restore_state
   module procedure restore_domain_state
 end interface read_restart
+
+
+interface read_new_restart
+  module procedure netcdf_restore_state_wrap
+  module procedure restore_domain_state_wrap
+end interface read_new_restart
 
 
 end module fms2_io_mod

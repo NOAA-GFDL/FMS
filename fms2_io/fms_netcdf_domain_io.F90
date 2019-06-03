@@ -14,7 +14,7 @@ private
 
 !Module constants.
 integer, parameter :: no_domain_decomposed_dimension = 0
-integer, parameter :: max_num_domain_decomposed_dims = 10
+integer, parameter, public :: max_num_domain_decomposed_dims = 10
 integer, parameter :: variable_not_found = 0
 integer, parameter :: default_domain_position = center
 character(len=16), parameter :: domain_pos_att = "domain_position"
@@ -25,7 +25,6 @@ character(len=16), parameter :: y = "y"
 
 !> @brief Domain variable.
 type :: DomainDimension_t
-  private
   character(len=nf90_max_name) :: varname !< Variable name.
   integer :: pos !< Domain position.
 endtype DomainDimension_t
@@ -33,7 +32,6 @@ endtype DomainDimension_t
 
 !> @brief netcdf domain file type.
 type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
-  private
   type(domain2d) :: domain !< Two-dimensional domain.
   type(DomainDimension_t), dimension(:), allocatable :: xdims !< Dimensions associated
                                                               !! with the "x" axis
@@ -73,7 +71,6 @@ public :: save_domain_restart
 public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
-public :: create_diskless_domain_file
 
 
 interface compute_global_checksum
@@ -486,7 +483,7 @@ end subroutine register_domain_variable
 !!        a netcdf file.
 subroutine save_domain_restart(fileobj, unlim_dim_level)
 
-  type(FmsNetcdfDomainFile_t), intent(in), target :: fileobj !< File object.
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
 
   integer :: i
@@ -541,7 +538,7 @@ end subroutine save_domain_restart
 !!        a netcdf file.
 subroutine restore_domain_state(fileobj, unlim_dim_level)
 
-  type(FmsNetcdfDomainFile_t), intent(in), target :: fileobj !< File object.
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
 
   integer :: i
@@ -692,12 +689,12 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
   dpos = get_domain_decomposed_index(dimname, fileobj%xdims, fileobj%nx)
   if (dpos .ne. variable_not_found) then
     dpos = fileobj%xdims(dpos)%pos
-    call mpp_get_global_domain(io_domain, xbegin=is, xend=ie)
+    call mpp_get_global_domain(io_domain, xbegin=is, xend=ie, position=dpos)
   else
     dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%nx)
     if (dpos .ne. variable_not_found) then
       dpos = fileobj%ydims(dpos)%pos
-      call mpp_get_global_domain(io_domain, ybegin=is, yend=ie)
+      call mpp_get_global_domain(io_domain, ybegin=is, yend=ie, position=dpos)
     else
       call error("input dimension is not associated with the domain.")
     endif
@@ -709,253 +706,6 @@ include "register_domain_restart_variable.inc"
 include "domain_read.inc"
 include "domain_write.inc"
 include "compute_global_checksum.inc"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!> @brief Create a "diskless" netcdf file to act as a buffer to support our "register
-!!        data to a file without knowing its name" legacy restart I/O workflow.
-!! @return Flag telling whether the creation of the buffer was successful.
-function create_diskless_domain_file(fileobj, domain, path) &
-  result(success)
-
-  type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
-  type(domain2d), intent(in) :: domain !< Two-dimensional domain.
-  character(len=*), intent(in), optional :: path !< File path.
-  logical :: success
-
-  type(domain2d), pointer :: io_domain
-  integer :: pelist_size
-  integer, dimension(:), allocatable :: pelist
-
-  io_domain => mpp_get_io_domain(domain)
-  if (.not. associated(io_domain)) then
-    call error("input domain does not have an io_domain.")
-  endif
-  pelist_size = mpp_get_domain_npes(io_domain)
-  allocate(pelist(pelist_size))
-  call mpp_get_pelist(io_domain, pelist)
-  success = create_diskless_netcdf_file(fileobj, pelist, path)
-  deallocate(pelist)
-  fileobj%domain = domain
-  allocate(fileobj%xdims(max_num_domain_decomposed_dims))
-  fileobj%nx = 0
-  allocate(fileobj%ydims(max_num_domain_decomposed_dims))
-  fileobj%ny = 0
-  call string_copy(fileobj%non_mangled_path, fileobj%path)
-end function create_diskless_domain_file
-
-
-!> @brief Make a copy of a file's metadata to support "intermediate restarts".
-!! @internal
-subroutine new_domain_file(fileobj, path, mode, new_fileobj, nc_format)
-
-  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
-  character(len=*), intent(in) :: path !< Name of new file.
-  character(len=*), intent(in) :: mode !< File mode.  Allowed values are:
-                                       !! "read", "append", "write", or "overwrite".
-  type(FmsNetcdfDomainFile_t), intent(out) :: new_fileobj !< File object.
-  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
-                                                     !! new files are written
-                                                     !! as.  Allowed values
-                                                     !! are: "64bit", "classic",
-                                                     !! or "netcdf4". Defaults to
-                                                     !! "64bit".
-
-  logical :: success
-  integer :: i
-
-  success = open_domain_file(new_fileobj, path, mode, fileobj%domain, nc_format, &
-                             fileobj%is_restart)
-  if (.not. success) then
-    call error("error opening file "//trim(path)//".")
-  endif
-  call copy_metadata(fileobj, new_fileobj)
-  do i = 1, fileobj%nx
-    call string_copy(new_fileobj%xdims(i)%varname, fileobj%xdims(i)%varname)
-    new_fileobj%xdims(i)%pos = fileobj%xdims(i)%pos
-  enddo
-  new_fileobj%nx = fileobj%nx
-  do i = 1, fileobj%ny
-    call string_copy(new_fileobj%ydims(i)%varname, fileobj%ydims(i)%varname)
-    new_fileobj%ydims(i)%pos = fileobj%ydims(i)%pos
-  enddo
-  new_fileobj%ny = fileobj%ny
-end subroutine new_domain_file
-
-
-!> @brief Loop through registered restart variables and write them to
-!!        a netcdf file.
-subroutine save_domain_restart_wrap(fileobj, unlim_dim_level, directory, timestamp, &
-                                    filename, nc_format)
-
-  type(FmsNetcdfDomainFile_t), intent(in), target :: fileobj !< File object.
-  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
-  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
-  character(len=*), intent(in), optional :: timestamp !< Model time.
-  character(len=*), intent(in), optional :: filename !< New name for the file.
-  character(len=*), intent(in), optional :: nc_format !< Netcdf format that
-                                                     !! new files are written
-                                                     !! as.  Allowed values
-                                                     !! are: "64bit", "classic",
-                                                     !! or "netcdf4". Defaults to
-                                                     !! "64bit".
-
-  integer :: i
-  character(len=32) :: chksum
-  character(len=256) :: new_name
-  type(FmsNetcdfDomainFile_t), target :: new_fileobj
-  type(FmsNetcdfDomainFile_t), pointer :: p
-  logical :: close_new_file
-
-  if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
-  endif
-  call get_new_filename(fileobj%non_mangled_path, new_name, directory, timestamp, filename)
-  if (string_compare(fileobj%non_mangled_path, new_name)) then
-    p => fileobj
-    close_new_file = .false.
-  else
-    call new_domain_file(fileobj, new_name, "write", new_fileobj, nc_format)
-    p => new_fileobj
-    close_new_file = .true.
-  endif
-  do i = 1, p%num_restart_vars
-    if (associated(p%restart_vars(i)%data0d)) then
-      call domain_write_0d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data0d, &
-                           unlim_dim_level=unlim_dim_level)
-    elseif (associated(p%restart_vars(i)%data1d)) then
-      call domain_write_1d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data1d, &
-                           unlim_dim_level=unlim_dim_level)
-    elseif (associated(p%restart_vars(i)%data2d)) then
-      call domain_write_2d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data2d, &
-                           unlim_dim_level=unlim_dim_level)
-      if (is_variable_domain_decomposed(p, p%restart_vars(i)%varname)) then
-!       chksum = compute_global_checksum(p, p%restart_vars(i)%varname, p%restart_vars(i)%data2d)
-!       call register_variable_attribute(p, p%restart_vars(i)%varname, "checksum", chksum)
-      endif
-    elseif (associated(p%restart_vars(i)%data3d)) then
-      call domain_write_3d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data3d, &
-                           unlim_dim_level=unlim_dim_level)
-      if (is_variable_domain_decomposed(p, p%restart_vars(i)%varname)) then
-!       chksum = compute_global_checksum(p, p%restart_vars(i)%varname, p%restart_vars(i)%data3d)
-!       call register_variable_attribute(p, p%restart_vars(i)%varname, "checksum", chksum)
-      endif
-    elseif (associated(p%restart_vars(i)%data4d)) then
-      call domain_write_4d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data4d, &
-                           unlim_dim_level=unlim_dim_level)
-      if (is_variable_domain_decomposed(p, p%restart_vars(i)%varname)) then
-!       chksum = compute_global_checksum(p, p%restart_vars(i)%varname, p%restart_vars(i)%data4d)
-!       call register_variable_attribute(p, p%restart_vars(i)%varname, "checksum", chksum)
-      endif
-    else
-      call error("this branch should not be reached.")
-    endif
-  enddo
-  if (close_new_file) then
-    call close_domain_file(p)
-  endif
-end subroutine save_domain_restart_wrap
-
-
-!> @brief Loop through registered restart variables and read them from
-!!        a netcdf file.
-subroutine restore_domain_state_wrap(fileobj, unlim_dim_level, directory, timestamp, &
-                                     filename)
-
-  type(FmsNetcdfDomainFile_t), intent(in), target :: fileobj !< File object.
-  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
-  character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
-  character(len=*), intent(in), optional :: timestamp !< Model time.
-  character(len=*), intent(in), optional :: filename !< New name for the file.
-
-  integer :: i
-  character(len=32) :: chksum_in_file
-  character(len=32) :: chksum
-  character(len=256) :: new_name
-  type(FmsNetcdfDomainFile_t), target :: new_fileobj
-  type(FmsNetcdfDomainFile_t), pointer :: p
-  logical :: close_new_file
-
-  if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
-  endif
-  call get_new_filename(fileobj%non_mangled_path, new_name, directory, timestamp, filename)
-  if (string_compare(fileobj%non_mangled_path, new_name)) then
-    p => fileobj
-    close_new_file = .false.
-  else
-    call new_domain_file(fileobj, new_name, "read", new_fileobj)
-    p => new_fileobj
-    close_new_file = .true.
-  endif
-  do i = 1, p%num_restart_vars
-    if (associated(p%restart_vars(i)%data0d)) then
-      call domain_read_0d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data0d, &
-                          unlim_dim_level=unlim_dim_level)
-    elseif (associated(p%restart_vars(i)%data1d)) then
-      call domain_read_1d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data1d, &
-                          unlim_dim_level=unlim_dim_level)
-    elseif (associated(p%restart_vars(i)%data2d)) then
-      call domain_read_2d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data2d, &
-                          unlim_dim_level=unlim_dim_level)
-!     if (is_variable_domain_decomposed(p, p%restart_vars(i)%varname) .and. &
-!         variable_att_exists(p, p%restart_vars(i)%varname, "checksum")) then
-!       call get_variable_attribute(p, p%restart_vars(i)%varname, "checksum", chksum_in_file)
-!       chksum = compute_global_checksum(p, p%restart_vars(i)%varname, p%restart_vars(i)%data2d)
-!       if (.not. string_compare(chksum_in_file, chksum)) then
-!         call error("checksum attribute does not match data in file.")
-!       endif
-!     endif
-    elseif (associated(p%restart_vars(i)%data3d)) then
-      call domain_read_3d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data3d, &
-                          unlim_dim_level=unlim_dim_level)
-!     if (is_variable_domain_decomposed(p, p%restart_vars(i)%varname) .and. &
-!         variable_att_exists(p, p%restart_vars(i)%varname, "checksum")) then
-!       call get_variable_attribute(p, p%restart_vars(i)%varname, "checksum", chksum_in_file)
-!       chksum = compute_global_checksum(p, p%restart_vars(i)%varname, p%restart_vars(i)%data3d)
-!       if (.not. string_compare(chksum_in_file, chksum)) then
-!         call error("checksum attribute does not match data in file.")
-!       endif
-!     endif
-    elseif (associated(p%restart_vars(i)%data4d)) then
-      call domain_read_4d(p, p%restart_vars(i)%varname, p%restart_vars(i)%data4d, &
-                          unlim_dim_level=unlim_dim_level)
-!     if (is_variable_domain_decomposed(p, p%restart_vars(i)%varname) .and. &
-!         variable_att_exists(p, p%restart_vars(i)%varname, "checksum")) then
-!       call get_variable_attribute(p, p%restart_vars(i)%varname, "checksum", chksum_in_file)
-!       chksum = compute_global_checksum(p, p%restart_vars(i)%varname, p%restart_vars(i)%data4d)
-!       if (.not. string_compare(chksum_in_file, chksum)) then
-!         call error("checksum attribute does not match data in file.")
-!       endif
-!     endif
-    else
-      call error("this branch should not be reached.")
-    endif
-  enddo
-  if (close_new_file) then
-    call close_domain_file(p)
-  endif
-end subroutine restore_domain_state_wrap
 
 
 end module fms_netcdf_domain_io_mod
