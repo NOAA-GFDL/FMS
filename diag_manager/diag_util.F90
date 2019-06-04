@@ -2701,6 +2701,7 @@ CONTAINS
       ! going to this file, and it was never opened (b/c diag_data_out was not
       ! called)
       CALL mpp_close(files(file)%file_unit)
+    END IF
 !! New FMS_IO close
       if (fnum_for_domain(file) == "2d" )then!.or. (fnum_for_domain(file) == "nd" .and. mpp_pe() == mpp_root_pe()) ) then
           if (check_if_open(fileobj(file))) call close_file (fileobj(file) )
@@ -2712,7 +2713,6 @@ CONTAINS
           if (check_if_open(fileobjU(file))) call close_file (fileobjU(file))
       endif
       files(file)%file_unit = -1
-    END IF
   END SUBROUTINE write_static
   ! </SUBROUTINE>
 
