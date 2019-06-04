@@ -1289,7 +1289,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
                endif
           elseif (fnum_for_domain == "nd") then
                if (check_if_open(fileobjND (file_num)) .and. mpp_pe() == mpp_root_pe() ) then
-                    call write_data (fileobjND (file_num), trim(varname), local_buffer, unlim_dim_level=time)
+                    call write_data (fileobjND (file_num), trim(varname), buffer, unlim_dim_level=time)
                endif
           elseif (fnum_for_domain == "ug") then
                call write_data (fileobjU(file_num), trim(varname), buffer, unlim_dim_level=time)
