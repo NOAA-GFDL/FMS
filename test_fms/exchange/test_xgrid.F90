@@ -55,16 +55,16 @@ implicit none
   character(len=256) :: atm_output_file = "atmos_output.nc"
   character(len=256) :: lnd_output_file = "land_output.nc"
   character(len=256) :: ice_output_file = "ocean_output.nc"
-  character(len=256) :: atm_field_name  = "none"
+  character(len=256) :: atm_field_name  = "depth"
 
   character(len=256) :: runoff_input_file  = "INPUT/land_runoff.nc"
   character(len=256) :: runoff_output_file  = "land_runoff.nc"
   character(len=256) :: runoff_field_name  = "none"
-  integer            :: num_iter           = 0 
-  integer            :: nk_lnd = 1, nk_ice = 1
-  integer            :: atm_layout(2) = (/0,0/)
-  integer            :: lnd_layout(2) = (/0,0/)
-  integer            :: ice_layout(2) = (/0,0/)
+  integer            :: num_iter           = 1 
+  integer            :: nk_lnd = 14, nk_ice = 6
+  integer            :: atm_layout(2) = (/2,2/)
+  integer            :: lnd_layout(2) = (/2,2/)
+  integer            :: ice_layout(2) = (/12,3/)
   integer            :: atm_nest_layout(2) = (/0,0/)
   integer            :: atm_npes = 0
   integer            :: lnd_npes = 0
@@ -72,7 +72,7 @@ implicit none
   integer            :: ocn_npes = 0
   integer            :: atm_nest_npes = 0
   logical            :: concurrent = .false.
-  logical            :: test_unstruct = .false.
+  logical            :: test_unstruct = .true.
 
   namelist /xgrid_test_nml/ atm_input_file, atm_field_name, runoff_input_file, runoff_field_name, num_iter, &
                             nk_lnd, nk_ice, atm_layout, ice_layout, lnd_layout, atm_nest_layout, &
@@ -275,7 +275,7 @@ implicit none
 
      ntile_atm_global = ntile_atm
      ncontact_global = ncontact
-     if( atm_nest_npes > 0 ) then
+    if( atm_nest_npes > 0 ) then
         if(ntile_atm .NE. 7) call mpp_error(FATAL,  &
            'xgrid_test: ntile_atm should be 7 when atmos_nest_npes > 0')
         if(ncontact .NE. 13 ) call mpp_error(FATAL,  &
@@ -495,11 +495,13 @@ implicit none
     call set_frac_area(ice_frac, 'OCN', xmap)
   endif
 
+  if(mpp_pe() == mpp_root_pe() ) print *, '------> Calling test_unstruct_exchange'
   if(test_unstruct) call test_unstruct_exchange()
+  if(mpp_pe() == mpp_root_pe() ) print *, '------> Finish with test_unstruct_exchange'
 
   deallocate(atm_nx, atm_ny, lnd_nx, lnd_ny, ice_nx, ice_ny)
 
-  !--- remap realistic data and write the output file when atmos_input_file does exist
+  !--- remap "realistic" data and write the output file when atmos_input_file does exist
   atm_input_file_exist = file_exist(atm_input_file, domain=atm_domain)
   if( atm_input_file_exist ) then
      if(trim(atm_input_file) == trim(atm_output_file) ) call mpp_error(FATAL, &

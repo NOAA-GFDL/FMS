@@ -10,4 +10,6 @@
   ice_layout=12,3
   nk_lnd = 14
   nk_ice = 6
+  atm_field_name = 'depth'
+  test_unstruct = .true.
 /
