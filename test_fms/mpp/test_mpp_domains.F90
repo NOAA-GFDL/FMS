@@ -188,67 +188,92 @@ program test_mpp_domains
      if( istart_coarse > iend_coarse .OR. jstart_coarse > jend_coarse ) call mpp_error(FATAL, &
         "test_mpp_domain: check the setting of namelist variable istart_coarse, iend_coarse, jstart_coarse, jend_coarse")
 
+    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain <-------------------'
      call test_update_nest_domain('Cubic-Grid')
+    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_update_nest_domain <-------------------'
   endif
 
   if(test_subset) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_subset_update <-------------------'
       call test_subset_update()
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_subset_update <-------------------'
   endif
 
   if( test_halosize_performance ) then
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_halosize_performance <-------------------'
      call test_halosize_update( 'Folded-north' )
      call test_halosize_update( 'Folded-north symmetry' )
      call test_halosize_update( 'Cubic-Grid' )
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_halosize_performance <-------------------'
   endif
 
   if( test_edge_update ) then
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_edge_update <-------------------'
       call test_update_edge( 'Cyclic' )
       call test_update_edge( 'Folded-north' ) !includes vector field test
       call test_update_edge( 'Folded-north symmetry' )
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_edge_update <-------------------'
   endif
 
   if( test_nonsym_edge ) then
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_nonsym_edge <-------------------'
       call test_update_nonsym_edge( 'Folded-north' ) !includes vector field test
       call test_update_nonsym_edge( 'Folded-north symmetry' )
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_nonsym_edge <-------------------'
   endif
 
   if( test_performance) then
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_performance <-------------------'
       call update_domains_performance('Folded-north')
       call update_domains_performance('Cubic-Grid')
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_performance <-------------------'
   endif
 
   if( test_global_sum ) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_mpp_global_sum <-------------------'
       call test_mpp_global_sum('Folded-north')
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_mpp_global_sum <-------------------'
   endif
 
   if( test_cubic_grid_redistribute ) then
-     call cubic_grid_redistribute()
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling cubic_grid_redistribute <-------------------'
+     call cubic_grid_redistribute()     
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished cubic_grid_redistribute <-------------------'
   endif
 
   if(test_boundary) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_boundary <-------------------'
       call test_get_boundary('torus')
       call test_get_boundary('Four-Tile')
       call test_get_boundary('Cubic-Grid')
       call test_get_boundary('Folded-north')
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_boundary <-------------------'
   endif
 
 ! Adjoint Dot Test ------------------------------------------
   if (test_adjoint) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_adjoint <-------------------'
        call test_get_boundary_ad('Four-Tile')
        call test_halo_update_ad( 'Simple' ) 
        call test_global_reduce_ad( 'Simple')
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_adjoint <-------------------'
   endif
 
   if( test_unstruct) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_unstruct <-------------------'
      call test_unstruct_update( 'Cubic-Grid' )
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_unstruct <-------------------'
   endif
 
   if( test_group) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_group <-------------------'
      call test_group_update( 'Folded-north' )
      call test_group_update( 'Cubic-Grid' )
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_group <-------------------'
   endif
 
   if( test_interface ) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_interface  <-------------------'
       call test_modify_domain()
 !!$      call test_cyclic_offset('x_cyclic_offset')
 !!$      call test_cyclic_offset('y_cyclic_offset')
@@ -314,21 +339,27 @@ program test_mpp_domains
          call test_define_mosaic_pelist('Ten tile', 10)
          call test_define_mosaic_pelist('Ten tile with nonuniform cost', 10)
       endif
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finish test_interface  <-------------------'
   endif
 
   if( check_parallel) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_check_parallel <-------------------'
      call test_parallel( )
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finish test_check_parallel <-------------------'
   endif
 
 !!$!Balaji adding openMP tests
 !!$  call test_openmp()
 !!$! Alewxander.Pletzer get_neighbor tests
   if( test_get_nbr ) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_get_nbr <-------------------'
      call test_get_neighbor_1d
      call test_get_neighbor_non_cyclic
      call test_get_neighbor_cyclic
      call test_get_neighbor_folded_north
      call test_get_neighbor_mask
+     call mpp_sync()
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finish test_get_nbr <-------------------'
   endif
 
   call mpp_domains_exit()
@@ -5555,7 +5586,7 @@ end subroutine test_halosize_update
     integer :: ni, nj
 
     if(mpp_npes() < 25) then
-       call mpp_error(NOTE,"test_mpp_domains: test_subset_update will&
+       call mpp_error(FATAL,"test_mpp_domains: test_subset_update will&
             & not be done when npes < 25")
        return
     endif
@@ -5596,12 +5627,14 @@ end subroutine test_halosize_update
     x (is:ie,js:je,:) = global(is:ie,js:je,:)
 
 !full update
-    call mpp_update_domains( x, domain )
+print *, 'here'
+    call mpp_update_domains( x, domain)
+print *, 'finish'
     call compare_checksums( x, global(isd:ied,jsd:jed,:), '9pe subset' )
 
     deallocate(x, global)
     call mpp_deallocate_domain(domain)
-  endif
+  endif 
 
    call mpp_set_current_pelist()
 
@@ -6940,6 +6973,7 @@ end subroutine test_halosize_update
         print*, "at pe ", pe, "halo is w=",whalo,",e=",ehalo,",s=",shalo,"n=",nhalo, &
                ",data domain without halo is ",isd1, ied1, jsd1, jed1,                     &
                ", data domain with halo is ", isd2, ied2, jsd2, jed2
+        call mpp_error(FATAL, "compute domain mismatch between data domain without halo and data domain with halo")
     else
         if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, 'test_modify_domain: OK.' )
     end if
@@ -7398,7 +7432,6 @@ end subroutine test_modify_domain
                            istart_fine, iend_fine, jstart_fine, jend_fine,                  &
                            istart_coarse, iend_coarse, jstart_coarse, jend_coarse,         &
                            pelist, extra_halo, name="nest_domain")
-
     !---------------------------------------------------------------------------
     !
     !                 Coarse to Fine
@@ -7423,6 +7456,7 @@ end subroutine test_modify_domain
        call mpp_get_domain_shift(domain_coarse, ishift, jshift, position)
        !--- first check the index is correct or not
        if(is_fine_pe) then
+
           !--- The index from nest domain
           call mpp_get_compute_domain(domain_fine, isc_fine, iec_fine, jsc_fine, jec_fine, position=position)
           call mpp_get_data_domain(domain_fine, isd_fine, ied_fine, jsd_fine, jed_fine, position=position)
@@ -7450,6 +7484,7 @@ end subroutine test_modify_domain
              jsw_c2 = jstart_coarse + (jsc_fine - jstart_fine)/y_refine - shalo
              jew_c2 = jstart_coarse + (jec_fine - jstart_fine)/y_refine + nhalo
           endif
+
           !--- east
           if( iec_fine == nx_fine+ishift ) then
              ise_f2 = iec_fine+1; iee_f2 = ied_fine
