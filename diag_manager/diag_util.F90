@@ -2538,7 +2538,7 @@ CONTAINS
           call diag_write_time (fileobj(file), files(file)%rtime_current, files(file)%time_index)
      elseif (fnum_for_domain(file) == "ug") then
           call diag_write_time (fileobjU(file), files(file)%rtime_current, files(file)%time_index)
-     elseif (fnum_for_domain(file) == "nd") then
+     elseif (fnum_for_domain(file) == "nd" .and. mpp_pe()==mpp_root_pe()) then
           call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index)
      else
           call error_mesg("diag_util_mod::diag_data_out","Error opening the file "//files(file)%name,fatal)
