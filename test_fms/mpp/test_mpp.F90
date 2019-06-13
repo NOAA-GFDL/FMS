@@ -59,16 +59,15 @@ program test   !test various aspects of mpp_mod
   pe = mpp_pe()
   npes = mpp_npes()
   root = mpp_root_pe()
-
   out_unit = stdout()
   call test_gather(npes,pe,root,out_unit)
   call test_gatherV(npes,pe,root,out_unit)
   call test_gather2DV(npes,pe,root,out_unit)
 
-  if(.false.) then
-
+  if(.true.) then
   ! first test broadcast
-  call test_broadcast()
+  call test_broadcast_2D()
+  call test_broadcast_char()
 
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
 
@@ -186,6 +185,7 @@ program test   !test various aspects of mpp_mod
   !---------------------------------------------------------------------!
   !                   test mpp_chksum                                   !
   !---------------------------------------------------------------------!
+
   if( modulo(n,npes).EQ.0 )then  !only set up for even division
      n2 = 1024
      a = 0.d0
@@ -204,11 +204,16 @@ program test   !test various aspects of mpp_mod
      
      if( pe.EQ.root )then
         print *
-        print *, 'Test mpp_chksum...'
+        print *, '------------------ > Test mpp_chksum <------------------ '
         print *, 'This test shows that a whole array and a distributed array give identical checksums.'
      end if
-     print *, 'chksum(a(1:1024))=', mpp_chksum(a(1:n2),(/pe/))
-     print *, 'chksum(c(1:1024))=', mpp_chksum(c)
+
+     if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then 
+		call mpp_error(FATAL, 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
+     else
+		print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='
+     endif
+ 
 !    print *, 'chksum(a)=', mpp_chksum(a,(/pe/))
 !    print *, 'chksum(c)=', mpp_chksum(c)
   end if
@@ -244,7 +249,7 @@ contains
 
   !***********************************************
   !currently only test the mpp_broadcast_char
-  subroutine test_broadcast()
+  subroutine test_broadcast_char()
      integer, parameter :: ARRAYSIZE = 3
      integer, parameter :: STRINGSIZE = 256
      character(len=STRINGSIZE), dimension(ARRAYSIZE) :: textA, textB
@@ -279,9 +284,57 @@ contains
         if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: after broadcast, textA should equal textB")
      enddo
 
-     write(out_unit,*) "==> NOTE from test_broadcast: The test is succesful"
+     write(out_unit,*) "==> NOTE from test_broadcast_char: The test is succesful"
 
-  end subroutine test_broadcast
+  end subroutine test_broadcast_char
+
+  subroutine test_broadcast_2D()
+  integer, parameter :: ARRAYSIZE = 3
+  integer :: n, m, p
+  real :: r(3,3), k(3,3)
+
+  p=0;
+  do n = 1, ARRAYSIZE
+    do m = 1, ARRAYSIZE
+       p = p + 1
+       k(n, m) = p
+       r(n, m) = k(n, m)
+    enddo
+  enddo
+
+  if(mpp_pe() .NE. mpp_root_pe()) then
+    do n =1, ARRAYSIZE
+       r(:, n) = 0
+    enddo
+  endif
+
+!--- comparing array m and n. m and n are supposed to be different on pe other than root_pe
+  if(mpp_pe() == mpp_root_pe()) then
+    do n = 1, ARRAYSIZE
+       do m = 1, ARRAYSIZE
+          if(r(n, m) .NE. k(n, m)) call mpp_error(FATAL, "test_broadcast: on root_pe, m should equal n")
+       enddo
+    enddo
+  else
+    do n = 1, ARRAYSIZE
+       do m = 1, ARRAYSIZE 
+          if(r(n, m) == k(n, m)) call mpp_error(FATAL, "test_broadcast: on root_pe, m should not equal n")
+       enddo
+    enddo
+  endif
+ 
+  call mpp_broadcast(r, ARRAYSIZE*ARRAYSIZE, mpp_root_pe())
+
+!--- after broadcast, m and n should be the same
+  do n = 1, ARRAYSIZE
+     do m =1, ARRAYSIZE
+        if(r(n, m) .NE. k(n, m)) call mpp_error(FATAL, "test_broadcast: after broadcast, m should equal n")
+     enddo
+  enddo
+
+     write(out_unit,*) "==> NOTE from test_broadcast_2D: The test is succesful"
+
+  end subroutine test_broadcast_2D
 
   subroutine test_gather(npes,pe,root,out_unit)
      integer, intent(in) :: npes,pe,root,out_unit
