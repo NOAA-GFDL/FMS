@@ -60,163 +60,35 @@ program test   !test various aspects of mpp_mod
   npes = mpp_npes()
   root = mpp_root_pe()
   out_unit = stdout()
-  call test_gather(npes,pe,root,out_unit)
-  call test_gatherV(npes,pe,root,out_unit)
-  call test_gather2DV(npes,pe,root,out_unit)
 
-  if(.true.) then
-  ! first test broadcast
-  call test_broadcast_2D()
-  call test_broadcast_char()
+  if( pe.EQ.root ) print *, '------------------> Calling test_gather <------------------'
+  	call test_gather(npes,pe,root,out_unit)
+  	call test_gatherV(npes,pe,root,out_unit)
+  	call test_gather2DV(npes,pe,root,out_unit)
+  if( pe.EQ.root ) print *, '------------------> Finished test_gather <------------------'
+
+  if( pe.EQ.root ) print *, '------------------> Calling test_broadcast <------------------'
+	call test_broadcast_2D()
+ 	call test_broadcast_char()
+  if( pe.EQ.root ) print *, '------------------> Finished test_broadcast <------------------'
 
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
+  if( pe.EQ.root ) print *, '------------------> Calling test_time_transmit <------------------'
+	call test_time_transmit()
+  if( pe.EQ.root ) print *, '------------------> Finished test_time_transmit <------------------'
 
-  allocate( a(n), b(n) )
-  id = mpp_clock_id( 'Random number' )
-  call mpp_clock_begin(id)
-  call random_number(a)
-  call mpp_clock_end  (id)
-  !---------------------------------------------------------------------!
-  !   time transmit, compare against shmem_put and get                  !
-  !---------------------------------------------------------------------!
-  if( pe.EQ.root )then
-     print *, 'Time mpp_transmit for various lengths...'
-#ifdef SGICRAY
-     print *, 'For comparison, times for shmem_get and shmem_put are also provided.'
-#endif
-     print *
-  end if
-  id = mpp_clock_id( 'mpp_transmit' )
-  call mpp_clock_begin(id)
-  !timing is done for cyclical pass (more useful than ping-pong etc)
-  l = n
-  do while( l.GT.0 )
-     !--- mpp_transmit -------------------------------------------------
-     call mpp_sync()
-     call SYSTEM_CLOCK(tick0)
-     do i = 1,npes
-        call mpp_transmit( put_data=a(1), plen=l, to_pe=modulo(pe+npes-i,npes), &
-                           get_data=b(1), glen=l, from_pe=modulo(pe+i,npes) )
-        call mpp_sync_self()
-        !          call mpp_sync_self( (/modulo(pe+npes-i,npes)/) )
-     end do
-     call mpp_sync()
-     call SYSTEM_CLOCK(tick)
-     dt = real(tick-tick0)/(npes*ticks_per_sec)
-     dt = max( dt, epsilon(dt) )
-     if( pe.EQ.root )write( out_unit,'(/a,i8,f13.6,f8.2)' )'MPP_TRANSMIT length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
-!#ifdef SGICRAY
-!     !--- shmem_put ----------------------------------------------------
-!     call mpp_sync()
-!     call SYSTEM_CLOCK(tick0)
-!     do i = 1,npes
-!       call shmem_real_put( b, a, l, modulo(pe+1,npes) )
-!     end do
-!     call mpp_sync()
-!     call SYSTEM_CLOCK(tick)
-!     dt = real(tick-tick0)/(npes*ticks_per_sec)
-!     dt = max( dt, epsilon(dt) )
-!     if( pe.EQ.root )write( stdout(),'( a,i8,f13.6,f8.2)' )'SHMEM_PUT    length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
-!     !--- shmem_get ----------------------------------------------------
-!     call mpp_sync()
-!     call SYSTEM_CLOCK(tick0)
-!     do i = 1,npes
-!        call shmem_real_get( b, a, l, modulo(pe+1,npes) )
-!     end do
-!     call SYSTEM_CLOCK(tick)
-!     dt = real(tick-tick0)/(npes*ticks_per_sec)
-!     dt = max( dt, epsilon(dt) )
-!     if( pe.EQ.root )write( stdout(),'( a,i8,f13.6,f8.2)' )'SHMEM_GET    length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
-!#endif
-     l = l/2
-  end do
-  !---------------------------------------------------------------------!
-  !                   test mpp_sum                                      !
-  !---------------------------------------------------------------------!
-  if( pe.EQ.root )then
-     print '(/a)', 'Time mpp_sum...'
-  end if
-  a = real(pe+1)
-  call mpp_sync()
-  call SYSTEM_CLOCK(tick0)
-  call mpp_sum(a(1:1000),1000)
-  call SYSTEM_CLOCK(tick)
-  dt = real(tick-tick0)/ticks_per_sec
-  dt = max( dt, epsilon(dt) )
-  if( pe.EQ.root )write( out_unit,'(a,2i6,f9.1,i8,f13.6,f8.2/)' ) &
-       'mpp_sum: pe, npes, sum(pe+1), length, time, bw(Mb/s)=', pe, npes, a(1), n, dt, n*8e-6/dt
-  call mpp_clock_end(id)
-  !---------------------------------------------------------------------!
-  !                   test mpp_max                                      !
-  !---------------------------------------------------------------------!
-  if( pe.EQ.root )then
-     print *
-     print *, 'Test mpp_max...'
-  end if
-  a = real(pe+1)
-  print *, 'pe,     pe+1 =', pe, a(1)
-  call mpp_max( a(1) )
-  print *, 'pe, max(pe+1)=', pe, a(1)
-  !pelist check
-  call mpp_sync()
-  call flush(out_unit,istat)
-  if( npes.GE.2 )then
-     if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
-     call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a = real(pe+1)
-     if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
-     print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
-     a = real(pe+1)
-     if( pe.NE.npes-1 )then
-        call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
-        id = mpp_clock_id( 'Partial mpp_sum' )
-        call mpp_clock_begin(id)
-        call mpp_sum( a(1:1000), 1000, (/(i,i=0,npes-2)/) )
-        call mpp_clock_end  (id)
-     end if
-     if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
-     a = real(pe+1)
-     if( pe.NE.npes-1 )call mpp_max( a(1), (/(i,i=0,npes-2)/) )
-     if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
-  end if
-  call mpp_set_current_pelist()
-  
-#ifdef use_CRI_pointers
-  !---------------------------------------------------------------------!
-  !                   test mpp_chksum                                   !
-  !---------------------------------------------------------------------!
+  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_sum <------------------'
+	call test_mpp_sum()
+  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_sum <------------------'
 
-  if( modulo(n,npes).EQ.0 )then  !only set up for even division
-     n2 = 1024
-     a = 0.d0
-     if( pe.EQ.root )call random_number(a(1:n2))
-!    if( pe.EQ.root )call random_number(a)
-     call mpp_sync()
-     call mpp_transmit( put_data=a(1), plen=n2, to_pe=ALL_PES, &
-                        get_data=a(1), glen=n2, from_pe=root )
-     call mpp_sync_self ()
-!    call mpp_transmit( put_data=a(1), plen=n, to_pe=ALL_PES, &
-!                       get_data=a(1), glen=n, from_pe=root )
-     m= n2/npes
-!    m= n/npes
-     allocate( c(m) )
-     c = a(pe*m+1:pe*m+m)
-     
-     if( pe.EQ.root )then
-        print *
-        print *, '------------------ > Test mpp_chksum <------------------ '
-        print *, 'This test shows that a whole array and a distributed array give identical checksums.'
-     end if
+  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_max <------------------'
+	call test_mpp_max()
+  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_max <------------------'
 
-     if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then 
-		call mpp_error(FATAL, 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
-     else
-		print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='
-     endif
- 
-!    print *, 'chksum(a)=', mpp_chksum(a,(/pe/))
-!    print *, 'chksum(c)=', mpp_chksum(c)
-  end if
+  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_chksum <------------------'
+	call test_mpp_chksum()
+  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_chksum <------------------'
+
 !test of pointer sharing
 #ifdef use_MPI_GSM
       call mpp_gsm_malloc( locd, sizeof(d) )
@@ -240,8 +112,7 @@ program test   !test various aspects of mpp_mod
       deallocate( d )
   end if
 #endif
-#endif
-  endif  ! if(.false.)
+
 
   call mpp_exit()
 
@@ -249,8 +120,9 @@ contains
 
   !***********************************************
   !currently only test the mpp_broadcast_char
+     
   subroutine test_broadcast_char()
-     integer, parameter :: ARRAYSIZE = 3
+	  integer, parameter :: ARRAYSIZE = 3
      integer, parameter :: STRINGSIZE = 256
      character(len=STRINGSIZE), dimension(ARRAYSIZE) :: textA, textB
      integer :: n
@@ -345,8 +217,7 @@ contains
      real :: val
 
      if(npes < 3)then
-       write(out_unit,*) "Minimum of 3 ranks required. Not testing gather; too few ranks."
-       return
+		 call mpp_error(FATAL, "Test_gather: minimum of 3 ranks required. Not testing gather; too few ranks.")
      endif
      write(out_unit,*)
 
@@ -394,11 +265,9 @@ contains
      real,allocatable :: sdata(:), rdata(:), ref(:)
 
      if(npes < 3)then
-       write(out_unit,*) "Minimum of 3 ranks required. Not testing gatherV; too few ranks."
-       return
+		 call mpp_error(FATAL, "Test_gatherV: minimum of 3 ranks required. Not testing gather; too few ranks.")
      elseif(npes > 9999)then
-       write(out_unit,*) "Maximum of 9999 ranks supported. Not testing gatherV; too many ranks."
-       return
+       call mpp_error(FATAL, "Test_gatherV: maximum of 9999 ranks supported. Not testing gatherV; too many ranks.")
      endif
      write(out_unit,*)
 
@@ -478,10 +347,9 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
 
 
      if(npes < 3)then
-       write(out_unit,*) "Minimum of 3 ranks required. Not testing gather2DV; too few ranks."
-       return
+		 call mpp_error(FATAL, "Test_gather2DV: minimum of 3 ranks required. Not testing gather; too few ranks.")
      elseif(npes > 9999)then
-       write(out_unit,*) "Maximum of 9999 ranks supported. Not testing gather2DV; too many ranks."
+       call mpp_error(FATAL, "Test_gather2DV: maximum of 9999 ranks supported. Not testing gather2DV; too many ranks.")
        return
      endif
      write(out_unit,*)
@@ -576,6 +444,119 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
      write(out_unit,*) "Test gather2DV with reversed pelist successful"
      deallocate(data,sbuff,rbuff,cdata,ref)
   end subroutine test_gather2DV
+
+  subroutine test_time_transmit()
+
+  allocate( a(n), b(n) )
+  id = mpp_clock_id( 'Random number' )
+  call mpp_clock_begin(id)
+  call random_number(a)
+  call mpp_clock_end  (id)
+  
+  id = mpp_clock_id( 'mpp_transmit' )
+  call mpp_clock_begin(id)
+  !timing is done for cyclical pass (more useful than ping-pong etc)
+  l = n
+  do while( l.GT.0 )
+     !--- mpp_transmit -------------------------------------------------
+     call mpp_sync()
+     call SYSTEM_CLOCK(tick0)
+     do i = 1,npes
+        call mpp_transmit( put_data=a(1), plen=l, to_pe=modulo(pe+npes-i,npes), &
+                           get_data=b(1), glen=l, from_pe=modulo(pe+i,npes) )
+        call mpp_sync_self()
+     end do
+     call mpp_sync()
+     call SYSTEM_CLOCK(tick)
+     dt = real(tick-tick0)/(npes*ticks_per_sec)
+     dt = max( dt, epsilon(dt) )
+     if( pe.EQ.root ) print *, 'MPP_TRANSMIT length, time, bw(Mb/s)=', l, dt, l*8e-6/dt
+     l = l/2
+  end do
+
+  end subroutine test_time_transmit
+
+  subroutine test_mpp_sum()
+
+	a = real(pe+1)
+  call mpp_sync()
+  call SYSTEM_CLOCK(tick0)
+  call mpp_sum(a(1:1000),1000)
+  call SYSTEM_CLOCK(tick)
+  dt = real(tick-tick0)/ticks_per_sec
+  dt = max( dt, epsilon(dt) )
+  if( pe.EQ.root )write( out_unit,'(a,2i6,f9.1,i8,f13.6,f8.2/)' ) &
+       'mpp_sum: pe, npes, sum(pe+1), length, time, bw(Mb/s)=', pe, npes, a(1), n, dt, n*8e-6/dt
+  call mpp_clock_end(id)
+
+  end subroutine test_mpp_sum
+
+  subroutine test_mpp_max
+
+  a = real(pe+1)
+  print *, 'pe,     pe+1 =', pe, a(1)
+  call mpp_max( a(1) )
+  print *, 'pe, max(pe+1)=', pe, a(1)
+  !pelist check
+  call mpp_sync()
+  call flush(out_unit,istat)
+  if( npes.GE.2 )then
+     if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
+     call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
+     a = real(pe+1)
+     if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
+     print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
+     a = real(pe+1)
+     if( pe.NE.npes-1 )then
+        call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
+        id = mpp_clock_id( 'Partial mpp_sum' )
+        call mpp_clock_begin(id)
+        call mpp_sum( a(1:1000), 1000, (/(i,i=0,npes-2)/) )
+        call mpp_clock_end  (id)
+     end if
+     if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
+     a = real(pe+1)
+     if( pe.NE.npes-1 )call mpp_max( a(1), (/(i,i=0,npes-2)/) )
+     if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
+  end if
+  call mpp_set_current_pelist()
+
+   end subroutine test_mpp_max
+
+  subroutine test_mpp_chksum()
+
+   if( modulo(n,npes).EQ.0 )then  !only set up for even division
+     n2 = 1024
+     a = 0.d0
+     if( pe.EQ.root )call random_number(a(1:n2))
+
+     call mpp_sync()
+     call mpp_transmit( put_data=a(1), plen=n2, to_pe=ALL_PES, &
+                        get_data=a(1), glen=n2, from_pe=root )
+     call mpp_sync_self ()
+
+     m= n2/npes
+
+     allocate( c(m) )
+     c = a(pe*m+1:pe*m+m)
+     
+     if( pe.EQ.root )then
+        print *
+        print *, '------------------ > Test mpp_chksum <------------------ '
+        print *, 'This test shows that a whole array and a distributed array give identical checksums.'
+     end if
+
+     if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then 
+		call mpp_error(FATAL, 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
+     else
+		print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='
+     endif
+
+	else
+		call mpp_error(FATAL, 'Test mpp_chksum: cannot run this test since n cannot be evenly by npes')
+   end if
+
+  end subroutine test_mpp_chksum
 
   subroutine test_shared_pointers(locd,n)
     integer(LONG_KIND), intent(in) :: locd
