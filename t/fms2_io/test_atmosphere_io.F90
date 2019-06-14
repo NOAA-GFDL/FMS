@@ -28,6 +28,7 @@ integer :: ny_north
 integer :: jsc_north
 integer :: jec_north
 type(FmsNetcdfDomainFile_t) :: fileobj
+type(FmsNetcdfDomainFile_t) :: fileobjv
 integer, parameter :: ntiles = 6
 integer, parameter :: nt = 11
 real(kind=real64), dimension(:), allocatable :: double_buffer
@@ -36,6 +37,10 @@ real(kind=real64), dimension(:,:,:), allocatable :: var5
 real(kind=real64), dimension(:,:,:), allocatable :: var6
 real(kind=real64), dimension(:,:,:), allocatable :: var7
 real(kind=real64), dimension(:,:,:), allocatable :: var8
+real(kind=real64), dimension(:,:,:), allocatable :: var5p
+real(kind=real64), dimension(:,:,:), allocatable :: var6p
+real(kind=real64), dimension(:,:,:), allocatable :: var7p
+real(kind=real64), dimension(:,:,:), allocatable :: var8p
 real(kind=real64), dimension(:), allocatable :: var9
 integer(kind=int32), dimension(:,:), allocatable :: var10
 real(kind=real64), dimension(:,:,:), allocatable :: var11
@@ -49,6 +54,7 @@ integer :: ndims
 integer, dimension(:), allocatable :: dim_sizes
 character(len=256) :: att
 character(len=6), dimension(4) :: names
+character(len=8) :: timestamp
 
 !Initialize.
 call init(test_params, ntiles)
@@ -79,6 +85,7 @@ call mpp_get_compute_domain(io_domain, ybegin=jsc_north, yend=jec_north, ysize=n
 !Open a restart file and initialize the file object.
 call open_check(open_file(fileobj, "atmosphere.nc", "overwrite", &
                           domain, nc_format="64bit", is_restart=.true.))
+call open_check(open_virtual_file(fileobjv, domain, "atm.nc"))
 
 !Add some global attributes to the restart file.
 call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
@@ -86,6 +93,11 @@ call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
 call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
 call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
 call register_global_attribute(fileobj, "globalatt5", "some text")
+call register_global_attribute(fileobjv, "globalatt1", real(7., kind=real64))
+call register_global_attribute(fileobjv, "globalatt2", real(4., kind=real32))
+call register_global_attribute(fileobjv, "globalatt3", int(3, kind=int32))
+call register_global_attribute(fileobjv, "globalatt4", int(2, kind=int64))
+call register_global_attribute(fileobjv, "globalatt5", "some text")
 
 !Add dimensions and corresponding variables to the file.
 !Longitude (domain "x" dimension with center position).
@@ -95,6 +107,10 @@ call register_field(fileobj, "lon", "double", names(1:1))
 call create_data(double_buffer, nx)
 call write_data(fileobj, "lon", double_buffer)
 call register_variable_attribute(fileobj, "lon", "units", "degrees")
+call register_axis(fileobjv, "lon", "x")
+call register_field(fileobjv, "lon", "double", names(1:1))
+call write_data(fileobjv, "lon", double_buffer)
+call register_variable_attribute(fileobjv, "lon", "units", "degrees")
 
 !Longitude2 (domain "x" dimension with east position).
 names(1) = "lon2"
@@ -103,6 +119,10 @@ call register_field(fileobj, "lon2", "double", names(1:1))
 call create_data(double_buffer, nx+1)
 call write_data(fileobj, "lon2", double_buffer)
 call register_variable_attribute(fileobj, "lon2", "units", "radians")
+call register_axis(fileobjv, "lon2", "x", domain_position=east)
+call register_field(fileobjv, "lon2", "double", names(1:1))
+call write_data(fileobjv, "lon2", double_buffer)
+call register_variable_attribute(fileobjv, "lon2", "units", "radians")
 
 !Latitude (domain "y" dimension with center position).
 names(1) = "lat"
@@ -111,6 +131,10 @@ call register_field(fileobj, "lat", "double", names(1:1))
 call create_data(double_buffer, ny)
 call write_data(fileobj, "lat", double_buffer)
 call register_variable_attribute(fileobj, "lat", "units", "degrees")
+call register_axis(fileobjv, "lat", "y", domain_position=center)
+call register_field(fileobjv, "lat", "double", names(1:1))
+call write_data(fileobjv, "lat", double_buffer)
+call register_variable_attribute(fileobjv, "lat", "units", "degrees")
 
 !Latitude2 (domain "y" dimension wiht north position).
 names(1) = "lat2"
@@ -119,6 +143,10 @@ call register_field(fileobj, "lat2", "double", names(1:1))
 call create_data(double_buffer, ny+1)
 call write_data(fileobj, "lat2", double_buffer)
 call register_variable_attribute(fileobj, "lat", "units2", "radians")
+call register_axis(fileobjv, "lat2", "y", domain_position=north)
+call register_field(fileobjv, "lat2", "double", names(1:1))
+call write_data(fileobjv, "lat2", double_buffer)
+call register_variable_attribute(fileobjv, "lat", "units2", "radians")
 
 !Height.
 names(1) = "lev"
@@ -127,6 +155,11 @@ call register_field(fileobj, "lev", "double", names(1:1))
 call create_data(double_buffer, test_params%nz)
 call write_data(fileobj, "lev", double_buffer)
 call register_variable_attribute(fileobj, "lev", "units", "mb")
+call register_axis(fileobjv, "lev", test_params%nz)
+call register_field(fileobjv, "lev", "double", names(1:1))
+call write_data(fileobjv, "lev", double_buffer)
+call register_variable_attribute(fileobjv, "lev", "units", "mb")
+
 
 !Height2.
 names(1) = "lay"
@@ -135,15 +168,23 @@ call register_field(fileobj, "lay", "double", names(1:1))
 call create_data(double_buffer, test_params%nz-1)
 call write_data(fileobj, "lay", double_buffer)
 call register_variable_attribute(fileobj, "lay", "units", "mb")
+call register_axis(fileobjv, "lay", test_params%nz-1)
+call register_field(fileobjv, "lay", "double", names(1:1))
+call write_data(fileobjv, "lay", double_buffer)
+call register_variable_attribute(fileobjv, "lay", "units", "mb")
 
 !Time.
 names(1) = "time"
 call register_axis(fileobj, "time", unlimited)
 call register_field(fileobj, "time", "float", names(1:1))
 call register_variable_attribute(fileobj, "time", "units", "years")
+call register_axis(fileobjv, "time", unlimited)
+call register_field(fileobjv, "time", "float", names(1:1))
+call register_variable_attribute(fileobjv, "time", "units", "years")
 
 !String length.
 call register_axis(fileobj, "strlen", 256)
+!call register_axis(fileobjv, "strlen", 256)
 
 !Add a non-domain-decomposed variable whose type does not match the type of the user
 !defined buffer.
@@ -151,6 +192,8 @@ names(1) = "lev"
 call create_data(double_buffer, test_params%nz)
 call register_field(fileobj, "var1", "float", names(1:1))
 call write_data(fileobj, "var1", double_buffer)
+!call register_field(fileobjv, "var1", "float", names(1:1))
+!call write_data(fileobjv, "var1", double_buffer)
 
 !Add scalar and 1D string variables.
 names(1) = "strlen"
@@ -165,6 +208,10 @@ do i = 1, test_params%nz
   string_buffer(i) = trim(adjustl(string_buffer(i)))
 enddo
 call write_data(fileobj, "var3", string_buffer)
+!call register_field(fileobjv, "var2", "char", names(1:1))
+!call write_data(fileobjv, "var2", "file1.nc")
+!call register_field(fileobjv, "var3", "char", names(1:2))
+!call write_data(fileobjv, "var3", string_buffer)
 
 !Add a domain decomposed variable.
 names(1) = "lon"
@@ -173,6 +220,9 @@ call create_data(double_buffer2d, (/nx, ny/))
 call register_field(fileobj, "var4", "double", names(1:2))
 call register_variable_attribute(fileobj, "var4", "units", "K")
 call write_data(fileobj, "var4", double_buffer2d)
+!call register_field(fileobjv, "var4", "double", names(1:2))
+!call register_variable_attribute(fileobjv, "var4", "units", "K")
+!call write_data(fileobjv, "var4", double_buffer2d)
 
 !Add a domain-decomposed restart variable with center position.
 names(1) = "lon"
@@ -182,6 +232,9 @@ names(4) = "time"
 call create_data(var5, (/nx, ny, test_params%nz/))
 call register_restart_field(fileobj, "var5", var5, names(1:4))
 call register_variable_attribute(fileobj, "var5", "units", "K")
+call create_data(var5p, (/nx, ny, test_params%nz/))
+call register_restart_field(fileobjv, "var5", var5p, names(1:4))
+call register_variable_attribute(fileobjv, "var5", "units", "K")
 
 !Add a domain-decomposed restart variable with east position.
 names(1) = "lon2"
@@ -191,6 +244,9 @@ names(4) = "time"
 call create_data(var6, (/nx+1, ny, test_params%nz/))
 call register_restart_field(fileobj, "var6", var6, names(1:4))
 call register_variable_attribute(fileobj, "var6", "units", "K")
+call create_data(var6p, (/nx+1, ny, test_params%nz/))
+call register_restart_field(fileobjv, "var6", var6p, names(1:4))
+call register_variable_attribute(fileobjv, "var6", "units", "K")
 
 !Add a domain-decomposed restart variable with north position.
 names(1) = "lon"
@@ -200,6 +256,9 @@ names(4) = "time"
 call create_data(var7, (/nx, ny+1, test_params%nz/))
 call register_restart_field(fileobj, "var7", var7, names(1:4))
 call register_variable_attribute(fileobj, "var7", "units", "K")
+call create_data(var7p, (/nx, ny+1, test_params%nz/))
+call register_restart_field(fileobjv, "var7", var7p, names(1:4))
+call register_variable_attribute(fileobjv, "var7", "units", "K")
 
 !Add a domain-decomposed restart variable with corner (east+north) position.
 names(1) = "lon2"
@@ -209,6 +268,9 @@ names(4) = "time"
 call create_data(var8, (/nx+1, ny+1, test_params%nz/))
 call register_restart_field(fileobj, "var8", var8, names(1:4))
 call register_variable_attribute(fileobj, "var8", "units", "K")
+call create_data(var8p, (/nx+1, ny+1, test_params%nz/))
+call register_restart_field(fileobjv, "var8", var8p, names(1:4))
+call register_variable_attribute(fileobjv, "var8", "units", "K")
 
 !Add a non-domain-decomposed variable.
 names(1) = "lay"
@@ -246,7 +308,13 @@ do i = 1, nt
   call write_data(fileobj, "var10", var10, unlim_dim_level=i)
   call create_data(var11)
   call write_restart(fileobj, unlim_dim_level=i)
+  call create_data(var5p)
+  call create_data(var6p)
+  call create_data(var7p)
+  call create_data(var8p)
 enddo
+timestamp = "00001"
+call write_new_restart(fileobjv, timestamp=timestamp)
 
 !Store checksums for non-domain-decomposed/non-restart variables since they are not
 !currently written to the output file.
@@ -375,8 +443,15 @@ deallocate(dim_sizes)
 !Read in the restart data.
 call read_restart(fileobj, unlim_dim_level=nt)
 
+var5p = 0.
+var6p = 0.
+var7p = 0.
+var8p = 0.
+call read_new_restart(fileobjv, timestamp=timestamp)
+
 !Close the file.
 call close_file(fileobj)
+call close_file(fileobjv)
 call mpi_barrier(mpi_comm_world, err)
 call mpi_check(err)
 
@@ -393,6 +468,10 @@ deallocate(var6)
 deallocate(var7)
 deallocate(var8)
 deallocate(var11)
+deallocate(var5p)
+deallocate(var6p)
+deallocate(var7p)
+deallocate(var8p)
 call cleanup(test_params)
 
 

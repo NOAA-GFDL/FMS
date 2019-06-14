@@ -17,7 +17,7 @@ OBJ = mpp_data.o mpp_domains.o monin_obukhov_kernel.o atmos_ocean_fluxes.o \
       netcdf_io.o gradient_c2l.o mpp.o topography.o fms.o column_diagnostics.o axis_utils.o \
       random_numbers.o mpp_parameter.o gradient.o diag_util.o gaussian_topog.o \
       drifters_core.o threadloc.o stock_constants.o interpolator.o mpp_utilities.o diag_axis.o \
-      field_manager.o drifters.o fms_netcdf_domain_io.o cloud_interpolator.o legacy.o \
+      field_manager.o drifters.o blackboxio.o fms_netcdf_domain_io.o cloud_interpolator.o legacy.o \
       fms_netcdf_unstructured_domain_io.o sat_vapor_pres.o mpp_memutils.o diag_grid.o \
       diag_output.o coupler_types.o diag_manifest.o get_cal_time.o \
       xgrid.o diag_data.o oda_types.o oda_core_ecda.o diag_table.o read_mosaic.o \

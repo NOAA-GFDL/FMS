@@ -142,7 +142,8 @@ public :: netcdf_add_restart_variable_5d_wrap
 public :: compressed_start_and_count
 public :: get_fill_value
 public :: is_registered_to_restart
-
+public :: set_netcdf_mode
+public :: check_netcdf_code
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d

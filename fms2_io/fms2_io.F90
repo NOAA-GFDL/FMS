@@ -24,7 +24,9 @@ public :: register_restart_field
 public :: write_data
 public :: read_data
 public :: write_restart
+public :: write_new_restart
 public :: read_restart
+public :: read_new_restart
 public :: global_att_exists
 public :: variable_att_exists
 public :: register_global_attribute

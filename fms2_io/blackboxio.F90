@@ -42,11 +42,11 @@ subroutine get_new_filename(path, new_path, directory, timestamp, new_name)
   endif
   tstamp = ""
   if (present(timestamp)) then
-    call string_copy(tstamp, timestamp//".")
+    call string_copy(tstamp, trim(timestamp)//".")
   endif
   call string_copy(nname, trim(path))
   if (present(new_name)) then
-    call string_copy(nname, new_name)
+    call string_copy(nname, trim(new_name))
   endif
   call string_copy(new_path, trim(dir)//trim(tstamp)//trim(nname))
 end subroutine get_new_filename
