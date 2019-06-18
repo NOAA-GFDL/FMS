@@ -57,7 +57,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
        & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
-  USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe
+  USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe, mpp_get_current_pelist
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
        & get_domainUG, get_diag_axis_name
@@ -154,6 +154,7 @@ CONTAINS
     TYPE(diag_global_att_type) :: gAtt
     character(len=:),allocatable :: fname_no_tile
     integer :: len_file_name
+    integer, allocatable, dimension(:) :: current_pelist
     !---- initialize mpp_io ----
     IF ( .NOT.module_is_initialized ) THEN
        CALL mpp_io_init ()
@@ -210,11 +211,15 @@ CONTAINS
             & threading=threading, fileset=fileset)
        fileob => fileobjND
 !        if (.not.check_if_open(fileob) .and. mpp_pe() == mpp_root_pe()) then
+        allocate(current_pelist(mpp_npes()))
+        call mpp_get_current_pelist(current_pelist)
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, "TESTND"//trim(fname_no_tile)//".nc", "overwrite", &
-                            nc_format="64bit", is_restart=.false.))
+                            nc_format="64bit", pelist=current_pelist, is_restart=.false.))
         endif
        fnum_domain = "nd" ! no domain
+       if (file_unit < 0) file_unit = 10
+       deallocate(current_pelist)
     END IF
 
     !---- write global attributes ----
@@ -1159,10 +1164,10 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
     INTEGER               :: i
 
     !---- write data for all non-time axes ----
-    DO i = 1, num_axis_in_file
-       IF ( time_axis_flag(i) ) CYCLE
-       CALL mpp_write(file_unit, Axis_types(i))
-    END DO
+!    DO i = 1, num_axis_in_file
+!       IF ( time_axis_flag(i) ) CYCLE
+!       CALL mpp_write(file_unit, Axis_types(i))
+!    END DO
 
     num_axis_in_file = 0
   END SUBROUTINE done_meta_data
@@ -1216,7 +1221,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
                     endif
                endif
           elseif (fnum_for_domain == "nd") then
-               if (check_if_open(fileobjND (file_num)) .and. mpp_pe() == mpp_root_pe() ) then
+               if (check_if_open(fileobjND (file_num)) ) then
                     if (time == 0) then
                          call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
                     else
@@ -1288,7 +1293,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
 !                    call write_data (fileobj (file_num), trim(varname), local_buffer)
                endif
           elseif (fnum_for_domain == "nd") then
-               if (check_if_open(fileobjND (file_num)) .and. mpp_pe() == mpp_root_pe() ) then
+               if (check_if_open(fileobjND (file_num)) ) then
                     call write_data (fileobjND (file_num), trim(varname), buffer, unlim_dim_level=time)
                endif
           elseif (fnum_for_domain == "ug") then
@@ -1394,7 +1399,8 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
   SUBROUTINE diag_flush(file_unit)
     INTEGER, INTENT(in) :: file_unit
 
-    CALL mpp_flush (file_unit)
+!    CALL mpp_flush (file_unit)
+    call error_mesg("diag_flush","This routine is no longer necessary." ,NOTE)
   END SUBROUTINE diag_flush
   ! </SUBROUTINE>
 
