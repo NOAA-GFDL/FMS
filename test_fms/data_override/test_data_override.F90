@@ -93,9 +93,9 @@
  integer                           :: get_cpu_affinity, base_cpu
  integer                           :: nthreads=1
  integer                           :: nwindows
- integer                           :: nx_cubic=0, ny_cubic=0, nx_latlon=0, ny_latlon=0
-
- namelist / test_data_override_nml / layout, window, nthreads, nx_cubic, ny_cubic, nx_latlon, ny_latlon
+ integer                           :: nx_cubic=90, ny_cubic=90, nx_latlon=90, ny_latlon=90
+ integer                           :: test_num=1 !* 1 for unstruct cubic grid, 2 for unstruct latlon-grid
+ namelist / test_data_override_nml / layout, window, nthreads, nx_cubic, ny_cubic, nx_latlon, ny_latlon, test_num
 
  call fms_init
  call constants_init
@@ -118,7 +118,7 @@
 10 call close_file (unit)
  endif
 #endif
-
+print *, field_exist(grid_file, "ocn_mosaic_file")
  if(field_exist(grid_file, "x_T" ) ) then
     call field_size(grid_file, 'x_T', siz)
     nlon = siz(1)
@@ -245,11 +245,19 @@ enddo
  if(id_sst > 0) used = send_data(id_sst, sst, Time)
  if(id_ice > 0) used = send_data(id_ice, ice, Time)
 
- if(nx_cubic > 0 .and. ny_cubic > 0) then
+ if(test_num == 1 .and. nx_cubic > 0 .and. ny_cubic > 0) then
+    call mpp_memuse_begin()
+    if(mpp_pe() == mpp_root_pe() ) print *, '---------> Testing cubic grid'
     call test_unstruct_grid( 'Cubic-Grid', Time )
+    call mpp_memuse_end('Cubic-grid')
+    if(mpp_pe() == mpp_root_pe() ) print *, '---------> Done testing cubic grid'
  endif
- if(nx_latlon > 0 .and. ny_latlon > 0) then
+ if(test_num ==2 .and. nx_latlon > 0 .and. ny_latlon > 0) then
+    call mpp_memuse_begin
+    if(mpp_pe() == mpp_root_pe() ) print *, '---------> Testing latlon-grid'
     call test_unstruct_grid( 'Latlon-Grid', Time )
+    call mpp_memuse_end('Latlon-Grid')
+    if(mpp_pe() == mpp_root_pe() ) print *, '---------> Finish testing latlon-grid'
  endif
 
 
@@ -398,7 +406,6 @@ contains
     integer            :: ntotal_land, istart, iend, pos
     integer            :: outunit, errunit, k, l
  
-  call mpp_memuse_begin()
   npes = mpp_npes()
  
   outunit = stdout()
