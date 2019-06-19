@@ -118,7 +118,7 @@
 10 call close_file (unit)
  endif
 #endif
-print *, field_exist(grid_file, "ocn_mosaic_file")
+
  if(field_exist(grid_file, "x_T" ) ) then
     call field_size(grid_file, 'x_T', siz)
     nlon = siz(1)
