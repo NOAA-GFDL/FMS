@@ -17,6 +17,28 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+! The diag_table needed for the test is included below.
+
+!--------------------------------------------------------------------------------------------------
+! test_data_override
+! 1 3 1 0 0 0
+!
+! #output files
+! "test_data_override",  -1, "days", 1, "days", "time"
+!
+! #output variables
+! "test_data_override_mod", "sst", "sst", "test_data_override",  "all", .false., "none", 2
+! "test_data_override_mod", "ice", "ice", "test_data_override",  "all", .false., "none", 2
+!--------------------------------------------------------------------------------------------------
+
+! The data table needed for the test is included below.
+!--------------------------------------------------------------------------------------------------
+! "ICE", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+! "ICE", "sic_obs",  "SIC", "INPUT/sst_ice_clim.nc", .false., 300.0
+! "OCN", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+! "LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+!--------------------------------------------------------------------------------------------------
+
  program test
 
  ! Input data and path_names file for this program is in:
