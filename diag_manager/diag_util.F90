@@ -88,7 +88,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
-  USE diag_output_mod, ONLY: diag_flush, diag_field_out, diag_output_init, write_axis_meta_data,&
+  USE diag_output_mod, ONLY: diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data, diag_field_write, diag_write_time
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
@@ -2529,7 +2529,6 @@ CONTAINS
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) CALL check_and_open(file, time, do_write)
     IF ( .NOT.do_write ) RETURN  ! no need to write data
 
-!    CALL diag_field_out(files(file)%file_unit, output_fields(field)%f_type, dat, dif)
 !> Set up the time index and write the correct time value to the time array
     if (dif > files(file)%rtime_current) then
      files(file)%time_index = files(file)%time_index + 1
@@ -2574,23 +2573,19 @@ CONTAINS
           IF ( num == field ) THEN
              ! Output the axes if this is first time-averaged field
              time_data(1, 1, 1, 1) = start_dif
-!             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_start, time_data(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_start, time_data(1:1,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              time_data(2, 1, 1, 1) = end_dif
-!             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_end, time_data(2:2,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_end, time_data(2:2,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              ! Compute the length of the average
              dt_time(1, 1, 1, 1) = end_dif - start_dif
-!             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
              call diag_field_write (files(file)%f_avg_nitems, dt_time(1:1,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              ! Include boundary variable for CF compliance
-!             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)
              call diag_field_write (files(file)%f_bounds, time_data(1:2,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
@@ -2602,12 +2597,10 @@ CONTAINS
     ! If write time is greater (equal for the last call) than last_flush for this file, flush it
     IF ( final_call ) THEN
        IF ( time >= files(file)%last_flush ) THEN
-          CALL diag_flush(files(file)%file_unit)
           files(file)%last_flush = time
        END IF
     ELSE
        IF ( time > files(file)%last_flush .AND. (flush_nc_files.OR.debug_diag_manager) ) THEN
-          CALL diag_flush(files(file)%file_unit)
           files(file)%last_flush = time
        END IF
     END IF
@@ -2695,14 +2688,10 @@ CONTAINS
        IF ( .NOT.output_fields(i)%static ) CYCLE
        CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE.)
     END DO
-    ! Close up this file
-    IF ( files(file)%file_unit.NE.-1 ) then
+!! New FMS_IO close
       ! File is stil open.  This is to protect when the diag_table has no Fields
       ! going to this file, and it was never opened (b/c diag_data_out was not
       ! called)
-      CALL mpp_close(files(file)%file_unit)
-    END IF
-!! New FMS_IO close
       if (fnum_for_domain(file) == "2d" )then!.or. (fnum_for_domain(file) == "nd" .and. mpp_pe() == mpp_root_pe()) ) then
           if (check_if_open(fileobj(file))) call close_file (fileobj(file) )
       elseif (fnum_for_domain(file) == "nd") then
