@@ -32,7 +32,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   integer,                    intent(in   ) :: tile_fine(:), tile_coarse(:)
   integer,                    intent(in   ) :: istart_coarse(:), icount_coarse(:), jstart_coarse(:), jcount_coarse(:)
   integer,                    intent(in   ) :: npes_nest_tile(:)
-  integer,                    intent(in   ) :: x_refine, y_refine
+  integer,                    intent(in   ) :: x_refine(:), y_refine(:)
   integer,          optional, intent(in   ) :: extra_halo
   character(len=*), optional, intent(in   ) :: name
 
@@ -79,8 +79,8 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
      if(jcount_coarse(n) < 1) call mpp_error(FATAL, "mpp_define_nest_domains.inc: jend_coarse < 1")
      iend_coarse(n) = istart_coarse(n) + icount_coarse(n) - 1
      jend_coarse(n) = jstart_coarse(n) + jcount_coarse(n) - 1
-     istart_fine(n) = 1 ; iend_fine(n) = icount_coarse(n)*x_refine
-     jstart_fine(n) = 1 ; jend_fine(n) = jcount_coarse(n)*y_refine
+     istart_fine(n) = 1 ; iend_fine(n) = icount_coarse(n)*x_refine(n)
+     jstart_fine(n) = 1 ; jend_fine(n) = jcount_coarse(n)*y_refine(n)
   end do
 
   !--- make sure the nest level is monotonic and no jumping
@@ -268,9 +268,13 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
            nest_domain%nest(l)%domain_coarse=>domain
            allocate(nest_domain%nest(l)%domain_fine)
         endif
+!!!! DEBUG CODE ! has problems on coarse domain
+!!$        print*, 'MPP_BROADCAST_DOMAIN: ', mpp_pe(), l, & !ASSOCIATED(nest_domain%nest(l)%domain_fine), &
+!!$             nest_domain%nest(l)%domain_fine%tile_id(1), nest_domain%nest(l)%tile_fine, tile_fine
+!!!! END DEBUG CODE
         call mpp_broadcast_domain(nest_domain%nest(l)%domain_fine, nest_domain%nest(l)%tile_fine)
         call mpp_broadcast_domain(nest_domain%nest(l)%domain_coarse, my_tile_coarse)
-        call define_nest_level_type(nest_domain%nest(l), x_refine, y_refine, extra_halo_local)
+        call define_nest_level_type(nest_domain%nest(l), x_refine(l), y_refine(l), extra_halo_local)
      endif
   enddo
 
