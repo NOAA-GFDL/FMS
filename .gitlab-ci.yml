@@ -250,7 +250,7 @@ build:ncrc:cce:prod:
 # **********************************************************************
 # Google Compute
 # **********************************************************************
-.ncrcScript: &gcpScript
+.gcpScript: &gcpScript
   script:
     - source
     - module load intel/19.0.1.144
