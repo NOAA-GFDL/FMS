@@ -247,3 +247,27 @@ build:ncrc:cce:prod:
       - libfms_${myBuild}.a
       - ./*.mod
 
+# **********************************************************************
+# Google Compute
+# **********************************************************************
+.ncrcScript: &gcpScript
+  script:
+    - source
+    - module load intel/19.0.1.144
+    - module load mpich/3.3
+    - module load netcdf/4.6.2
+    - module load netcdf-fortran/4.4.4
+    - autoreconf -i
+    - configure
+    - make -j distcheck
+
+build:gcp:intel:
+  stage: build
+  tags:
+    - gfdl-gcp
+  variables:
+    CC: mpicc
+    FC: mpif90
+    CPPFLAGS: "$(nc-config --cflags) $(nf-config --fflags)"
+    FCFLAGS: "-fno-alias -stack_temps -safe_cray_ptr -ftz -assume byterecl -i4 -r8 -nowarn -g -sox -traceback"
+  <<: *gcpScript
