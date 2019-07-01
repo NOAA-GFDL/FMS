@@ -257,7 +257,8 @@ before_script:
     - module load mpich/3.3
     - module load netcdf/4.6.2
     - module load netcdf-fortran/4.4.4
-    - env
+    - export CC=mpicc
+    - export FC=mpif90
     - autoreconf -i
     - ./configure
     - make distcheck
@@ -267,8 +268,6 @@ build:gcp:intel:
   tags:
     - gfdl-gcp
   variables:
-    CC: mpicc
-    FC: mpif90
     CPPFLAGS: "-I/apps/spack/opt/spack/linux-centos7-x86_64/intel-19.0.1.144/netcdf-4.6.2-iq53f4shh2qy4f7tmurxxyjzhxhxpjxd/include -I/apps/spack/opt/spack/linux-centos7-x86_64/intel-19.0.1.144/hdf5-1.8.16-romz4gqlhno57t5oc4qym24w7arkk7i7/include -I/apps/spack/opt/spack/linux-centos7-x86_64/intel-19.0.1.144/netcdf-fortran-4.4.4-p23ncwfcytdjtwykkvacvhdpweo4vhvr/include"
     FCFLAGS: "-fno-alias -stack_temps -safe_cray_ptr -ftz -assume byterecl -i4 -r8 -nowarn -g -sox -traceback"
   <<: *gcpScript
