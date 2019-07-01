@@ -90,7 +90,8 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: dpos
+  integer :: xpos
+  integer :: ypos
   integer :: i
   integer :: isd
   integer :: isc
@@ -111,16 +112,15 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
-                                          xdim_index, ydim_index)) then
+                                          xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -130,8 +130,8 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
-                                 ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
@@ -288,7 +288,8 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: dpos
+  integer :: xpos
+  integer :: ypos
   integer :: i
   integer :: isd
   integer :: isc
@@ -309,16 +310,15 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
-                                          xdim_index, ydim_index)) then
+                                          xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -328,8 +328,8 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
-                                 ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
@@ -486,7 +486,8 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: dpos
+  integer :: xpos
+  integer :: ypos
   integer :: i
   integer :: isd
   integer :: isc
@@ -507,16 +508,15 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
-                                          xdim_index, ydim_index)) then
+                                          xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -526,8 +526,8 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
-                                 ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
@@ -684,7 +684,8 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xdim_index
   integer :: ydim_index
   type(domain2d), pointer :: io_domain
-  integer :: dpos
+  integer :: xpos
+  integer :: ypos
   integer :: i
   integer :: isd
   integer :: isc
@@ -705,16 +706,15 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   logical :: buffer_includes_halos
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
-                                          xdim_index, ydim_index)) then
+                                          xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  dpos = get_domain_decomposed_variable_position(fileobj, variable_name)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      dpos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -724,8 +724,8 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, &
-                                 ybegin=pe_jsc, ysize=pe_jcsize, position=dpos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
