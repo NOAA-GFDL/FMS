@@ -52,8 +52,9 @@ public :: is_valid
 public :: get_unlimited_dimension_name
 public :: file_exists
 public :: compressed_start_and_count
+public :: open_check
 public :: is_registered_to_restart
-
+public :: check_if_open
 
 interface open_file
   module procedure netcdf_file_open_wrap

@@ -24,6 +24,7 @@ public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
 public :: get_checksum
+public :: open_check
 
 
 !> @brief A linked list of strings.
@@ -401,6 +402,20 @@ subroutine restart_filepath_mangle(dest, source)
   endif
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
 end subroutine restart_filepath_mangle
+
+subroutine open_check(flag,fname)
+
+  logical, intent(in) :: flag
+  character(*), intent(in), optional :: fname !< The file name
+  
+  if (.not. flag) then
+     if (present(fname)) then
+          call mpp_error(fatal, "Error occured while opening file "//trim(fname))
+     else
+          call mpp_error(fatal, "Error occured while opening file.")
+     endif
+  endif
+end subroutine open_check
 
 
 include "array_utils.inc"

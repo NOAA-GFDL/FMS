@@ -11,7 +11,7 @@ OTHER_FFLAGS =
 
 OBJ = mpp_data.o mpp_domains.o monin_obukhov_kernel.o atmos_ocean_fluxes.o \
       fms_io_utils.o affinity.o time_interp.o memutils.o astronomy.o fft.o monin_obukhov.o drifters_comm.o \
-      tridiagonal.o station_data.o diag_integral.o drifters_input.o time_manager.o horiz_interp_type.o \
+      tridiagonal.o diag_integral.o drifters_input.o time_manager.o horiz_interp_type.o \
       mpp_pset.o horiz_interp_conserve.o amip_interp.o quicksort.o block_control.o \
       xbt_drop_rate_adjust.o horiz_interp_spherical.o fms2_io.o fm_util.o \
       netcdf_io.o gradient_c2l.o mpp.o topography.o fms.o column_diagnostics.o axis_utils.o \
@@ -77,31 +77,31 @@ create_xgrid.o: mosaic/create_xgrid.c mosaic/mosaic_util.h mosaic/create_xgrid.h
 data_override.o: data_override/data_override.F90 include/fms_platform.h include/file_version.h platform.o constants.o mpp_io.o mpp.o horiz_interp.o time_interp_external.o fms_io.o fms.o axis_utils.o mpp_domains.o time_manager.o diag_manager.o mpp_memutils.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude data_override/data_override.F90
 
-diag_axis.o: diag_manager/diag_axis.F90 include/fms_platform.h include/file_version.h mpp_domains.o fms.o diag_data.o
+diag_axis.o: diag_manager/diag_axis.F90 include/fms_platform.h include/file_version.h mpp_domains.o fms.o fms2_io.o diag_data.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude diag_manager/diag_axis.F90
 
-diag_data.o: diag_manager/diag_data.F90 include/fms_platform.h include/file_version.h time_manager.o mpp_domains.o mpp_io.o fms.o
+diag_data.o: diag_manager/diag_data.F90 include/fms_platform.h include/file_version.h time_manager.o mpp_domains.o mpp_io.o fms.o fms2_io.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude diag_manager/diag_data.F90
 
-diag_grid.o: diag_manager/diag_grid.F90 include/fms_platform.h include/file_version.h constants.o fms.o mpp.o mpp_domains.o
+diag_grid.o: diag_manager/diag_grid.F90 include/fms_platform.h include/file_version.h constants.o fms.o mpp.o mpp_domains.o fms2_io.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude diag_manager/diag_grid.F90
 
 diag_integral.o: diag_integral/diag_integral.F90 include/fms_platform.h time_manager.o mpp.o fms.o constants.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude diag_integral/diag_integral.F90
 
-diag_manager.o: diag_manager/diag_manager.F90 include/fms_platform.h include/file_version.h time_manager.o mpp_io.o mpp.o fms.o fms_io.o diag_axis.o diag_util.o diag_data.o diag_table.o diag_output.o diag_grid.o diag_manifest.o constants.o mpp_domains.o mpp_parameter.o
+diag_manager.o: diag_manager/diag_manager.F90 include/fms_platform.h include/file_version.h time_manager.o mpp_io.o mpp.o fms.o fms_io.o fms2_io.o diag_axis.o diag_util.o diag_data.o diag_table.o diag_output.o diag_grid.o diag_manifest.o constants.o mpp_domains.o mpp_parameter.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude diag_manager/diag_manager.F90
 
-diag_manifest.o: diag_manager/diag_manifest.F90 diag_data.o mpp.o fms.o fms_io.o time_manager.o
+diag_manifest.o: diag_manager/diag_manifest.F90 diag_data.o mpp.o fms.o fms_io.o fms2_io.o time_manager.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c diag_manager/diag_manifest.F90
 
-diag_output.o: diag_manager/diag_output.F90 include/fms_platform.h include/file_version.h mpp_io.o mpp_domains.o mpp.o diag_axis.o diag_data.o time_manager.o fms.o
+diag_output.o: diag_manager/diag_output.F90 include/fms_platform.h include/file_version.h mpp_io.o mpp_domains.o mpp.o fms2_io.o legacy.o diag_axis.o diag_data.o time_manager.o fms.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude diag_manager/diag_output.F90
 
-diag_table.o: diag_manager/diag_table.F90 mpp_io.o mpp.o fms.o time_manager.o constants.o diag_data.o diag_util.o
+diag_table.o: diag_manager/diag_table.F90 mpp_io.o mpp.o fms.o time_manager.o constants.o fms2_io.o diag_data.o diag_util.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c diag_manager/diag_table.F90
 
-diag_util.o: diag_manager/diag_util.F90 include/fms_platform.h include/file_version.h diag_data.o diag_axis.o diag_output.o diag_grid.o fms.o fms_io.o mpp_domains.o time_manager.o mpp_io.o mpp.o constants.o
+diag_util.o: diag_manager/diag_util.F90 include/fms_platform.h include/file_version.h diag_data.o diag_axis.o diag_output.o diag_grid.o fms2_io.o fms.o fms_io.o mpp_domains.o time_manager.o mpp_io.o mpp.o constants.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude diag_manager/diag_util.F90
 
 drifters.o: drifters/drifters.F90 drifters/fms_switches.h include/fms_platform.h include/file_version.h drifters/drifters_push.h drifters/drifters_set_field.h drifters/drifters_compute_k.h mpp.o mpp_domains.o drifters_core.o drifters_input.o drifters_io.o drifters_comm.o cloud_interpolator.o
@@ -271,9 +271,6 @@ sat_vapor_pres.o: sat_vapor_pres/sat_vapor_pres.F90 include/file_version.h const
 
 sat_vapor_pres_k.o: sat_vapor_pres/sat_vapor_pres_k.F90 include/file_version.h
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude sat_vapor_pres/sat_vapor_pres_k.F90
-
-station_data.o: station_data/station_data.F90 include/file_version.h axis_utils.o mpp_io.o fms.o mpp.o mpp_domains.o diag_axis.o diag_output.o diag_manager.o diag_util.o time_manager.o
-	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude station_data/station_data.F90
 
 stock_constants.o: exchange/stock_constants.F90 include/file_version.h mpp.o fms.o time_manager.o diag_manager.o
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) -c -Iinclude exchange/stock_constants.F90

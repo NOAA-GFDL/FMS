@@ -333,10 +333,9 @@ subroutine netcdf_write_data_4d(fileobj, variable_name, variable_data, unlim_dim
     if (present(unlim_dim_level)) then
       unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                                broadcast=.false.)
-      if (unlim_dim_index .ne. 5) then
-        call error("unlimited dimension must be the slowest varying dimension.")
-      endif
-      c(unlim_dim_index) = unlim_dim_level
+     if  (unlim_dim_index /= -1) then
+       c(unlim_dim_index) = unlim_dim_level
+     endif
     endif
     call set_netcdf_mode(fileobj%ncid, data_mode)
     varid = get_variable_id(fileobj%ncid, trim(variable_name))

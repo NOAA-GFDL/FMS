@@ -66,6 +66,7 @@ type, public :: FmsNetcdfFile_t
                      !! I/O root.
   logical :: is_restart !< Flag telling if the this file is a restart
                         !! file (that has internal pointers to data).
+  logical, allocatable :: is_open !< Allocated and set to true if opened.  
   type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
   integer :: num_restart_vars !< Number of registered restart variables.
@@ -144,6 +145,8 @@ public :: get_fill_value
 public :: is_registered_to_restart
 public :: set_netcdf_mode
 public :: check_netcdf_code
+public :: check_if_open
+
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
@@ -394,6 +397,12 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   character(len=256) :: buf
   logical :: is_res
 
+  if (allocated(fileobj%is_open)) then
+    if (fileobj%is_open) then
+      success = .true.
+      return
+    endif
+  endif 
   !Add ".res" to the file path if necessary.
   is_res = .false.
   if (present(is_restart)) then
@@ -457,6 +466,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   else
     fileobj%ncid = missing_ncid
   endif
+
   fileobj%is_diskless = .false.
 
   !Allocate memory.
@@ -468,7 +478,9 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   fileobj%is_readonly = string_compare(mode, "read", .true.)
   allocate(fileobj%compressed_dims(max_num_compressed_dims))
   fileobj%num_compressed_dims = 0
-
+  ! Set the is_open flag to true for this file object.
+  if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
+  fileobj%is_open = .true.
 end function netcdf_file_open
 
 
@@ -484,6 +496,7 @@ subroutine netcdf_file_close(fileobj)
     err = nf90_close(fileobj%ncid)
     call check_netcdf_code(err)
   endif
+  if (allocated(fileobj%is_open)) fileobj%is_open = .false.
   fileobj%path = missing_path
   fileobj%ncid = missing_ncid
   if (allocated(fileobj%pelist)) then
@@ -1739,6 +1752,26 @@ function is_registered_to_restart(fileobj, variable_name) &
     endif
   enddo
 end function is_registered_to_restart
+
+
+function check_if_open(fileobj, fname) result(is_open)
+  logical :: is_open !< True if the file in the file object is opened
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in), optional :: fname !< Optional filename for checking
+
+  !Check if the is_open variable in the object has been allocated
+  if (allocated(fileobj%is_open)) then
+    is_open = fileobj%is_open !Return the value of the fileobj%is_open
+  else
+    is_open = .false. !If fileobj%is_open is not allocated, that the file has not been opened
+  endif
+
+  if (present(fname)) then
+    !If the filename does not match the name in path, 
+    !then this is considered not open
+     if (is_open .AND. trim(fname) .ne. trim(fileobj%path)) is_open = .false. 
+  endif
+end function check_if_open
 
 
 end module netcdf_io_mod
