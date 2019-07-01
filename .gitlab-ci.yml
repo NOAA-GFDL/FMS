@@ -258,7 +258,7 @@ before_script:
     - module load netcdf/4.6.2
     - module load netcdf-fortran/4.4.4
     - autoreconf -i
-    - configure
+    - ./configure
     - make distcheck
 
 build:gcp:intel:
