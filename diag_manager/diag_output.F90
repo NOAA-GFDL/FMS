@@ -268,7 +268,7 @@ CONTAINS
   !   </IN>
   SUBROUTINE write_axis_meta_data(file_unit, axes, fileob, time_ops, time_axis_registered)
     INTEGER, INTENT(in) :: file_unit, axes(:)
-    class(FmsNetcdfFile_t) ,optional, intent(inout),target :: fileob
+    class(FmsNetcdfFile_t) , intent(inout),target :: fileob
     class(FmsNetcdfFile_t) ,pointer                        :: fptr
     LOGICAL, INTENT(in), OPTIONAL :: time_ops
     logical, intent(inout) , optional :: time_axis_registered
@@ -302,7 +302,7 @@ integer :: domain_size, axis_length, axis_pos
     integer, allocatable, dimension(:) :: all_indicies
     ! Make sure err_msg is initialized
     err_msg = ''
-    if (present(fileob)) fptr => fileob !Use for selecting a type
+    fptr => fileob !Use for selecting a type
     IF ( PRESENT(time_ops) ) THEN
        time_ops1 = time_ops
     ELSE
@@ -348,7 +348,6 @@ integer :: domain_size, axis_length, axis_pos
        IF ( Domain .NE. null_domain1d ) THEN
           IF ( length > 0 ) THEN
              if (trim(uppercase(trim(axis_cart_name))) .eq. "X" .or. trim(uppercase(trim(axis_cart_name))) .eq. "Y") then
-                if (present(fileob))then
                   select type (fptr)
                     type is (FmsNetcdfDomainFile_t)
                          call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
@@ -371,11 +370,9 @@ integer :: domain_size, axis_length, axis_pos
                               "The file object is not the right type. It must be FmsNetcdfDomainFile_t for a "//&
                               "X or Y axis", FATAL)
                   end select
-                endif
              endif
              
           ELSE
-             if (present(fileob))then
                select type (fptr)
                     type is (FmsNetcdfDomainFile_t)
                          call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
@@ -408,7 +405,6 @@ integer :: domain_size, axis_length, axis_pos
                               call register_variable_attribute(fptr, axis_name, "positive", "down")
                     end select 
                     call write_data(fileob, axis_name, axis_data(istart:iend) )
-             endif
           END IF
        ELSE
           IF ( length > 0 ) THEN
@@ -445,7 +441,6 @@ integer :: domain_size, axis_length, axis_pos
                                  unstruct_axis_data, &
                                  unstruct_axis_sizes, &
                                  io_pelist)
-                 if (present(fileob))then
                   select type (fptr)
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name )
@@ -458,14 +453,12 @@ integer :: domain_size, axis_length, axis_pos
                         call error_mesg("diag_output_mod::write_axis_meta_data", &
                              "The file unstructred 1 object is not the right type.", NOTE)
                   end select
-                 endif
                  deallocate(io_pelist)
                  deallocate(unstruct_axis_sizes)
                  deallocate(unstruct_axis_data)
                  io_domain => null()
 
              else
-                if (present(fileob))then
                  select type (fptr)
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
@@ -514,13 +507,10 @@ integer :: domain_size, axis_length, axis_pos
                         call error_mesg("diag_output_mod::write_axis_meta_data", &
                              "The file object unstructured 2 is not the right type.", FATAL)
                  end select
-                endif
              endif
 
           ELSE
-!! I'm literally guessing
-                if (present(fileob) .and. allocated(fptr%pelist) .and. &
-                    .not. is_time_axis_registered) then
+                if ( allocated(fptr%pelist) .and. .not. is_time_axis_registered) then
                  select type (fptr)
                    type is (FmsNetcdfDomainFile_t)
                         call register_axis(fptr, trim(axis_name), unlimited )
@@ -557,11 +547,8 @@ integer :: domain_size, axis_length, axis_pos
 
        ! Write axis attributes
        id_axis = mpp_get_id(Axis_types(num_axis_in_file))
-     if (present(fileob)) then
        CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg, varname=axis_name, fileob=fileob)
-     else
-       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
-     endif
+!       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
        IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
           CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
        END IF
@@ -575,13 +562,13 @@ integer :: domain_size, axis_length, axis_pos
           calendar = get_calendar_type()
 
 
-          if (present(fileob)) call register_variable_attribute(fileob, axis_name, "calendar_type", &
+          call register_variable_attribute(fileob, axis_name, "calendar_type", &
                                     UPPERCASE(TRIM(valid_calendar_types(calendar))) )
-          if (present(fileob)) call register_variable_attribute(fileob, axis_name, "calendar", &
+          call register_variable_attribute(fileob, axis_name, "calendar", &
                                     lowercase(TRIM(valid_calendar_types(calendar))) )
           IF ( time_ops1 ) THEN
 
-             if (present(fileob)) call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds')
+             call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds')
           END IF
        ELSE
           time_axis_flag(num_axis_in_file) = .FALSE.
@@ -648,8 +635,8 @@ integer :: domain_size, axis_length, axis_pos
              CALL mpp_get_pelist(Domain,pelist)
           END IF
        END IF
+
 !> Add edges axis with fms2_io
-                if (present(fileob))then
                  select type (fptr)
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
@@ -698,14 +685,9 @@ integer :: domain_size, axis_length, axis_pos
                         call error_mesg("diag_output_mod::write_axis_meta_data", &
                              "The file object unstructured 2 is not the right type.", FATAL)
                  end select
-                endif
-
-
-!       call write_axis_edges(fileob, axis_name , axis_edges)
-
        ! Write edge axis attributes
        id_axis = mpp_get_id(Axis_types(num_axis_in_file))
-       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
+!       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
        IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
           CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
        END IF
@@ -776,7 +758,7 @@ integer :: domain_size, axis_length, axis_pos
     TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
     LOGICAL, OPTIONAL, INTENT(in) :: use_UGdomain
-class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
+class(FmsNetcdfFile_t), intent(inout)     :: fileob
 
     CHARACTER(len=256) :: standard_name2
     CHARACTER(len=1280) :: att_str
@@ -928,7 +910,6 @@ character(len=128),dimension(size(axes)) :: axis_names
                & pack=ipack, time_method=time_method)
        END IF
     END IF 
- if (present(fileob)) then
   if (.not. variable_exists(fileob,name)) then
   ! ipack Valid values:
   !        1 = 64bit </LI>
@@ -974,7 +955,6 @@ character(len=128),dimension(size(axes)) :: axis_names
           call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method))
      ENDIF
   endif
- endif
     !---- write user defined attributes -----
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
@@ -1011,21 +991,21 @@ character(len=128),dimension(size(axes)) :: axis_names
     !---- write additional attribute for time averaging -----
     IF ( PRESENT(avg_name) ) THEN
        IF ( avg_name(1:1) /= ' ' ) THEN
-          if (present(fileob)) call register_variable_attribute(fileob,name,'time_avg_info',&
+          call register_variable_attribute(fileob,name,'time_avg_info',&
              & trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT')
        END IF
     END IF
 
     ! write coordinates attribute for CF compliance
     IF ( coord_present ) then
-         if (present(fileob)) call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att))
+         call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att))
     ENDIF
     IF ( TRIM(standard_name2) /= 'none' ) then
-         if (present(fileob)) call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2))
+         call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2))
     ENDIF
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
-       if (present(fileob)) call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method))
+       call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method))
     END IF
 
     !---- get axis domain ----
@@ -1047,7 +1027,7 @@ character(len=128),dimension(size(axes)) :: axis_names
     CHARACTER(len=*), INTENT(in), OPTIONAL :: time_method !< To include in cell_methods attribute if present
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Return error message
     CHARACTER(len=*), INTENT(IN), OPTIONAL :: varname !< The name of the variable
-class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
+class(FmsNetcdfFile_t), intent(inout)     :: fileob
 
     INTEGER :: i, att_len
     CHARACTER(len=1280) :: att_str
@@ -1065,7 +1045,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
                 RETURN
              END IF
           END IF
-          if (present(fileob).and.present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , attributes(i)%iatt)
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , attributes(i)%iatt)
        CASE (NF90_FLOAT)
           IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
@@ -1074,7 +1054,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
                 RETURN
              END IF
           END IF
-          if (present(fileob).and.present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , real(attributes(i)%fatt,4) )
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , real(attributes(i)%fatt,4) )
        CASE (NF90_CHAR)
           att_str = attributes(i)%catt
           att_len = attributes(i)%len
@@ -1083,7 +1063,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
              att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
              att_len = LEN_TRIM(att_str)
           END IF
-          if (present(fileob).and.present(varname))&
+          if (present(varname))&
                call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len))
 
        CASE default
@@ -1127,12 +1107,12 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
     TYPE(diag_fieldtype), INTENT(inout) :: Field
     REAL , INTENT(inout) :: buffer(:,:,:,:)
     logical, intent(in), optional :: static
-    class(FmsNetcdfFile_t), intent(inout),optional,target :: fileob 
+    class(FmsNetcdfFile_t), optional, intent(inout),target :: fileob 
     class(FmsNetcdfFile_t), pointer :: fptr => null()
     integer, intent(in), optional  :: file_num
-    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout),optional :: fileobjU(:)
-    type(FmsNetcdfDomainFile_t),intent(inout),optional :: fileobj(:)
-    type(FmsNetcdfFile_t),intent(inout),optional :: fileobjND(:)
+    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout), optional :: fileobjU(:)
+    type(FmsNetcdfDomainFile_t),intent(inout), optional:: fileobj(:)
+    type(FmsNetcdfFile_t),intent(inout), optional:: fileobjND(:)
     character(len=2), intent(in), optional :: fnum_for_domain
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
@@ -1201,12 +1181,12 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
     CHARACTER(len=*), INTENT(in) :: varname
     REAL , INTENT(inout) :: buffer(:,:,:,:)
     logical, intent(in), optional :: static
-    class(FmsNetcdfFile_t), intent(inout),optional,target :: fileob
+    class(FmsNetcdfFile_t), intent(inout), optional, target :: fileob
     class(FmsNetcdfFile_t), pointer :: fptr => null()
     integer, intent(in), optional  :: file_num
-    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout),optional :: fileobjU(:)
-    type(FmsNetcdfDomainFile_t),intent(inout),optional :: fileobj(:)
-    type(FmsNetcdfFile_t),intent(inout),optional :: fileobjND(:)
+    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout), optional :: fileobjU(:)
+    type(FmsNetcdfDomainFile_t),intent(inout), optional:: fileobj(:)
+    type(FmsNetcdfFile_t),intent(inout), optional:: fileobjND(:)
     character(len=2), intent(in), optional :: fnum_for_domain
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
@@ -1261,7 +1241,7 @@ class(FmsNetcdfFile_t), intent(inout), optional    :: fileob
 !     if (allocated(local_buffer)) deallocate(local_buffer)
   end subroutine diag_field_write_varname
   subroutine diag_write_time (fileob,rtime_value,time_index,time_name)
-     class(FmsNetcdfFile_t), intent(inout),optional,target  :: fileob      !< fms2_io file object
+     class(FmsNetcdfFile_t), intent(inout),target  :: fileob      !< fms2_io file object
      class(FmsNetcdfFile_t), pointer                        :: fptr => null()
      real, intent(in)                                       :: rtime_value !< The value of time to be written
      integer, intent(in)                                    :: time_index  !< The index of the time variable
