@@ -513,7 +513,7 @@ integer :: domain_size, axis_length, axis_pos
                     endif
                    class default
                         call error_mesg("diag_output_mod::write_axis_meta_data", &
-                             "The file object unstructured 2 is not the right type.", FATAL)
+                             "The file object is not the right type.", FATAL)
                  end select
              endif
 
@@ -578,6 +578,7 @@ integer :: domain_size, axis_length, axis_pos
 
              call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds')
           END IF
+          call set_fileobj_time_name(fileob, axis_name)
        ELSE
           time_axis_flag(num_axis_in_file) = .FALSE.
        END IF

@@ -73,6 +73,7 @@ type, public :: FmsNetcdfFile_t
   type(CompressedDimension_t), dimension(:), allocatable :: compressed_dims !< "Compressed" dimension.
   integer :: num_compressed_dims !< Number of compressed dimensions.
   logical :: is_diskless !< Flag telling whether this is a diskless file.
+  character (len=:),allocatable :: time_name
 endtype FmsNetcdfFile_t
 
 
@@ -150,7 +151,7 @@ public :: is_registered_to_restart
 public :: set_netcdf_mode
 public :: check_netcdf_code
 public :: check_if_open
-
+public :: set_fileobj_time_name
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
@@ -1845,5 +1846,17 @@ function check_if_open(fileobj, fname) result(is_open)
   endif
 end function check_if_open
 
+subroutine set_fileobj_time_name (fileobj,time_name)
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj
+  character(*),intent(in) :: time_name
+  integer :: len_of_name
+  len_of_name = len(trim(time_name))
+  if (.not. allocated(fileobj%time_name)) then
+     allocate(character(len=len_of_name) :: fileobj%time_name)
+     fileobj%time_name = trim(time_name)
+  else
+     call error ("set_fileobj_time_name :: The time_name has already been set")
+  endif
+end subroutine set_fileobj_time_name
 
 end module netcdf_io_mod
