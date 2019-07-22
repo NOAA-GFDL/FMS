@@ -27,10 +27,12 @@
 #include <sys/resource.h>
 #include <sys/syscall.h>
 
+#ifndef __APPLE__
 static pid_t gettid(void)
 {
   return syscall(__NR_gettid);
 }
+#endif
 
 /*
  * Returns this thread's CPU affinity, if bound to a single core,
@@ -38,6 +40,7 @@ static pid_t gettid(void)
  */
 int get_cpu_affinity(void)
 {
+#ifndef __APPLE__
   cpu_set_t coremask;		/* core affinity mask */
 
   CPU_ZERO(&coremask);
@@ -60,6 +63,7 @@ int get_cpu_affinity(void)
 
   if (last_cpu != -1) {return (first_cpu);}
   return (last_cpu == -1) ? first_cpu : -1;
+#endif
 }
 
 int get_cpu_affinity_(void) { return get_cpu_affinity(); }	/* Fortran interface */
@@ -70,6 +74,7 @@ int get_cpu_affinity_(void) { return get_cpu_affinity(); }	/* Fortran interface 
  */
 void set_cpu_affinity( int cpu )
 {
+#ifndef __APPLE__
   cpu_set_t coremask;		/* core affinity mask */
 
   CPU_ZERO(&coremask);
@@ -77,6 +82,7 @@ void set_cpu_affinity( int cpu )
   if (sched_setaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
     fprintf(stderr,"Unable to set thread %d affinity. %s\n",gettid(),strerror(errno));
   }
+#endif
 }
 
 void set_cpu_affinity_(int *cpu) { set_cpu_affinity(*cpu); }	/* Fortran interface */
