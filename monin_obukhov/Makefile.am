@@ -20,10 +20,11 @@ libmonin_obukhov_kernel_la_SOURCES = monin_obukhov_kernel.F90
 # this one does not have "_mod" in the name.
 monin_obukhov_mod.mod: monin_obukhov.$(OBJEXT)
 monin_obukhov_inter.mod: monin_obukhov_kernel.$(OBJEXT)
+monin_obukhov.$(OBJEXT): monin_obukhov_inter.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = monin_obukhov_mod.mod monin_obukhov_inter.mod
-include_HEADERS = $(MODFILES) monin_obukhov_interfaces.h
+include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod

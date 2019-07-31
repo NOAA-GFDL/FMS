@@ -66,6 +66,7 @@ libFMS_la_LIBADD += ${top_builddir}/column_diagnostics/libcolumn_diagnostics.la
 libFMS_la_LIBADD += ${top_builddir}/block_control/libblock_control.la
 libFMS_la_LIBADD += ${top_builddir}/astronomy/libastronomy.la
 libFMS_la_LIBADD += ${top_builddir}/field_manager/libfield_manager.la
+libFMS_la_LIBADD += ${top_builddir}/field_manager/libfm_util.la
 libFMS_la_LIBADD += ${top_builddir}/monin_obukhov/libmonin_obukhov.la
 libFMS_la_LIBADD += ${top_builddir}/monin_obukhov/libmonin_obukhov_kernel.la
 libFMS_la_LIBADD += ${top_builddir}/interpolator/libinterpolator.la
