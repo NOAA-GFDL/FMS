@@ -60,14 +60,8 @@ int get_cpu_affinity(void)
       }
     }
   }
-
-<<<<<<< HEAD
-  if (last_cpu != -1) {return (first_cpu);}
-  return (last_cpu == -1) ? first_cpu : -1;
-#endif
-=======
   return first_cpu;
->>>>>>> affinity.c get_cpu_affinity only one return
+#endif
 }
 
 int get_cpu_affinity_(void) { return get_cpu_affinity(); }	/* Fortran interface */
@@ -76,7 +70,7 @@ int get_cpu_affinity_(void) { return get_cpu_affinity(); }	/* Fortran interface 
 /*
  * Set CPU affinity to one core.
  */
-void set_cpu_affinity( int cpu )
+int set_cpu_affinity( int cpu )
 {
 #ifndef __APPLE__
   cpu_set_t coremask;		/* core affinity mask */
@@ -84,9 +78,10 @@ void set_cpu_affinity( int cpu )
   CPU_ZERO(&coremask);
   CPU_SET(cpu,&coremask);
   if (sched_setaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
-    fprintf(stderr,"Unable to set thread %d affinity. %s\n",gettid(),strerror(errno));
+    return -1;
   }
+  return 0;
 #endif
 }
 
-void set_cpu_affinity_(int *cpu) { set_cpu_affinity(*cpu); }	/* Fortran interface */
+int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */
