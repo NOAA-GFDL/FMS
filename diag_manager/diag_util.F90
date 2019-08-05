@@ -2534,11 +2534,26 @@ CONTAINS
      files(file)%time_index = files(file)%time_index + 1
      files(file)%rtime_current = dif
      if (fnum_for_domain(file) == "2d") then
-          call diag_write_time (fileobj(file), files(file)%rtime_current, files(file)%time_index)
+!        if (allocated(fileobj(file)%time_name)) then
+          call diag_write_time (fileobj(file), files(file)%rtime_current, files(file)%time_index,   &
+                                time_name=fileobj(file)%time_name)
+!        else
+!          call diag_write_time (fileobj(file), files(file)%rtime_current, files(file)%time_index)
+!        endif
      elseif (fnum_for_domain(file) == "ug") then
-          call diag_write_time (fileobjU(file), files(file)%rtime_current, files(file)%time_index)
+!        if (allocated(fileobj(file)%time_name)) then
+          call diag_write_time (fileobjU(file), files(file)%rtime_current, files(file)%time_index,  &
+                                time_name=fileobjU(file)%time_name)
+!        else
+!          call diag_write_time (fileobjU(file), files(file)%rtime_current, files(file)%time_index)
+!        endif
      elseif (fnum_for_domain(file) == "nd") then
-          call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index)
+!        if (allocated(fileobj(file)%time_name)) then
+          call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index, &
+                                time_name=fileobjND(file)%time_name)
+!        else
+!          call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index)
+!        endif
      else
           call error_mesg("diag_util_mod::diag_data_out","Error opening the file "//files(file)%name,fatal)
      endif
