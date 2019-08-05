@@ -947,6 +947,9 @@ character(len=128),dimension(size(axes)) :: axis_names
                call register_variable_attribute(fileob,name,"_FillValue",real(CMOR_MISSING_VALUE,8))
                call register_variable_attribute(fileob,name,"missing_value",real(CMOR_MISSING_VALUE,8))
           ENDIF
+          IF ( use_range ) then
+               call register_variable_attribute(fileob,name,"valid_range", real(RANGE,8))
+          ENDIF
      case (2) !default
           call register_field(fileob,name,"float",axis_names)
           IF ( Field%miss_present ) THEN
@@ -955,6 +958,9 @@ character(len=128),dimension(size(axes)) :: axis_names
           ELSE
                call register_variable_attribute(fileob,name,"_FillValue",real(CMOR_MISSING_VALUE,4))
                call register_variable_attribute(fileob,name,"missing_value",real(CMOR_MISSING_VALUE,4))
+          ENDIF
+          IF ( use_range ) then
+               call register_variable_attribute(fileob,name,"valid_range", real(RANGE,4))
           ENDIF
      case default
           CALL error_mesg('diag_output_mod::write_field_meta_data',&
@@ -969,9 +975,6 @@ character(len=128),dimension(size(axes)) :: axis_names
 !         call register_variable_attribute(fileob,name,"_FillValue",CMOR_MISSING_VALUE)
 !         call register_variable_attribute(fileob,name,"missing_value",CMOR_MISSING_VALUE)
 !    ENDIF
-     IF ( use_range ) then
-          call register_variable_attribute(fileob,name,"valid_range", real(RANGE,4))
-     ENDIF
      IF (present(time_method) ) then
           call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method))
      ENDIF
