@@ -2542,11 +2542,9 @@ CONTAINS
      else
           call error_mesg("diag_util_mod::diag_data_out","Error opening the file "//files(file)%name,fatal)
      endif
-!     call diag_field_write ("time", dif, file_num=file, fileobjU=fileobjU, &
-!                         fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
     elseif (dif < files(file)%rtime_current .and. .not.(static_write) ) then
      call error_mesg("diag_util_mod::diag_data_out","The time for the file "//trim(files(file)%name)//&
-                    " has gone backwards.",FATAL)
+                    " has gone backwards. There may be missing values for some of the variables",NOTE)
     endif
 !> Write data
     call diag_field_write (output_fields(field)%output_name, dat, static=static_write, file_num=file, fileobjU=fileobjU, &
