@@ -194,6 +194,19 @@ CONTAINS
     else
        fname_no_tile = trim(file_name)
     endif
+!> If there is a .nc suffix on the file name, remove the .nc
+    if (len(trim(fname_no_tile)) > 3 ) then
+       checkNC: do i = 3,len_file_name
+         if (fname_no_tile(i-2:i) == ".nc") then
+            fname_no_tile(i-2:i) = "   "
+            exit checkNC
+         endif
+       enddo checkNC
+    endif
+!        trim(fname_no_tile)(len_file_name-3:len_file_name) == ".nc") write (6,*)trim(fname_no_tile)
+!        trim(fname_no_tile)(len(trim(fname_no_tile))-3:len(trim(fname_no_tile))) == ".nc") &
+!        trim(fname_no_tile)(len(trim(fname_no_tile))-3:len(trim(fname_no_tile)))  = "   "
+    
 !> Check to make sure that only domain2D or domainUG is used.  If both are not null, then FATAL
     if (domain .NE. NULL_DOMAIN2D .AND. domainU .NE. NULL_DOMAINUG)&
           & CALL error_mesg('diag_output_init', "Domain2D and DomainUG can not be used at the same time in "//&

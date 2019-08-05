@@ -3733,6 +3733,7 @@ CONTAINS
              IF ( mpp_pe() .EQ. mpp_root_pe() ) &
                   & CALL error_mesg('diag_manager_mod::closing_file', 'module/output_field ' //&
                   & TRIM(message)//', skip one time level, maybe send_data never called', WARNING)
+             status = writing_field(i, .TRUE.,message,time)
           ELSE
              status = writing_field(i, .TRUE., message, time)
           END IF
