@@ -22,7 +22,7 @@ before_script:
 # **********************************************************************
 # Intel 16 Compilers
 # **********************************************************************
-# build:ncrc:intel16:debug:
+build:ncrc:intel16:debug:
   stage: build
   tags:
     - ncrc
