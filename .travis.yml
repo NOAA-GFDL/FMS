@@ -7,7 +7,7 @@
 # FMS is not a c-language project, although there are a few c-language
 # sources.  However, this is the best choice.
 language: c
-dist: trusty
+dist: bionic
 sudo: false
 
 addons:
@@ -15,7 +15,7 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - pkg-config netcdf-bin libnetcdf-dev openmpi-bin libopenmpi-dev gfortran
+    - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev 
 
 before_install:
   - test -n $CC && unset CC
