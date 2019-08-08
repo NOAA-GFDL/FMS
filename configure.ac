@@ -66,13 +66,13 @@ AC_CONFIG_FILES([Makefile
         constants/Makefile
         platform/Makefile
         fms/Makefile
+        fms2_io/Makefile
+        fms2_io/include/Makefile
         mpp/Makefile
         mpp/include/Makefile
         tridiagonal/Makefile
         tracer_manager/Makefile
         topography/Makefile
-        station_data/Makefile
-        oda_tools/Makefile
         mosaic/Makefile
         monin_obukhov/Makefile
         memutils/Makefile
@@ -93,6 +93,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
-        test_fms/Makefile
+        test_fms/diag_manager/Makefile
+        test_fms/fms2_io/Makefile
         ])
 AC_OUTPUT()

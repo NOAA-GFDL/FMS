@@ -9,6 +9,7 @@ AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/horiz_interp
+AM_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libgaussian_topog.la libtopography.la

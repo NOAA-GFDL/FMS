@@ -35,9 +35,8 @@ module monin_obukhov_mod
 
 use constants_mod, only: grav, vonkarm
 use mpp_mod,       only: input_nml_file
-use fms_mod,       only: error_mesg, FATAL, file_exist,   &
-                         check_nml_error, open_namelist_file,      &
-                         mpp_pe, mpp_root_pe, close_file, stdlog, &
+use fms_mod,       only: error_mesg, FATAL, check_nml_error,   &
+                         mpp_pe, mpp_root_pe, stdlog, &
                          write_version_number
 use monin_obukhov_inter, only: monin_obukhov_diff, monin_obukhov_drag_1d, &
                                monin_obukhov_profile_1d, monin_obukhov_stable_mix
@@ -118,19 +117,8 @@ integer :: unit, ierr, io, logunit
 
 !------------------- read namelist input -------------------------------
 
-#ifdef INTERNAL_FILE_NML
       read (input_nml_file, nml=monin_obukhov_nml, iostat=io)
       ierr = check_nml_error(io,"monin_obukhov_nml")
-#else
-      if (file_exist('input.nml')) then
-         unit = open_namelist_file ()
-         ierr=1; do while (ierr /= 0)
-            read  (unit, nml=monin_obukhov_nml, iostat=io, end=10)
-            ierr = check_nml_error(io,'monin_obukhov_nml')
-         enddo
-  10     call close_file (unit)
-      endif
-#endif
 
 !---------- output namelist to log-------------------------------------
 
