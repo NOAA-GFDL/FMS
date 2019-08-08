@@ -39,17 +39,18 @@ use fms_mod,       only: error_mesg, FATAL, file_exist,   &
                          check_nml_error, open_namelist_file,      &
                          mpp_pe, mpp_root_pe, close_file, stdlog, &
                          write_version_number
-
+use monin_obukhov_inter, only: monin_obukhov_diff, monin_obukhov_drag_1d, &
+                               monin_obukhov_profile_1d, monin_obukhov_stable_mix
 implicit none
 private
 
 !=======================================================================
- public monin_obukhov_init
- public monin_obukhov_end
- public mo_drag
- public mo_profile
- public mo_diff
- public stable_mix
+ public :: monin_obukhov_init
+ public :: monin_obukhov_end
+ public :: mo_drag
+ public :: mo_profile
+ public :: mo_diff
+ public :: stable_mix
 !=======================================================================
 
 interface mo_drag
@@ -902,16 +903,22 @@ real, intent(out) :: k_m, k_h
 
 integer            :: ni, nj, nk, ier
 real, parameter    :: ustar_min = 1.e-10
+real, dimension(1,1,1) :: z_a, k_m_a, k_h_a
+real, dimension(1,1) :: u_star_a, b_star_a
 
 if(.not.module_is_initialized) call error_mesg('mo_diff_0d_1 in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)
 
 ni = 1; nj = 1; nk = 1
+z_a(1,1,1) = z
+u_star_a(1,1) = u_star
+b_star_a(1,1) = b_star
 call monin_obukhov_diff(vonkarm,                           &
           & ustar_min,                                     &
           & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &!miz
-          & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
-
+          & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
+k_m = k_m_a(1,1,1)
+k_h = k_h_a(1,1,1)
 end subroutine mo_diff_0d_1
 
 !=======================================================================
@@ -924,16 +931,22 @@ real, intent(out), dimension(:) :: k_m, k_h
 
 integer            :: ni, nj, nk, ier
 real, parameter    :: ustar_min = 1.e-10
+real, dimension(1,1,size(z)) :: z_a, k_m_a, k_h_a
+real, dimension(1,1) :: u_star_a, b_star_a
 
 if(.not.module_is_initialized) call error_mesg('mo_diff_0d_n in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)
 
 ni = 1; nj = 1; nk = size(z(:))
+z_a(1,1,:) = z(:)
+u_star_a(1,1) = u_star
+b_star_a(1,1) = b_star
 call monin_obukhov_diff(vonkarm,                           &
           & ustar_min,                                     &
           & neutral, stable_option,new_mo_option,rich_crit, zeta_trans, &!miz
-          & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
-
+          & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
+k_m(:) = k_m_a(1,1,:)
+k_h(:) = k_h_a(1,1,:)
 end subroutine mo_diff_0d_n
 
 !=======================================================================
