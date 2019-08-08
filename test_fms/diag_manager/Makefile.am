@@ -7,7 +7,7 @@ AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/diag_manager
 AM_CPPFLAGS += -I${top_builddir}/time_manager
 AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/include
+AM_CPPFLAGS += -I${top_srcdir}/include
 
 # Build this test program.
 check_PROGRAMS = test_diag_manager
