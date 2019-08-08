@@ -40,7 +40,7 @@ build:ncrc:intel16:debug:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:intel16:repro:
+#build:ncrc:intel16:repro:
   stage: build
   tags:
     - ncrc
@@ -58,7 +58,7 @@ build:ncrc:intel16:repro:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:intel16:prod:
+#build:ncrc:intel16:prod:
   stage: build
   tags:
     - ncrc
@@ -79,7 +79,7 @@ build:ncrc:intel16:prod:
 # **********************************************************************
 # GNU Compilers
 # **********************************************************************
-build:ncrc:gnu:debug:
+#build:ncrc:gnu:debug:
   stage: build
   tags:
     - ncrc
@@ -97,7 +97,7 @@ build:ncrc:gnu:debug:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:gnu:repro:
+#build:ncrc:gnu:repro:
   stage: build
   tags:
     - ncrc
@@ -115,7 +115,7 @@ build:ncrc:gnu:repro:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:gnu:prod:
+#build:ncrc:gnu:prod:
   stage: build
   tags:
     - ncrc
@@ -136,7 +136,7 @@ build:ncrc:gnu:prod:
 # **********************************************************************
 # PGI Compilers
 # **********************************************************************
-build:ncrc:pgi:debug:
+#build:ncrc:pgi:debug:
   stage: build
   tags:
     - ncrc
@@ -154,7 +154,7 @@ build:ncrc:pgi:debug:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:pgi:repro:
+#build:ncrc:pgi:repro:
   stage: build
   tags:
     - ncrc
@@ -172,7 +172,7 @@ build:ncrc:pgi:repro:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:pgi:prod:
+#build:ncrc:pgi:prod:
   stage: build
   tags:
     - ncrc
@@ -193,7 +193,7 @@ build:ncrc:pgi:prod:
 # **********************************************************************
 # Cray Compilers
 # **********************************************************************
-build:ncrc:cce:debug:
+#build:ncrc:cce:debug:
   stage: build
   tags:
     - ncrc
@@ -211,7 +211,7 @@ build:ncrc:cce:debug:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:cce:repro:
+#build:ncrc:cce:repro:
   stage: build
   tags:
     - ncrc
@@ -229,7 +229,7 @@ build:ncrc:cce:repro:
       - libfms_${myBuild}.a
       - ./*.mod
 
-build:ncrc:cce:prod:
+#build:ncrc:cce:prod:
   stage: build
   tags:
     - ncrc
