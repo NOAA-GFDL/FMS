@@ -946,6 +946,7 @@
 
 !****************************************************
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_r8_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_r8_3d
 #undef MPP_TYPE_
@@ -954,6 +955,7 @@
 
 #ifdef OVERLOAD_C8
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_c8_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_c8_3d
 #undef MPP_TYPE_
@@ -963,6 +965,7 @@
 
 #ifndef no_8byte_integers
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_i8_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_i8_3d
 #undef MPP_TYPE_
@@ -970,6 +973,7 @@
 #include <mpp_do_global_field.h>                                    
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l8_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_l8_3d
 #define LOGICAL_VARIABLE
@@ -981,6 +985,7 @@
 
 #ifdef OVERLOAD_R4
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_r4_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_r4_3d
 #undef MPP_TYPE_
@@ -990,6 +995,7 @@
 
 #ifdef OVERLOAD_C4
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_c4_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_c4_3d
 #undef MPP_TYPE_
@@ -998,6 +1004,7 @@
 #endif
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_i4_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_i4_3d
 #undef MPP_TYPE_
@@ -1005,6 +1012,7 @@
 #include <mpp_do_global_field.h>                                    
 
 #undef MPP_DO_GLOBAL_FIELD_3D_
+#undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_l4_3d
 #define MPP_DO_GLOBAL_FIELD_A2A_3D_ mpp_do_global_field2D_a2a_l4_3d
 #define LOGICAL_VARIABLE

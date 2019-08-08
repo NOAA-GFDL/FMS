@@ -161,6 +161,9 @@ integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregor
 integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian
 integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian
 integer, parameter :: invalid_date=-1                     ! Used only for gregorian
+integer,parameter :: do_floor = 0
+integer,parameter :: do_nearest = 1
+
 
 ! time_type is implemented as seconds and days to allow for larger intervals
 type time_type
@@ -1261,53 +1264,58 @@ time_type_to_real = dble(time%days) * 86400.d0 + dble(time%seconds) + &
      dble(time%ticks)/dble(ticks_per_second)
 
 end function time_type_to_real
-! </FUNCTION>
 
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="real_to_time_type">
-!   <OVERVIEW>
-!       Converts a real number of seconds to a time_type variable
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Converts a real number of seconds to a time_type variable
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     real_to_time_type(x, err_msg)
-!   </TEMPLATE>
-!   <IN NAME="x" UNITS="" TYPE="real" DIM="">
-!      A real number of seconds
-!   </IN>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <OUT NAME="real_to_time_type"  TYPE="time_type">
-!   </OUT>
+!> @brief Convert a real number of seconds into a time_type variable.
+!! @return A filled time type variable, and an error message if an
+!!         error occurs.
+function real_to_time_type(x,err_msg) result(t)
+  real,intent(in) :: x !< Number of seconds.
+  character(len=*),intent(out),optional :: err_msg !< Error message.
+  type(time_type) :: t
+  integer :: days
+  integer :: seconds
+  integer :: ticks
+  character(len=128) :: err_msg_local
+  real,parameter :: spd = real(86400)
+  real :: tps
+  real :: a
+  tps = real(ticks_per_second)
+  a = x/spd
+  days = safe_rtoi(a,do_floor)
+  a = x - real(days)*spd
+  seconds = safe_rtoi(a,do_floor)
+  a = (a - real(seconds))*tps
+  ticks = safe_rtoi(a,do_nearest)
+  if (.not. set_time_private(seconds,days,ticks,t,err_msg_local)) then
+    if (error_handler('function real_to_time_type',err_msg_local,err_msg)) then
+      return
+    endif
+  endif
+end function real_to_time_type
 
- function real_to_time_type(x, err_msg)
- type(time_type)  :: real_to_time_type
- real, intent(in) :: x
- character(len=*), intent(out), optional :: err_msg
- integer          :: seconds, days, ticks
- real             :: real_ticks
- character(len=128) :: err_msg_local
-
- if(.not.module_is_initialized) call time_manager_init
-
- days = floor(x/86400.)
- seconds = int(x - 86400.*days)
- real_ticks = x - int(x)
- ticks = nint(real_ticks * ticks_per_second)
- if(.not.set_time_private(seconds, days, ticks, real_to_time_type, err_msg_local)) then
-   if(error_handler('function real_to_time_type', err_msg_local, err_msg)) return
- endif
-
- end function real_to_time_type
-! </FUNCTION>
+!> @brief Convert a floating point value to an integer value.
+!! @return The integer value, using the input rounding mode.
+function safe_rtoi(rval,mode) result(ival)
+  real,intent(in) :: rval !< A floating point value.
+  integer,intent(in) :: mode !< A rouding mode (either "do_floor" or
+                             !! "do_nearest")
+  integer :: ival
+  real :: big
+  big = real(huge(ival))
+  if (rval .le. big .and. -1.*rval .ge. -1.*big) then
+    if (mode .eq. do_floor) then
+      ival = floor(rval)
+    elseif (mode .eq. do_nearest) then
+      ival = nint(rval)
+    else
+      call error_mesg("safe_rtoi","mode must be either do_floor" &
+                      //" or do_nearest.",FATAL)
+    endif
+  else
+    call error_mesg("safe_rtoi","input value cannot be safely" &
+                   //" converted to a 32-bit integer.",FATAL)
+  endif
+end function safe_rtoi
 
 !-------------------------------------------------------------------------
 ! <FUNCTION NAME="time_scalar_divide; operator(/)">

@@ -6,6 +6,7 @@
 # Find the fms_mod.mod file.
 AM_CPPFLAGS = -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/constants
+LDADD = ${top_builddir}/libFMS/.libs/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = tst_fms1
