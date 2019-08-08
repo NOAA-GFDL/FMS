@@ -5,7 +5,7 @@ SUBDIRS = include
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms2_io/include
+AM_CPPFLAGS += -I${top_srcdir}/fms2_io/include
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfms2_io.la libfms_io_utils.la libnetcdf_io.la \
