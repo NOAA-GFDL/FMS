@@ -49,8 +49,7 @@ module horiz_interp_mod
 !-----------------------------------------------------------------------
 
 use fms_mod,                    only: write_version_number, fms_error_handler
-use fms_mod,                    only: file_exist, close_file
-use fms_mod,                    only: check_nml_error, open_namelist_file
+use fms_mod,                    only: check_nml_error
 use mpp_mod,                    only: mpp_error, FATAL, stdout, stdlog, mpp_min
 use mpp_mod,                    only: input_nml_file, WARNING, mpp_pe, mpp_root_pe
 use constants_mod,              only: pi
@@ -252,20 +251,8 @@ contains
   if(module_is_initialized) return
   call write_version_number("HORIZ_INTERP_MOD", version)
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, horiz_interp_nml, iostat=io)
   ierr = check_nml_error(io,'horiz_interp_nml')
-#else
-  if (file_exist('input.nml')) then
-     unit = open_namelist_file ( )
-     ierr=1
-     do while (ierr /= 0)
-     read  (unit, nml=horiz_interp_nml, iostat=io, end=10)
-     ierr = check_nml_error(io,'horiz_interp_nml')  ! also initializes nml error codes
-     enddo
-10   call close_file (unit)
-  endif
-#endif
   if (mpp_pe() == mpp_root_pe() ) then
      unit = stdlog()
      write (unit, nml=horiz_interp_nml)
@@ -1292,7 +1279,7 @@ use mpp_mod,          only : input_nml_file
 use mpp_io_mod,       only : mpp_io_init, mpp_io_exit
 use mpp_domains_mod,  only : mpp_define_layout, mpp_define_domains, mpp_get_compute_domain
 use mpp_domains_mod,  only : mpp_domains_init, domain2d
-use fms_mod,          only : file_exist, open_namelist_file, close_file, check_nml_error
+use fms_mod,          only : check_nml_error
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
 use horiz_interp_mod, only : horiz_interp, horiz_interp_type
 use constants_mod,    only : constants_init, PI
@@ -1328,20 +1315,8 @@ implicit none
   call horiz_interp_init
 
   !--- read namelist
-#ifdef INTERNAL_FILE_NML
       read (input_nml_file, test_horiz_interp_nml, iostat=io)
       ierr = check_nml_error(io, 'test_horiz_interp_nml')
-#else
-  if (file_exist('input.nml')) then
-     ierr=1
-     nml_unit = open_namelist_file()
-     do while (ierr /= 0)
-        read(nml_unit, nml=test_horiz_interp_nml, iostat=io, end=10)
-        ierr = check_nml_error(io, 'test_horiz_interp_nml')
-     enddo
-10   call close_file(nml_unit)
-  endif
-#endif
 
   !--- define domains
   call mpp_define_layout( (/1, ni_dst, 1, nj_dst/), mpp_npes(), layout)
