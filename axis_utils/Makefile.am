@@ -7,7 +7,6 @@
 AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/constants
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libaxis_utils.la
