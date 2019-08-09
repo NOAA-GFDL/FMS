@@ -17,31 +17,31 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! -*-F90-*-
-! $Id$
-
-!==============================================================================
-! Kernel routine interface
-!==============================================================================
 
 module monin_obukhov_inter
 #include <fms_platform.h>
+implicit none
+private
 
-! explicit interface to all kernel routines
-#include "monin_obukhov_interfaces.h"
 
-end module monin_obukhov_inter
+public :: monin_obukhov_diff
+public :: monin_obukhov_drag_1d
+public :: monin_obukhov_solve_zeta
+public :: monin_obukhov_derivative_t
+public :: monin_obukhov_derivative_m
+public :: monin_obukhov_profile_1d
+public :: monin_obukhov_integral_m
+public :: monin_obukhov_integral_tq
+public :: monin_obukhov_stable_mix
 
-!==============================================================================
-! Kernel routines
-!==============================================================================
+
+contains
+
 
 _PURE subroutine monin_obukhov_diff(vonkarm,                &
      & ustar_min,                                     &
      & neutral, stable_option,new_mo_option,rich_crit, zeta_trans, &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
-
-  implicit none
 
   real   , intent(in   )                        :: vonkarm
   real   , intent(in   )                        :: ustar_min ! = 1.e-10
@@ -57,40 +57,7 @@ _PURE subroutine monin_obukhov_diff(vonkarm,                &
 
   real , dimension(ni, nj) :: phi_m, phi_h, zeta, uss
   integer :: j, k
-
   logical, dimension(ni) :: mask
-
-  interface
-     _PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
-          & n, phi_t, zeta, mask, ier)
-
-       ! the differential similarity function for buoyancy and tracers
-       ! Note: seems to be the same as monin_obukhov_derivative_m?
-
-       integer, intent(in   )                :: stable_option
-       logical, intent(in   )                :: new_mo_option !miz
-       real   , intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(  out), dimension(n)  :: phi_t
-       real   , intent(in   ), dimension(n)  :: zeta
-       logical, intent(in   ), dimension(n)  :: mask  
-       integer, intent(  out)                :: ier
-     end subroutine monin_obukhov_derivative_t
-
-     _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
-          & n, phi_m, zeta, mask, ier)
-
-       ! the differential similarity function for momentum
-
-       integer, intent(in   )                :: stable_option
-       real   , intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(  out), dimension(n)  :: phi_m
-       real   , intent(in   ), dimension(n)  :: zeta
-       logical, intent(in   ), dimension(n)  :: mask
-       integer, intent(out  )                :: ier
-     end subroutine monin_obukhov_derivative_m
-  end interface
 
   ier = 0
 
@@ -117,15 +84,14 @@ _PURE subroutine monin_obukhov_diff(vonkarm,                &
   endif
 
 end subroutine monin_obukhov_diff
-!==============================================================================
+
+
 _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
      & error, zeta_min, max_iter, small,                         &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans,&
      & drag_min_heat, drag_min_moist, drag_min_mom,              &
      & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,         &
      & drag_q, u_star, b_star, lavail, avail, ier)
-
-  implicit none
 
   real   , intent(in   )                :: grav     
   real   , intent(in   )                :: vonkarm   
@@ -152,26 +118,6 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
   real                  :: sqrt_drag_min_moist, sqrt_drag_min_mom 
   real                  :: us, bs, qs
   integer               :: i
-
-  interface
-     _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
-          & stable_option, new_mo_option, rich_crit, zeta_trans,                           &
-          & n, rich, z, z0, zt, zq, f_m, f_t, f_q, mask, ier)
-
-       real   , intent(in   )                :: error    ! = 1.e-04
-       real   , intent(in   )                :: zeta_min ! = 1.e-06
-       integer, intent(in   )                :: max_iter ! = 20
-       real   , intent(in   )                :: small    ! = 1.e-04
-       integer, intent(in   )                :: stable_option
-       logical, intent(in   )                :: new_mo_option
-       real   , intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(in   ), dimension(n)  :: rich, z, z0, zt, zq
-       logical, intent(in   ), dimension(n)  :: mask
-       real   , intent(  out), dimension(n)  :: f_m, f_t, f_q
-       integer, intent(  out)                :: ier
-     end subroutine monin_obukhov_solve_zeta
-  end interface
 
   ier = 0
   r_crit = 0.95*rich_crit  ! convergence can get slow if one is 
@@ -249,12 +195,11 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
   end if
 
 end subroutine monin_obukhov_drag_1d
-!==============================================================================
+
+
 _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
      & stable_option, new_mo_option, rich_crit, zeta_trans,        & !miz
      & n, rich, z, z0, zt, zq, f_m, f_t, f_q, mask, ier)
-
-  implicit none
 
   real   , intent(in   )                :: error    ! = 1.e-04
   real   , intent(in   )                :: zeta_min ! = 1.e-06
@@ -269,79 +214,14 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
   real   , intent(  out), dimension(n)  :: f_m, f_t, f_q
   integer, intent(  out)                :: ier
 
-
   real    :: max_cor
   integer :: iter
-
   real, dimension(n) ::   &
        d_rich, rich_1, correction, corr, z_z0, z_zt, z_zq, &
        ln_z_z0, ln_z_zt, ln_z_zq, zeta,                    &
        phi_m, phi_m_0, phi_t, phi_t_0, rzeta,              &
        zeta_0, zeta_t, zeta_q, df_m, df_t
-
   logical, dimension(n) :: mask_1
-
-  interface
-     _PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
-          & n, phi_t, zeta, mask, ier)
-
-       ! the differential similarity function for buoyancy and tracers
-       ! Note: seems to be the same as monin_obukhov_derivative_m?
-
-       integer, intent(in   )                :: stable_option
-       logical, intent(in   )                :: new_mo_option !miz
-       real   , intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(  out), dimension(n)  :: phi_t
-       real   , intent(in   ), dimension(n)  :: zeta
-       logical, intent(in   ), dimension(n)  :: mask  
-       integer, intent(  out)                :: ier
-     end subroutine monin_obukhov_derivative_t
-     _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
-          & n, phi_m, zeta, mask, ier)
-
-       ! the differential similarity function for momentum
-
-       integer, intent(in   )                :: stable_option
-       real   , intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(  out), dimension(n)  :: phi_m
-       real   , intent(in   ), dimension(n)  :: zeta
-       logical, intent(in   ), dimension(n)  :: mask
-       integer, intent(out  )                :: ier
-     end subroutine monin_obukhov_derivative_m
-     _PURE subroutine monin_obukhov_integral_tq(stable_option, new_mo_option,rich_crit, zeta_trans, &
-          & n, psi_t, psi_q, zeta, zeta_t, zeta_q, &
-          & ln_z_zt, ln_z_zq, mask, ier)
-
-       ! the integral similarity function for moisture and tracers
-
-       integer, intent(in   )                :: stable_option
-       logical, intent(in   )                :: new_mo_option
-       real,    intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(inout), dimension(n)  :: psi_t, psi_q
-       real   , intent(in)   , dimension(n)  :: zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq
-       logical, intent(in)   , dimension(n)  :: mask
-       integer, intent(  out)                :: ier
-     end subroutine monin_obukhov_integral_tq
-
-     _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
-          & n, psi_m, zeta, zeta_0, ln_z_z0, mask, ier)
-
-       !  the integral similarity function for momentum
-
-       integer, intent(in   )                :: stable_option
-       real   , intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(inout), dimension(n)  :: psi_m
-       real   , intent(in)   , dimension(n)  :: zeta, zeta_0, ln_z_z0
-       logical, intent(in)   , dimension(n)  :: mask
-       integer, intent(out)                  :: ier
-     end subroutine monin_obukhov_integral_m
-     
-  end interface
-
 
   ier = 0
 
@@ -430,14 +310,12 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
   ier = 1 ! surface drag iteration did not converge
 
 end subroutine monin_obukhov_solve_zeta
-!==============================================================================
+
+
+! the differential similarity function for buoyancy and tracers
+! Note: seems to be the same as monin_obukhov_derivative_m?
 _PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
      & n, phi_t, zeta, mask, ier)
-
-  ! the differential similarity function for buoyancy and tracers
-  ! Note: seems to be the same as monin_obukhov_derivative_m?
-
-  implicit none
 
   integer, intent(in   )                :: stable_option
   logical, intent(in   )                :: new_mo_option !miz
@@ -489,13 +367,11 @@ _PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_cri
   endif
 
 end subroutine monin_obukhov_derivative_t
-!==============================================================================
+
+
+! the differential similarity function for momentum
 _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
      & n, phi_m, zeta, mask, ier)
-
-  ! the differential similarity function for momentum
-
-  implicit none
 
   integer, intent(in   )                :: stable_option
   real   , intent(in   )                :: rich_crit, zeta_trans
@@ -508,7 +384,6 @@ _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans
   logical, dimension(n) :: stable, unstable
   real   , dimension(n) :: x
   real                  :: b_stab, lambda
-
 
   ier = 0
   b_stab     = 1.0/rich_crit
@@ -541,13 +416,12 @@ _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans
   endif
 
 end subroutine monin_obukhov_derivative_m
-!==============================================================================
+
+
 _PURE subroutine monin_obukhov_profile_1d(vonkarm, &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
      & del_m, del_t, del_q, lavail, avail, ier)
-
-  implicit none
 
   real   , intent(in   )                :: vonkarm
   logical, intent(in   )                :: neutral
@@ -566,40 +440,7 @@ _PURE subroutine monin_obukhov_profile_1d(vonkarm, &
        ln_z_z0, ln_z_zt, ln_z_zq, ln_z_zref, ln_z_zref_t,  &
        f_m_ref, f_m, f_t_ref, f_t, f_q_ref, f_q,           &
        mo_length_inv
-
   logical, dimension(n) :: mask
-
-  interface
-     _PURE subroutine monin_obukhov_integral_tq(stable_option, new_mo_option,rich_crit, zeta_trans, &
-          & n, psi_t, psi_q, zeta, zeta_t, zeta_q, &
-          & ln_z_zt, ln_z_zq, mask, ier)
-
-       ! the integral similarity function for moisture and tracers
-
-       integer, intent(in   )                :: stable_option
-       logical, intent(in   )                :: new_mo_option
-       real,    intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(inout), dimension(n)  :: psi_t, psi_q
-       real   , intent(in)   , dimension(n)  :: zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq
-       logical, intent(in)   , dimension(n)  :: mask
-       integer, intent(  out)                :: ier
-     end subroutine monin_obukhov_integral_tq
-
-     _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
-          & n, psi_m, zeta, zeta_0, ln_z_z0, mask, ier)
-
-       !  the integral similarity function for momentum
-
-       integer, intent(in   )                :: stable_option
-       real   , intent(in   )                :: rich_crit, zeta_trans
-       integer, intent(in   )                :: n
-       real   , intent(inout), dimension(n)  :: psi_m
-       real   , intent(in)   , dimension(n)  :: zeta, zeta_0, ln_z_z0
-       logical, intent(in)   , dimension(n)  :: mask
-       integer, intent(out)                  :: ier
-     end subroutine monin_obukhov_integral_m
-  end interface
 
   ier = 0
 
@@ -658,13 +499,11 @@ _PURE subroutine monin_obukhov_profile_1d(vonkarm, &
 
 
 end subroutine monin_obukhov_profile_1d
-!==============================================================================
+
+
+!  the integral similarity function for momentum
 _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
      & n, psi_m, zeta, zeta_0, ln_z_z0, mask, ier)
-
-  !  the integral similarity function for momentum
-
-  implicit none
 
   integer, intent(in   )                :: stable_option
   real   , intent(in   )                :: rich_crit, zeta_trans
@@ -675,7 +514,6 @@ _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, 
   integer, intent(out)                  :: ier
 
   real                   :: b_stab, lambda
-
   real, dimension(n) :: x, x_0, x1, x1_0, num, denom, y
   logical, dimension(n) :: stable, unstable, &
        weakly_stable, strongly_stable
@@ -737,14 +575,12 @@ _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, 
   end if
 
 end subroutine monin_obukhov_integral_m
-!==============================================================================
+
+
+! the integral similarity function for moisture and tracers
 _PURE subroutine monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, psi_t, psi_q, zeta, zeta_t, zeta_q, &
      & ln_z_zt, ln_z_zq, mask, ier)
-
-  ! the integral similarity function for moisture and tracers
-
-  implicit none
 
   integer, intent(in   )                :: stable_option
   logical, intent(in   )                :: new_mo_option !miz
@@ -838,11 +674,10 @@ else if (stable_option == 2) then
 end if
 
 end subroutine monin_obukhov_integral_tq
-!==============================================================================
+
+
 _PURE subroutine monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
      &                              n, rich, mix, ier)
-
-  implicit none
 
   integer, intent(in   )                 :: stable_option
   real   , intent(in   )                 :: rich_crit, zeta_trans
@@ -889,6 +724,9 @@ else if(stable_option == 2) then
 end if
 
 end subroutine monin_obukhov_stable_mix
+
+
+end module monin_obukhov_inter
 
 
 #ifdef _TEST_MONIN_OBUKHOV
@@ -1142,4 +980,3 @@ end program test
 !==============================================================================
 
 #endif 
-! _TEST_MONIN_OBUKHOV

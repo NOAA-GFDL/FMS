@@ -176,7 +176,7 @@ CONTAINS
     INTEGER, INTENT(in) :: outnum  ! position in array output_fields
 
     REAL, ALLOCATABLE   :: global_lat(:), global_lon(:), global_depth(:)
-    INTEGER :: global_axis_size
+    INTEGER :: global_axis_size, global_axis_sizey
     INTEGER :: i,xbegin,xend,ybegin,yend,xbegin_l,xend_l,ybegin_l,yend_l
     CHARACTER(len=1) :: cart
     TYPE(domain2d) :: Domain2, Domain2_new
@@ -296,16 +296,16 @@ CONTAINS
             &                 JSTART=gstart_indx(2), JEND=gend_indx(2))
        global_axis_size =  get_axis_global_length(axes(1))
        ALLOCATE(global_lon(global_axis_size))
-       global_axis_size = get_axis_global_length(axes(2))
-       ALLOCATE(global_lat(global_axis_size))
+       global_axis_sizey = get_axis_global_length(axes(2))
+       ALLOCATE(global_lat(global_axis_sizey))
        CALL get_diag_axis_data(axes(1),global_lon)
        CALL get_diag_axis_data(axes(2),global_lat)
 
        !Potential fix for out-of-bounds error for global_lon and global_lat.
        IF ((gstart_indx(1) .GT. 0 .AND. gstart_indx(2) .GT. 0) .AND. &
-           (gstart_indx(1) .LE. global_axis_size .AND. gstart_indx(2) .LE. global_axis_size) .AND. &
+           (gstart_indx(1) .LE. global_axis_size .AND. gstart_indx(2) .LE. global_axis_sizey) .AND. &
            (gend_indx(1) .GT. 0 .AND. gend_indx(2) .GT. 0) .AND. &
-           (gend_indx(1) .LE. global_axis_size .AND. gend_indx(2) .LE. global_axis_size)) THEN
+           (gend_indx(1) .LE. global_axis_size .AND. gend_indx(2) .LE. global_axis_sizey)) THEN
           ALLOCATE(subaxis_x(gstart_indx(1):gend_indx(1)))
           ALLOCATE(subaxis_y(gstart_indx(2):gend_indx(2)))
           subaxis_x=global_lon(gstart_indx(1):gend_indx(1))
