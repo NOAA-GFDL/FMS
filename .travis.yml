@@ -26,9 +26,6 @@ before_script:
   - export CPPFLAGS='-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500'
   - export FCFLAGS='-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check'
   - export LDFLAGS='-L/usr/lib'
-  - git clone https://github.com/sstephenson/bats.git
-  - bats/install.sh $PWD
-  - export PATH=${PATH}:${PWD}
 
 script:
   - autoreconf -i
