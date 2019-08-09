@@ -41,7 +41,7 @@ static pid_t gettid(void)
 int get_cpu_affinity(void)
 {
 #ifndef __APPLE__
-  cpu_set_t coremask;		/* core affinity mask */
+  cpu_set_t coremask;           /* core affinity mask */
 
   CPU_ZERO(&coremask);
   if (sched_getaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
@@ -49,30 +49,64 @@ int get_cpu_affinity(void)
   }
 
   int cpu;
-  int first_cpu = -1;	/* first CPU in range */
-  int last_cpu = -1;	/* last CPU in range */
   for (cpu=0;cpu < CPU_SETSIZE;cpu++) {
     if (CPU_ISSET(cpu,&coremask)) {
-      if (first_cpu == -1) {
-         first_cpu = cpu;
-      } else {
-        last_cpu = cpu;
+      return cpu;
+    }
+  }
+  return -1;
+#endif
+}
+
+int get_cpu_affinity_(void) { return get_cpu_affinity(); }      /* Fortran interface */
+
+
+/*
+ * Returns this groups CPUSET
+ * and also the CPUSET size or -1 (in case of a storage error)
+ */
+int get_cpuset_affinity(int fsz, int *output, int pe, _Bool debug)
+{
+#ifndef __APPLE__
+  cpu_set_t coremask;		/* core affinity mask */
+
+  CPU_ZERO(&coremask);
+  if (sched_getaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
+    fprintf(stderr,"Unable to get thread %d affinity. %s\n",gettid(),strerror(errno));
+  }
+
+  int  cpu;
+  int  count;
+
+  if (debug) {
+    for (cpu=0;cpu < CPU_SETSIZE;cpu++) {
+      if (CPU_ISSET(cpu,&coremask)) {
+        printf("=> get_cpuset_affinity - pe %d: %d\n",pe, cpu);
       }
     }
   }
 
-  if (last_cpu != -1) {return (first_cpu);}
-  return (last_cpu == -1) ? first_cpu : -1;
+  count = 0;
+  for (cpu=0;cpu < CPU_SETSIZE;cpu++) {
+    if (CPU_ISSET(cpu,&coremask)) {
+      if (count > fsz) { 
+        return -1;
+      }
+      output[count] = cpu;
+      count ++;
+    }
+  }
+  return count;
 #endif
 }
 
-int get_cpu_affinity_(void) { return get_cpu_affinity(); }	/* Fortran interface */
+int get_cpuset_affinity_(int *fsz, int *output, int *pe, _Bool *debug) { return get_cpuset_affinity(*fsz, output, *pe, *debug); } /* Fortran interface */
 
 
 /*
  * Set CPU affinity to one core.
  */
-void set_cpu_affinity( int cpu )
+int set_cpu_affinity(int cpu)
 {
 #ifndef __APPLE__
   cpu_set_t coremask;		/* core affinity mask */
@@ -80,9 +114,10 @@ void set_cpu_affinity( int cpu )
   CPU_ZERO(&coremask);
   CPU_SET(cpu,&coremask);
   if (sched_setaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
-    fprintf(stderr,"Unable to set thread %d affinity. %s\n",gettid(),strerror(errno));
+    return -1;
   }
+  return 0;
 #endif
 }
 
-void set_cpu_affinity_(int *cpu) { set_cpu_affinity(*cpu); }	/* Fortran interface */
+int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */
