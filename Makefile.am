@@ -14,3 +14,5 @@ tracer_manager sat_vapor_pres random_numbers libFMS \
 test_fms/diag_manager test_fms/fms2_io
 
 EXTRA_DIST = README.md
+
+CLEANFILES = *__genmod.mod *__genmod.f90

@@ -1,3 +1,2 @@
 #!/bin/sh
-export PATH="$PATH:../bats/bin"
-bats test_diag_manager.bats
+bats ${srcdir}/test_diag_manager.bats

@@ -15,6 +15,8 @@ check_PROGRAMS = test_diag_manager
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_LDADD = ${top_builddir}/libFMS/libFMS.la
-
+EXTRA_DIST = test_diag_manager.sh test_diag_manager.bats input.nml_base diagTables
 # Run the test program.
 TESTS = test_diag_manager.sh
+
+CLEANFILES = input.nml

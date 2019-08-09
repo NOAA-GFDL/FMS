@@ -93,6 +93,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
+	test_fms/diag_manager/Makefile
         test_fms/fms2_io/Makefile
         ])
 AC_OUTPUT()

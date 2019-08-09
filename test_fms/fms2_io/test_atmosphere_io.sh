@@ -1,3 +1,2 @@
 #!/bin/sh
-export PATH="$PATH:../bats/bin"
-bats test_atmosphere_io.bats
+bats ${srcdir}/test_atmosphere_io.bats

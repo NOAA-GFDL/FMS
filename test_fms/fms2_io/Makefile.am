@@ -11,13 +11,14 @@ check_PROGRAMS = test_atmosphere_io
 # This is the source code for the test.
 test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90
 test_atmosphere_io_LDADD = ${top_builddir}/libFMS/libFMS.la
+EXTRA_DIST = test_atmosphere_io.sh test_atmosphere_io.bats input.nml 
 
 argparse.mod: argparse.$(OBJEXT)
 setup.mod: setup.$(OBJEXT)
 setup.$(OBJEXT): argparse.mod
 test_atmosphere_io.$(OBJEXT): setup.mod
 
-CLEANFILES = *.mod
+CLEANFILES = *.mod *.nc logfile.000000.out
 
 # Run the test program.
 TESTS = test_atmosphere_io.sh
