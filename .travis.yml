@@ -16,6 +16,11 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev 
+
+env:
+  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8'
+  - CPPFLAGS_ADD='-DOVERLOAD_R4 -DOVERLOAD_R8' FCFLAGS_REAL_KIND=''
+
 # Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
 before_install:
   - test -n "$CC" && unset CC
@@ -23,8 +28,8 @@ before_install:
 before_script:
   - export CC=mpicc
   - export FC=mpif90
-  - export CPPFLAGS='-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500'
-  - export FCFLAGS='-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check'
+  - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500 ${CPPFLAGS_ADD}"
+  - export FCFLAGS="-fcray-pointer -fdefault-double-8 -Waliasing -ffree-line-length-none -fno-range-check ${FCFLAGS_REAL_KIND}"
   - export LDFLAGS='-L/usr/lib'
 
 script:
