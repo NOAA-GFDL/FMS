@@ -1527,6 +1527,7 @@ real, dimension (size(data,1),size(data,2)) :: data2
 
 end function vert_diag_integral
 
+!> \brief Adds .ens_## to the diag_integral.out file name 
 function ensemble_file_name(fname) result(updated_file_name)
      character (len=mxch), intent(inout) :: fname
      character (len=mxch) :: updated_file_name
@@ -1534,7 +1535,7 @@ function ensemble_file_name(fname) result(updated_file_name)
      character(len=7) :: ensemble_suffix
      character(len=2) :: ensemble_id_char 
      integer :: i
-     !> Make sure the file name short enough ti handle adding the ensemble number
+     !> Make sure the file name short enough to handle adding the ensemble number
      if (len(trim(fname)) > mxch-7) call error_mesg ('diag_integral_mod :: ensemble_file_name',  &
           trim(fname)//" is too long and can not support adding ens_XX.  Please shorten the "//&
           "file_name in the diag_integral_nml", FATAL)
