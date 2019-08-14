@@ -83,7 +83,6 @@ type, public :: Valid_t
   logical :: has_fill !< Flag that's true a user defined fill value.
   logical :: has_missing !< Flag that's true a user defined missing value.
   real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
-  logical :: has_missing !< Flag that's true a user defined missing value.
   real(kind=real64) :: min_val !< Unpacked minimum value allowed for a variable.
   real(kind=real64) :: max_val !< Unpacked maximum value allowed for a variable.
 endtype Valid_t
@@ -1494,6 +1493,10 @@ function get_valid(fileobj, variable_name) &
     else
       add_offset = 0._real64
     endif
+
+	 !Max and and min data values are defined by the valid_range, valid_min, and valid_max attributes if they are present. 
+	 !If the fill_value attribute is present and valid_range is not, then fill_value determines valid_data values. 
+	 !Otherwise, the missing_value attribute determines valid data_values if it is present, and valid_range fill_value attributes are not.
 
     !Get default max/min from missing_value.  These could be overwritten by
     !vaild_range/valid_min/valid_max/_Fill_Value.
