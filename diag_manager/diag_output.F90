@@ -196,7 +196,7 @@ CONTAINS
     endif
 !> If there is a .nc suffix on the file name, remove the .nc
     if (len(trim(fname_no_tile)) > 3 ) then
-       checkNC: do i = 3,len(fname_no_tile)
+       checkNC: do i = 3,len(trim(fname_no_tile))
          if (fname_no_tile(i-2:i) == ".nc") then
             fname_no_tile(i-2:i) = "   "
             exit checkNC
