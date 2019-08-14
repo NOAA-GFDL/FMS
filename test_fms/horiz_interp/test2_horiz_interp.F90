@@ -16,13 +16,14 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifdef TEST_HORIZ_INTERP
+!#ifdef TEST_HORIZ_INTERP
 !z1l: currently only test bilinear interpolation.
 
-program test
+program test2_horiz_interp
 
   use mpp_mod,          only : mpp_error, mpp_pe,  mpp_npes, mpp_root_pe
   use mpp_mod,          only : FATAL, stdout, stdlog, mpp_chksum
+  use mpp_mod,          only : input_nml_file
   use mpp_io_mod,       only : mpp_open, mpp_close, mpp_read
   use mpp_io_mod,       only : axistype, fieldtype
   use mpp_io_mod,       only : mpp_get_info, mpp_get_fields, mpp_get_times
@@ -46,13 +47,13 @@ program test
   use axis_utils_mod,    only : get_axis_bounds
 implicit none
 
-  character(len=256) :: src_file = ""
-  character(len=256) :: dst_grid = "INPUT/grid_spec.nc"
-  character(len=256) :: field_name = ""
+  character(len=256) :: src_file = "INPUT/sst_ice_clim.nc"
+  character(len=256) :: dst_grid = "INPUT/unit_test_land_mosaic.nc"
+  character(len=256) :: field_name = "SST"
   character(len=256) :: dst_file = "output.nc"
   logical            :: new_missing_handle = .false.
   character(len=256) :: interp_method = "bilinear"
-  logical            :: use_2d_version = .false.
+  logical            :: use_2d_version = .true.
   logical            :: write_remap_index = .false.
   integer            :: layout(2) = (/1,1/)
   integer            :: io_layout(2) = (/1,1/)
@@ -68,7 +69,7 @@ implicit none
   real    :: missing_value
   integer :: n, ntimes
 
-  namelist /test_horiz_interp_nml/ src_file, field_name, dst_file, dst_grid, new_missing_handle, &
+  namelist /test2_horiz_interp_nml/ src_file, field_name, dst_file, dst_grid, new_missing_handle, &
            interp_method, use_2d_version, layout, write_remap_index
 
   call fms_init
@@ -76,7 +77,7 @@ implicit none
   call constants_init
 
 #ifdef INTERNAL_FILE_NML
-  read (input_nml_file, test_horiz_interp_nml, iostat=io)
+  read (input_nml_file, test2_horiz_interp_nml, iostat=io)
   ierr = check_nml_error(io, 'test_horiz_interp_nml')
 #else
   if (file_exist('input.nml')) then
@@ -253,6 +254,8 @@ contains
     start(2) = 2*js-1; nread(2) = 2*(je-js+1)+1
 
     call read_data(tile_file, "x", tmp, start, nread, domain)
+
+
     if(trim(interp_method) == 'conservative' ) then
        allocate(x_dst(is:ie+1,js:je+1), y_dst(is:ie+1,js:je+1))
        do j = js, je+1
@@ -450,10 +453,4 @@ contains
   end subroutine read_src_file
 
 
-end program test
-
-#else
-module null_test_horiz_interp
-end module
-
-#endif
+end program test2_horiz_interp
