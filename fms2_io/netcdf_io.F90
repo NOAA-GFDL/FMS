@@ -81,9 +81,11 @@ endtype FmsNetcdfFile_t
 type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_fill !< Flag that's true a user defined fill value.
+  logical :: has_missing !< Flag that's true a user defined missing value.
   real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
   real(kind=real64) :: min_val !< Unpacked minimum value allowed for a variable.
   real(kind=real64) :: max_val !< Unpacked maximum value allowed for a variable.
+  real(kind=real64) :: missing_val !< Unpacked missing value for a variable.
 endtype Valid_t
 
 
@@ -1493,6 +1495,29 @@ function get_valid(fileobj, variable_name) &
       add_offset = 0._real64
     endif
 
+	 !Max and and min data values are defined by the valid_range, valid_min, and valid_max attributes if they are present. 
+	 !If the fill_value attribute is present and valid_range is not, then fill_value determines valid_data values. 
+	 !Otherwise, the missing_value attribute determines valid data_values if it is present, and valid_range fill_value attributes are not.
+
+    !Get default max/min from missing_value.  These could be overwritten by
+    !vaild_range/valid_min/valid_max/_Fill_Value.
+    if (attribute_exists(fileobj%ncid, varid, "missing_value")) then
+      call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1))
+      xtype = get_variable_type(fileobj%ncid, varid)
+      valid%missing_val = buffer(1)*scale_factor + add_offset
+      valid%has_missing = .true.
+      if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
+          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
+          has_min = .true.
+      elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
+          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
+                          *scale_factor + add_offset
+          has_min = .true.
+      else
+        call error("unsupported type.")
+      endif
+    endif
+
     !Get default max/min from _Fillvalue.  These could be overwritten by
     !vaild_range/valid_min/valid_max.
     if (attribute_exists(fileobj%ncid, varid, "_FillValue")) then
@@ -1585,6 +1610,8 @@ elemental function is_valid(datum, validobj) &
     valid_data = rdatum .ge. validobj%min_val .and. rdatum .le. validobj%max_val
   elseif (validobj%has_fill) then
     valid_data = rdatum .ne. validobj%fill_val
+  elseif (validobj%has_missing) then 
+    valid_data = rdatum .ne. validobj%missing_val
   endif
 end function is_valid
 
