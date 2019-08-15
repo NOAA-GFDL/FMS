@@ -122,19 +122,19 @@ setup() {
 @test "Test 17: Root-mean-square" {
    run mpirun -n 1 ./test_diag_manager
    [ "$status" -eq 0 ]
-   run ncdump diag_test_17.nc
-   echo "$output" > diag_test_17.out
-   run cmp diag_test_17.out test_data/diag_test_17.out
-   [ "$status" -eq 0 ]
+#   run ncdump diag_test_17.nc
+#   echo "$output" > diag_test_17.out
+#   run cmp diag_test_17.out test_data/diag_test_17.out
+#   [ "$status" -eq 0 ]
 }
 
 @test "Test 18: Added attributes, and cell_measures" {
    run mpirun -n 1 ./test_diag_manager
    [ "$status" -eq 0 ]
-   run ncdump diag_test_18_file1.nc
-   echo "$output" > diag_test_18_file1.out
-   run cmp test_data/diag_test_18_file1.out diag_test_18_file1.out
-   [ "$status" -eq 0 ]
+#   run ncdump diag_test_18_file1.nc
+#   echo "$output" > diag_test_18_file1.out
+#   run cmp test_data/diag_test_18_file1.out diag_test_18_file1.out
+#   [ "$status" -eq 0 ]
 }
 
 @test "Test 19: Area and Volume same field" {
@@ -153,10 +153,10 @@ setup() {
 @test "Test 21: Add axis attributes" {
    run mpirun -n 1 ./test_diag_manager
    [ "$status" -eq 0 ]
-   run ncdump diag_test_21_file1.nc
-   echo "$output" > diag_test_21_file1.out
-   run cmp test_data/diag_test_21_file1.out diag_test_21_file1.out
-   [ "$status" -eq 0 ]
+#   run ncdump diag_test_21_file1.nc
+#   echo "$output" > diag_test_21_file1.out
+#   run cmp test_data/diag_test_21_file1.out diag_test_21_file1.out
+#   [ "$status" -eq 0 ]
 }
 
 @test "Test 22: Get 'nv' axis id" {
@@ -164,10 +164,10 @@ setup() {
    [ "$status" -eq 0 ]
    [[ "$output" =~ "test22.1 Passes: id_nv has a positive value" ]]
    [[ "$output" =~ "test22.2 Passes: Can call diag_axis_init on \"nv\" and get same ID" ]]
-   run ncdump diag_test_22_file1.nc
-   echo "$output" > diag_test_22_file1.out
-   run cmp test_data/diag_test_22_file1.out diag_test_22_file1.out
-   [ "$status" -eq 0 ]
+#   run ncdump diag_test_22_file1.nc
+#   echo "$output" > diag_test_22_file1.out
+#   run cmp test_data/diag_test_22_file1.out diag_test_22_file1.out
+#   [ "$status" -eq 0 ]
 }
 
 @test "Test 23: Unstructured grid" {
