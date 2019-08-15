@@ -18,10 +18,10 @@ subroutine compressed_write_0d(fileobj, variable_name, cdata, unlim_dim_level, &
                                           !! where the data
                                           !! will be written to.
 
-  integer :: compressed_dim_index
+  integer, dimension(2) :: compressed_dim_index
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
-  if (compressed_dim_index .eq. dimension_not_found) then
+  if (compressed_dim_index(1) .eq. dimension_not_found) then
     call netcdf_write_data(fileobj, variable_name, cdata, &
                            unlim_dim_level=unlim_dim_level, corner=corner)
     return
@@ -76,7 +76,7 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: compressed_dim_index
+  integer, dimension(2) :: compressed_dim_index
   integer, dimension(1) :: c
   integer, dimension(1) :: e
   integer :: i
@@ -86,7 +86,8 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
   real(kind=real64), dimension(:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
-  if (compressed_dim_index .eq. dimension_not_found) then
+
+  if (compressed_dim_index(1) .eq. dimension_not_found) then
     call netcdf_write_data(fileobj, variable_name, cdata, &
                            unlim_dim_level=unlim_dim_level, corner=corner, &
                            edge_lengths=edge_lengths)
@@ -98,8 +99,8 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
     c(:) = 1
     e(:) = shape(cdata)
     do i = 1, size(fileobj%pelist)
-      c(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_corner(i)
-      e(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_nelems(i)
+      c(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_corner(i)
+      e(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems(i)
       if (i .eq. 1) then
         call netcdf_write_data(fileobj, variable_name, cdata, &
                                unlim_dim_level=unlim_dim_level, corner=c, &
@@ -181,7 +182,7 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: compressed_dim_index
+  integer, dimension(2) :: compressed_dim_index
   integer, dimension(2) :: c
   integer, dimension(2) :: e
   integer :: i
@@ -191,7 +192,7 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
   real(kind=real64), dimension(:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
-  if (compressed_dim_index .eq. dimension_not_found) then
+  if (compressed_dim_index(1) .eq. dimension_not_found) then
     call netcdf_write_data(fileobj, variable_name, cdata, &
                            unlim_dim_level=unlim_dim_level, corner=corner, &
                            edge_lengths=edge_lengths)
@@ -203,8 +204,8 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
     c(:) = 1
     e(:) = shape(cdata)
     do i = 1, size(fileobj%pelist)
-      c(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_corner(i)
-      e(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_nelems(i)
+      c(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_corner(i)
+      e(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems(i)
       if (i .eq. 1) then
         call netcdf_write_data(fileobj, variable_name, cdata, &
                                unlim_dim_level=unlim_dim_level, corner=c, &
@@ -286,7 +287,7 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: compressed_dim_index
+  integer, dimension(2) :: compressed_dim_index
   integer, dimension(3) :: c
   integer, dimension(3) :: e
   integer :: i
@@ -296,7 +297,7 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
   real(kind=real64), dimension(:,:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
-  if (compressed_dim_index .eq. dimension_not_found) then
+  if (compressed_dim_index(1) .eq. dimension_not_found) then
     call netcdf_write_data(fileobj, variable_name, cdata, &
                            unlim_dim_level=unlim_dim_level, corner=corner, &
                            edge_lengths=edge_lengths)
@@ -308,8 +309,8 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
     c(:) = 1
     e(:) = shape(cdata)
     do i = 1, size(fileobj%pelist)
-      c(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_corner(i)
-      e(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_nelems(i)
+      c(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_corner(i)
+      e(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems(i)
       if (i .eq. 1) then
         call netcdf_write_data(fileobj, variable_name, cdata, &
                                unlim_dim_level=unlim_dim_level, corner=c, &
@@ -391,7 +392,7 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: compressed_dim_index
+  integer, dimension(2) :: compressed_dim_index
   integer, dimension(4) :: c
   integer, dimension(4) :: e
   integer :: i
@@ -401,7 +402,7 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
   real(kind=real64), dimension(:,:,:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
-  if (compressed_dim_index .eq. dimension_not_found) then
+  if (compressed_dim_index(1) .eq. dimension_not_found) then
     call netcdf_write_data(fileobj, variable_name, cdata, &
                            unlim_dim_level=unlim_dim_level, corner=corner, &
                            edge_lengths=edge_lengths)
@@ -413,8 +414,8 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
     c(:) = 1
     e(:) = shape(cdata)
     do i = 1, size(fileobj%pelist)
-      c(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_corner(i)
-      e(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_nelems(i)
+      c(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_corner(i)
+      e(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems(i)
       if (i .eq. 1) then
         call netcdf_write_data(fileobj, variable_name, cdata, &
                                unlim_dim_level=unlim_dim_level, corner=c, &
@@ -496,7 +497,7 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: compressed_dim_index
+  integer, dimension(2) :: compressed_dim_index
   integer, dimension(5) :: c
   integer, dimension(5) :: e
   integer :: i
@@ -506,7 +507,7 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
   real(kind=real64), dimension(:,:,:,:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
-  if (compressed_dim_index .eq. dimension_not_found) then
+  if (compressed_dim_index(1) .eq. dimension_not_found) then
     call netcdf_write_data(fileobj, variable_name, cdata, &
                            unlim_dim_level=unlim_dim_level, corner=corner, &
                            edge_lengths=edge_lengths)
@@ -518,8 +519,8 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
     c(:) = 1
     e(:) = shape(cdata)
     do i = 1, size(fileobj%pelist)
-      c(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_corner(i)
-      e(compressed_dim_index) = fileobj%compressed_dims(compressed_dim_index)%npes_nelems(i)
+      c(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_corner(i)
+      e(compressed_dim_index(1)) = fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems(i)
       if (i .eq. 1) then
         call netcdf_write_data(fileobj, variable_name, cdata, &
                                unlim_dim_level=unlim_dim_level, corner=c, &

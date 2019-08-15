@@ -733,11 +733,12 @@ function get_variable_compressed_dimension_index(fileobj, variable_name, broadca
                                              !! "I/O root" ranks.
                                              !! The broadcast will be done
                                              !! by default.
-  integer :: compressed_dimension_index
+  integer, dimension(2) :: compressed_dimension_index
 
   integer :: ndims
   character(len=nf90_max_name), dimension(:), allocatable :: dim_names
   integer :: i
+  integer :: j
 
   compressed_dimension_index = dimension_not_found
   if (fileobj%is_root) then
@@ -746,8 +747,10 @@ function get_variable_compressed_dimension_index(fileobj, variable_name, broadca
       allocate(dim_names(ndims))
       call get_variable_dimension_names(fileobj, variable_name, dim_names, broadcast=.false.)
       do i = 1, size(dim_names)
-        if (get_compressed_dimension_index(fileobj,dim_names(i)) .ne. dimension_not_found) then
-          compressed_dimension_index = i
+        j = get_compressed_dimension_index(fileobj,dim_names(i))
+        if (j .ne. dimension_not_found) then
+          compressed_dimension_index(1) = i
+          compressed_dimension_index(2) = j
           exit
         endif
       enddo
@@ -759,7 +762,7 @@ function get_variable_compressed_dimension_index(fileobj, variable_name, broadca
       return
     endif
   endif
-  call mpp_broadcast(compressed_dimension_index, fileobj%io_root, pelist=fileobj%pelist)
+  call mpp_broadcast(compressed_dimension_index(1), fileobj%io_root, pelist=fileobj%pelist)
 end function get_variable_compressed_dimension_index
 
 
