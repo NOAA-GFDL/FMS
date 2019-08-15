@@ -85,6 +85,7 @@ type, public :: Valid_t
   real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
   real(kind=real64) :: min_val !< Unpacked minimum value allowed for a variable.
   real(kind=real64) :: max_val !< Unpacked maximum value allowed for a variable.
+  real(kind=real64) :: missing_val !< Unpacked missing value for a variable.
 endtype Valid_t
 
 
