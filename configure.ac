@@ -90,13 +90,13 @@ AC_CONFIG_FILES([Makefile
         exchange/Makefile
         drifters/Makefile
         diag_manager/Makefile
-        diag_integral/Makefile
         data_override/Makefile
         column_diagnostics/Makefile
         block_control/Makefile
         axis_utils/Makefile
         astronomy/Makefile
         coupler/Makefile
+        diag_integral/Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
