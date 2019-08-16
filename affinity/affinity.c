@@ -54,8 +54,8 @@ int get_cpu_affinity(void)
       return cpu;
     }
   }
-  return -1;
 #endif
+  return -1;
 }
 
 int get_cpu_affinity_(void) { return get_cpu_affinity(); }      /* Fortran interface */
@@ -97,6 +97,8 @@ int get_cpuset_affinity(int fsz, int *output, int pe, _Bool debug)
     }
   }
   return count;
+#else
+  return fsz;
 #endif
 }
 
@@ -116,8 +118,8 @@ int set_cpu_affinity(int cpu)
   if (sched_setaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
     return -1;
   }
-  return 0;
 #endif
+  return 0;
 }
 
 int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */

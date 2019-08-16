@@ -57,11 +57,14 @@ AC_LANG_POP(Fortran)
 AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
 
-# CPPDEF for an Apple/Mac OS X
-AC_DEFINE([__APPLE__], [test `uname` = 'Darwin'])
+# Define __APPLE__ macro if on a Apple/Mac OS X
+AS_IF([test `echo $OSTYPE` = 'darwin'], [AC_DEFINE([__APPLE__], [ ])], [])
 
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` > 0])
+
+# Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
+AM_CONDITIONAL([APPLE], [test `echo $OSTYPE` = 'darwin'])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
