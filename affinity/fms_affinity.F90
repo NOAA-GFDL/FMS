@@ -25,7 +25,7 @@ module fms_affinity_mod
   !--- FMS modules
   use mpp_mod,    only: input_nml_file, mpp_pe, stdlog
   use fms_mod,    only: fms_init, check_nml_error, write_version_number, &
-                        error_mesg, FATAL
+                        error_mesg, FATAL, NOTE
 
   !--- default scoping
   implicit none
@@ -104,16 +104,18 @@ contains
      allocate (cpu_set(0:cpuset_sz-1))
      retcode = get_cpuset_affinity(cpuset_sz, cpu_set, mpp_pe(), debug_cpuset)
      if (retcode == -1) then
-       call error_mesg('fms_set_affinity',trim(component)//' fms_set_affinity: cpu_set size > allocated storage',FATAL)
+       call error_mesg('fms_set_affinity',trim(component)//' cpu_set size > allocated storage',FATAL)
+     elseif (retcode == cpuset_sz/2 .and. retcode == nthreads) then
+       call error_mesg('fms_set_affinity',trim(component)//' affinity assumes hyperthreading disabled',NOTE)
      elseif (retcode < cpuset_sz) then
-       call error_mesg('fms_set_affinity',trim(component)//' fms_set_affinity: cpu_set size smaller than expected',FATAL)
+       call error_mesg('fms_set_affinity',trim(component)//' cpu_set size smaller than expected',FATAL)
      endif
 !$   call omp_set_num_threads(nthreads)
 !$OMP PARALLEL NUM_THREADS(nthreads), PRIVATE(th_num, retcode)
 !$   th_num = omp_get_thread_num() 
 !$   retcode = set_cpu_affinity(cpu_set(th_num))
 !$   if (retcode == -1) then
-!$     call error_mesg('fms_set_affinigy',trim(component)//': issue setting cpu affinity', FATAL)
+!$     call error_mesg('fms_set_affinity',trim(component)//': issue setting cpu affinity', FATAL)
 !$   endif
 !$   if (debug_affinity) then
 !$      call hostnm(h_name)
