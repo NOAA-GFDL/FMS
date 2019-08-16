@@ -42,6 +42,8 @@ type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
                                                               !! of a 2d domain.
   integer :: ny !< Number of "y" dimensions.
   character(len=256) :: non_mangled_path !< Non-domain-mangled file path.
+  logical :: adjust_indices !< Flag telling if indices need to be adjusted
+                            !! for domain-decomposed read.
 endtype FmsNetcdfDomainFile_t
 
 
@@ -322,6 +324,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   pelist_size = mpp_get_domain_npes(io_domain)
   allocate(pelist(pelist_size))
   call mpp_get_pelist(io_domain, pelist)
+  fileobj%adjust_indices = .true.
 
   !Open the distibuted files.
   success = netcdf_file_open(fileobj, distributed_filepath, mode, nc_format, pelist, &
@@ -338,6 +341,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
                                  is_restart)
+      fileobj%adjust_indices = .not. (success .and. (io_layout(1)*io_layout(2) .gt. 1))
     endif
   endif
   if (.not. success) then
@@ -641,11 +645,14 @@ end subroutine get_compute_domain_dimension_indices
 
 !> @brief Utility routine that retrieves domain indices.
 !! @internal
-subroutine domain_offsets(data_xsize, data_ysize, io_domain, xpos, ypos, &
-                          isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+subroutine domain_offsets(data_xsize, data_ysize, domain, io_domain, xpos, ypos, &
+                          isd, isc, xc_size, jsd, jsc, yc_size, &
+                          buffer_includes_halos, extra_x_point, &
+                          extra_y_point)
 
   integer, intent(in) :: data_xsize !< Size of buffer's domain "x" dimension.
   integer, intent(in) :: data_ysize !< Size of buffer's domain "y" dimension.
+  type(domain2d), intent(in) :: domain !< Parent domain.
   type(domain2d), intent(in) :: io_domain !< I/O domain variable is decomposed over.
   integer, intent(in) :: xpos !< Variable's domain x dimension position.
   integer, intent(in) :: ypos !< Variable's domain y dimension position.
@@ -656,14 +663,30 @@ subroutine domain_offsets(data_xsize, data_ysize, io_domain, xpos, ypos, &
   integer, intent(out) :: jsc !< Starting index for y dimension of compute domain.
   integer, intent(out) :: yc_size !< Size of y dimension of compute domain.
   logical, intent(out) :: buffer_includes_halos !< Flag telling if input buffer includes space for halos.
+  logical, intent(out), optional :: extra_x_point !<
+  logical, intent(out), optional :: extra_y_point !<
 
   integer :: xd_size
   integer :: yd_size
+  integer :: iec
+  integer :: xmax
+  integer :: jec
+  integer :: ymax
 
+  call mpp_get_global_domain(domain, xend=xmax, position=xpos)
+  call mpp_get_global_domain(domain, yend=ymax, position=ypos)
   call mpp_get_data_domain(io_domain, xbegin=isd, xsize=xd_size, position=xpos)
   call mpp_get_data_domain(io_domain, ybegin=jsd, ysize=yd_size, position=ypos)
-  call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=xc_size, position=xpos)
-  call mpp_get_compute_domain(io_domain, ybegin=jsc, ysize=yc_size, position=ypos)
+  call mpp_get_compute_domain(io_domain, xbegin=isc, xend=iec, xsize=xc_size, &
+                              position=xpos)
+  if (present(extra_x_point)) then
+    extra_x_point = (xpos .ne. east) .or. (iec .eq. xmax .and. xpos .eq. east)
+  endif
+  call mpp_get_compute_domain(io_domain, ybegin=jsc, yend=jec, ysize=yc_size, &
+                              position=ypos)
+  if (present(extra_y_point)) then
+    extra_y_point = (ypos .ne. north) .or. (jec .eq. ymax .and. ypos .eq. north)
+  endif
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
   if (.not. buffer_includes_halos .and. data_xsize .ne. xc_size .and. data_ysize &
       .ne. yc_size) then

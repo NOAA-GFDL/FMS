@@ -163,10 +163,11 @@ end subroutine cleanup
 
 
 !> @brief Initialize a cubed-sphere domain.
-subroutine create_cubed_sphere_domain(test_params, domain)
+subroutine create_cubed_sphere_domain(test_params, domain, io_layout)
 
   type(Params), intent(in) :: test_params !< Test parameters.
   type(domain2d), intent(inout) :: domain !< A cubed-sphere domain.
+  integer, dimension(2), intent(in) :: io_layout
 
   integer, dimension(12) :: tile1
   integer, dimension(12) :: tile2
@@ -357,7 +358,7 @@ subroutine create_cubed_sphere_domain(test_params, domain)
                          test_params%pe_end, symmetry=.true., whalo=whalo, ehalo=ehalo, &
                          shalo=shalo, nhalo=nhalo, name=trim("Cubed-sphere"), &
                          memory_size=msize)
-  call mpp_define_io_domain(domain, test_params%io_layout)
+  call mpp_define_io_domain(domain, io_layout)
 end subroutine create_cubed_sphere_domain
 
 

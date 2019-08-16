@@ -88,6 +88,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   type(domain2d), pointer :: io_domain
   integer :: xpos
   integer :: ypos
+  integer :: xmax
+  integer :: ymax
   integer :: isd
   integer :: isc
   integer :: xc_size
@@ -95,6 +97,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
+  logical :: extra_x
+  logical :: extra_y
   integer, dimension(2) :: c
   integer, dimension(2) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -115,8 +119,9 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -126,6 +131,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
+    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
@@ -133,6 +140,12 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
+      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+        e(xdim_index) = e(xdim_index) - 1
+      endif
+      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+        e(ydim_index) = e(ydim_index) - 1
+      endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -245,6 +258,12 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
+    if (.not. extra_x) then
+      e(xdim_index) = e(xdim_index) - 1
+    endif
+    if (.not. extra_y) then
+      e(ydim_index) = e(ydim_index) - 1
+    endif
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
@@ -298,6 +317,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   type(domain2d), pointer :: io_domain
   integer :: xpos
   integer :: ypos
+  integer :: xmax
+  integer :: ymax
   integer :: isd
   integer :: isc
   integer :: xc_size
@@ -305,6 +326,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
+  logical :: extra_x
+  logical :: extra_y
   integer, dimension(3) :: c
   integer, dimension(3) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -325,8 +348,9 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -336,6 +360,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
+    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
@@ -343,6 +369,12 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
+      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+        e(xdim_index) = e(xdim_index) - 1
+      endif
+      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+        e(ydim_index) = e(ydim_index) - 1
+      endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -455,6 +487,12 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
+    if (.not. extra_x) then
+      e(xdim_index) = e(xdim_index) - 1
+    endif
+    if (.not. extra_y) then
+      e(ydim_index) = e(ydim_index) - 1
+    endif
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
@@ -508,6 +546,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   type(domain2d), pointer :: io_domain
   integer :: xpos
   integer :: ypos
+  integer :: xmax
+  integer :: ymax
   integer :: isd
   integer :: isc
   integer :: xc_size
@@ -515,6 +555,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
+  logical :: extra_x
+  logical :: extra_y
   integer, dimension(4) :: c
   integer, dimension(4) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -535,8 +577,9 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -546,6 +589,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
+    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
@@ -553,6 +598,12 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
+      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+        e(xdim_index) = e(xdim_index) - 1
+      endif
+      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+        e(ydim_index) = e(ydim_index) - 1
+      endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -665,6 +716,12 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
+    if (.not. extra_x) then
+      e(xdim_index) = e(xdim_index) - 1
+    endif
+    if (.not. extra_y) then
+      e(ydim_index) = e(ydim_index) - 1
+    endif
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
@@ -718,6 +775,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   type(domain2d), pointer :: io_domain
   integer :: xpos
   integer :: ypos
+  integer :: xmax
+  integer :: ymax
   integer :: isd
   integer :: isc
   integer :: xc_size
@@ -725,6 +784,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
+  logical :: extra_x
+  logical :: extra_y
   integer, dimension(5) :: c
   integer, dimension(5) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -745,8 +806,9 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
-                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -756,6 +818,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_icsize(size(fileobj%pelist)))
     allocate(pe_jsc(size(fileobj%pelist)))
     allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
+    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
@@ -763,6 +827,12 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
+      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+        e(xdim_index) = e(xdim_index) - 1
+      endif
+      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+        e(ydim_index) = e(ydim_index) - 1
+      endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -875,6 +945,12 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
+    if (.not. extra_x) then
+      e(xdim_index) = e(xdim_index) - 1
+    endif
+    if (.not. extra_y) then
+      e(ydim_index) = e(ydim_index) - 1
+    endif
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)

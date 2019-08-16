@@ -9,6 +9,7 @@ use setup
 
 type(Params) :: test_params
 type(domain2d) :: domain
+type(domain2d) :: domain2
 integer :: err
 type(domain2d), pointer :: io_domain
 integer :: isc
@@ -44,8 +45,13 @@ real(kind=real64), dimension(:,:,:), allocatable :: var8p
 real(kind=real64), dimension(:), allocatable :: var9
 integer(kind=int32), dimension(:,:), allocatable :: var10
 real(kind=real64), dimension(:,:,:), allocatable :: var11
+integer(kind=int64) :: var5_chksum
+integer(kind=int64) :: var6_chksum
+integer(kind=int64) :: var7_chksum
+integer(kind=int64) :: var8_chksum
 integer(kind=int64) :: var9_chksum
 integer(kind=int64) :: var10_chksum
+integer(kind=int64) :: var11_chksum
 integer(kind=int64) :: chksum
 character(len=256), dimension(:), allocatable :: string_buffer
 character(len=256), dimension(:), allocatable :: string_buffer2
@@ -58,7 +64,8 @@ character(len=8) :: timestamp
 
 !Initialize.
 call init(test_params, ntiles)
-call create_cubed_sphere_domain(test_params, domain)
+call create_cubed_sphere_domain(test_params, domain, (/1, 1/))
+call create_cubed_sphere_domain(test_params, domain2, (/1, mpp_npes()/ntiles/))
 call mpi_barrier(mpi_comm_world, err)
 call mpi_check(err)
 call random_seed()
@@ -318,10 +325,15 @@ call write_new_restart(fileobjv, timestamp=timestamp)
 
 !Store checksums for non-domain-decomposed/non-restart variables since they are not
 !currently written to the output file.
-if (fileobj%is_root) then
+!if (fileobj%is_root) then
   var9_chksum = mpp_chksum(var9, pelist=(/mpp_pe()/))
-endif
+!endif
+!var5_chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
+!var6_chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
+!var7_chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
+!var8_chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
 var10_chksum = mpp_chksum(var10, pelist=(/mpp_pe()/))
+!var11_chksum = mpp_chksum(var11(isc-isd+1:isc-isd+1+nx, jsc-jsd+1:jsc-jsd+1+ny, :), pelist=(/mpp_pe()/))
 
 !Close the file.
 call close_file(fileobj)
@@ -346,8 +358,18 @@ if (open_file(fileobj, "atmosphere.foobar.nc", "read", domain, &
 endif
 
 !Re-open the restart file and re-initialize the file object.
-call open_check(open_file(fileobj, "atmosphere.nc", "read", domain, &
+call open_check(open_file(fileobj, "atmosphere.nc", "read", domain2, &
                           nc_format="64bit", is_restart=.true.))
+
+!Get the sizes of the I/O compute and data domains.
+io_domain => mpp_get_io_domain(domain2)
+if (.not. associated(io_domain)) then
+  call mpp_error(fatal, "I/O domain is not associated.")
+endif
+call mpp_get_compute_domain(io_domain, xbegin=isc, xend=iec, xsize=nx, ybegin=jsc, yend=jec, ysize=ny)
+call mpp_get_data_domain(io_domain, xbegin=isd, xsize=nxd, ybegin=jsd, ysize=nyd)
+call mpp_get_compute_domain(io_domain, xbegin=isc_east, xend=iec_east, xsize=nx_east, position=east)
+call mpp_get_compute_domain(io_domain, ybegin=jsc_north, yend=jec_north, ysize=ny_north, position=north)
 
 !Associate the lon and lat dimensions with the
 !"x" and "y" dimensions of the domain.
@@ -382,12 +404,12 @@ allocate(dim_sizes(ndims))
 call get_variable_size(fileobj, "var9", dim_sizes, broadcast=.true.)
 allocate(var9(dim_sizes(1)))
 call read_data(fileobj, "var9", var9, unlim_dim_level=nt)
-if (fileobj%is_root) then
-  chksum = mpp_chksum(var9, pelist=(/mpp_pe()/))
-  if (chksum .ne. var9_chksum) then
-    call mpp_error(fatal, "checksum for var9 does not match.")
-  endif
-endif
+!if (fileobj%is_root) then
+!  chksum = mpp_chksum(var9, pelist=(/mpp_pe()/))
+!  if (chksum .ne. var9_chksum) then
+!    call mpp_error(fatal, "checksum for var9 does not match.")
+!  endif
+!endif
 deallocate(var9)
 deallocate(dim_sizes)
 
@@ -395,11 +417,11 @@ deallocate(dim_sizes)
 ndims = get_variable_num_dimensions(fileobj, "var10", broadcast=.true.)
 allocate(dim_sizes(ndims))
 call get_variable_size(fileobj, "var10", dim_sizes, broadcast=.true.)
-allocate(var10(dim_sizes(1), dim_sizes(2)))
+allocate(var10(nx, ny))
 call read_data(fileobj, "var10", var10, unlim_dim_level=nt)
 chksum = mpp_chksum(var10, pelist=(/mpp_pe()/))
 if (chksum .ne. var10_chksum) then
-! call mpp_error(fatal, "checksum for var10 does not match.")
+  call mpp_error(fatal, "checksum for var10 does not match.")
 endif
 deallocate(var10)
 deallocate(dim_sizes)
@@ -408,28 +430,28 @@ deallocate(dim_sizes)
 ndims = get_variable_num_dimensions(fileobj, "var5", broadcast=.true.)
 allocate(dim_sizes(ndims))
 call get_variable_size(fileobj, "var5", dim_sizes, broadcast=.true.)
-allocate(var5(dim_sizes(1), dim_sizes(2), dim_sizes(3)))
+allocate(var5(nx, ny, dim_sizes(3)))
 call register_restart_field(fileobj, "var5", var5)
 deallocate(dim_sizes)
 
 ndims = get_variable_num_dimensions(fileobj, "var6", broadcast=.true.)
 allocate(dim_sizes(ndims))
 call get_variable_size(fileobj, "var6", dim_sizes, broadcast=.true.)
-allocate(var6(dim_sizes(1), dim_sizes(2), dim_sizes(3)))
+allocate(var6(nx+1, ny, dim_sizes(3)))
 call register_restart_field(fileobj, "var6", var6)
 deallocate(dim_sizes)
 
 ndims = get_variable_num_dimensions(fileobj, "var7", broadcast=.true.)
 allocate(dim_sizes(ndims))
 call get_variable_size(fileobj, "var7", dim_sizes, broadcast=.true.)
-allocate(var7(dim_sizes(1), dim_sizes(2), dim_sizes(3)))
+allocate(var7(nx, ny+1, dim_sizes(3)))
 call register_restart_field(fileobj, "var7", var7)
 deallocate(dim_sizes)
 
 ndims = get_variable_num_dimensions(fileobj, "var8", broadcast=.true.)
 allocate(dim_sizes(ndims))
 call get_variable_size(fileobj, "var8", dim_sizes, broadcast=.true.)
-allocate(var8(dim_sizes(1), dim_sizes(2), dim_sizes(3)))
+allocate(var8(nx+1, ny+1, dim_sizes(3)))
 call register_restart_field(fileobj, "var8", var8)
 deallocate(dim_sizes)
 
@@ -442,6 +464,28 @@ deallocate(dim_sizes)
 
 !Read in the restart data.
 call read_restart(fileobj, unlim_dim_level=nt)
+
+
+!chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
+!if (chksum .ne. var5_chksum) then
+!  call mpp_error(fatal, "checksum for var 5 does not match.")
+!endif
+!chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
+!if (chksum .ne. var6_chksum) then
+!  call mpp_error(fatal, "checksum for var 6 does not match.")
+!endif
+!chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
+!if (chksum .ne. var7_chksum) then
+!  call mpp_error(fatal, "checksum for var 7 does not match.")
+!endif
+!chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
+!if (chksum .ne. var8_chksum) then
+!  call mpp_error(fatal, "checksum for var 8 does not match.")
+!endif
+
+
+
+
 
 var5p = 0.
 var6p = 0.

@@ -119,7 +119,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
@@ -133,8 +133,12 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      c(xdim_index) = pe_isc(i)
+      c(ydim_index) = pe_jsc(i)
+      if (fileobj%adjust_indices) then
+        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
+        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+      endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -150,6 +154,9 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int32, vdata, c, e)
           else
@@ -170,6 +177,9 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int64, vdata, c, e)
           else
@@ -190,6 +200,9 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real32, vdata, c, e)
           else
@@ -210,6 +223,9 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real64, vdata, c, e)
           else
@@ -317,7 +333,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
@@ -331,8 +347,12 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      c(xdim_index) = pe_isc(i)
+      c(ydim_index) = pe_jsc(i)
+      if (fileobj%adjust_indices) then
+        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
+        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+      endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -348,6 +368,9 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int32, vdata, c, e)
           else
@@ -368,6 +391,9 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int64, vdata, c, e)
           else
@@ -388,6 +414,9 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real32, vdata, c, e)
           else
@@ -408,6 +437,9 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real64, vdata, c, e)
           else
@@ -515,7 +547,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
@@ -529,8 +561,12 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      c(xdim_index) = pe_isc(i)
+      c(ydim_index) = pe_jsc(i)
+      if (fileobj%adjust_indices) then
+        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
+        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+      endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -546,6 +582,9 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int32, vdata, c, e)
           else
@@ -566,6 +605,9 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int64, vdata, c, e)
           else
@@ -586,6 +628,9 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real32, vdata, c, e)
           else
@@ -606,6 +651,9 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real64, vdata, c, e)
           else
@@ -713,7 +761,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
@@ -727,8 +775,13 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      !Calculate the indices of the domain-decomposed chunk relative to its position in the file.
+      c(xdim_index) = pe_isc(i)
+      c(ydim_index) = pe_jsc(i)
+      if (fileobj%adjust_indices) then
+        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
+        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+      endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -739,11 +792,15 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 unlim_dim_level=unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
-            !Root rank stores data directly.
+            !Root rank stores data directly.  Re-adjust the indicies relative
+            !to the input buffer vdata.
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int32, vdata, c, e)
           else
@@ -764,6 +821,9 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_int64, vdata, c, e)
           else
@@ -784,6 +844,9 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real32, vdata, c, e)
           else
@@ -804,6 +867,9 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
+            else
+              c(xdim_index) = 1
+              c(ydim_index) = 1
             endif
             call put_array_section(buf_real64, vdata, c, e)
           else
