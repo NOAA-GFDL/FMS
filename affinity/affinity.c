@@ -65,7 +65,7 @@ int get_cpu_affinity_(void) { return get_cpu_affinity(); }      /* Fortran inter
  * Returns this groups CPUSET
  * and also the CPUSET size or -1 (in case of a storage error)
  */
-int get_cpuset_affinity(int fsz, int *output, int pe, _Bool debug)
+int get_cpuset(int fsz, int *output, int pe, _Bool debug)
 {
 #ifndef __APPLE__
   cpu_set_t coremask;		/* core affinity mask */
@@ -81,7 +81,7 @@ int get_cpuset_affinity(int fsz, int *output, int pe, _Bool debug)
   if (debug) {
     for (cpu=0;cpu < CPU_SETSIZE;cpu++) {
       if (CPU_ISSET(cpu,&coremask)) {
-        printf("=> get_cpuset_affinity - pe %d: %d\n",pe, cpu);
+        printf("=> get_cpuset - pe %d: %d\n",pe, cpu);
       }
     }
   }
@@ -102,7 +102,7 @@ int get_cpuset_affinity(int fsz, int *output, int pe, _Bool debug)
 #endif
 }
 
-int get_cpuset_affinity_(int *fsz, int *output, int *pe, _Bool *debug) { return get_cpuset_affinity(*fsz, output, *pe, *debug); } /* Fortran interface */
+int get_cpuset_(int *fsz, int *output, int *pe, _Bool *debug) { return get_cpuset(*fsz, output, *pe, *debug); } /* Fortran interface */
 
 
 /*

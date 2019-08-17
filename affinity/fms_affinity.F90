@@ -36,7 +36,7 @@ module fms_affinity_mod
   logical(c_bool):: debug_cpuset = .false.
   namelist /fms_affinity_nml/ debug_affinity, debug_cpuset
 
-  public fms_affinity_init, fms_set_affinity
+  public fms_affinity_init, fms_get_affinity, fms_set_affinity
 
   !---- version number
   ! Include variable "version" to be written to log file.
@@ -73,17 +73,30 @@ contains
 
   end subroutine fms_affinity_init
 
-    
+
+  !--- function to get affinity 
+  function fms_get_affinity () result(affinity)
+
+    !--- local declarations for Fortran/C affinity interoperability
+    integer(c_int):: get_cpu_affinity
+
+    !--- local variables
+    integer:: affinity 
+
+    affinity = get_cpu_affinity()
+
+  end function fms_get_affinity
+
 
   !--- routine to set affinity 
   subroutine fms_set_affinity (component, nthreads, use_hyper_threads)
     !--- interface variables
-    character(len=*), intent(in):: component
-    integer,          intent(in):: nthreads
-    logical,          intent(in):: use_hyper_threads
+    character(len=*),  intent(in):: component
+    integer,           intent(in):: nthreads
+    logical,           intent(in):: use_hyper_threads
 
     !--- local declarations for Fortran/C affinity interoperability
-    integer(c_int):: get_cpuset_affinity
+    integer(c_int):: get_cpuset
     integer(c_int):: get_cpu_affinity
     integer(c_int):: set_cpu_affinity
     integer(c_int):: cpuset_sz
@@ -91,35 +104,57 @@ contains
     integer(c_int):: retcode
 
     !--- local variables
+    logical:: concurrent
     integer:: th_num
     character(len=32):: h_name
 
      h_name = 'generic                         '
 
+     !--- allocate storage for cpuset
      if (use_hyper_threads) then
        cpuset_sz = nthreads
      else
        cpuset_sz = nthreads * 2
      endif
      allocate (cpu_set(0:cpuset_sz-1))
-     retcode = get_cpuset_affinity(cpuset_sz, cpu_set, mpp_pe(), debug_cpuset)
+
+     !--- get cpuset for this MPI-rank
+     retcode = get_cpuset(cpuset_sz, cpu_set, mpp_pe(), debug_cpuset)
      if (retcode == -1) then
        call error_mesg('fms_set_affinity',trim(component)//' cpu_set size > allocated storage',FATAL)
      elseif (retcode == cpuset_sz/2 .and. retcode == nthreads) then
-       call error_mesg('fms_set_affinity',trim(component)//' affinity assumes hyperthreading disabled',NOTE)
+       call error_mesg('fms_set_affinity',trim(component)//' affinity assumes hyper-threading disabled',NOTE)
      elseif (retcode < cpuset_sz) then
        call error_mesg('fms_set_affinity',trim(component)//' cpu_set size smaller than expected',FATAL)
      endif
-!$   call omp_set_num_threads(nthreads)
-!$OMP PARALLEL NUM_THREADS(nthreads), PRIVATE(th_num, retcode)
-!$   th_num = omp_get_thread_num() 
+
+     !--- set the affinity for the MPI-rank
+     retcode = set_cpu_affinity(cpu_set(1))
+     if (retcode == -1) then
+       call error_mesg('fms_set_affinity',trim(component)//': issue setting cpu affinity', FATAL)
+     endif
+
+     !--- set affinity for threads associated with this MPI-rank
+!$OMP PARALLEL NUM_THREADS (nthreads) &
+!$             SHARED (use_hyper_threads, cpuset_sz, component, cpu_set) &
+!$             PRIVATE (th_num, retcode, h_name)
+!$   th_num = omp_get_thread_num()
+     !--- handle hyper threading case by alternating threads between logical and virtual cores
+!$   if (use_hyper_threads) then
+!$     if (mod(th_num,2) == 0 ) then
+!$       th_num = th_num/2
+!$     else
+!$       th_num = (cpuset_sz - 1) - ((cpuset_sz - 1) - th_num)/2
+!$     endif
+!$   endif
 !$   retcode = set_cpu_affinity(cpu_set(th_num))
 !$   if (retcode == -1) then
 !$     call error_mesg('fms_set_affinity',trim(component)//': issue setting cpu affinity', FATAL)
 !$   endif
+     !--- output affinity placement 
 !$   if (debug_affinity) then
 !$      call hostnm(h_name)
-!$      print *, 'NOTE:',mpp_pe(),trim(component),' ',trim(h_name),get_cpu_affinity(),cpu_set(0),th_num
+!$      print *, 'NOTE:',mpp_pe(),trim(component),' ',trim(h_name),get_cpu_affinity(),cpu_set(0),omp_get_thread_num()
 !$   endif
 !$OMP END PARALLEL
 

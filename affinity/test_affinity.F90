@@ -6,13 +6,15 @@ program test_affinity
 
 !--- namelist parameters
  character(len=15) :: component='COMPONENT      '
- integer:: nthreads = 2
+ integer:: nthreads   = 2
  logical:: use_hyper_threads = .false.
- namelist /test_affinity_nml/ component, nthreads, use_hyper_threads
+ logical:: do_concurrent = .false.
+ integer:: nthreads_2 = 2
+ namelist /test_affinity_nml/ component, nthreads, use_hyper_threads, do_concurrent, nthreads_2
 
 !--- program vars
  integer:: io_status
- integer:: th_num
+ integer:: conc_threads
  character(len=32):: h_name
 
 
@@ -28,7 +30,10 @@ program test_affinity
       call mpp_error(FATAL, '=> test_affinity: Error reading input.nml')
     endif
 
-    call fms_set_affinity (component, nthreads, use_hyper_threads)
+    conc_threads = nthreads
+    if (do_concurrent) conc_threads = nthreads + nthreads_2
+
+    call fms_set_affinity (component, conc_threads, use_hyper_threads)
 
 !--- print success or failure message
     if (mpp_pe() == mpp_root_pe()) print *, '*** SUCCESS!'
