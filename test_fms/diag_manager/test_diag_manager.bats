@@ -6,8 +6,8 @@ setup() {
    # Setup the run directory
    tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
    rm -f diag_test_${tnum}* > /dev/null 2>&1
-   sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
-   ln -s diagTables/diag_table_${tnum} diag_table
+   sed "s/<test_num>/${tnum}/" $srcdir/test_fms/diag_manager/input.nml_base > input.nml
+   ln -s $srcdir/test_fms/diag_manager/diagTables/diag_table_${tnum} diag_table
 }
 
 @test "Test 1: Data array is too large in x and y direction" {

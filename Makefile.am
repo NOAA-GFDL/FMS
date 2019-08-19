@@ -19,3 +19,5 @@ test_fms/horiz_interp \
 test_fms/field_manager test_fms/fft test_fms/axis_utils 
 
 EXTRA_DIST = README.md
+EXTRA_DIST = test_fms/bats
+
