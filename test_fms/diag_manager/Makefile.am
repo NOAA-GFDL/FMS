@@ -15,7 +15,6 @@ test_diag_manager_CPPFLAGS += -I${top_srcdir}/fms
 test_diag_manager_CPPFLAGS += -I${top_srcdir}/diag_manager
 test_diag_manager_CPPFLAGS += -I${top_srcdir}/time_manager
 test_diag_manager_CPPFLAGS += -I${top_srcdir}/constants
-test_diag_manager_CPPFLAGS += -I${top_srcdir}/include
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_diag_manager.sh
