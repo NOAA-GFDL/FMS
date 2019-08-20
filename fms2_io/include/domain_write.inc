@@ -119,7 +119,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
                       buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
@@ -258,12 +258,19 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-    if (.not. extra_x) then
+
+    if (extra_x) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(xdim_index) = e(xdim_index) - 1
     endif
-    if (.not. extra_y) then
+
+    if (extra_y) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(ydim_index) = e(ydim_index) - 1
     endif
+
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
@@ -348,7 +355,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
                       buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
@@ -487,12 +494,19 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-    if (.not. extra_x) then
+
+    if (extra_x) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(xdim_index) = e(xdim_index) - 1
     endif
-    if (.not. extra_y) then
+
+    if (extra_y) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(ydim_index) = e(ydim_index) - 1
     endif
+
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
@@ -577,7 +591,7 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
                       buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
@@ -716,12 +730,19 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-    if (.not. extra_x) then
+
+    if (extra_x) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(xdim_index) = e(xdim_index) - 1
     endif
-    if (.not. extra_y) then
+
+    if (extra_y) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(ydim_index) = e(ydim_index) - 1
     endif
+
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
@@ -806,7 +827,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
                       buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
@@ -945,12 +966,19 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-    if (.not. extra_x) then
+
+    if (extra_x) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(xdim_index) = e(xdim_index) - 1
     endif
-    if (.not. extra_y) then
+
+    if (extra_y) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
       e(ydim_index) = e(ydim_index) - 1
     endif
+
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)

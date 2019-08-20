@@ -119,7 +119,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
@@ -333,7 +333,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
@@ -547,7 +547,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
@@ -761,7 +761,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, io_domain, &
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)

@@ -44,7 +44,7 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(variable_data, xdim), size(variable_data, ydim), fileobj%domain, &
-                      io_domain, xpos, ypos, isd, isc, xc_size, jsd, jsc, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, &
                       yc_size, buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
   if (buffer_includes_halos) then
@@ -55,14 +55,19 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
   e(:) = shape(variable_data)
   e(xdim) = xc_size
   e(ydim) = yc_size
-  if (.not. extra_x) then
+
+  if (extra_x) then
     !Adjust sizes since compute domains overlap whe there are non-centered
     !domain position.
     e(xdim) = e(xdim) - 1
   endif
-  if (.not. extra_y) then
+
+  if (extra_y) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
     e(ydim) = e(ydim) - 1
   endif
+
   select type (variable_data)
     type is (integer(kind=int32))
       call allocate_array(buf_int32, e)
@@ -155,7 +160,7 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(variable_data, xdim), size(variable_data, ydim), fileobj%domain, &
-                      io_domain, xpos, ypos, isd, isc, xc_size, jsd, jsc, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, &
                       yc_size, buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
   if (buffer_includes_halos) then
@@ -166,12 +171,16 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
   e(:) = shape(variable_data)
   e(xdim) = xc_size
   e(ydim) = yc_size
-  if (.not. extra_x) then
+
+  if (extra_x) then
     !Adjust sizes since compute domains overlap whe there are non-centered
     !domain position.
     e(xdim) = e(xdim) - 1
   endif
+
   if (.not. extra_y) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
     e(ydim) = e(ydim) - 1
   endif
   select type (variable_data)
@@ -266,7 +275,7 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(variable_data, xdim), size(variable_data, ydim), fileobj%domain, &
-                      io_domain, xpos, ypos, isd, isc, xc_size, jsd, jsc, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, &
                       yc_size, buffer_includes_halos, extra_x, extra_y)
   c(:) = 1
   if (buffer_includes_halos) then
@@ -277,14 +286,19 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
   e(:) = shape(variable_data)
   e(xdim) = xc_size
   e(ydim) = yc_size
-  if (.not. extra_x) then
+
+  if (extra_x) then
     !Adjust sizes since compute domains overlap whe there are non-centered
     !domain position.
     e(xdim) = e(xdim) - 1
   endif
-  if (.not. extra_y) then
+
+  if (extra_y) then
+    !Adjust sizes since compute domains overlap whe there are non-centered
+    !domain position.
     e(ydim) = e(ydim) - 1
   endif
+
   select type (variable_data)
     type is (integer(kind=int32))
       call allocate_array(buf_int32, e)
