@@ -42,6 +42,8 @@ type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
                                                               !! of a 2d domain.
   integer :: ny !< Number of "y" dimensions.
   character(len=256) :: non_mangled_path !< Non-domain-mangled file path.
+  logical :: adjust_indices !< Flag telling if indices need to be adjusted
+                            !! for domain-decomposed read.
 endtype FmsNetcdfDomainFile_t
 
 
@@ -322,6 +324,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   pelist_size = mpp_get_domain_npes(io_domain)
   allocate(pelist(pelist_size))
   call mpp_get_pelist(io_domain, pelist)
+  fileobj%adjust_indices = .true. !Set the default to true
 
   !Open the distibuted files.
   success = netcdf_file_open(fileobj, distributed_filepath, mode, nc_format, pelist, &
@@ -338,6 +341,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
                                  is_restart)
+		!If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
+		if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
     endif
   endif
   if (.not. success) then
@@ -641,12 +646,14 @@ end subroutine get_compute_domain_dimension_indices
 
 !> @brief Utility routine that retrieves domain indices.
 !! @internal
-subroutine domain_offsets(data_xsize, data_ysize, io_domain, xpos, ypos, &
-                          isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos)
+subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
+                          isd, isc, xc_size, jsd, jsc, yc_size, &
+                          buffer_includes_halos, extra_x_point, &
+                          extra_y_point)
 
   integer, intent(in) :: data_xsize !< Size of buffer's domain "x" dimension.
   integer, intent(in) :: data_ysize !< Size of buffer's domain "y" dimension.
-  type(domain2d), intent(in) :: io_domain !< I/O domain variable is decomposed over.
+  type(domain2d), intent(in) :: domain !< Parent domain.
   integer, intent(in) :: xpos !< Variable's domain x dimension position.
   integer, intent(in) :: ypos !< Variable's domain y dimension position.
   integer, intent(out) :: isd !< Starting index for x dimension of data domain.
@@ -656,14 +663,46 @@ subroutine domain_offsets(data_xsize, data_ysize, io_domain, xpos, ypos, &
   integer, intent(out) :: jsc !< Starting index for y dimension of compute domain.
   integer, intent(out) :: yc_size !< Size of y dimension of compute domain.
   logical, intent(out) :: buffer_includes_halos !< Flag telling if input buffer includes space for halos.
+  logical, intent(out), optional :: extra_x_point !<
+  logical, intent(out), optional :: extra_y_point !<
 
   integer :: xd_size
   integer :: yd_size
+  integer :: iec
+  integer :: xmax
+  integer :: jec
+  integer :: ymax
+  type(domain2d), pointer :: io_domain !< I/O domain variable is decomposed over.
 
+  io_domain => mpp_get_io_domain(domain)
+
+  call mpp_get_global_domain(domain, xend=xmax, position=xpos)
+  call mpp_get_global_domain(domain, yend=ymax, position=ypos)
   call mpp_get_data_domain(io_domain, xbegin=isd, xsize=xd_size, position=xpos)
   call mpp_get_data_domain(io_domain, ybegin=jsd, ysize=yd_size, position=ypos)
-  call mpp_get_compute_domain(io_domain, xbegin=isc, xsize=xc_size, position=xpos)
-  call mpp_get_compute_domain(io_domain, ybegin=jsc, ysize=yc_size, position=ypos)
+
+  call mpp_get_compute_domain(io_domain, xbegin=isc, xend=iec, xsize=xc_size, &
+                              position=xpos)
+  ! If the xpos is east and the ending x index is NOT equal to max allowed, set extra_x_point to true
+  if (present(extra_x_point)) then
+	 if ((xpos .eq. east) .and. (iec .ne. xmax)) then 
+		extra_x_point = .true.
+    	else
+		extra_x_point = .false.
+	endif
+  endif
+
+  call mpp_get_compute_domain(io_domain, ybegin=jsc, yend=jec, ysize=yc_size, &
+                              position=ypos)
+  ! If the ypost is north and the ending y index is NOT equal to max allowed, set extra_y_point to true
+  if (present(extra_y_point)) then
+	 if ((ypos .eq. north) .and. (jec .ne. ymax)) then 
+		extra_y_point = .true.
+	 else
+		extra_y_point = .false.
+   	 endif
+  endif
+
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
   if (.not. buffer_includes_halos .and. data_xsize .ne. xc_size .and. data_ysize &
       .ne. yc_size) then
