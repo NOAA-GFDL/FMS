@@ -683,24 +683,24 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
 
   call mpp_get_compute_domain(io_domain, xbegin=isc, xend=iec, xsize=xc_size, &
                               position=xpos)
-  ! If the xpos is east and the ending x index is equal to max allowed, set extra_x_point to true
+  ! If the xpos is east and the ending x index is NOT equal to max allowed, set extra_x_point to true
   if (present(extra_x_point)) then
-	 if ((xpos .eq. east) .and. (iec .eq. xmax)) then 
+	 if ((xpos .eq. east) .and. (iec .ne. xmax)) then 
 		extra_x_point = .true.
-    else
+    	else
 		extra_x_point = .false.
-	 endif
+	endif
   endif
 
   call mpp_get_compute_domain(io_domain, ybegin=jsc, yend=jec, ysize=yc_size, &
                               position=ypos)
-  ! If the ypost is north and the ending y index is equal to max allowed, set extra_y_point to true
+  ! If the ypost is north and the ending y index is NOT equal to max allowed, set extra_y_point to true
   if (present(extra_y_point)) then
-	 if ((ypos .eq. north) .and. (jec .eq. ymax)) then 
+	 if ((ypos .eq. north) .and. (jec .ne. ymax)) then 
 		extra_y_point = .true.
 	 else
 		extra_y_point = .false.
-    endif
+   	 endif
   endif
 
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
