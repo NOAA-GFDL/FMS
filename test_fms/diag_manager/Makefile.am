@@ -27,3 +27,5 @@ TESTS = test_diag_manager.sh
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+
+CLEANFILES = input.nml *.nc *.out

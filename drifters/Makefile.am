@@ -43,4 +43,4 @@ drifters_mod.mod
 include_HEADERS = $(MODFILES) $(DRIFTERS_HDRS)
 BUILT_SOURCES = $(MODFILES)
 
-CLEANFILES = *.mod
+CLEANFILES = *.mod *__genmod.f90

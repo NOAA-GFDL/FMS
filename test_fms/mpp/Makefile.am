@@ -2,11 +2,26 @@
 # package.
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
+test_mpp_CPPFLAGS = -I${top_srcdir}/include
+test_mpp_CPPFLAGS += -I${top_srcdir}/mpp
+
+test_mpp_domains_CPPFLAGS = -I${top_srcdir}/include
+test_mpp_domains_CPPFLAGS += -I${top_srcdir}/mpp
+
+test_mpp_pset_CPPFLAGS = -I${top_srcdir}/include
+test_mpp_pset_CPPFLAGS += -I${top_srcdir}/mpp
 
 # Build this test program.
 check_PROGRAMS = test_mpp test_mpp_domains test_mpp_pset
+
+# Copy over other needed files to the srcdir
+EXTRA_DIST = input.nml_base
+EXTRA_DIST += test_mpp.sh
+EXTRA_DIST +=  test_mpp.bats
+EXTRA_DIST += test_mpp_domains.sh
+EXTRA_DIST +=  test_mpp_domains.bats
+EXTRA_DIST += test_mpp_pset.sh
+EXTRA_DIST +=  test_mpp_pset.bats
 
 # This is the source code for the test.
 test_mpp_SOURCES = test_mpp.F90
@@ -19,4 +34,10 @@ test_mpp_pset_SOURCES = test_mpp_pset.F90
 test_mpp_pset_LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Run the test program.
-TESTS = test_mpp.sh test_mpp_domains.sh test_mpp_pset.sh
+TESTS = test_mpp_domains.sh test_mpp_pset.sh test_mpp.sh
+
+# Set srcdir as evironment variable to be reference in the job script
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+
+# Clean up
+CLEANFILES = input.nml* *.out* 

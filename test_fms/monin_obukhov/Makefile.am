@@ -23,3 +23,7 @@ TESTS = test_monin_obukhov.sh
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+
+# Clean up 
+CLEANFILES = ${top_builddir}/test_fms/monin_obukhov/input.nml
+CLEANFILES += ${top_builddir}/test_fms/monin_obukhov/*.out

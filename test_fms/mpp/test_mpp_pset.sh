@@ -1,3 +1,5 @@
 #!/bin/sh
-export PATH="$PATH:../bats/bin"
-bats test_mpp_pset.bats
+export PATH="$PATH:$srcdir/test_fms/bats/bin"
+export PATH="$PATH:$srcdir/test_fms/bats/libexec"
+
+bats $srcdir/test_fms/mpp/test_mpp_pset.bats

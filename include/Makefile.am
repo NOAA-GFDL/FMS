@@ -3,4 +3,5 @@
 
 # Ed Hartnett 2/26/19
 
+EXTRA_DIST = file_version.h fms_platform.h
 include_HEADERS = file_version.h fms_platform.h

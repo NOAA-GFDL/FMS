@@ -13,7 +13,7 @@ test_xgrid_CPPFLAGS += -I${top_srcdir}/coupler
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_xgrid.sh
 EXTRA_DIST += input.nml
-EXTRA_DIST += INPUT
+#EXTRA_DIST += INPUT
 EXTRA_DIST += test_xgrid.bats
 
 # Build this test program.
@@ -28,3 +28,9 @@ TESTS = test_xgrid.sh
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+TESTS_ENVIRONMENT += builddir="$(top_builddir)"
+
+# Clean up 
+DISTCLEANFILES = input.nml
+DISTCLEANFILES += *.nc
+DISTCLEANFILES += *.out

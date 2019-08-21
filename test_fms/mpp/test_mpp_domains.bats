@@ -25,6 +25,7 @@
 }
 
 @test "5: Test Nonsym Edge" {
+    skip "To do"
     sed "s/test_nonsym_edge = .false./test_nonsym_edge = .true./" input.nml_base > input.nml
     run mpirun -n 6 ./test_mpp_domains
     [ "$status" -eq 0 ]
