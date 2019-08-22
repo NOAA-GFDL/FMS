@@ -32,11 +32,13 @@ module fms_affinity_mod
   private
 
   !--- namelist parameters
+  logical:: affinity = .true.
+  logical:: strict = .true.
   logical:: debug_affinity = .false.
   logical(c_bool):: debug_cpuset = .false.
-  namelist /fms_affinity_nml/ debug_affinity, debug_cpuset
+  namelist /fms_affinity_nml/ affinity, strict, debug_affinity, debug_cpuset
 
-  public fms_affinity_init, fms_get_affinity, fms_set_affinity
+  public fms_affinity_init, fms_affinity_get, fms_affinity_set
 
   !---- version number
   ! Include variable "version" to be written to log file.
@@ -75,7 +77,7 @@ contains
 
 
   !--- function to get affinity 
-  function fms_get_affinity () result(affinity)
+  function fms_affinity_get () result(affinity)
 
     !--- local declarations for Fortran/C affinity interoperability
     integer(c_int):: get_cpu_affinity
@@ -85,15 +87,15 @@ contains
 
     affinity = get_cpu_affinity()
 
-  end function fms_get_affinity
+  end function fms_affinity_get
 
 
   !--- routine to set affinity 
-  subroutine fms_set_affinity (component, nthreads, use_hyper_threads)
+  subroutine fms_affinity_set (component, use_hyper_thread, nthreads)
     !--- interface variables
     character(len=*),  intent(in):: component
+    logical,           intent(in):: use_hyper_thread
     integer,           intent(in):: nthreads
-    logical,           intent(in):: use_hyper_threads
 
     !--- local declarations for Fortran/C affinity interoperability
     integer(c_int):: get_cpuset
@@ -104,14 +106,23 @@ contains
     integer(c_int):: retcode
 
     !--- local variables
-    logical:: concurrent
-    integer:: th_num
     character(len=32):: h_name
+    integer:: MSG_TYPE
+    integer:: th_num
+    integer:: indx
+
+     if (.not. affinity) return
+
+     if (strict) then
+       MSG_TYPE = FATAL
+     else
+       MSG_TYPE = NOTE
+     endif
 
      h_name = 'generic                         '
 
      !--- allocate storage for cpuset
-     if (use_hyper_threads) then
+     if (use_hyper_thread) then
        cpuset_sz = nthreads
      else
        cpuset_sz = nthreads * 2
@@ -121,43 +132,46 @@ contains
      !--- get cpuset for this MPI-rank
      retcode = get_cpuset(cpuset_sz, cpu_set, mpp_pe(), debug_cpuset)
      if (retcode == -1) then
-       call error_mesg('fms_set_affinity',trim(component)//' cpu_set size > allocated storage',FATAL)
-     elseif (retcode == cpuset_sz/2 .and. retcode == nthreads) then
-       call error_mesg('fms_set_affinity',trim(component)//' affinity assumes hyper-threading disabled',NOTE)
+       call error_mesg('fms_affinity_set',trim(component)//' cpu_set size > allocated storage',FATAL)
+     elseif ( (retcode == cpuset_sz/2) .and. (retcode == nthreads) ) then
+       call error_mesg('fms_affinity_set',trim(component)//' affinity assumes hyper-threading hardware disabled',NOTE)
      elseif (retcode < cpuset_sz) then
-       call error_mesg('fms_set_affinity',trim(component)//' cpu_set size smaller than expected',FATAL)
+       call error_mesg('fms_affinity_set',trim(component)//' cpu_set size smaller than expected',MSG_TYPE)
      endif
 
      !--- set the affinity for the MPI-rank
-     retcode = set_cpu_affinity(cpu_set(1))
+     retcode = set_cpu_affinity(cpu_set(0))
      if (retcode == -1) then
-       call error_mesg('fms_set_affinity',trim(component)//': issue setting cpu affinity', FATAL)
+       call error_mesg('fms_affinity_set',trim(component)//': issue setting cpu affinity', FATAL)
      endif
 
-     !--- set affinity for threads associated with this MPI-rank
+     !--- set affinity for threads associated with this MPI-rank 
 !$OMP PARALLEL NUM_THREADS (nthreads) &
-!$             SHARED (use_hyper_threads, cpuset_sz, component, cpu_set) &
-!$             PRIVATE (th_num, retcode, h_name)
+!$             DEFAULT (none) & 
+!$             SHARED (use_hyper_thread, cpuset_sz, component, cpu_set, debug_affinity) &
+!$             PRIVATE (th_num, indx, retcode, h_name)
 !$   th_num = omp_get_thread_num()
      !--- handle hyper threading case by alternating threads between logical and virtual cores
-!$   if (use_hyper_threads) then
+!$   if (use_hyper_thread) then
 !$     if (mod(th_num,2) == 0 ) then
-!$       th_num = th_num/2
+!$       indx = th_num/2
 !$     else
-!$       th_num = (cpuset_sz - 1) - ((cpuset_sz - 1) - th_num)/2
+!$       indx = (cpuset_sz - 1) - ((cpuset_sz - 1) - th_num)/2
 !$     endif
+!$   else
+!$     indx = th_num
 !$   endif
-!$   retcode = set_cpu_affinity(cpu_set(th_num))
+!$   retcode = set_cpu_affinity(cpu_set(indx))
 !$   if (retcode == -1) then
-!$     call error_mesg('fms_set_affinity',trim(component)//': issue setting cpu affinity', FATAL)
+!$     call error_mesg('fms_affinity_set',trim(component)//': issue setting cpu affinity', FATAL)
 !$   endif
      !--- output affinity placement 
 !$   if (debug_affinity) then
 !$      call hostnm(h_name)
-!$      print *, 'NOTE:',mpp_pe(),trim(component),' ',trim(h_name),get_cpu_affinity(),cpu_set(0),omp_get_thread_num()
+!$      print *, 'DEBUG:',mpp_pe(),trim(component),' ',trim(h_name),get_cpu_affinity(),th_num
 !$   endif
 !$OMP END PARALLEL
 
-  end subroutine fms_set_affinity
+  end subroutine fms_affinity_set
 
 end module fms_affinity_mod
