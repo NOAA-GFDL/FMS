@@ -24,7 +24,7 @@ libmpp_domains_la_SOURCES = mpp_domains.F90
 libmpp_io_la_SOURCES = mpp_io.F90
 libmpp_pset_la_SOURCES = mpp_pset.F90
 libmpp_efp_la_SOURCES = mpp_efp.F90
-libmpp_c_la_SOURCES = nsclock.c affinity.c threadloc.c
+libmpp_c_la_SOURCES = nsclock.c threadloc.c
 libmpp_memutils_la_SOURCES = mpp_memutils.F90
 
 # Each mod file depends on the .o file.
