@@ -4,9 +4,12 @@
 # Ed Hartnett 2/22/19
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/constants
+AM_CPPFLAGS = -I${top_builddir}/constants
+if CRAY
+LDADD = ${top_builddir}/libFMS/.libs/libFMS.a
+else
 LDADD = ${top_builddir}/libFMS/.libs/libFMS.la
+endif
 
 # Build this test program.
 check_PROGRAMS = tst_fms1

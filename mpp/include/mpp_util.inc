@@ -101,6 +101,7 @@
     logical :: opened
     character(len=11) :: this_pe
 !$  logical           :: omp_in_parallel    
+!$  integer           :: omp_get_num_threads
 !$  integer           :: errunit
 
 
@@ -108,7 +109,7 @@
 !       will call stdout and stdout will call stdlog for non-root-pe.
 !       This will be a cicular call. 
 
-!$  if( omp_in_parallel() ) then
+!$  if( omp_in_parallel() .and. (omp_get_num_threads() > 1) ) then
 !$OMP single
 !$      errunit = stderr()
 !$      write( errunit,'(/a/)' ) 'FATAL: STDLOG: is called inside a OMP parallel region'
