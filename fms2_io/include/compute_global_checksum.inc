@@ -178,7 +178,7 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
     e(xdim) = e(xdim) - 1
   endif
 
-  if (.not. extra_y) then
+  if (extra_y) then
     !Adjust sizes since compute domains overlap whe there are non-centered
     !domain position.
     e(ydim) = e(ydim) - 1
