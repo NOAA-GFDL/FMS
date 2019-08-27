@@ -294,7 +294,7 @@ function has_domain_tile_string(string) &
     i = i + 5 
     j = i
     do while (i .le. l)
-! If the ith characters is a dot but i set has_string to true
+! If the ith characters is a dot but i not equal to the index after .tile set has_string to true
       if (verify(string(i:i), ".") .eq. 0 .and. j .ne. i) then
         has_string = .true.
         exit
