@@ -283,17 +283,22 @@ function has_domain_tile_string(string) &
   logical :: has_string
 
   integer :: l
-  integer :: i
+  integer :: i, j
 
   has_string = .false.
-  i = index(trim(string), ".tile", back=.true.)
+! Assigns i to the index where ".tile" starts
+  i = index(trim(string), ".tile", back=.true.) 
   if (i .ne. 0) then
     l = len_trim(string)
-    i = i + 1
+! Sets i to the index after .tile 
+    i = i + 5 
+    j = i
     do while (i .le. l)
-      if (verify(string(i:i), ".") .eq. 0) then
+! If the ith characters is a dot but i set has_string to true
+      if (verify(string(i:i), ".") .eq. 0 .and. j .ne. i) then
         has_string = .true.
         exit
+! If the ith characters is NOT a number exit function and has_string will stay as false
       elseif (verify(string(i:i), "0123456789") .ne. 0) then
         exit
       endif
