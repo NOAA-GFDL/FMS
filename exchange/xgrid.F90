@@ -1494,7 +1494,7 @@ subroutine get_ocean_model_area_elements(domain, grid_file)
   type(Domain2d), intent(in) :: domain
   character(len=*), intent(in) :: grid_file
   integer :: is, ie, js, je
-  type(FmsNetcdfDomainFile_t) :: fileobj
+  type(FmsNetcdfFile_t) :: fileobj
 
   if(allocated(AREA_OCN_MODEL)) return
 
@@ -1504,7 +1504,7 @@ subroutine get_ocean_model_area_elements(domain, grid_file)
   allocate(AREA_OCN_MODEL(is:ie, js:je))
   if(ie < is .or. je < js ) return
 
-  if(.not. open_file(fileobj, grid_file, 'read', domain) ) then
+  if(.not. open_file(fileobj, grid_file, 'read') ) then
      call error_mesg('xgrid_mod(get_ocean_model_area_elements)', 'Error in opening file '//trim(grid_file), FATAL)
   endif
 
