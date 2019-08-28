@@ -60,7 +60,7 @@ public :: open_check
 public :: is_registered_to_restart
 public :: check_if_open
 public :: set_fileobj_time_name
-public :: unpack_data
+
 
 interface open_file
   module procedure netcdf_file_open_wrap
@@ -189,13 +189,5 @@ interface read_new_restart
   module procedure restore_domain_state_wrap
 end interface read_new_restart
 
-interface unpack_data
-  module procedure unpack_data_0d
-  module procedure unpack_data_1d
-  module procedure unpack_data_2d
-  module procedure unpack_data_3d
-  module procedure unpack_data_4d
-  module procedure unpack_data_5d
-end interface unpack_data
 
 end module fms2_io_mod

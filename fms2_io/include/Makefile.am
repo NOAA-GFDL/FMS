@@ -9,4 +9,4 @@ include_HEADERS = array_utils_char.inc array_utils.inc compressed_read.inc \
                   netcdf_write_data.inc register_domain_restart_variable.inc \
                   register_global_attribute.inc register_unstructured_domain_restart_variable.inc \
                   register_variable_attribute.inc unstructured_domain_read.inc \
-                  unstructured_domain_write.inc unpack_data.inc
+                  unstructured_domain_write.inc
