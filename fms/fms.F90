@@ -165,7 +165,6 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        write_version_number
 
 use memutils_mod, only: print_memuse_stats, memutils_init
-use constants_mod, only: constants_version=>version !pjp: PI not computed
 
 
 implicit none
@@ -350,6 +349,10 @@ contains
 ! also calls mpp initialization routines and reads fms namelist
 
 subroutine fms_init (localcomm )
+
+!--- needed to output the version number of constants_mod to the logfile ---
+ use constants_mod, only: constants_version=>version !pjp: PI not computed
+
  integer, intent(in), optional :: localcomm
  integer :: unit, ierr, io
 
@@ -447,6 +450,7 @@ subroutine fms_init (localcomm )
     call memutils_init( print_memory_usage )
     call print_memuse_stats('fms_init')
 
+!--- output version information constants to the logfile
     call write_version_number("CONSTANTS_MOD", constants_version)
 
 end subroutine fms_init
