@@ -5,9 +5,9 @@ subroutine unpack_data_0d(fileobj, varid, var_data)
                                                  !! will be read into.
 
   real(kind=int32) :: buf_int32
-  real(kind=int32) :: buf_int64
-  real(kind=int32) :: buf_real32
-  real(kind=int32) :: buf_real64
+  real(kind=int64) :: buf_int64
+  real(kind=real32) :: buf_real32
+  real(kind=real64) :: buf_real64
   integer :: err
 
 ! 		First, check if scale factor exists, if it does assign it to a buffer and multiply 
@@ -70,9 +70,9 @@ subroutine unpack_data_1d(fileobj, varid, var_data)
                                                  !! will be read into.
 
   real(kind=int32) :: buf_int32
-  real(kind=int32) :: buf_int64
-  real(kind=int32) :: buf_real32
-  real(kind=int32) :: buf_real64
+  real(kind=int64) :: buf_int64
+  real(kind=real32) :: buf_real32
+  real(kind=real64) :: buf_real64
   integer :: err
 
 ! 		First, check if scale factor exists, if it does assign it to a buffer and multiply 
@@ -134,9 +134,9 @@ subroutine unpack_data_2d(fileobj, varid, var_data)
                                                  !! will be read into.
 
   real(kind=int32) :: buf_int32
-  real(kind=int32) :: buf_int64
-  real(kind=int32) :: buf_real32
-  real(kind=int32) :: buf_real64
+  real(kind=int64) :: buf_int64
+  real(kind=real32) :: buf_real32
+  real(kind=real64) :: buf_real64
   integer :: err
 
 ! 		First, check if scale factor exists, if it does assign it to a buffer and multiply 
@@ -198,9 +198,9 @@ subroutine unpack_data_3d(fileobj, varid, var_data)
                                                  !! will be read into.
 
   real(kind=int32) :: buf_int32
-  real(kind=int32) :: buf_int64
-  real(kind=int32) :: buf_real32
-  real(kind=int32) :: buf_real64
+  real(kind=int64) :: buf_int64
+  real(kind=real32) :: buf_real32
+  real(kind=real64) :: buf_real64
   integer :: err
 
 ! 		First, check if scale factor exists, if it does assign it to a buffer and multiply 
@@ -262,9 +262,9 @@ subroutine unpack_data_4d(fileobj, varid, var_data)
                                                  !! will be read into.
 
   real(kind=int32) :: buf_int32
-  real(kind=int32) :: buf_int64
-  real(kind=int32) :: buf_real32
-  real(kind=int32) :: buf_real64
+  real(kind=int64) :: buf_int64
+  real(kind=real32) :: buf_real32
+  real(kind=real64) :: buf_real64
   integer :: err
 
 ! 		First, check if scale factor exists, if it does assign it to a buffer and multiply 
@@ -326,9 +326,9 @@ subroutine unpack_data_5d(fileobj, varid, var_data)
                                                  !! will be read into.
 
   real(kind=int32) :: buf_int32
-  real(kind=int32) :: buf_int64
-  real(kind=int32) :: buf_real32
-  real(kind=int32) :: buf_real64
+  real(kind=int64) :: buf_int64
+  real(kind=real32) :: buf_real32
+  real(kind=real64) :: buf_real64
   integer :: err
 
 ! 		First, check if scale factor exists, if it does assign it to a buffer and multiply 
