@@ -1466,7 +1466,7 @@ endif
      else
           call read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-     idat =  nint(dat*100) ! reconstruct packed data for reproducibity
+     idat =  nint(dat*100.) ! reconstruct packed data for reproducibity
 
    !---- unpacking of data ----
 
