@@ -33,7 +33,7 @@ before_script:
   - export LDFLAGS='-L/usr/lib'
   - git clone https://github.com/sstephenson/bats.git
   - bats/install.sh $PWD
-  - export PATH=${PATH}:${PWD}
+  - export PATH=${PATH}:${PWD}/bin
 
 script:
   - autoreconf -i
