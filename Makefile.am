@@ -6,7 +6,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = include platform constants tridiagonal mpp memutils fms \
-mosaic time_manager diag_manager drifters axis_utils horiz_interp \
+affinity mosaic time_manager diag_manager drifters axis_utils horiz_interp \
 time_interp column_diagnostics block_control \
 data_override astronomy field_manager coupler diag_integral monin_obukhov \
 interpolator fft amip_interp oda_tools exchange topography \
