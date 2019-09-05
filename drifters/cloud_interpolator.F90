@@ -26,9 +26,7 @@ MODULE cloud_interpolator_mod
   private
 
   public :: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, cld_ntrp_get_cell_values
- #ifdef _TEST_CLOUD_INTERPOLATOR
   public :: cld_ntrp_expand_index, cld_ntrp_contract_indices
- #endif
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
