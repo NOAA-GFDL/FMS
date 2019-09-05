@@ -90,7 +90,7 @@ program test_monin_obukhov
 
       integer(i8)        :: w
 
-      integer :: i, ier_l
+      integer :: i, ier_l, CHKSUM_DRAG
       integer, parameter :: n = 5
       logical :: avail(n), lavail
 
@@ -149,7 +149,7 @@ program test_monin_obukhov
       integer, parameter      :: n = 5
       real   , dimension(n)   :: rich
       real   , dimension(n)   :: mix
-      integer                 :: ier_l
+      integer                 :: ier_l, CHKSUM_STABLE_MIX
 
 
       stable_option = 1
@@ -187,7 +187,7 @@ program test_monin_obukhov
       real   , dimension(ni, nj, nk) :: z
       real   , dimension(ni, nj)     :: u_star, b_star
       real   , dimension(ni, nj, nk) :: k_m, k_h
-      integer                        :: ier_l
+      integer                        :: ier_l, CHKSUM_DIFF
 
       z      = 19.9982554527751
       u_star = 0.129638955971075
@@ -220,7 +220,7 @@ program test_monin_obukhov
       integer(i8)        :: w
 
       integer, parameter :: n = 5
-      integer            :: ier_l
+      integer            :: ier_l, CHKSUM_PROFILE
 
       logical :: avail(n)
 
