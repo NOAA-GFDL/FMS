@@ -20,6 +20,7 @@ addons:
 env:
   - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8'
   - CPPFLAGS_ADD='-DOVERLOAD_R4 -DOVERLOAD_R8' FCFLAGS_REAL_KIND=''
+  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8 -fopenmp'
 
 # Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
 before_install:
