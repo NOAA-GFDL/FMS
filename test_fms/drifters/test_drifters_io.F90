@@ -80,13 +80,13 @@ program test_drifters_io
       call mpp_error(FATAL, ermesg)
   endif
 
-  call drifters_io_set_position_units(drfts_io, (/'deg east ','deg north','meters'/), ermesg)
+  call drifters_io_set_position_units(drfts_io, (/'deg east ','deg north','meters   '/), ermesg)
   if(ermesg/='') then
       print *,'ERROR after drifters_io_position_units: ', ermesg
       call mpp_error(FATAL, ermesg)
   endif
 
-  call drifters_io_set_field_units(drfts_io, (/'deg K ','ppm'/), ermesg)
+  call drifters_io_set_field_units(drfts_io, (/'deg K ','ppm  '/), ermesg)
   if(ermesg/='') then 
       print *,'ERROR after drifters_io_field_units: ', ermesg
       call mpp_error(FATAL, ermesg)
