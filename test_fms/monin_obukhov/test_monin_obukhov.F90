@@ -77,9 +77,9 @@ program test_monin_obukhov
   ier_tot = ier_tot + ier
 
   if(ier_tot/=0) then
-      call mpp_error(FATAL, 'test_monin_obukhov: result different from expected result')
+      print *, 'Test_monin_obukhov: result different from expected result'
   else
-     print *,'No error detected.'
+     print *, 'No error detected.'
   endif
 
   call mpp_exit()
