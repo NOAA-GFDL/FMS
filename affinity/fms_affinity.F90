@@ -147,9 +147,9 @@ contains
 
      !--- set affinity for threads associated with this MPI-rank 
 !$OMP PARALLEL NUM_THREADS (nthreads) &
-!$             DEFAULT (none) & 
-!$             SHARED (use_hyper_thread, cpuset_sz, component, cpu_set, debug_affinity) &
-!$             PRIVATE (th_num, indx, retcode, h_name)
+!$OMP&         DEFAULT (none) & 
+!$OMP&         SHARED (use_hyper_thread, cpuset_sz, component, cpu_set, debug_affinity) &
+!$OMP&         PRIVATE (th_num, indx, retcode, h_name)
 !$   th_num = omp_get_thread_num()
      !--- handle hyper threading case by alternating threads between logical and virtual cores
 !$   if (use_hyper_thread) then
