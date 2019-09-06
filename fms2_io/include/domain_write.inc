@@ -140,12 +140,12 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
-      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
-        e(xdim_index) = e(xdim_index) - 1
-      endif
-      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
-        e(ydim_index) = e(ydim_index) - 1
-      endif
+!      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+!        e(xdim_index) = e(xdim_index) - 1
+!      endif
+!      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+!        e(ydim_index) = e(ydim_index) - 1
+!      endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -259,17 +259,17 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
 
-    if (extra_x) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(xdim_index) = e(xdim_index) - 1
-    endif
-
-    if (extra_y) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(ydim_index) = e(ydim_index) - 1
-    endif
+!    if (extra_x) then
+!    !Adjust sizes since compute domains overlap whe there are non-centered
+!    !domain position.
+!      e(xdim_index) = e(xdim_index) - 1
+!    endif
+!
+!    if (extra_y) then
+!    !Adjust sizes since compute domains overlap whe there are non-centered
+!    !domain position.
+!      e(ydim_index) = e(ydim_index) - 1
+!    endif
 
     select type(vdata)
       type is (integer(kind=int32))
@@ -376,12 +376,12 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
-      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
-        e(xdim_index) = e(xdim_index) - 1
-      endif
-      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
-        e(ydim_index) = e(ydim_index) - 1
-      endif
+!      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+!        e(xdim_index) = e(xdim_index) - 1
+!      endif
+!      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+!        e(ydim_index) = e(ydim_index) - 1
+!      endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -495,17 +495,17 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
 
-    if (extra_x) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(xdim_index) = e(xdim_index) - 1
-    endif
-
-    if (extra_y) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(ydim_index) = e(ydim_index) - 1
-    endif
+!    if (extra_x) then
+!    !Adjust sizes since compute domains overlap whe there are non-centered
+!    !domain position.
+!      e(xdim_index) = e(xdim_index) - 1
+!    endif
+!
+!    if (extra_y) then
+!    !Adjust sizes since compute domains overlap whe there are non-centered
+!    !domain position.
+!      e(ydim_index) = e(ydim_index) - 1
+!    endif
 
     select type(vdata)
       type is (integer(kind=int32))
@@ -612,12 +612,12 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
-      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
-        e(xdim_index) = e(xdim_index) - 1
-      endif
-      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
-        e(ydim_index) = e(ydim_index) - 1
-      endif
+!      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+!        e(xdim_index) = e(xdim_index) - 1
+!      endif
+!      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+!        e(ydim_index) = e(ydim_index) - 1
+!      endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -731,17 +731,17 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
 
-    if (extra_x) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(xdim_index) = e(xdim_index) - 1
-    endif
+!   if (extra_x) then
+!   !Adjust sizes since compute domains overlap whe there are non-centered
+!   !domain position.
+!     e(xdim_index) = e(xdim_index) - 1
+!   endif
 
-    if (extra_y) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(ydim_index) = e(ydim_index) - 1
-    endif
+!   if (extra_y) then
+!   !Adjust sizes since compute domains overlap whe there are non-centered
+!   !domain position.
+!     e(ydim_index) = e(ydim_index) - 1
+!   endif
 
     select type(vdata)
       type is (integer(kind=int32))
@@ -848,12 +848,12 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
       c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
-      if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
-        e(xdim_index) = e(xdim_index) - 1
-      endif
-      if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
-        e(ydim_index) = e(ydim_index) - 1
-      endif
+!     if (xpos .ne. center .and. pe_isc(i)+pe_icsize(i)-1 .ne. xmax) then
+!       e(xdim_index) = e(xdim_index) - 1
+!     endif
+!     if (ypos .ne. center .and. pe_jsc(i)+pe_jcsize(i)-1 .ne. ymax) then
+!       e(ydim_index) = e(ydim_index) - 1
+!     endif
       select type(vdata)
         type is (integer(kind=int32))
           call allocate_array(buf_int32, e)
@@ -967,17 +967,17 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
 
-    if (extra_x) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(xdim_index) = e(xdim_index) - 1
-    endif
+!   if (extra_x) then
+!   !Adjust sizes since compute domains overlap whe there are non-centered
+!   !domain position.
+!     e(xdim_index) = e(xdim_index) - 1
+!   endif
 
-    if (extra_y) then
-    !Adjust sizes since compute domains overlap whe there are non-centered
-    !domain position.
-      e(ydim_index) = e(ydim_index) - 1
-    endif
+!   if (extra_y) then
+!   !Adjust sizes since compute domains overlap whe there are non-centered
+!   !domain position.
+!     e(ydim_index) = e(ydim_index) - 1
+!   endif
 
     select type(vdata)
       type is (integer(kind=int32))
