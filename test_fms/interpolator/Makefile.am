@@ -1,14 +1,17 @@
 # This is an automake file for the test_fms/interpolator directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
-test_interpolator_CPPFLAGS = -I${top_srcdir}/mpp
-test_interpolator_CPPFLAGS += -I${top_srcdir}/fms
-test_interpolator_CPPFLAGS += -I${top_srcdir}/time_manager
-test_interpolator_CPPFLAGS += -I${top_srcdir}/diag_manager
-test_interpolator_CPPFLAGS += -I${top_srcdir}/interpolator
-test_interpolator_CPPFLAGS += -I${top_srcdir}/constants
-test_interpolator_CPPFLAGS += -I${top_srcdir}/time_interp
+test_interpolator_CPPFLAGS = -I${top_builddir}/mpp
+test_interpolator_CPPFLAGS += -I${top_builddir}/fms
+test_interpolator_CPPFLAGS += -I${top_builddir}/time_manager
+test_interpolator_CPPFLAGS += -I${top_builddir}/diag_manager
+test_interpolator_CPPFLAGS += -I${top_builddir}/interpolator
+test_interpolator_CPPFLAGS += -I${top_builddir}/constants
+test_interpolator_CPPFLAGS += -I${top_builddir}/time_interp
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_interpolator.sh

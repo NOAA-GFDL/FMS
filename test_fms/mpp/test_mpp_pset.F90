@@ -32,6 +32,7 @@ program test_mpp_pset
   integer, parameter :: n=96 !divisible by lots of numbers
   real, allocatable, dimension(:,:,:) :: a, b, cc
   real :: c(n,n,n)
+  logical :: opened
 #ifdef use_CRI_pointers
   pointer( ptr_c, c )
 #endif

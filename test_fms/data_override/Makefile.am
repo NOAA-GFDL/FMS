@@ -1,14 +1,17 @@
 # This is an automake file for the test_fms/data_override directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
 test_data_override_CPPFLAGS = -I${top_srcdir}/include
-test_data_override_CPPFLAGS += -I${top_srcdir}/mpp
-test_data_override_CPPFLAGS += -I${top_srcdir}/fms
-test_data_override_CPPFLAGS += -I${top_srcdir}/constants
-test_data_override_CPPFLAGS += -I${top_srcdir}/time_manager
-test_data_override_CPPFLAGS += -I${top_srcdir}/diag_manager
-test_data_override_CPPFLAGS += -I${top_srcdir}/data_override
+test_data_override_CPPFLAGS += -I${top_builddir}/mpp
+test_data_override_CPPFLAGS += -I${top_builddir}/fms
+test_data_override_CPPFLAGS += -I${top_builddir}/constants
+test_data_override_CPPFLAGS += -I${top_builddir}/time_manager
+test_data_override_CPPFLAGS += -I${top_builddir}/diag_manager
+test_data_override_CPPFLAGS += -I${top_builddir}/data_override
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_data_override.sh

@@ -120,7 +120,7 @@ contains
 
   !***********************************************
   !currently only test the mpp_broadcast_char
-     
+
   subroutine test_broadcast_char()
 	  integer, parameter :: ARRAYSIZE = 3
      integer, parameter :: STRINGSIZE = 256
@@ -129,8 +129,8 @@ contains
 
      textA(1) = "This is line 1 "
      textA(2) = "Here comes the line 2 "
-     textA(3) = "Finally is line 3 "  
-     do n = 1, ARRAYSIZE  
+     textA(3) = "Finally is line 3 "
+     do n = 1, ARRAYSIZE
         textB(n) = TextA(n)
      enddo
 
@@ -142,17 +142,17 @@ contains
 
      !--- comparing textA and textB. textA and textB are supposed to be different on pe other than root_pe
      if(mpp_pe() == mpp_root_pe()) then
-        do n = 1, ARRAYSIZE         
+        do n = 1, ARRAYSIZE
            if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should equal textB")
         enddo
      else
-        do n = 1, ARRAYSIZE         
+        do n = 1, ARRAYSIZE
            if(textA(n) == textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should not equal textB")
-        enddo 
+        enddo
      endif
      call mpp_broadcast(textA, STRINGSIZE, mpp_root_pe())
      !--- after broadcast, textA and textB should be the same
-     do n = 1, ARRAYSIZE         
+     do n = 1, ARRAYSIZE
         if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: after broadcast, textA should equal textB")
      enddo
 
@@ -189,12 +189,12 @@ contains
     enddo
   else
     do n = 1, ARRAYSIZE
-       do m = 1, ARRAYSIZE 
+       do m = 1, ARRAYSIZE
           if(r(n, m) == k(n, m)) call mpp_error(FATAL, "test_broadcast: on root_pe, m should not equal n")
        enddo
     enddo
   endif
- 
+
   call mpp_broadcast(r, ARRAYSIZE*ARRAYSIZE, mpp_root_pe())
 
 !--- after broadcast, m and n should be the same
@@ -228,7 +228,7 @@ contains
      enddo
 
      call mpp_gather((/val/),rdata)
-     if(pe == root)then 
+     if(pe == root)then
        do i=1,npes
         if(INT(rdata(i)) /= pelist(i))then
            write(6,*) "Gathered data ",INT(rdata(i)), " NE reference ",pelist(i), "at i=",i
@@ -292,7 +292,7 @@ contains
      enddo;enddo
 
      call mpp_gather(sdata,ssize,rdata,rsize)
- 
+
      if(pe == root)then
        k = 1
        do j=1,npes
@@ -409,7 +409,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
      write(out_unit,*) "Test gather2DV with global pelist successful"
 
      do i=1,npes
-       pelist2(i) = pelist(npes-i+1) 
+       pelist2(i) = pelist(npes-i+1)
        rsize2(i) = rsize(npes-i+1)
      enddo
 
@@ -452,7 +452,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
   call mpp_clock_begin(id)
   call random_number(a)
   call mpp_clock_end  (id)
-  
+
   id = mpp_clock_id( 'mpp_transmit' )
   call mpp_clock_begin(id)
   !timing is done for cyclical pass (more useful than ping-pong etc)
@@ -499,7 +499,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
   print *, 'pe, max(pe+1)=', pe, a(1)
   !pelist check
   call mpp_sync()
-  call flush(out_unit,istat)
+  call flush(out_unit)
   if( npes.GE.2 )then
      if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
      call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
@@ -539,14 +539,14 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
 
      allocate( c(m) )
      c = a(pe*m+1:pe*m+m)
-     
+
      if( pe.EQ.root )then
         print *
         print *, '------------------ > Test mpp_chksum <------------------ '
         print *, 'This test shows that a whole array and a distributed array give identical checksums.'
      end if
 
-     if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then 
+     if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then
 		call mpp_error(FATAL, 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
      else
 		print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='

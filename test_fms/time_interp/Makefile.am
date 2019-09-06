@@ -1,18 +1,21 @@
 # This is an automake file for the test_fms/time_interp directory of the FMS
 # package.
 
-# Find the fms_mod.mod file.
-test_time_interp_CPPFLAGS = -I${top_srcdir}/time_manager
-test_time_interp_CPPFLAGS += -I${top_srcdir}/fms
-test_time_interp_CPPFLAGS += -I${top_srcdir}/time_interp
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
 
-test_time_interp_external_CPPFLAGS = -I${top_srcdir}/time_manager
-test_time_interp_external_CPPFLAGS += -I${top_srcdir}/fms
-test_time_interp_external_CPPFLAGS += -I${top_srcdir}/time_interp
-test_time_interp_external_CPPFLAGS += -I${top_srcdir}/mpp
-test_time_interp_external_CPPFLAGS += -I${top_srcdir}/axis_utils
-test_time_interp_external_CPPFLAGS += -I${top_srcdir}/horiz_interp
-test_time_interp_external_CPPFLAGS += -I${top_srcdir}/constants
+# Find the fms_mod.mod file.
+test_time_interp_CPPFLAGS = -I${top_builddir}/time_manager
+test_time_interp_CPPFLAGS += -I${top_builddir}/fms
+test_time_interp_CPPFLAGS += -I${top_builddir}/time_interp
+
+test_time_interp_external_CPPFLAGS = -I${top_builddir}/time_manager
+test_time_interp_external_CPPFLAGS += -I${top_builddir}/fms
+test_time_interp_external_CPPFLAGS += -I${top_builddir}/time_interp
+test_time_interp_external_CPPFLAGS += -I${top_builddir}/mpp
+test_time_interp_external_CPPFLAGS += -I${top_builddir}/axis_utils
+test_time_interp_external_CPPFLAGS += -I${top_builddir}/horiz_interp
+test_time_interp_external_CPPFLAGS += -I${top_builddir}/constants
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_time_interp.sh
@@ -38,4 +41,4 @@ TESTS = test_time_interp.sh test_time_interp_external.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = input.nml *.out* 
+CLEANFILES = input.nml *.out*

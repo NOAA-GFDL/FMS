@@ -1,18 +1,21 @@
 # This is an automake file for the test_fms/data_override directory of the FMS
 # package.
 
-# Find the fms_mod.mod file.
-test_horiz_interp_CPPFLAGS = -I${top_srcdir}/horiz_interp
-test_horiz_interp_CPPFLAGS += -I${top_srcdir}/fms
-test_horiz_interp_CPPFLAGS += -I${top_srcdir}/constants
-test_horiz_interp_CPPFLAGS += -I${top_srcdir}/mpp
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
 
-test2_horiz_interp_CPPFLAGS = -I${top_srcdir}/horiz_interp
-test2_horiz_interp_CPPFLAGS += -I${top_srcdir}/fms
-test2_horiz_interp_CPPFLAGS += -I${top_srcdir}/constants
-test2_horiz_interp_CPPFLAGS += -I${top_srcdir}/mpp
-test2_horiz_interp_CPPFLAGS += -I${top_srcdir}/mosaic
-test2_horiz_interp_CPPFLAGS += -I${top_srcdir}/axis_utils
+# Find the fms_mod.mod file.
+test_horiz_interp_CPPFLAGS = -I${top_builddir}/horiz_interp
+test_horiz_interp_CPPFLAGS += -I${top_builddir}/fms
+test_horiz_interp_CPPFLAGS += -I${top_builddir}/constants
+test_horiz_interp_CPPFLAGS += -I${top_builddir}/mpp
+
+test2_horiz_interp_CPPFLAGS = -I${top_builddir}/horiz_interp
+test2_horiz_interp_CPPFLAGS += -I${top_builddir}/fms
+test2_horiz_interp_CPPFLAGS += -I${top_builddir}/constants
+test2_horiz_interp_CPPFLAGS += -I${top_builddir}/mpp
+test2_horiz_interp_CPPFLAGS += -I${top_builddir}/mosaic
+test2_horiz_interp_CPPFLAGS += -I${top_builddir}/axis_utils
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_horiz_interp.sh
@@ -38,4 +41,4 @@ TESTS = test_horiz_interp.sh test2_horiz_interp.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = input.nml *.out* 
+CLEANFILES = input.nml *.out*

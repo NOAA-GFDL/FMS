@@ -10,8 +10,13 @@ setup() {
    ln -s $srcdir/test_fms/diag_manager/diagTables/diag_table_${tnum} diag_table
 }
 
+teardown () {
+  # Echo the output.  Will only be done on a test failure.
+  echo "$output"
+}
+
 @test "Test 1: Data array is too large in x and y direction" {
-   run mpirun -n 1 ./test_diag_manager 
+   run mpirun -n 1 ./test_diag_manager
    [ "$status" -eq 0 ]
    [[ "$output" =~ "test1.1 successful:" ]]
    [[ "$output" =~ "test1.2 successful" ]]
@@ -174,4 +179,3 @@ setup() {
    run mpirun -n 1 ./test_diag_manager
    [ "$status" -eq 0 ]
 }
-

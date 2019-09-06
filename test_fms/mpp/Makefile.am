@@ -1,15 +1,18 @@
 # This is an automake file for the test_fms/mpp directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
 test_mpp_CPPFLAGS = -I${top_srcdir}/include
-test_mpp_CPPFLAGS += -I${top_srcdir}/mpp
+test_mpp_CPPFLAGS += -I${top_builddir}/mpp
 
 test_mpp_domains_CPPFLAGS = -I${top_srcdir}/include
-test_mpp_domains_CPPFLAGS += -I${top_srcdir}/mpp
+test_mpp_domains_CPPFLAGS += -I${top_builddir}/mpp
 
 test_mpp_pset_CPPFLAGS = -I${top_srcdir}/include
-test_mpp_pset_CPPFLAGS += -I${top_srcdir}/mpp
+test_mpp_pset_CPPFLAGS += -I${top_builddir}/mpp
 
 # Build this test program.
 check_PROGRAMS = test_mpp test_mpp_domains test_mpp_pset
@@ -40,4 +43,4 @@ TESTS = test_mpp_domains.sh test_mpp_pset.sh test_mpp.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = input.nml* *.out* 
+CLEANFILES = input.nml* *.out*

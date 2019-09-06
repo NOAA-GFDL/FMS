@@ -78,14 +78,14 @@ implicit none
 
 #ifdef INTERNAL_FILE_NML
   read (input_nml_file, test2_horiz_interp_nml, iostat=io)
-  ierr = check_nml_error(io, 'test_horiz_interp_nml')
+  ierr = check_nml_error(io, 'test2_horiz_interp_nml')
 #else
   if (file_exist('input.nml')) then
      unit = open_namelist_file ( )
      ierr=1
      do while (ierr /= 0)
-        read(unit, nml=test_horiz_interp_nml, iostat=io, end=10)
-        ierr = check_nml_error(io, 'test_horiz_interp_nml')
+        read(unit, nml=test2_horiz_interp_nml, iostat=io, end=10)
+        ierr = check_nml_error(io, 'test2_horiz_interp_nml')
      enddo
 10   call close_file (unit)
   endif
@@ -93,9 +93,9 @@ implicit none
 
 
   if( .not. file_exist(src_file) ) call mpp_error(FATAL, &
-       "test_horiz_interp: src_file = "//trim(src_file)//" does not exist")
+       "test2_horiz_interp: src_file = "//trim(src_file)//" does not exist")
   if( .not. field_exist(src_file, field_name) ) call mpp_error(FATAL, &
-       "test_horiz_interp: field_name = "//trim(field_name)//" does not exist in file "//trim(src_file) )
+       "test2_horiz_interp: field_name = "//trim(field_name)//" does not exist in file "//trim(src_file) )
 
   ! reading the grid information and missing value from src_file
   call mpp_open(src_unit, trim(src_file), &
@@ -219,7 +219,7 @@ contains
     real, allocatable :: tmp(:,:)
 
     ntiles = get_mosaic_ntiles(dst_grid)
-    if(ntiles .NE. 1 .and. ntiles .NE. 6) call mpp_error(FATAL, "test_horiz_interp: ntiles should be 1 or 6")
+    if(ntiles .NE. 1 .and. ntiles .NE. 6) call mpp_error(FATAL, "test2_horiz_interp: ntiles should be 1 or 6")
     npes_per_tile = mpp_npes()/ntiles
     mytile = mpp_pe()/npes_per_tile + 1
 
@@ -227,7 +227,7 @@ contains
        call read_data(dst_grid, "gridfiles", tile_file, level=mytile)
        tile_file = 'INPUT/'//trim(tile_file)
     else
-       call mpp_error(FATAL, "test_horiz_interp: field gridfiles does not exist in file "//trim(dst_grid) )
+       call mpp_error(FATAL, "test2_horiz_interp: field gridfiles does not exist in file "//trim(dst_grid) )
     endif
 
     call field_size(tile_file, "x", siz)
@@ -395,7 +395,7 @@ contains
              src_field_index = i
        endif
     enddo
-    if(src_field_index == 0) call mpp_error(FATAL, 'test_horiz_interp: field '&
+    if(src_field_index == 0) call mpp_error(FATAL, 'test2_horiz_interp: field '&
             //trim(field_name)//' is not in the file '//trim(src_file) )
     !--- get the src grid
     call mpp_get_atts(fields(src_field_index),ndim=ndim)
@@ -431,9 +431,9 @@ contains
        end select
     enddo
 
-    if(nx_src==0) call mpp_error(FATAL,'test_horiz_interp: file ' &
+    if(nx_src==0) call mpp_error(FATAL,'test2_horiz_interp: file ' &
          //trim(src_file)//' does not contain axis with cartesian attributes = "X" ')
-    if(ny_src==0) call mpp_error(FATAL,'test_horiz_interp: file '&
+    if(ny_src==0) call mpp_error(FATAL,'test2_horiz_interp: file '&
          //trim(src_file)//' does not contain axis with cartesian attributes = "Y" ')
 
     if(trim(interp_method) .ne. 'conservative') then

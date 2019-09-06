@@ -1,9 +1,12 @@
 # This is an automake file for the test_fms/data_override directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
-test_field_manager_CPPFLAGS = -I${top_srcdir}/field_manager
-test_field_manager_CPPFLAGS += -I${top_srcdir}/mpp
+test_field_manager_CPPFLAGS = -I${top_builddir}/field_manager
+test_field_manager_CPPFLAGS += -I${top_builddir}/mpp
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_field_manager.sh

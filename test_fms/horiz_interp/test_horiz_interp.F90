@@ -26,7 +26,7 @@ use mpp_mod,          only : input_nml_file
 use mpp_io_mod,       only : mpp_io_init, mpp_io_exit
 use mpp_domains_mod,  only : mpp_define_layout, mpp_define_domains, mpp_get_compute_domain
 use mpp_domains_mod,  only : mpp_domains_init, domain2d
-use fms_mod,          only : file_exist, open_namelist_file, close_file, check_nml_error
+use fms_mod,          only : file_exist, open_namelist_file, close_file, check_nml_error, fms_init
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
 use horiz_interp_mod, only : horiz_interp, horiz_interp_type
 use constants_mod,    only : constants_init, PI
@@ -59,6 +59,7 @@ implicit none
   call mpp_init
   call mpp_domains_init
   call mpp_io_init
+  call fms_init
   call horiz_interp_init
 
   !--- read namelist
@@ -226,4 +227,3 @@ implicit none
   call mpp_exit
 
 end program horiz_interp_test
-

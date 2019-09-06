@@ -237,7 +237,7 @@ program test_mpp_domains
 
   if( test_cubic_grid_redistribute ) then
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling cubic_grid_redistribute <-------------------'
-     call cubic_grid_redistribute()     
+     call cubic_grid_redistribute()
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished cubic_grid_redistribute <-------------------'
   endif
 
@@ -254,7 +254,7 @@ program test_mpp_domains
   if (test_adjoint) then
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_adjoint <-------------------'
        call test_get_boundary_ad('Four-Tile')
-       call test_halo_update_ad( 'Simple' ) 
+       call test_halo_update_ad( 'Simple' )
        call test_global_reduce_ad( 'Simple')
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_adjoint <-------------------'
   endif
@@ -866,7 +866,7 @@ end subroutine test_openmp
     integer            :: nx_save, ny_save
     logical            :: same_layout = .false.
 
-    
+
     nx_save = nx
     ny_save = ny
     if(type == 'Cubic-Grid' .and. nx_cubic >0) then
@@ -1486,7 +1486,7 @@ end subroutine test_openmp
                          x = 0.; y = 0.
                          x(isc:iec+shift,jsc:jec+shift,:,1) = global1(isc:iec+shift,jsc:jec+shift,:,1)
                          y(isc:iec+shift,jsc:jec+shift,:,1) = global2(isc:iec+shift,jsc:jec+shift,:,1)
-                        
+
                          call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
                          call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
                          write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type2), ' with whalo = ', wh, &
@@ -5634,7 +5634,7 @@ print *, 'finish'
 
     deallocate(x, global)
     call mpp_deallocate_domain(domain)
-  endif 
+  endif
 
    call mpp_set_current_pelist()
 
@@ -6999,7 +6999,7 @@ end subroutine test_modify_domain
        do j = 1, size(a,2)
           do i = 1, size(a,1)
              if(a(i,j,k) .ne. b(i,j,k)) then
-                write(stdunit,'(a,i3,a,i3,a,i3,a,i3,a,f20.9,a,f20.9)')" at pe ", mpp_pe(), &
+                write(*,'(a,i3,a,i3,a,i3,a,i3,a,f20.9,a,f20.9)') trim(string)//" at pe ", mpp_pe(), &
                      ", at point (",i,", ", j, ", ", k, "), a = ", a(i,j,k), ", b = ", b(i,j,k)
                 call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
              endif
@@ -7039,7 +7039,7 @@ end subroutine test_modify_domain
           if(a(i,j) .ne. b(i,j)) then
             print*, "a =", a(i,j)
             print*, "b =", b(i,j)
-             write(stdunit,'(a,i3,a,i3,a,i3,a,f20.9,a,f20.9)')"at pe ", mpp_pe(), &
+             write(*,'(a,i3,a,i3,a,i3,a,f20.9,a,f20.9)')"at the pe ", mpp_pe(), &
                   ", at point (",i,", ", j, "),a=", a(i,j), ",b=", b(i,j)
              call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
           endif
@@ -7812,17 +7812,17 @@ end subroutine test_modify_domain
        end do
     else
        call mpp_error(NOTE,'TEST_MPP_DOMAINS: npes should be multiple of ntiles or ' // &
-            'ntiles should be multiple of npes. No test is done for '//trim(type) )       
+            'ntiles should be multiple of npes. No test is done for '//trim(type) )
        return
     end if
- 
+
     do n = 1, ntiles
        global_indices(:,n) = (/1,nx,1,ny/)
        layout2D(:,n)         = layout
     end do
 
     call define_fourtile_mosaic(type, domain, (/nx,nx,nx,nx/), (/ny,ny,ny,ny/), global_indices, &
-                                layout2D, pe_start, pe_end, .true. )  
+                                layout2D, pe_start, pe_end, .true. )
 
     call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
     call mpp_get_memory_domain( domain, ism, iem, jsm, jem )
@@ -7855,7 +7855,7 @@ end subroutine test_modify_domain
     x_save=x_fd
     y_save=y_fd
 
-    ebufferx2_ad = 0 
+    ebufferx2_ad = 0
     wbufferx2_ad = 0
     sbuffery2_ad = 0
     nbuffery2_ad = 0
@@ -7969,7 +7969,7 @@ end subroutine test_modify_domain
     case default
         call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type )
     end select
-        
+
 !set up x array
     call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
     call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
@@ -8108,7 +8108,7 @@ end subroutine test_modify_domain
     type(domain2D) :: domain
     real, allocatable, dimension(:,:,:) :: x, x_ad, x_ad_bit
 
-    !--- set up domain    
+    !--- set up domain
     call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
     select case(type)
     case( 'Simple' )
@@ -8125,7 +8125,7 @@ end subroutine test_modify_domain
     end select
 
     call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-        
+
     !--- determine if an extra point is needed
     ishift = 0; jshift = 0; position = CENTER
     select case(type)
@@ -8146,15 +8146,15 @@ end subroutine test_modify_domain
        do j = jsd, jed
        	  do i = isd, ied
              x(i,j,k) = i+j+k
-       	  enddo 
+       	  enddo
        enddo
     enddo
-   
+
     gsum_tl      = mpp_global_sum( domain, x, position = position  )
     gsum_tl_bit  = mpp_global_sum( domain, x, flags=BITWISE_EXACT_SUM  )
     gsum_tl_save = gsum_tl*gsum_tl
     gsum_tl_save_bit = gsum_tl_bit*gsum_tl_bit
-    
+
     gsum_ad      = gsum_tl
     gsum_ad_bit  = gsum_tl_bit
 
@@ -8171,7 +8171,7 @@ end subroutine test_modify_domain
        	  do i = isd, ied
              gsum_ad_save     = gsum_ad_save + x_ad(i,j,k)*x(i,j,k)
              gsum_ad_save_bit = gsum_ad_save_bit + x_ad_bit(i,j,k)*x(i,j,k)
-       	  enddo 
+       	  enddo
        enddo
     enddo
 

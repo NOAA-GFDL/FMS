@@ -20,7 +20,7 @@
 program test_drifters_io
 
   use drifters_io_mod
-  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init
+  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
 
   implicit none
   type(drifters_io_type) :: drfts_io
@@ -35,9 +35,9 @@ program test_drifters_io
 
   ! number of dimensions
   nd = 3
-  ! number of fields 
+  ! number of fields
   nf = 2
-  ! max number of dirfters 
+  ! max number of dirfters
   npmax = 20
   ! number of time steps
   nt = 50
@@ -56,10 +56,10 @@ program test_drifters_io
   dt = 1/real(nt)
 
   ! open file
-  
-  filename = 'test.nc'
+
+  filename = 'test_drifter_io.nc'
   call drifters_io_new(drfts_io, filename, nd, nf, ermesg)
-  if(ermesg/='') then 
+  if(ermesg/='') then
      print *,'ERROR after drifters_io_new: ', ermesg
      call mpp_error(FATAL, ermesg)
   endif
@@ -71,11 +71,11 @@ program test_drifters_io
      call mpp_error(FATAL, ermesg)
   endif
 
-  ! note the trailing blanks in the first field, which are added here to 
-  ! ensure that "salinity" will not be truncated (all names must have the 
+  ! note the trailing blanks in the first field, which are added here to
+  ! ensure that "salinity" will not be truncated (all names must have the
   ! same length)
   call drifters_io_set_field_names(drfts_io, (/'temp    ','salinity'/), ermesg)
-  if(ermesg/='') then 
+  if(ermesg/='') then
       print *,'ERROR after drifters_io_field_names: ', ermesg
       call mpp_error(FATAL, ermesg)
   endif
@@ -87,7 +87,7 @@ program test_drifters_io
   endif
 
   call drifters_io_set_field_units(drfts_io, (/'deg K','ppm  '/), ermesg)
-  if(ermesg/='') then 
+  if(ermesg/='') then
       print *,'ERROR after drifters_io_field_units: ', ermesg
       call mpp_error(FATAL, ermesg)
   endif
@@ -105,7 +105,7 @@ program test_drifters_io
 
   ! drifters' identity array (can be any integer number)
   ids = (/ (i, i=1, npmax) /)
-  
+
   ! set fields as a function of space time
   fields(1, :) = sqrt( (positions(1,:)-xmin)**2 + (positions(2,:)-ymin)**2 )
   fields(2, :) = positions(1,:)-u*time + positions(2,:)-v*time ! invariant
@@ -117,7 +117,7 @@ program test_drifters_io
      if(x>=xmin .and. x<=xmax .and. y>=ymin .and. y<=ymax) then
         call drifters_io_write(drfts_io, time, np=1, nd=nd, nf=nf, &
              & ids=ids(i), positions=positions(:,i), fields=fields(:,i), ermesg=ermesg)
-        if(ermesg/='') then 
+        if(ermesg/='') then
             print *,'ERROR after drifters_io_write: ', ermesg
             call mpp_error(FATAL, ermesg)
         endif
@@ -125,7 +125,7 @@ program test_drifters_io
   enddo
 
   ! advect
-  
+
   do j = 1, nt
      time = time + dt
      positions(1, :) = positions(1, :) + u*dt
@@ -145,7 +145,7 @@ program test_drifters_io
            endif
         endif
      enddo
-     
+
   enddo
 
   deallocate(positions, ids, fields)
@@ -155,6 +155,5 @@ program test_drifters_io
       print *,'ERROR after drifters_io_del: ', ermesg
       call mpp_error(FATAL, ermesg)
   endif
-
+  call mpp_exit()
 end program test_drifters_io
-

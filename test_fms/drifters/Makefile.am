@@ -1,34 +1,37 @@
 # This is an automake file for the test_fms/drifters directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
-test_cloud_interpolator_CPPFLAGS = -I${top_srcdir}/drifters
-test_cloud_interpolator_CPPFLAGS += -I${top_srcdir}/mpp
+test_cloud_interpolator_CPPFLAGS = -I${top_builddir}/drifters
+test_cloud_interpolator_CPPFLAGS += -I${top_builddir}/mpp
 test_cloud_interpolator_CPPFLAGS += -I${top_srcdir}/include
 
-test_drifters_io_CPPFLAGS = -I${top_srcdir}/drifters
-test_drifters_io_CPPFLAGS += -I${top_srcdir}/mpp
-test_drifters_io_CPPFLAGS += -I${top_srcdir}/include
+test_drifters_io_CPPFLAGS = -I${top_builddir}/drifters
+test_drifters_io_CPPFLAGS += -I${top_builddir}/mpp
+test_drifters_io_CPPFLAGS += -I${top_builddir}/include
 
-test_drifters_input_CPPFLAGS = -I${top_srcdir}/drifters
-test_drifters_input_CPPFLAGS += -I${top_srcdir}/mpp
-test_drifters_input_CPPFLAGS += -I${top_srcdir}/fms
-test_drifters_input_CPPFLAGS += -I${top_srcdir}/include
+test_drifters_input_CPPFLAGS = -I${top_builddir}/drifters
+test_drifters_input_CPPFLAGS += -I${top_builddir}/mpp
+test_drifters_input_CPPFLAGS += -I${top_builddir}/fms
+test_drifters_input_CPPFLAGS += -I${top_builddir}/include
 
-test_drifters_comm_CPPFLAGS = -I${top_srcdir}/drifters
-test_drifters_comm_CPPFLAGS += -I${top_srcdir}/mpp
-test_drifters_comm_CPPFLAGS += -I${top_srcdir}/include
+test_drifters_comm_CPPFLAGS = -I${top_builddir}/drifters
+test_drifters_comm_CPPFLAGS += -I${top_builddir}/mpp
+test_drifters_comm_CPPFLAGS += -I${top_builddir}/include
 
-test_drifters_core_CPPFLAGS = -I${top_srcdir}/drifters
-test_drifters_core_CPPFLAGS += -I${top_srcdir}/mpp
-test_drifters_core_CPPFLAGS += -I${top_srcdir}/include
-test_drifters_core_CPPFLAGS += -I${top_srcdir}/fms
+test_drifters_core_CPPFLAGS = -I${top_builddir}/drifters
+test_drifters_core_CPPFLAGS += -I${top_builddir}/mpp
+test_drifters_core_CPPFLAGS += -I${top_builddir}/include
+test_drifters_core_CPPFLAGS += -I${top_builddir}/fms
 
-test_quicksort_CPPFLAGS = -I${top_srcdir}/drifters
+test_quicksort_CPPFLAGS = -I${top_builddir}/drifters
 
-test_drifters_CPPFLAGS = -I${top_srcdir}/drifters
-test_drifters_CPPFLAGS += -I${top_srcdir}/mpp
-test_drifters_CPPFLAGS += -I${top_srcdir}/include
+test_drifters_CPPFLAGS = -I${top_builddir}/drifters
+test_drifters_CPPFLAGS += -I${top_builddir}/mpp
+test_drifters_CPPFLAGS += -I${top_builddir}/include
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = input.nml
@@ -36,16 +39,17 @@ EXTRA_DIST += test_cloud_interpolator.bats
 EXTRA_DIST += test_cloud_interpolator.sh
 EXTRA_DIST += test_drifters_io.bats
 EXTRA_DIST += test_drifters_io.sh
-EXTRA_DIST +=  test_drifters_input.bats
-EXTRA_DIST +=  test_drifters_input.sh
-EXTRA_DIST +=  test_drifters_comm.bats
-EXTRA_DIST +=  test_drifters_comm.sh
-EXTRA_DIST +=  test_drifters_core.bats
-EXTRA_DIST +=  test_drifters_core.sh
-EXTRA_DIST +=  test_quicksort.bats
-EXTRA_DIST +=  test_quicksort.sh
-EXTRA_DIST +=  test_drifters.bats
-EXTRA_DIST +=  test_drifters.sh
+EXTRA_DIST += test_drifters_input.bats
+EXTRA_DIST += test_drifters_input.sh
+EXTRA_DIST += test_drifters_comm.bats
+EXTRA_DIST += test_drifters_comm.sh
+EXTRA_DIST += test_drifters_core.bats
+EXTRA_DIST += test_drifters_core.sh
+EXTRA_DIST += test_quicksort.bats
+EXTRA_DIST += test_quicksort.sh
+EXTRA_DIST += test_drifters.bats
+EXTRA_DIST += test_drifters.sh
+EXTRA_DIST += drifters_inp_test_3d.cdl
 
 # Build this test program.
 check_PROGRAMS = test_cloud_interpolator test_drifters_input test_drifters_comm test_drifters_core test_drifters_io test_quicksort test_drifters
@@ -80,4 +84,3 @@ TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
 CLEANFILES = *out *__genmod.mod *__genmod.f90 input.nml *.nc
-
