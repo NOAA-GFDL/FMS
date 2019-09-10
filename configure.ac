@@ -8,6 +8,7 @@ AC_INIT([FMS], [2.0-development], [])
 
 # Find out about the host we're building on.
 AC_CANONICAL_HOST
+AC_CANONICAL_BUILD
 
 # Find out about the target we're building for.
 AC_CANONICAL_TARGET
@@ -58,13 +59,13 @@ AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
 
 # Define __APPLE__ macro if on a Apple/Mac OS X
-AS_IF([test `echo $OSTYPE` = 'darwin'], [AC_DEFINE([__APPLE__], [ ])], [])
+AS_IF([test "x$target_vendor" = "xapple"], [AC_DEFINE([__APPLE__], [ ])])
 
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
 # Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
-AM_CONDITIONAL([APPLE], [test `echo $OSTYPE` = 'darwin'])
+AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
