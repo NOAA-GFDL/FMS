@@ -106,3 +106,37 @@ fi
 # Done testing Fortran compiler.
 AC_LANG_POP(Fortran)
 ])
+
+
+dnl Check that Fortran compiler can handle cray pointeres.
+dnl Ed Hartnett, 9/11/19
+AC_DEFUN([GFDL_CHECK_FORTRAN_CRAY_POINTERS],
+[
+# Tell autoconf that language tests are in fortran.
+AC_LANG_PUSH(Fortran)
+
+# Check a fortran compile with a test program with this file
+# extension.
+AC_FC_SRCEXT(F90)
+
+# Check that code that uses a cray pointer can be compiled.
+AC_MSG_CHECKING([whether Fortran compiler can handle cray pointers])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+        subroutine foo(bar)
+        real :: dummy
+        pointer( ptr, dummy )
+        end subroutine foo
+        ])],
+        [test_result=yes],
+        [test_result=no])
+AC_MSG_RESULT($test_result)
+
+# If it failed, error out of configure with a helpful message.
+if test $test_result = no; then
+   AC_MSG_ERROR([Fortran compiler must handle cray pointers. \
+   Set FCFLAGS to allow this (-fcray-pointer for gfortran)])
+fi
+
+# Done testing Fortran compiler.
+AC_LANG_POP(Fortran)
+])

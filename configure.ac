@@ -59,6 +59,9 @@ GFDL_CHECK_FORTRAN_REAL_8()
 # Check that doubles in Fortran are 8 bytes.
 GFDL_CHECK_FORTRAN_DOUBLE_8()
 
+# Check that cray pointers are supported by Fortran compiler.
+GFDL_CHECK_FORTRAN_CRAY_POINTERS()
+
 # These defines are required for the build.
 AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
