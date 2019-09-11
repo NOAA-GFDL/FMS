@@ -53,11 +53,15 @@ AC_LANG_POP(Fortran)
 # Check that long lines of Fortran code can be handled.
 GFDL_CHECK_FORTRAN_LONG_LINES()
 
-# Check that reals in Fortran are 8 bytes.
-GFDL_CHECK_FORTRAN_REAL_8()
+# Check that reals in Fortran are 8 bytes, unless -DOVERLOAD_R4 is used.
+if [ -z ${OVERLOAD_R4+x} ]; then
+   GFDL_CHECK_FORTRAN_REAL_8()
+fi
 
-# Check that doubles in Fortran are 8 bytes.
-GFDL_CHECK_FORTRAN_DOUBLE_8()
+# Check that doubles in Fortran are 8 bytes, unless -DOVERLOAD_P8 is used.
+if [ -z ${OVERLOAD_R8+x} ]; then
+   GFDL_CHECK_FORTRAN_DOUBLE_8()
+fi
 
 # These defines are required for the build.
 AC_DEFINE([use_netCDF], [1])
