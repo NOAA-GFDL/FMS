@@ -50,8 +50,8 @@ AC_SEARCH_LIBS([nf_create], [netcdff], [],
                             [AC_MSG_ERROR([Can't find or link to the netcdf Fortran library, set CPPFLAGS/LDFLAGS.])])
 AC_LANG_POP(Fortran)
 
-# Require netCDF.
-#AC_CHECK_FUNC([nf_open], [], [AC_MSG_ERROR([NetCDF Fortran library required to build FMS])])
+# Check that long lines of Fortran code can be handled.
+GFDL_CHECK_FORTRAN_LONG_LINES()
 
 # These defines are required for the build.
 AC_DEFINE([use_netCDF], [1])
