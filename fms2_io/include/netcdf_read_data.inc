@@ -271,11 +271,11 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
   endif
   c(:) = 1
   if (present(corner)) then
-    c(1:2) = corner(:)
+    c(1:2) = corner(1:2)
   endif
   e(:) = 1
   if (present(edge_lengths)) then
-    e(1:2) = edge_lengths(:)
+    e(1:2) = edge_lengths(1:2)
   else
     e(1:2) = shape(buf)
   endif
@@ -359,11 +359,11 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
   endif
   c(:) = 1
   if (present(corner)) then
-    c(1:3) = corner(:)
+    c(1:3) = corner(1:3)
   endif
   e(:) = 1
   if (present(edge_lengths)) then
-    e(1:3) = edge_lengths(:)
+    e(1:3) = edge_lengths(1:3)
   else
     e(1:3) = shape(buf)
   endif
@@ -447,11 +447,11 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
   endif
   c(:) = 1
   if (present(corner)) then
-    c(1:4) = corner(:)
+    c(1:4) = corner(1:4)
   endif
   e(:) = 1
   if (present(edge_lengths)) then
-    e(1:4) = edge_lengths(:)
+    e(1:4) = edge_lengths(1:4)
   else
     e(1:4) = shape(buf)
   endif
@@ -535,11 +535,11 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
   endif
   c(:) = 1
   if (present(corner)) then
-    c(1:5) = corner(:)
+    c(1:5) = corner(1:5)
   endif
   e(:) = 1
   if (present(edge_lengths)) then
-    e(1:5) = edge_lengths(:)
+    e(1:5) = edge_lengths(1:5)
   else
     e(1:5) = shape(buf)
   endif
