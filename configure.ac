@@ -53,6 +53,10 @@ AC_LANG_POP(Fortran)
 # Require netCDF.
 #AC_CHECK_FUNC([nf_open], [], [AC_MSG_ERROR([NetCDF Fortran library required to build FMS])])
 
+# Check that long lines of Fortran code can be handled. This will add
+# necessary fortran flags.
+#AC_FC_LINE_LENGTH([unlimited])
+
 # These defines are required for the build.
 AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
