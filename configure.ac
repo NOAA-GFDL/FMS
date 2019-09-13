@@ -21,6 +21,19 @@ AC_CONFIG_MACRO_DIR([m4])
 LT_PREREQ([2.4])
 LT_INIT()
 
+# Process user optons.
+
+# Does the user want to turn off all attempts to set fortran flags?
+# This is necessary to handle situations where the configure-provided
+# flags will be wrong for a particular install. With this setting, the
+# user is in complete control of Fortran flags.
+AC_MSG_CHECKING([whether we should attempt to set Fortran flags for the user])
+AC_ARG_ENABLE([fortran-flag-setting],
+  [AS_HELP_STRING([--disable-fortran-flag-setting],
+    [Disable any attempts by configure to set fortran flags. With this option, only user-provided flags (set in FCFLAGS) will be used compiling Fortran code.])])
+test "x$enable_fortran_flag_setting" = xno || enable_fortran_flag_setting=yes
+AC_MSG_RESULT([$enable_fortran_flag_setting])
+
 # Find the C compiler.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -53,9 +66,16 @@ AC_LANG_POP(Fortran)
 # Require netCDF.
 #AC_CHECK_FUNC([nf_open], [], [AC_MSG_ERROR([NetCDF Fortran library required to build FMS])])
 
-# Check that long lines of Fortran code can be handled. This will add
-# necessary fortran flags.
-#AC_FC_LINE_LENGTH([unlimited])
+# Do we want to try and set Fortran flags for the user?
+if test $enable_fortran_flag_setting = "yes"; then
+   # Make sure the compiler is seeing this as free-formatted, not
+   # fixed-formatted, fortran code.
+   AC_FC_FREEFORM()
+
+   # Check that long lines of Fortran code can be handled. This will add
+   # necessary fortran flags.
+   AC_FC_LINE_LENGTH([unlimited])
+fi
 
 # These defines are required for the build.
 AC_DEFINE([use_netCDF], [1])
