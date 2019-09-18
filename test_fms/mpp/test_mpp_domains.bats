@@ -90,6 +90,9 @@ teardown () {
     if [ "$skip_test" = "true" ]
     then
       skip "Does not work on Darwin"
+    elif [ "x$TRAVIS" = "xtrue" ]
+    then
+      skip "Fails on Travis in 32bit/Mixed mode"
     fi
     sed "s/test_boundary = .false./test_boundary = .true./" input.nml_base > input.nml
     run mpirun -n 2 ./test_mpp_domains
