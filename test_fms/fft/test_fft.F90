@@ -19,13 +19,15 @@
 
 program test_fft
 use fft_mod
-use mpp_mod,       only : mpp_error, FATAL, stdout
+use mpp_mod,       only : mpp_init, mpp_exit, mpp_error, FATAL, stdout
 
 integer, parameter :: lot = 2
 real   , allocatable :: ain(:,:), aout(:,:)
 complex, allocatable :: four(:,:)
 integer :: i, j, m, n
 integer :: ntrans(2) = (/ 60, 90 /)
+
+call mpp_init
 
 ! test multiple transform lengths
   do m = 1,2
@@ -50,9 +52,9 @@ integer :: ntrans(2) = (/ 60, 90 /)
 
     enddo
     enddo
-   
+
     call fft_end
     deallocate (ain,aout,four)
   enddo
-
+  call mpp_exit
 end program test_fft

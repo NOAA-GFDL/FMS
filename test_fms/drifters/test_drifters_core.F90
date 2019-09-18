@@ -21,7 +21,7 @@
 program test_drifters_core
 
   use drifters_core_mod
-  use fms_mod, only : fms_init
+  use fms_mod, only : fms_init, fms_end
   use mpp_mod, only : mpp_error, FATAL, stdout
   implicit none
   type(drifters_core_type) :: drf
@@ -85,7 +85,7 @@ program test_drifters_core
   if(ermesg/='') call mpp_error(FATAL, ermesg)
   call drifters_core_print(drf, ermesg)
   deallocate(positions_to_add)
-  
+
   ! add particles requiring resizing
   npa = 10
   allocate(positions_to_add(nd,npa))
@@ -108,5 +108,5 @@ program test_drifters_core
 !!$  else
 !!$     print *,'Sucessful test ier=', ier
 !!$  end if
-
+  call fms_end()
 end program test_drifters_core

@@ -1,13 +1,16 @@
 # This is an automake file for the test_fms/fms directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
-test_fms_io_CPPFLAGS = -I${top_srcdir}/fms
-test_fms_io_CPPFLAGS += -I${top_srcdir}/mpp
+test_fms_io_CPPFLAGS = -I${top_builddir}/fms
+test_fms_io_CPPFLAGS += -I${top_builddir}/mpp
 test_fms_io_CPPFLAGS += -I${top_srcdir}/include
 
-test_unstructured_fms_io_CPPFLAGS = -I${top_srcdir}/fms
-test_unstructured_fms_io_CPPFLAGS += -I${top_srcdir}/mpp
+test_unstructured_fms_io_CPPFLAGS = -I${top_builddir}/fms
+test_unstructured_fms_io_CPPFLAGS += -I${top_builddir}/mpp
 test_unstructured_fms_io_CPPFLAGS += -I${top_srcdir}/include
 
 # Copy over other needed files to the srcdir

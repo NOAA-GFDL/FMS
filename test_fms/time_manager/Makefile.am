@@ -1,6 +1,9 @@
 # This is an automake file for the test_fms/data_override directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
 AM_CPPFLAGS = -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/fms
@@ -26,4 +29,4 @@ TESTS = test_time_manager.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = input.nml *.out* 
+CLEANFILES = input.nml *.out*

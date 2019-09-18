@@ -1,14 +1,17 @@
 # This is an automake file for the test_fms/exchange directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
 test_xgrid_CPPFLAGS = -I${top_srcdir}/include
-test_xgrid_CPPFLAGS += -I${top_srcdir}/mpp
-test_xgrid_CPPFLAGS += -I${top_srcdir}/fms
-test_xgrid_CPPFLAGS += -I${top_srcdir}/constants
-test_xgrid_CPPFLAGS += -I${top_srcdir}/exchange
-test_xgrid_CPPFLAGS += -I${top_srcdir}/mosaic
-test_xgrid_CPPFLAGS += -I${top_srcdir}/coupler
+test_xgrid_CPPFLAGS += -I${top_builddir}/mpp
+test_xgrid_CPPFLAGS += -I${top_builddir}/fms
+test_xgrid_CPPFLAGS += -I${top_builddir}/constants
+test_xgrid_CPPFLAGS += -I${top_builddir}/exchange
+test_xgrid_CPPFLAGS += -I${top_builddir}/mosaic
+test_xgrid_CPPFLAGS += -I${top_builddir}/coupler
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_xgrid.sh
@@ -30,7 +33,7 @@ TESTS = test_xgrid.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 TESTS_ENVIRONMENT += builddir="$(top_builddir)"
 
-# Clean up 
+# Clean up
 DISTCLEANFILES = input.nml
 DISTCLEANFILES += *.nc
 DISTCLEANFILES += *.out

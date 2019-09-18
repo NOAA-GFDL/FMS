@@ -1,11 +1,14 @@
 # This is an automake file for the test_fms/mosaic directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
-test_mosaic_CPPFLAGS = -I${top_srcdir}/mosaic
-test_mosaic_CPPFLAGS += -I${top_srcdir}/fms
+test_mosaic_CPPFLAGS = -I${top_builddir}/mosaic
+test_mosaic_CPPFLAGS += -I${top_builddir}/fms
 test_mosaic_CPPFLAGS += -I${top_srcdir}/include
-test_mosaic_CPPFLAGS += -I${top_srcdir}/mpp
+test_mosaic_CPPFLAGS += -I${top_builddir}/mpp
 
 # Build this test program.
 check_PROGRAMS = test_mosaic

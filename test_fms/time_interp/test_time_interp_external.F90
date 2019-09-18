@@ -21,7 +21,7 @@
 program test_time_interp_external
 
 use constants_mod, only: constants_init
-use fms_mod,       only: open_namelist_file, check_nml_error
+use fms_mod,       only: open_namelist_file, check_nml_error, close_file
 use mpp_mod, only : mpp_init, mpp_exit, mpp_npes, stdout, stdlog, FATAL, mpp_error
 use mpp_mod, only : input_nml_file
 use mpp_io_mod, only : mpp_io_init, mpp_io_exit, mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close, &

@@ -19,7 +19,7 @@
 
 program test_cloud_interpolator
   use cloud_interpolator_mod
-  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init
+  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
 
   implicit none
 
@@ -30,9 +30,10 @@ program test_cloud_interpolator
   call test_cell_search
   call test_get_node_values
 
+  call mpp_exit()
 CONTAINS
     subroutine test_expansion_contraction
-    
+
       integer ie1(4), ie2(4), Ic, ier, idiff, j
       ie1 = (/1,0,1,1/)
       call cld_ntrp_contract_indices(ie1, Ic, ier)
@@ -49,11 +50,11 @@ CONTAINS
       print *,'ie1 = ', ie1
       print *,'ie2 = ', ie2
       print *,'Ic  = ', Ic
-      
+
     end subroutine test_expansion_contraction
 
     subroutine test_linear_cell_interpolation
-      integer, parameter :: nd = 3 
+      integer, parameter :: nd = 3
       real :: fvals(2**nd), ts(nd)
       real :: fi, fx
       integer ier
@@ -62,9 +63,9 @@ CONTAINS
       ts    = (/ 0.1, 0.2, 0.3 /)
       fx    = 1. + ts(1) + 2*ts(2) + 3*ts(3)
       call cld_ntrp_linear_cell_interp(fvals, ts, fi, ier)
-      if(ier/=0) then 
+      if(ier/=0) then
          print *,'ERROR flag ier=', ier
-         call mpp_error(FATAL,'ERROR: linear cell interpolation test failed (ier/=0)')    
+         call mpp_error(FATAL,'ERROR: linear cell interpolation test failed (ier/=0)')
       endif
       print *,'fi, fx = ', fi, fx
     end subroutine test_linear_cell_interpolation
@@ -78,7 +79,7 @@ CONTAINS
       real :: axis4(n) = (/0.4, 0.03, 0.02, 0.01, 0./)
       real x
       integer :: ier_tot = 0
-      
+
       print *,'axis1=', axis1
       x = -0.0001
       call cld_ntrp_locate_cell(axis1, x, index, ier)

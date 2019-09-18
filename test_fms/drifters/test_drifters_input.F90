@@ -20,18 +20,18 @@
 
 program test_drifters_input
   use drifters_input_mod
-  use fms_mod, only : fms_init
+  use fms_mod, only : fms_init, fms_end
   use mpp_mod, only : mpp_error, FATAL, stdout
 
   implicit none
   character(len=128) :: ermesg
   integer :: i
-  
+
   type(drifters_input_type) :: obj
-  
+
   call fms_init()
 
-  call drifters_input_new(obj, 'test.nc', ermesg)
+  call drifters_input_new(obj, 'test_drifters_input.nc', ermesg)
   if(ermesg/='') call mpp_error(FATAL, ermesg)
 
   print *,'field_names:'
@@ -52,4 +52,6 @@ program test_drifters_input
   enddo
 
   call drifters_input_del(obj, ermesg)
+
+  call fms_end()
 end program test_drifters_input
