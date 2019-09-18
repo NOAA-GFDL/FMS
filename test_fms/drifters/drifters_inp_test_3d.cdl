@@ -1,0 +1,27 @@
+netcdf drifters_inp_test_3d {
+dimensions:
+	nd = 3 ; // number of dimensions (2 or 3)
+	np = 4 ; // number of particles
+variables:
+	double positions(np, nd) ;
+		positions:names = "x y z" ;
+		positions:units = "- - -" ;
+	int ids(np) ;
+
+// global attributes:
+		:velocity_names = "u v w" ;
+		:field_names = "temp" ;
+		:field_units = "C" ;
+		:time_units = "seconds" ;
+		:title = "example of input data for drifters" ;
+data:
+
+ positions =
+  -0.8, 0., 0.,
+  -0.2, 0., 0., 
+   0.2, 0., 0.,
+   0.8, 0., 0.;
+
+ ids = 1, 2, 3, 4 ; // must range from 1 to np, in any order
+}
+

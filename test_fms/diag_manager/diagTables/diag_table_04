@@ -1,0 +1,10 @@
+test_diag_manager_04
+1 3 1 0 0 0
+
+#output files
+ "diag_test_04_file1",  1, "days", 1, "days", "time"
+ "diag_test_04_file2",  1, "days", 1, "days", "time"
+
+#output variables
+ "test_diag_manager_mod", "dat2", "dat2", "diag_test_04_file1",  "all", .false., "none", 2
+ "test_mod",              "dat2", "dat2", "diag_test_04_file2",  "all", .false., "none", 2
