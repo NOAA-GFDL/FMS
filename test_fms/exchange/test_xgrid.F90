@@ -40,8 +40,8 @@ program xgrid_test
   use xgrid_mod,       only : xmap_type, xgrid_count, grid_box_type, SECOND_ORDER
   use xgrid_mod,       only : get_xmap_grid_area, set_frac_area
   use xgrid_mod,       only : get_from_xgrid_ug, put_to_xgrid_ug
-  use mosaic_mod,      only : get_mosaic_ntiles, get_mosaic_grid_sizes
-  use mosaic_mod,      only : get_mosaic_ncontacts, get_mosaic_contact, get_mosaic_tile_grid
+  use mosaic2_mod,     only : get_mosaic_ntiles, get_mosaic_grid_sizes
+  use mosaic2_mod,     only : get_mosaic_ncontacts, get_mosaic_contact, get_mosaic_tile_grid
   use grid_mod,        only : get_grid_comp_area
   use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
