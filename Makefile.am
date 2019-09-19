@@ -11,7 +11,12 @@ horiz_interp time_interp column_diagnostics block_control \
 data_override astronomy field_manager coupler diag_integral \
 monin_obukhov interpolator fft amip_interp exchange topography \
 tracer_manager sat_vapor_pres random_numbers libFMS \
-test_fms/diag_manager test_fms/fms2_io
+test_fms/diag_manager test_fms/data_override test_fms/exchange \
+test_fms/monin_obukhov test_fms/drifters test_fms/mosaic \
+test_fms/interpolator test_fms/fms \
+test_fms/mpp test_fms/mpp_io  test_fms/time_interp test_fms/time_manager \
+test_fms/horiz_interp \
+test_fms/field_manager test_fms/fft test_fms/axis_utils test_fms/fms2_io
 
 EXTRA_DIST = README.md
 

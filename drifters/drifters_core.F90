@@ -25,11 +25,11 @@ module drifters_core_mod
   implicit none
   private
 
-  public :: drifters_core_type, drifters_core_new, drifters_core_del
+  public :: drifters_core_type, drifters_core_new, drifters_core_del, drifters_core_set_ids
   public :: drifters_core_remove_and_add, drifters_core_set_positions, assignment(=)
-#ifdef _TEST_DRIFTERS_CORE
-  public :: drifters_core_print, drifters_core_resize
-#endif
+!#ifdef _TEST_DRIFTERS_CORE
+  public :: drifters_core_print,  drifters_core_resize
+!#endif
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
@@ -171,16 +171,16 @@ contains
   end subroutine drifters_core_set_positions
 
 !###############################################################################
-  subroutine drifters_core_set_ids(self, ids, ermesg)
-    type(drifters_core_type)        :: self
-    integer, intent(in)        :: ids(:)
-    character(*), intent(out)  :: ermesg
+  subroutine drifters_core_set_ids(self1, ids1, ermesg1)
+    type(drifters_core_type)        :: self1
+    integer, intent(in)        :: ids1(:)
+    character(*), intent(out)  :: ermesg1
     integer ier, np !, iflag
-    ermesg = ''
+    ermesg1 = ''
     ier = 0
-    np = min(self%npdim, size(ids))
-    self%ids(1:np) = ids(1:np)
-    if(ier/=0) ermesg = 'drifters::ERROR in drifters_core_set_ids'
+    np = min(self1%npdim, size(ids1))
+    self1%ids(1:np) = ids1(1:np)
+    if(ier/=0) ermesg1 = 'drifters::ERROR in drifters_core_set_ids'
   end subroutine drifters_core_set_ids
 
 !###############################################################################
@@ -249,18 +249,18 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
   end subroutine drifters_core_remove_and_add
   
 !###############################################################################
-  subroutine drifters_core_print(self, ermesg)
-    type(drifters_core_type)        :: self
-    character(*), intent(out) :: ermesg
+  subroutine drifters_core_print(self1, ermesg1)
+    type(drifters_core_type)        :: self1
+    character(*), intent(out) :: ermesg1
     integer j
-    ermesg = ''
+    ermesg1 = ''
 
-    print '(a,i10,a,i6,a,i6,a,i4,a,i4,a,i4)','it=',self%it,  &
-         & ' np=', self%np, ' npdim=', self%npdim
+    print '(a,i10,a,i6,a,i6,a,i4,a,i4,a,i4)','it=',self1%it,  &
+         & ' np=', self1%np, ' npdim=', self1%npdim
         
     print *,'ids and positions:'
-    do j = 1, self%np
-       print *,self%ids(j), self%positions(:,j)
+    do j = 1, self1%np
+       print *,self1%ids(j), self1%positions(:,j)
     enddo    
        
   end subroutine drifters_core_print
@@ -269,95 +269,3 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 end module drifters_core_mod
 !###############################################################################
 !###############################################################################
-
-#ifdef _TEST_DRIFTERS_CORE
-program test
-  use drifters_core_mod
-  implicit none
-  type(drifters_core_type) :: drf
-  integer :: ier, nd, npdim, i, j, np
-  character(128) :: ermesg
-  integer :: npa
-  real   , allocatable :: positions(:,:), positions_to_add(:,:)
-
-  ! c-tor/d-tor tests
-  nd    = 3
-  npdim = 2
-  call drifters_core_new(drf, nd, npdim, ermesg)
-  if(ermesg/='') print *,ermesg
-  call drifters_core_del(drf, ermesg)
-  if(ermesg/='') print *,ermesg
-  call drifters_core_new(drf, nd, npdim, ermesg)
-  if(ermesg/='') print *,ermesg
-
-  call drifters_core_print(drf, ermesg)
-
-  npdim = 10
-  call drifters_core_resize(drf, npdim, ermesg)
-  if(ermesg/='') print *,ermesg
-  call drifters_core_print(drf, ermesg)
-
-  np = 7
-  allocate(positions(nd,np))
-  positions(1,:) = (/0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0/) ! x
-  positions(2,:) = (/0.1, 1.1, 2.1, 3.1, 4.1, 5.1, 6.1/) ! y
-  positions(3,:) = (/0.2, 1.2, 2.2, 3.2, 4.2, 5.2, 6.2/) ! z
-  call drifters_core_set_positions(drf, positions, ermesg)
-  if(ermesg/='') print *,ermesg
-  call drifters_core_print(drf, ermesg)
-
-  ! remove more particles than are added
-  npa = 2
-  allocate(positions_to_add(nd,npa))
-  positions_to_add(1,:) = (/100.0, 200.0/)
-  positions_to_add(2,:) = (/100.1, 200.1/)
-  positions_to_add(3,:) = (/100.2, 200.2/)
-  call drifters_core_remove_and_add(drf, (/2, 6, 1/), &
-     & (/ 1001, 1002 /), &
-     & positions_to_add, &
-     & ermesg)
-  if(ermesg/='') print *,ermesg
-  call drifters_core_print(drf, ermesg)
-  deallocate(positions_to_add)
-
-  ! add more particles than are removed
-  npa = 3
-  allocate(positions_to_add(nd,npa))
-  positions_to_add(1,:) = (/1000.0, 2000.0, 3000.0/)
-  positions_to_add(2,:) = (/1000.1, 2000.1, 3000.1/)
-  positions_to_add(3,:) = (/1000.2, 2000.2, 3000.2/)
-  call drifters_core_remove_and_add(drf, (/3,1/), &
-     & (/ 1003, 1004, 1005 /), &
-     & positions_to_add,  &
-     & ermesg)
-  if(ermesg/='') print *,ermesg
-  call drifters_core_print(drf, ermesg)
-  deallocate(positions_to_add)
-  
-  ! add particles requiring resizing
-  npa = 10
-  allocate(positions_to_add(nd,npa))
-  positions_to_add(1,:) = (/100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 10000.0/)
-  positions_to_add(2,:) = (/100.1, 200.1, 300.1, 400.1, 500.1, 600.1, 700.1, 800.1, 900.1, 10000.1/)
-  positions_to_add(3,:) = (/100.2, 200.2, 300.2, 400.2, 500.2, 600.2, 700.2, 800.2, 900.2, 10000.2/)
-  call drifters_core_remove_and_add(drf, (/3,1,5,2/), &
-     & (/ (1010+i, i=1,npa) /), &
-     & positions_to_add,  &
-     & ermesg)
-  if(ermesg/='') print *,ermesg
-  call drifters_core_print(drf, ermesg)
-  deallocate(positions_to_add)
-
-!!$  call test_circle(ier)
-!!$  !call test_3d(ier)
-!!$
-!!$  if(ier/=0) then
-!!$     print *,'Test unit failed ier=', ier
-!!$  else
-!!$     print *,'Sucessful test ier=', ier
-!!$  end if
-
-end program test
-
-
-#endif

@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 ! This program runs only one of many possible tests with each execution.
 ! Each test ends with an intentional fatal error.
 ! diag_manager_mod is not a stateless module, and there are situations
@@ -174,16 +193,18 @@
 !  "test_diag_manager_mod", "dat2", "dat2",     "diag_test2", "all", .true., "none", 2,
 !--------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------
-!> diag_table for test 100 (unstructured grid)
+!> diag_table for test 23 (unstructured grid)
 !!
-!!test_unstructured_grid_diag_manager
-!!1990 1 1 0 0 0
-!!#output files
-!!"unstructured_diag_test", 1, "days", 1, "days", "time",
-!!#output variables
-!!"UG_unit_test", "unstructured_real_scalar_field_data", "rsf_diag_1", "unstructured_diag_test", "all", .TRUE., "none", 1,
-!!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
-!!"UG_unit_test", "unstructured_real_2D_field_data", "unstructured_real_2D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!test_diag_manager_23
+!1990 1 1 0 0 0
+!#output files
+!"unstructured_diag_test", 2, "days", 2, "days", "time",
+!#output variables
+!"UG_unit_test", "unstructured_real_scalar_field_data", "rsf_diag_1", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!"UG_unit_test", "unstructured_real_2D_field_data", "unstructured_real_2D_field_data", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!"UG_unit_test", "lon", "grid_xt", "unstructured_diag_test", "all", .TRUE., "none", 1,
+!"UG_unit_test", "lat", "grid_yt", "unstructured_diag_test", "all", .TRUE., "none", 1,
 !--------------------------------------------------------------------------------------------------
 PROGRAM test
   ! This program runs only one of many possible tests with each execution.
@@ -251,10 +272,10 @@ PROGRAM test
   INTEGER :: is_in, ie_in, js_in, je_in
   INTEGER :: is2, ie2, js2, je2, hi=1, hj=1
   INTEGER :: nlon1, nlat1, nlon2, nlat2
-  INTEGER, DIMENSION(2) :: layout = (/0,0/)
+  INTEGER, DIMENSION(2) :: layout = (/1,1/)
   INTEGER :: test_number=1
-  INTEGER :: nlon=18, nlat=18, nlev=2
-  INTEGER :: io_layout(2) = (/0,0/)
+  INTEGER :: nlon=10, nlat=10, nlev=10
+  INTEGER :: io_layout(2) = (/1,1/)
   INTEGER :: nstep = 2
   TYPE(time_type) :: Time, Time_step, Time_end, Time_start, Run_length
   LOGICAL :: used, test_successful
@@ -263,7 +284,7 @@ PROGRAM test
 
   INTEGER :: nyc1, n, jsw, jew, isw, iew
   INTEGER :: numthreads=1, ny_per_thread, idthread
-  INTEGER :: months=0, days=0, dt_step=0
+  INTEGER :: months=0, days=1, dt_step=1
 
   ! Variables needed for test 22
   INTEGER :: id_nv, id_nv_init
@@ -350,8 +371,8 @@ PROGRAM test
   END IF
   WRITE (log_unit,test_diag_manager_nml)
 
-!> If the test_number == 100, then call the unstrcutured grid unit test and skip everything else.
-if (test_number == 100) then
+!> If the test_number == 23, then call the unstrcutured grid unit test and skip everything else.
+if (test_number == 23) then
    !Initialize the mpp_domains module
     if (debug) then
         call mpp_domains_init(MPP_DEBUG)
@@ -401,7 +422,7 @@ if (test_number == 100) then
    !Set the diag_time variable to be 01/01/1990 at 00:00:00 (midnight).
     call set_calendar_type(JULIAN)
     time = set_date(1990,1,1,0,0,0)
-   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 2, time,io_tile_factor)
+   CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 1, time,io_tile_factor)
 else
 !!!!!! ALL OTHER TESTS !!!!!!
   IF ( test_number == 12 ) THEN
@@ -631,12 +652,12 @@ else
            iew = ie1
            if(id_dat1>0) used = send_data(id_dat1, dat1(isw:iew, jsw:jew,:), Time, &
                                 is_in=isw-is1+1, js_in=jsw-js1+1,err_msg=err_msg)
-           if(id_sol_con>0) used = send_data(id_sol_con, solar_constant, Time )
+           if(id_sol_con>0) used = send_data(id_sol_con, solar_constant, Time, err_msg=err_msg )
         END DO
         !$OMP END parallel do
-        CALL diag_send_complete(Time_step)
+        !CALL diag_send_complete(Time_step)
      END DO
-  END IF
+ END IF
 
 
   IF ( test_number == 14 ) THEN
@@ -952,6 +973,7 @@ else
 
   IF ( test_number == 1 ) THEN
      !  1 window, no halos
+     ! Here dat2 is too large in both x and y direction so you should get an error. 
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat2, Time, err_msg=err_msg)
      IF ( err_msg == '' ) THEN
         WRITE (out_unit,'(a)') 'test1.1 fails: Intentional error not detected'
@@ -959,16 +981,18 @@ else
         WRITE (out_unit,'(a)') 'test1.1 successful: '//TRIM(err_msg)
      END IF
 
-     !  intentional_error: data array too large in both x and y directions
+     ! Here dat1 has the correct shape, so no error 
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
+
      IF ( err_msg == '' ) THEN
         WRITE (out_unit,'(a)') 'test1.2 successful'
      ELSE
         WRITE (out_unit,'(a)') 'test1.2 fails: '//TRIM(err_msg)
      END IF
   END IF
-endif !! This is the endif for the unstructured grid if
   CALL diag_manager_end(Time)
+endif !! This is the endif for the unstructured grid if
+
   CALL fms_io_exit
   CALL fms_end
 
@@ -1570,14 +1594,14 @@ ENDIF !L.ne.1
        !Simulate the model timesteps, so that diagnostics may be written
        !out.
         num_diag_time_steps = 4
-        diag_time_step = set_time(12*3600)
+        diag_time_step = set_time(12*3600, 0)
         diag_time_start = diag_time
 ! used = send_data(idlat,lat,diag_time)
 ! used = send_data(idlon,lon,diag_time)
         do i = 1,num_diag_time_steps
 
            !Update the current time.
-            diag_time = diag_time + diag_time_step
+            diag_time = diag_time  + diag_time_step
 
            !"Evolve" the test data.
             unstructured_real_scalar_field_data_ref = unstructured_real_scalar_field_data_ref + &
@@ -1590,7 +1614,8 @@ ENDIF !L.ne.1
                                 unstructured_real_scalar_field_data, &
                                 diag_time)
            endif
-         IF (SIZE(rsf_diag_1d_id) == 1) THEN
+
+        IF (SIZE(rsf_diag_1d_id) == 1) THEN
           used = send_data(rsf_diag_1d_id(1), &
                                 unstructured_real_1D_field_data, &
                                 diag_time)
