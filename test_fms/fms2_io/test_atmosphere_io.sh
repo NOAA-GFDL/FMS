@@ -1,2 +1,2 @@
 #!/bin/sh
-bats ${srcdir}/test_atmosphere_io.bats
+bats ${srcdir}/test_fms/fms2_io/test_atmosphere_io.bats
