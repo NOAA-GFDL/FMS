@@ -1,6 +1,9 @@
 # This is an automake file for the test_fms/diag_manager directory of the FMS
 # package.
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
 # Find the fms_mod.mod file.
 AM_CPPFLAGS = -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/fms2_io
@@ -18,20 +21,13 @@ setup.mod: setup.$(OBJEXT)
 setup.$(OBJEXT): argparse.mod
 test_atmosphere_io.$(OBJEXT): setup.mod
 
-CLEANFILES = *.mod *.nc logfile.000000.out
-
 # Run the test program.
 TESTS = test_atmosphere_io.sh
 
+# Set srcdir as evironment variable to be reference in the job script
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
-
-
-
-
-
-
-
-
+CLEANFILES = *.mod *.nc logfile.000000.out
 
 ## Build this test program.
 #check_PROGRAMS = test_fms2_io
