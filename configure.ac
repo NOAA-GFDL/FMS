@@ -8,11 +8,13 @@ AC_INIT([FMS], [2.0-development], [])
 
 # Find out about the host we're building on.
 AC_CANONICAL_HOST
+AC_CANONICAL_BUILD
 
 # Find out about the target we're building for.
 AC_CANONICAL_TARGET
 
 AM_INIT_AUTOMAKE([foreign dist-zip subdir-objects])
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
 # Keep libtool macros in an m4 directory.
 AC_CONFIG_MACRO_DIR([m4])
@@ -82,13 +84,13 @@ AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
 
 # Define __APPLE__ macro if on a Apple/Mac OS X
-AS_IF([test `echo $OSTYPE` = 'darwin'], [AC_DEFINE([__APPLE__], [ ])], [])
+AS_IF([test "x$target_vendor" = "xapple"], [AC_DEFINE([__APPLE__], [ ])])
 
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
 # Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
-AM_CONDITIONAL([APPLE], [test `echo $OSTYPE` = 'darwin'])
+AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
@@ -127,7 +129,22 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
-	test_fms/diag_manager/Makefile
+        test_fms/diag_manager/Makefile
+        test_fms/data_override/Makefile
+        test_fms/exchange/Makefile
+        test_fms/monin_obukhov/Makefile
+        test_fms/drifters/Makefile
+        test_fms/interpolator/Makefile
+        test_fms/fms/Makefile
+        test_fms/mpp/Makefile
+        test_fms/mpp_io/Makefile
+        test_fms/time_interp/Makefile
+        test_fms/time_manager/Makefile
+        test_fms/horiz_interp/Makefile
+        test_fms/field_manager/Makefile
+        test_fms/fft/Makefile
+        test_fms/axis_utils/Makefile
+        test_fms/mosaic/Makefile
         test_fms/fms2_io/Makefile
         ])
 AC_OUTPUT()

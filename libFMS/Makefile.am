@@ -24,6 +24,7 @@ libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_io.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_pset.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_efp.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_c.la
+libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_memutils.la
 libFMS_la_LIBADD += ${top_builddir}/memutils/libmemutils.la
 if APPLE
 libFMS_la_LIBADD += ${top_builddir}/memutils/libmemuse_c.la
