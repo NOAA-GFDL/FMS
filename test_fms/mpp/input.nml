@@ -1,5 +1,5 @@
 &test_mpp_pset_nml	
-test_number = 02
+test_number = <test_num>
 /
 
 
@@ -40,7 +40,7 @@ test_adjoint = .false.
 test_boundary = .false.
 test_cubic_grid_redistribute = .false.
 test_edge_update = .false.
-test_get_nbr = .false.
+test_get_nbr = .true.
 test_global_sum = .false.
 test_group = .false.
 test_halosize_performance = .false.
