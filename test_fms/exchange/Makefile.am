@@ -12,6 +12,7 @@ test_xgrid_CPPFLAGS += -I${top_builddir}/constants
 test_xgrid_CPPFLAGS += -I${top_builddir}/exchange
 test_xgrid_CPPFLAGS += -I${top_builddir}/mosaic
 test_xgrid_CPPFLAGS += -I${top_builddir}/coupler
+test_xgrid_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_xgrid.sh
