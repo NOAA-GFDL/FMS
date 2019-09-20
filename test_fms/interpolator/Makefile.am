@@ -16,8 +16,8 @@ test_interpolator_CPPFLAGS += -I${top_builddir}/time_interp
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_interpolator.sh
 EXTRA_DIST +=  test_interpolator.bats
-EXTRA_DIST += input.nml
-EXTRA_DIST += diag_table
+EXTRA_DIST += input_base.nml
+EXTRA_DIST += diag_table_base
 
 # Build this test program.
 check_PROGRAMS = test_interpolator
