@@ -10,7 +10,7 @@ test_monin_obukhov_CPPFLAGS += -I${top_builddir}/fms
 test_monin_obukhov_CPPFLAGS += -I${top_builddir}/mpp
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml
+EXTRA_DIST = input_base.nml
 EXTRA_DIST += test_monin_obukhov.sh
 EXTRA_DIST += test_monin_obukhov.bats
 
@@ -28,5 +28,4 @@ TESTS = test_monin_obukhov.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = ${top_builddir}/test_fms/monin_obukhov/input.nml
-CLEANFILES += ${top_builddir}/test_fms/monin_obukhov/*.out
+CLEANFILES = input.nml *.out
