@@ -22,7 +22,7 @@ EXTRA_DIST = test_horiz_interp.sh
 EXTRA_DIST +=  test_horiz_interp.bats
 EXTRA_DIST += test2_horiz_interp.sh
 EXTRA_DIST +=  test2_horiz_interp.bats
-EXTRA_DIST += input.nml
+EXTRA_DIST += input_base.nml
 
 # Build this test program.
 check_PROGRAMS = test_horiz_interp test2_horiz_interp

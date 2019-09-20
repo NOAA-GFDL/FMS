@@ -34,7 +34,7 @@ test_drifters_CPPFLAGS += -I${top_builddir}/mpp
 test_drifters_CPPFLAGS += -I${top_builddir}/include
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml
+EXTRA_DIST = input_base.nml
 EXTRA_DIST += test_cloud_interpolator.bats
 EXTRA_DIST += test_cloud_interpolator.sh
 EXTRA_DIST += test_drifters_io.bats
