@@ -5,21 +5,17 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
              $(top_srcdir)/tap-driver.sh
 
 # Find the fms_mod.mod file.
-test_axis_utils_CPPFLAGS = -I${top_builddir}/axis_utils
-test_axis_utils_CPPFLAGS += -I${top_builddir}/fms
-test_axis_utils_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS = -I${top_builddir}/fms -I${top_builddir}/mpp
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_axis_utils.sh
-EXTRA_DIST +=  test_axis_utils.bats
-EXTRA_DIST += input.nml
+EXTRA_DIST = test_axis_utils.sh test_axis_utils.bats input.nml
 
 # Build this test program.
 check_PROGRAMS = test_axis_utils
 
 # This is the source code for the test.
 test_axis_utils_SOURCES = test_axis_utils.F90
-test_axis_utils_LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Run the test program.
 TESTS = test_axis_utils.sh
