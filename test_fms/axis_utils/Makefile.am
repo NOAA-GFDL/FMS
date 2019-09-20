@@ -9,7 +9,7 @@ AM_CPPFLAGS = -I${top_builddir}/fms -I${top_builddir}/mpp
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_axis_utils.sh test_axis_utils.bats input.nml
+EXTRA_DIST = test_axis_utils.sh test_axis_utils.bats input_base.nml
 
 # Build this test program.
 check_PROGRAMS = test_axis_utils
