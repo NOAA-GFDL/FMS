@@ -18,7 +18,7 @@ test_mpp_io_LDADD = ${top_builddir}/libFMS/libFMS.la
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_mpp_io.sh
 EXTRA_DIST += test_mpp_io.bats
-EXTRA_DIST += input.nml
+EXTRA_DIST += input_base.nml
 
 # Run the test program.
 TESTS = test_mpp_io.sh
@@ -27,6 +27,4 @@ TESTS = test_mpp_io.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = ${top_builddir}/test_fms/mpp_io/input.nml
-CLEANFILES += ${top_builddir}/test_fms/mpp_io/*.nc*
-CLEANFILES += ${top_builddir}/test_fms/mpp_io/*.out
+CLEANFILES = input.nml *.nc* *.out
