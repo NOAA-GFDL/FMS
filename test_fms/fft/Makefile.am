@@ -11,7 +11,7 @@ test_fft_CPPFLAGS += -I${top_builddir}/mpp
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_fft.sh
 EXTRA_DIST += test_fft.bats
-EXTRA_DIST += input.nml
+EXTRA_DIST += input_base.nml
 
 # Build this test program.
 check_PROGRAMS = test_fft
