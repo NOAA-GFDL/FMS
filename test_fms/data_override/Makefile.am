@@ -15,7 +15,7 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_data_override.sh test_data_override.bats	\
-input.nml_base diag_table data_table INPUT
+input.nml_base diag_table data_table
 
 # Build this test program.
 check_PROGRAMS = test_data_override
