@@ -22,7 +22,7 @@ EXTRA_DIST = test_time_interp.sh
 EXTRA_DIST += test_time_interp.bats
 EXTRA_DIST += test_time_interp_external.sh
 EXTRA_DIST += test_time_interp_external.bats
-EXTRA_DIST += input.nml
+EXTRA_DIST += input_base.nml
 
 # Build this test program.
 check_PROGRAMS = test_time_interp test_time_interp_external
