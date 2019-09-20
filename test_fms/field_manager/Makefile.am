@@ -11,8 +11,8 @@ test_field_manager_CPPFLAGS += -I${top_builddir}/mpp
 # Copy over other needed files to the srcdir
 EXTRA_DIST = test_field_manager.sh
 EXTRA_DIST +=  test_field_manager.bats
-EXTRA_DIST += input.nml
-EXTRA_DIST += field_table
+EXTRA_DIST += input_base.nml
+EXTRA_DIST += field_table_base
 
 # Build this test program.
 check_PROGRAMS = test_field_manager
