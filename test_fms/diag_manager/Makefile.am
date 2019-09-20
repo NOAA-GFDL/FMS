@@ -4,6 +4,9 @@
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
              $(top_srcdir)/tap-driver.sh
 
+# Set srcdir as evironment variable to be reference in the job script
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+
 # Find the needed mod and .inc files.
 AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
 -I${top_builddir}/fms -I${top_builddir}/diag_manager		\
@@ -18,14 +21,11 @@ check_PROGRAMS = test_diag_manager
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
 
-# Copy over other needed files to the srcdir
-EXTRA_DIST = test_diag_manager.sh input.nml_base diagTables	\
-test_diag_manager.bats
-
 # Run the test program.
 TESTS = test_diag_manager.sh
 
-# Set srcdir as evironment variable to be reference in the job script
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+# Copy over other needed files to the srcdir
+EXTRA_DIST = test_diag_manager.sh input.nml_base diagTables	\
+test_diag_manager.bats
 
 CLEANFILES = input.nml *.nc *.out
