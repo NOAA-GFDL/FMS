@@ -16,7 +16,7 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
 -I${top_builddir}/coupler
 
 # Link to FMS library.
-AM_LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_xgrid
