@@ -43,4 +43,4 @@ TESTS = test_mpp_domains.sh test_mpp_pset.sh test_mpp.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml *.out* input.nml_base
