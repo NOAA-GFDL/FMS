@@ -18,7 +18,7 @@ test_mpp_pset_CPPFLAGS += -I${top_builddir}/mpp
 check_PROGRAMS = test_mpp test_mpp_domains test_mpp_pset
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml_base
+EXTRA_DIST = input_base.nml
 EXTRA_DIST += test_mpp.sh
 EXTRA_DIST +=  test_mpp.bats
 EXTRA_DIST += test_mpp_domains.sh
@@ -43,4 +43,4 @@ TESTS = test_mpp_domains.sh test_mpp_pset.sh test_mpp.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Clean up
-CLEANFILES = input.nml* *.out*
+CLEANFILES = input.nml *.out*
