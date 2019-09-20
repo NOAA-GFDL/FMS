@@ -1,6 +1,8 @@
 # This is an automake file for the test_fms/diag_manager directory of the FMS
 # package.
 
+# uramirez, Ed Hartnett
+
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
              $(top_srcdir)/tap-driver.sh
 
