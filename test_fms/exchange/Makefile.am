@@ -1,39 +1,34 @@
 # This is an automake file for the test_fms/exchange directory of the FMS
 # package.
 
+# uramirez, Ed Hartnett
+
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
              $(top_srcdir)/tap-driver.sh
 
-# Find the fms_mod.mod file.
-test_xgrid_CPPFLAGS = -I${top_srcdir}/include
-test_xgrid_CPPFLAGS += -I${top_builddir}/mpp
-test_xgrid_CPPFLAGS += -I${top_builddir}/fms
-test_xgrid_CPPFLAGS += -I${top_builddir}/constants
-test_xgrid_CPPFLAGS += -I${top_builddir}/exchange
-test_xgrid_CPPFLAGS += -I${top_builddir}/mosaic
-test_xgrid_CPPFLAGS += -I${top_builddir}/coupler
+# Set srcdir as evironment variable to be reference in the job script
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)" builddir="$(top_builddir)"
 
-# Copy over other needed files to the srcdir
-EXTRA_DIST = test_xgrid.sh
-EXTRA_DIST += input.nml
-#EXTRA_DIST += INPUT
-EXTRA_DIST += test_xgrid.bats
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
+-I${top_builddir}/fms -I${top_builddir}/constants		\
+-I${top_builddir}/exchange -I${top_builddir}/mosaic		\
+-I${top_builddir}/coupler
+
+# Link to FMS library.
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_xgrid
 
 # This is the source code for the test.
 test_xgrid_SOURCES = test_xgrid.F90
-test_xgrid_LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Run the test program.
 TESTS = test_xgrid.sh
 
-# Set srcdir as evironment variable to be reference in the job script
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-TESTS_ENVIRONMENT += builddir="$(top_builddir)"
+# Copy over other needed files to the srcdir
+EXTRA_DIST = test_xgrid.sh input.nml test_xgrid.bats
 
 # Clean up
-DISTCLEANFILES = input.nml
-DISTCLEANFILES += *.nc
-DISTCLEANFILES += *.out
+CLEANFILES = input.nml *.nc *.out
