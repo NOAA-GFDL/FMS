@@ -21,6 +21,36 @@
 #ifndef __FMS_PLATFORM_
 #define __FMS_PLATFORM_
 
+!Control "pure" functions.
+#ifdef NO_F95
+#define _PURE
+!DEC$ MESSAGE:'Not using pure routines.'
+#else
+#define _PURE pure
+!DEC$ MESSAGE:'Using pure routines.'
+#endif
+
+!Control array members of derived types.
+#ifdef NO_F2000
+#define _ALLOCATABLE pointer
+#define _NULL =>null()
+#define _ALLOCATED associated
+!DEC$ MESSAGE:'Using pointer derived type array members.'
+#else
+#define _ALLOCATABLE allocatable
+#define _NULL
+#define _ALLOCATED allocated
+!DEC$ MESSAGE:'Using allocatable derived type array members.'
+#endif
+
+!Control use of cray pointers.
+#ifdef NO_CRAY_POINTERS
+#undef use_CRI_pointers
+!DEC$ MESSAGE:'Not using cray pointers.'
+#else
+#define use_CRI_pointers
+!DEC$ MESSAGE:'Using cray pointers.'
+#endif
 
 !Set type kinds.
 #ifdef PORTABLE_KINDS
@@ -45,74 +75,5 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #define POINTER_KIND 8
 !DEC$ MESSAGE:'Using 8-byte addressing'
 #endif
-
-
-!Control "pure" functions.
-#ifdef NO_F95
-#define _PURE
-!DEC$ MESSAGE:'Not using pure routines.'
-#else
-#define _PURE pure
-!DEC$ MESSAGE:'Using pure routines.'
-#endif
-
-
-!Control array members of derived types.
-#ifdef NO_F2000
-#define _ALLOCATABLE pointer
-#define _NULL =>null()
-#define _ALLOCATED associated
-!DEC$ MESSAGE:'Using pointer derived type array members.'
-#else
-#define _ALLOCATABLE allocatable
-#define _NULL
-#define _ALLOCATED allocated
-!DEC$ MESSAGE:'Using allocatable derived type array members.'
-#endif
-
-
-!Control use of cray pointers.
-#ifdef NO_CRAY_POINTERS
-#undef use_CRI_pointers
-!DEC$ MESSAGE:'Not using cray pointers.'
-#else
-#define use_CRI_pointers
-!DEC$ MESSAGE:'Using cray pointers.'
-#endif
-
-
-!Control size of integers that will hold address values.
-!Appears for legacy reasons, but seems rather dangerous.
-#ifdef _32bits
-#define POINTER_KIND 4
-!DEC$ MESSAGE:'Using 4-byte addressing'
-#endif
-
-
-!If you do not want to use 64-bit integers.
-#ifdef no_8byte_integers
-#define LONG_KIND INT_KIND
-#endif
-
-
-!If you do not want to use 32-bit floats.
-#ifdef no_4byte_reals
-#define FLOAT_KIND DOUBLE_KIND
-#define NF_GET_VAR_REAL nf_get_var_double
-#define NF_GET_VARA_REAL nf_get_vara_double
-#define NF_GET_ATT_REAL nf_get_att_double
-#undef OVERLOAD_R4
-#undef OVERLOAD_C4
-#endif
-
-
-!If you want to use quad-precision.
-#define NO_QUAD_PRECISION
-#if defined(QUAD_PRECISION) && !defined(__PGI)
-#undef NO_QUAD_PRECISION
-#else
-#define QUAD_KIND DOUBLE_KIND
-#endif
-
 
 #endif
