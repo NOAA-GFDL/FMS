@@ -1,5 +1,6 @@
 # This is the main configure file for the FMS package.
 # Ed Hartnett 2/21/2019
+# Seth Underwood 10/2/2019
 
 AC_PREREQ([2.59])
 
@@ -24,7 +25,12 @@ LT_PREREQ([2.4])
 LT_INIT()
 
 # Process user optons.
-
+AC_ARG_WITH([mixed-mode],
+  AS_HELP_STRING([--with-mixed-mode=[yes/no]],
+    [Build using mixed mode.  Enables both 64-bit and 32-bit reals in Fortran. This option will be ignored if --disable-fortran-flag-setting is also given.  (Default no)]),
+  [AS_IF([test "x${withval-no}" = x"no"],
+    [with_mixed_mode=no],
+    [with_mixed_mode=yes])])
 # Does the user want to turn off all attempts to set fortran flags?
 # This is necessary to handle situations where the configure-provided
 # flags will be wrong for a particular install. With this setting, the
@@ -44,7 +50,6 @@ AC_PROG_CPP
 
 # Find the Fortran compiler.
 AC_PROG_FC
-AC_PROG_F77
 
 # Find the install program.
 AC_PROG_INSTALL
@@ -62,17 +67,22 @@ AC_SYS_LARGEFILE
 AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
 
 # Check for netCDF C library.
-AC_SEARCH_LIBS([nc_create], [netcdf], [],
-                            [AC_MSG_ERROR([Can't find or link to the netcdf C library, set CPPFLAGS/LDFLAGS.])])
+AC_LANG_PUSH(C)
+GX_CHECK_NETCDF()
+AC_LANG_POP(C)
+AS_IF([test x"$ac_cv_search_nc_create" = no || test x"$ac_cv_header_netcdf_h" = x"no"],
+  [AC_MSG_ERROR([Can't find or link to the netCDF C library.  Set CPPFLAGS/LDFLAGS])])
 
 # Check for netCDF Fortran library.
 AC_LANG_PUSH(Fortran)
-AC_SEARCH_LIBS([nf_create], [netcdff], [],
-                            [AC_MSG_ERROR([Can't find or link to the netcdf Fortran library, set CPPFLAGS/LDFLAGS.])])
+GX_CHECK_NETCDF()
+AS_IF([test x"$gx_cv_search_nf_create" = x"no" || test x"$gx_cv_header_netcdf_h" = x"no" || test x"$gx_cv_search_nf90_create" = x"no" || test x"$gx_cv_fc_check_mod_netcdf" = x"no"],
+  [AC_MSG_ERROR([Can't find or link to the netCDF Fortran library.  Set CPPFLAGS/LDFLAGS])])
 AC_LANG_POP(Fortran)
 
-# Require netCDF.
-#AC_CHECK_FUNC([nf_open], [], [AC_MSG_ERROR([NetCDF Fortran library required to build FMS])])
+# We passed all the netCDF tests, set the use_netcdf define.  This is required
+# for libFMS to build.  (for now)
+AC_DEFINE([use_netCDF], [1], [This is required for the library to build])
 
 # Do we want to try and set Fortran flags for the user?
 if test $enable_fortran_flag_setting = "yes"; then
@@ -86,7 +96,7 @@ if test $enable_fortran_flag_setting = "yes"; then
 fi
 
 # These defines are required for the build.
-AC_DEFINE([use_netCDF], [1])
+
 AC_DEFINE([use_libMPI], [1])
 
 # Define __APPLE__ macro if on a Apple/Mac OS X
