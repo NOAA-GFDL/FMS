@@ -1,0 +1,15 @@
+&test_time_interp_nml
+  timelist_len = 1
+/
+
+&test_time_interp_ext_nml
+cal_type = 'julian'
+filename = 'INPUT/aerosol.climatology.nc'
+fieldname = 'so4_anthro'
+ntime = 12
+year0 = 1990
+month0 = 1
+day0 = 1
+days_inc = 31
+
+/

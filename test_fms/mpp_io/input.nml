@@ -1,0 +1,12 @@
+&test_mpp_io_nml
+  nx = 360
+  ny = 200
+  nz = 50
+  stackmaxd = 2000000
+  layout = 1,1
+  io_layout = 1,1
+/
+
+&mpp_io_nml
+  io_clocks_on = .true.
+/
