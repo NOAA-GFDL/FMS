@@ -67,16 +67,15 @@ for ac_flag in none \
                '-r8' \
                '-qrealsize=8'; do
   test "x$ac_flag" != xnone && FCFLAGS="$gx_fc_default_real_kind8_flag_FCFLAGS_save ${ac_flag}"
-  AC_COMPILE_IFELSE([[
-     program test
-     interface
-     subroutine test_sub(a)
-     real(kind=selected_real_kind(15,307)) :: a
-     end subroutine test_sub
-     end interface
-     real :: b=1.0
-     call test_sub(b)
-     end program test]],
+  AC_COMPILE_IFELSE([[      program test
+      interface
+      subroutine test_sub(a)
+      real(kind=selected_real_kind(15,307)) :: a
+      end subroutine test_sub
+      end interface
+      real :: b=1.0
+      call test_sub(b)
+      end program test]],
      [gx_cv_fc_default_real_kind8_flag=$ac_flag; break])
 done
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -124,16 +123,15 @@ for ac_flag in none \
                '-r4' \
                '-qrealsize=4'; do
   test "x$ac_flag" != xnone && FCFLAGS="$gx_fc_default_real_kind4_flag_FCFLAGS_save ${ac_flag}"
-  AC_COMPILE_IFELSE([[
-     program test
-     interface
-     subroutine test_sub(a)
-     real(kind=selected_real_kind(6, 37)) :: a
-     end subroutine test_sub
-     end interface
-     real :: b=1.0
-     call test_sub(b)
-     end program test]],
+  AC_COMPILE_IFELSE([[      program test
+      interface
+      subroutine test_sub(a)
+      real(kind=selected_real_kind(6, 37)) :: a
+      end subroutine test_sub
+      end interface
+      real :: b=1.0
+      call test_sub(b)
+      end program test]],
      [gx_cv_fc_default_real_kind4_flag=$ac_flag; break])
 done
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -161,10 +159,9 @@ AC_DEFUN([GX_FC_QUAD_PRECISION],[
 AC_LANG_PUSH([Fortran])
 AC_CACHE_CHECK([if Fortran and target have IEEE 754 support], [gx_cv_fc_quad_precision],[
 gx_cv_fc_quad_precision=unknown
-AC_COMPILE_IFELSE([[
-   program test
-   real(KIND=selected_real_kind(33, 4931)) :: quad
-   end program test]],
+AC_COMPILE_IFELSE([[      program test
+      real(KIND=selected_real_kind(33, 4931)) :: quad
+      end program test]],
    [gx_cv_fc_quad_precision=yes],
    [gx_cv_fc_quad_precision=no])])
 if test "x$gx_cv_fc_quad_precision" = "xyes"; then
@@ -200,12 +197,11 @@ for ac_flag in none \
                '-fcray-pointer' \
                '-Mcray=pointer'; do
   test "x$ac_flag" != xnone && FCFLAGS="$gx_cray_ptr_flag_FCFLAGS_save ${ac_flag}"
-  AC_COMPILE_IFELSE([[
-     program test
-     integer(kind=8) :: ipt
-     integer iarri(10)
-     pointer (ipt, iarr)
-     end program test]],
+  AC_COMPILE_IFELSE([[      program test
+      integer(kind=8) :: ipt
+      integer iarri(10)
+      pointer (ipt, iarr)
+      end program test]],
      [gx_cv_fc_cray_ptr_flag=$ac_flag; break])
 done
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -235,15 +231,14 @@ AC_DEFUN([GX_FC_INTERNAL_FILE_NML],[
 AC_LANG_PUSH([Fortran])
 AC_CACHE_CHECK([if Fortran supports reading namelist from internal files], [gx_cv_fc_internal_file_nml],[
 gx_cv_fc_internal_file_nml=unknown
-AC_COMPILE_IFELSE([[
-   program test
-   implicit none
-   integer :: a = 1
-   real :: b = 0.1
-   character(LEN=20) :: internal_nml ="&test_nml a=2 b=1.0/"
-   namelist /test_nml/ a, b
-   read(internal_nml,test_nml)
-   end program test]],
+AC_COMPILE_IFELSE([[      program test
+      implicit none
+      integer :: a = 1
+      real :: b = 0.1
+      character(LEN=20) :: internal_nml ="&test_nml a=2 b=1.0/"
+      namelist /test_nml/ a, b
+      read(internal_nml,test_nml)
+      end program test]],
    [gx_cv_fc_internal_file_nml=yes],
    [gx_cv_fc_internal_file_nml=no])])
 if test "x$gx_cv_fc_internal_file_nml" = "xyes"; then
@@ -277,4 +272,109 @@ AS_VAR_IF([gx_mod], [yes],
   [$4])
 AS_VAR_POPDEF([gx_mod])
 AC_LANG_POP([Fortran])
+])#GX_FC_CHECK_MOD
+
+# GX_FORTRAN_CHECK_HEADERS(header, [action-if-found], [action-if-not-found])
+# -----------------------------------------------------------------------
+# Check if a Fortran include file is available.
+AC_DEFUN([GX_FORTRAN_CHECK_HEADERS], [
+_AC_FORTRAN_ASSERT()dnl
+AS_LITERAL_WORD_IF([$1],
+  [AS_VAR_PUSHDEF([gx_header], [gx_cv_fortran_check_headers_$1])],
+  [AS_VAR_PUSHDEF([gx_header], [AS_TR_SH([gx_cv_fortran_check_headers_$1])])])
+dnl Ensure the Fortran compiler will run the preprocessor
+_GX_FORTRAN_PP_SRCEXT_PUSH([F])
+dnl Autoconf does not pass CPPFLAGS to the Fortran tests.  As the user may
+dnl define the include options in CPPFLAGS instead of FFLAGS or FCFLAGS, we
+dnl force CPPFLAGS te be part of FFLAGS/FCFLAGS
+gx_save_[]_AC_LANG_PREFIX[]FLAGS=${[]_AC_LANG_PREFIX[]FLAGS}
+_AC_LANG_PREFIX[]FLAGS="${[]_AC_LANG_PREFIX[]FLAGS} $CPPFLAGS"
+AC_CACHE_CHECK([for $1 usability], [gx_header],
+  [AC_COMPILE_IFELSE(AC_LANG_PROGRAM([],
+    [@%:@include <$1>]),
+    [AS_VAR_SET([gx_header], [yes])],
+    [AS_VAR_SET([gx_header], [no])])])
+_AC_LANG_PREFIX[]FLAGS="${[]_AC_LANG_PREFIX[]FLAGS}"
+_GX_FORTRAN_PP_SRCEXT_POP([F])
+AS_VAR_IF([gx_header], [yes],
+  [m4_default([$2],
+    [AC_DEFINE_UNQUOTED(AS_TR_CPP(HAVE_$1), 1, [Define to 1 if the Fortran include file $1 is found])])],
+  [$3])
+AS_VAR_POPDEF([gx_header])
+])# GX_FC_CHECK_HEADERS
+
+# GX_FORTRAN_SEARCH_LIBS(FUNCTION, SEARCH-LIBS, [CALL_PREFIX], [CALL_SYNTAX],
+#                        [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND],
+#                        [OTHER-LIBRARIES])
+# ------------------------------------------------------------------------------
+# Search for a Fortran library defining FUNCTION, if it's not already availabe.
+#
+# This expands AC_SEARCH_LIBS for Fortran as the AC function does not work in
+# all cases for Fortran.
+AC_DEFUN([GX_FORTRAN_SEARCH_LIBS], [
+_AC_FORTRAN_ASSERT()dnl
+AS_VAR_PUSHDEF([gx_search], [gx_cv_fortran_search_libs_$1])
+dnl Ensure the Fortran compiler will run the preprocessor
+_GX_FORTRAN_PP_SRCEXT_PUSH([F])
+dnl Autoconf does not pass CPPFLAGS to the Fortran tests.  As the user may
+dnl define the include options in CPPFLAGS instead of FFLAGS or FCFLAGS, we
+dnl force CPPFLAGS te be part of FFLAGS/FCFLAGS
+gx_save_FLAGS="${[]_AC_LANG_PREFIX[]FLAGS}"
+_AC_LANG_PREFIX[]FLAGS="${[]_AC_LANG_PREFIX[]FLAGS} $CPPFLAGS"
+dnl Prepare the prefix and syntax sections so they will compile correctly
+dnl with the Fortran compiler
+m4_foreach(gx_line, m4_split($3, m4_newline()),
+  [m4_append([_gx_fortran_sanitized_call_prefix], m4_bmatch(gx_line, [^\w.*], [      ]gx_line, [gx_line]), m4_newline())dnl
 ])
+gx_fortran_sanitized_call_prefix="_gx_fortran_sanitized_call_prefix"
+gx_fortran_func_line="m4_bregexp([$4], [^.*$], [      \&])"
+AC_CACHE_CHECK([for library containing $1], [gx_search],
+[gx_fortran_search_libs_save_LIBS=$LIBS
+AC_LANG_CONFTEST([AC_LANG_PROGRAM([],[[$gx_fortran_sanitized_call_prefix
+$gx_fortran_func_line]])])
+dnl Search for the library
+for gx_lib in '' $2; do
+  if test -z "$gx_lib"; then
+    gx_res="none required"
+  else
+    gx_res=-l$gx_lib
+    LIBS="$gx_res $7 $gx_fortran_search_libs_save_LIBS"
+  fi
+  AC_LINK_IFELSE([], [AS_VAR_SET([gx_search], [$gx_res])])
+  AS_VAR_SET_IF([gx_search], [break])
+done
+AS_VAR_SET_IF([gx_search], , [AS_VAR_SET([gx_search], [no])])
+rm conftest.$ac_ext
+LIBS=$gx_fortran_search_libs_save_LIBS])
+AS_VAR_COPY([gx_res], [gx_search])
+AS_IF([test "$gx_res" != no],
+  [test "$gx_res" = "none required" || LIBS="$gx_res $LIBS"
+  $5],
+  [$6])
+_AC_LANG_PREFIX[]FLAGS="$gx_save_FLAGS"
+_GX_FORTRAN_PP_SRCEXT_POP([F])
+AS_VAR_POPDEF([gx_search])
+m4_ifdef([gx_line], [m4_undefine([gx_line])])
+m4_ifdef([_gx_fortran_sanitized_call_prefix], [m4_undefine([_gx_fortran_sanitized_call_prefix])])
+])# GX_FORTRAN_SEARCH_LIBS
+
+# _GX_FORTRAN_PP_SRCEXT_PUSH(EXT) will ensure the Fortran test extension (stored
+# in ac_ext) will cause the Fortran compiler to preprocess the test source file.
+# Most Fortran compilers will preprocess the file based on the file extension,
+# and of the known extension, F appears to work for all compilers.  This
+# function accepts the file extension (without the preceeding .), similar
+# to the AC_FC_SRCEXT and AC_FC_PP_SRCEXT macros.  If the extension is not
+# provided, the default is 'F'.
+# Unfortunately, this will not work for compilers that require a specific flag.
+AC_DEFUN([_GX_FORTRAN_PP_SRCEXT_PUSH],[
+_gx_fortran_pp_srcext_save=$ac_ext
+AS_VAR_SET_IF([1], [ac_ext=$1], [ac_ext="F"])
+])# _GX_FORTRAN_PP_SRCEXT_PUSH
+
+# _GX_FORTRAN_PP_SRCEXT_POP() reverses the extension change done in
+# _GX_FORTRAN_PP_SRCEXT_PUSH.  If this pop is called without a preceeding
+# push, the default Fortran file extension (f) will be used.
+AC_DEFUN([_GX_FORTRAN_PP_SRCEXT_POP], [
+AS_VAR_SET_IF([_gx_fortran_pp_srcext_save], [ac_ext=${_gx_fortran_pp_srcext_save}], [ac_ext="f"])
+unset _gx_fortran_pp_srcext_save
+])# _GX_FORTRAN_PP_SRCEXT_POP

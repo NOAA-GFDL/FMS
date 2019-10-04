@@ -26,21 +26,29 @@ LT_INIT()
 
 # Process user optons.
 AC_ARG_WITH([mixed-mode],
-  AS_HELP_STRING([--with-mixed-mode=[yes/no]],
-    [Build using mixed mode.  Enables both 64-bit and 32-bit reals in Fortran. This option will be ignored if --disable-fortran-flag-setting is also given.  (Default no)]),
-  [AS_IF([test "x${withval-no}" = x"no"],
-    [with_mixed_mode=no],
-    [with_mixed_mode=yes])])
-# Does the user want to turn off all attempts to set fortran flags?
-# This is necessary to handle situations where the configure-provided
-# flags will be wrong for a particular install. With this setting, the
-# user is in complete control of Fortran flags.
-AC_MSG_CHECKING([whether we should attempt to set Fortran flags for the user])
+  [AS_HELP_STRING([--with-mixed-mode=[yes/no]],
+    [Build using mixed mode.  Enables both 64-bit and 32-bit reals in Fortran. This option will be ignored if --disable-fortran-flag-setting is also given.])])
+AS_IF([test ${withval:-no} = no],
+  [with_mixed_mode=no],
+  [with_mixed_mode=yes])
+AC_ARG_WITH([mpi],
+  [AS_HELP_STRING([--with-mpi=[yes/no]],
+    [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
+AS_IF([test ${with_mpi:-yes} = yes],
+  [with_mpi=yes],
+  [with_mpi=no])
+AC_ARG_WITH([openmp],
+  [AS_HELP_STRING([--with-openmp=[yes/no]],
+    [Build with OpenMPI support. This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
+AS_IF([test ${withvar:-yes} = yes],
+  [with_openmp=yes],
+  [with_openmp=no])
 AC_ARG_ENABLE([fortran-flag-setting],
-  [AS_HELP_STRING([--disable-fortran-flag-setting],
-    [Disable any attempts by configure to set fortran flags. With this option, only user-provided flags (set in FCFLAGS) will be used compiling Fortran code.])])
-test "x$enable_fortran_flag_setting" = xno || enable_fortran_flag_setting=yes
-AC_MSG_RESULT([$enable_fortran_flag_setting])
+  [AS_HELP_STRING([--enable-fortran-flag-setting=[yes/no]],
+    [Allow configure to set some fortran flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
+AS_IF([test ${enableval:-yes} = yes],
+  [enable_fortran_flag_setting=yes],
+  [enable_fortran_flag_setting=no])
 
 # Find the C compiler.
 AC_PROG_CC
@@ -55,58 +63,118 @@ AC_PROG_FC
 AC_PROG_INSTALL
 
 # Is bats installed? It is required for testing.
-AC_CHECK_PROGS([FMS_BATS], [bats])
-if test -z "$FMS_BATS"; then
-   AC_MSG_ERROR([Cannot find bats utility. Install bats and try again.])
+AC_CHECK_PROGS([BATS], [bats])
+AM_CONDITIONAL([MAKE_CHECK_ENABLED], [test -n "$BATS"])
+if test -z "$BATS"; then
+   AC_MSG_WARN([Cannot find the bats utility. All checks will be disabled.])
 fi
 
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
-# Require MPI.
-AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
-
-# Check for netCDF C library.
+# C specific checks
 AC_LANG_PUSH(C)
-GX_CHECK_NETCDF()
-AC_LANG_POP(C)
-AS_IF([test x"$ac_cv_search_nc_create" = no || test x"$ac_cv_header_netcdf_h" = x"no"],
-  [AC_MSG_ERROR([Can't find or link to the netCDF C library.  Set CPPFLAGS/LDFLAGS])])
-
-# Check for netCDF Fortran library.
-AC_LANG_PUSH(Fortran)
-GX_CHECK_NETCDF()
-AS_IF([test x"$gx_cv_search_nf_create" = x"no" || test x"$gx_cv_header_netcdf_h" = x"no" || test x"$gx_cv_search_nf90_create" = x"no" || test x"$gx_cv_fc_check_mod_netcdf" = x"no"],
-  [AC_MSG_ERROR([Can't find or link to the netCDF Fortran library.  Set CPPFLAGS/LDFLAGS])])
-AC_LANG_POP(Fortran)
-
-# We passed all the netCDF tests, set the use_netcdf define.  This is required
-# for libFMS to build.  (for now)
-AC_DEFINE([use_netCDF], [1], [This is required for the library to build])
-
-# Do we want to try and set Fortran flags for the user?
-if test $enable_fortran_flag_setting = "yes"; then
-   # Make sure the compiler is seeing this as free-formatted, not
-   # fixed-formatted, fortran code.
-   AC_FC_FREEFORM()
-
-   # Check that long lines of Fortran code can be handled. This will add
-   # necessary fortran flags.
-   AC_FC_LINE_LENGTH([unlimited])
+if test $with_mpi = yes; then
+  # Require MPI
+  # We expect users to set CC and FC to MPI compiler wrappers, or that the correct
+  # CPPFLAGS, {C,FC}FLAGS, LDFLAGS and LIBS options are given.
+  AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([Can't find the MPI C header file.  Set CC/CPPFLAGS/CFLAGS])])
+  AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([Can't find the MPI C library.  Set CC/LDFLAGS/LIBS])])
 fi
 
-# These defines are required for the build.
+# Require netCDF
+AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
+AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
-AC_DEFINE([use_libMPI], [1])
+if test $with_openmp = yes; then
+  # Check if the compiler needs special OpenMP flags
+  AC_OPENMP()
+fi
+AC_LANG_POP(C)
 
+# Fortran specific checks
+AC_LANG_PUSH(Fortran)
+if test $with_mpi = yes; then
+  # Require MPI
+  GX_FORTRAN_CHECK_HEADERS([mpif.h], [], [AC_MSG_ERROR([Can't find the MPI Fortran header file.  Set FC/CPPFLAGS/FCFLAGS])])
+  GX_FC_CHECK_MOD([mpi], [], [], [AC_MSG_ERROR([Can't find the MPI Fortran module.  Set FC/CPPFLAGS/FCFLAGS])])
+  AC_CHECK_FUNC([MPI_init], [], [AC_MSG_ERROR([Can't find the MPI Fortran library.  Set FC/LDFLAGS/LIBS])])
+fi
+
+# Require netCDF
+GX_FORTRAN_CHECK_HEADERS([netcdf.inc], [], [AC_MSG_ERROR([Can't find the netCDF Fortran header file.  Set CPPFLAGS/FCFLAGS])])
+GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
+GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret = nf_create('foo.nc', 1, ncid)], [],
+  [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
+GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
+  [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
+GX_CHECK_NETCDF()
+
+# Check if Fortran compiler has Cray pointer support
+GX_FC_CRAY_POINTER_FLAG()
+
+# Check if Fortran compiler and system have quad precision support
+GX_FC_QUAD_PRECISION()
+
+# Check if Fortran compiler supports reading namelists from internal files
+GX_FC_INTERNAL_FILE_NML()
+
+if test $with_openmp = yes; then
+  # Check if the compiler needs special OpenMP flags
+  AC_OPENMP()
+fi
+AC_LANG_POP(Fortran)
+
+# We passed all the tests.  Set the required defines.
+AC_DEFINE([use_netCDF], [1], [This is required for the library to build])
+if test $with_mpi = yes; then
+  AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
+fi
+
+# Set any required compile flags.  This will not be done if the user wants to
+# define all their own flags.
+if test $enable_fortran_flag_setting = yes; then
+  # Make sure the compiler is seeing this as free-formatted, not
+  # fixed-formatted, fortran code.
+  AC_FC_FREEFORM()
+
+  # Check that long lines of Fortran code can be handled. This will add
+  # necessary fortran flags.
+  AC_FC_LINE_LENGTH([unlimited])
+
+  # Will we build with default 64-bit reals in Fortran, or do mixed mode?
+  if test $with_mixed_mode = yes; then
+    GX_FC_DEFAULT_REAL_KIND4_FLAG([dnl
+      FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
+    AC_DEFINE([OVERLOAD_R4], [1], [Set to overload the R4 Fortran routines])
+    AC_DEFINE([OVERLOAD_R8], [1], [Set to overload the R8 Fortran routines])
+  else
+    GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
+      FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
+  fi
+
+  # Add Cray Pointer support flag
+  if test ! -z "$FC_CRAY_POINTER_FLAG"; then
+    FCFLAGS="$FCFLAGS $FC_CRAY_POINTER_FLAG"
+  fi
+
+  # Add OpenMP flags
+  if test ! -z "$OPENMP_CFLAGS"; then
+    CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $OPENMP_CFLAGS"
+  fi
+  if test ! -z "$OPENMP_FCFLAGS"; then
+    FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
+  fi
+fi
+
+# Settings based on the system and hardware
 # Define __APPLE__ macro if on a Apple/Mac OS X
 AS_IF([test "x$target_vendor" = "xapple"], [AC_DEFINE([__APPLE__], [ ])])
-
-# Define an AM_CONDITIONAL to determine if you are on a CRAY
-AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
-
 # Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
 AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
+# Define an AM_CONDITIONAL to determine if you are on a CRAY
+AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
