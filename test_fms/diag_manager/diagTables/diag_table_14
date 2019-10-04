@@ -1,0 +1,9 @@
+test_diag_manager_14
+1990 1 29 0 0 0
+
+#output files
+ "diag_test_14", 1, "months", 1, "days", "time"
+
+#output variables
+# Test of check for invalid date. (Jan 29 1990 + one month = Feb 29 1990)
+ "test_mod",              "dat2", "dat2", "diag_test_14", "all", .false., "none", 2

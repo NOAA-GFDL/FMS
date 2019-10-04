@@ -1,21 +1,10 @@
-# This is an automake file for the test_fms directory of the FMS
-# package.
+# This is the automake file for the test_fms directory.
+# Ed Hartnett 9/20/2019
 
-# Ed Hartnett 2/22/19
+# This directory stores libtool macros, put there by aclocal.
+ACLOCAL_AMFLAGS = -I m4
 
-# Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/constants
-if CRAY
-LDADD = ${top_builddir}/libFMS/.libs/libFMS.a
-else
-LDADD = ${top_builddir}/libFMS/.libs/libFMS.la
-endif
-
-# Build this test program.
-check_PROGRAMS = tst_fms1
-
-# This is the source code for the test.
-tst_fms1_SOURCES = tst_fms1.F90
-
-# Run the test program.
-TESTS = tst_fms1
+# Make targets will be run in each subdirectory. Order is significant.
+SUBDIRS = diag_manager data_override exchange monin_obukhov drifters	\
+mosaic interpolator fms mpp mpp_io time_interp time_manager		\
+horiz_interp field_manager fft axis_utils

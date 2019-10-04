@@ -15,7 +15,7 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev 
+    - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev
 
 env:
   - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8' OPENMP=''
@@ -32,9 +32,9 @@ before_script:
   - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500 ${CPPFLAGS_ADD}"
   - export FCFLAGS="-fcray-pointer -Waliasing -ffree-line-length-none -fno-range-check ${FCFLAGS_REAL_KIND} ${OPENMP}"
   - export LDFLAGS='-L/usr/lib'
+  - export LOG_DRIVER_FLAGS="--comments"
 
 script:
   - autoreconf -i
   - ./configure
   - make -j distcheck
- 
