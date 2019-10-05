@@ -18,10 +18,10 @@ addons:
     - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev
 
 env:
-  - CPPFLAGS_ADD='' FCFLAGS_ADD='' CONFIGURE_OPTIONS=''
-  - CPPFLAGS_ADD='' FCFLAGS_ADD='' CONFIGURE_OPTIONS='--without-openmp'
-  - CPPFLAGS_ADD='' FCFLAGS_ADD='' CONFIGURE_OPTIONS='--enable-mixed-mode'
-  - CPPFLAGS_ADD='' FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8' CONFIGURE_OPTIONS='--disable-setting-flags'
+  - FCFLAGS_ADD='' CONFIGURE_OPTIONS=''
+  - FCFLAGS_ADD='' CONFIGURE_OPTIONS='--without-openmp'
+  - FCFLAGS_ADD='' CONFIGURE_OPTIONS='--enable-mixed-mode'
+  - FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8' CONFIGURE_OPTIONS='--disable-setting-flags'
 
 # Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
 before_install:
@@ -30,12 +30,12 @@ before_install:
 before_script:
   - export CC=mpicc
   - export FC=mpif90
-  - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500 ${CPPFLAGS_ADD}"
-  - export FCFLAGS="-fcray-pointer -Waliasing -ffree-line-length-none -fno-range-check ${FCFLAGS_REAL_KIND} ${OPENMP}"
+  - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
+  - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
   - export LDFLAGS='-L/usr/lib'
   - export LOG_DRIVER_FLAGS="--comments"
 
 script:
   - autoreconf -i
-  - ./configure
+  - ./configure ${CONFIGURE_OPTIONS}
   - make -j distcheck
