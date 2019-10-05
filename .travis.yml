@@ -21,7 +21,7 @@ env:
   - FCFLAGS_ADD='' CONFIGURE_OPTIONS=''
   - FCFLAGS_ADD='' CONFIGURE_OPTIONS='--without-openmp'
   - FCFLAGS_ADD='' CONFIGURE_OPTIONS='--enable-mixed-mode'
-  - FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8' CONFIGURE_OPTIONS='--disable-setting-flags'
+  - FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none' CONFIGURE_OPTIONS='--disable-setting-flags'
 
 # Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
 before_install:
