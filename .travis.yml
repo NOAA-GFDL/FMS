@@ -18,9 +18,10 @@ addons:
     - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev
 
 env:
-  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8' OPENMP=''
-  - CPPFLAGS_ADD='-DOVERLOAD_R4 -DOVERLOAD_R8' FCFLAGS_REAL_KIND='' OPENMP=''
-  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8' OPENMP='-fopenmp'
+  - CPPFLAGS_ADD='' FCFLAGS_ADD='' CONFIGURE_OPTIONS=''
+  - CPPFLAGS_ADD='' FCFLAGS_ADD='' CONFIGURE_OPTIONS='--without-openmp'
+  - CPPFLAGS_ADD='' FCFLAGS_ADD='' CONFIGURE_OPTIONS='--enable-mixed-mode'
+  - CPPFLAGS_ADD='' FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8' CONFIGURE_OPTIONS='--disable-setting-flags'
 
 # Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
 before_install:

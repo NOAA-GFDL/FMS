@@ -25,30 +25,30 @@ LT_PREREQ([2.4])
 LT_INIT()
 
 # Process user optons.
-AC_ARG_WITH([mixed-mode],
-  [AS_HELP_STRING([--with-mixed-mode=[yes/no]],
+AC_ARG_ENABLE([mixed-mode],
+  [AS_HELP_STRING([--enable-mixed-mode],
     [Build using mixed mode.  Enables both 64-bit and 32-bit reals in Fortran. This option will be ignored if --disable-fortran-flag-setting is also given.])])
-AS_IF([test ${withval:-no} = no],
-  [with_mixed_mode=no],
-  [with_mixed_mode=yes])
+AS_IF([test ${enable_mixed_mode:-no} = no],
+  [enable_mixed_mode=no],
+  [enable_mixed_mode=yes])
 AC_ARG_WITH([mpi],
-  [AS_HELP_STRING([--with-mpi=[yes/no]],
+  [AS_HELP_STRING([--with-mpi],
     [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
 AS_IF([test ${with_mpi:-yes} = yes],
   [with_mpi=yes],
   [with_mpi=no])
 AC_ARG_WITH([openmp],
-  [AS_HELP_STRING([--with-openmp=[yes/no]],
+  [AS_HELP_STRING([--with-openmp],
     [Build with OpenMPI support. This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
-AS_IF([test ${withvar:-yes} = yes],
+AS_IF([test ${with_openmp:-yes} = yes],
   [with_openmp=yes],
   [with_openmp=no])
-AC_ARG_ENABLE([fortran-flag-setting],
-  [AS_HELP_STRING([--enable-fortran-flag-setting=[yes/no]],
-    [Allow configure to set some fortran flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
-AS_IF([test ${enableval:-yes} = yes],
-  [enable_fortran_flag_setting=yes],
-  [enable_fortran_flag_setting=no])
+AC_ARG_ENABLE([setting-flags],
+  [AS_HELP_STRING([--enable-setting-flags],
+    [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
+AS_IF([test ${enable_setting_flags:-yes} = yes],
+  [enable_setting_flags=yes],
+  [enable_setting_flags=no])
 
 # Find the C compiler.
 AC_PROG_CC
@@ -86,7 +86,7 @@ fi
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
-if test $with_openmp = yes; then
+if test $with_openmp = yes && test $enable_setting_flags = yes; then
   # Check if the compiler needs special OpenMP flags
   AC_OPENMP()
 fi
@@ -108,7 +108,6 @@ GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
-GX_CHECK_NETCDF()
 
 # Check if Fortran compiler has Cray pointer support
 GX_FC_CRAY_POINTER_FLAG()
@@ -119,7 +118,7 @@ GX_FC_QUAD_PRECISION()
 # Check if Fortran compiler supports reading namelists from internal files
 GX_FC_INTERNAL_FILE_NML()
 
-if test $with_openmp = yes; then
+if test $with_openmp = yes && test $enable_setting_flags = yes; then
   # Check if the compiler needs special OpenMP flags
   AC_OPENMP()
 fi
@@ -133,7 +132,7 @@ fi
 
 # Set any required compile flags.  This will not be done if the user wants to
 # define all their own flags.
-if test $enable_fortran_flag_setting = yes; then
+if test $enable_setting_flags = yes; then
   # Make sure the compiler is seeing this as free-formatted, not
   # fixed-formatted, fortran code.
   AC_FC_FREEFORM()
@@ -143,7 +142,7 @@ if test $enable_fortran_flag_setting = yes; then
   AC_FC_LINE_LENGTH([unlimited])
 
   # Will we build with default 64-bit reals in Fortran, or do mixed mode?
-  if test $with_mixed_mode = yes; then
+  if test $enable_mixed_mode = yes; then
     GX_FC_DEFAULT_REAL_KIND4_FLAG([dnl
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
     AC_DEFINE([OVERLOAD_R4], [1], [Set to overload the R4 Fortran routines])
