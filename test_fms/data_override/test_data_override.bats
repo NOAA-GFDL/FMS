@@ -13,16 +13,20 @@ teardown () {
 }
 
 @test "Test 1: Cubic-Grid" {
-    skip "The input file is missing"
-   cp -r $srcdir/test_fms/data_override/INPUT $builddir/test_fms/data_override/INPUT
+#    skip "The input file is missing"
+#   cp -r $srcdir/test_fms/data_override/INPUT $builddir/test_fms/data_override/INPUT
    run mpirun -n 2 ./test_data_override
    [ "$status" -eq 0 ]
 }
 
 @test "Test 2: Latlon-Grid" {
-   skip "The input file is missing"
+#   skip "The input file is missing"
    run mpirun -n 2 ./test_data_override
    [ "$status" -eq 0 ]
-   chmod 755 $builddir/test_fms/data_override/INPUT
-   rm -rf $builddir/test_fms/data_override/INPUT
+#   chmod 755 $builddir/test_fms/data_override/INPUT
+#   rm -rf $builddir/test_fms/data_override/INPUT
+}
+@test "Test 3: Check_blend" {
+   run mpirun -n 6 ./test_data_override
+   [ "$status" -eq 0 ]
 }
