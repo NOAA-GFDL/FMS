@@ -2424,7 +2424,7 @@ double poly_ctrlon(const double x[], const double y[], int n, double clon)
     if( dphi2 > M_PI) dphi2 -= 2.0*M_PI;
     if( dphi2 <-M_PI) dphi2 += 2.0*M_PI;
 
-    if(abs(dphi2 -dphi1) < M_PI) {
+    if(fabs(dphi2 -dphi1) < M_PI) {
       ctrlon -= dphi * (dphi1*f1+dphi2*f2)/2.0;
     }
     else {
@@ -2432,7 +2432,7 @@ double poly_ctrlon(const double x[], const double y[], int n, double clon)
         fac = M_PI;
       else
         fac = -M_PI;
-      fint = f1 + (f2-f1)*(fac-dphi1)/abs(dphi);
+      fint = f1 + (f2-f1)*(fac-dphi1)/fabs(dphi);
       ctrlon -= 0.5*dphi1*(dphi1-fac)*f1 - 0.5*dphi2*(dphi2+fac)*f2
           + 0.5*fac*(dphi1+dphi2)*fint;
     }
