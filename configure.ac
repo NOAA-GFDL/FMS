@@ -229,5 +229,6 @@ AC_CONFIG_FILES([Makefile
         test_fms/fft/Makefile
         test_fms/axis_utils/Makefile
         test_fms/mosaic/Makefile
+        FMS.pc
         ])
 AC_OUTPUT()

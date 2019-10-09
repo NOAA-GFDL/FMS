@@ -13,6 +13,9 @@ monin_obukhov interpolator fft amip_interp oda_tools exchange		\
 topography tracer_manager station_data sat_vapor_pres random_numbers	\
 libFMS test_fms
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = FMS.pc
+
 EXTRA_DIST = README.md
 
 CLEANFILES = *__genmod.mod *__genmod.f90
