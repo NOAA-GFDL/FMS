@@ -255,23 +255,28 @@ AC_LANG_POP([Fortran])
 # action-if-found, otherwise execute action-if-not-found.  If only is specified
 # then check if the Fortran module has the given symbol.
 AC_DEFUN([GX_FC_CHECK_MOD],[
-AC_LANG_PUSH([Fortran])
+_AC_FORTRAN_ASSERT()dnl
 m4_ifval([$2],[gx_fc_check_mod_only=",only:$2"],[gx_fc_check_mod_only=""])
 AS_LITERAL_WORD_IF([$1],
   [AS_VAR_PUSHDEF([gx_mod], [gx_cv_fc_check_mod_$1])],
   [AS_VAR_PUSHDEF([gx_mod], AS_TR_SH([gx_cv_check_mod_$1]))])
+dnl Autoconf does not pass CPPFLAGS to the Fortran tests.  As the user may
+dnl define the include options in CPPFLAGS instead of FFLAGS or FCFLAGS, we
+dnl force CPPFLAGS te be part of FFLAGS/FCFLAGS
+gx_save_[]_AC_LANG_PREFIX[]FLAGS=${[]_AC_LANG_PREFIX[]FLAGS}
+_AC_LANG_PREFIX[]FLAGS="${[]_AC_LANG_PREFIX[]FLAGS} $CPPFLAGS"
 AC_CACHE_CHECK([for Fortran module $1], [gx_mod],
   [AC_COMPILE_IFELSE([[      program test
       use $1$gx_fc_check_mod_only
       end program test]],
     [AS_VAR_SET([gx_mod], [yes])],
     [AS_VAR_SET([gx_mod], [no])])])
+_AC_LANG_PREFIX[]FLAGS="${gx_save_[]_AC_LANG_PREFIX[]FLAGS}"
 AS_VAR_IF([gx_mod], [yes],
   [m4_default([$3],
     [AC_DEFINE_UNQUOTED(AS_TR_CPP(HAVE_MOD_$1), 1, [Define to 1 if the Fortran module $1 is found])])],
   [$4])
 AS_VAR_POPDEF([gx_mod])
-AC_LANG_POP([Fortran])
 ])#GX_FC_CHECK_MOD
 
 # GX_FORTRAN_CHECK_HEADERS(header, [action-if-found], [action-if-not-found])
@@ -294,7 +299,7 @@ AC_CACHE_CHECK([for $1 usability], [gx_header],
     [@%:@include <$1>]),
     [AS_VAR_SET([gx_header], [yes])],
     [AS_VAR_SET([gx_header], [no])])])
-_AC_LANG_PREFIX[]FLAGS="${[]_AC_LANG_PREFIX[]FLAGS}"
+_AC_LANG_PREFIX[]FLAGS="${gx_save_[]_AC_LANG_PREFIX[]FLAGS}"
 _GX_FORTRAN_PP_SRCEXT_POP([F])
 AS_VAR_IF([gx_header], [yes],
   [m4_default([$2],
