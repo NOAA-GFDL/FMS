@@ -33,7 +33,7 @@ subroutine MPP_GLOBAL_SUM_AD_( domain, field, gsum_, flags, position, tile_count
     MPP_TYPE_, dimension(:,:),       allocatable :: field2D
     MPP_TYPE_, dimension(:,:),       allocatable :: global2D
     MPP_TYPE_, dimension(MAX_TILES), save        :: gsum, nbrgsum, mygsum
-    
+
     integer :: i,j, ioff,joff, isc, iec, jsc, jec, is, ie, js, je, ishift, jshift, ioffset, joffset
     integer :: gxsize, gysize
     integer :: global_flag, tile, ntile, nlist, n, list, m
@@ -50,7 +50,7 @@ subroutine MPP_GLOBAL_SUM_AD_( domain, field, gsum_, flags, position, tile_count
 
     if( size(field,1).EQ.domain%x(tile)%compute%size+ishift .AND. size(field,2).EQ.domain%y(tile)%compute%size+jshift )then
 !field is on compute domain
-        ioff = -domain%x(tile)%compute%begin + 1 
+        ioff = -domain%x(tile)%compute%begin + 1
         joff = -domain%y(tile)%compute%begin + 1
     else if( size(field,1).EQ.domain%x(tile)%memory%size+ishift .AND. size(field,2).EQ.domain%y(tile)%memory%size+jshift )then
 !field is on data domain
@@ -75,15 +75,15 @@ subroutine MPP_GLOBAL_SUM_AD_( domain, field, gsum_, flags, position, tile_count
        allocate( global2D( gxsize+ishift, gysize+jshift ) )
        field2D = 0.
        ioffset = domain%x(tile)%goffset*ishift; joffset = domain%y(tile)%goffset*jshift
-       if( tile == ntile) then 
+       if( tile == ntile) then
           if(domain%ntiles == 1 ) then
-	     MPP_GLOBAL_SUM_ = gsum_
+             MPP_GLOBAL_SUM_ = gsum_
              mygsum(tile)    = MPP_GLOBAL_SUM_
           else if( nlist == 1) then
-	     MPP_GLOBAL_SUM_ = gsum_
+             MPP_GLOBAL_SUM_ = gsum_
              mygsum(1:ntile) = MPP_GLOBAL_SUM_
           else ! need to sum by the order of tile_count
-	     MPP_GLOBAL_SUM_ = gsum_
+             MPP_GLOBAL_SUM_ = gsum_
              gsum(1:domain%ntiles) = MPP_GLOBAL_SUM_
              !--- receive data from root_pe of each tile
              do list = 1, nlist - 1
@@ -110,10 +110,10 @@ subroutine MPP_GLOBAL_SUM_AD_( domain, field, gsum_, flags, position, tile_count
 
           end if
        end if
-       global2D(1:gxsize+ioffset,1:gysize+joffset) = mygsum(tile) 
+       global2D(1:gxsize+ioffset,1:gysize+joffset) = mygsum(tile)
        if ( present( tile_count ) ) then
            call mpp_global_field_ad( domain, field2D, global2D, position=position, tile_count=tile_count )
-       else    
+       else
            call mpp_global_field_ad( domain, field2D, global2D, position=position )
        endif
 
@@ -122,12 +122,12 @@ subroutine MPP_GLOBAL_SUM_AD_( domain, field, gsum_, flags, position, tile_count
              field(i+ioff:i+ioff,j+joff:j+joff MPP_EXTRA_INDICES_) = field2D(i,j)
           end do
        end do
-       
+
        deallocate(global2D, field2d)
     else if ( global_flag == BITWISE_EFP_SUM )then
 #ifdef DO_EFP_SUM_
        !this is bitwise across different PE counts using EFP sum
-       if( ntile > 1 ) then 
+       if( ntile > 1 ) then
           call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: multiple tile per pe is not supported for BITWISE_EFP_SUM')
        endif
 
@@ -137,7 +137,7 @@ subroutine MPP_GLOBAL_SUM_AD_( domain, field, gsum_, flags, position, tile_count
           end do
        end do
 #else
-        call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: BITWISE_EFP_SUM is only implemented for real number, contact developer') 
+        call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: BITWISE_EFP_SUM is only implemented for real number, contact developer')
 #endif
     else  !this is not bitwise-exact across different PE counts
        ioffset = domain%x(tile)%loffset*ishift; joffset = domain%y(tile)%loffset*jshift
