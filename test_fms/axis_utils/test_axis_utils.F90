@@ -33,7 +33,7 @@ integer, parameter :: maxsize = 100
 
 integer :: n_src = 0
 integer :: n_dst = 0
-real, dimension(MAXSIZE) :: grid_src = 0 
+real, dimension(MAXSIZE) :: grid_src = 0
 real, dimension(MAXSIZE) :: grid_dst = 0
 real, dimension(MAXSIZE) :: data_src = 0
 real, dimension(MAXSIZE) :: out_linear_dst = 0
@@ -98,7 +98,7 @@ integer           :: unit, ierr, io
                          374.647838146611, 385.613883532528, 397.240573301678, 408.134997959681, &
                          418.287826652131, 427.884458370414, 437.110292105921, 446.150726850039 /)
 
-  !---reading namelist 
+  !---reading namelist
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, test_axis_utils_nml, iostat=io)
       ierr = check_nml_error(io,'test_axis_utils_nml')
@@ -129,7 +129,7 @@ integer           :: unit, ierr, io
   !--- testing linear interpolation
   call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "linear")
   write(unit,*)' the destination data using linear interpolation is ', data_dst(1:n_dst)
-  diff = sum(abs(data_dst - out_linear_dst(1:n_dst))) 
+  diff = sum(abs(data_dst - out_linear_dst(1:n_dst)))
   write(unit,*)' the total difference between the result and the expected result is ', diff
   if(diff > 1.0e-8) call mpp_error(FATAL, 'test_axis_utils: the result with linear interpolation is different')
 

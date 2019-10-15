@@ -46,7 +46,7 @@
  logical :: do_write=.true. ! set this to false for high resolution and single file,
                             ! split file capability is not implemented for write_data
  integer :: layout_cubic (2) = (/0,0/)
- integer :: layout_latlon(2) = (/0,0/)  
+ integer :: layout_latlon(2) = (/0,0/)
  integer :: io_layout(2) = (/0,0/) ! set ndivs_x and ndivs_y to divide each tile into io_layout(1)*io_layout(2)
                                    ! group and write out data from the root pe of each group.
  logical :: read_only = .False.
@@ -69,7 +69,7 @@
     integer, allocatable, dimension(:,:)       :: data1_i1d, data2_i1d, data1_i1d_read, data2_i1d_read
     integer, allocatable, dimension(:)         :: data1_i0d, data2_i0d, data1_i0d_read, data2_i0d_read
  end type data_storage_type
- 
+
  type(data_storage_type), save :: latlon_data
  type(data_storage_type), save :: cubic_data
  type(domain2d),          save :: domain_latlon
@@ -87,7 +87,7 @@
  npes = mpp_npes()
  print *, 'The npes is ', npes
 
- call mpp_domains_init  
+ call mpp_domains_init
 
  call fms_io_init
 
@@ -127,7 +127,7 @@
     call restore_state(restart_cubic)
     call compare_restart("cubic_grid save_restore", cubic_data, .true. )
  end if
- 
+
  !---copy data
  if(mod(npes,ntile_latlon) == 0) call copy_restart_data(latlon_data)
  if(mod(npes,ntile_cubic) == 0 ) call copy_restart_data(cubic_data)
@@ -158,7 +158,7 @@ contains
     character(len=*), intent(in)             :: type
     integer,          intent(in)             :: ntiles
     type(data_storage_type), intent(inout)   :: storage
-    character(len=*), intent(in)             :: file  
+    character(len=*), intent(in)             :: file
     integer,          intent(in)             :: layout_in(:)
     type(domain2d),   intent(inout)          :: domain
     character(len=128)                       :: file_r
@@ -208,7 +208,7 @@ contains
     if(mod(layout(1), io_layout(1)) .NE. 0 ) call mpp_error(FATAL, &
          "program test_fms_io: layout(1) must be divided by io_layout(1)")
     if(mod(layout(2), io_layout(2)) .NE. 0 ) call mpp_error(FATAL, &
-         "program test_fms_io: layout(2) must be divided by io_layout(2)")    
+         "program test_fms_io: layout(2) must be divided by io_layout(2)")
     allocate(global_indices(4,ntiles), layout2D(2,ntiles), pe_start(ntiles), pe_end(ntiles) )
     do n = 1, ntiles
        global_indices(:,n) = (/1,nx,1,ny/)
@@ -277,20 +277,20 @@ contains
           storage%data2_i1d(k,n) =  -tile*1e6 - n*1e3 - k
           do j = jsc, jec
              do i = isc, iec
-                storage%data1_r3d(i,j,k,n) =  tile*1e6 + n*1e3 + k + i*1e-3 + j*1e-6; 
-                storage%data2_r3d(i,j,k,n) = -tile*1e6 - n*1e3 - k - i*1e-3 - j*1e-6; 
-                storage%data1_i3d(i,j,k,n) =  (n*ntiles+tile)*1e8 + k*1e6 + i*1e3 + j; 
-                storage%data2_i3d(i,j,k,n) = -(n*ntiles+tile)*1e8 - k*1e6 - i*1e3 - j; 
+                storage%data1_r3d(i,j,k,n) =  tile*1e6 + n*1e3 + k + i*1e-3 + j*1e-6;
+                storage%data2_r3d(i,j,k,n) = -tile*1e6 - n*1e3 - k - i*1e-3 - j*1e-6;
+                storage%data1_i3d(i,j,k,n) =  (n*ntiles+tile)*1e8 + k*1e6 + i*1e3 + j;
+                storage%data2_i3d(i,j,k,n) = -(n*ntiles+tile)*1e8 - k*1e6 - i*1e3 - j;
              end do
           end do
        end do
 
        do j = jsc, jec
           do i = isc, iec
-             storage%data1_r2d(i,j,n) =  tile*1e1 + n + i*1e-3 + j*1e-6; 
-             storage%data2_r2d(i,j,n) = -tile*1e1 - n - i*1e-3 - j*1e-6; 
-             storage%data1_i2d(i,j,n) =  tile*1e7 + n*1e6 + i*1e3 + j; 
-             storage%data2_i2d(i,j,n) = -tile*1e7 - n*1e6 - i*1e3 - j; 
+             storage%data1_r2d(i,j,n) =  tile*1e1 + n + i*1e-3 + j*1e-6;
+             storage%data2_r2d(i,j,n) = -tile*1e1 - n - i*1e-3 - j*1e-6;
+             storage%data1_i2d(i,j,n) =  tile*1e7 + n*1e6 + i*1e3 + j;
+             storage%data2_i2d(i,j,n) = -tile*1e7 - n*1e6 - i*1e3 - j;
           end do
        end do
     end do
@@ -318,7 +318,7 @@ contains
 
 
     !--- high resolution restart is not implemented for write data
-    if(do_write ) then 
+    if(do_write ) then
        do n = 1, nt
           call write_data(file_w, "data1_r3d", storage%data1_r3d(:,:,:,n), domain )
           call write_data(file_w, "data2_r3d", storage%data2_r3d(:,:,:,n), domain )
@@ -420,7 +420,7 @@ contains
     type(data_storage_type), intent(inout)   :: storage
     logical,                 intent(in   )   :: compare_r4d
 
-       if(compare_r4d) then   
+       if(compare_r4d) then
           call compare_data_r5d(storage%data1_r4d, storage%data1_r4d_read, type//" data1_r4d")
           call compare_data_r5d(storage%data2_r4d(:,:,:,:,1:1), storage%data2_r4d_read(:,:,:,:,1:1), type//" data2_r4d")
        endif
@@ -507,7 +507,7 @@ contains
 
     if( sum1.EQ.sum2 )then
        if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
+       !--- in some case, even though checksum agree, the two arrays
        !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
        !--- hence we need to check the value point by point.
     else
@@ -544,7 +544,7 @@ contains
 
     if( sum1.EQ.sum2 )then
        if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
+       !--- in some case, even though checksum agree, the two arrays
        !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
        !--- hence we need to check the value point by point.
     else
@@ -558,7 +558,7 @@ contains
     real                                    :: real_a(size(a,1),size(a,2),size(a,3),size(a,4))
     real                                    :: real_b(size(b,1),size(b,2),size(b,3),size(b,4))
 
-    real_a = a 
+    real_a = a
     real_b = b
     call compare_data_r4d(real_a, real_b, string)
 
@@ -591,7 +591,7 @@ contains
 
     if( sum1.EQ.sum2 )then
        if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
+       !--- in some case, even though checksum agree, the two arrays
        !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
        !--- hence we need to check the value point by point.
     else
@@ -605,7 +605,7 @@ contains
     real                                  :: real_a(size(a,1),size(a,2),size(a,3))
     real                                  :: real_b(size(b,1),size(b,2),size(b,3))
 
-    real_a = a 
+    real_a = a
     real_b = b
     call compare_data_r3d(real_a, real_b, string)
 
@@ -636,7 +636,7 @@ contains
 
     if( sum1.EQ.sum2 )then
        if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
+       !--- in some case, even though checksum agree, the two arrays
        !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
        !--- hence we need to check the value point by point.
     else
@@ -650,7 +650,7 @@ contains
     real                                :: real_a(size(a,1),size(a,2))
     real                                :: real_b(size(b,1),size(b,2))
 
-    real_a = a 
+    real_a = a
     real_b = b
     call compare_data_r2d(real_a, real_b, string)
 
@@ -678,7 +678,7 @@ contains
 
     if( sum1.EQ.sum2 )then
        if( mpp_pe() .EQ. mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-       !--- in some case, even though checksum agree, the two arrays 
+       !--- in some case, even though checksum agree, the two arrays
        !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
        !--- hence we need to check the value point by point.
     else
@@ -692,7 +692,7 @@ contains
     real                              :: real_a(size(a(:)))
     real                              :: real_b(size(b(:)))
 
-    real_a = a 
+    real_a = a
     real_b = b
     call compare_data_r1d(real_a, real_b, string)
 

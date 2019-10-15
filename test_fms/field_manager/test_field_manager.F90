@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!********************* Sample field table required: ********************* 
+!********************* Sample field table required: *********************
 ! "TRACER", "ocean_mod", "biotic1"
 !           "diff_horiz", "linear", "slope=ok"
 !           "longname", "biotic one" /
@@ -54,7 +54,7 @@ call field_manager_init(nfields)
 ! Dump the list of fields produced from reading the field_table
 
 ! Here are the lists that propagate off the root "/"
-! By calling fm_dump_list with a single argument you only get the 
+! By calling fm_dump_list with a single argument you only get the
 ! lists branching off this argument in the list.
 write(*,*) "Here's a baseline listing"
 success = fm_dump_list("/")
@@ -83,7 +83,7 @@ if (.not. success ) call mpp_error(FATAL, "ERROR: unable to look at the last fie
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
 ! Now let's modify some of the field entries.
-! 
+!
 !In this example we add a field ( convection = 'off' ) to the radon list
 write(*,*) "ADDING convection = off TO RADON LIST"
 !if ( fm_change_list('/atmos_mod/tracer/radon')) then
@@ -129,7 +129,7 @@ if (.not. success ) call mpp_error(FATAL, "Unable to dump the listing of the ori
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
 
-index = fm_get_length("/ocean_mod/tracer") 
+index = fm_get_length("/ocean_mod/tracer")
 write(*,*) "The length of the current list '/ocean_mod/tracer' is ",index," i.e."
 success = fm_dump_list("/ocean_mod/tracer")
 if (.not. success ) call mpp_error(FATAL, "Unable to get the length of the current list")
@@ -170,7 +170,7 @@ if (.not. success) call mpp_error(FATAL, "Unable to change the name of biotic1 t
 success = fm_dump_list("/ocean_mod/tracer/biotic_control", .true.)
 if (.not. success) call mpp_error(FATAL, "Unable to dump the listing of the modified tracers")
 
-! Double check to show that the tracer has been renamed and the original doesn't exist anymore. 
+! Double check to show that the tracer has been renamed and the original doesn't exist anymore.
 success = fm_dump_list("/ocean_mod/tracer/biotic1", .true.)
 if (success ) call mpp_error(NOTE, "Ocean model tracer biotic1 still exists.")
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
@@ -187,7 +187,7 @@ if (.not. success) call mpp_error(FATAL, "Unable to dump the listing to the rece
 write(*,*) "Now we'll give it a value"
 if (success) then
     index = fm_new_value('units','days')
-else 
+else
     call mpp_error(FATAL, "Unable to give field new value")
 endif
 

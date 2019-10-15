@@ -49,7 +49,7 @@ module drifters_input_mod
   interface assignment(=)
      module procedure drifters_input_copy_new
   end interface
- 
+
 
   contains
 
@@ -60,11 +60,11 @@ module drifters_input_mod
     character(len=*), intent(in) :: filename
     character(len=*), intent(out):: ermesg
 
-    ! Local 
+    ! Local
     integer :: ier, ncid, nd, nf, np, ipos, j, id, i, isz
     character(len=MAX_STR_LEN) :: attribute
     include 'netcdf.inc'
-    
+
     ermesg = ''
 
     ier = nf_open(filename, NF_NOWRITE, ncid)
@@ -96,7 +96,7 @@ module drifters_input_mod
           nf = nf + 1
        endif
     enddo
-      
+
     ier = NF_INQ_DIMID(NCID, 'np', id)
     if(ier/=NF_NOERR) then
        ermesg = 'drifters_input: ERROR could not find "np" (number of particles)'
@@ -132,7 +132,7 @@ module drifters_input_mod
     attribute = ''
     ier = nf_get_att_text(ncid, NF_GLOBAL, 'version', attribute)
     self%version = trim(attribute)
-   
+
     attribute = ''
     ier = nf_get_att_text(ncid, NF_GLOBAL, 'time_units', attribute)
     self%time_units = trim(attribute)
@@ -234,7 +234,7 @@ module drifters_input_mod
     deallocate(self%velocity_names, stat=iflag)
     deallocate(self%ids, stat=iflag)
     deallocate(self%positions, stat=iflag)
-    
+
   end subroutine drifters_input_del
 
 !===============================================================================
@@ -249,7 +249,7 @@ module drifters_input_mod
     allocate(new_instance%field_units( size(old_instance%field_units) ))
     allocate(new_instance%velocity_names( size(old_instance%velocity_names) ))
     new_instance%position_names = old_instance%position_names
-    new_instance%position_units = old_instance%position_units 
+    new_instance%position_units = old_instance%position_units
     new_instance%field_names    = old_instance%field_names
     new_instance%field_units    = old_instance%field_units
     new_instance%velocity_names = old_instance%velocity_names
@@ -278,9 +278,9 @@ module drifters_input_mod
     include 'netcdf.inc'
 
     ermesg = ''
-    
+
     ier = nf_create(filename, NF_CLOBBER, ncid)
-    if(ier/=NF_NOERR) then 
+    if(ier/=NF_NOERR) then
        ermesg = 'drifters_input: ERROR cannot create '//filename
        return
     endif
@@ -300,7 +300,7 @@ module drifters_input_mod
     ier = nf_put_att_text(ncid, NF_GLOBAL, 'title', len_trim(self%title), self%title)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR setting global att "title" ' &
          & //nf_strerror(ier)
-    
+
     ier = nf_put_att_text(ncid, NF_GLOBAL, 'time_units', len_trim(self%time_units), self%time_units)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR setting global att "time_units" ' &
          & //nf_strerror(ier)
@@ -367,9 +367,9 @@ module drifters_input_mod
        if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR setting att "units" to "latitude" ' &
          & //nf_strerror(ier)
     endif
-    
+
     ! variable attributes
-    
+
     att = ''
     j = 1
     do i = 1, nd
@@ -381,7 +381,7 @@ module drifters_input_mod
          & att)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR setting att "units" to "positions" ' &
          & //nf_strerror(ier)
-    
+
     att = ''
     j = 1
     do i = 1, nd
@@ -400,30 +400,30 @@ module drifters_input_mod
          & //nf_strerror(ier)
 
     ! data
-    ier = nf_put_var_double(ncid, nc_pos, self%positions)    
+    ier = nf_put_var_double(ncid, nc_pos, self%positions)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "positions" ' &
          & //nf_strerror(ier)
-    
-    ier = nf_put_var_int(ncid, nc_ids, self%ids)    
+
+    ier = nf_put_var_int(ncid, nc_ids, self%ids)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "ids" ' &
          & //nf_strerror(ier)
 
     if(present(geolon)) then
-       ier = nf_put_var_double(ncid, nc_lon, geolon)    
+       ier = nf_put_var_double(ncid, nc_lon, geolon)
        if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "geolon" ' &
-            & //nf_strerror(ier)       
+            & //nf_strerror(ier)
     endif
     if(present(geolat)) then
-       ier = nf_put_var_double(ncid, nc_lat, geolat)    
+       ier = nf_put_var_double(ncid, nc_lat, geolat)
        if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "geolat" ' &
-            & //nf_strerror(ier)       
+            & //nf_strerror(ier)
     endif
-    
-    
+
+
     ier = nf_close(ncid)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not close file ' &
          & //nf_strerror(ier)
-    
+
   end subroutine drifters_input_save
 
 end module drifters_input_mod

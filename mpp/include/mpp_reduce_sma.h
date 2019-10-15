@@ -40,7 +40,7 @@
           call mpp_error( FATAL, 'MPP_REDUCE_0D user stack overflow: call mpp_set_stack_size('//text//') from all PEs.' )
       end if
       mpp_stack_hwm = max( words, mpp_stack_hwm )
-      
+
       work(1) = a
       call SHMEM_REDUCE_( work, work, 1, peset(n)%start, peset(n)%log2stride, peset(n)%count, work(2), sync )
       call mpp_sync(pelist)
@@ -59,4 +59,3 @@
       call mpp_error( FATAL, 'MPP_REDUCE_1D: SMA version is not implemented, contact developer' )
       return
     end subroutine MPP_REDUCE_1D_
-

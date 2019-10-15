@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! This test requires the files: atm_ocean_mosaic_tile1Xlnd_ocean_mosaic_tile1.nc, ocean_hgrid.nc, atm_ocean_mosaic_tile1Xocn_ocean_mosaic_tile1.nc, ocean_mosaic.nc to run. 
+! This test requires the files: atm_ocean_mosaic_tile1Xlnd_ocean_mosaic_tile1.nc, ocean_hgrid.nc, atm_ocean_mosaic_tile1Xocn_ocean_mosaic_tile1.nc, ocean_mosaic.nc to run.
 
 program test_mosaic
 

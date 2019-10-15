@@ -10,7 +10,7 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Find the needed mod files.
-AM_CPPFLAGS = -I${top_builddir}/monin_obukhov -I${top_builddir}/fms	\
+AM_CPPFLAGS = -I${top_builddir}/monin_obukhov -I${top_builddir}/fms \
 -I${top_builddir}/mpp
 
 # Link to the FMS library.
@@ -26,7 +26,7 @@ test_monin_obukhov_SOURCES = test_monin_obukhov.F90
 TESTS = test_monin_obukhov.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_monin_obukhov.sh	\
+EXTRA_DIST = input_base.nml test_monin_obukhov.sh \
 test_monin_obukhov.bats
 
 # Clean up

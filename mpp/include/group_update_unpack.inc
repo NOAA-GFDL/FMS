@@ -23,7 +23,7 @@ if( group%k_loop_inside ) then
 !$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy, n,k )
   do n = nunpack, 1, -1
      buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
-     pos = buffer_pos 
+     pos = buffer_pos
      is = group%unpack_is(n); ie = group%unpack_ie(n)
      js = group%unpack_js(n); je = group%unpack_je(n)
      if( group%unpack_type(n) == FIELD_S ) then

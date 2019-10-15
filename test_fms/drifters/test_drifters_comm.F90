@@ -42,7 +42,7 @@ program test_drifters_comm
   integer :: io_status
 !!$  integer :: stackmax=4000000
 
-  namelist /drifters_comm_nml/ nx, ny, halox, haloy, u0, v0, dt, nt  
+  namelist /drifters_comm_nml/ nx, ny, halox, haloy, u0, v0, dt, nt
 
   call mpp_init !(MPP_DEBUG)
   !call mpp_set_stack_size(3145746)
@@ -92,10 +92,10 @@ program test_drifters_comm
   ! repeated calls just for the fun of it
   call drifters_comm_set_domain(drfts_com, domain, x, y, 0,0)
   call drifters_comm_set_domain(drfts_com, domain, x, y, 0,0)
-  
+
   ! create drifters
   call drifters_core_new(drfts, nd, npmax, ermsg)
-  if(ermsg /= '') then 
+  if(ermsg /= '') then
       print *,'ERROR',ermsg
       call mpp_error(FATAL, 'test_drifters_comm: Error')
   endif
@@ -103,7 +103,7 @@ program test_drifters_comm
   pe = mpp_pe()
   ids = (/ (i+100*pe, i=1,npmax) /)
   call drifters_core_set_ids(drfts, ids, ermsg)
-  if(ermsg /= '') then 
+  if(ermsg /= '') then
        print *,'ERROR', ermsg
        call mpp_error(FATAL, 'test_drifters_comm: Error')
   endif
@@ -114,7 +114,7 @@ program test_drifters_comm
           &               (drfts_com%ycmin + drfts_com%ycmax)/2. /)
      !positions(:, 2) = (/0.,0.01/)
      call drifters_core_set_positions(drfts, positions(:, 1:1), ermsg)
-     if(ermsg /= '') then 
+     if(ermsg /= '') then
          print *,'ERROR',ermsg
          call mpp_error(FATAL, 'test_drifters_comm: Error')
      endif
@@ -127,8 +127,8 @@ program test_drifters_comm
           & modulo(drfts%positions(:,1:drfts%np) + dt*velocity(:,1:drfts%np)-xmin, xmax-xmin)
      ! this will redistribute the drifters and update the positions
      call drifters_comm_update(drfts_com, drfts, positions(:,1:drfts%np))
-     
-     if(drfts%np > 0) then 
+
+     if(drfts%np > 0) then
         do i=1,drfts%np
            print '(a,i6,a,i3,a,i3,a, i3, a,2f10.6)', 'PE: ',pe, ' it=', it, ' np=', drfts%np, ' ip=', i, &
                 & ' x,y=', drfts%positions(1,i), drfts%positions(2,i)
@@ -140,12 +140,12 @@ program test_drifters_comm
 
   ! clean up
   call drifters_core_del(drfts, ermsg)
-  if(ermsg /= '') then 
+  if(ermsg /= '') then
        print *,ermsg, '<--- THIS'
        call mpp_error(FATAL, 'test_drifters_comm: Error')
   endif
   call drifters_comm_del(drfts_com)
   call mpp_domains_exit
   call mpp_exit
-  
+
 end program test_drifters_comm

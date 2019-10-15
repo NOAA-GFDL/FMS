@@ -22,25 +22,25 @@ program test_drifters
 !* contents of input file: drifters_inp_test_3d.nc
 !!$netcdf drifters_inp_test_3d {
 !!$dimensions:
-!!$	nd = 3 ; // number of dimensions (2 or 3)
-!!$	np = 4 ; // number of particles
+!!$   nd = 3 ; // number of dimensions (2 or 3)
+!!$   np = 4 ; // number of particles
 !!$variables:
-!!$	double positions(np, nd) ;
-!!$		positions:names = "x y z" ;
-!!$		positions:units = "- - -" ;
-!!$	int ids(np) ;
+!!$   double positions(np, nd) ;
+!!$      positions:names = "x y z" ;
+!!$      positions:units = "- - -" ;
+!!$   int ids(np) ;
 !!$
 !!$// global attributes:
-!!$		:velocity_names = "u v w" ;
-!!$		:field_names = "temp" ;
-!!$		:field_units = "C" ;
-!!$		:time_units = "seconds" ;
-!!$		:title = "example of input data for drifters" ;
+!!$      :velocity_names = "u v w" ;
+!!$      :field_names = "temp" ;
+!!$      :field_units = "C" ;
+!!$      :time_units = "seconds" ;
+!!$      :title = "example of input data for drifters" ;
 !!$data:
 !!$
 !!$ positions =
 !!$  -0.8, 0., 0.,
-!!$  -0.2, 0., 0., 
+!!$  -0.2, 0., 0.,
 !!$   0.2, 0., 0.,
 !!$   0.8, 0., 0.;
 !!$
@@ -49,13 +49,13 @@ program test_drifters
 !***********************************************************************
 
   ! Example showing how to use drifters_mod.
-  
+
   use drifters_mod
   use mpp_mod
   use mpp_domains_mod
 
   implicit none
-  
+
   ! declare drifters object
   type(drifters_type) :: drfts  ! drifters' object
   type(drifters_type) :: drfts2 ! to test copy
@@ -65,7 +65,7 @@ program test_drifters
   real    :: xmin, xmax, ymin, ymax, zmin, zmax, theta
   real, parameter :: pi = 3.1415926535897931159980
   real, allocatable :: x(:), y(:)
-  
+
 !  if (DIMS == 2) then
 !     real, allocatable :: u(:,:), v(:,:), w(:,:), temp(:,:)
 !  endif
@@ -129,8 +129,8 @@ program test_drifters
 !#endif
 
   ! this sumulates a run on a subset of PEs
-  if(pe >= pe_beg .and. pe <= pe_end) then 
-     
+  if(pe >= pe_beg .and. pe <= pe_end) then
+
 !#ifndef _SERIAL
      call mpp_set_current_pelist( (/ (i, i=pe_beg, pe_end) /) )
 
@@ -186,7 +186,7 @@ program test_drifters
      ! should be larger than the compute domain and therefore overlap: ie
      ! xdmax[pe] > xdmin[pe_east]
      ! ydmax[pe] > ydmin[pe_north]
-     ! Particles in the overlap regions are tracked by several PEs. 
+     ! Particles in the overlap regions are tracked by several PEs.
 
      call drifters_set_domain(drfts, &
           & xmin_comp=x(isc  ), xmax_comp=x(iec+1), &
@@ -302,7 +302,7 @@ program test_drifters
                 &    data=temp, ermesg=ermesg)
            if(ermesg/='') call my_error_handler(ermesg)
 
-           ! Save data 
+           ! Save data
 
            call drifters_save(drfts, ermesg=ermesg)
            if(ermesg/='') call my_error_handler(ermesg)
@@ -314,7 +314,7 @@ program test_drifters
      ! Write restart file
 
      call drifters_write_restart(drfts, filename='drifters_res.nc', &
-          & ermesg=ermesg)  
+          & ermesg=ermesg)
      if(ermesg/='') call my_error_handler(ermesg)
 
      ! test copy
@@ -349,7 +349,7 @@ subroutine my_error_handler(mesg)
   call mpp_error(FATAL, mesg)
 !#else
 !  print *, mesg
-!  stop 
+!  stop
 !#endif
 
 end subroutine my_error_handler

@@ -27,8 +27,8 @@ test_mpp_pset_SOURCES = test_mpp_pset.F90
 TESTS = test_mpp_domains.sh test_mpp_pset.sh test_mpp.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_mpp.sh test_mpp.bats		\
-test_mpp_domains.sh test_mpp_domains.bats test_mpp_pset.sh	\
+EXTRA_DIST = input_base.nml test_mpp.sh test_mpp.bats \
+test_mpp_domains.sh test_mpp_domains.bats test_mpp_pset.sh \
 test_mpp_pset.bats
 
 # Clean up

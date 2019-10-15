@@ -60,7 +60,7 @@ implicit none
   character(len=256) :: runoff_input_file  = "INPUT/land_runoff.nc"
   character(len=256) :: runoff_output_file  = "land_runoff.nc"
   character(len=256) :: runoff_field_name  = "none"
-  integer            :: num_iter           = 1 
+  integer            :: num_iter           = 1
   integer            :: nk_lnd = 14, nk_ice = 6
   integer            :: atm_layout(2) = (/2,2/)
   integer            :: lnd_layout(2) = (/2,2/)
@@ -130,7 +130,7 @@ implicit none
   call mpp_domains_init
 
   call xgrid_init(remap_method)
-  call ensemble_manager_init() 
+  call ensemble_manager_init()
 
   npes     = mpp_npes()
   pe       = mpp_pe()
@@ -152,9 +152,9 @@ implicit none
 #endif
 
   !--- get ensemble size
-  ens_siz = get_ensemble_size()   
-  ensemble_size = ens_siz(1)      
-  npes = ens_siz(2)              
+  ens_siz = get_ensemble_size()
+  ensemble_size = ens_siz(1)
+  npes = ens_siz(2)
 
   if( atm_npes == 0 ) atm_npes = mpp_npes()
   if( lnd_npes == 0 ) lnd_npes = atm_npes
@@ -162,13 +162,13 @@ implicit none
   if( ice_npes == 0 ) ice_npes = atm_npes
   if(lnd_npes > atm_npes) call mpp_error(FATAL, 'xgrid_test: lnd_npes > atm_npes')
   if(ocn_npes > atm_npes) call mpp_error(FATAL, 'xgrid_test: ocn_npes > atm_npes')
-  
+
   write(out_unit, *) "NOTE from test_xgrid: atm_npes = ", atm_npes
   write(out_unit, *) "NOTE from test_xgrid: atm_nest_npes = ", atm_nest_npes
   write(out_unit, *) "NOTE from test_xgrid: lnd_npes = ", lnd_npes
   write(out_unit, *) "NOTE from test_xgrid: ice_npes = ", ice_npes
   write(out_unit, *) "NOTE from test_xgrid: ocn_npes = ", ocn_npes
-  
+
   allocate(atm_pelist(atm_npes))
   allocate(ice_pelist(ice_npes))
   allocate(lnd_pelist(lnd_npes))
@@ -177,7 +177,7 @@ implicit none
 
   call ensemble_pelist_setup(concurrent, atm_npes, ocn_npes, lnd_npes, ice_npes, &
                              atm_pelist, ocn_pelist, lnd_pelist, ice_pelist)
- 
+
   if(atm_nest_npes > 0) then
     atm_global_npes = atm_npes - atm_nest_npes
     allocate(atm_global_pelist(atm_global_npes))
@@ -197,9 +197,9 @@ implicit none
     atm_nest_pe = .FALSE.
   endif
 
-  atm_pe = ANY(atm_pelist   .EQ. mpp_pe()) 
-  lnd_pe = ANY(lnd_pelist   .EQ. mpp_pe()) 
-  ocn_pe = ANY(ocn_pelist   .EQ. mpp_pe()) 
+  atm_pe = ANY(atm_pelist   .EQ. mpp_pe())
+  lnd_pe = ANY(lnd_pelist   .EQ. mpp_pe())
+  ocn_pe = ANY(ocn_pelist   .EQ. mpp_pe())
   ice_pe = ANY(ice_pelist   .EQ. mpp_pe())
   atm_root_pe = atm_pelist(1)
   lnd_root_pe = lnd_pelist(1)
@@ -223,19 +223,19 @@ implicit none
      call field_size(grid_file, "AREA_LND", siz )
      lnd_nx = siz(1); lnd_ny = siz(2)
      if( atm_layout(1)*atm_layout(2) .NE. npes ) then
-        call mpp_define_layout( (/1,atm_nx,1,atm_ny/), npes, atm_layout) 
+        call mpp_define_layout( (/1,atm_nx,1,atm_ny/), npes, atm_layout)
      endif
      call mpp_define_domains( (/1,atm_nx,1,atm_ny/), atm_layout, Atm_domain, name="atmosphere")
      if( lnd_layout(1)*lnd_layout(2) .NE. npes ) then
-        call mpp_define_layout( (/1,lnd_nx,1,lnd_ny/), npes, lnd_layout) 
+        call mpp_define_layout( (/1,lnd_nx,1,lnd_ny/), npes, lnd_layout)
      endif
-     call mpp_define_domains( (/1,lnd_nx,1,lnd_ny/), lnd_layout, Lnd_domain, name="land") 
+     call mpp_define_domains( (/1,lnd_nx,1,lnd_ny/), lnd_layout, Lnd_domain, name="land")
      if( ice_layout(1)*ice_layout(2) .NE. npes ) then
         call mpp_define_layout( (/1,ice_nx,1,ice_ny/), npes, ice_layout)
      endif
      call mpp_define_domains( (/1,ice_nx,1,ice_ny/), ice_layout, Ice_domain, name="Ice")
   else if (field_exist(grid_file, "atm_mosaic" ) ) then
-     !--- Get the mosaic data of each component model 
+     !--- Get the mosaic data of each component model
      call read_data(grid_file, 'atm_mosaic', atm_mosaic)
      call read_data(grid_file, 'lnd_mosaic', lnd_mosaic)
      call read_data(grid_file, 'ocn_mosaic', ocn_mosaic)
@@ -284,7 +284,7 @@ implicit none
         ncontact_global  = ncontact_global  - 1
      endif
 
-     if(atm_global_pe) then         
+     if(atm_global_pe) then
         call mpp_set_current_pelist(atm_global_pelist)
         if(mod(atm_global_npes, ntile_atm_global) .NE. 0 ) call mpp_error(FATAL, &
              "atm_npes_global should be divided by ntile_atm_global")
@@ -302,7 +302,7 @@ implicit none
               call mpp_define_layout( global_indices(:,n), pe_end(n)-pe_start(n)+1, layout(:,n))
            endif
         end do
- 
+
         allocate(tile_id(ntile_atm_global))
         do n = 1, ntile_atm_global
            tile_id(n) = n
@@ -326,7 +326,7 @@ implicit none
         ncontact = 0
         allocate(pe_start(1), pe_end(1) )
         allocate(global_indices(4, 1), layout(2,1))
-        pe_start(1) = atm_nest_root_pe 
+        pe_start(1) = atm_nest_root_pe
         pe_end(1)   = atm_nest_root_pe + atm_nest_npes - 1
         global_indices(:,1) = (/1, atm_nest_nx, 1, atm_nest_ny/)  !-- the last tile is the nested tile
         if(atm_nest_layout(1)*atm_nest_layout(2) == atm_nest_npes ) then
@@ -348,7 +348,7 @@ implicit none
         allocate(pe_start(ntile_lnd), pe_end(ntile_lnd) )
         allocate(global_indices(4,ntile_lnd), layout(2,ntile_lnd))
         if(mod(lnd_npes, ntile_lnd) .NE. 0 ) call mpp_error(FATAL,"lnd_npes should be divided by ntile_lnd")
-        npes_per_tile = lnd_npes/ntile_lnd  
+        npes_per_tile = lnd_npes/ntile_lnd
         do n = 1, ntile_lnd
            pe_start(n) = lnd_root_pe + (n-1)*npes_per_tile
            pe_end(n)   = lnd_root_pe + n*npes_per_tile - 1
@@ -364,7 +364,7 @@ implicit none
 
         allocate(tile_id(ntile_lnd))
         do n = 1, ntile_lnd
-           tile_id(n) = n      
+           tile_id(n) = n
         enddo
 
         call mpp_define_mosaic(global_indices, layout, Lnd_domain, ntile_lnd, ncontact, dummy, dummy, &
@@ -417,7 +417,7 @@ implicit none
   endif
 
   ! set up atm_grid for second order conservative interpolation and atm grid is cubic grid.
-  if(remap_method == SECOND_ORDER ) then  
+  if(remap_method == SECOND_ORDER ) then
       if( atm_nest_npes > 0 ) call mpp_error(FATAL, &
             'test_xgrid: remap_method could not be SECOND_ORDER when atmos_nest_npes > 0')
       if(ntile_atm == 6) then ! 6 tile for cubic grid
@@ -430,11 +430,11 @@ implicit none
         allocate(atm_grid%vlon(3,isc_atm:iec_atm,jsc_atm:jec_atm), atm_grid%vlat(3,isc_atm:iec_atm,jsc_atm:jec_atm) )
         allocate(atm_grid%area(isc_atm:iec_atm,jsc_atm:jec_atm) )
 
-        ! first get grid from grid file 
+        ! first get grid from grid file
         call get_mosaic_tile_grid(tile_file, atm_mosaic_file, atm_domain)
         allocate(tmpx(nxa*2+1, nya*2+1), tmpy(nxa*2+1, nya*2+1))
         call read_data( tile_file, 'x', tmpx, no_domain=.true.)
-        call read_data( tile_file, 'y', tmpy, no_domain=.true.) 
+        call read_data( tile_file, 'y', tmpy, no_domain=.true.)
         xt = 0; yt = 0;
         do j = jsc_atm, jec_atm
            do i = isc_atm, iec_atm
@@ -447,7 +447,7 @@ implicit none
               xc(i,j) = tmpx(2*i-1, 2*j-1)*DEG_TO_RAD
               yc(i,j) = tmpy(2*i-1, 2*j-1)*DEG_TO_RAD
            end do
-        end do        
+        end do
         call mpp_update_domains(xt, atm_domain)
         call mpp_update_domains(yt, atm_domain)
 
@@ -460,7 +460,7 @@ implicit none
 
   call mpp_set_current_pelist()
 
-  !--- conservation check is done in setup_xmap. 
+  !--- conservation check is done in setup_xmap.
   call setup_xmap(Xmap, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ice_domain, Lnd_domain /), grid_file, atm_grid)
   call setup_xmap(Xmap_runoff, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file )
   !--- set frac area if nk_lnd or nk_ocn is greater than 1.
@@ -546,7 +546,7 @@ implicit none
      if(ANY(x_1 .NE. x_2)) call mpp_error(FATAL,"test_xgrid: x_1 and x_2 are not equal")
      if(ANY(x_1 .NE. x_3)) call mpp_error(FATAL,"test_xgrid: x_1 and x_3 are not equal")
      if(ANY(x_1 .NE. x_4)) call mpp_error(FATAL,"test_xgrid: x_1 and x_4 are not equal")
- 
+
      deallocate(x_3,x_4)
      x_2 = 0
      call get_from_xgrid(lnd_data_out, 'LND', x_1, xmap)
@@ -573,7 +573,7 @@ implicit none
      write(out_unit,*) "chksum for ice_data_out", mpp_chksum(ice_data_out)
      write(out_unit,*) "chksum for atm_data_out", mpp_chksum(atm_data_out)
 
-     ! conservation check 
+     ! conservation check
      allocate(atm_area(isc_atm:iec_atm, jsc_atm:jec_atm ) )
      allocate(lnd_area(isc_lnd:iec_lnd, jsc_lnd:jec_lnd ) )
      allocate(ice_area(isc_ice:iec_ice, jsc_ice:jec_ice ) )
@@ -603,7 +603,7 @@ implicit none
      enddo
      sum_atm_out = mpp_global_sum(atm_domain, atm_area * atm_data_out)
      write(out_unit,*) "********************** check conservation *********************** "
-     write(out_unit,*) "the global area sum of atmos input data is                    : ", sum_atm_in 
+     write(out_unit,*) "the global area sum of atmos input data is                    : ", sum_atm_in
      write(out_unit,*) "the global area sum of atmos output data is                   : ", sum_atm_out
      write(out_unit,*) "the global area sum of land output data + ocean output data is: ", sum_lnd_out+sum_ice_out
      write(out_unit,*) "The min of atmos input   data is ", min_atm_in
@@ -619,9 +619,9 @@ implicit none
      deallocate(x_1, x_2)
   else
      write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."
-  end if           
+  end if
 
-  runoff_input_file_exist = file_exist(runoff_input_file, domain=atm_domain)     
+  runoff_input_file_exist = file_exist(runoff_input_file, domain=atm_domain)
   if( runoff_input_file_exist ) then
      if( atm_nest_npes > 0 ) call mpp_error(FATAL, &
           "test_xgrid: runoff_input_file_exist should be false when atmos_nest_npes > 0")
@@ -633,7 +633,7 @@ implicit none
      if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(runoff_field_name) &
             //" in file "//trim(runoff_input_file) //" should be no larger than 1")
 
-     allocate(runoff_data_in (isc_lnd:iec_lnd, jsc_lnd:jec_lnd   ) ) 
+     allocate(runoff_data_in (isc_lnd:iec_lnd, jsc_lnd:jec_lnd   ) )
      allocate(runoff_data_out(isc_ice:iec_ice, jsc_ice:jec_ice, 1) )
      nxgrid = max(xgrid_count(Xmap_runoff), 1)
      allocate(x_1(nxgrid), x_2(nxgrid))
@@ -645,7 +645,7 @@ implicit none
      call put_to_xgrid(runoff_data_in, 'LND', x_1, Xmap_runoff)
      call get_from_xgrid(runoff_data_out, 'OCN', x_1, xmap_runoff)
      call write_data( runoff_output_file, runoff_field_name, runoff_data_out, ice_domain)
-     ! conservation check 
+     ! conservation check
      allocate(lnd_area(isc_lnd:iec_lnd, jsc_lnd:jec_lnd ) )
      allocate(ice_area(isc_ice:iec_ice, jsc_ice:jec_ice ) )
      call get_xmap_grid_area("LND", Xmap_runoff, lnd_area)
@@ -654,11 +654,11 @@ implicit none
      sum_runoff_in  = mpp_global_sum(lnd_domain, lnd_area * runoff_data_in)
      sum_runoff_out = mpp_global_sum(Ice_domain, ice_area * runoff_data_out(:,:,1))
      write(out_unit,*) "********************** check conservation *********************** "
-     write(out_unit,*) "the global area sum of runoff input data is                    : ", sum_runoff_in 
+     write(out_unit,*) "the global area sum of runoff input data is                    : ", sum_runoff_in
      write(out_unit,*) "the global area sum of runoff output data is                   : ", sum_runoff_out
   else
      write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)//" does not exist, no check is done for real data sets."
-  end if           
+  end if
 
   ! when num_iter is greater than 0, create random number as input to test the performance of xgrid_mod.
   if(num_iter > 0) then
@@ -670,11 +670,11 @@ implicit none
      allocate(lnd_data_out(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd) )
      allocate(ice_data_out(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice) )
      nxgrid = max(xgrid_count(Xmap), 1)
-     allocate(x_1(nxgrid), x_2(nxgrid))  
+     allocate(x_1(nxgrid), x_2(nxgrid))
      atm_data_in  = 0
      atm_data_out = 0
      lnd_data_out = 0
-     ice_data_out = 0   
+     ice_data_out = 0
      allocate(atm_area(isc_atm:iec_atm, jsc_atm:jec_atm ) )
      allocate(lnd_area(isc_lnd:iec_lnd, jsc_lnd:jec_lnd ) )
      allocate(ice_area(isc_ice:iec_ice, jsc_ice:jec_ice ) )
@@ -703,13 +703,13 @@ implicit none
         enddo
         sum_atm_out = mpp_global_sum(atm_domain, atm_area * atm_data_out)
         write(out_unit,*) "********************** check conservation *********************** "
-        write(out_unit,*) "the global area sum of atmos input data is                    : ", sum_atm_in 
+        write(out_unit,*) "the global area sum of atmos input data is                    : ", sum_atm_in
         write(out_unit,*) "the global area sum of atmos output data is                   : ", sum_atm_out
         write(out_unit,*) "the global area sum of land output data + ocean output data is: ", sum_lnd_out+sum_ice_out
      enddo
      deallocate(atm_area, lnd_area, ice_area, atm_data_in, atm_data_out, lnd_data_out, ice_data_out)
      deallocate(x_1, x_2)
-  endif  
+  endif
 
   write(out_unit,*) "************************************************************************"
   write(out_unit,*) "***********      Finish running program test_xgrid         *************"
@@ -718,7 +718,7 @@ implicit none
   call fms_io_exit
   call fms_end
 
-contains 
+contains
 
   subroutine test_unstruct_exchange()
 
@@ -728,8 +728,8 @@ contains
     real, allocatable :: atm_data_ug(:,:), tmp_sg(:,:,:)
     real, allocatable :: atm_data_ug_1(:,:), atm_data_ug_2(:,:), atm_data_ug_3(:,:)
     real, allocatable :: lnd_data_ug(:,:), ice_data_ug(:,:,:)
-    real, allocatable :: x_1(:), x_2(:), x_3(:), x_4(:)            
-    real, allocatable :: y_1(:), y_2(:), y_3(:), y_4(:)   
+    real, allocatable :: x_1(:), x_2(:), x_3(:), x_4(:)
+    real, allocatable :: y_1(:), y_2(:), y_3(:), y_4(:)
     real,    allocatable, dimension(:,:)     :: rmask, tmp2d
     logical, allocatable, dimension(:,:,:)   :: lmask
     integer, allocatable, dimension(:)       :: npts_tile, grid_index, ntiles_grid
@@ -833,7 +833,7 @@ contains
     atm_data_ug_3 = 0
 
 
-    if(lnd_pe) then 
+    if(lnd_pe) then
        allocate(lnd_data_ug(is_ug:ie_ug, nk_lnd) )
        allocate(lnd_data_sg(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd) )
        lnd_data_sg = 0
@@ -940,7 +940,7 @@ contains
     sum2 = mpp_chksum( b, (/pe/) )
     if( sum1.EQ.sum2 )then
         if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-        !--- in some case, even though checksum agree, the two arrays 
+        !--- in some case, even though checksum agree, the two arrays
         !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
         !--- hence we need to check the value point by point.
     else
@@ -984,7 +984,7 @@ contains
 
     if( sum1.EQ.sum2 )then
         if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-        !--- in some case, even though checksum agree, the two arrays 
+        !--- in some case, even though checksum agree, the two arrays
         !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
         !--- hence we need to check the value point by point.
     else

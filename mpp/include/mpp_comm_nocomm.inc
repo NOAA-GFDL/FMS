@@ -96,7 +96,7 @@ subroutine mpp_init( flags,localcomm )
 
   open(unit_nml,file='input.nml', iostat=io_status)
   read(unit_nml,mpp_nml,iostat=io_status)
-  close(unit_nml)  
+  close(unit_nml)
 #endif
 
   if (io_status > 0) then
@@ -529,7 +529,7 @@ end subroutine mpp_exit
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
 #include <mpp_transmit_nocomm.h>
-#endif 
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_TRANSMIT_
@@ -868,12 +868,12 @@ end subroutine mpp_exit
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_nocomm.h>
-#endif       
- 
+#endif
+
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_int4_0d
 #undef MPP_REDUCE_1D_
-#define MPP_REDUCE_1D_ mpp_min_int4_1d            
+#define MPP_REDUCE_1D_ mpp_min_int4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_TYPE_BYTELEN_

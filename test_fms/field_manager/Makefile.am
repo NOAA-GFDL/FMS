@@ -25,7 +25,7 @@ test_field_manager_SOURCES = test_field_manager.F90
 TESTS = test_field_manager.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = test_field_manager.sh test_field_manager.bats	\
+EXTRA_DIST = test_field_manager.sh test_field_manager.bats \
 input_base.nml field_table_base
 
 # Clean up

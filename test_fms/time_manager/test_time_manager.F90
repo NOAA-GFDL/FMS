@@ -80,7 +80,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
  ! Tests of set_time_i and get_time without ticks
 
  if(test1) then
-   write(outunit,'(/,a)') '#################################  test1  #################################' 
+   write(outunit,'(/,a)') '#################################  test1  #################################'
    Time = set_time(seconds=2, days=1)
    call get_time(Time, sec, day, ticks)
    write(outunit,'(a,i2,a,i8,a,i2)') ' test1.1: days=',day,' seconds=',sec,' ticks=',ticks
@@ -93,7 +93,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
  ! Tests of set_time_i and get_time with ticks
 
  if(test2) then
-   write(outunit,'(/,a)') '#################################  test2  #################################' 
+   write(outunit,'(/,a)') '#################################  test2  #################################'
    Time = set_time(seconds=2, days=1, ticks=5)
    call get_time(Time, sec, day, ticks)
    write(outunit,'(a,i2,a,i6,a,i2)') ' test2.1: days=',day,' seconds=',sec,' ticks=',ticks
@@ -216,7 +216,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
 
  !==============================================================================================
  ! Tests of set_date_i
- 
+
  if(test5) then
    write(outunit,'(/,a)') '#################################  test5  #################################'
    call set_calendar_type(JULIAN)
@@ -408,7 +408,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
   endif
  !==============================================================================================
  ! Tests of increment_time and decrement_time
-      
+
   if(test11) then
     write(outunit,'(/,a)') '#################################  test11  #################################'
     call print_time(increment_time(set_time(seconds=0, days=2), seconds=0, days=1),'test11.1:', unit=outunit)
@@ -567,7 +567,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
         days_this_month = days_per_month(month)
         if(leap .and. month == 2) days_this_month = 29
         do dday=1,days_this_month
-          Time = set_date(year, month, dday, 0, 0, 0) 
+          Time = set_date(year, month, dday, 0, 0, 0)
           call get_date(Time, yr, mo, day, hr, min, sec)
           write(outunit,100) yr, mo, day, leap_year(Time), days_in_month(Time), days_in_year(Time)
         enddo

@@ -48,14 +48,14 @@
       integer, intent(in),  optional :: tag
       integer, intent(out), optional :: recv_request, send_request
       logical                       :: block_comm
-      integer                       :: i 
+      integer                       :: i
       MPP_TYPE_, allocatable, save  :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
       integer                       :: comm_tag
       integer                       :: rsize
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( to_pe.EQ.NULL_PE .AND. from_pe.EQ.NULL_PE )return
-      
+
       block_comm = .true.
       if(PRESENT(block)) block_comm = block
 
@@ -73,7 +73,7 @@
 !use non-blocking sends
           if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
 !z1l: truly non-blocking send.
-!          if( request(to_pe).NE.MPI_REQUEST_NULL )then !only one message from pe->to_pe in queue 
+!          if( request(to_pe).NE.MPI_REQUEST_NULL )then !only one message from pe->to_pe in queue
 !              if( debug )write( stderr(),* )'PE waiting for sending', pe, to_pe
 !              call MPI_WAIT( request(to_pe), stat, error )
 !          end if
@@ -118,7 +118,7 @@
                 call mpp_error(FATAL, "MPP_TRANSMIT: get_len does not match size of data received")
              endif
           else
-!             if( request_recv(from_pe).NE.MPI_REQUEST_NULL )then !only one message from from_pe->pe in queue 
+!             if( request_recv(from_pe).NE.MPI_REQUEST_NULL )then !only one message from from_pe->pe in queue
                 !              if( debug )write( stderr(),* )'PE waiting for receiving', pe, from_pe
 !                call MPI_WAIT( request_recv(from_pe), stat, error )
 !             end if
@@ -128,9 +128,9 @@
              else
                 cur_recv_request = cur_recv_request + 1
                 if( cur_recv_request > max_request ) call mpp_error(FATAL, &
-                "MPP_TRANSMIT: cur_recv_request is greater than max_request, increase mpp_nml request_multiply")             
+                "MPP_TRANSMIT: cur_recv_request is greater than max_request, increase mpp_nml request_multiply")
                 call MPI_IRECV( get_data, get_len, MPI_TYPE_, from_pe, comm_tag, mpp_comm_private, &
-                     request_recv(cur_recv_request), error ) 
+                     request_recv(cur_recv_request), error )
                 size_recv(cur_recv_request) = get_len
                 type_recv(cur_recv_request) = MPI_TYPE_
              endif
@@ -183,7 +183,7 @@
            call mpp_error( FATAL, 'MPP_BROADCAST: broadcasting from invalid PE.' )
 
       if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
- ! find the rank of from_pe in the pelist.     
+ ! find the rank of from_pe in the pelist.
       do i = 1, mpp_npes()
          if(peset(n)%list(i) == from_pe) then
              from_rank = i - 1

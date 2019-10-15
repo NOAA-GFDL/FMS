@@ -104,7 +104,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
      gind(4,:)=gind(4,:)+joff
 ! check indices to make sure they are within the range of "data"
      if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(data,1)) .OR. (maxval(gind(3:4,:)).gt.size(data,2))) &
-         call mpp_error(FATAL,"fms_io(mpp_scatter_pelist): specified indices (with shift) are outside of the & 
+         call mpp_error(FATAL,"fms_io(mpp_scatter_pelist): specified indices (with shift) are outside of the &
                         &range of the receiving array")
    else
 ! non root_pe's send indices to root_pe
