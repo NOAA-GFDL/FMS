@@ -34,6 +34,6 @@ function MPP_CHKSUM_( var, pelist , mask_val)
   else
       MPP_CHKSUM_ = mpp_chksum( TRANSFER(var,mold), pelist )
   end if
-  
+
       return
     end function MPP_CHKSUM_

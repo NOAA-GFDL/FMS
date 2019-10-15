@@ -5,6 +5,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = diag_manager data_override exchange monin_obukhov drifters	\
-mosaic interpolator fms mpp mpp_io time_interp time_manager		\
+SUBDIRS = diag_manager data_override exchange monin_obukhov drifters \
+mosaic interpolator fms mpp mpp_io time_interp time_manager \
 horiz_interp field_manager fft axis_utils

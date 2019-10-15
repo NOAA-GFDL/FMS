@@ -18,7 +18,7 @@
 !***********************************************************************
 
 module field_manager_mod
-#ifndef MAXFIELDS_ 
+#ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
 #endif
 
@@ -29,7 +29,7 @@ module field_manager_mod
 !
 ! <CONTACT EMAIL="William.Cooke@noaa.gov"> William Cooke
 ! </CONTACT>
-! 
+!
 ! <REVIEWER EMAIL="Richard.Slater@noaa.gov"> Richard D. Slater
 ! </REVIEWER>
 !
@@ -70,15 +70,15 @@ module field_manager_mod
 !vertical-advection-scheme = mdfl_sweby
 !restart_file = ocean_age.res.nc
 ! </PRE>
-! 
+!
 ! The field table consists of entries in the following format.
 !
 ! The first line of an entry should consist of three quoted strings.
 !
-! The first quoted string will tell the field manager what type of 
+! The first quoted string will tell the field manager what type of
 ! field it is.
-! 
-! The second quoted string will tell the field manager which model the 
+!
+! The second quoted string will tell the field manager which model the
 ! field is being applied to.
 ! The supported types at present are
 !<PRE>
@@ -98,42 +98,42 @@ module field_manager_mod
 !
 ! These lines can be coded quite flexibly.
 !
-! The line can consist of two or three quoted strings or a simple unquoted 
+! The line can consist of two or three quoted strings or a simple unquoted
 ! string.
 !
-! If the line consists two or three quoted strings, then the first string will 
+! If the line consists two or three quoted strings, then the first string will
 ! be an identifier that the querying module will ask for.
 !
 ! The second string will be a name that the querying module can use to
-! set up values for the module. 
+! set up values for the module.
 !
 ! The third string, if present, can supply parameters to the calling module that can be
 ! parsed and used to further modify values.
 !
-! If the line consists of a simple unquoted string then quotes are not allowed 
+! If the line consists of a simple unquoted string then quotes are not allowed
 ! in any part of the line.
 !
 ! An entry is ended with a backslash (/) as the final character in a
 ! row.
-! 
+!
 ! Comments can be inserted in the field table by having a # as the
 ! first character in the line.
-! 
-! In the example above we have three field entries. 
-! 
-! The first is a simple declaration of a tracer called "sphum". 
+!
+! In the example above we have three field entries.
+!
+! The first is a simple declaration of a tracer called "sphum".
 !
 ! The second is for a tracer called "sf6". In this case a field named
-! "longname" will be given the value "sulf_hex". A field named 
+! "longname" will be given the value "sulf_hex". A field named
 ! "advection_scheme_horiz" will be given the value "2nd_order". Finally a field
 ! name "Profile_type" will be given a child field called "Fixed", and that field
 ! will be given a field called "surface_value" with a real value of 0.0E+00.
 !
-! The third entry is an example of a oceanic age tracer. Note that the 
-! method lines are formatted differently here. This is the flexibility mentioned 
+! The third entry is an example of a oceanic age tracer. Note that the
+! method lines are formatted differently here. This is the flexibility mentioned
 ! above.
-! 
-! With these formats, a number of restrictions are required. 
+!
+! With these formats, a number of restrictions are required.
 !
 ! The following formats are equally valid.
 !<PRE>
@@ -146,7 +146,7 @@ module field_manager_mod
 !      longname = "sulf_hex"
 !</PRE>
 !
-! In the SF6 example above the last line of the entry could be written in the 
+! In the SF6 example above the last line of the entry could be written in the
 ! following ways.
 !<PRE>
 !      "Profile_type","Fixed","surface_value = 0.0E+00"/
@@ -160,7 +160,7 @@ module field_manager_mod
 !    These values only support e or E format for exponentials.
 !    e.g. 10.0, 1e10 and 1E10 are considered to be real numbers.
 !
-! Integer values : These values only contain numbers. 
+! Integer values : These values only contain numbers.
 !    e.g 10 is an integer. 10.0 and 1e10 are not.
 !
 ! Logical values : These values are supplied as one of the following formats.
@@ -170,7 +170,7 @@ module field_manager_mod
 !    f, .f., false, .false.
 !    These will be converted to T or F in a dump of the field.
 !
-! Character strings : These values are assumed to be strings if a character 
+! Character strings : These values are assumed to be strings if a character
 !    other than an e (or E) is in the value. Numbers can be suppled in the value.
 !    If the value does not meet the criteria for a real, integer or logical type,
 !    it is assumed to be a character type.
@@ -211,15 +211,15 @@ logical            :: module_is_initialized  = .false.
 public :: field_manager_init   ! (nfields, [table_name]) returns number of fields
 public :: field_manager_end    ! ()
 public :: find_field_index     ! (model, field_name) or (list_path)
-public :: find_field_index_old ! (model, field_name) returns index of field_name in 
-public :: find_field_index_new ! (list_path) returns index of field_name in 
+public :: find_field_index_old ! (model, field_name) returns index of field_name in
+public :: find_field_index_new ! (list_path) returns index of field_name in
                                ! component model model
 public :: get_field_info       ! (n,fld_type,fld_name,model,num_methods)
                                ! Returns parameters relating to field n.
 public :: get_field_method     ! (n, m, method) Returns the m-th method of field n
 public :: get_field_methods    ! (n, methods) Returns the methods related to field n
 public :: parse                ! (text, label, values) Overloaded function to parse integer,
-                               ! real or character. Parse returns the number of values 
+                               ! real or character. Parse returns the number of values
                                ! decoded (> 1 => an array of values)
 public :: fm_change_list       ! (list) return success
 public :: fm_change_root       ! (list) return success
@@ -247,9 +247,9 @@ public :: fm_new_value_string  !   as above (overloaded function)
 public :: fm_reset_loop        ! ()
 public :: fm_return_root       ! () return success
 public :: fm_modify_name       ! (oldname, newname) return success
-public :: fm_query_method      ! (name, method_name, method_control) return success and 
+public :: fm_query_method      ! (name, method_name, method_control) return success and
                                ! name and control strings
-public :: fm_find_methods      ! (list, methods, control) return success and name and 
+public :: fm_find_methods      ! (list, methods, control) return success and name and
                                ! control strings.
 public :: fm_copy_list         ! (list, suffix, [create]) return index
 public :: fm_set_verbosity     ! ([verbosity])
@@ -295,11 +295,11 @@ integer, parameter, public :: NUM_MODELS        = 5
 integer, parameter, public :: NO_FIELD          = -1
 ! <DATA NAME="NO_FIELD" TYPE="integer, parameter" DEFAULT="-1">
 !   The value returned if a field is not defined.
-! </DATA>! 
+! </DATA>!
 integer, parameter, public :: MODEL_ATMOS       = 1
 ! <DATA NAME="MODEL_ATMOS" TYPE="integer, parameter" DEFAULT="1">
 !   Atmospheric model.
-! </DATA>! 
+! </DATA>!
 integer, parameter, public :: MODEL_OCEAN       = 2
 ! <DATA NAME="MODEL_OCEAN" TYPE="integer, parameter" DEFAULT="2">
 !   Ocean model.
@@ -358,7 +358,7 @@ type, public :: method_type
   ! <DATA NAME="method_type :: method_name" TYPE="character" DIM="(128)">
   !   This is the name of a method which the module can parse and use
   !   to assign different default values to a field method.
-  ! </DATA> 
+  ! </DATA>
   !
   ! <DATA NAME="method_type :: method_control" TYPE="character" DIM="(256)">
   !   This is the string containing parameters that the module can use
@@ -375,7 +375,7 @@ end type
 ! <DESCRIPTION>
 !   This method_type is the same as method_type except that the
 !   method_control string is not present. This is used when you wish to
-!   change to a scheme within a module but do not need to pass 
+!   change to a scheme within a module but do not need to pass
 !   parameters.
 ! </DESCRIPTION>
 type, public :: method_type_short
@@ -385,7 +385,7 @@ type, public :: method_type_short
   !
   ! <DATA NAME="method_type_short :: method_name" TYPE="character" DIM="(128)">
   !   see method_type :: method_name above.
-  ! </DATA> 
+  ! </DATA>
   character(len=fm_string_len) :: method_type
   character(len=fm_string_len) :: method_name
 end type
@@ -543,7 +543,7 @@ type(field_mgr_type), private :: fields(MAX_FIELDS)
 character(len=fm_path_name_len)  :: loop_list
 character(len=fm_type_name_len)  :: field_type_name(num_types)
 character(len=fm_field_name_len) :: save_root_name
-! The string set is the set of characters. 
+! The string set is the set of characters.
 character(len=52)                :: set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 ! If a character in the string being parsed matches a character within
 ! the string set_nonexp then the string being parsed cannot be a number.
@@ -561,7 +561,7 @@ type (field_def), pointer        :: loop_list_p        => NULL()
 type (field_def), pointer        :: current_list_p     => NULL()
 type (field_def), pointer        :: root_p             => NULL()
 type (field_def), pointer        :: save_root_parent_p => NULL()
-type (field_def), target, save   :: root 
+type (field_def), target, save   :: root
 
 
 contains
@@ -571,7 +571,7 @@ contains
 !     Routine to initialize the field manager.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     This routine reads from a file containing formatted strings. 
+!     This routine reads from a file containing formatted strings.
 !     These formatted strings contain information on which schemes are
 !     needed within various modules. The field manager does not
 !     initialize any of those schemes however. It simply holds the
@@ -699,7 +699,7 @@ do while (.TRUE.)
             endif
          enddo
 !     <ERROR MSG="Too many fields in field table header entry." STATUS="FATAL">
-!       There are more that 3 fields in the field table header entry. 
+!       There are more that 3 fields in the field table header entry.
 !       The entry should look like <BR/>
 !       "Field_Type","Model_Type","Field_Name" <BR/>
 !        or<BR/>
@@ -735,7 +735,7 @@ do while (.TRUE.)
              text_names%fld_name = " "
 !             call mpp_error(FATAL,trim(error_header)//'Unterminated field in field_table header entry.'//trim(record))
 !     </ERROR>
-         end select    
+         end select
 
 ! Create a list with Rick Slaters field manager code
 
@@ -757,7 +757,7 @@ do while (.TRUE.)
    if ( index_list_name == NO_FIELD ) &
      call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
 
-   fm_success = fm_change_list(list_name)  
+   fm_success = fm_change_list(list_name)
    select case (text_names%mod_name)
    case ('coupler_mod')
       model = MODEL_COUPLER
@@ -816,11 +816,11 @@ do while (.TRUE.)
             if (record(l:l) == dquote ) then
                icount = icount + 1
             endif
-         enddo     
+         enddo
 !     <ERROR MSG="Too many fields in field entry." STATUS="FATAL">
 !       There are more that 3 fields in the tracer entry. This is probably due
-!       to separating the parameters entry into multiple strings. 
-!       The entry should look like <BR/>       
+!       to separating the parameters entry into multiple strings.
+!       The entry should look like <BR/>
 !       "Type","Name","Control1=XXX,Control2=YYY" <BR/>
 !        and not like<BR/>
 !       "Type","Name","Control1=XXX","Control2=YYY"
@@ -889,12 +889,12 @@ do while (.TRUE.)
 !     </ERROR>
       end select
 
-! This section of code breaks the control string into separate strings. 
+! This section of code breaks the control string into separate strings.
 ! The array control_array contains the following parameters.
 ! control_array(:,1) = index within control_str of the first character of the name.
 ! control_array(:,2) = index within control_str of the equal sign
 ! control_array(:,3) = index within control_str of the last character of the value.
-! 
+!
 ! control_array(:,1)   -> control_array(:,2) -1 = name of the parameter.
 ! control_array(:,2)+1 -> control_array(:,3)    = value of the parameter.
 
@@ -932,7 +932,7 @@ do while (.TRUE.)
 
             endif
          endif
-      enddo     
+      enddo
 
       ! Make sure that we point to the end of the string (minus any trailing comma)
       ! for the last set of values. This fixes the case where the last set of values
@@ -951,23 +951,23 @@ do while (.TRUE.)
           method_name = trim(name_str)
         endif
         val_name = control_str
-        
+
         call new_name(list_name, method_name, val_name )
-      
+
       else
-      
+
         do l = 1,icount
           startcont = control_array(l,1)
           midcont   = control_array(l,2)
           endcont   = control_array(l,3)
-          
+
           method_name = trim(type_str)
           if (len_trim(method_name) > 0 ) then
             method_name = trim(method_name)//list_sep// trim(name_str)
           else
             method_name = trim(name_str)
           endif
-          
+
           if (len_trim(method_name) > 0 ) then
             method_name = trim(method_name)//list_sep//&
                           trim(control_str(startcont:midcont-1))
@@ -975,7 +975,7 @@ do while (.TRUE.)
             method_name = trim(control_str(startcont:midcont-1))
           endif
           val_name =    trim(control_str(midcont+1:endcont))
-        
+
           call new_name(list_name, method_name, val_name )
         enddo
 
@@ -1010,14 +1010,14 @@ do while (.TRUE.)
    endif
 79 continue
 enddo
-         
+
 89 continue
 close(iunit)
 
 if(present(nfields)) nfields = num_fields
 if (verb .gt. verb_level_warn) &
   fm_success= fm_dump_list("/", .true.)
-  
+
 default_method%method_type = 'none'
 default_method%method_name = 'none'
 default_method%method_control = 'none'
@@ -1079,7 +1079,7 @@ subroutine new_name ( list_name, method_name_in , val_name_in)
 character(len=*), intent(in)    :: list_name
 character(len=*), intent(in)    :: method_name_in
 !   <INOUT NAME="val_name_in" TYPE="character(len=*)">
-!     The value or values that will be parsed and used as the value when 
+!     The value or values that will be parsed and used as the value when
 !     creating a new field or fields.
 !   </INOUT>
 character(len=*), intent(inout) :: val_name_in
@@ -1126,7 +1126,7 @@ append_new = .false.
 start_val(1) = 1
 end_val(:) = len_trim(val_name_in)
 
-! If the array of values being passed in is a comma delimited list then count 
+! If the array of values being passed in is a comma delimited list then count
 ! the number of elements.
 
 do i = 1, len_trim(val_name_in)
@@ -1140,7 +1140,7 @@ enddo
 ! Check to see if this is an array element of form array[x] = value
 left_br  = scan(method_name,'[')
 right_br = scan(method_name,']')
-if ( num_elem .eq. 1 ) then 
+if ( num_elem .eq. 1 ) then
 !     <ERROR MSG="Left bracket present without right bracket in method_name" STATUS="FATAL">
 !       When using an array element an unpaired bracket was found.
 !     </ERROR>
@@ -1151,9 +1151,9 @@ if ( num_elem .eq. 1 ) then
 !     </ERROR>
   if ( left_br== 0 .and. right_br > 0 ) &
     call mpp_error(FATAL, trim(error_header)//"Right bracket present without left bracket in "//trim(method_name))
-  
 
-  if ( left_br > 0 .and. right_br > 0 ) then 
+
+  if ( left_br > 0 .and. right_br > 0 ) then
 !     <ERROR MSG="Using a non-numeric value for index in method_name" STATUS="FATAL">
 !       An array assignment was requested but a non-numeric value was found. i.e. array[a] = 1
 !     </ERROR>
@@ -1178,7 +1178,7 @@ do i = 1, num_elem
   if ( i .gt. 1 .or. index_t .eq. 0 ) then
     append_new = .true.
     index_t = 0 ! If append is true then index must be <= 0
-  endif  
+  endif
   val_type = string_type  ! Assume it is a string
   val_name = val_name_in(start_val(i):end_val(i))
   call strip_front_blanks(val_name)
@@ -1214,12 +1214,12 @@ do i = 1, num_elem
          ' for ' // trim(method_name) // ' of ' // trim(list_name))
 
   else  !}{
-! If the string to be parsed is a real then all the characters must be numeric, 
+! If the string to be parsed is a real then all the characters must be numeric,
 ! be a plus/minus, be a decimal point or, for exponentials, be e or E.
 
 ! If a string is an integer, then all the characters must be numeric.
 
-  if ( scan(val_name(1:1), setnum ) > 0 ) then  
+  if ( scan(val_name(1:1), setnum ) > 0 ) then
 
 ! If there is a letter in the name it may only be e or E
 
@@ -1236,13 +1236,13 @@ do i = 1, num_elem
 
       else
 ! It is real if there is a . in the name or the value appears exponential
-        if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then 
+        if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then
           read(val_name, *) val_real
           val_type = real_type
         else
           read(val_name, *) val_int
           val_type = integer_type
-        endif   
+        endif
       endif
 
     endif
@@ -1268,7 +1268,7 @@ do i = 1, num_elem
     endif
   endif  !}
 
-  select case(val_type) 
+  select case(val_type)
 
     case (integer_type)
       if ( fm_new_value( method_name, val_int, create = .true., index = index_t, append = append_new ) < 0 ) &
@@ -1292,7 +1292,7 @@ do i = 1, num_elem
     case default
       call mpp_error(FATAL, trim(error_header)//'Could not find a valid type to set the '//trim(method_name)//&
                             ' for '//trim(list_name))
-    
+
   end select
 
   if (mpp_pe() == mpp_root_pe() ) then
@@ -1304,7 +1304,7 @@ do i = 1, num_elem
 
 enddo
 
-end subroutine new_name 
+end subroutine new_name
 !</SUBROUTINE>
 !</PRIVATE>
 !#######################################################################
@@ -1315,7 +1315,7 @@ end subroutine new_name
 !     Destructor for field manager.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     This subroutine writes to the logfile that the user is exiting field_manager and 
+!     This subroutine writes to the logfile that the user is exiting field_manager and
 !     changes the initialized flag to false.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1330,7 +1330,7 @@ character(len=17), parameter :: sub_name     = 'field_manager_end'
 character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
                                                '(' // trim(sub_name) // '): '
 
-integer :: unit 
+integer :: unit
 
 call write_version_number("FIELD_MANAGER_MOD", version)
 if ( mpp_pe() == mpp_root_pe() ) then
@@ -1388,8 +1388,8 @@ end subroutine strip_front_blanks
 !     Function to return the index of the field.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     This function when passed a model number and a field name will 
-!     return the index of the field within the field manager. This index 
+!     This function when passed a model number and a field name will
+!     return the index of the field within the field manager. This index
 !     can be used to access other information from the field manager.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1398,7 +1398,7 @@ end subroutine strip_front_blanks
 !   </TEMPLATE>
 
 function find_field_index_old(model, field_name)
-! 
+!
 !   <IN NAME="model" TYPE="integer">
 !     The number indicating which model is used.
 !   </IN>
@@ -1430,7 +1430,7 @@ enddo
 end function find_field_index_old
 
 function find_field_index_new(field_name)
-! 
+!
 !   <IN NAME="field_name" TYPE="character">
 !     The path to the name of the field that an index is being requested for.
 !   </IN>
@@ -1461,8 +1461,8 @@ end function find_field_index_new
 !     This routine allows access to field information given an index.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     When passed an index, this routine will return the type of field, 
-!     the name of the field, the model which the field is associated and 
+!     When passed an index, this routine will return the type of field,
+!     the name of the field, the model which the field is associated and
 !     the number of methods associated with the field.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1501,7 +1501,7 @@ character(len=64), parameter :: error_header = '==>Error from ' // trim(module_n
                                                '(' // trim(sub_name) // '): '
 
 !   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the 
+!     The field index is invalid because it is less than 1 or greater than the
 !     number of fields.
 !   </ERROR>
 if (n < 1 .or. n > num_fields) call mpp_error(FATAL,trim(error_header)//'Invalid field index')
@@ -1522,7 +1522,7 @@ end subroutine get_field_info
 !     A routine to get a specified method.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     This routine, when passed a field index and a method index will 
+!     This routine, when passed a field index and a method index will
 !     return the method text associated with the field(n) method(m).
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1551,13 +1551,13 @@ character(len=64), parameter :: error_header = '==>Error from ' // trim(module_n
                                                '(' // trim(sub_name) // '): '
 
 !   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the 
+!     The field index is invalid because it is less than 1 or greater than the
 !     number of fields.
 !   </ERROR>
 if (n < 1 .or. n > num_fields) call mpp_error(FATAL,trim(error_header)//'Invalid field index')
 
 !   <ERROR MSG="invalid method index" STATUS="FATAL">
-!     The method index is invalid because it is less than 1 or greater than 
+!     The method index is invalid because it is less than 1 or greater than
 !     the number of methods.
 !   </ERROR>
 if (m < 1 .or. m > fields(n)%num_methods) call mpp_error(FATAL,trim(error_header)//'Invalid method index')
@@ -1575,7 +1575,7 @@ end subroutine get_field_method
 !     A routine to obtain all the methods associated with a field.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     When passed a field index, this routine will return the text 
+!     When passed a field index, this routine will return the text
 !     associated with all the methods attached to the field.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1607,7 +1607,7 @@ character(len=fm_path_name_len), dimension(size(methods(:))) :: control
 character(len=fm_path_name_len), dimension(size(methods(:))) :: method
 logical                                                   :: found_methods
 !   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the 
+!     The field index is invalid because it is less than 1 or greater than the
 !     number of fields.
 !   </ERROR>
   if (n < 1 .or. n > num_fields) &
@@ -1627,10 +1627,10 @@ end subroutine get_field_methods
 
 !#######################################################################
 !#######################################################################
-  
+
 ! <FUNCTION NAME="parse">
 !   <OVERVIEW>
-!     A function to parse an integer or an array of integers, 
+!     A function to parse an integer or an array of integers,
 !     a real or an array of reals, a string or an array of strings.
 !   </OVERVIEW>
 !   <DESCRIPTION>
@@ -1652,14 +1652,14 @@ function parse_reals ( text, label, values ) result (parse)
 !     The text string from which the values will be parsed.
 !   </IN>
 !   <IN NAME="label" TYPE="character(len=*)">
-!     A label which describes the values being decoded. 
+!     A label which describes the values being decoded.
 !   </IN>
 !   <OUT NAME="value" TYPE="integer, real, character(len=*)">
 !     The value or values that have been decoded.
 !   </OUT>
 !   <OUT NAME="parse" TYPE="integer">
-!     The number of values that have been decoded. This allows 
-!     a user to define a large array and fill it partially with 
+!     The number of values that have been decoded. This allows
+!     a user to define a large array and fill it partially with
 !     values from a list. This should be the size of the value array.
 !   </OUT>
 character(len=*), intent(in)  :: text, label
@@ -1874,7 +1874,7 @@ end function  create_field  !}
 !    This is a function that lists the parameters of a field.
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    Given a pointer to a list, this function prints out the fields, and 
+!    Given a pointer to a list, this function prints out the fields, and
 !    subfields, if recursive is true, associated with the list.
 !
 !    This is most likely to be used through fm_dump_list.
@@ -1889,15 +1889,15 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
 !     A pointer to the field, the contents of which will be printed out.
 !   </IN>
 !   <IN NAME="recursive" TYPE="logical">
-!     A flag to make the function recursively print all the sub-fields 
+!     A flag to make the function recursively print all the sub-fields
 !     of the field pointed to by list_p.
 !   </IN>
 !   <IN NAME="depth" TYPE="integer">
-!     The listing will be padded so that 'depth' spaces appear before 
+!     The listing will be padded so that 'depth' spaces appear before
 !     the field being printed.
 !   </IN>
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
   type (field_def), pointer :: list_p
@@ -1913,7 +1913,7 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
   character(len=fm_field_name_len)    :: num, scratch
   type (field_def), pointer           :: this_field_p
   character(len=depth+fm_field_name_len) :: blank
-  
+
   blank = ' ' ! initialize blank string
 
   ! Check for a valid list
@@ -1965,7 +1965,7 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
                write (num,*) j
                write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
-           enddo 
+           enddo
          endif
 
      case(logical_type)
@@ -1981,7 +1981,7 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
                write (num,*) j
                write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
-            enddo 
+            enddo
          endif
 
      case(real_type)
@@ -1997,7 +1997,7 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
                write (num,*) j
                write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
-            enddo 
+            enddo
          endif
 
      case(string_type)
@@ -2011,7 +2011,7 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
                write (num,*) j
                write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
                       '[', trim(adjustl(num)), '] = ', ''''//trim(this_field_p%s_value(j))//''''
-            enddo 
+            enddo
          endif
 
      case default
@@ -2041,7 +2041,7 @@ end function dump_list
 ! <DESCRIPTION>
 !    Find the base name for a list by splitting the list name into
 !    a path and base. The base is the last field within name, while the
-!    path is the preceding section of name. The base string can then be 
+!    path is the preceding section of name. The base string can then be
 !    used to query for values associated with name.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -2139,7 +2139,7 @@ end subroutine find_base  !}
 ! </OVERVIEW>
 ! <DESCRIPTION>
 !    Find and return a pointer to the field in the specified
-!    list. Return a null pointer on error. Given a pointer to a field, 
+!    list. Return a null pointer on error. Given a pointer to a field,
 !    this function searchs for "name" as a sub field.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -2149,7 +2149,7 @@ end subroutine find_base  !}
 function find_field(name, this_list_p)                                &
         result (field_p)  !{
 !  <OUT NAME="field_p" TYPE="type(field_def), pointer">
-!    A pointer to the field corresponding to "name" or an unassociated 
+!    A pointer to the field corresponding to "name" or an unassociated
 !    pointer if the field name does not exist.
 !  </OUT>
 !  <IN NAME="name" TYPE="character(len=*)">
@@ -2171,7 +2171,7 @@ type (field_def), pointer    :: this_list_p
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save    :: temp_p 
+type (field_def), pointer, save    :: temp_p
 
 
 nullify (field_p)
@@ -2307,7 +2307,7 @@ end subroutine find_head  !}
 ! </OVERVIEW>
 ! <DESCRIPTION>
 !    This function, when supplied a pointer to a field and a name of a second
-!    field relative to that pointer, will find a list and return the pointer to 
+!    field relative to that pointer, will find a list and return the pointer to
 !    the second field. If create is .true. and the second field does not exist,
 !    it will be created.
 ! </DESCRIPTION>
@@ -2356,8 +2356,8 @@ character(len=fm_path_name_len)  :: working_path
 character(len=fm_path_name_len)  :: rest
 character(len=fm_field_name_len) :: this_list
 integer                          :: i, out_unit
-type (field_def), pointer, save  :: working_path_p 
-type (field_def), pointer, save  :: this_list_p 
+type (field_def), pointer, save  :: working_path_p
+type (field_def), pointer, save  :: this_list_p
 
 
 out_unit = stdout()
@@ -2473,8 +2473,8 @@ end function find_list  !}
 ! </OVERVIEW>
 ! <DESCRIPTION>
 !    This function changes the currect list to correspond to the list named name.
-!    If the first character of name is the list separator (/) then the list will 
-!    search for "name" starting from the root of the field tree. Otherwise it 
+!    If the first character of name is the list separator (/) then the list will
+!    search for "name" starting from the root of the field tree. Otherwise it
 !    will search for name starting from the current list.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -2484,7 +2484,7 @@ end function find_list  !}
 function fm_change_list(name)                                        &
         result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="name" TYPE="character(len=*)">
@@ -2502,7 +2502,7 @@ character(len=*), intent(in)  :: name
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_p 
+type (field_def), pointer, save :: temp_p
 !
 !        Initialize the field manager if needed
 !
@@ -2533,14 +2533,14 @@ end function fm_change_list  !}
 !    Change the root list
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    This function changes the root of the field tree to correspond to the 
-!    field named name. An example of a use of this would be if code is 
-!    interested in a subset of fields with a common base. This common base 
-!    could be set using fm_change_root and fields could be referenced using 
-!    this root. 
-!    
+!    This function changes the root of the field tree to correspond to the
+!    field named name. An example of a use of this would be if code is
+!    interested in a subset of fields with a common base. This common base
+!    could be set using fm_change_root and fields could be referenced using
+!    this root.
+!
 !    This function should be used in conjunction with fm_return_root.
-!    
+!
 ! </DESCRIPTION>
 !   <TEMPLATE>
 !     success = fm_change_root(name)
@@ -2550,7 +2550,7 @@ function  fm_change_root(name)                                        &
           result (success)  !{
 !
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="name" TYPE="character(len=*)">
@@ -2574,7 +2574,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_list_p 
+type (field_def), pointer, save :: temp_list_p
 integer :: out_unit
 !
 !        Initialize the field manager if needed
@@ -2651,11 +2651,11 @@ end function  fm_change_root  !}
 ! </OVERVIEW>
 ! <DESCRIPTION>
 !    This function writes the contents of the field named "name" to stdout.
-!    If recursive is present and .true., then this function writes out the 
+!    If recursive is present and .true., then this function writes out the
 !    contents of any subfields associated with the field named "name".
 ! </DESCRIPTION>
 !   <TEMPLATE>
-!     success = fm_dump_list(name, recursive = .true.) 
+!     success = fm_dump_list(name, recursive = .true.)
 !   </TEMPLATE>
 !
 logical function  fm_dump_list(name, recursive, unit) result (success)
@@ -2663,7 +2663,7 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
   logical, intent(in), optional :: recursive
   integer, intent(in), optional :: unit ! file to print to
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="name" TYPE="character(len=*)">
@@ -2680,7 +2680,7 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
                                                '(' // trim(sub_name) // '): '
   ! ---- local variables
   logical                         :: recursive_t
-  type (field_def), pointer, save :: temp_list_p 
+  type (field_def), pointer, save :: temp_list_p
   integer                         :: out_unit
 
   if (present(unit)) then
@@ -2693,16 +2693,16 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
   if (present(recursive)) recursive_t = recursive
   if (.not. module_is_initialized) call initialize()
 
-  if (name .eq. ' ') then 
+  if (name .eq. ' ') then
     ! If list is empty, then dump the current list
     temp_list_p => current_list_p
     success = .true.
-  else  
+  else
     ! Get a pointer to the list
     temp_list_p => find_list(name, current_list_p, .false.)
     if (associated(temp_list_p)) then
        success = .true.
-    else 
+    else
        ! Error following the path
        if (verb .gt. verb_level_warn) then
           write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
@@ -2740,7 +2740,7 @@ function fm_exists(name)                                                &
 !     The name of the field that is being queried.
 !   </IN>
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !
@@ -2755,7 +2755,7 @@ character(len=*), intent(in) :: name
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: dummy_p 
+type (field_def), pointer, save :: dummy_p
 !
 !        Initialize the field manager if needed
 !
@@ -2781,9 +2781,9 @@ end function fm_exists  !}
 ! </OVERVIEW>
 ! <DESCRIPTION>
 !    Returns the index for name, returns the parameter NO_FIELD if it does not
-!    exist. If the first character of the named field is the list peparator, 
-!    then the named field will be relative to the root of the field tree. 
-!    Otherwise the named field will be relative to the current list. 
+!    exist. If the first character of the named field is the list peparator,
+!    then the named field will be relative to the root of the field tree.
+!    Otherwise the named field will be relative to the current list.
 ! </DESCRIPTION>
 !   <TEMPLATE>
 !     index = fm_get_index(name)
@@ -2792,7 +2792,7 @@ end function fm_exists  !}
 function  fm_get_index(name)                        &
           result (index)  !{
 !   <OUT NAME="index" TYPE="index">
-!     The index of the named field if it exists. 
+!     The index of the named field if it exists.
 !     Otherwise the parameter NO_FIELD.
 !   </OUT>
 !   <IN NAME="name" TYPE="character(len=*)">
@@ -2816,7 +2816,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_field_p 
+type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -2867,7 +2867,7 @@ end function  fm_get_index  !}
 !    A function to return the full path of the current list.
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    This function returns the full path for the current list. A blank 
+!    This function returns the full path for the current list. A blank
 !    path indicates an error condition has occurred.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -2891,7 +2891,7 @@ character(len=fm_path_name_len) :: path
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_list_p 
+type (field_def), pointer, save :: temp_list_p
 !
 !        Initialize the field manager if needed
 !
@@ -2946,7 +2946,7 @@ end function  fm_get_current_list  !}
 ! <FUNCTION NAME="fm_get_length">
 !
 ! <OVERVIEW>
-!    A function to return how many elements are contained within the named 
+!    A function to return how many elements are contained within the named
 !    list or entry.
 ! </OVERVIEW>
 ! <DESCRIPTION>
@@ -2984,7 +2984,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_field_p 
+type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -3045,7 +3045,7 @@ end function  fm_get_length  !}
 !    This function returns the type of the field for name.
 !    This indicates whether the named field is a "list" (has children fields),
 !    or has values of type "integer", "real", "logical" or "string".
-!    If it does not exist it returns a blank string. 
+!    If it does not exist it returns a blank string.
 ! </DESCRIPTION>
 !   <TEMPLATE>
 !     name_field_type = fm_get_type(name)
@@ -3077,7 +3077,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_field_p 
+type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -3131,8 +3131,8 @@ end function  fm_get_type  !}
 !    An overloaded function to find and extract a value for a named field.
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    Find and extract the value for name. The value may be of type real, 
-!    integer, logical or character. If a single value from an array  of values 
+!    Find and extract the value for name. The value may be of type real,
+!    integer, logical or character. If a single value from an array  of values
 !    is required, an optional index can be supplied.
 !    Return true for success and false for failure
 ! </DESCRIPTION>
@@ -3143,7 +3143,7 @@ end function  fm_get_type  !}
 function  fm_get_value_integer(name, value, index)                 &
           result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="name" TYPE="character(len=*)">
@@ -3176,7 +3176,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
-type (field_def), pointer, save :: temp_field_p 
+type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -3299,7 +3299,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
-type (field_def), pointer, save :: temp_field_p 
+type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -3425,7 +3425,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
-type (field_def), pointer, save :: temp_field_p 
+type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -3554,7 +3554,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
-type (field_def), pointer, save :: temp_field_p 
+type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -3663,7 +3663,7 @@ end function  fm_get_value_string  !}
 ! <FUNCTION NAME="fm_intersection">
 !
 ! <OVERVIEW>
-!    A function to find the common names of the sub-fields in a list 
+!    A function to find the common names of the sub-fields in a list
 !    of fields.
 ! </OVERVIEW>
 ! <DESCRIPTION>
@@ -3679,7 +3679,7 @@ end function  fm_get_value_string  !}
 function fm_intersection(lists, dim)                        &
         result (return_p)  !{
 !   <OUT NAME="return_p" TYPE="type (fm_array_list_def), pointer">
-!     A pointer to a list of names that are common to the fields provided in 
+!     A pointer to a list of names that are common to the fields provided in
 !     lists.
 !   </OUT>
 !   <IN NAME="dim" TYPE="dim">
@@ -3719,7 +3719,7 @@ integer                            :: index
 integer                            :: n, ier
 integer                            :: shortest
 logical                            :: found
-type (field_def), pointer, save    :: temp_p 
+type (field_def), pointer, save    :: temp_p
 integer                            :: out_unit
 
 out_unit = stdout()
@@ -3881,7 +3881,7 @@ end function fm_intersection  !}
 function  fm_loop_over_list_old(list, name, field_type, index)        &
           result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="list" TYPE="character(len=*)">
@@ -3917,7 +3917,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_list_p 
+type (field_def), pointer, save :: temp_list_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -4010,9 +4010,9 @@ end function  fm_loop_over_list_old
 subroutine fm_init_loop(loop_list, iter)
   character(len=*)       , intent(in)  :: loop_list ! name of the list to iterate over
   type(fm_list_iter_type), intent(out) :: iter     ! loop iterator
-  
+
   if (.not.module_is_initialized) call initialize
-  
+
   if (loop_list==' ') then ! looping over current list
      iter%ptr => current_list_p%first_field
   else
@@ -4023,7 +4023,7 @@ end subroutine fm_init_loop
 
 !#######################################################################
 ! given a list iterator, returns information about curren list element
-! and advances the iterator to the next list element. At the end of the 
+! and advances the iterator to the next list element. At the end of the
 ! list, returns FALSE
 function fm_loop_over_list_new(iter, name, field_type, index) &
          result (success) ; logical success
@@ -4056,7 +4056,7 @@ end function fm_loop_over_list_new
 !    A function to create a new list.
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    Allocate and initialize a new list and return the index of the list. 
+!    Allocate and initialize a new list and return the index of the list.
 !    If an error occurs return the parameter NO_FIELD.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -4101,7 +4101,7 @@ logical                          :: create_t
 logical                          :: keep_t
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
-type (field_def), pointer, save  :: temp_list_p 
+type (field_def), pointer, save  :: temp_list_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -4196,10 +4196,10 @@ end function  fm_new_list  !}
 !    If an error condition occurs the parameter NO_FIELD is returned.
 !
 !    If the type of the field is changing (e.g. real values being transformed to
-!    integers), then any previous values for the field are removed and replaced 
+!    integers), then any previous values for the field are removed and replaced
 !    by the value passed in the present call to this function.
-!     
-!    If append is present and .true., then index cannot be greater than 0 if 
+!
+!    If append is present and .true., then index cannot be greater than 0 if
 !    it is present.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -4224,7 +4224,7 @@ function  fm_new_value_integer(name, value, create, index, append)     &
 !     The index to an array of values that the user wishes to apply a new value.
 !   </IN>
 !   <IN NAME="append" TYPE="logical, optional">
-!     If present and .true., then append the value to an array of the present 
+!     If present and .true., then append the value to an array of the present
 !     values. If present and .true., then index cannot be greater than 0.
 !   </IN>
 !
@@ -4255,8 +4255,8 @@ integer                          :: index_t
 integer, pointer, dimension(:)   :: temp_i_value
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
-type (field_def), pointer, save  :: temp_list_p 
-type (field_def), pointer, save  :: temp_field_p 
+type (field_def), pointer, save  :: temp_list_p
+type (field_def), pointer, save  :: temp_field_p
 integer                          :: out_unit
 
 out_unit = stdout()
@@ -4344,7 +4344,7 @@ if (associated(temp_list_p)) then  !{
        return
     else if (temp_field_p%field_type /= integer_type ) then
       !  slm: why would we reset index? Is it not an error to have a "list" defined
-      !  with different types in more than one place? 
+      !  with different types in more than one place?
       temp_field_p%max_index = 0
       if (temp_field_p%field_type /= null_type ) then  !{
         if (verb .gt. verb_level_warn) then  !{
@@ -4472,7 +4472,7 @@ integer                                :: field_index
 character(len=*), intent(in)           :: name
 logical,          intent(in)           :: value
 logical,          intent(in), optional :: create
-integer,          intent(in), optional :: index 
+integer,          intent(in), optional :: index
 logical,          intent(in), optional :: append
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4489,9 +4489,9 @@ character(len=fm_field_name_len)     :: base
 integer                              :: i, ier
 integer                              :: index_t
 logical                              :: create_t
-logical, dimension(:), pointer       :: temp_l_value 
-type (field_def),      pointer, save :: temp_list_p 
-type (field_def),      pointer, save :: temp_field_p 
+logical, dimension(:), pointer       :: temp_l_value
+type (field_def),      pointer, save :: temp_list_p
+type (field_def),      pointer, save :: temp_field_p
 integer                              :: out_unit
 
 out_unit = stdout()
@@ -4726,8 +4726,8 @@ integer                          :: index_t
 real, pointer, dimension(:)      :: temp_r_value
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
-type (field_def), pointer, save  :: temp_list_p 
-type (field_def), pointer, save  :: temp_field_p 
+type (field_def), pointer, save  :: temp_list_p
+type (field_def), pointer, save  :: temp_field_p
 integer                          :: out_unit
 
 out_unit = stdout()
@@ -5178,7 +5178,7 @@ end function  fm_new_value_string  !}
 !    Resets the loop variable. For use in conjunction with fm_loop_over_list.
 ! </DESCRIPTION>
 !   <TEMPLATE>
-!     call fm_reset_loop 
+!     call fm_reset_loop
 !   </TEMPLATE>
 !
 subroutine  fm_reset_loop
@@ -5213,10 +5213,10 @@ end subroutine  fm_reset_loop  !}
 !    Return the root list to the value at initialization
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    Return the root list to the value at initialization. 
-!    For use in conjunction with fm_change_root. 
+!    Return the root list to the value at initialization.
+!    For use in conjunction with fm_change_root.
 !
-!    Users should use this routine before leaving their routine if they 
+!    Users should use this routine before leaving their routine if they
 !    previously used fm_change_root.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -5296,7 +5296,7 @@ type (field_def), pointer        :: this_list_p
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
-type (field_def), pointer, save  :: temp_p 
+type (field_def), pointer, save  :: temp_p
 
 nullify(list_p)
 !
@@ -5328,11 +5328,11 @@ end function get_field  !}
 ! <FUNCTION NAME="fm_modify_name">
 !
 ! <OVERVIEW>
-!    This function allows a user to rename a field without modifying the 
+!    This function allows a user to rename a field without modifying the
 !    contents of the field.
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    Function to modify the name of a field. 
+!    Function to modify the name of a field.
 !    Should be used with caution.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -5342,7 +5342,7 @@ end function get_field  !}
 function fm_modify_name(oldname, newname)                                        &
         result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="oldname" TYPE="character(len=*)">
@@ -5365,8 +5365,8 @@ character(len=*), intent(in)     :: newname
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
-type (field_def), pointer, save  :: list_p 
-type (field_def), pointer, save  :: temp_p 
+type (field_def), pointer, save  :: list_p
+type (field_def), pointer, save  :: temp_p
 !
 !        Get the path and base for name
 !
@@ -5391,7 +5391,7 @@ else  !}{
   if (associated(list_p)) then !{
     list_p%name = newname
     success = .true.
-  endif !} 
+  endif !}
 endif  !}
 
 end function fm_modify_name  !}
@@ -5490,7 +5490,7 @@ end subroutine initialize  !}
 function  make_list(this_list_p, name)                        &
           result (list_p)  !{
 !   <OUT NAME="list_p" TYPE="type (field_def), pointer">
-!     A pointer to the list that has been created. 
+!     A pointer to the list that has been created.
 !   </OUT>
 !   <IN NAME="this_list_p" TYPE="type (field_def), pointer">
 !     The base of a list that the user wishes to add a list to.
@@ -5517,7 +5517,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer :: ier
-type (field_def), pointer, save :: dummy_p 
+type (field_def), pointer, save :: dummy_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -5573,7 +5573,7 @@ end function  make_list  !}
 ! <FUNCTION NAME="fm_query_method">
 !
 ! <OVERVIEW>
-!    This is a function that provides the capability to return parameters 
+!    This is a function that provides the capability to return parameters
 !    associated with a field in a pair of strings.
 ! </OVERVIEW>
 ! <DESCRIPTION>
@@ -5588,7 +5588,7 @@ end function  make_list  !}
 function fm_query_method(name, method_name, method_control)                &
           result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="name" TYPE="character(len=*)">
@@ -5623,9 +5623,9 @@ character(len=fm_path_name_len) :: path
 character(len=fm_path_name_len) :: base
 character(len=fm_path_name_len) :: name_loc
 logical                         :: recursive_t
-type (field_def), pointer, save :: temp_list_p 
-type (field_def), pointer, save :: temp_value_p 
-type (field_def), pointer, save :: this_field_p 
+type (field_def), pointer, save :: temp_list_p
+type (field_def), pointer, save :: temp_value_p
+type (field_def), pointer, save :: this_field_p
 integer                         :: out_unit
 
   out_unit = stdout()
@@ -5829,12 +5829,12 @@ end subroutine concat_strings
 
 ! <FUNCTION NAME = "fm_copy_list" >
 ! <OVERVIEW>
-!    A function that allows the user to copy a field and add a suffix to 
+!    A function that allows the user to copy a field and add a suffix to
 !    the name of the new field.
 ! </OVERVIEW>
 ! <DESCRIPTION>
 !    Given the name of a pre-existing field and a suffix, this function
-!    will create a new field. The name of the new field will be that of 
+!    will create a new field. The name of the new field will be that of
 !    the old field with a suffix supplied by the user.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -5889,8 +5889,8 @@ logical                                                    :: recursive_t
 logical                                                    :: success
 logical                                                    :: val_logical
 real                                                       :: val_real
-type (field_def), pointer, save                            :: temp_field_p 
-type (field_def), pointer, save                            :: temp_list_p 
+type (field_def), pointer, save                            :: temp_field_p
+type (field_def), pointer, save                            :: temp_list_p
 integer                                                    :: out_unit
 
 out_unit = stdout()
@@ -5951,21 +5951,21 @@ if (success) then  !{
                              create = create, append = .true.) < 0 ) &
             call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
                                   ' for '//trim(list_name)//trim(suffix))
-  
+
         case (logical_type)
           got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_logical)
           if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_logical, &
                              create = create, append = .true.) < 0 ) &
             call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
                                   ' for '//trim(list_name)//trim(suffix))
-  
+
         case (real_type)
           got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real)
           if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real, &
                              create = create, append = .true.) < 0 ) &
             call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
                                   ' for '//trim(list_name)//trim(suffix))
-  
+
         case (string_type)
           got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_str)
           if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_str, &
@@ -5974,12 +5974,12 @@ if (success) then  !{
                                   ' for '//trim(list_name)//trim(suffix))
         case default
       end select
-  
+
     endif
   enddo
 endif  !}
 
-end function fm_copy_list !}         
+end function fm_copy_list !}
 ! </FUNCTION > NAME = "fm_copy_list"
 
 !#######################################################################
@@ -6001,7 +6001,7 @@ end function fm_copy_list !}
 function fm_find_methods(list_name, methods, control ) &
          result(success)   !{
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="list_name" TYPE="character(len=*)">
@@ -6035,7 +6035,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: num_meth
 logical                         :: recursive_t
-type (field_def), pointer, save :: temp_list_p 
+type (field_def), pointer, save :: temp_list_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -6083,7 +6083,7 @@ if (success) then  !{
   success = find_method(temp_list_p, recursive_t, num_meth, methods, control)
 endif  !}
 
-end function fm_find_methods !}         
+end function fm_find_methods !}
 ! </FUNCTION > NAME = "fm_find_methods"
 
 !#######################################################################
@@ -6092,11 +6092,11 @@ end function fm_find_methods !}
 ! <PRIVATE><FUNCTION NAME = "find_method">
 !
 ! <OVERVIEW>
-!    Given a field list pointer this function retrieves methods and 
+!    Given a field list pointer this function retrieves methods and
 !    associated parameters for the field list.
 ! </OVERVIEW>
 ! <DESCRIPTION>
-!    Given a field list pointer this function retrieves methods and 
+!    Given a field list pointer this function retrieves methods and
 !    associated parameters for the field list.
 ! </DESCRIPTION>
 !   <TEMPLATE>
@@ -6106,7 +6106,7 @@ end function fm_find_methods !}
 recursive function find_method(list_p, recursive, num_meth, method, control)   &
           result (success)  !{
 !   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or 
+!     A flag to indicate whether the function operated with (FALSE) or
 !     without (TRUE) errors.
 !   </OUT>
 !   <IN NAME="list_p" TYPE="type (field_def), pointer">
@@ -6151,7 +6151,7 @@ integer                         :: first
 integer                         :: i
 integer                         :: last
 integer                         :: n
-type (field_def), pointer, save :: this_field_p 
+type (field_def), pointer, save :: this_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
@@ -6242,7 +6242,7 @@ else  !}{
         success = .false.
         exit
 
-    end select 
+    end select
 
     this_field_p => this_field_p%next
   enddo  !}
@@ -6319,10 +6319,10 @@ else  !}{
 
 endif  !}
 
-write (out_unit,*) 
+write (out_unit,*)
 write (out_unit,*) trim(note_header),                          &
      'Verbosity now at level ', verb
-write (out_unit,*) 
+write (out_unit,*)
 
 end subroutine  fm_set_verbosity  !}
 ! </SUBROUTINE> NAME="fm_set_verbosity"

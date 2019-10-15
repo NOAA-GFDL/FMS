@@ -10,8 +10,8 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
--I${top_builddir}/fms -I${top_builddir}/diag_manager		\
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp \
+-I${top_builddir}/fms -I${top_builddir}/diag_manager \
 -I${top_builddir}/time_manager -I${top_builddir}/constants
 
 # Link to the FMS library.
@@ -27,7 +27,7 @@ test_diag_manager_SOURCES = test_diag_manager.F90
 TESTS = test_diag_manager.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_diag_manager.sh input.nml_base diagTables	\
+EXTRA_DIST = test_diag_manager.sh input.nml_base diagTables \
 test_diag_manager.bats
 
 CLEANFILES = input.nml *.nc *.out

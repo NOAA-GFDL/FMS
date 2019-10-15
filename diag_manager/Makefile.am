@@ -11,8 +11,8 @@ AM_CPPFLAGS += -I${top_builddir}/time_manager
 AM_CPPFLAGS += -I${top_builddir}/constants
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libdiag_data.la libdiag_axis.la libdiag_grid.la	\
-libdiag_output.la libdiag_util.la libdiag_manifest.la			\
+noinst_LTLIBRARIES = libdiag_data.la libdiag_axis.la libdiag_grid.la \
+libdiag_output.la libdiag_util.la libdiag_manifest.la \
 libdiag_table.la libdiag_manager.la
 
 # Each convenience library depends on its source.
@@ -44,8 +44,8 @@ diag_table.$(OBJEXT): diag_data_mod.mod diag_util_mod.mod
 diag_manager.$(OBJEXT): diag_axis_mod.mod diag_data_mod.mod diag_util_mod.mod diag_output_mod.mod diag_grid_mod.mod diag_table_mod.mod diag_manifest_mod.mod
 
 # Mod files are built and then installed as headers.
-MODFILES = diag_data_mod.mod diag_axis_mod.mod diag_grid_mod.mod	\
-diag_output_mod.mod diag_util_mod.mod diag_manifest_mod.mod		\
+MODFILES = diag_data_mod.mod diag_axis_mod.mod diag_grid_mod.mod \
+diag_output_mod.mod diag_util_mod.mod diag_manifest_mod.mod \
 diag_table_mod.mod diag_manager_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)

@@ -178,7 +178,7 @@ end type time_type
 
 interface operator (+);   module procedure time_plus;        end interface
 interface operator (-);   module procedure time_minus;       end interface
-interface operator (*);   module procedure time_scalar_mult 
+interface operator (*);   module procedure time_scalar_mult
                           module procedure scalar_time_mult; end interface
 interface operator (/);   module procedure time_scalar_divide
                           module procedure time_divide;      end interface
@@ -338,7 +338,7 @@ contains
  odays  = 0; if(present(days))  odays  = days
  oticks = 0; if(present(ticks)) oticks = ticks
  if(present(err_msg)) err_msg = ''
- 
+
  if(.not.set_time_private(seconds, odays, oticks, set_time_i, err_msg_local)) then
    if(error_handler('function set_time_i', trim(err_msg_local), err_msg)) return
  endif
@@ -445,15 +445,15 @@ contains
      tpsfrac = ticks_per_second*fraction
      if(allow_rounding) then
        tick = nint((real(tpsfrac)/magnitude))
-     else 
+     else
        if(modulo(tpsfrac,magnitude) == 0) then
          tick = tpsfrac/magnitude
        else
          write(err_msg,'(a,i6)') 'Second fraction cannot be exactly represented with ticks.  '// &
-                                 'fraction='//trim(string)//'  ticks_per_second=',ticks_per_second 
+                                 'fraction='//trim(string)//'  ticks_per_second=',ticks_per_second
          get_tick_from_string = .false.
        endif
-     endif 
+     endif
    endif
  endif
 
@@ -472,7 +472,7 @@ contains
 !   </TEMPLATE>
 
 !   <IN NAME="time" TYPE="time_type">
-!     A time interval. 
+!     A time interval.
 !   </IN>
 !   <OUT NAME="seconds" UNITS="" TYPE="integer" DIM="(scalar)">
 !     A number of seconds.
@@ -640,7 +640,7 @@ end subroutine get_time
 
 !   <OVERVIEW>
 !      Given a time and a decrement of days and seconds, returns
-!      a time that subtracts this decrement from an input time. 
+!      a time that subtracts this decrement from an input time.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      Decrements a time by seconds and days.
@@ -654,7 +654,7 @@ end subroutine get_time
 !   </IN>
 !   <IN NAME="seconds"  TYPE="integer" DIM="(scalar)">
 !     Decrement of seconds.
-!   </IN>    
+!   </IN>
 !   <IN NAME="days"  TYPE="integer, optional" DIM="(scalar)">
 !     Decrement of days.
 !   </IN>
@@ -981,7 +981,7 @@ end function time_plus
 !       Returns difference of two time_types.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!       Returns difference of two time_types. WARNING: a time type is positive 
+!       Returns difference of two time_types. WARNING: a time type is positive
 !       so by definition time1 - time2  is the same as time2 - time1.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1003,7 +1003,7 @@ end function time_plus
 
 function time_minus(time1, time2)
 
-! Returns difference of two time_types. WARNING: a time type is positive 
+! Returns difference of two time_types. WARNING: a time type is positive
 ! so by definition time1 - time2  is the same as time2 - time1.
 
 type(time_type) :: time_minus
@@ -1013,7 +1013,7 @@ if(.not.module_is_initialized) call time_manager_init
 
 if(time1 > time2) then
    time_minus = decrement_time(time1, time2%seconds, time2%days, time2%ticks)
-else 
+else
    time_minus = decrement_time(time2, time1%seconds, time1%days, time1%ticks)
 endif
 
@@ -1214,10 +1214,10 @@ end function time_real_divide
 !       Assigns all components of the time_type variable on
 !       RHS to same components of time_type variable on LHS.
 !   </OVERVIEW>
-!   <DESCRIPTION>         
+!   <DESCRIPTION>
 !       Assigns all components of the time_type variable on
 !       RHS to same components of time_type variable on LHS.
-!   </DESCRIPTION> 
+!   </DESCRIPTION>
 !   <TEMPLATE>
 !     time1 = time2
 !   </TEMPLATE>
@@ -1385,15 +1385,15 @@ end function time_scalar_divide
 
 !   <OVERVIEW>
 !     Given a time, and a time interval, this function returns true
-!     if this is the closest time step to the alarm time. 
+!     if this is the closest time step to the alarm time.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      This is a specialized operation that is frequently performed in models.
 !      Given a time, and a time interval, this function is true if this is the
 !      closest time step to the alarm time. The actual computation is:
-! 
+!
 !             if((alarm_time - time) &#60;&#61; (time_interval / 2))
-! 
+!
 !      If the function is true, the alarm time is incremented by the
 !      alarm_interval; WARNING, this is a featured side effect. Otherwise, the
 !      function is false and there are no other effects. CAUTION: if the
@@ -1421,7 +1421,7 @@ function interval_alarm(time, time_interval, alarm, alarm_interval)
 ! Supports a commonly used type of test on times for models.  Given the
 ! current time, and a time for an alarm, determines if this is the closest
 ! time to the alarm time given a time step of time_interval.  If this
-! is the closest time (alarm - time <= time_interval/2), the function 
+! is the closest time (alarm - time <= time_interval/2), the function
 ! returns true and the alarm is incremented by the alarm_interval.  Watch
 ! for problems if the new alarm time is less than time + time_interval
 
@@ -1444,14 +1444,14 @@ end function interval_alarm
 
 !   <OVERVIEW>
 !      Repeat_alarm supports an alarm that goes off with
-!      alarm_frequency and lasts for alarm_length. 
+!      alarm_frequency and lasts for alarm_length.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      Repeat_alarm supports an alarm that goes off with alarm_frequency and
 !      lasts for alarm_length.  If the nearest occurence of an alarm time
 !      is less than half an alarm_length from the input time, repeat_alarm
-!      is true.  For instance, if the alarm_frequency is 1 day, and the 
-!      alarm_length is 2 hours, then repeat_alarm is true from time 2300 on 
+!      is true.  For instance, if the alarm_frequency is 1 day, and the
+!      alarm_length is 2 hours, then repeat_alarm is true from time 2300 on
 !      day n to time 0100 on day n + 1 for all n.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -1474,8 +1474,8 @@ function repeat_alarm(time, alarm_frequency, alarm_length)
 ! Repeat_alarm supports an alarm that goes off with alarm_frequency and
 ! lasts for alarm_length.  If the nearest occurence of an alarm time
 ! is less than half an alarm_length from the input time, repeat_alarm
-! is true.  For instance, if the alarm_frequency is 1 day, and the 
-! alarm_length is 2 hours, then repeat_alarm is true from time 2300 on 
+! is true.  For instance, if the alarm_frequency is 1 day, and the
+! alarm_length is 2 hours, then repeat_alarm is true from time 2300 on
 ! day n to time 0100 on day n + 1 for all n.
 
 logical :: repeat_alarm
@@ -1523,7 +1523,7 @@ end function repeat_alarm
 
 subroutine set_calendar_type(type, err_msg)
 
-! Selects calendar for default mapping from time to date. 
+! Selects calendar for default mapping from time to date.
 
 integer, intent(in) :: type
 character(len=*), intent(out), optional :: err_msg
@@ -1545,7 +1545,7 @@ if(seconds_per_day /= 86400 .and. type /= NO_CALENDAR ) then
                   ' You are using '//trim(valid_calendar_types(type))//' and seconds_per_day='
   write(err_msg_local(len_trim(err_msg_local)+1:len_trim(err_msg_local)+8),'(i8)') seconds_per_day
   if(error_handler('subroutine set_calendar_type', err_msg_local, err_msg)) return
-endif 
+endif
 
 calendar_type = type
 
@@ -1645,7 +1645,7 @@ end function get_ticks_per_second
 
 !   <OVERVIEW>
 !      Given a time_interval, returns the corresponding date under
-!      the selected calendar. 
+!      the selected calendar.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      Given a time_interval, returns the corresponding date under
@@ -1679,7 +1679,7 @@ end function get_ticks_per_second
  integer, intent(out), optional :: tick
  character(len=*), intent(out), optional :: err_msg
  character(len=128) :: err_msg_local
- integer :: tick1 
+ integer :: tick1
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
@@ -1700,7 +1700,7 @@ end function get_ticks_per_second
    err_msg_local = 'Invalid calendar type'
    if(error_handler('subroutine get_date', err_msg_local, err_msg)) return
  end select
- 
+
  if(present(tick)) then
    tick = tick1
  else
@@ -1739,7 +1739,7 @@ end function get_ticks_per_second
  hour = Time%seconds / 3600
  isec  = Time%seconds - 3600*hour
  minute = isec / 60
- second = isec - 60*minute 
+ second = isec - 60*minute
  tick = time%ticks
 
  end subroutine get_date_gregorian
@@ -1764,7 +1764,7 @@ end function get_ticks_per_second
 
  subroutine get_date_julian_private(time, year, month, day, hour, minute, second, tick)
 
-! Base date for Julian calendar is year 1 with all multiples of 4 
+! Base date for Julian calendar is year 1 with all multiples of 4
 ! years being leap years.
 
  type(time_type), intent(in) :: time
@@ -1774,7 +1774,7 @@ end function get_ticks_per_second
  logical :: leap
 
 ! find number of four year periods; also get modulo number of days
- nfour = time%days / (4 * 365 + 1) 
+ nfour = time%days / (4 * 365 + 1)
  day = modulo(time%days, (4 * 365 + 1))
 
 ! Find out what year in four year chunk
@@ -1786,7 +1786,7 @@ end function get_ticks_per_second
     day=modulo(day, 365) + 1
  endif
 
-! Is this a leap year? 
+! Is this a leap year?
  leap = (nex == 3)
 
  year = 1 + 4 * nfour + nex
@@ -1844,7 +1844,7 @@ end function get_ticks_per_second
  day = t -dmonth * 30 + 1
 
  t = time%seconds
- hour = t / (60 * 60) 
+ hour = t / (60 * 60)
  t = t - hour * (60 * 60)
  minute = t / 60
  second = t - 60 * minute
@@ -1997,7 +1997,7 @@ end function get_ticks_per_second
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
-     
+
 ! Missing optionals are set to 0
  osecond = 0; if(present(second)) osecond = second
  ominute = 0; if(present(minute)) ominute = minute
@@ -2043,18 +2043,18 @@ end function get_ticks_per_second
  character(len=32) :: string_sifted_left
  integer :: year, month, day, hour, minute, second, tick
  character(len=128) :: err_msg_local
- 
+
  if(.not.module_is_initialized) call time_manager_init()
  if(present(err_msg)) err_msg = ''
  if(present(zero_year_warning)) then
-   zero_year_warning_local = zero_year_warning 
+   zero_year_warning_local = zero_year_warning
  else
-   zero_year_warning_local = .true. 
+   zero_year_warning_local = .true.
  endif
  if(present(allow_rounding)) then
-   allow_rounding_local = allow_rounding 
+   allow_rounding_local = allow_rounding
  else
-   allow_rounding_local = .true. 
+   allow_rounding_local = .true.
  endif
 
  string_sifted_left = adjustl(string)
@@ -2189,7 +2189,7 @@ end function get_ticks_per_second
    return
  endif
 
-! Is this a leap year? 
+! Is this a leap year?
  leap = (modulo(year,4) == 0)
 ! compute number of complete leap years from year 1
  nleapyr = (year - 1) / 4
@@ -2356,7 +2356,7 @@ end function get_ticks_per_second
 
 !   <OVERVIEW>
 !      Increments the date represented by a time interval and the
-!      default calendar type by a number of seconds, etc. 
+!      default calendar type by a number of seconds, etc.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      Given a time and some date increment, computes a new time.  Depending
@@ -2384,7 +2384,7 @@ end function get_ticks_per_second
 !     similar to this:
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
-!   <OUT NAME="increment_date" TYPE="time_type"> A new time based on the input 
+!   <OUT NAME="increment_date" TYPE="time_type"> A new time based on the input
 !         time interval and the calendar type.
 !   </OUT>
 !   <IN NAME="allow_neg_inc" TYPE="logical, optional" DIM="(scalar)" DEFAULT=".true.">
@@ -2447,7 +2447,7 @@ end function get_ticks_per_second
      Time, oyears, omonths, odays, ohours, ominutes, oseconds, oticks, increment_date, err_msg_local)) then
    if(error_handler('function increment_date', err_msg_local, err_msg)) return
  endif
- 
+
  end function increment_date
 
 ! </FUNCTION>
@@ -2473,7 +2473,7 @@ end function get_ticks_per_second
  integer,          intent(in)  :: years, months, days, hours, minutes, seconds, ticks
  type(time_type),  intent(out) :: Time_out
  character(len=*), intent(out) :: err_msg
- integer :: cyear , cmonth , cday , chour , cminute , csecond , ctick 
+ integer :: cyear , cmonth , cday , chour , cminute , csecond , ctick
  logical :: mode_1, mode_2
 
  err_msg = ''
@@ -2550,7 +2550,7 @@ end function get_ticks_per_second
 
 !   <OVERVIEW>
 !      Decrements the date represented by a time interval and the
-!      default calendar type by a number of seconds, etc. 
+!      default calendar type by a number of seconds, etc.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      Given a time and some date decrement, computes a new time.  Depending
@@ -2578,7 +2578,7 @@ end function get_ticks_per_second
 !     similar to this:
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
-!   <OUT NAME="decrement_date" TYPE="time_type"> A new time based on the input 
+!   <OUT NAME="decrement_date" TYPE="time_type"> A new time based on the input
 !         time interval and the calendar type.
 !   </OUT>
 !   <IN NAME="allow_neg_inc" TYPE="logical, optional" DIM="(scalar)" DEFAULT=".true.">
@@ -2834,7 +2834,7 @@ end function leap_year_julian
 
 function leap_year_thirty(Time)
 
-! No leap years in thirty day months, included for transparency. 
+! No leap years in thirty day months, included for transparency.
 
 logical :: leap_year_thirty
 type(time_type), intent(in) :: Time
@@ -2862,7 +2862,7 @@ end function leap_year_no_leap
 ! <FUNCTION NAME="length_of_year">
 
 !   <OVERVIEW>
-!      Returns the mean length of the year in the default calendar setting. 
+!      Returns the mean length of the year in the default calendar setting.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      There are no arguments in this function. It returns the mean
@@ -2949,7 +2949,7 @@ function day_of_year(time)
 
   integer :: second, minute, hour, day, month, year
   type(time_type) :: t
-  
+
   call get_date(time,year,month,day,hour,minute,second)
   t = time-set_date(year,1,1,0,0,0)
   day_of_year = t%days + 1
@@ -3057,12 +3057,12 @@ end function days_in_year_no_leap
 
 !   <OVERVIEW>
 !      Returns a character string containing the name of the
-!      month corresponding to month number n. 
+!      month corresponding to month number n.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      Returns a character string containing the name of the
 !      month corresponding to month number n. Definition is the
-!      same for all calendar types. 
+!      same for all calendar types.
 !   </DESCRIPTION>
 !   <TEMPLATE> month_name(n) </TEMPLATE>
 !   <IN NAME="n" TYPE="integer">Month number.</IN>
@@ -3081,7 +3081,7 @@ character (len=9) :: month_name
 integer, intent(in) :: n
 character (len = 9), dimension(12) :: months = (/'January  ', 'February ', &
           'March    ', 'April    ', 'May      ', 'June     ', 'July     ', &
-          'August   ', 'September', 'October  ', 'November ', 'December '/) 
+          'August   ', 'September', 'October  ', 'November ', 'December '/)
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -3108,7 +3108,7 @@ end function month_name
  error_handler = .false.
  if(present(err_msg)) then
    err_msg = err_msg_local
-   error_handler = .true.    
+   error_handler = .true.
  else
    call error_mesg(trim(routine),trim(err_msg_local),FATAL)
  endif
@@ -3150,7 +3150,7 @@ end subroutine time_manager_init
 !   </DESCRIPTION>
 !   <TEMPLATE>print_time (time,str,unit)</TEMPLATE>
 !   <IN NAME="time" TYPE="time_type"> Time that will be printed. </IN>
-!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:"> 
+!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:">
 !      Character string that precedes the printed time or date.
 !   </IN>
 !   <IN NAME="unit" TYPE="integer">
@@ -3201,7 +3201,7 @@ end subroutine print_time
 !   <TEMPLATE> print_date (time,str,unit)
 !   </TEMPLATE>
 !   <IN NAME="time" TYPE="time_type"> Time that will be printed. </IN>
-!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:"> 
+!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:">
 !      Character string that precedes the printed time or date.
 !   </IN>
 !   <IN NAME="unit" TYPE="integer">
@@ -3287,7 +3287,7 @@ end function valid_calendar_types
 ! </FUNCTION>
 !------------------------------------------------------------------------
 
-!--- get the a character string that represents the time. The format will be 
+!--- get the a character string that represents the time. The format will be
 !--- yyyymmdd.hhmmss
 function date_to_string(time, err_msg)
   type(time_type),  intent(in)            :: time
@@ -3324,7 +3324,7 @@ end module time_manager_mod
 
 ! <INFO>
 
-!   <TESTPROGRAM NAME="time_main2">  
+!   <TESTPROGRAM NAME="time_main2">
 !    <PRE>
 !        use time_manager_mod
 !        implicit none
@@ -3334,46 +3334,46 @@ end module time_manager_mod
 !        integer :: num_steps, i, days, months, years, seconds, minutes, hours
 !        integer :: months2, length
 !        real :: astro_days
-!   
+!
 !   !Set calendar type
 !   !    call set_calendar_type(THIRTY_DAY_MONTHS)
 !        call set_calendar_type(JULIAN)
 !   !    call set_calendar_type(NOLEAP)
-!   
+!
 !   ! Set timestep
 !        dt = set_time(1100, 0)
-!   
+!
 !   ! Set initial date
 !        init_date = set_date(1992, 1, 1)
-!   
+!
 !   ! Set date for astronomy delta calculation
 !        astro_base_date = set_date(1970, 1, 1, 12, 0, 0)
-!   
+!
 !   ! Copy initial time to model current time
 !        time = init_date
-!   
+!
 !   ! Determine how many steps to do to run one year
 !        final_date = increment_date(init_date, years = 1)
 !        num_steps = (final_date - init_date) / dt
 !        write(*, *) 'Number of steps is' , num_steps
-!   
+!
 !   ! Want to compute radiation at initial step, then every two hours
 !        next_rad_time = time + set_time(7200, 0)
-!   
+!
 !   ! Test repeat alarm
 !        repeat_alarm_freq = set_time(0, 1)
 !        repeat_alarm_length = set_time(7200, 0)
-!   
+!
 !   ! Loop through a year
 !        do i = 1, num_steps
-!   
+!
 !   ! Increment time
 !        time = time + dt
-!   
+!
 !   ! Test repeat alarm
 !        if(repeat_alarm(time, repeat_alarm_freq, repeat_alarm_length)) &
 !        write(*, *) 'REPEAT ALARM IS TRUE'
-!   
+!
 !   ! Should radiation be computed? Three possible tests.
 !   ! First test assumes exact interval; just ask if times are equal
 !   !     if(time == next_rad_time) then
@@ -3383,15 +3383,15 @@ end module time_manager_mod
 !         if(interval_alarm(time, dt, next_rad_time, set_time(7200, 0))) then
 !           call get_date(time, years, months, days, hours, minutes, seconds)
 !           write(*, *) days, month_name(months), years, hours, minutes, seconds
-!   
+!
 !   ! Need to compute real number of days between current time and astro_base
 !           call get_time(time - astro_base_date, seconds, days)
 !           astro_days = days + seconds / 86400.
 !   !       write(*, *) 'astro offset ', astro_days
 !        end if
-!   
+!
 !   ! Can compute daily, monthly, yearly, hourly, etc. diagnostics as for rad
-!   
+!
 !   ! Example: do diagnostics on last time step of this month
 !        call get_date(time + dt, years, months2, days, hours, minutes, seconds)
 !        call get_date(time, years, months, days, hours, minutes, seconds)
@@ -3399,33 +3399,33 @@ end module time_manager_mod
 !           write(*, *) 'last timestep of month'
 !           write(*, *) days, months, years, hours, minutes, seconds
 !        endif
-!   
+!
 !   ! Example: mid-month diagnostics; inefficient to make things clear
 !        length = days_in_month(time)
 !        call get_date(time, years, months, days, hours, minutes, seconds)
 !        mid_date = set_date(years, months, 1) + set_time(0, length) / 2
-!   
+!
 !        if(time < mid_date .and. (mid_date - time) < dt) then
 !           write(*, *) 'mid-month time'
 !           write(*, *) days, months, years, hours, minutes, seconds
 !        endif
-!   
+!
 !        end do
-!   
+!
 !    </PRE>
 !   end program time_main2
 
 !   </TESTPROGRAM>
 !   <NOTE>
-!     The <a name="base date">base date</a> is implicitly defined so users don't 
-!     need to be concerned with it. For the curious, the base date is defined as 
+!     The <a name="base date">base date</a> is implicitly defined so users don't
+!     need to be concerned with it. For the curious, the base date is defined as
 !     0 seconds, 0 minutes, 0 hours, day 1, month 1, year 1
 !   </NOTE>
 !   <NOTE>
 !     Please note that a time is a positive definite quantity.
 !   </NOTE>
 !   <NOTE>
-!     See the <LINK SRC="TEST PROGRAM">Test Program </LINK> for a simple program 
+!     See the <LINK SRC="TEST PROGRAM">Test Program </LINK> for a simple program
 !     that shows some of the capabilities of the time manager.
 !   </NOTE>
 ! </INFO>

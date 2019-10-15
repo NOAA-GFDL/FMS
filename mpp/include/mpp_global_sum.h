@@ -28,7 +28,7 @@
     MPP_TYPE_, dimension(:,:),       allocatable :: field2D
     MPP_TYPE_, dimension(:,:),       allocatable :: global2D
     MPP_TYPE_, dimension(MAX_TILES), save        :: gsum, nbrgsum, mygsum
-    
+
     integer :: i,j, ioff,joff, isc, iec, jsc, jec, is, ie, js, je, ishift, jshift, ioffset, joffset
     integer :: gxsize, gysize
     integer :: global_flag, tile, ntile, nlist, n, list, m
@@ -45,7 +45,7 @@
 
     if( size(field,1).EQ.domain%x(tile)%compute%size+ishift .AND. size(field,2).EQ.domain%y(tile)%compute%size+jshift )then
 !field is on compute domain
-        ioff = -domain%x(tile)%compute%begin + 1 
+        ioff = -domain%x(tile)%compute%begin + 1
         joff = -domain%y(tile)%compute%begin + 1
     else if( size(field,1).EQ.domain%x(tile)%memory%size+ishift .AND. size(field,2).EQ.domain%y(tile)%memory%size+jshift )then
 !field is on data domain
@@ -76,17 +76,17 @@
        global2D = 0.
 
        !call mpp_global_field( domain, field2D, global2D, position=position, tile_count=tile_count )
-       
+
        if ( present( tile_count ) ) then
            call mpp_global_field( domain, field2D, global2D, position=position, tile_count=tile_count )
-       else    
+       else
            call mpp_global_field( domain, field2D, global2D, position=position )
        endif
-       
+
        ioffset = domain%x(tile)%goffset*ishift; joffset = domain%y(tile)%goffset*jshift
        mygsum(tile) = sum(global2D(1:gxsize+ioffset,1:gysize+joffset))
        deallocate(global2D, field2d)
-       if( tile == ntile) then 
+       if( tile == ntile) then
           if(domain%ntiles == 1 ) then
              MPP_GLOBAL_SUM_ = mygsum(tile)
           else if( nlist == 1) then
@@ -121,7 +121,7 @@
     else if ( global_flag == BITWISE_EFP_SUM )then
 #ifdef DO_EFP_SUM_
        !this is bitwise across different PE counts using EFP sum
-       if( ntile > 1 ) then 
+       if( ntile > 1 ) then
           call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: multiple tile per pe is not supported for BITWISE_EFP_SUM')
        endif
        allocate( field2D (isc:iec,jsc:jec) )
@@ -137,7 +137,7 @@
           MPP_GLOBAL_SUM_ = mpp_reproducing_sum(field2D, overflow_check=overflow_check)
        endif
 #else
-        call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: BITWISE_EFP_SUM is only implemented for real number, contact developer') 
+        call mpp_error( FATAL, 'MPP_GLOBAL_SUM_: BITWISE_EFP_SUM is only implemented for real number, contact developer')
 #endif
     else  !this is not bitwise-exact across different PE counts
        ioffset = domain%x(tile)%loffset*ishift; joffset = domain%y(tile)%loffset*jshift

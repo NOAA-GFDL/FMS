@@ -40,16 +40,16 @@ module stock_constants_mod
   ! flux integrated increments at present time.
 
   integer, parameter :: NSIDES  = 3         ! top, bottom, side
- 
+
   type stock_type ! per PE values
      real  :: q_start = 0.0    ! total stocks at start time
-     real  :: q_now   = 0.0    ! total stocks at time t    
-     
+     real  :: q_now   = 0.0    ! total stocks at time t
+
      ! The dq's below are the stocks increments at the present time
      ! delta_t * surf integr of flux
      ! one for each side (ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE)
-     real  :: dq(NSIDES)    = 0.0    ! stock increments at present time on the Ice   grid     
-     real  :: dq_IN(NSIDES) = 0.0    ! stock increments at present time on the Ocean grid       
+     real  :: dq(NSIDES)    = 0.0    ! stock increments at present time on the Ice   grid
+     real  :: dq_IN(NSIDES) = 0.0    ! stock increments at present time on the Ocean grid
   end type stock_type
 
   type(stock_type), save, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
@@ -116,41 +116,41 @@ contains
        write(stocks_file,*) '      calculations are in error by an order which scales as the inverse'
        write(stocks_file,*) '      of the number of time steps.'
        write(stocks_file,*) ' '
-       write(stocks_file,*) '======================================================================='       
+       write(stocks_file,*) '======================================================================='
 
 
-       write(stocks_file,*) '======================Initial Stock S(0)==============================='       
-!The following produces  formatString='(5x,a,a,12x,a,a, 9x)' but is general to handle more elements         
+       write(stocks_file,*) '======================Initial Stock S(0)==============================='
+!The following produces  formatString='(5x,a,a,12x,a,a, 9x)' but is general to handle more elements
        formatString= '(5x'
        do i=1,NELEMS_report
           s = 25-len_trim(STOCK_NAMES(i))-len_trim(STOCK_UNITS(i))
-          write(space,'(i2)') s 
+          write(space,'(i2)') s
           formatString= trim(formatString)//',a,a,'//trim(space)
-          formatString= trim(formatString)//trim('x') 
+          formatString= trim(formatString)//trim('x')
        enddo
        formatString= trim(formatString)//')'
-       
+
        write(stocks_file,formatString) (trim(STOCK_NAMES(i)),trim(STOCK_UNITS(i)), i=1,NELEMS_report)
 
 !The following produces  formatString=' (a,x,es22.15,3x,es22.15,3x)' but is general to handle more elements
        formatString= '(a,x'
        do i=1,NELEMS_report
-          write(space,'(i2)') s 
+          write(space,'(i2)') s
           formatString= trim(formatString)//',es22.15,3x'
        enddo
        formatString= trim(formatString)//')'
-       
-      
-       write(stocks_file,formatString) 'ATM', (val_atm(i), i=1,NELEMS_report) 
+
+
+       write(stocks_file,formatString) 'ATM', (val_atm(i), i=1,NELEMS_report)
        write(stocks_file,formatString) 'LND', (val_lnd(i), i=1,NELEMS_report)
        write(stocks_file,formatString) 'ICE', (val_ice(i), i=1,NELEMS_report)
        write(stocks_file,formatString) 'OCN', (val_ocn(i), i=1,NELEMS_report)
 
-       write(stocks_file,*) '========================================================================'       
+       write(stocks_file,*) '========================================================================'
        write(stocks_file,'(a)'  ) ' '!blank line
 
     end if
-    
+
     call stocks_set_init_time(Time)
 
   end subroutine stocks_report_init
@@ -166,8 +166,8 @@ contains
     integer :: iday0, isec0, iday, isec, hours
     real    :: days
     integer :: diagID , comp,elem,i
-    integer, parameter :: initID = -2 ! initial value for diag IDs. Must not be equal to the value 
-    ! that register_diag_field returns when it can't register the filed -- otherwise the registration 
+    integer, parameter :: initID = -2 ! initial value for diag IDs. Must not be equal to the value
+    ! that register_diag_field returns when it can't register the filed -- otherwise the registration
     ! is attempted every time this subroutine is called
 
     integer, dimension(NCOMPS,NELEMS), save :: f_valueDiagID = initID
@@ -182,11 +182,11 @@ contains
     if(mpp_pe()==mpp_root_pe()) then
        call get_time(init_time, isec0, iday0)
        call get_time(Time, isec, iday)
-       
+
        hours = iday*24 + isec/3600 - iday0*24 - isec0/3600
-       days  = hours/24.  
+       days  = hours/24.
        write(stocks_file,*) '==============================================='
-       write(stocks_file,'(a,f12.3)') 't = TimeSinceStart[days]= ',days 
+       write(stocks_file,'(a,f12.3)') 't = TimeSinceStart[days]= ',days
        write(stocks_file,*) '==============================================='
     endif
 
@@ -205,7 +205,7 @@ contains
           f_ocn_btf(comp)  = stck%dq_IN( ISTOCK_BOTTOM )
 
           q_start(comp) = stck%q_start
-          q_now(comp)   = stck%q_now 
+          q_now(comp)   = stck%q_now
 
           call mpp_sum(f_ice_grid(comp))
           call mpp_sum(f_ocn_grid(comp))
@@ -285,7 +285,7 @@ contains
 
        if(mpp_pe()==mpp_root_pe()) then
 !          write(stocks_file,'(a)'  ) ' '!blank line
-!          write(stocks_file,'(a,f12.3)') 't = TimeSinceStart[days]= ',days 
+!          write(stocks_file,'(a,f12.3)') 't = TimeSinceStart[days]= ',days
 !          write(stocks_file,'(a)'  )   ' '!blank line
 !          write(stocks_file,'(a,30x,a,20x,a,20x,a,20x,a)') 'Component ','ATM','LND','ICE','OCN'
 !          write(stocks_file,'(55x,a,20x,a,20x,a,20x,a)')  'ATM','LND','ICE','OCN'
@@ -301,16 +301,16 @@ contains
           write(stocks_file,formatString) 'Input =F(t)               ',STOCK_UNITS(elem),&
                ( f_value(i), i=1,NCOMPS)
           write(stocks_file,formatString) 'Diff  =F(t) - (S(t)-S(0)) ',STOCK_UNITS(elem),&
-               ( f_value(i) - c_value(i), i=1,NCOMPS)                           
+               ( f_value(i) - c_value(i), i=1,NCOMPS)
           write(stocks_file,formatString) 'Error =Diff/S(0)          ','[NonDim]    ', &
-               ((f_value(i) - c_value(i))/(1+q_start(i)), i=1,NCOMPS)  !added 1 to avoid div by zero. Assuming q_start large          
+               ((f_value(i) - c_value(i))/(1+q_start(i)), i=1,NCOMPS)  !added 1 to avoid div by zero. Assuming q_start large
 
           write(stocks_file,'(a)'  ) ' '!blank line
           formatString = '(a,a,a,6x,es22.15)'
           write(stocks_file,formatString) 'Lost Stocks in the exchange between Ice and Ocean ',trim(STOCK_NAMES(elem)),trim(STOCK_UNITS(elem)),  &
                f_ice_grid(ISTOCK_OCN) - f_ocn_grid(ISTOCK_OCN) + f_ocn_btf(ISTOCK_OCN)
 
-          write(stocks_file,'(a)') ' ' !blank line  
+          write(stocks_file,'(a)') ' ' !blank line
           write(stocks_file,'(a)') ' ' !blank line
 
        endif
@@ -321,7 +321,7 @@ contains
   subroutine stocks_set_init_time(Time)
     type(time_type)     , intent(in) :: Time
     init_time = Time
-    
+
   end subroutine stocks_set_init_time
 
 end module stock_constants_mod

@@ -8,5 +8,5 @@ test_diag_manager_13
 #output variables
  "test_diag_manager_mod", "dat2", "dat2", "diag_test_13_file1",  "all", .false., "none", 2
 
-# Test of WARNING message that no data is written when run length is less than output interval  
+# Test of WARNING message that no data is written when run length is less than output interval
  "test_mod",              "dat2", "dat2", "diag_test_13_file2",  "all", .false., "none", 2

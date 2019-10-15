@@ -56,10 +56,10 @@ int find_nodenum(int mynodedev) {
   int i;
   struct stat sbuf;
   char buff[80];
-  for (i=0; ;i++)	{
+  for (i=0; ;i++) {
     sprintf(buff,"/hw/nodenum/%d",i);
     stat(buff, &sbuf);
-    if (sbuf.st_ino	== mynodedev)
+    if (sbuf.st_ino == mynodedev)
       return(i);
   }
 

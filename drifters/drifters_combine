@@ -40,7 +40,7 @@ class drifters_combine:
         self.global_atts = {}
         self.position_atts = {}
         self.field_atts = {}
-        
+
         for f in filenames:
             nc =  NetCDFFile(f, 'r')
             index_time= nc.variables['index_time'][:]
@@ -53,7 +53,7 @@ class drifters_combine:
             # get global attributes
             for a in nc.__dict__:
                 self.global_atts[a] = nc.__dict__[a]
-            
+
             # get attributes
             for a in nc.variables['positions'].__dict__:
                 if not self.position_atts.has_key(a):
@@ -91,12 +91,12 @@ class drifters_combine:
     def save(self, outfile):
 
         nc = NetCDFFile(outfile,'w')
-        
+
         nc.createDimension('it_id', None)
         nc.createDimension('nd', self.nd)
         if self.nf>0:
             nc.createDimension('nf', self.nf)
-        
+
         nc_index_time = nc.createVariable('index_time', Num.Int, ('it_id',))
         nc_time       = nc.createVariable('time', Num.Float64, ('it_id',))
         nc_ids        = nc.createVariable('ids', Num.Int, ('it_id',))
@@ -109,7 +109,7 @@ class drifters_combine:
         for a in self.position_atts:
             setattr(nc_positions, a, self.position_atts[a])
 
-        if self.nf>0:           
+        if self.nf>0:
             nc_fields     = nc.createVariable('fields', Num.Float64, \
                                           ('it_id', 'nf'))
             for a in self.field_atts:
@@ -127,10 +127,10 @@ class drifters_combine:
                 if self.nf>0:
                     nc_fields[k:k+1,:]= self.data[it][id][1+self.nd:1+self.nd+self.nf]
                 k += 1
-               
+
         nc.close()
-                    
-                
+
+
 ###############################################################################
 
 
@@ -153,7 +153,7 @@ def main():
                   help='The combined files will be saved as OUTPUT. By default OUTPUT=FILE.',
                   default='',
                   )
-    
+
     options, args = parser.parse_args(sys.argv)
     fname = options.filename
     if not fname:
@@ -170,9 +170,9 @@ def main():
         else:
             print 'ERROR: pe range should be in format [-p|--pe_range] "min_pe..max_pe".'
             sys.exit(1)
-            
+
         fnames = [fname + '.' + str(pe).zfill(4) for pe in range(int(min_pe), int(max_pe)+1)]
-        
+
     else:
         fnames = glob.glob(fname + '.' + '????')
 
@@ -183,5 +183,5 @@ def main():
         ofile = fname
 
     vfc.save(ofile)
-    
+
 if __name__=='__main__': main()
