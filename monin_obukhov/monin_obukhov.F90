@@ -24,11 +24,11 @@ module monin_obukhov_mod
 !
 !                         MONIN-OBUKHOV MODULE
 !
-!          Routines for computing surface drag coefficients 
-!                 from data at the lowest model level 
-!              and for computing the profile of fields 
+!          Routines for computing surface drag coefficients
+!                 from data at the lowest model level
+!              and for computing the profile of fields
 !           between the lowest model level and the ground
-!                  using Monin-Obukhov scaling 
+!                  using Monin-Obukhov scaling
 !
 !=======================================================================
 
@@ -85,9 +85,9 @@ character(len=128) :: tagname = '$Name$'
 !  DEFAULT VALUES OF NAMELIST PARAMETERS:
 
 real    :: rich_crit      = 2.0
-real    :: drag_min_heat  = 1.e-05          
-real    :: drag_min_moist = 1.e-05          
-real    :: drag_min_mom   = 1.e-05          
+real    :: drag_min_heat  = 1.e-05
+real    :: drag_min_moist = 1.e-05
+real    :: drag_min_mom   = 1.e-05
 logical :: neutral        = .false.
 integer :: stable_option  = 1
 real    :: zeta_trans     = 0.5
@@ -104,7 +104,7 @@ namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
 
 real, parameter    :: small  = 1.e-04
 real               :: b_stab, r_crit, lambda, rich_trans
-real               :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom 
+real               :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
 logical            :: module_is_initialized = .false.
 
 
@@ -139,7 +139,7 @@ integer :: unit, ierr, io, logunit
            logunit = stdlog()
            write (logunit, nml=monin_obukhov_nml)
       endif
-      
+
 !----------------------------------------------------------------------
 
 if(rich_crit.le.0.25)  call error_mesg( &
@@ -167,7 +167,7 @@ if(stable_option == 2 .and. zeta_trans < 0) call error_mesg( &
         'zeta_trans must be positive', FATAL)
 
 b_stab = 1.0/rich_crit
-r_crit = 0.95*rich_crit  ! convergence can get slow if one is 
+r_crit = 0.95*rich_crit  ! convergence can get slow if one is
                          ! close to rich_crit
 
 sqrt_drag_min_heat = 0.0
@@ -221,7 +221,7 @@ lavail = .false.
 if(present(avail)) lavail = .true.
 
 
-if(lavail) then 
+if(lavail) then
    if (count(avail) .eq. 0) return
    call monin_obukhov_drag_1d(grav, vonkarm,               &
         & error, zeta_min, max_iter, small,                         &
@@ -344,7 +344,7 @@ real, dimension(size(rich(:))) ::   &
           ln_z_z0, ln_z_zt, ln_z_zq, zeta,                    &
           phi_m, phi_m_0, phi_t, phi_t_0, rzeta,              &
           zeta_0, zeta_t, zeta_q, df_m, df_t
-          
+
 logical, dimension(size(rich(:))) :: mask_1
 
 
@@ -360,7 +360,7 @@ mask_1 = mask
 
 ! initial guess
 
-where(mask_1) 
+where(mask_1)
   zeta = rich*ln_z_z0*ln_z_z0/ln_z_zt
 elsewhere
   zeta = 0.0
@@ -368,18 +368,18 @@ end where
 
 where (mask_1 .and. rich >= 0.0)
   zeta = zeta/(1.0 - rich/rich_crit)
-end where 
+end where
 
 iter_loop: do iter = 1, max_iter
 
-  where (mask_1 .and. abs(zeta).lt.zeta_min) 
+  where (mask_1 .and. abs(zeta).lt.zeta_min)
     zeta = 0.0
     f_m = ln_z_z0
     f_t = ln_z_zt
     f_q = ln_z_zq
     mask_1 = .false.  ! don't do any more calculations at these pts
   end where
-  
+
   where (mask_1)
     rzeta  = 1.0/zeta
     zeta_0 = zeta/z_z0
@@ -395,7 +395,7 @@ iter_loop: do iter = 1, max_iter
   call mo_derivative_m(phi_m_0, zeta_0, mask_1)
   call mo_derivative_t(phi_t  , zeta  , mask_1)
   call mo_derivative_t(phi_t_0, zeta_t, mask_1)
-                   
+
   call mo_integral_m(f_m, zeta, zeta_0, ln_z_z0, mask_1)
   call mo_integral_tq(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
 
@@ -403,19 +403,19 @@ iter_loop: do iter = 1, max_iter
     df_m  = (phi_m - phi_m_0)*rzeta
     df_t  = (phi_t - phi_t_0)*rzeta
     rich_1 = zeta*f_t/(f_m*f_m)
-    d_rich = rich_1*( rzeta +  df_t/f_t - 2.0 *df_m/f_m) 
-    correction = (rich - rich_1)/d_rich  
-    corr = min(abs(correction),abs(correction/zeta)) 
+    d_rich = rich_1*( rzeta +  df_t/f_t - 2.0 *df_m/f_m)
+    correction = (rich - rich_1)/d_rich
+    corr = min(abs(correction),abs(correction/zeta))
       ! the criterion corr < error seems to work ok, but is a bit arbitrary
       !  when zeta is small the tolerance is reduced
   end where
-  
+
   max_cor= maxval(corr)
 
   if(max_cor > error) then
-    mask_1 = mask_1 .and. (corr > error)  
+    mask_1 = mask_1 .and. (corr > error)
        ! change the mask so computation proceeds only on non-converged points
-    where(mask_1) 
+    where(mask_1)
       zeta = zeta + correction
     end where
     cycle iter_loop
@@ -446,17 +446,17 @@ real   , dimension(size(zeta(:))) :: x
 stable   = mask .and. zeta >= 0.0
 unstable = mask .and. zeta <  0.0
 
-where (unstable) 
+where (unstable)
   x     = (1 - 16.0*zeta  )**(-0.5)
   phi_m = sqrt(x)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
 end where
 
-if(stable_option == 1) then 
+if(stable_option == 1) then
 
-  where (stable) 
+  where (stable)
     phi_m = 1.0 + zeta  *(5.0 + b_stab*zeta)/(1.0 + zeta)
   end where
-  
+
 else if(stable_option == 2) then
 
   where (stable .and. zeta < zeta_trans)
@@ -486,16 +486,16 @@ logical, dimension(size(zeta(:))) :: stable, unstable
 stable   = mask .and. zeta >= 0.0
 unstable = mask .and. zeta <  0.0
 
-where (unstable) 
+where (unstable)
   phi_t = (1 - 16.0*zeta)**(-0.5)
 end where
 
-if(stable_option == 1) then 
+if(stable_option == 1) then
 
-  where (stable) 
+  where (stable)
     phi_t = 1.0 + zeta*(5.0 + b_stab*zeta)/(1.0 + zeta)
   end where
-  
+
 else if(stable_option == 2) then
 
   where (stable .and. zeta < zeta_trans)
@@ -522,19 +522,19 @@ real    , intent(in),  dimension(:) :: zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq
 logical , intent(in),  dimension(:) :: mask
 
 real, dimension(size(zeta(:))) :: x, x_t, x_q
-                               
+
 logical, dimension(size(zeta(:))) :: stable, unstable, &
                                   weakly_stable, strongly_stable
 
 stable   = mask .and. zeta >= 0.0
 unstable = mask .and. zeta <  0.0
 
-where(unstable) 
+where(unstable)
 
   x     = sqrt(1 - 16.0*zeta)
   x_t   = sqrt(1 - 16.0*zeta_t)
   x_q   = sqrt(1 - 16.0*zeta_q)
-  
+
   psi_t = ln_z_zt - 2.0*log( (1.0 + x)/(1.0 + x_t) )
   psi_q = ln_z_zq - 2.0*log( (1.0 + x)/(1.0 + x_q) )
 
@@ -542,43 +542,43 @@ end where
 
 if( stable_option == 1) then
 
-  where (stable) 
-  
+  where (stable)
+
     psi_t = ln_z_zt + (5.0 - b_stab)*log((1.0 + zeta)/(1.0 + zeta_t)) &
-       + b_stab*(zeta - zeta_t) 
+       + b_stab*(zeta - zeta_t)
     psi_q = ln_z_zq + (5.0 - b_stab)*log((1.0 + zeta)/(1.0 + zeta_q)) &
-       + b_stab*(zeta - zeta_q) 
-       
+       + b_stab*(zeta - zeta_q)
+
   end where
-  
+
 else if (stable_option == 2) then
 
   weakly_stable   = stable .and. zeta <= zeta_trans
   strongly_stable = stable .and. zeta >  zeta_trans
 
   where (weakly_stable)
-    psi_t = ln_z_zt + 5.0*(zeta - zeta_t) 
-    psi_q = ln_z_zq + 5.0*(zeta - zeta_q) 
+    psi_t = ln_z_zt + 5.0*(zeta - zeta_t)
+    psi_q = ln_z_zq + 5.0*(zeta - zeta_q)
   end where
-  
+
   where(strongly_stable)
     x = (lambda - 1.0)*log(zeta/zeta_trans) + b_stab*(zeta - zeta_trans)
   endwhere
-  
+
   where (strongly_stable .and. zeta_t <= zeta_trans)
     psi_t = ln_z_zt + x + 5.0*(zeta_trans - zeta_t)
   end where
   where (strongly_stable .and. zeta_t > zeta_trans)
     psi_t = lambda*ln_z_zt + b_stab*(zeta  - zeta_t)
   endwhere
-  
+
   where (strongly_stable .and. zeta_q <= zeta_trans)
     psi_q = ln_z_zq + x + 5.0*(zeta_trans - zeta_q)
   end where
   where (strongly_stable .and. zeta_q > zeta_trans)
     psi_q = lambda*ln_z_zq + b_stab*(zeta  - zeta_q)
   endwhere
-  
+
 end if
 
 return
@@ -595,58 +595,58 @@ real    , intent(in),  dimension(:) :: zeta, zeta_0, ln_z_z0
 logical , intent(in),  dimension(:) :: mask
 
 real, dimension(size(zeta(:))) :: x, x_0, x1, x1_0, num, denom, y
-                               
+
 logical, dimension(size(zeta(:))) :: stable, unstable, &
                                   weakly_stable, strongly_stable
 
 stable   = mask .and. zeta >= 0.0
 unstable = mask .and. zeta <  0.0
 
-where(unstable) 
+where(unstable)
 
   x     = sqrt(1 - 16.0*zeta)
   x_0   = sqrt(1 - 16.0*zeta_0)
 
   x      = sqrt(x)
   x_0    = sqrt(x_0)
-  
+
   x1     = 1.0 + x
   x1_0   = 1.0 + x_0
-  
+
   num    = x1*x1*(1.0 + x*x)
   denom  = x1_0*x1_0*(1.0 + x_0*x_0)
   y      = atan(x) - atan(x_0)
   psi_m  = ln_z_z0 - log(num/denom) + 2*y
-  
+
 end where
 
 if( stable_option == 1) then
 
-  where (stable) 
+  where (stable)
     psi_m = ln_z_z0 + (5.0 - b_stab)*log((1.0 + zeta)/(1.0 + zeta_0)) &
-       + b_stab*(zeta - zeta_0) 
+       + b_stab*(zeta - zeta_0)
   end where
-  
+
 else if (stable_option == 2) then
 
   weakly_stable   = stable .and. zeta <= zeta_trans
   strongly_stable = stable .and. zeta >  zeta_trans
 
   where (weakly_stable)
-    psi_m = ln_z_z0 + 5.0*(zeta - zeta_0) 
+    psi_m = ln_z_z0 + 5.0*(zeta - zeta_0)
   end where
-  
+
   where(strongly_stable)
     x = (lambda - 1.0)*log(zeta/zeta_trans) + b_stab*(zeta - zeta_trans)
   endwhere
-  
+
   where (strongly_stable .and. zeta_0 <= zeta_trans)
     psi_m = ln_z_z0 + x + 5.0*(zeta_trans - zeta_0)
   end where
   where (strongly_stable .and. zeta_0 > zeta_trans)
     psi_m = lambda*ln_z_z0 + b_stab*(zeta  - zeta_0)
   endwhere
-  
+
 end if
 
 return
@@ -751,11 +751,11 @@ q_star_1(1) = q_star
 call mo_profile_1d (zref, zref_t, z_1, z0_1, zt_1, zq_1, &
                     u_star_1, b_star_1, q_star_1,        &
                     del_m_1, del_h_1, del_q_1)
-                    
+
 del_m = del_m_1(1)
 del_h = del_h_1(1)
 del_q = del_q_1(1)
-                    
+
 
 return
 end subroutine mo_profile_0d
@@ -776,7 +776,7 @@ do k = 1, size(zref(:))
   if(present(avail)) then
     call mo_profile_1d (zref(k), zref(k), z, z0, zt, zq, &
        u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
-  else 
+  else
       call mo_profile_1d (zref(k), zref(k), z, z0, zt, zq, &
        u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k))
   endif
@@ -1006,4 +1006,3 @@ end subroutine stable_mix_0d
 !=======================================================================
 
 end module monin_obukhov_mod
-

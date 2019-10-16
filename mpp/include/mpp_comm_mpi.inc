@@ -118,7 +118,7 @@
 
   open(unit_nml,file='input.nml', iostat=io_status)
   read(unit_nml,mpp_nml,iostat=io_status)
-  close(unit_nml)  
+  close(unit_nml)
 #endif
 
   if (io_status > 0) then
@@ -362,7 +362,7 @@ subroutine mpp_gsm_malloc( ptr, len )
   integer(KIND=MPI_ADDRESS_KIND), intent(in)    :: len
   real                   :: dummy
   integer                :: ierror
-  !argument ptr is a cray pointer, points to a dummy argument in this routine 
+  !argument ptr is a cray pointer, points to a dummy argument in this routine
   pointer( ptr, dummy )
   include "mpi_gsmf.h"
   if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GSM_MALLOC: You must first call mpp_init.' )
@@ -379,7 +379,7 @@ subroutine mpp_gsm_free( ptr )
   use mpp_data_mod,      only : peset, current_peset_num
   real                   :: dummy
   integer                :: ierror
-  !argument ptr is a cray pointer, points to a dummy argument in this routine 
+  !argument ptr is a cray pointer, points to a dummy argument in this routine
   pointer( ptr, dummy )
   include "mpi_gsmf.h"
 
@@ -436,7 +436,7 @@ end subroutine mpp_gsm_free
            call mpp_error( FATAL, 'mpp_broadcast_text: broadcasting from invalid PE.' )
 
       if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
- ! find the rank of from_pe in the pelist.     
+ ! find the rank of from_pe in the pelist.
       do i = 1, mpp_npes()
          if(peset(n)%list(i) == from_pe) then
              from_rank = i - 1
@@ -675,7 +675,7 @@ end subroutine mpp_gsm_free
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
 #include <mpp_transmit_mpi.h>
-#endif 
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_TRANSMIT_
@@ -1014,12 +1014,12 @@ end subroutine mpp_gsm_free
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
 #include <mpp_reduce_mpi.h>
-#endif       
+#endif
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_int4_0d
 #undef MPP_REDUCE_1D_
-#define MPP_REDUCE_1D_ mpp_min_int4_1d             
+#define MPP_REDUCE_1D_ mpp_min_int4_1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_TYPE_BYTELEN_

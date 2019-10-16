@@ -10,8 +10,8 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Find the needed mod files.
-AM_CPPFLAGS = -I${top_builddir}/horiz_interp -I${top_builddir}/fms	\
--I${top_builddir}/constants -I${top_builddir}/mpp			\
+AM_CPPFLAGS = -I${top_builddir}/horiz_interp -I${top_builddir}/fms \
+-I${top_builddir}/constants -I${top_builddir}/mpp \
 -I${top_builddir}/mosaic -I${top_builddir}/axis_utils
 
 # Link to the FMS library.
@@ -28,7 +28,7 @@ test2_horiz_interp_SOURCES = test2_horiz_interp.F90
 TESTS = test_horiz_interp.sh test2_horiz_interp.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = test_horiz_interp.sh test_horiz_interp.bats	\
+EXTRA_DIST = test_horiz_interp.sh test_horiz_interp.bats \
 test2_horiz_interp.sh test2_horiz_interp.bats input_base.nml
 
 # Clean up

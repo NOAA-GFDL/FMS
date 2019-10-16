@@ -160,7 +160,7 @@
 !!                     <td>pressure</td>
 !!                     <td>ocean_day</td>
 !!                     <td>.false.</td>
-!!                     <td>2</td> 
+!!                     <td>2</td>
 !!                   </tr>
 !!                 </table>
 !!               </td>
@@ -233,7 +233,7 @@
 !!          set_time set_date, increment_date, increment_time</td>
 !!    </tr>
 !! </table>
-module station_data_mod 
+module station_data_mod
 
 
 
@@ -330,7 +330,7 @@ end type group_field_type
 type global_field_type
    real, pointer       :: buffer(:,:)=>null()
    integer             :: counter
-end type global_field_type   
+end type global_field_type
 
 
 type(global_field_type),save            :: global_field
@@ -394,20 +394,20 @@ end interface
 subroutine station_data_init()
 
 character(len=128)    :: station_name
-real                  :: lat, lon  
+real                  :: lat, lon
 integer               :: iunit,nfiles,nfields,time_units,output_freq_units,j,station_id,io_status,logunit, ierr
 logical               :: init_verbose
 character(len=128)    :: record
 type file_part_type
    character(len=128) :: name
    integer            :: output_freq
-   character(len=10)  :: output_freq_units 
+   character(len=10)  :: output_freq_units
    integer            :: format    ! must always be 1 for netcdf files
    character(len=10)  :: time_unit
 end type file_part_type
 type field_part_type
    character(len=128) :: module_name,field_name,file_name
-   character(len=8)   :: time_method   
+   character(len=8)   :: time_method
    integer            :: pack
 end type field_part_type
 
@@ -420,7 +420,7 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   init_verbose = .false.
   total_pe = mpp_npes()
   allocate(pelist(total_pe))
-  call mpp_get_current_pelist(pelist, pelist_name) 
+  call mpp_get_current_pelist(pelist, pelist_name)
 
   !> read namelist
 #ifdef INTERNAL_FILE_NML
@@ -451,11 +451,11 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   call mpp_open(iunit, 'list_stations',form=MPP_ASCII,action=MPP_RDONLY)
   do while (num_stations<max_stations)
      read(iunit,'(a)',end=76,err=75) record
-     if (record(1:1) == '#') cycle 
+     if (record(1:1) == '#') cycle
      if(len_trim(record) < 1) cycle
-     read(record, *, end = 76, err = 75) station_name, lat, lon 
+     read(record, *, end = 76, err = 75) station_name, lat, lon
      station_id = get_station_id(lat, lon)
-     if(station_id > 0) then       
+     if(station_id > 0) then
         stations(station_id)%name = station_name
      else
         call error_mesg('station_data_init','station DUPLICATED in file list_stations', FATAL)
@@ -463,7 +463,7 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
      logunit = stdout()
      if( init_verbose.and.  mpp_pe() == mpp_root_pe()) &
           write(logunit,1)stations(station_id)%name,stations(station_id)%lat,stations(station_id)%lon
-1 format(1x,A18, 1x,F8.2,4x,F8.2)     
+1 format(1x,A18, 1x,F8.2,4x,F8.2)
 75   continue
   enddo
   call error_mesg('station_data_init','max_stations exceeded, increase it via namelist', FATAL)
@@ -471,7 +471,7 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   call mpp_close (iunit)
   logunit = stdout()
   if(init_verbose)  write(logunit, *)'*****************************************************************'
-     
+
   !> read station_data table
   call mpp_open(iunit, 'station_data_table',form=MPP_ASCII,action=MPP_RDONLY)
   !> Read in the global file labeling string
@@ -492,7 +492,7 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
   nfiles=0
   do while (nfiles <= max_files)
      read(iunit,'(a)',end=86,err=85) record
-     if (record(1:1) == '#') cycle        
+     if (record(1:1) == '#') cycle
      read(record,*,err=85,end=85)record_files%name,record_files%output_freq, &
           record_files%output_freq_units,record_files%format,record_files%time_unit
      if(record_files%format /= 1) cycle   !avoid reading field part
@@ -500,11 +500,11 @@ namelist /station_data_nml/ max_output_fields, max_stations,init_verbose
      output_freq_units = 0
      do j = 1, size(time_unit_list(:))
         if(record_files%time_unit == time_unit_list(j)) time_units = j
-        if(record_files%output_freq_units == time_unit_list(j)) output_freq_units = j     
+        if(record_files%output_freq_units == time_unit_list(j)) output_freq_units = j
      end do
      if(time_units == 0) &
           call error_mesg('station_data_init',' check time unit in station_data_table',FATAL)
-     if(output_freq_units == 0) & 
+     if(output_freq_units == 0) &
           call error_mesg('station_data_init',', check output_freq in station_data_table',FATAL)
       call init_file(record_files%name,record_files%output_freq, output_freq_units,time_units)
 85    continue
@@ -549,7 +549,7 @@ subroutine check_duplicate_output_fields()
 integer            :: i, j, tmp_file
 character(len=128) :: tmp_name, tmp_module
 
-if(num_output_fields <= 1) return 
+if(num_output_fields <= 1) return
 do i = 1, num_output_fields-1
    tmp_name = trim(output_fields(i)%output_name)
    tmp_file =  output_fields(i)%output_file
@@ -557,11 +557,11 @@ do i = 1, num_output_fields-1
    do j = i+1, num_output_fields
       if((tmp_name == trim(output_fields(j)%output_name)).and. &
            (tmp_file == output_fields(j)%output_file)) &
-           call error_mesg (' ERROR1 in station_data_table:', &           
+           call error_mesg (' ERROR1 in station_data_table:', &
            &' module/field '//tmp_module//'/'//tmp_name//' duplicated', FATAL)
       if((tmp_name == trim(output_fields(j)%output_name)).and. &
            (tmp_module == trim(output_fields(j)%module_name))) &
-           call error_mesg (' ERROR2 in station_data_table:', &           
+           call error_mesg (' ERROR2 in station_data_table:', &
            &' module/field '//tmp_module//'/'//tmp_name//' duplicated', FATAL)
    enddo
 enddo
@@ -585,7 +585,7 @@ function get_station_id(lat,lon)
   stations(num_stations)%lat = lat
   stations(num_stations)%lon = lon
   stations(num_stations)%need_compute = .false.
-  stations(num_stations)%global_i = -1; stations(num_stations)%global_j = -1 
+  stations(num_stations)%global_i = -1; stations(num_stations)%global_j = -1
   stations(num_stations)%local_i = -1 ; stations(num_stations)%local_j = -1
   get_station_id = num_stations
 end function get_station_id
@@ -636,7 +636,7 @@ subroutine init_output_field(module_name,field_name,file_name,time_method,pack)
   character(len=*), intent(in)           :: module_name, field_name, file_name
   character(len=*), intent(in)           :: time_method
   integer, intent(in)                    :: pack
-  integer                                :: out_num, file_num,num_fields, method_selected, l1 
+  integer                                :: out_num, file_num,num_fields, method_selected, l1
   character(len=8)                       :: t_method
   !> Get a number for this output field
   num_output_fields = num_output_fields + 1
@@ -660,7 +660,7 @@ subroutine init_output_field(module_name,field_name,file_name,time_method,pack)
    output_fields(out_num)%pack         = pack
    output_fields(out_num)%time_average = .false.
    output_fields(out_num)%time_min     = .false.
-   output_fields(out_num)%time_max     = .false. 
+   output_fields(out_num)%time_max     = .false.
    output_fields(out_num)%time_ops     = .false.
    output_fields(out_num)%register     = .false.
    t_method = lowercase(time_method)
@@ -687,7 +687,7 @@ subroutine init_output_field(module_name,field_name,file_name,time_method,pack)
     output_fields(out_num)%time_method  = 'max'
     l1 = len_trim(output_fields(out_num)%output_name)
     if(output_fields(out_num)%output_name(l1-2:l1) /= 'max') &
-           output_fields(out_num)%output_name = trim(field_name)//'_max'      
+           output_fields(out_num)%output_name = trim(field_name)//'_max'
  case ('min')
     call error_mesg('station_data, init_output_field','time_method MIN is not supported',&
          FATAL)
@@ -824,12 +824,12 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
         stations(i)%need_compute = .true.
         stations(i)%local_i = stations(i)%global_i - isc + 1
         stations(i)%local_j = stations(i)%global_j - jsc + 1
-        local_num_stations = local_num_stations +1    
+        local_num_stations = local_num_stations +1
      endif
   enddo
   !> get the position of this field in the array output_fields
-  out_num = find_output_field(module_name, fieldname)  
-  if(out_num < 0 .and. mpp_pe() == mpp_root_pe()) then 
+  out_num = find_output_field(module_name, fieldname)
+  if(out_num < 0 .and. mpp_pe() == mpp_root_pe()) then
      call error_mesg ('register_station_field', &
           'module/field_name '//trim(module_name)//'/'//&
           trim(fieldname)//' NOT found in station_data table', WARNING)
@@ -840,9 +840,9 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
      allocate(output_fields(out_num)%station_id(local_num_stations))
      allocate(output_fields(out_num)%buffer(local_num_stations,nlevel))
      output_fields(out_num)%buffer = EMPTY
-     !> fill out list of available stations in this PE 
+     !> fill out list of available stations in this PE
      ii=0
-     do i = 1,num_stations       
+     do i = 1,num_stations
         if(stations(i)%need_compute) then
            ii = ii+ 1
            if(ii>local_num_stations) call error_mesg ('register_station_field', &
@@ -868,20 +868,20 @@ function register_station_field3d (module_name,fieldname,glo_lat,glo_lon,levels,
   output_fields(out_num)%units = units2
   output_fields(out_num)%nlevel = nlevel
   !> deal with axes
- 
+
   output_fields(out_num)%axes(1) = diag_axis_init('Stations',station_values,'station number', 'X')
   if(nlevel == 1) then
-     output_fields(out_num)%num_axes = 1     
+     output_fields(out_num)%num_axes = 1
   else
-     output_fields(out_num)%num_axes = 2     
-     output_fields(out_num)%axes(2) = diag_axis_init('Levels',level_values,'level number', 'Y' )   
+     output_fields(out_num)%num_axes = 2
+     output_fields(out_num)%axes(2) = diag_axis_init('Levels',level_values,'level number', 'Y' )
   endif
   if(need_write_axis) then
      lat_axis = diag_axis_init('Latitude', stations(1:num_stations)%lat,'station latitudes', 'n')
      lon_axis = diag_axis_init('Longitude',stations(1:num_stations)%lon,  'station longitudes', 'n')
   endif
   need_write_axis = .false.
- 
+
 !  call mpp_sync()
 
 end function register_station_field3d
@@ -899,7 +899,7 @@ function find_output_field(module_name, field_name)
   do i = 1, num_output_fields
      if(trim(output_fields(i)%module_name) == trim(module_name) .and. &
           lowercase(trim(output_fields(i)%output_name)) == &
-          lowercase(trim(field_name))) then 
+          lowercase(trim(field_name))) then
         find_output_field = i
         return
      endif
@@ -912,7 +912,7 @@ end function find_output_field
 !!
 !! \throw FATAL, "<output_name> has axis_id = -1"
 subroutine opening_file(file)
-! open file, write axis meta_data for all files (only on ROOT PE, 
+! open file, write axis meta_data for all files (only on ROOT PE,
 !                        do nothing on other PEs)
  integer, intent(in)  :: file !< File to be opened
  character(len=128)   :: time_units
@@ -952,7 +952,7 @@ subroutine opening_file(file)
     call write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 3), time_ops)
     if(time_ops) then
        axes(num_axes + 4) = files(file)%time_bounds_id
-       call write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 4))     
+       call write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 4))
     endif
  end do
 !write field meta data
@@ -961,7 +961,7 @@ subroutine opening_file(file)
     num_axes = output_fields(field_num)%num_axes
     axes(1:num_axes) = output_fields(field_num)%axes(1:num_axes)
     num_axes = num_axes + 1
-    axes(num_axes) = files(file)%time_axis_id    
+    axes(num_axes) = files(file)%time_axis_id
     diag_field = write_field_meta_data(files(file)%file_unit,output_fields(field_num)%output_name, &
          axes(1:num_axes),output_fields(field_num)%units, &
          output_fields(field_num)%long_name,time_method=output_fields(field_num)%time_method,&
@@ -980,16 +980,16 @@ subroutine opening_file(file)
     files(file)%f_avg_end = diag_field%Field
 
     diag_field=write_field_meta_data(files(file)%file_unit,avg_name // '_DT' ,time_axis_id, &
-          time_units,"Length of average period", pack=1)  
+          time_units,"Length of average period", pack=1)
     files(file)%f_avg_nitems = diag_field%Field
 
     diag_field=write_field_meta_data(files(file)%file_unit, 'Time_bnds', (/time_bounds_id,time_axis_id/), &
            trim(time_unit_list(files(file)%time_units)), &
-           'Time axis boundaries', pack=1) 
+           'Time axis boundaries', pack=1)
      files(file)%f_bounds =  diag_field%Field
  endif
  call done_meta_data(files(file)%file_unit)
-end subroutine opening_file 
+end subroutine opening_file
 
 
 !> \brief send_station_data_2d sends data to the root PE, which then sends
@@ -1017,7 +1017,7 @@ end subroutine send_station_data_2d
 !! \throw FATAL, "Global field contains MISSING field"
 !! \throw FATAL, "Local index out of range for field"
 subroutine send_station_data_3d(field_id, data, time)
- 
+
   integer, intent(in)         :: field_id    !< Field id of the station data being recorded
   real,    intent(in)         :: data(:,:,:) !< Data of the station being recorded
   type(time_type), intent(in) :: time        !< Time of the station being recorded
@@ -1025,12 +1025,12 @@ subroutine send_station_data_3d(field_id, data, time)
   integer                     :: index_x, index_y, station_id
   integer, allocatable        :: station_ids(:)  !< root_pe only, to receive local station_ids
   real,    allocatable        :: tmp_buffer(:,:) !< root_pe only, to receive local buffer from each PE
-  
+
 
   if (.not.module_is_initialized) &
      call error_mesg ('send_station_data_3d',' station_data NOT initialized', FATAL)
 
-  if(field_id < 0) return  
+  if(field_id < 0) return
   file_num = output_fields(field_id)%output_file
   if( mpp_pe() == mpp_root_pe() .and. files(file_num)%file_unit < 0) then
      call opening_file(file_num)
@@ -1039,29 +1039,29 @@ subroutine send_station_data_3d(field_id, data, time)
   units = files(file_num)%output_units
   !> compare time with next_output
 
-  if (time > output_fields(field_id)%next_output .and. freq /= END_OF_RUN) then  ! time to write out     
-! ALL PEs, including root PE, must send data to root PE        
+  if (time > output_fields(field_id)%next_output .and. freq /= END_OF_RUN) then  ! time to write out
+! ALL PEs, including root PE, must send data to root PE
      call mpp_send(output_fields(field_id)%num_station,plen=1,to_pe=mpp_root_pe(),tag=COMM_TAG_1)
      if(output_fields(field_id)%num_station > 0) then
         call mpp_send(output_fields(field_id)%station_id(1),plen=size(output_fields(field_id)%station_id),&
              to_pe=mpp_root_pe())
         call mpp_send(output_fields(field_id)%buffer(1,1),plen=size(output_fields(field_id)%buffer),&
              to_pe=mpp_root_pe())
-     endif   
+     endif
      !> get max_counter if the field is averaged
      if(output_fields(field_id)%time_average) then
         max_counter = output_fields(field_id)%counter
         call mpp_max(max_counter, pelist)
      endif
-     !> receive local data from all PEs 
+     !> receive local data from all PEs
      if(mpp_pe() == mpp_root_pe()) then
-        do i = 1,size(pelist)           
+        do i = 1,size(pelist)
            call mpp_recv(local_num_stations,glen=1,from_pe=pelist(i),tag=COMM_TAG_1)
            if(local_num_stations> 0) then
               allocate(station_ids(local_num_stations))
               allocate(tmp_buffer(local_num_stations,output_fields(field_id)%nlevel))
               call mpp_recv(station_ids(1), glen=size(station_ids), from_pe=pelist(i))
-              call mpp_recv(tmp_buffer(1,1),glen=size(tmp_buffer),  from_pe=pelist(i)) 
+              call mpp_recv(tmp_buffer(1,1),glen=size(tmp_buffer),  from_pe=pelist(i))
               do ii = 1,local_num_stations
                  global_field%buffer(station_ids(ii),:) = tmp_buffer(ii,:)
               enddo
@@ -1069,7 +1069,7 @@ subroutine send_station_data_3d(field_id, data, time)
            endif
         enddo
         !> send global_buffer content to file
-        if(output_fields(field_id)%time_average) then  
+        if(output_fields(field_id)%time_average) then
            if(max_counter == 0 ) &
                 call error_mesg ('send_station_data','counter=0 for averaged field '// &
                 output_fields(field_id)%output_name, FATAL)
@@ -1089,7 +1089,7 @@ subroutine send_station_data_3d(field_id, data, time)
      output_fields(field_id)%next_output =  diag_time_inc(output_fields(field_id)%next_output,&
           freq, units)
      output_fields(field_id)%counter = 0; max_counter = 0
-    
+
   endif
   !> accumulate buffer only
   do i = 1 , output_fields(field_id)%num_station
@@ -1097,10 +1097,10 @@ subroutine send_station_data_3d(field_id, data, time)
      index_x = stations(station_id)%local_i; index_y = stations(station_id)%local_j
      if(index_x>size(data,1) .or. index_y>size(data,2)) &
           call error_mesg ('send_station_data','local index out of range for field '// &
-          output_fields(field_id)%output_name, FATAL) 
+          output_fields(field_id)%output_name, FATAL)
      if(output_fields(field_id)%time_average) then
         output_fields(field_id)%buffer(i,:) = output_fields(field_id)%buffer(i,:) + &
-             data(index_x,index_y,:)                                          ! accumulate buffer 
+             data(index_x,index_y,:)                                          ! accumulate buffer
      else                                                                     ! not average
         output_fields(field_id)%buffer(i,:) = data(index_x,index_y,:)
      endif
@@ -1129,7 +1129,7 @@ subroutine station_data_out(file, field, data, time,final_call_in)
   start_dif = get_date_dif(output_fields(field)%last_output, base_time,files(file)%time_units)
   end_dif = dif
   do i = 1, files(file)%num_fields
-     num = files(file)%fields(i)     
+     num = files(file)%fields(i)
       if(output_fields(num)%time_ops) then
          if(num == field) then
             time_data(1, 1, 1) = start_dif
@@ -1181,7 +1181,7 @@ subroutine station_data_end(time)
         field = files(file)%fields(nfield)
         if(.not. output_fields(field)%register) cycle
         if(time >= output_fields(field)%next_output .or. freq == END_OF_RUN) then
-           !> ALL PEs, including root PE, must send data to root PE        
+           !> ALL PEs, including root PE, must send data to root PE
            call mpp_send(output_fields(field)%num_station,plen=1,to_pe=mpp_root_pe(),tag=COMM_TAG_2)
            if(output_fields(field)%num_station > 0) then
               call mpp_send(output_fields(field)%station_id(1),plen=size(output_fields(field)%station_id),&
@@ -1194,15 +1194,15 @@ subroutine station_data_end(time)
               max_counter = output_fields(field)%counter
               call mpp_max(max_counter, pelist)
            endif
-           !> only root PE receives local data from all PEs 
+           !> only root PE receives local data from all PEs
            if(mpp_pe() == mpp_root_pe()) then
-              do pe = 1,size(pelist)           
+              do pe = 1,size(pelist)
                  call mpp_recv(local_num_stations,glen=1,from_pe=pelist(pe),tag=COMM_TAG_2)
                  if(local_num_stations> 0) then
                     allocate(station_ids(local_num_stations))
                     allocate(tmp_buffer(local_num_stations,output_fields(field)%nlevel))
                     call mpp_recv(station_ids(1), glen=size(station_ids), from_pe=pelist(pe),tag=COMM_TAG_3)
-                    call mpp_recv(tmp_buffer(1,1),glen=size(tmp_buffer),from_pe=pelist(pe),tag=COMM_TAG_4) 
+                    call mpp_recv(tmp_buffer(1,1),glen=size(tmp_buffer),from_pe=pelist(pe),tag=COMM_TAG_4)
                     do col = 1,local_num_stations
                        global_field%buffer(station_ids(col),:) = tmp_buffer(col,:)
                     enddo
@@ -1210,7 +1210,7 @@ subroutine station_data_end(time)
                  endif
               enddo
               !> send global_buffer content to file
-              if(output_fields(field)%time_average)then           
+              if(output_fields(field)%time_average)then
                  if(max_counter == 0 )&
                       call error_mesg ('send_station_end','counter=0 for averaged field '// &
                       output_fields(field)%output_name, FATAL)
@@ -1219,7 +1219,7 @@ subroutine station_data_end(time)
               !> check if global_field contains any missing values
               if(any(global_field%buffer == MISSING)) &
                    call error_mesg ('send_station_end','Global_field contains MISSING, field '// &
-                   output_fields(field)%output_name, FATAL)              
+                   output_fields(field)%output_name, FATAL)
               call station_data_out(file,field,global_field%buffer,output_fields(field)%next_output,.true.)
               global_field%buffer = MISSING
            endif
@@ -1235,5 +1235,3 @@ end subroutine station_data_end
 
 
 end module station_data_mod
-
-

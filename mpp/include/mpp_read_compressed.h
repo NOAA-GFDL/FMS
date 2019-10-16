@@ -58,33 +58,33 @@
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
       if( threading_flag == MPP_MULTI ) then
-	 call read_record(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
+        call read_record(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
       else if( threading_flag == MPP_SINGLE ) then
 
-	 io_domain=>mpp_get_io_domain(domain)
-	 if(.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: io_domain must be defined.' )
-	 npes = mpp_get_domain_npes(io_domain)
-	 allocate(pelist(npes))
-	 call mpp_get_pelist(io_domain,pelist)
+        io_domain=>mpp_get_io_domain(domain)
+        if(.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: io_domain must be defined.' )
+        npes = mpp_get_domain_npes(io_domain)
+        allocate(pelist(npes))
+        call mpp_get_pelist(io_domain,pelist)
 
-	 if(mpp_pe() == pelist(1)) call read_record(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
+        if(mpp_pe() == pelist(1)) call read_record(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
 
-	 !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
-	 !---     because size(pelist) might be different for different rank.
-	 !--- prepost receive
-	 if( mpp_pe() == pelist(1) ) then
-	    do p = 2, npes
-	       call mpp_send(data(1,1), plen=size(data(:,:)), to_pe=pelist(p), tag=COMM_TAG_1)
-	    enddo
-	    call mpp_sync_self()
-	 else
-	    call mpp_recv(data(1,1), glen=size(data(:,:)), from_pe=pelist(1), block=.false., tag=COMM_TAG_1)
-	    call mpp_sync_self(check=EVENT_RECV)
-	 endif
+        !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
+        !---     because size(pelist) might be different for different rank.
+        !--- prepost receive
+        if( mpp_pe() == pelist(1) ) then
+          do p = 2, npes
+            call mpp_send(data(1,1), plen=size(data(:,:)), to_pe=pelist(p), tag=COMM_TAG_1)
+          enddo
+          call mpp_sync_self()
+        else
+          call mpp_recv(data(1,1), glen=size(data(:,:)), from_pe=pelist(1), block=.false., tag=COMM_TAG_1)
+          call mpp_sync_self(check=EVENT_RECV)
+        endif
 
-	 deallocate(pelist)
+        deallocate(pelist)
       else
-	 call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: threading should be MPP_SINGLE or MPP_MULTI')
+        call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: threading should be MPP_SINGLE or MPP_MULTI')
       endif
     endif
 
@@ -93,22 +93,22 @@
 
       if (compute_chksum) then
 #ifdef use_netCDF
-	 if (field%type==NF_INT) then
-            if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
-               chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
-            else
-	       call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_2d) int field "//trim(field%name)// &
-			      " found fill. Icebergs, or code using defaults can safely ignore. "// &
-			      " If manually overriding compressed restart fills, confirm this is what you want.")
-	       chk = mpp_chksum( ceiling(data), mask_val=field%fill)
-	    end if
-	 else !!real data
-	    chk = mpp_chksum(data,mask_val=field%fill)
-	 end if
+      if (field%type==NF_INT) then
+         if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
+            chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
+         else
+            call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_2d) int field "//trim(field%name)// &
+                " found fill. Icebergs, or code using defaults can safely ignore. "// &
+                " If manually overriding compressed restart fills, confirm this is what you want.")
+            chk = mpp_chksum( ceiling(data), mask_val=field%fill)
+         end if
+      else !!real data
+         chk = mpp_chksum(data,mask_val=field%fill)
+      end if
 #endif
-	 !!compare
+      !!compare
          if ( print_compressed_chksum) then
-            if ( mpp_pe() == mpp_root_pe() ) then 
+            if ( mpp_pe() == mpp_root_pe() ) then
                print '(A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" = ", chk
                !! discuss making fatal after testing/review to match other routines.
                !! Need to do some nword-counting and digging with pjp
@@ -126,13 +126,13 @@
     end subroutine MPP_READ_COMPRESSED_2D_
 
     subroutine MPP_READ_COMPRESSED_3D_(unit, field, domain, data, tindex, start, nread, threading)
-      integer,		 intent(in)	      :: unit
-      type(fieldtype),	 intent(in)	      :: field
-      type(domain2D),	 intent(in)	      :: domain
-      MPP_TYPE_,	 intent(inout)	      :: data(:,:,:)
-      integer,		 intent(in), optional :: tindex
-      integer,		 intent(in), optional :: start(:), nread(:)
-      integer,		 intent(in), optional :: threading
+      integer, intent(in)      :: unit
+      type(fieldtype), intent(in)      :: field
+      type(domain2D), intent(in)      :: domain
+      MPP_TYPE_, intent(inout)      :: data(:,:,:)
+      integer, intent(in), optional :: tindex
+      integer, intent(in), optional :: start(:), nread(:)
+      integer, intent(in), optional :: threading
 
       integer, allocatable :: pelist(:)
       integer :: npes, p, threading_flag
@@ -151,33 +151,33 @@
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
       if( threading_flag == MPP_MULTI ) then
-	 call read_record(unit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
+         call read_record(unit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
       else if( threading_flag == MPP_SINGLE ) then
 
-	 io_domain=>mpp_get_io_domain(domain)
-	 if(.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: io_domain must be defined.' )
-	 npes = mpp_get_domain_npes(io_domain)
-	 allocate(pelist(npes))
-	 call mpp_get_pelist(io_domain,pelist)
+         io_domain=>mpp_get_io_domain(domain)
+         if(.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: io_domain must be defined.' )
+         npes = mpp_get_domain_npes(io_domain)
+         allocate(pelist(npes))
+         call mpp_get_pelist(io_domain,pelist)
 
-	 if(mpp_pe() == pelist(1)) call read_record(unit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
+         if(mpp_pe() == pelist(1)) call read_record(unit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
 
-	 !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
-	 !---	  because size(pelist) might be different for different rank.
-	 !--- prepost receive
-	 if( mpp_pe() == pelist(1) ) then
-	    do p = 2, npes
-	       call mpp_send(data(1,1,1), plen=size(data(:,:,:)), to_pe=pelist(p), tag=COMM_TAG_1)
-	    enddo
-	    call mpp_sync_self()
-	 else
-	    call mpp_recv(data(1,1,1), glen=size(data(:,:,:)), from_pe=pelist(1), block=.false., tag=COMM_TAG_1)
-	    call mpp_sync_self(check=EVENT_RECV)
-	 endif
+         !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
+         !---  because size(pelist) might be different for different rank.
+         !--- prepost receive
+         if( mpp_pe() == pelist(1) ) then
+            do p = 2, npes
+               call mpp_send(data(1,1,1), plen=size(data(:,:,:)), to_pe=pelist(p), tag=COMM_TAG_1)
+            enddo
+            call mpp_sync_self()
+         else
+            call mpp_recv(data(1,1,1), glen=size(data(:,:,:)), from_pe=pelist(1), block=.false., tag=COMM_TAG_1)
+            call mpp_sync_self(check=EVENT_RECV)
+         endif
 
-	 deallocate(pelist)
+         deallocate(pelist)
       else
-	 call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: threading should be MPP_SINGLE or MPP_MULTI')
+         call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: threading should be MPP_SINGLE or MPP_MULTI')
       endif
 
       compute_chksum = .FALSE.
@@ -185,22 +185,22 @@
 
       if (compute_chksum) then
 #ifdef use_netCDF
-	 if (field%type==NF_INT) then
-	    if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
-               chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
-            else 
-	       call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_3d) int field "//trim(field%name)// &
-			      " found fill. Icebergs, or code using defaults can safely ignore. "// &
-			      " If manually overriding compressed restart fills, confirm this is what you want.")
-	       chk = mpp_chksum( ceiling(data), mask_val=field%fill)
-	    end if
-	 else !!real
-	    chk = mpp_chksum(data,mask_val=field%fill)
-	 end if
+      if (field%type==NF_INT) then
+         if (field%fill == MPP_FILL_DOUBLE .or. field%fill == real(MPP_FILL_INT) ) then
+            chk = mpp_chksum( ceiling(data), mask_val=MPP_FILL_INT )
+         else
+            call mpp_error(NOTE,"During mpp_io(mpp_read_compressed_3d) int field "//trim(field%name)// &
+               " found fill. Icebergs, or code using defaults can safely ignore. "// &
+               " If manually overriding compressed restart fills, confirm this is what you want.")
+            chk = mpp_chksum( ceiling(data), mask_val=field%fill)
+         end if
+      else !!real
+         chk = mpp_chksum(data,mask_val=field%fill)
+      end if
 #endif
-	 !!compare
+      !!compare
          if ( print_compressed_chksum) then
-            if ( mpp_pe() == mpp_root_pe() ) then 
+            if ( mpp_pe() == mpp_root_pe() ) then
                print '(A,Z16)', "mpp_read_compressed_3d chksum: "//trim(field%name)//" = ", chk
                !! discuss making fatal after testing/review to match other routines.
                !! Need to do some nword-counting and digging with pjp

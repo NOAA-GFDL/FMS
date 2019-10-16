@@ -10,9 +10,9 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)" builddir="$(top_builddir)"
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
--I${top_builddir}/fms -I${top_builddir}/constants		\
--I${top_builddir}/exchange -I${top_builddir}/mosaic		\
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp \
+-I${top_builddir}/fms -I${top_builddir}/constants \
+-I${top_builddir}/exchange -I${top_builddir}/mosaic \
 -I${top_builddir}/coupler
 
 # Link to FMS library.

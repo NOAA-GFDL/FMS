@@ -19,7 +19,7 @@
 #undef _TYP
 #define _TYP integer
 
-! Written by Magnus Lie Hetland 
+! Written by Magnus Lie Hetland
 
 function qksrt_partition(n, list, start, end) result(top)
   implicit none
@@ -84,5 +84,3 @@ recursive subroutine qksrt_quicksort(n, list, start, end)
         call qksrt_quicksort(n, list, split+1, end)
      endif
 end subroutine qksrt_quicksort
-
-

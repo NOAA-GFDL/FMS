@@ -31,5 +31,5 @@ program test_affinity
 
 !--- print success or failure message
     if (mpp_pe() == mpp_root_pe()) print *, '*** SUCCESS!'
- 
+
 end program test_affinity

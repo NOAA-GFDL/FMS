@@ -37,16 +37,16 @@ module mpp_data_mod
 #endif
 
 #if defined(use_libMPI) && !defined(sgi_mipspro)
-#include <mpif.h>  
+#include <mpif.h>
 !sgi_mipspro gets this from 'use mpi'
 #endif
 
   !--- public data is used by mpp_mod
-  public :: stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync  
+  public :: stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
   public :: mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
 
-  !--- public data which is used by mpp_domains_mod. 
-  !--- All othere modules should import these parameters from mpp_domains_mod. 
+  !--- public data which is used by mpp_domains_mod.
+  !--- All othere modules should import these parameters from mpp_domains_mod.
   public :: mpp_domains_stack, ptr_domains_stack
   public :: mpp_domains_stack_nonblock, ptr_domains_stack_nonblock
 

@@ -10,7 +10,7 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Find the needed mod and include files.
-AM_CPPFLAGS = -I${top_builddir}/mosaic -I${top_builddir}/fms	\
+AM_CPPFLAGS = -I${top_builddir}/mosaic -I${top_builddir}/fms \
 -I${top_srcdir}/include -I${top_builddir}/mpp
 
 # Link to the FMS library.

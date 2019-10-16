@@ -920,7 +920,7 @@
 
               do j=1,nvdims
                  if(dimids(j).eq.mpp_file(unit)%recdimid  .and. mpp_file(unit)%time_level/=-1)then
-                    mpp_file(unit)%Var(nv)%time_axis_index = j   !dimids(j). z1l: Should be j. 
+                    mpp_file(unit)%Var(nv)%time_axis_index = j   !dimids(j). z1l: Should be j.
                                                                  !This will cause problem when appending to existed file.
                     mpp_file(unit)%Var(nv)%size(j)=1    ! dimid length set to 1 here for consistency w/ mpp_write
                  else

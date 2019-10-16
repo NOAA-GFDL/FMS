@@ -110,15 +110,15 @@ subroutine drifters_push_XXX(self, u, v, &
      call drifters_modulo(self, self%temp_pos, ermesg=ermesg)
 
      ! estimate of max number of particles to add/remove
-     ! this may need to be adjusted over time... 
+     ! this may need to be adjusted over time...
      ! [_MPP_NPES is a macro for mpp_npes()]
      if(self%comm%pe_end < 0) self%comm%pe_end = _MPP_NPES - 1
      max_add_remove = &
-          max(  10, &
-	  &     int(0.2*self%core%npdim/ &
-          &        (self%comm%pe_end-self%comm%pe_beg+1)), &
-	  &     int(np * 2*(self%nx+self%ny)/real(self%nx*self%ny)) &
-	  &  ) 
+      &  max(  10, &
+      &  int(0.2*self%core%npdim/ &
+      &     (self%comm%pe_end-self%comm%pe_beg+1)), &
+      &  int(np * 2*(self%nx+self%ny)/real(self%nx*self%ny)) &
+      &  )
 
      ! copy/move drifters across domain boundaries, if necessary
      call drifters_comm_update(self%comm, self%core, self%temp_pos(:,1:np), &

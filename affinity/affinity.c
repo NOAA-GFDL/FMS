@@ -68,7 +68,7 @@ int get_cpu_affinity_(void) { return get_cpu_affinity(); }      /* Fortran inter
 int get_cpuset(int fsz, int *output, int pe, _Bool debug)
 {
 #ifndef __APPLE__
-  cpu_set_t coremask;		/* core affinity mask */
+  cpu_set_t coremask; /* core affinity mask */
 
   CPU_ZERO(&coremask);
   if (sched_getaffinity(gettid(),sizeof(cpu_set_t),&coremask) != 0) {
@@ -89,7 +89,7 @@ int get_cpuset(int fsz, int *output, int pe, _Bool debug)
   count = 0;
   for (cpu=0;cpu < CPU_SETSIZE;cpu++) {
     if (CPU_ISSET(cpu,&coremask)) {
-      if (count > fsz) { 
+      if (count > fsz) {
         return -1;
       }
       output[count] = cpu;
@@ -111,7 +111,7 @@ int get_cpuset_(int *fsz, int *output, int *pe, _Bool *debug) { return get_cpuse
 int set_cpu_affinity(int cpu)
 {
 #ifndef __APPLE__
-  cpu_set_t coremask;		/* core affinity mask */
+  cpu_set_t coremask; /* core affinity mask */
 
   CPU_ZERO(&coremask);
   CPU_SET(cpu,&coremask);
@@ -122,4 +122,4 @@ int set_cpu_affinity(int cpu)
   return 0;
 }
 
-int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); }	/* Fortran interface */
+int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); } /* Fortran interface */
