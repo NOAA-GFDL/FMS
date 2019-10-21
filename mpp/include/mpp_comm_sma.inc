@@ -123,7 +123,7 @@ subroutine mpp_init( flags,localcomm )
 
   open(unit_nml,file='input.nml', iostat=io_status)
   read(unit_nml,mpp_nml,iostat=io_status)
-  close(unit_nml)  
+  close(unit_nml)
 #endif
 
   if (io_status > 0) then
@@ -644,7 +644,7 @@ end subroutine mpp_malloc
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET64
 #include <mpp_transmit_sma.h>
-#endif 
+#endif
 
 #ifndef no_8byte_integers
 #undef MPP_TRANSMIT_
@@ -1246,4 +1246,3 @@ subroutine shmem_int8_wait_local( ivar, cmp_value )
   call SHMEM_INT8_WAIT( ivar, cmp_value )
   return
 end subroutine shmem_int8_wait_local
-

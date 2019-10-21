@@ -74,7 +74,7 @@ contains
 !===============================================================================
   subroutine drifters_comm_new(self)
     type(drifters_comm_type)   :: self
-    
+
     self%xcmin = -huge(1.); self%xcmax = +huge(1.)
     self%ycmin = -huge(1.); self%ycmax = +huge(1.)
 
@@ -97,14 +97,14 @@ contains
 
     self%pe_beg =  0
     self%pe_end = -1
-    
-    
+
+
   end subroutine drifters_comm_new
 
 !===============================================================================
   subroutine drifters_comm_del(self)
     type(drifters_comm_type)   :: self
-    
+
     ! nothing to deallocate
     call drifters_comm_new(self)
 
@@ -115,7 +115,7 @@ contains
     ! Set data domain bounds.
     type(drifters_comm_type)   :: self
     real, intent(in)           :: xmin, ymin, xmax, ymax
-    
+
     self%xdmin = max(xmin, self%xdmin)
     self%xdmax = min(xmax, self%xdmax)
     self%ydmin = max(ymin, self%ydmin)
@@ -128,7 +128,7 @@ contains
     ! Set compute domain bounds.
     type(drifters_comm_type)   :: self
     real, intent(in)           :: xmin, ymin, xmax, ymax
-    
+
     self%xcmin = max(xmin, self%xcmin)
     self%xcmax = min(xmax, self%xcmax)
     self%ycmin = max(ymin, self%ycmin)
@@ -157,45 +157,45 @@ contains
     call mpp_get_neighbor_pe(domain, NORTH_WEST, pe_NW)
 
     if(pe_N  /= self%pe_N  .and. self%pe_N  == _NULL_PE) then
-       self%pe_N  = pe_N 
+       self%pe_N  = pe_N
     else if(pe_N  /= self%pe_N ) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: NORTH PE changed!.')
-    endif 
+    endif
     if(pe_NE /= self%pe_NE .and. self%pe_NE == _NULL_PE) then
        self%pe_NE = pe_NE
     else if(pe_NE /= self%pe_NE) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: NORTH-EAST PE changed!.')
-    endif 
+    endif
     if(pe_E  /= self%pe_E  .and. self%pe_E  == _NULL_PE) then
-       self%pe_E  = pe_E 
+       self%pe_E  = pe_E
     else if(pe_E  /= self%pe_E ) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: EAST PE changed!.')
-    endif 
+    endif
     if(pe_SE /= self%pe_SE .and. self%pe_SE == _NULL_PE) then
        self%pe_SE = pe_SE
     else if(pe_SE /= self%pe_SE) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: SOUTH-EAST PE changed!.')
-    endif 
+    endif
     if(pe_S  /= self%pe_S  .and. self%pe_S  == _NULL_PE) then
-       self%pe_S  = pe_S 
+       self%pe_S  = pe_S
     else if(pe_S  /= self%pe_S ) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: SOUTH PE changed!.')
-    endif 
+    endif
     if(pe_SW /= self%pe_SW .and. self%pe_SW == _NULL_PE) then
        self%pe_SW = pe_SW
     else if(pe_SW /= self%pe_SW) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: SOUTH-WEST PE changed!.')
-    endif 
+    endif
     if(pe_W  /= self%pe_W  .and. self%pe_W  == _NULL_PE) then
-       self%pe_W  = pe_W 
+       self%pe_W  = pe_W
     else if(pe_W  /= self%pe_W ) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: WEST PE changed!.')
-    endif 
+    endif
     if(pe_NW /= self%pe_NW .and. self%pe_NW == _NULL_PE) then
        self%pe_NW = pe_NW
     else if(pe_NW /= self%pe_NW) then
        call mpp_error( FATAL, 'drifters_comm_set_pe_neighbors: NORTH-WEST PE changed!.')
-    endif 
+    endif
 
 #endif
 ! end of parallel code
@@ -206,12 +206,12 @@ contains
   subroutine drifters_comm_set_domain(self, domain, x, y, backoff_x, backoff_y)
     ! Set boundaries of domain and compute neighbors. This method can be called
     ! multiple times; the data domain will just be the intersection (overlap) of
-    ! all domains (e.g domain_u, domain_v, etc). 
+    ! all domains (e.g domain_u, domain_v, etc).
     type(drifters_comm_type)   :: self
     _TYPE_DOMAIN2D, intent(inout) :: domain
     real, intent(in)           :: x(:), y(:)           ! global axes
     integer, intent(in)        :: backoff_x, backoff_y ! >=0, data domain is reduced by "backoff_x,y" indices in x, resp. y
-    
+
     ! compute/data domain start/end indices
     integer isc, iec, jsc, jec
     integer isd, ied, jsd, jed
@@ -278,7 +278,7 @@ contains
     else
        ydmax = y(jed-bckf_y)
     endif
-    
+
     self%xdmin = max(xdmin, self%xdmin)
     self%ydmin = max(ydmin, self%ydmin)
     self%xdmax = min(xdmax, self%xdmax)
@@ -301,7 +301,7 @@ contains
 
 #ifdef _SERIAL
 ! serial code
-    
+
     drfts%positions(:, 1:drfts%np) = new_positions(:, 1:drfts%np)
     return
 
@@ -314,7 +314,7 @@ contains
     integer nd, np, nar_est, ip, neigh_pe, irem, pe, npes, ntuples
     integer ntuples_tot, ndata, mycomm
 #ifdef _USE_MPI
-    integer ier 
+    integer ier
 #endif
     integer, allocatable :: iadd(:)
     integer, allocatable :: table_recv(:), table_send(:)
@@ -337,7 +337,7 @@ contains
     if(np > 0 .and. nd < 2) call mpp_error( FATAL, &
          & 'drifters_comm_update: number of dimensions must be 2 or higher.' )
 
-    nar_est = 100 
+    nar_est = 100
     if(present(max_add_remove)) nar_est = max(1, max_add_remove)
 
     pe   = mpp_pe()
@@ -371,8 +371,8 @@ contains
           was_in_compute_domain = .TRUE.
        endif
 
-       ! check if drifters crossed compute domain boundary 
-       
+       ! check if drifters crossed compute domain boundary
+
        crossed_W = .FALSE.
        crossed_E = .FALSE.
        crossed_S = .FALSE.
@@ -444,9 +444,9 @@ contains
 
     ! fill in table_recv from table_send. table_send contains the
     ! number of tuples that will be sent to another pe. table_recv
-    ! will contain the number of tuples to be received. The indices 
+    ! will contain the number of tuples to be received. The indices
     ! of table_send refer to the pe where the tuples should be sent to;
-    ! the indices of table_recv refer to the pe number 
+    ! the indices of table_recv refer to the pe number
     ! (self%pe_beg..self%pe_end) from
     ! which the tuple should be received from.
     !
@@ -465,7 +465,7 @@ contains
              call mpp_send(table_send(k), plen=1, to_pe=k, tag=COMM_TAG_1)
           enddo
        endif
-       call mpp_recv(table_recv(m), glen=1, from_pe=m, tag=COMM_TAG_1)    
+       call mpp_recv(table_recv(m), glen=1, from_pe=m, tag=COMM_TAG_1)
 #endif
     enddo
 
@@ -486,7 +486,7 @@ contains
              call mpp_send(data_send(1,k), plen=nar_est*(1+nd), to_pe=k, tag=COMM_TAG_2)
           enddo
        endif
-       call mpp_recv(data_recv(1,m), glen=nar_est*(1+nd), from_pe=m, tag=COMM_TAG_2)           
+       call mpp_recv(data_recv(1,m), glen=nar_est*(1+nd), from_pe=m, tag=COMM_TAG_2)
 #endif
     enddo
 
@@ -508,7 +508,7 @@ contains
           el = (n-1)*(nd+1) + 1
           id = int(data_recv(el, m))
           ! only add if id not already present in drfts
-          ! this can happen if a drifter meanders about 
+          ! this can happen if a drifter meanders about
           ! the compute domain boundary
           is_present = .false.
           do j = 1, drfts%np
@@ -528,7 +528,7 @@ contains
           endif
        enddo
     enddo
-    
+
     ! remove and add
     if(irem > 0 .or. k > 0) then
        write(notemsg, '(i4,a,i4,a)') irem, ' drifter(s) will be removed, ', k,' will be added'
@@ -620,10 +620,10 @@ contains
     nd = drfts%nd
     np = drfts%np
     npdim = drfts%npdim
-    
+
     allocate(nps(self%pe_beg:self%pe_end))
     nps = 0
-    
+
     ! npf= number of drifters in compute domain
 
     npf = 0
@@ -654,8 +654,8 @@ contains
        enddo
     endif
 #endif
-    
-    ! Now we know the max number of drifters to expect from each PE, so allocate 
+
+    ! Now we know the max number of drifters to expect from each PE, so allocate
     ! recvbuf (first dim will be zero on all PEs except root).
 
     ! allocate recvbuf to receive all the data on root PE, strided by npmax*(nd+3)
@@ -677,10 +677,10 @@ contains
        enddo
     endif
 #endif
-    
+
     ! Set positions and ids
     if(pe == root_pe) then
-       ! check dims 
+       ! check dims
        nptot = sum(nps) ! total number of drifters, across al PEs
        if(nptot /= size(dinp%ids)) then
           deallocate(dinp%ids      , stat=ier)
@@ -693,8 +693,8 @@ contains
 
        allocate(lons0(nptot), lats0(nptot))
 
-       ! Set the new positions/ids in dinp, on PE=root. Also set 
-       ! lons/lats, these arrays will hold garbage if x1, y1, etc. were 
+       ! Set the new positions/ids in dinp, on PE=root. Also set
+       ! lons/lats, these arrays will hold garbage if x1, y1, etc. were
        ! not passed as subroutine arguments, that's ok 'cause we won't
        ! save them.
        j = 1

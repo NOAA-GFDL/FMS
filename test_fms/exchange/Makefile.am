@@ -20,9 +20,9 @@ test_xgrid_CPPFLAGS += -I${top_builddir}/coupler
 test_xgrid_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
--I${top_builddir}/fms -I${top_builddir}/constants		\
--I${top_builddir}/exchange -I${top_builddir}/mosaic		\
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp \
+-I${top_builddir}/fms -I${top_builddir}/constants \
+-I${top_builddir}/exchange -I${top_builddir}/mosaic \
 -I${top_builddir}/coupler
 
 # Link to FMS library.

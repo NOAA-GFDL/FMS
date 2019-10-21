@@ -18,8 +18,8 @@
 !***********************************************************************
 
 !***********************************************************************
-!* Requires namelist but it can be empty. Requires a diag_table such as 
-!* below, requires the input files: (aerosol.climatology.nc and 
+!* Requires namelist but it can be empty. Requires a diag_table such as
+!* below, requires the input files: (aerosol.climatology.nc and
 !* o3.climatology.nc)
 
 !* diag_table

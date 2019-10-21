@@ -63,6 +63,6 @@
      if (is  > last) exit  ! end of text string ... DONE
   enddo
   return
-    
+
 99 continue
-   call mpp_error (FATAL,'in parse, error decoding "'//trim(label)//'" in text "'//text//'"') 
+   call mpp_error (FATAL,'in parse, error decoding "'//trim(label)//'" in text "'//text//'"')

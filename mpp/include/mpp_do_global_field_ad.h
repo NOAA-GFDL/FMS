@@ -1,4 +1,4 @@
-! -*-f90-*- 
+! -*-f90-*-
 
 
 !***********************************************************************
@@ -38,7 +38,7 @@
       integer :: stackuse
       character(len=8) :: text
 
-      pointer( ptr_local,  clocal  ) 
+      pointer( ptr_local,  clocal  )
       pointer( ptr_remote, cremote )
 
       stackuse = size(clocal(:))+size(cremote(:))
@@ -68,14 +68,14 @@
          root_only = BTEST(flags, ROOT_GLOBAL)
          if( (xonly .or. yonly) .AND. root_only ) then
             call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: flags = XUPDATE+GLOBAL_ROOT_ONLY or ' // &
-                 'flags = YUPDATE+GLOBAL_ROOT_ONLY is not supported, will ignore GLOBAL_ROOT_ONLY' )     
+                 'flags = YUPDATE+GLOBAL_ROOT_ONLY is not supported, will ignore GLOBAL_ROOT_ONLY' )
             root_only = .FALSE.
          endif
       endif
-    
+
       global_on_this_pe =  .NOT. root_only .OR. domain%pe == domain%tile_root_pe
       ipos = 0; jpos = 0
-      if(global_on_this_pe ) then      
+      if(global_on_this_pe ) then
          if(size(local,3).NE.size(global,3) ) call mpp_error( FATAL, &
               'MPP_GLOBAL_FIELD: mismatch of third dimension size of global and local')
          if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. size(global,2).NE.(domain%y(tile)%global%size+jshift))then
@@ -238,7 +238,7 @@
       end if
 
       call mpp_sync_self()
-     
+
      ! make contiguous array from compute domain
       m = 0
 #ifdef LOGICAL_VARIABLE

@@ -10,9 +10,9 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms	\
--I${top_builddir}/time_manager -I${top_builddir}/diag_manager	\
--I${top_builddir}/interpolator -I${top_builddir}/constants	\
+AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms \
+-I${top_builddir}/time_manager -I${top_builddir}/diag_manager \
+-I${top_builddir}/interpolator -I${top_builddir}/constants \
 -I${top_builddir}/time_interp
 
 # Link to the FMS library.
@@ -28,7 +28,7 @@ test_interpolator_SOURCES = test_interpolator.F90
 TESTS = test_interpolator.sh
 
 # These files are also included in the distribution.
-EXTRA_DIST = test_interpolator.sh test_interpolator.bats	\
+EXTRA_DIST = test_interpolator.sh test_interpolator.bats \
 input_base.nml diag_table_base
 
 # Clean up

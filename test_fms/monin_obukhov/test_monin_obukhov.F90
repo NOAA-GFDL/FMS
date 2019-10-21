@@ -53,11 +53,11 @@ program test_monin_obukhov
   drag_min_moist= 1.0e-5
   drag_min_mom  = 1.0e-5
   ustar_min     = 1.e-10
-  
+
 
   zref   = 10.
   zref_t = 2.
-  
+
 
   ier_tot = 0
   call test_drag
@@ -139,7 +139,7 @@ program test_monin_obukhov
 
       print *,'chksum test_drag      : ', w, ' ref ', CHKSUM_DRAG
       ier = CHKSUM_DRAG - w
-      
+
     end subroutine test_drag
 
     subroutine test_stable_mix
@@ -209,7 +209,7 @@ program test_monin_obukhov
 
       print *,'chksum test_diff      : ', w, ' ref ', CHKSUM_DIFF
 
-      ier = CHKSUM_DIFF - w  
+      ier = CHKSUM_DIFF - w
 
     end subroutine test_diff
 
@@ -233,7 +233,7 @@ program test_monin_obukhov
       zq     = (/ 5.72575636226887e-05, 0.0001, 5.72575636226887e-05, 5.72575636226887e-05, 5.72575636226887e-05/)
       u_star = (/ 0.109462510724615, 0.0932942802513508, 0.223232887323184, 0.290918439028557, 0.260087579361467/)
       b_star = (/ 0.00690834676781433, 0.00428178089592372, 0.00121229800895103, 0.00262353784027441, -0.000570314880866852/)
-      q_star = (/ 0.000110861442197537, 9.44983279664197e-05, 4.17643828631936e-05, 0.000133135421415819, 9.36317815993945e-06/) 
+      q_star = (/ 0.000110861442197537, 9.44983279664197e-05, 4.17643828631936e-05, 0.000133135421415819, 9.36317815993945e-06/)
 
       avail = (/ .true., .true.,.true.,.true.,.true. /)
 
@@ -249,7 +249,7 @@ program test_monin_obukhov
       w = w + transfer(sum(del_q), w)
 
       ! plug check sum in here>>>
-#if defined(__INTEL_COMPILER) || defined(_LF95) 
+#if defined(__INTEL_COMPILER) || defined(_LF95)
 #define CHKSUM_PROFILE -4596910845317820786
 #endif
 #if defined(_PGF95)

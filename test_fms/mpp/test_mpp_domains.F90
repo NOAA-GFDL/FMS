@@ -8144,9 +8144,9 @@ end subroutine test_modify_domain
     x=0.
     do k = 1,nz
        do j = jsd, jed
-       	  do i = isd, ied
-             x(i,j,k) = i+j+k
-       	  enddo
+         do i = isd, ied
+           x(i,j,k) = i+j+k
+         enddo
        enddo
     enddo
 
@@ -8168,10 +8168,10 @@ end subroutine test_modify_domain
 
     do k = 1,nz
        do j = jsd, jed
-       	  do i = isd, ied
-             gsum_ad_save     = gsum_ad_save + x_ad(i,j,k)*x(i,j,k)
-             gsum_ad_save_bit = gsum_ad_save_bit + x_ad_bit(i,j,k)*x(i,j,k)
-       	  enddo
+         do i = isd, ied
+           gsum_ad_save     = gsum_ad_save + x_ad(i,j,k)*x(i,j,k)
+           gsum_ad_save_bit = gsum_ad_save_bit + x_ad_bit(i,j,k)*x(i,j,k)
+         enddo
        enddo
     enddo
 
