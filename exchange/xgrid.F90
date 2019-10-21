@@ -1994,18 +1994,6 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      xmap%recv_count_repro_tot = 0
   end if
 
-  if (xgrid_log) then
-    call mpp_open( unit, 'xgrid.out', action=MPP_OVERWR, threading=MPP_MULTI, &
-         fileset=MPP_MULTI, nohdrs=.TRUE. )
-
-    write( unit,* )xmap%grids(:)%id, ' GRID: PE ', xmap%me, ' #XCELLS=', &
-       xmap%grids(2:size(xmap%grids(:)))%size, ' #COMM. PARTNERS=', &
-       count(xmap%your1my2), '/', count(xmap%your2my1), &
-       pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your1my2),  &
-       '/', pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your2my1)
-    call close_file (unit)
-  endif
-
   allocate( xmap%x1(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x2(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x1_put(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
