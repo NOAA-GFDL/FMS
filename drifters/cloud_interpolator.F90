@@ -54,7 +54,7 @@ pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
     do j = 1, nd
        ie(j) = mod(Ic/2**(j-1), 2)
     end do
-    
+
   end subroutine cld_ntrp_expand_index
 
 !...............................................................................
@@ -64,7 +64,7 @@ pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
     integer, intent(out)  ::  Ic   ! contacted index
     integer, intent(out) ::  ier   ! error flag (0=ok)
 
-    integer j, nd    
+    integer j, nd
 
     ier = 0
     nd  = size(ie) ! dimension
@@ -79,7 +79,7 @@ pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
 
   end subroutine cld_ntrp_contract_indices
 
-  
+
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
@@ -87,7 +87,7 @@ pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
     real, intent(in) :: ts(:)      ! normalized [0,1]^nd cell coordinates
     real, intent(out):: f          ! interpolated value
     integer, intent(out) ::  ier   ! error flag (0=ok)
-    
+
     integer j, nd, Ic, iflag
     integer ie(size(fvals))
     real    basis
@@ -99,7 +99,7 @@ pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
        ier = 1
        return
     endif
-    
+
     do Ic = 0, 2**nd - 1
        basis = 1.
        call cld_ntrp_expand_index(Ic, ie, iflag)
@@ -108,13 +108,13 @@ pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
        end do
        f = f + fvals(Ic)*basis
     end do
-    
+
   end subroutine cld_ntrp_linear_cell_interp
 
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_locate_cell(axis, x, index, ier)
-    real, intent(in)     :: axis(:) ! axis 
+    real, intent(in)     :: axis(:) ! axis
     real, intent(in)     :: x       ! abscissae
     integer, intent(out) :: index   ! lower-left corner index
     integer, intent(out) ::  ier    ! error flag (0=ok)
@@ -194,8 +194,8 @@ pure subroutine cld_ntrp_locate_cell(axis, x, index, ier)
              if(axis(index) >= x-tol) return
           enddo
        endif
-    endif    
-    
+    endif
+
   end subroutine cld_ntrp_locate_cell
 
 !...............................................................................
@@ -216,13 +216,13 @@ pure subroutine cld_ntrp_get_flat_index(nsizes, indices, flat_index, ier)
        ier = 1
        return
     endif
-    
+
     flat_index = indices(nd)-1
     do id = nd-1, 1, -1
        flat_index = flat_index*nsizes(id) + indices(id)-1
     enddo
-    flat_index = flat_index + 1    
-    
+    flat_index = flat_index + 1
+
   end subroutine cld_ntrp_get_flat_index
 
 !...............................................................................
@@ -266,9 +266,8 @@ pure subroutine cld_ntrp_get_cell_values(nsizes, fnodes, indices, fvals, ier)
        call cld_ntrp_get_flat_index(nsizes, node_indices, flat_index, iflag)
        fvals(Ic) = fnodes(flat_index)
     enddo
-    
+
   end subroutine cld_ntrp_get_cell_values
 
 end MODULE cloud_interpolator_mod
 !===============================================================================
-

@@ -10,15 +10,15 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_builddir}/drifters -I${top_builddir}/mpp	\
+AM_CPPFLAGS = -I${top_builddir}/drifters -I${top_builddir}/mpp \
 -I${top_srcdir}/include -I${top_builddir}/fms
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_cloud_interpolator test_drifters_input		\
-test_drifters_comm test_drifters_core test_drifters_io test_quicksort	\
+check_PROGRAMS = test_cloud_interpolator test_drifters_input \
+test_drifters_comm test_drifters_core test_drifters_io test_quicksort \
 test_drifters
 
 # This is the source code for the tests.
@@ -31,16 +31,16 @@ test_quicksort_SOURCES = test_quicksort.F90
 test_drifters_SOURCES = test_drifters.F90
 
 # Run the test programs.
-TESTS = test_drifters_io.sh test_cloud_interpolator.sh			\
-test_drifters_input.sh test_drifters_comm.sh test_drifters_core.sh	\
+TESTS = test_drifters_io.sh test_cloud_interpolator.sh \
+test_drifters_input.sh test_drifters_comm.sh test_drifters_core.sh \
 test_quicksort.sh test_drifters.sh
 
 # Include these files in the distribution.
-EXTRA_DIST = input_base.nml test_cloud_interpolator.bats		\
-test_cloud_interpolator.sh test_drifters_io.bats test_drifters_io.sh	\
-test_drifters_input.bats test_drifters_input.sh				\
-test_drifters_comm.bats test_drifters_comm.sh test_drifters_core.bats	\
-test_drifters_core.sh test_quicksort.bats test_quicksort.sh		\
+EXTRA_DIST = input_base.nml test_cloud_interpolator.bats \
+test_cloud_interpolator.sh test_drifters_io.bats test_drifters_io.sh \
+test_drifters_input.bats test_drifters_input.sh \
+test_drifters_comm.bats test_drifters_comm.sh test_drifters_core.bats \
+test_drifters_core.sh test_quicksort.bats test_quicksort.sh \
 test_drifters.bats test_drifters.sh drifters_inp_test_3d.cdl
 
 # Clean up

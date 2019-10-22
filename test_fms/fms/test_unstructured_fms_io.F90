@@ -105,7 +105,7 @@ program test_unstructured_fms_io
 
    !Initialize mpp, get the rank of the current process and the number
    !of ranks in the current pelist.
-    call mpp_init() 
+    call mpp_init()
     npes = mpp_npes()
 
    !Get the values from the namelist file.
@@ -484,7 +484,7 @@ contains
         endif
 
        !Define the number of "I/O tile factor".  The number of ranks that
-       !participate in I/O for a tile is equal to: 
+       !participate in I/O for a tile is equal to:
        !
        ! num_io_ranks_on_a_tile = num_ranks_on_the_tile / "I/O tile factor".
        !

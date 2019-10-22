@@ -18,7 +18,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer, &
-                                    flags, complete, position, extra_halo, name, tile_count) 
+                                    flags, complete, position, extra_halo, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field(:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: wbuffer(:,:)
@@ -48,7 +48,7 @@ subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffe
       ptr_s = LOC(sbuffer)
       ptr_n = LOC(nbuffer)
       call mpp_update_nest_fine( field3D, nest_domain, wbuffer3D, ebuffer3D, sbuffer3D, nbuffer3D, &
-                                 flags, complete, position, extra_halo, name, tile_count) 
+                                 flags, complete, position, extra_halo, name, tile_count)
 
       return
 
@@ -56,7 +56,7 @@ subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffe
 end subroutine MPP_UPDATE_NEST_FINE_2D_
 
 subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer, &
-                                    flags, complete, position, extra_halo, name, tile_count) 
+                                    flags, complete, position, extra_halo, name, tile_count)
     MPP_TYPE_,             intent(in)      :: field(:,:,:)
     type(nest_domain_type), intent(inout)  :: nest_domain
     MPP_TYPE_,             intent(inout)   :: wbuffer(:,:,:)
@@ -86,7 +86,7 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
    integer, save    :: isize_save=0, jsize_save=0, ksize_save=0
    integer          :: wbuffersz_save=0, ebuffersz_save=0, sbuffersz_save=0, nbuffersz_save=0
    integer, save    :: add_halo_save=0, update_flags_save=0, update_position_save=0
-   integer, save    :: list=0 
+   integer, save    :: list=0
 
    add_halo = 0
    if(present(extra_halo)) add_halo = add_halo
@@ -151,7 +151,7 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
       l_size = list
       list = 0
    end if
-      
+
    if(is_complete)then
       update => search_C2F_nest_overlap(nest_domain, add_halo, update_position)
       call mpp_do_update_nest_fine(f_addrs(1:l_size), nest_domain, update, d_type, ksize, &
@@ -165,7 +165,7 @@ end subroutine MPP_UPDATE_NEST_FINE_3D_
 
 !###############################################################################
 subroutine MPP_UPDATE_NEST_FINE_4D_(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer, &
-                                    flags, complete, position, extra_halo, name, tile_count) 
+                                    flags, complete, position, extra_halo, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field(:,:,:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: wbuffer(:,:,:,:)
@@ -196,7 +196,7 @@ subroutine MPP_UPDATE_NEST_FINE_4D_(field, nest_domain, wbuffer, ebuffer, sbuffe
       ptr_s = LOC(sbuffer)
       ptr_n = LOC(nbuffer)
       call mpp_update_nest_fine( field3D, nest_domain, wbuffer3D, ebuffer3D, sbuffer3D, nbuffer3D, &
-                                 flags, complete, position, extra_halo, name, tile_count) 
+                                 flags, complete, position, extra_halo, name, tile_count)
 
       return
 
@@ -205,7 +205,7 @@ end subroutine MPP_UPDATE_NEST_FINE_4D_
 
 
 
-subroutine MPP_UPDATE_NEST_COARSE_2D_(field, nest_domain, buffer, complete, position, name, tile_count) 
+subroutine MPP_UPDATE_NEST_COARSE_2D_(field, nest_domain, buffer, complete, position, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field(:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: buffer(:,:)
@@ -220,7 +220,7 @@ subroutine MPP_UPDATE_NEST_COARSE_2D_(field, nest_domain, buffer, complete, posi
       pointer( ptr_b, buffer3D)
       ptr = LOC(field)
       ptr_b = LOC(buffer)
-      call mpp_update_nest_coarse( field3D, nest_domain, buffer3D, complete, position, name, tile_count) 
+      call mpp_update_nest_coarse( field3D, nest_domain, buffer3D, complete, position, name, tile_count)
 
       return
 
@@ -228,7 +228,7 @@ subroutine MPP_UPDATE_NEST_COARSE_2D_(field, nest_domain, buffer, complete, posi
 end subroutine MPP_UPDATE_NEST_COARSE_2D_
 
 
-subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, position, name, tile_count) 
+subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, position, name, tile_count)
    MPP_TYPE_,             intent(in)      :: field(:,:,:)
    type(nest_domain_type), intent(inout)  :: nest_domain
    MPP_TYPE_,             intent(inout)   :: buffer(:,:,:)
@@ -249,7 +249,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, posi
    integer          :: isize, jsize, ksize, l_size
    integer, save    :: isize_save=0, jsize_save=0, ksize_save=0
    integer, save    :: update_position_save=0
-   integer, save    :: list=0 
+   integer, save    :: list=0
 
    update_position = CENTER
    if(present(position)) update_position = position
@@ -297,7 +297,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, posi
       l_size = list
       list = 0
    end if
-      
+
    if(is_complete)then
       update => search_F2C_nest_overlap(nest_domain, update_position)
       call mpp_do_update_nest_coarse(f_addrs(1:l_size), nest_domain, update, d_type, ksize, &
@@ -307,7 +307,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field, nest_domain, buffer, complete, posi
 end subroutine MPP_UPDATE_NEST_COARSE_3D_
 
 !###############################################################################
-subroutine MPP_UPDATE_NEST_COARSE_4D_(field, nest_domain, buffer, complete, position, name, tile_count) 
+subroutine MPP_UPDATE_NEST_COARSE_4D_(field, nest_domain, buffer, complete, position, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field(:,:,:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: buffer(:,:,:,:)
@@ -323,7 +323,7 @@ subroutine MPP_UPDATE_NEST_COARSE_4D_(field, nest_domain, buffer, complete, posi
       pointer( ptr_b, buffer3D)
       ptr = LOC(field)
       ptr_b = LOC(buffer)
-      call mpp_update_nest_coarse( field3D, nest_domain, buffer3D, complete, position, name, tile_count) 
+      call mpp_update_nest_coarse( field3D, nest_domain, buffer3D, complete, position, name, tile_count)
 
       return
 

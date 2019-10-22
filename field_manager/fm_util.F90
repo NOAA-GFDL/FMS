@@ -18,7 +18,7 @@
 !***********************************************************************
 
 module fm_util_mod  !{
-! 
+!
 !<CONTACT EMAIL="Richard.Slater@noaa.gov"> Richard D. Slater
 !</CONTACT>
 !
@@ -480,7 +480,7 @@ good_length = size(good_fields)
 if (list_length .lt. good_length) then  !{
 
 !
-!       If the list length is less than the number of good fields this is an error 
+!       If the list length is less than the number of good fields this is an error
 !       as the list should be fully populated and we'll check which extra fields
 !       are given in good_fields
 !

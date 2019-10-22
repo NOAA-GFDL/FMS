@@ -46,11 +46,11 @@ program test
   !--- namelist definition
   integer           :: nx=360, ny=200, nz=50, nt=2
   integer           :: halo=2, stackmax=1500000, stackmaxd=2000000
-  logical           :: debug=.FALSE.  
+  logical           :: debug=.FALSE.
   character(len=64) :: file='test', iospec='-F cachea'
   integer           :: layout(2) = (/1,1/)
   integer           :: ntiles_x=1, ntiles_y=1  ! total number of tiles will be ntiles_x*ntiles_y,
-                                               ! the grid size for each tile will be (nx/ntiles_x, ny/ntiles_y) 
+                                               ! the grid size for each tile will be (nx/ntiles_x, ny/ntiles_y)
                                                ! set ntiles > 1 to test the efficiency of mpp_io.
   integer           :: io_layout(2) = (/1,1/)  ! set io_layout to divide each tile into io_layout(1)*io_layout(2)
                                                ! group and write out data from the root pe of each group.
@@ -77,7 +77,7 @@ program test
   real(DOUBLE_KIND)                  :: doubledata = 0.0
   real                               :: realarray(4)
 
-  call mpp_init() 
+  call mpp_init()
   pe = mpp_pe()
   npes = mpp_npes()
 
@@ -118,7 +118,7 @@ program test
 
 ! determine the pack_size
   pack_size = size(transfer(doubledata, realarray))
-  if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'test_mpp_io: pack_size should be 1 or 2')  
+  if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'test_mpp_io: pack_size should be 1 or 2')
 
   call test_netcdf_io_append()
 
@@ -199,7 +199,7 @@ program test
   real,                   allocatable :: tstamp(:)
   real, dimension(:,:,:), allocatable :: data, gdata, rdata
 
-  !--- determine the shift and symmetry according to type, 
+  !--- determine the shift and symmetry according to type,
   select case(type)
   case('Simple')
      position = CENTER; symmetry = .false.
@@ -217,7 +217,7 @@ program test
 
 !define domain decomposition
   call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-  if(index(type,"memory") == 0) then  
+  if(index(type,"memory") == 0) then
      call mpp_define_domains( (/1,nx,1,ny/), layout, domain, xhalo=halo, yhalo=halo, symmetry = symmetry )
   else  ! on memory domain
      msize(1) = nx/layout(1) + 2*halo + 2
@@ -287,7 +287,7 @@ program test
      call mpp_write( unit, f, domain, data, time )
   end do
   call mpp_close(unit)
-  
+
 !netCDF single-threaded write
   if( pe.EQ.mpp_root_pe() )print *, 'netCDF single-threaded write'
   call mpp_open( unit, trim(type)//"_"//trim(file)//'s', action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE )
@@ -399,7 +399,7 @@ program test
      call mpp_write( unit, f, data, time )
   end do
   call mpp_close(unit)
-  
+
 !--- append
   if( pe.EQ.mpp_root_pe() )print *, 'netCDF single thread append'
   call mpp_open( unit, "timestats.nc", action=MPP_APPEND, &
@@ -409,7 +409,7 @@ program test
     call mpp_get_info(unit, ndim, nvar, natt, ntime)
 
     if (nvar /= 1) then
-       call mpp_error(FATAL, "test_netcdf_io_append: nvar should be 1")     
+       call mpp_error(FATAL, "test_netcdf_io_append: nvar should be 1")
     endif
     call mpp_get_fields(unit,vars(1:nvar))
   endif
@@ -449,7 +449,7 @@ program test
   ! the file will be read/write using distributed file.
   ! when there is more than one tile, single fileset will be used
   npes = mpp_npes()
-  
+
   id_clock_read  = mpp_clock_id(trim(type)//" read", flags=MPP_CLOCK_SYNC)
   id_clock_write = mpp_clock_id(trim(type)//" write", flags=MPP_CLOCK_SYNC)
 
@@ -474,7 +474,7 @@ program test
      nlon = nx
      nlat = ny
   endif
-  
+
   do n = 1, ntiles
      global_indices(:,n) = (/1,nlon,1,nlat/)
      layout2D(1,n)         = layout(1)/ntiles_x
@@ -516,7 +516,7 @@ program test
 
   case default
      call mpp_error(FATAL, "program test_mpp_io: invaid value of type="//type)
-  end select  
+  end select
 
   call mpp_write_meta( unit, x, 'X', 'km', 'X distance', 'X', domain=xdom, data=(/(i-1.,i=1,nlon)/) )
   call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', 'Y', domain=ydom, data=(/(i-1.,i=1,nlat)/) )
@@ -533,7 +533,7 @@ program test
   end do
   call mpp_clock_end(id_clock_write)
   call mpp_close(unit)
-  
+
   call mpp_sync()               !wait for previous write to complete
 
   select case(type)
@@ -548,7 +548,7 @@ program test
      call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_mpp_io: invaid value of type="//type)
-  end select  
+  end select
 
   call mpp_get_info( unit, ndim, nvar, natt, ntime )
   call mpp_get_fields ( unit, vars(:) )

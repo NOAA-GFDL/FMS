@@ -62,31 +62,31 @@ program test   !test various aspects of mpp_mod
   out_unit = stdout()
 
   if( pe.EQ.root ) print *, '------------------> Calling test_gather <------------------'
-  	call test_gather(npes,pe,root,out_unit)
-  	call test_gatherV(npes,pe,root,out_unit)
-  	call test_gather2DV(npes,pe,root,out_unit)
+    call test_gather(npes,pe,root,out_unit)
+    call test_gatherV(npes,pe,root,out_unit)
+    call test_gather2DV(npes,pe,root,out_unit)
   if( pe.EQ.root ) print *, '------------------> Finished test_gather <------------------'
 
   if( pe.EQ.root ) print *, '------------------> Calling test_broadcast <------------------'
-	call test_broadcast_2D()
- 	call test_broadcast_char()
+    call test_broadcast_2D()
+    call test_broadcast_char()
   if( pe.EQ.root ) print *, '------------------> Finished test_broadcast <------------------'
 
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
   if( pe.EQ.root ) print *, '------------------> Calling test_time_transmit <------------------'
-	call test_time_transmit()
+    call test_time_transmit()
   if( pe.EQ.root ) print *, '------------------> Finished test_time_transmit <------------------'
 
   if( pe.EQ.root ) print *, '------------------> Calling test_mpp_sum <------------------'
-	call test_mpp_sum()
+    call test_mpp_sum()
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_sum <------------------'
 
   if( pe.EQ.root ) print *, '------------------> Calling test_mpp_max <------------------'
-	call test_mpp_max()
+    call test_mpp_max()
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_max <------------------'
 
   if( pe.EQ.root ) print *, '------------------> Calling test_mpp_chksum <------------------'
-	call test_mpp_chksum()
+    call test_mpp_chksum()
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_chksum <------------------'
 
 !test of pointer sharing
@@ -122,7 +122,7 @@ contains
   !currently only test the mpp_broadcast_char
 
   subroutine test_broadcast_char()
-	  integer, parameter :: ARRAYSIZE = 3
+     integer, parameter :: ARRAYSIZE = 3
      integer, parameter :: STRINGSIZE = 256
      character(len=STRINGSIZE), dimension(ARRAYSIZE) :: textA, textB
      integer :: n
@@ -217,7 +217,7 @@ contains
      real :: val
 
      if(npes < 3)then
-		 call mpp_error(FATAL, "Test_gather: minimum of 3 ranks required. Not testing gather; too few ranks.")
+       call mpp_error(FATAL, "Test_gather: minimum of 3 ranks required. Not testing gather; too few ranks.")
      endif
      write(out_unit,*)
 
@@ -265,7 +265,7 @@ contains
      real,allocatable :: sdata(:), rdata(:), ref(:)
 
      if(npes < 3)then
-		 call mpp_error(FATAL, "Test_gatherV: minimum of 3 ranks required. Not testing gather; too few ranks.")
+       call mpp_error(FATAL, "Test_gatherV: minimum of 3 ranks required. Not testing gather; too few ranks.")
      elseif(npes > 9999)then
        call mpp_error(FATAL, "Test_gatherV: maximum of 9999 ranks supported. Not testing gatherV; too many ranks.")
      endif
@@ -347,7 +347,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
 
 
      if(npes < 3)then
-		 call mpp_error(FATAL, "Test_gather2DV: minimum of 3 ranks required. Not testing gather; too few ranks.")
+       call mpp_error(FATAL, "Test_gather2DV: minimum of 3 ranks required. Not testing gather; too few ranks.")
      elseif(npes > 9999)then
        call mpp_error(FATAL, "Test_gather2DV: maximum of 9999 ranks supported. Not testing gather2DV; too many ranks.")
        return
@@ -478,7 +478,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
 
   subroutine test_mpp_sum()
 
-	a = real(pe+1)
+  a = real(pe+1)
   call mpp_sync()
   call SYSTEM_CLOCK(tick0)
   call mpp_sum(a(1:1000),1000)
@@ -547,13 +547,13 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
      end if
 
      if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then
-		call mpp_error(FATAL, 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
+       call mpp_error(FATAL, 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
      else
-		print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='
+       print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='
      endif
 
-	else
-		call mpp_error(FATAL, 'Test mpp_chksum: cannot run this test since n cannot be evenly by npes')
+   else
+     call mpp_error(FATAL, 'Test mpp_chksum: cannot run this test since n cannot be evenly by npes')
    end if
 
   end subroutine test_mpp_chksum

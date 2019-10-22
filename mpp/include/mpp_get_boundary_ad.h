@@ -1,4 +1,4 @@
-! -*-f90-*- 
+! -*-f90-*-
 
 !***********************************************************************
 !*                   GNU Lesser General Public License
@@ -19,7 +19,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! this routine is used to retrieve scalar boundary data for symmetric domain. 
+! this routine is used to retrieve scalar boundary data for symmetric domain.
 
 subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffer, flags, &
                                 position, complete, tile_count)
@@ -28,7 +28,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
   MPP_TYPE_, intent(inout), optional :: ebuffer(:), sbuffer(:), wbuffer(:), nbuffer(:)
   integer,      intent(in), optional :: flags, position, tile_count
   logical,      intent(in), optional :: complete
-  
+
   MPP_TYPE_                             :: field3D(size(field,1),size(field,2),1)
   MPP_TYPE_, allocatable, dimension(:,:) :: ebuffer2D, sbuffer2D, wbuffer2D, nbuffer2D
   integer                               :: xcount, ycount
@@ -66,7 +66,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
        need_ebuffer=.true.; need_wbuffer=.true.
      end select
   end if
-   
+
   tile = 1
   max_ntile = domain%max_ntile_pe
   is_complete = .true.
@@ -84,7 +84,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
      tile = tile_count
   end if
 
-  do_update = (tile == ntile) .AND. is_complete        
+  do_update = (tile == ntile) .AND. is_complete
   list = list+1
   if(list > MAX_DOMAIN_FIELDS)then
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
@@ -147,9 +147,9 @@ subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
      list = 0
   end if
 
-  if(do_update )then 
+  if(do_update )then
      !--- only non-center data in symmetry domain will be retrieved.
-     if(position == CENTER .OR. (.NOT. domain%symmetry) ) return 
+     if(position == CENTER .OR. (.NOT. domain%symmetry) ) return
      bound => search_bound_overlap(domain, update_position)
      call mpp_get_domain_shift(domain, ishift, jshift, update_position)
      if(size(field,1) .NE. domain%x(1)%memory%size+ishift .OR. size(field,2) .NE. domain%y(1)%memory%size+jshift ) &
@@ -207,7 +207,7 @@ subroutine MPP_GET_BOUNDARY_AD_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
        need_ebuffer=.true.; need_wbuffer=.true.
      end select
   end if
-   
+
   tile = 1
   max_ntile = domain%max_ntile_pe
   is_complete = .true.
@@ -225,7 +225,7 @@ subroutine MPP_GET_BOUNDARY_AD_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
      tile = tile_count
   end if
 
-  do_update = (tile == ntile) .AND. is_complete        
+  do_update = (tile == ntile) .AND. is_complete
   list = list+1
   if(list > MAX_DOMAIN_FIELDS)then
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
@@ -290,9 +290,9 @@ subroutine MPP_GET_BOUNDARY_AD_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
      list = 0
   end if
 
-  if(do_update )then 
+  if(do_update )then
      !--- only non-center data in symmetry domain will be retrieved.
-     if(position == CENTER .OR. (.NOT. domain%symmetry) ) return 
+     if(position == CENTER .OR. (.NOT. domain%symmetry) ) return
      bound => search_bound_overlap(domain, update_position)
      call mpp_get_domain_shift(domain, ishift, jshift, update_position)
      if(size(field,1) .NE. domain%x(1)%memory%size+ishift .OR. size(field,2) .NE. domain%y(1)%memory%size+jshift ) &
@@ -318,7 +318,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
   MPP_TYPE_, intent(inout), optional :: ebuffery(:), sbuffery(:), wbuffery(:), nbuffery(:)
   integer,      intent(in), optional :: flags, gridtype, tile_count
   logical,      intent(in), optional :: complete
-  
+
   integer                 :: ntile, update_flags
   logical                 :: need_ebufferx, need_sbufferx, need_wbufferx, need_nbufferx
   logical                 :: need_ebuffery, need_sbuffery, need_wbuffery, need_nbuffery
@@ -340,7 +340,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
 
   ntile = size(domain%x(:))
   update_flags = 0
-  if( PRESENT(flags) ) then 
+  if( PRESENT(flags) ) then
      update_flags = flags
   end if
 
@@ -378,7 +378,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      tile = tile_count
   end if
 
-  do_update = (tile == ntile) .AND. is_complete        
+  do_update = (tile == ntile) .AND. is_complete
   list = list+1
   if(list > MAX_DOMAIN_FIELDS)then
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
@@ -506,7 +506,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      end select
 
      boundx => search_bound_overlap(domain, position_x)
-     boundy => search_bound_overlap(domain, position_y)  
+     boundy => search_bound_overlap(domain, position_y)
 
      call mpp_get_domain_shift(domain, ishift, jshift, position_x)
      if(size(fieldx,1) .NE. domain%x(1)%memory%size+ishift .OR. size(fieldx,2) .NE. domain%y(1)%memory%size+jshift ) &
@@ -519,7 +519,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
              b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
              bsizey, ksize, d_type, update_flags, grid_offset_type)
      endif
-     l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0; 
+     l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0;
      b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
   end if
 
@@ -562,7 +562,7 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
 
   ntile = size(domain%x(:))
   update_flags = 0
-  if( PRESENT(flags) ) then 
+  if( PRESENT(flags) ) then
      update_flags = flags
   end if
 
@@ -600,7 +600,7 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      tile = tile_count
   end if
 
-  do_update = (tile == ntile) .AND. is_complete        
+  do_update = (tile == ntile) .AND. is_complete
   list = list+1
   if(list > MAX_DOMAIN_FIELDS)then
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
@@ -730,7 +730,7 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      end select
 
      boundx => search_bound_overlap(domain, position_x)
-     boundy => search_bound_overlap(domain, position_y)  
+     boundy => search_bound_overlap(domain, position_y)
 
      call mpp_get_domain_shift(domain, ishift, jshift, position_x)
      if(size(fieldx,1) .NE. domain%x(1)%memory%size+ishift .OR. size(fieldx,2) .NE. domain%y(1)%memory%size+jshift ) &
@@ -743,9 +743,8 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
              b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
              bsizey, ksize, d_type, update_flags, grid_offset_type)
      endif
-     l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0; 
+     l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0;
      b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
   end if
 
 end subroutine MPP_GET_BOUNDARY_AD_3D_V_
-

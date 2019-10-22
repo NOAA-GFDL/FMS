@@ -57,7 +57,7 @@
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( to_pe.EQ.NULL_PE .AND. from_pe.EQ.NULL_PE )return
-      
+
       outunit = stdout()
       if( debug )then
           call SYSTEM_CLOCK(tick)
@@ -151,4 +151,3 @@
 
 !####################################################################################
 #include <mpp_transmit.inc>
-

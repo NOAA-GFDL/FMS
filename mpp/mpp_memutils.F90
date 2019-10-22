@@ -47,7 +47,7 @@ contains
     begin_memuse = memuse()*1e-3
 #else
     call mpp_mem_dump(begin_memuse)
-#endif 
+#endif
 
   end subroutine mpp_memuse_begin
 
@@ -71,7 +71,7 @@ contains
     end_memuse = memuse()*1e-3
 #else
     call mpp_mem_dump(end_memuse)
-#endif 
+#endif
 
     mu = stderr(); if( PRESENT(unit) )mu = unit
     m = end_memuse - begin_memuse
@@ -82,7 +82,7 @@ contains
     if( mpp_pe().EQ.mpp_root_pe() )write( mu,'(a64,4es11.3)' ) &
          'Memory(MB) used in '//trim(text)//'=', mmin, mmax, mstd, mavg
 
-    return    
+    return
 
   end subroutine mpp_memuse_end
 
@@ -98,14 +98,14 @@ contains
 !use #ifdef to generate equivalent on other platforms.
 #if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     integer :: memuse !default integer OK?
-#endif 
+#endif
 
     mu = stderr(); if( PRESENT(unit) )mu = unit
 #if defined(__sgi) || defined(__aix) || defined(__SX) || defined(__APPLE__)
     m = memuse()*1e-3
 #else
     call mpp_mem_dump(m)
-#endif 
+#endif
     mmin = m; call mpp_min(mmin)
     mmax = m; call mpp_max(mmax)
     mavg = m; call mpp_sum(mavg); mavg = mavg/mpp_npes()
@@ -136,14 +136,14 @@ real    :: multiplier
 
   mem_unit = get_unit()
   open(mem_unit, file=file_name, form='FORMATTED', action='READ', access='SEQUENTIAL')
-  
+
   do; read (mem_unit,'(a)', end=10) string
     if ( INDEX ( string, 'VmHWM:' ) == 1 ) then
       read (string(7:LEN_TRIM(string)-2),*) memuse
       exit
     endif
   enddo
-  
+
   if (TRIM(string(LEN_TRIM(string)-1:)) == "kB" ) &
     multiplier = 1.0/1024. ! Convert from kB to MB
 

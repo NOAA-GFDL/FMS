@@ -46,5 +46,5 @@ integer, parameter :: stat = -999
 !-------------------------------------------------------------------!
 real(DOUBLE_KIND) :: mpp_domains_stack(1)
 real(DOUBLE_KIND) :: mpp_domains_stack_nonblock(1)
-pointer( ptr_domains_stack, mpp_domains_stack )  
-pointer( ptr_domains_stack_nonblock, mpp_domains_stack_nonblock )  
+pointer( ptr_domains_stack, mpp_domains_stack )
+pointer( ptr_domains_stack_nonblock, mpp_domains_stack_nonblock )
