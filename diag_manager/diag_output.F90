@@ -1142,8 +1142,8 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
     real(kind=4),allocatable :: local_buffer(:,:,:,:)
-     if (present(static) .and. static) then
-          time = 0
+     if (present(static)) then
+          if (static) time = 0
      elseif (present(time_in)) then
           time = time_in
      else
