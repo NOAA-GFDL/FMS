@@ -1,4 +1,4 @@
-! -*-f90-*- 
+! -*-f90-*-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -122,7 +122,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
         nonblock_data(id_update)%buffer_pos_recv(m) = buffer_pos
         buffer_pos = buffer_pos + msgsize
      end if
-  end do   
+  end do
 
   sendsize = 0
   do m = 1, nsend
@@ -151,7 +151,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
         nonblock_data(id_update)%buffer_pos_send(m) = buffer_pos
         buffer_pos = buffer_pos + msgsize
      end if
-  end do   
+  end do
 
   mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, &
      nonblock_data(id_update)%recv_pos+recvsize+sendsize )
@@ -159,7 +159,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
      write( text,'(i8)' )mpp_domains_stack_hwm
      call mpp_error( FATAL, 'MPP_START_DO_UPDATE_V: mpp_domains_stack overflow, '// &
           'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
-  end if  
+  end if
 
   if( reuse_id_update ) then
      if(recvsize .NE. nonblock_data(id_update)%recv_msgsize) then
@@ -205,13 +205,13 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
      ind_y = ind_send_y(m)
      buffer_pos = nonblock_data(id_update)%buffer_pos_send(m)
      pos = buffer_pos
-     
+
      select case( gridtype )
      case(BGRID_NE, BGRID_SW, AGRID)
         if(ind_x >= 0) then
            do n = 1, update_x%send(ind_x)%count
               dir = update_x%send(ind_x)%dir(n)
-              if( send(dir) ) then 
+              if( send(dir) ) then
                  tMe = update_x%send(ind_x)%tileMe(n)
                  is = update_x%send(ind_x)%is(n); ie = update_x%send(ind_x)%ie(n)
                  js = update_x%send(ind_x)%js(n); je = update_x%send(ind_x)%je(n)
@@ -230,7 +230,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
                           end do
                        end do
                     end do
-                 case( MINUS_NINETY ) 
+                 case( MINUS_NINETY )
                     if( BTEST(flags,SCALAR_BIT) ) then
                        do l=1,l_size  ! loop over number of fields
                           ptr_fieldx = f_addrsx(l,tMe)
@@ -321,7 +321,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
                        end do
                     end if
                  end select ! select case( rotation(n) )
-              end if ! if( send(dir) ) 
+              end if ! if( send(dir) )
            end do ! do n = 1, update_x%send(ind_x)%count
         endif
      case(CGRID_NE, CGRID_SW)
@@ -535,7 +535,7 @@ end subroutine MPP_START_DO_UPDATE_3D_V_
 
 !###############################################################################
 subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, update_x, update_y,     &
-                                        d_type, ke_max, ke_list, gridtype, flags) 
+                                        d_type, ke_max, ke_list, gridtype, flags)
   integer,             intent(in) :: id_update
   integer(LONG_KIND),  intent(in) :: f_addrsx(:,:), f_addrsy(:,:)
   type(domain2d),      intent(in) :: domain
@@ -606,7 +606,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
      nonblock_data(id_update)%request_recv(:)    = 0
 #endif
      nonblock_data(id_update)%type_recv(:)    = 0
-  endif 
+  endif
 
   call mpp_clock_begin(unpk_clock_nonblock)
 !$OMP parallel do schedule(dynamic) default(shared) private(ind_x,ind_y,buffer_pos,pos,dir,tMe,is,ie,js,je, &
@@ -614,17 +614,17 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   do m = nrecv,1,-1
      ind_x = ind_recv_x(m)
      ind_y = ind_recv_y(m)
-     buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m)+nonblock_data(id_update)%size_recv(m) 
+     buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m)+nonblock_data(id_update)%size_recv(m)
      pos = buffer_pos
      select case ( gridtype )
      case(BGRID_NE, BGRID_SW, AGRID)
         if(ind_x>=0) then
-           do n = update_x%recv(ind_x)%count, 1, -1    
+           do n = update_x%recv(ind_x)%count, 1, -1
               dir = update_x%recv(ind_x)%dir(n)
               if( recv(dir) ) then
                  tMe = update_x%recv(ind_x)%tileMe(n)
                  is = update_x%recv(ind_x)%is(n); ie = update_x%recv(ind_x)%ie(n)
-                 js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n) 
+                 js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n)
                  msgsize = (ie-is+1)*(je-js+1)*ke_sum*2
                  pos = buffer_pos - msgsize
                  buffer_pos = pos
@@ -642,7 +642,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
                     enddo
                  end do
               end if ! end if( recv(dir) )
-           end do  ! do dir=8,1,-1 
+           end do  ! do dir=8,1,-1
         endif
      case(CGRID_NE, CGRID_SW)
         if(ind_y>=0) then
@@ -676,7 +676,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               if( recv(dir) ) then
                  tMe = update_x%recv(ind_x)%tileMe(n)
                  is = update_x%recv(ind_x)%is(n); ie = update_x%recv(ind_x)%ie(n)
-                 js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n) 
+                 js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n)
                  msgsize = (ie-is+1)*(je-js+1)*ke_sum
                  pos = buffer_pos - msgsize
                  buffer_pos = pos
@@ -725,10 +725,10 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
            end do
         endif
 
-        ! the following code code block correct an error where the data in your halo coming from 
+        ! the following code code block correct an error where the data in your halo coming from
         ! other half may have the wrong sign
         !off west edge, when update north or west direction
-        j = domain%y(1)%global%end+shift 
+        j = domain%y(1)%global%end+shift
         if ( recv(7) .OR. recv(5) ) then
            select case(gridtype)
            case(BGRID_NE)
@@ -824,7 +824,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
            end do
         endif
 
-        ! the following code code block correct an error where the data in your halo coming from 
+        ! the following code code block correct an error where the data in your halo coming from
         ! other half may have the wrong sign
         !off west edge, when update north or west direction
         j = domain%y(1)%global%begin
@@ -917,7 +917,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
            end do
         endif
 
-        ! the following code code block correct an error where the data in your halo coming from 
+        ! the following code code block correct an error where the data in your halo coming from
         ! other half may have the wrong sign
         !off south edge, when update south or west direction
         i = domain%x(1)%global%begin
@@ -1011,7 +1011,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
            end do
         endif
 
-        ! the following code code block correct an error where the data in your halo coming from 
+        ! the following code code block correct an error where the data in your halo coming from
         ! other half may have the wrong sign
         !off south edge, when update south or west direction
         i = domain%x(1)%global%end+shift
@@ -1084,7 +1084,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
      end if
   end if
 
-  
+
   if(nrecv>0) then
     nonblock_data(id_update)%size_recv(:) = 0
   endif
@@ -1100,7 +1100,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
 #else
      nonblock_data(id_update)%request_send(:)    = 0
 #endif
-  endif 
+  endif
 
   return
 

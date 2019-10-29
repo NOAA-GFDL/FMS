@@ -79,7 +79,7 @@ end subroutine mpp_error_basic
 !#####################################################################
 !--- makes a PE set out of a PE list. A PE list is an ordered list of PEs
 !--- a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI
-!--- if stride is non-uniform or not a power of 2, 
+!--- if stride is non-uniform or not a power of 2,
 !--- will return error (not required for MPI but enforced for uniformity)
 function get_peset(pelist)
   integer                       :: get_peset
@@ -101,7 +101,7 @@ function get_peset(pelist)
   endif
 
   allocate( sorted(size(pelist(:))) )
-  sorted = pelist 
+  sorted = pelist
   errunit = stderr()
   if( debug )write( errunit,* )'pelist=', pelist
 
@@ -245,9 +245,9 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
                 call mpp_error(FATAL, "mpp_sync_self: size_recv does not match of data received")
            endif
            size_recv(m) = 0
-        end do    
+        end do
         cur_recv_request = 0
-     end select 
+     end select
   endif
   if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
   return

@@ -21,7 +21,7 @@ subroutine MPP_CREATE_GROUP_UPDATE_2D_(group, field, domain, flags, position, &
      whalo, ehalo, shalo, nhalo)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,            intent(inout)        :: field(:,:)
-  type(domain2D),       intent(inout)        :: domain  
+  type(domain2D),       intent(inout)        :: domain
   integer,              intent(in), optional :: flags
   integer,              intent(in), optional :: position
   integer,              intent(in), optional :: whalo, ehalo, shalo, nhalo
@@ -39,7 +39,7 @@ end subroutine MPP_CREATE_GROUP_UPDATE_2D_
 subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, whalo, ehalo, shalo, nhalo)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,        intent(inout)        :: field(:,:,:)
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
   integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! specify halo region to be updated.
@@ -86,7 +86,7 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, wh
   update_position = CENTER
   !--- when there is NINETY or MINUS_NINETY rotation for some contact, the salar data can not be on E or N-cell,
   if(present(position)) then
-     update_position = position 
+     update_position = position
      if(domain%rotated_ninety .AND. ( position == EAST .OR. position == NORTH ) )  &
           call mpp_error(FATAL, 'MPP_CREATE_GROUP_UPDATE_3D: hen there is NINETY or MINUS_NINETY rotation, ' // &
           'can not use scalar version update_domain for data on E or N-cell' )
@@ -96,7 +96,7 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, wh
      call mpp_error(FATAL,'MPP_CREATE_GROUP_UPDATE: do not support multiple tile per processor')
   endif
 
-  update_flags = XUPDATE+YUPDATE 
+  update_flags = XUPDATE+YUPDATE
   if(present(flags)) update_flags = flags
 
   group%nscalar = group%nscalar + 1
@@ -171,7 +171,7 @@ subroutine MPP_CREATE_GROUP_UPDATE_4D_(group, field, domain, flags, position, &
      whalo, ehalo, shalo, nhalo)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,            intent(inout)        :: field(:,:,:,:)
-  type(domain2D),       intent(inout)        :: domain  
+  type(domain2D),       intent(inout)        :: domain
   integer,              intent(in), optional :: flags
   integer,              intent(in), optional :: position
   integer,              intent(in), optional :: whalo, ehalo, shalo, nhalo
@@ -283,9 +283,9 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
      call mpp_error(FATAL,'MPP_CREATE_GROUP_UPDATE_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
 
-  isize_x = size(fieldx,1); jsize_x = size(fieldx,2); ksize_x = size(fieldx,3) 
-  isize_y = size(fieldy,1); jsize_y = size(fieldy,2); ksize_y = size(fieldy,3) 
-  
+  isize_x = size(fieldx,1); jsize_x = size(fieldx,2); ksize_x = size(fieldx,3)
+  isize_y = size(fieldy,1); jsize_y = size(fieldy,2); ksize_y = size(fieldy,3)
+
   if(ksize_x .NE. ksize_y) call mpp_error(FATAL,  &
            'MPP_CREATE_GROUP_UPDATE_V: mismatch of ksize between fieldx and fieldy')
 
@@ -419,7 +419,7 @@ end subroutine MPP_CREATE_GROUP_UPDATE_4D_V_
 
 subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   type(mpp_group_update_type), intent(inout) :: group
-  type(domain2D),              intent(inout) :: domain  
+  type(domain2D),              intent(inout) :: domain
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nscalar, nvector, nlist
@@ -447,7 +447,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   nlist   = size(domain%list(:))
   gridtype = group%gridtype
 
-  !--- ksize_s must equal ksize_v 
+  !--- ksize_s must equal ksize_v
   if(nvector > 0 .AND. nscalar > 0) then
      if(group%ksize_s .NE. group%ksize_v) then
         call mpp_error(FATAL, "MPP_DO_GROUP_UPDATE: ksize_s and ksize_v are not equal")
@@ -464,7 +464,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
   ptr = LOC(mpp_domains_stack)
 
-  !--- set reset_index_s and reset_index_v to 0 
+  !--- set reset_index_s and reset_index_v to 0
   group%reset_index_s = 0
   group%reset_index_v = 0
 
@@ -498,7 +498,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   call mpp_clock_end(group_pack_clock)
 
   call mpp_clock_begin(group_send_clock)
-  do n = 1, nsend  
+  do n = 1, nsend
      msgsize = group%send_size(n)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_send(n)
@@ -636,7 +636,7 @@ end subroutine MPP_DO_GROUP_UPDATE_
 
 subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   type(mpp_group_update_type), intent(inout) :: group
-  type(domain2D),              intent(inout) :: domain  
+  type(domain2D),              intent(inout) :: domain
   MPP_TYPE_,                   intent(in)    :: d_type
   logical,  optional,          intent(in)    :: reuse_buffer
 
@@ -667,7 +667,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
      ksize = group%ksize_v
   endif
 
-  !--- set reset_index_s and reset_index_v to 0 
+  !--- set reset_index_s and reset_index_v to 0
   group%reset_index_s = 0
   group%reset_index_v = 0
 
@@ -681,7 +681,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   if (.not. reuse_buf_pos) then
      group%buffer_start_pos = nonblock_group_buffer_pos
      nonblock_group_buffer_pos = nonblock_group_buffer_pos + group%tot_msgsize
-     mpp_domains_stack_hwm = nonblock_group_buffer_pos + 1    
+     mpp_domains_stack_hwm = nonblock_group_buffer_pos + 1
      if( mpp_domains_stack_hwm .GT. mpp_domains_stack_size )then
         write( text,'(i8)' )mpp_domains_stack_hwm
         call mpp_error( FATAL, 'set_group_update: mpp_domains_stack overflow, '// &
@@ -729,7 +729,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   call mpp_clock_end(nonblock_group_pack_clock)
 
   call mpp_clock_begin(nonblock_group_send_clock)
-  do n = 1, nsend  
+  do n = 1, nsend
      msgsize = group%send_size(n)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_send(n) + group%buffer_start_pos
@@ -744,7 +744,7 @@ end subroutine MPP_START_GROUP_UPDATE_
 
 subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   type(mpp_group_update_type), intent(inout) :: group
-  type(domain2D),              intent(inout) :: domain  
+  type(domain2D),              intent(inout) :: domain
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nsend, nrecv, nscalar, nvector
@@ -777,7 +777,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   ptr = LOC(mpp_domains_stack_nonblock)
 
   if(num_nonblock_group_update < 1) call mpp_error(FATAL, &
-    'mpp_start_group_update must be called before calling mpp_end_group_update')  
+    'mpp_start_group_update must be called before calling mpp_end_group_update')
   num_nonblock_group_update = num_nonblock_group_update - 1
   complete_group_update_on = .true.
 
@@ -922,7 +922,7 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_(group, field)
   if(group%reset_index_s > group%nscalar) &
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_: group%reset_index_s > group%nscalar")
   if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. group%ksize_s .NE. 1) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_: size of field does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_: size of field does not match the size stored in group")
 
   group%addrs_s(group%reset_index_s) = LOC(field)
 
@@ -937,7 +937,7 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_(group, field)
   if(group%reset_index_s > group%nscalar) &
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_: group%reset_index_s > group%nscalar")
   if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. size(field,3) .NE. group%ksize_s) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_: size of field does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_: size of field does not match the size stored in group")
 
   group%addrs_s(group%reset_index_s) = LOC(field)
 
@@ -953,7 +953,7 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_(group, field)
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_: group%reset_index_s > group%nscalar")
   if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. &
               size(field,3)*size(field,4) .NE. group%ksize_s) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_: size of field does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_: size of field does not match the size stored in group")
 
   group%addrs_s(group%reset_index_s) = LOC(field)
 
@@ -970,9 +970,9 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_(group, fieldx, fieldy)
   if(group%reset_index_v > group%nvector) &
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: group%reset_index_v > group%nvector")
   if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. group%ksize_v .NE. 1) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldx does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldx does not match the size stored in group")
   if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y ) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldy does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldy does not match the size stored in group")
 
   group%addrs_x(group%reset_index_v) = LOC(fieldx)
   group%addrs_y(group%reset_index_v) = LOC(fieldy)
@@ -990,9 +990,9 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_(group, fieldx, fieldy)
   if(group%reset_index_v > group%nvector) &
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: group%reset_index_v > group%nvector")
   if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. size(fieldx,3) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldx does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldx does not match the size stored in group")
   if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. size(fieldy,3) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldy does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldy does not match the size stored in group")
 
   group%addrs_x(group%reset_index_v) = LOC(fieldx)
   group%addrs_y(group%reset_index_v) = LOC(fieldy)
@@ -1011,14 +1011,12 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_(group, fieldx, fieldy)
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: group%reset_index_v > group%nvector")
   if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. &
               size(fieldx,3)*size(fieldx,4) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldx does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldx does not match the size stored in group")
   if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. &
               size(fieldy,3)*size(fieldy,4) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldy does not match the size stored in group") 
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldy does not match the size stored in group")
 
   group%addrs_x(group%reset_index_v) = LOC(fieldx)
   group%addrs_y(group%reset_index_v) = LOC(fieldy)
 
 end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
-
-

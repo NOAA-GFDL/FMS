@@ -73,11 +73,11 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
 !  the operation root
    if(PRESENT(pelist))then
       nproc = size(pelist)
-      allocate(pelist2(nproc)) 
+      allocate(pelist2(nproc))
       pelist2 = pelist
    else
       nproc = mpp_npes()
-      allocate(pelist2(nproc))        
+      allocate(pelist2(nproc))
       pelist2 = (/ (l, l=0+root_pe, nproc-1+root_pe) /)
    endif
    op_root = pelist2(1)
@@ -194,7 +194,7 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is
      gind(4,:)=gind(4,:)+joff
 ! check indices to make sure they are within the range of "data"
      if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(data,1)) .OR. (maxval(gind(3:4,:)).gt.size(data,2))) &
-         call mpp_error(FATAL,"fms_io(mpp_gather_pelist): specified indices (with shift) are outside of the & 
+         call mpp_error(FATAL,"fms_io(mpp_gather_pelist): specified indices (with shift) are outside of the &
                         &range of the receiving array")
    else
 ! non root_pe's send indices to root_pe

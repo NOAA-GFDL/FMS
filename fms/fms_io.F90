@@ -1744,8 +1744,8 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
                           position, tile_count, longname=longname, units=units, compressed_axis=compressed_axis, &
                           read_only=read_only, owns_data=restart_owns_data)
   endif
-  
-  
+
+
   fileObj%p2dr8(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 2
   register_restart_field_r2d8 = index_field
@@ -1793,7 +1793,7 @@ function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain,
                           position, tile_count, longname=longname, units=units, compressed_axis=compressed_axis, &
                           read_only=read_only, owns_data=restart_owns_data)
   endif
-  
+
   fileObj%p3dr8(fileObj%var(index_field)%siz(4), index_field)%p => data
   fileObj%var(index_field)%ndim = 3
   register_restart_field_r3d8 = index_field
@@ -5979,7 +5979,7 @@ subroutine read_data_2d_UG(filename,fieldname,data,SG_domain,UG_domain,timelevel
   type(domainUG), intent(in)                   :: UG_domain
   integer, intent(in) , optional               :: timelevel
   real, dimension(:,:), allocatable            :: data_2d
-  integer :: is, ie, js, je  
+  integer :: is, ie, js, je
 
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(data_2d(is:ie,js:je))

@@ -1,0 +1,12 @@
+test_diag_manager_18
+1 3 1 0 0 0
+
+#output files
+ "diag_test_18_file1", 1, "days", 1, "days", "time"
+ "diag_test_18_file2", 1, "days", 1, "days", "time"
+
+#output variables
+#"test_mod",              "dat2h_2", "dat2h_2", "diag_test_18_file1", "all", .true., "none", 2
+"test_diag_manager_mod", "dat1",    "dat1",    "diag_test_18_file1", "all", .true., "none", 2
+"test_diag_manager_mod", "dat2",    "dat2",    "diag_test_18_file1", "all", .true., "none", 2
+"test_mod",              "dat2h",   "dat2h",   "diag_test_18_file1", "all", .true., "none", 2

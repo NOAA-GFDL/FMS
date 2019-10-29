@@ -265,7 +265,7 @@
       integer :: ioff, joff, position
 
       call mpp_clock_begin(mpp_read_clock)
-      
+
       if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &
       call mpp_error(FATAL, 'MPP_READ: need to specify a time level for data with time axis')
 
@@ -331,10 +331,10 @@
               leny=size(data,2)
               lenz=size(data,3)
               len=lenx*leny*lenz
-              allocate(gdata(len))          
+              allocate(gdata(len))
 ! read field on pe 0 and pass to all pes
               if( pe.EQ.0 ) call READ_RECORD_( unit, field, len, gdata, tindex )
-! broadcasting global array, this can be expensive!          
+! broadcasting global array, this can be expensive!
               call mpp_transmit( put_data=gdata(1), plen=len, to_pe=ALL_PES, &
                                  get_data=gdata(1), glen=len, from_pe=0 )
               ioff = is; joff = js
@@ -383,4 +383,3 @@
       call mpp_read( unit, field, domain, data3D, tindex, tile_count)
       return
     end subroutine MPP_READ_2DDECOMP_4D_
-

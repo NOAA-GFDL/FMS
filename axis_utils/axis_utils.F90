@@ -32,7 +32,7 @@ module axis_utils_mod
   !<DESCRIPTION>
   !
   ! subroutine get_axis_cart(axis,cart) : Returns X,Y,Z or T cartesian attribute
-  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of 
+  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of
   !                                                    available axes, or defined based on axis mid-points
   ! function get_axis_modulo : Returns true if axis has the modulo attribute
   ! function get_axis_fold   : Returns is axis is folded at a boundary (non-standard meta-data)
@@ -62,7 +62,7 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  
+
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -75,7 +75,7 @@ module axis_utils_mod
 contains
 
 
-  subroutine get_axis_cart(axis, cart)      
+  subroutine get_axis_cart(axis, cart)
 
     type(axistype), intent(in) :: axis
     character(len=1), intent(out) :: cart
@@ -184,7 +184,7 @@ contains
        enddo
        data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
        if (abs(data(1)) < epsln) data(1) = 0.0
-       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))         
+       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))
        if (data(1) == 0.0) then
           if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
        endif
@@ -229,11 +229,11 @@ contains
     integer :: natt, i
     type(atttype), dimension(:), allocatable :: atts
     logical :: found_tbeg, found_tend
-    
+
     call mpp_get_atts(axis,natts=natt)
     allocate(atts(natt))
     call mpp_get_atts(axis,atts=atts)
-  
+
     found_tbeg = .false.
     found_tend = .false.
 
@@ -261,7 +261,7 @@ contains
       call mpp_error(FATAL,'error in get: Found modulo_end but not modulo_beg')
     endif
 
-    get_axis_modulo_times = found_tbeg 
+    get_axis_modulo_times = found_tbeg
 
   end function get_axis_modulo_times
 
@@ -304,7 +304,7 @@ contains
     endif
 
     do
-       if (lon_in_range < l_strt) then          
+       if (lon_in_range < l_strt) then
           lon_in_range = lon_in_range +  f360;
        else if (lon_in_range  >  l_end) then
           lon_in_range  = lon_in_range - f360;
@@ -341,13 +341,13 @@ contains
     istrt=0
     do i=1,len-1
        if (lon(i+1) < lon(i)) then
-          istrt=i+1 
+          istrt=i+1
           exit
        endif
     enddo
 
     if (istrt>1) then ! grid is not monotonic
-       if (abs(lon(len)-lon(1)) < epsln) then 
+       if (abs(lon(len)-lon(1)) < epsln) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
           lon(len) = lon(1)
@@ -406,15 +406,15 @@ contains
     real :: value, frac_index
     real, dimension(:) :: array
     logical keep_going
-    
+
     ia = size(array(:))
 
     do i=2,ia
        if (array(i) < array(i-1)) then
-          unit = stdout() 
+          unit = stdout()
           write (unit,*) '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ',&
                               value
-          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
              write (unit,*) 'i=',ii, ' array(i)=',array(ii)
@@ -432,7 +432,7 @@ contains
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             frac_index = float(i-1) + (value-array(i-1))/(array(i)-array(i-1)) 
+             frac_index = float(i-1) + (value-array(i-1))/(array(i)-array(i-1))
              keep_going = .false.
           endif
        enddo
@@ -490,7 +490,7 @@ contains
           unit = stdout()
           write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing &
                          &when searching for nearest value to ',value
-          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
              write (unit,*) 'i=',ii, ' array(i)=',array(ii)
@@ -517,7 +517,7 @@ contains
 
   !#############################################################################
 
-  subroutine interp_1d_linear(grid1,grid2,data1,data2)  
+  subroutine interp_1d_linear(grid1,grid2,data1,data2)
 
     real, dimension(:),    intent(in) :: grid1, data1, grid2
     real, dimension(:), intent(inout) :: data2
@@ -551,8 +551,8 @@ contains
              data2(i) = data1(n)
           else
              w = (grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1))
-             data2(i) = (1.-w)*data1(n-1) + w*data1(n)   
-          endif     
+             data2(i) = (1.-w)*data1(n-1) + w*data1(n)
+          endif
        endif
     enddo
 
@@ -562,7 +562,7 @@ contains
   end subroutine interp_1d_linear
 
   !###################################################################
-  subroutine interp_1d_cubic_spline(grid1, grid2, data1, data2, yp1, ypn)  
+  subroutine interp_1d_cubic_spline(grid1, grid2, data1, data2, yp1, ypn)
 
     real, dimension(:),    intent(in) :: grid1, grid2, data1
     real, dimension(:), intent(inout) :: data2
@@ -573,7 +573,7 @@ contains
     integer                           :: n, m, i, k, klo, khi
 
     n = size(grid1(:))
-    m = size(grid2(:))    
+    m = size(grid2(:))
 
     do i=2,n
        if (grid1(i) <= grid1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
@@ -623,7 +623,7 @@ contains
        else
           if(n==1) then
             klo = n
-          else 
+          else
             klo = n -1
           endif
        endif
@@ -638,7 +638,7 @@ contains
 
   !###################################################################
 
-  subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)  
+  subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)
 
     real, dimension(:),      intent(in)    :: grid1, data1, grid2
     real, dimension(:),      intent(inout) :: data2
@@ -646,7 +646,7 @@ contains
     real,             optional, intent(in) :: yp1, yp2
 
     real              :: y1, y2
-    character(len=32) :: interp_method    
+    character(len=32) :: interp_method
     integer           :: k2, ks, ke
 
     k2 = size(grid2(:))
@@ -674,7 +674,7 @@ contains
   !###################################################################
 
 
-  subroutine interp_1d_2d(grid1,grid2,data1,data2)  
+  subroutine interp_1d_2d(grid1,grid2,data1,data2)
 
     real, dimension(:,:),    intent(in) :: grid1, data1, grid2
     real, dimension(:,:), intent(inout) :: data2
@@ -699,7 +699,7 @@ contains
 
   !###################################################################
 
-  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)  
+  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)
 
     real, dimension(:,:,:),  intent(in)    :: grid1, data1, grid2
     real, dimension(:,:,:),  intent(inout) :: data2
@@ -779,105 +779,3 @@ contains
   end subroutine find_index
 
 end module axis_utils_mod
-
-#ifdef test_axis_utils
-
-program test
-
-use fms_mod,       only : fms_init, file_exist, open_namelist_file, check_nml_error
-use fms_mod,       only : close_file
-use mpp_mod,       only : mpp_error, FATAL, stdout
-use mpp_mod,       only : input_nml_file
-use axis_utils_mod, only: interp_1d
-
-implicit none
-
-
-
-integer, parameter :: maxsize = 100
-
-integer :: n_src = 0
-integer :: n_dst = 0
-real, dimension(MAXSIZE) :: grid_src = 0 
-real, dimension(MAXSIZE) :: grid_dst = 0
-real, dimension(MAXSIZE) :: data_src = 0
-
-namelist / test_axis_utils_nml / n_src, n_dst, grid_src, grid_dst, data_src
-
-real, allocatable :: data_dst(:)
-integer           :: unit, ierr, io
-
-  call fms_init()
-
-  !--- default option of data
-  n_src = 31
-  n_dst = 40
-  grid_src(1:n_src) = (/ -63.6711465476916, -63.6711455476916, 166.564180735096, 401.25299580552, &
-                         641.056493022762, 886.219516665347, 1137.35352761133, 1394.4936854079,   &
-                         1657.17893448689, 1925.64572676068, 2200.13183483549, 2480.9124139255,   &
-                         2768.35396680912, 3062.86513953019, 3675.47369643284, 4325.10564183322,  &
-                         5020.19039479527, 5769.85432323481, 6584.25101514851, 7475.94655633703,  &
-                         8462.01951335773, 9568.28246037887, 10178.3869413515, 10834.1425668942,  &
-                         11543.5265942777, 12317.3907407535, 13170.4562394288, 14125.6466646843,  &
-                         15225.8720618086, 16554.7859690842, 19697.1334102613   /)
-  grid_dst(1:n_dst) = (/ 1002.9522552602, 1077.51144617887, 1163.37842788755, 1264.19848463606,  &
-                         1382.57557953916, 1521.56713587855, 1684.76300370633, 1876.37817787584, &
-                         2101.36166220498, 2365.52429149707, 2675.68881278444, 3039.86610206727, &
-                         3467.4620678435, 3969.52058529847, 4553.81573511231, 5159.54844211827,  &
-                         5765.28114912423, 6371.01385613019, 6976.74656313614, 7582.4792701421,  &
-                         8188.21197714806, 8793.94468415402, 9399.67739115997, 10005.4100981659, &
-                         10611.1428051719, 11216.8755121778, 11822.6082191838, 12428.3409261898, &
-                         13034.0736331957, 13639.8063402017, 14245.5390472076, 14851.2717542136, &
-                         15457.0044612196, 16062.7371682255, 16668.4698752315, 17274.2025822374, &
-                         17879.9352892434, 18485.6679962493, 19091.4007032553, 19697.1334102613 /)
-  data_src(1:n_src) = (/ 309.895999643929, 309.991081541887, 309.971074746584, 310.873654697145, &
-                         311.946530606618, 312.862249229647, 314.821236806913, 315.001269608758, &
-                         315.092410930288, 315.19010999336,  315.122964496815, 315.057882573487, &
-                         314.998796850493, 314.984586411292, 315.782246062002, 318.142544345795, &
-                         321.553905292867, 325.247730854554, 329.151282227113, 332.835673638378, &
-                         336.810414210932, 341.64530983048,  344.155248759994, 346.650476976385, &
-                         349.106430095269, 351.915323032738, 354.709396583792, 359.68904432446,  &
-                         371.054289820675, 395.098187506342, 446.150726850039 /)
-
-
-  !---reading namelist 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, test_axis_utils_nml, iostat=io)
-      ierr = check_nml_error(io,'test_axis_utils_nml')
-#else
-  if(file_exist('input.nml')) then
-    unit =  open_namelist_file()
-       ierr=1
-    do while (ierr /= 0)
-          read  (unit, nml=test_axis_utils_nml, iostat=io, end=10)
-          ierr = check_nml_error(io,'test_axis_utils_nml')  ! also initializes nml error codes
-    enddo
- 10    call close_file(unit)
-  endif
-#endif
-
-  if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
-  if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')
-
-  allocate(data_dst(n_dst) )
-
-
-
-  !--- write out data
-  unit = stdout()
-  write(unit,*)' the source grid is ', grid_src(1:n_src)
-  write(unit,*)' the destination grid is ', grid_dst(1:n_dst)
-  write(unit,*)' the source data is ', data_src(1:n_src)
-  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "linear")
-  write(unit,*)' the destination data using linear interpolation is ', data_dst(1:n_dst)
-  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "cubic_spline")
-  write(unit,*)' the destination data using cublic spline interpolation is ', data_dst(1:n_dst)
-
-end program test
-
-
-#endif /* test_axis_utils */
-
-
-
-

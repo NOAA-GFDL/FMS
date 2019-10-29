@@ -18,7 +18,7 @@
 !***********************************************************************
 function MPP_START_UPDATE_DOMAINS_2D_( field, domain, flags, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete)
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -42,7 +42,7 @@ end function MPP_START_UPDATE_DOMAINS_2D_
 function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete )
 
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(domain%x(1)%data%begin:,domain%y(1)%data%begin:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -64,7 +64,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
   character(len=128)         :: text, field_name
   integer, save              :: ke_list(MAX_DOMAIN_FIELDS, MAX_TILES)=0
   integer(LONG_KIND), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  type(overlapSpec), pointer :: update => NULL()  
+  type(overlapSpec), pointer :: update => NULL()
   MPP_TYPE_                  :: d_type
 
   field_name = "unknown"
@@ -108,7 +108,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
      if(domain%rotated_ninety .AND. ( position == EAST .OR. position == NORTH ) )  &
           call mpp_error(FATAL, 'MPP_START_UPDATE_DOMAINS_3D: hen there is NINETY or MINUS_NINETY rotation, ' // &
           'can not use scalar version update_domain for data on E or N-cell' )
-     update_position = position    
+     update_position = position
   endif
 
   max_ntile = domain%max_ntile_pe
@@ -175,7 +175,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
      l_size = list
      list = 0
   end if
-  
+
   if(do_update) then
     if(num_nonblock_group_update>0) call mpp_error(FATAL, "MPP_START_UPDATE_DOMAINS: "// &
           " can not be called in the middle of mpp_start_group_update/mpp_complete_group_update call")
@@ -213,7 +213,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
         nonblock_data(current_id)%update_shalo = update_shalo
         nonblock_data(current_id)%update_nhalo = update_nhalo
         nonblock_data(current_id)%update_position = update_position
-        nonblock_data(current_id)%recv_pos = nonblock_buffer_pos  
+        nonblock_data(current_id)%recv_pos = nonblock_buffer_pos
      endif
      nonblock_data(current_id)%nfields = l_size
      nonblock_data(current_id)%field_addrs(1:l_size) = f_addrs(1:l_size,1)
@@ -240,7 +240,7 @@ end function MPP_START_UPDATE_DOMAINS_3D_
 !##########################################################################################
 function MPP_START_UPDATE_DOMAINS_4D_( field, domain, flags, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete )
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(:,:,:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -264,7 +264,7 @@ end function MPP_START_UPDATE_DOMAINS_4D_
 !##########################################################################################
 function MPP_START_UPDATE_DOMAINS_5D_( field, domain, flags, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete)
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(:,:,:,:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -289,7 +289,7 @@ end function MPP_START_UPDATE_DOMAINS_5D_
 subroutine MPP_COMPLETE_UPDATE_DOMAINS_2D_( id_update, field, domain, flags, position, &
                                             whalo, ehalo, shalo, nhalo, name, tile_count, complete )
   integer,          intent(in)           :: id_update
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -310,7 +310,7 @@ end subroutine MPP_COMPLETE_UPDATE_DOMAINS_2D_
 subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, position, &
                                             whalo, ehalo, shalo, nhalo, name, tile_count, complete )
   integer,          intent(in)           :: id_update
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(domain%x(1)%data%begin:,domain%y(1)%data%begin:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -363,7 +363,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
   end if
 
   update_position = CENTER
-  if(present(position)) update_position = position  
+  if(present(position)) update_position = position
   update_flags = XUPDATE+YUPDATE   !default
   if( PRESENT(flags) )update_flags = flags
 
@@ -398,7 +398,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
              "mismatch of address between mpp_start_update_domains and mpp_complete_update_domains")
      endif
   endif
-  
+
   ke_list(list,tile) = size(field,3)
 
   !check to make sure the consistency of halo size, position and flags.
@@ -428,7 +428,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
         update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
         ke_max = maxval(ke_list(1:l_size,1:ntile))
         call mpp_complete_do_update(id_update, f_addrs(1:l_size,1:ntile), domain, update, d_type, &
-                                    ke_max, ke_list(1:l_size,1:ntile), update_flags) 
+                                    ke_max, ke_list(1:l_size,1:ntile), update_flags)
      endif
      nonblock_data(id_update)%nfields = 0
      nonblock_data(id_update)%field_addrs(1:l_size) = 0
@@ -450,7 +450,7 @@ end subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_
 subroutine MPP_COMPLETE_UPDATE_DOMAINS_4D_( id_update, field, domain, flags, position, &
                                             whalo, ehalo, shalo, nhalo, name, tile_count, complete )
   integer,          intent(in)           :: id_update
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(:,:,:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -471,7 +471,7 @@ end subroutine MPP_COMPLETE_UPDATE_DOMAINS_4D_
 subroutine MPP_COMPLETE_UPDATE_DOMAINS_5D_( id_update, field, domain, flags, position, &
                                             whalo, ehalo, shalo, nhalo, name, tile_count, complete )
   integer,          intent(in)           :: id_update
-  type(domain2D),   intent(inout)        :: domain  
+  type(domain2D),   intent(inout)        :: domain
   MPP_TYPE_,        intent(inout)        :: field(:,:,:,:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -575,12 +575,12 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
   else
      update_nhalo = domain%nhalo
   end if
-  
+
   grid_offset_type = AGRID
   if( PRESENT(gridtype) ) grid_offset_type = gridtype
 
   update_flags = XUPDATE+YUPDATE   !default
-  if( PRESENT(flags) ) then 
+  if( PRESENT(flags) ) then
      update_flags = flags
      ! The following test is so that SCALAR_PAIR can be used alone with the
      ! same default update pattern as without.
@@ -663,7 +663,7 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
      list = 0
   end if
   if(do_update)then
-    if(num_nonblock_group_update>0) call mpp_error(FATAL, "MPP_START_UPDATE_DOMAINS_V: "// &       
+    if(num_nonblock_group_update>0) call mpp_error(FATAL, "MPP_START_UPDATE_DOMAINS_V: "// &
          " can not be called in the middle of mpp_start_group_update/mpp_complete_group_update call")
      num_update = num_update + 1
      if( PRESENT(update_id) ) then
@@ -697,7 +697,7 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
         nonblock_data(current_id)%update_shalo = update_shalo
         nonblock_data(current_id)%update_nhalo = update_nhalo
         nonblock_data(current_id)%update_gridtype = grid_offset_type
-        nonblock_data(current_id)%recv_pos = nonblock_buffer_pos  
+        nonblock_data(current_id)%recv_pos = nonblock_buffer_pos
      endif
      nonblock_data(current_id)%nfields = l_size
      nonblock_data(current_id)%field_addrs(1:l_size) = f_addrsx(1:l_size,1)
@@ -736,7 +736,7 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
                                     update_flags, reuse_id_update, field_name)
         else
            call mpp_start_do_update(current_id, f_addrsx(1:l_size,1:ntile), f_addrsy(1:l_size,1:ntile), domain, &
-                                    updatex, updatey, d_type, ke_max, ke_list(1:l_size,1:ntile), grid_offset_type,    & 
+                                    updatex, updatey, d_type, ke_max, ke_list(1:l_size,1:ntile), grid_offset_type,    &
                                     update_flags, reuse_id_update, field_name)
         endif
      endif
@@ -887,7 +887,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
   else
      update_nhalo = domain%nhalo
   end if
-  
+
   grid_offset_type = AGRID
   if( PRESENT(gridtype) ) grid_offset_type = gridtype
 

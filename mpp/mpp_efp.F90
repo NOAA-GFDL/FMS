@@ -228,7 +228,7 @@ function mpp_reproducing_sum_r4_2d(array, isr, ier, jsr, jer, EFP_sum, reproduci
   real(DOUBLE_KIND) :: array_r8(size(array,1), size(array,2))
 
   array_r8 = array
-  
+
   sum = mpp_reproducing_sum_r8_2d(array_r8, isr, ier, jsr, jer, EFP_sum, reproducing, &
                             overflow_check, err)
 

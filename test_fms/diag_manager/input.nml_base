@@ -1,0 +1,21 @@
+&test_diag_manager_nml
+   layout = 1,1
+   test_number = <test_num>
+   nlon = 10
+   nlat = 10
+   nlev = 10
+   io_layout = 1,1
+   numthreads = 1
+   dt_step = 1
+   months = 0
+   days = 1
+/
+
+&diag_manager_nml
+   max_field_attributes=3
+   debug_diag_manager=.true.
+/
+
+&ensemble_nml
+   ensemble_size = 1
+/

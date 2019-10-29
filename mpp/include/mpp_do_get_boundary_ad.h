@@ -1,4 +1,4 @@
-! -*-f90-*- 
+! -*-f90-*-
 
 
 !***********************************************************************
@@ -32,7 +32,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
   MPP_TYPE_ :: ebuffer(bsize(1), ke), sbuffer(bsize(2), ke), wbuffer(bsize(3), ke), nbuffer(bsize(4), ke)
   pointer(ptr_field, field)
   pointer(ptr_ebuffer, ebuffer)
-  pointer(ptr_sbuffer, sbuffer)  
+  pointer(ptr_sbuffer, sbuffer)
   pointer(ptr_wbuffer, wbuffer)
   pointer(ptr_nbuffer, nbuffer)
 
@@ -97,7 +97,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
   endif
 
   send = recv
-  nlist = size(domain%list(:))  
+  nlist = size(domain%list(:))
 
   if(debug_message_passing) then
       allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
@@ -146,7 +146,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
       deallocate(msg1, msg2)
   endif
   !recv
-  buffer_pos = 0     
+  buffer_pos = 0
   do m = 1, bound%nrecv
      msgsize = 0
      do n = 1, bound%recv(m)%count
@@ -215,7 +215,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
                     end do
                  end do
               end do
-           case (ONE_HUNDRED_EIGHTY) 
+           case (ONE_HUNDRED_EIGHTY)
               do l=1,l_size
                  ptr_field = f_addrs(l, tMe)
                  do k = 1, ke
@@ -231,7 +231,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
         end if ! if(send(bound%dir(n)))
      end do ! do n = 1, bound%count
      msgsize = pos - buffer_pos
-     if( msgsize.GT.0 )then  
+     if( msgsize.GT.0 )then
         !--- maybe we do not need the following stack size check.
         mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
         if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
@@ -247,7 +247,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
   call mpp_clock_begin(wait_clock)
   call mpp_sync_self(check=EVENT_RECV)
   call mpp_clock_end(wait_clock)
-  buffer_pos = buffer_recv_size  
+  buffer_pos = buffer_recv_size
 
   !unpack recv
   !unpack buffer in reverse order.
@@ -263,7 +263,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
            select case( bound%recv(m)%dir(n) )
            case ( 1 ) ! EAST
               do l=1,l_size
-                 ptr_ebuffer = b_addrs(1, l, tMe)              
+                 ptr_ebuffer = b_addrs(1, l, tMe)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -277,7 +277,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case ( 2 ) ! SOUTH
               do l=1,l_size
-                 ptr_sbuffer = b_addrs(2, l, tMe)   
+                 ptr_sbuffer = b_addrs(2, l, tMe)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -291,7 +291,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case ( 3 ) ! WEST
               do l=1,l_size
-                 ptr_wbuffer = b_addrs(3, l, tMe)   
+                 ptr_wbuffer = b_addrs(3, l, tMe)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -305,7 +305,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case ( 4 ) ! norTH
               do l=1,l_size
-                 ptr_nbuffer = b_addrs(4, l, tMe)   
+                 ptr_nbuffer = b_addrs(4, l, tMe)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -346,11 +346,11 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   pointer(ptr_fieldx, fieldx)
   pointer(ptr_fieldy, fieldy)
   pointer(ptr_ebufferx, ebufferx)
-  pointer(ptr_sbufferx, sbufferx)  
+  pointer(ptr_sbufferx, sbufferx)
   pointer(ptr_wbufferx, wbufferx)
   pointer(ptr_nbufferx, nbufferx)
   pointer(ptr_ebuffery, ebuffery)
-  pointer(ptr_sbuffery, sbuffery)  
+  pointer(ptr_sbuffery, sbuffery)
   pointer(ptr_wbuffery, wbuffery)
   pointer(ptr_nbuffery, nbuffery)
 
@@ -462,7 +462,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   sendx = recvx
   sendy = recvy
 
-  nlist = size(domain%list(:))  
+  nlist = size(domain%list(:))
 
   nsend_x = boundx%nsend
   nsend_y = boundy%nsend
@@ -474,7 +474,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
      msg1 = 0
      msg2 = 0
 
-     cur_rank = get_rank_recv(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y) 
+     cur_rank = get_rank_recv(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)
 
      do while ( ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y )
         msgsize = 0
@@ -489,7 +489,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
            end do
            ind_x = ind_x+1
            if(ind_x .LE. nrecv_x) then
-              rank_x = boundx%recv(ind_x)%pe - domain%pe 
+              rank_x = boundx%recv(ind_x)%pe - domain%pe
               if(rank_x .LE.0) rank_x = rank_x + nlist
            else
               rank_x = -1
@@ -507,7 +507,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
            end do
            ind_y = ind_y+1
            if(ind_y .LE. nrecv_y) then
-              rank_y = boundy%recv(ind_y)%pe - domain%pe 
+              rank_y = boundy%recv(ind_y)%pe - domain%pe
               if(rank_y .LE.0) rank_y = rank_y + nlist
            else
               rank_y = -1
@@ -519,7 +519,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         msg2(m) = msgsize
      end do
 
-     cur_rank = get_rank_send(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y) 
+     cur_rank = get_rank_send(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)
      do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
         msgsize = 0
         if(cur_rank == rank_x) then
@@ -533,7 +533,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
            enddo
            ind_x = ind_x+1
            if(ind_x .LE. nsend_x) then
-              rank_x = boundx%send(ind_x)%pe - domain%pe 
+              rank_x = boundx%send(ind_x)%pe - domain%pe
               if(rank_x .LT.0) rank_x = rank_x + nlist
            else
               rank_x = nlist+1
@@ -551,14 +551,14 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
            end do
            ind_y = ind_y+1
            if(ind_y .LE. nsend_y) then
-              rank_y = boundy%send(ind_y)%pe - domain%pe 
+              rank_y = boundy%send(ind_y)%pe - domain%pe
               if(rank_y .LT.0) rank_y = rank_y + nlist
            else
               rank_y = nlist+1
            endif
         endif
         cur_rank = min(rank_x, rank_y)
-        call mpp_send( msgsize, plen=1, to_pe=to_pe, tag=COMM_TAG_3)        
+        call mpp_send( msgsize, plen=1, to_pe=to_pe, tag=COMM_TAG_3)
      enddo
 
       call mpp_sync_self(check=EVENT_RECV)
@@ -590,8 +590,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
            do i = is ,ie, midpoint
               if( domain%x(1)%compute%begin == i )then
                  do l=1,l_size
-                    ptr_wbufferx = b_addrsx(3, l, tMe)     
-                    ptr_wbuffery = b_addrsy(3, l, tMe)     
+                    ptr_wbufferx = b_addrsx(3, l, tMe)
+                    ptr_wbuffery = b_addrsy(3, l, tMe)
                     do k = 1,ke
                        wbufferx(j,k) = 0
                        wbuffery(j,k) = 0
@@ -607,8 +607,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
 
   !unpack recv
   !unpack buffer in reverse order.
-  buffer_pos = 0     
-  cur_rank = get_rank_recv(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)   
+  buffer_pos = 0
+  cur_rank = get_rank_recv(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)
   do while ( ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y )
      msgsize = 0
      if(cur_rank == rank_x) then
@@ -622,7 +622,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do
         ind_x = ind_x+1
         if(ind_x .LE. nrecv_x) then
-           rank_x = boundx%recv(ind_x)%pe - domain%pe 
+           rank_x = boundx%recv(ind_x)%pe - domain%pe
            if(rank_x .LE.0) rank_x = rank_x + nlist
         else
            rank_x = -1
@@ -640,7 +640,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do
         ind_y = ind_y+1
         if(ind_y .LE. nrecv_y) then
-           rank_y = boundy%recv(ind_y)%pe - domain%pe 
+           rank_y = boundy%recv(ind_y)%pe - domain%pe
            if(rank_y .LE.0) rank_y = rank_y + nlist
         else
            rank_y = -1
@@ -654,7 +654,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   end do
   buffer_recv_size = buffer_pos
 
-  cur_rank = get_rank_unpack(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y) 
+  cur_rank = get_rank_unpack(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)
 
   do while(ind_x >0 .OR. ind_y >0)
      if(cur_rank == rank_y) then
@@ -669,7 +669,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               select case( boundy%recv(ind_y)%dir(n) )
               case ( 1 ) ! EAST
                  do l=1,l_size
-                    ptr_ebuffery = b_addrsy(1, l, tMe)     
+                    ptr_ebuffery = b_addrsy(1, l, tMe)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -684,7 +684,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 2 ) ! SOUTH
                  do l=1,l_size
-                    ptr_sbuffery = b_addrsy(2, l, tMe)     
+                    ptr_sbuffery = b_addrsy(2, l, tMe)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -699,7 +699,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 3 ) ! WEST
                  do l=1,l_size
-                    ptr_wbuffery = b_addrsy(3, l, tMe)     
+                    ptr_wbuffery = b_addrsy(3, l, tMe)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -714,7 +714,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 4 ) ! norTH
                  do l=1,l_size
-                    ptr_nbuffery = b_addrsy(4, l, tMe)     
+                    ptr_nbuffery = b_addrsy(4, l, tMe)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -732,7 +732,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do
         ind_y = ind_y-1
         if(ind_y .GT. 0) then
-           rank_y = boundy%recv(ind_y)%pe - domain%pe 
+           rank_y = boundy%recv(ind_y)%pe - domain%pe
            if(rank_y .LE.0) rank_y = rank_y + nlist
         else
            rank_y = nlist+1
@@ -751,7 +751,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               select case( boundx%recv(ind_x)%dir(n) )
               case ( 1 ) ! EAST
                  do l=1,l_size
-                    ptr_ebufferx = b_addrsx(1, l, tMe)     
+                    ptr_ebufferx = b_addrsx(1, l, tMe)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -766,7 +766,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 2 ) ! SOUTH
                  do l=1,l_size
-                    ptr_sbufferx = b_addrsx(2, l, tMe)     
+                    ptr_sbufferx = b_addrsx(2, l, tMe)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -781,7 +781,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 3 ) ! WEST
                  do l=1,l_size
-                    ptr_wbufferx = b_addrsx(3, l, tMe)     
+                    ptr_wbufferx = b_addrsx(3, l, tMe)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -796,7 +796,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 4 ) ! norTH
                  do l=1,l_size
-                    ptr_nbufferx = b_addrsx(4, l, tMe)     
+                    ptr_nbufferx = b_addrsx(4, l, tMe)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -814,7 +814,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do
         ind_x = ind_x-1
         if(ind_x .GT. 0) then
-           rank_x = boundx%recv(ind_x)%pe - domain%pe 
+           rank_x = boundx%recv(ind_x)%pe - domain%pe
            if(rank_x .LE.0) rank_x = rank_x + nlist
         else
            rank_x = nlist+1
@@ -824,8 +824,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   end do
 
   !recv
-  buffer_pos = 0     
-  cur_rank = get_rank_recv(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)   
+  buffer_pos = 0
+  cur_rank = get_rank_recv(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)
 
   do while ( ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y )
      msgsize = 0
@@ -841,7 +841,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do
         ind_x = ind_x+1
         if(ind_x .LE. nrecv_x) then
-           rank_x = boundx%recv(ind_x)%pe - domain%pe 
+           rank_x = boundx%recv(ind_x)%pe - domain%pe
            if(rank_x .LE.0) rank_x = rank_x + nlist
         else
            rank_x = -1
@@ -860,7 +860,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do
         ind_y = ind_y+1
         if(ind_y .LE. nrecv_y) then
-           rank_y = boundy%recv(ind_y)%pe - domain%pe 
+           rank_y = boundy%recv(ind_y)%pe - domain%pe
            if(rank_y .LE.0) rank_y = rank_y + nlist
         else
            rank_y = -1
@@ -876,7 +876,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   buffer_recv_size = buffer_pos
 
   ! send
-  cur_rank = get_rank_send(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y) 
+  cur_rank = get_rank_send(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)
 
   do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
      pos = buffer_pos
@@ -892,7 +892,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do  !do n = 1, boundx%count
         ind_x = ind_x+1
         if(ind_x .LE. nsend_x) then
-           rank_x = boundx%send(ind_x)%pe - domain%pe 
+           rank_x = boundx%send(ind_x)%pe - domain%pe
            if(rank_x .LT.0) rank_x = rank_x + nlist
         else
            rank_x = nlist+1
@@ -911,7 +911,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do    ! do n = 1, boundy%count
         ind_y = ind_y+1
         if(ind_y .LE. nsend_y) then
-           rank_y = boundy%send(ind_y)%pe - domain%pe 
+           rank_y = boundy%send(ind_y)%pe - domain%pe
            if(rank_y .LT.0) rank_y = rank_y + nlist
         else
            rank_y = nlist+1
@@ -919,7 +919,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
      endif
      cur_rank = min(rank_x, rank_y)
      msgsize = pos - buffer_pos
-     if( msgsize.GT.0 )then  
+     if( msgsize.GT.0 )then
         !--- maybe we do not need the following stack size check.
         mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos )
         if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
@@ -931,14 +931,14 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         buffer_pos = pos
      end if
 
-  end do       
+  end do
 
   call mpp_sync_self(check=EVENT_RECV)
 
 !send second part---------------------------------------------------------------
   buffer_pos = buffer_recv_size
 
-  cur_rank = get_rank_send(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y) 
+  cur_rank = get_rank_send(domain, boundx, boundy, rank_x, rank_y, ind_x, ind_y)
   buffer_pos_old = buffer_pos
   pos = buffer_pos
 
@@ -997,12 +997,12 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                        do j = js, je
                           do i = ie, is, -1
                              pos = pos + 1
-                             fieldy(i,j,k)= fieldy(i,j,k)+ buffer(pos) 
+                             fieldy(i,j,k)= fieldy(i,j,k)+ buffer(pos)
                           end do
                        end do
                     end do
                  end do
-              case (ONE_HUNDRED_EIGHTY) 
+              case (ONE_HUNDRED_EIGHTY)
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size
                        ptr_fieldx = f_addrsx(l, tMe)
@@ -1015,7 +1015,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                           end do
                        end do
                     end do
-                 else     
+                 else
                     do l=1,l_size
                        ptr_fieldx = f_addrsx(l, tMe)
                        do k = 1, ke
@@ -1033,7 +1033,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do  !do n = 1, boundx%count
         ind_x = ind_x+1
         if(ind_x .LE. nsend_x) then
-           rank_x = boundx%send(ind_x)%pe - domain%pe 
+           rank_x = boundx%send(ind_x)%pe - domain%pe
            if(rank_x .LT.0) rank_x = rank_x + nlist
         else
            rank_x = nlist+1
@@ -1098,7 +1098,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                        end do
                     end do
                  end if
-              case (ONE_HUNDRED_EIGHTY) 
+              case (ONE_HUNDRED_EIGHTY)
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size
                        ptr_fieldy = f_addrsy(l, tMe)
@@ -1111,7 +1111,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                           end do
                        end do
                     end do
-                 else     
+                 else
                     do l=1,l_size
                        ptr_fieldy = f_addrsy(l, tMe)
                        do k = 1, ke
@@ -1129,7 +1129,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
         end do    ! do n = 1, boundy%count
         ind_y = ind_y+1
         if(ind_y .LE. nsend_y) then
-           rank_y = boundy%send(ind_y)%pe - domain%pe 
+           rank_y = boundy%send(ind_y)%pe - domain%pe
            if(rank_y .LT.0) rank_y = rank_y + nlist
         else
            rank_y = nlist+1
@@ -1138,11 +1138,11 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
 
      cur_rank = min(rank_x, rank_y)
      msgsize = pos - buffer_pos
-     if( msgsize.GT.0 )then  
+     if( msgsize.GT.0 )then
         buffer_pos = pos
      end if
 
-  end do       
+  end do
 
   call mpp_sync_self( )
 

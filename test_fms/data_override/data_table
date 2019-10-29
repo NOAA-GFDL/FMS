@@ -1,0 +1,4 @@
+"ICE", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+"ICE", "sic_obs",  "SIC", "INPUT/sst_ice_clim.nc", .false., 300.0
+"OCN", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+"LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
