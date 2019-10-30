@@ -103,7 +103,6 @@ SRCS_F90 = \
          ../random_numbers/random_numbers.F90                               \
          ../sat_vapor_pres/sat_vapor_pres.F90                               \
          ../sat_vapor_pres/sat_vapor_pres_k.F90                             \
-         ../station_data/station_data.F90                                   \
          ../time_interp/time_interp.F90                                     \
          ../time_interp/time_interp_external.F90                            \
          ../time_manager/get_cal_time.F90                                   \
