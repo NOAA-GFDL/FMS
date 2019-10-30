@@ -190,7 +190,6 @@ AC_CONFIG_FILES([Makefile
         tridiagonal/Makefile
         tracer_manager/Makefile
         topography/Makefile
-        station_data/Makefile
         oda_tools/Makefile
         mosaic/Makefile
         monin_obukhov/Makefile
