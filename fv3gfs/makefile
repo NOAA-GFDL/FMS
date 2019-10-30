@@ -47,7 +47,6 @@ SRCS_F90 = \
          ../diag_manager/diag_axis.F90                                      \
          ../diag_manager/diag_data.F90                                      \
          ../diag_manager/diag_grid.F90                                      \
-         ../diag_manager/diag_manifest.F90                                  \
          ../diag_manager/diag_manager.F90                                   \
          ../diag_manager/diag_output.F90                                    \
          ../diag_manager/diag_table.F90                                     \
