@@ -197,7 +197,6 @@ AC_CONFIG_FILES([Makefile
         interpolator/Makefile
         horiz_interp/Makefile
         field_manager/Makefile
-        fft/Makefile
         exchange/Makefile
         drifters/Makefile
         diag_manager/Makefile
@@ -225,7 +224,6 @@ AC_CONFIG_FILES([Makefile
         test_fms/time_manager/Makefile
         test_fms/horiz_interp/Makefile
         test_fms/field_manager/Makefile
-        test_fms/fft/Makefile
         test_fms/axis_utils/Makefile
         test_fms/mosaic/Makefile
         FMS.pc

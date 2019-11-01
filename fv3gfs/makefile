@@ -61,8 +61,6 @@ SRCS_F90 = \
          ../exchange/stock_constants.F90                                    \
          ../exchange/test_xgrid.F90                                         \
          ../exchange/xgrid.F90                                              \
-         ../fft/fft.F90                                                     \
-         ../fft/fft99.F90                                                   \
          ../field_manager/field_manager.F90                                 \
          ../field_manager/fm_util.F90                                       \
          ../fms/fms.F90                                                     \
