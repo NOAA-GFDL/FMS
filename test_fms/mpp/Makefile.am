@@ -32,4 +32,4 @@ test_mpp_domains.sh test_mpp_domains.bats test_mpp_pset.sh \
 test_mpp_pset.bats
 
 # Clean up
-CLEANFILES = input.nml *.out* input.nml_base
+CLEANFILES = input.nml *.out*

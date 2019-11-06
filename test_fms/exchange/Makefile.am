@@ -28,7 +28,7 @@ test_xgrid_SOURCES = test_xgrid.F90
 TESTS = test_xgrid.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_xgrid.sh input.nml test_xgrid.bats
+EXTRA_DIST = test_xgrid.sh input_base.nml test_xgrid.bats
 
 # Clean up
 CLEANFILES = input.nml *.nc *.out

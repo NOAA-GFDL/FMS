@@ -32,4 +32,4 @@ EXTRA_DIST = test_data_override.sh test_data_override.bats \
 input.nml_base diag_table data_table
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out *_table
+CLEANFILES = input.nml *.nc* *.out
