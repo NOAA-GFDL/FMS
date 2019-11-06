@@ -31,9 +31,9 @@ test_quicksort_SOURCES = test_quicksort.F90
 test_drifters_SOURCES = test_drifters.F90
 
 # Run the test programs.
-TESTS = test_drifters_io.sh test_cloud_interpolator.sh \
-test_drifters_comm.sh test_drifters_core.sh \
-test_quicksort.sh #test_drifters.sh test_drifters_input.sh
+TESTS = test_drifters_io.sh test_cloud_interpolator.sh		\
+test_drifters_comm.sh test_drifters_core.sh test_quicksort.sh
+#test_drifters.sh test_drifters_input.sh
 
 # Include these files in the distribution.
 EXTRA_DIST = input_base.nml test_cloud_interpolator.bats \
