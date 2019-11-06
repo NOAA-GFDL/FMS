@@ -29,7 +29,7 @@ TESTS = test_data_override.sh
 
 # Include these files with the distribution.
 EXTRA_DIST = test_data_override.sh test_data_override.bats \
-input_base.nml diag_table data_table
+input_base.nml diag_table_base data_table_base
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out
+CLEANFILES = input.nml *.nc* *.out diag_table data_table
