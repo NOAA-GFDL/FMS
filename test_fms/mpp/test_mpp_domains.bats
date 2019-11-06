@@ -59,7 +59,7 @@ teardown () {
       skip "Fails on Travis"
     fi
     sed "s/test_performance = .false./test_performance = .true./" input.nml_base > input.nml
-    run mpirun -n 2 ./test_mpp_domains
+    run mpirun -n 6 ./test_mpp_domains
     [ "$status" -eq 0 ]
 }
 
@@ -82,7 +82,7 @@ teardown () {
       skip "Fails on Travis"
     fi
     sed "s/test_cubic_grid_redistribute = .false./test_cubic_grid_redistribute = .true./" input.nml_base > input.nml
-    run mpirun -n 2 ./test_mpp_domains
+    run mpirun -n 6 ./test_mpp_domains
     [ "$status" -eq 0 ]
 }
 
@@ -145,7 +145,7 @@ teardown () {
       skip "Fails on Travis"
     fi
     sed "s/check_parallel = .false./check_parallel = .true./" input.nml_base > input.nml
-    run mpirun -n 2 ./test_mpp_domains
+    run mpirun -n 6 ./test_mpp_domains
     [ "$status" -eq 0 ]
 }
 
