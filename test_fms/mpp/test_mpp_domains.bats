@@ -126,15 +126,15 @@ teardown () {
     [ "$status" -eq 0 ]
 }
 
-@test "13: Test Interface" {
-    if [ "$skip_test" = "true" ]
-    then
-      skip "Does not work on Darwin"
-    fi
-    sed "s/test_interface = .false./test_interface = .true./" input.nml_base > input.nml
-    run mpirun -n 2 ./test_mpp_domains
-    [ "$status" -eq 0 ]
-}
+#@test "13: Test Interface" {
+#    if [ "$skip_test" = "true" ]
+#    then
+#      skip "Does not work on Darwin"
+#    fi
+#    sed "s/test_interface = .false./test_interface = .true./" input.nml_base > input.nml
+#    run mpirun -n 2 ./test_mpp_domains
+#    [ "$status" -eq 0 ]
+#}
 
 @test "14: Test Check Parallel" {
     if [ "$skip_test" = "true" ]
