@@ -1,0 +1,62 @@
+&test_mpp_pset_nml
+test_number = 02
+/
+
+
+&test_mpp_domains_nml
+check_parallel = .false.
+debug=.FALSE.
+do_sleep = .false.
+ehalo = 2
+ensemble_size = 1
+extra_halo = 0
+iend_coarse = 10
+iend_fine = 10
+istart_coarse = 1
+istart_fine = 1
+jend_coarse = 10
+jend_fine = 10
+jstart_coarse = 1
+jstart_fine = 1
+layout_cubic = 0,0
+layout_ensemble = 0,0
+layout_tripolar = 0,0
+mix_2D_3D = .false.
+mpes = 3
+nhalo = 2
+npes_coarse = 6
+npes_fine   = 6
+nthreads = 1
+num_fields = 4
+num_iter = 1
+nx_cubic = 10
+nx=64
+ny_cubic = 10
+ny=64
+nz=10
+shalo = 2
+stackmax=10000000
+test_adjoint = .false.
+test_boundary = .false.
+test_cubic_grid_redistribute = .false.
+test_edge_update = .false.
+test_get_nbr = .false.
+test_global_sum = .false.
+test_group = .false.
+test_halosize_performance = .false.
+test_interface = .false.
+test_nest_domain = .false.
+test_nonsym_edge = .false.
+test_performance = .false.
+test_subset = .false.
+test_unstruct = .false.
+tile_coarse = 1
+tile_fine   = 1
+warn_level = "fatal"
+whalo = 2
+wide_halo = .false.
+wide_halo_x = 0
+wide_halo_y = 0
+x_cyclic_offset = 3
+y_cyclic_offset = -4
+/

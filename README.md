@@ -1,6 +1,6 @@
 # Flexible Modeling System (FMS)
 
-The Flexible Modeling System (FMS) is a software framework for supporting the 
+The Flexible Modeling System (FMS) is a software framework for supporting the
 efficient development, construction, execution, and scientific interpretation
 of atmospheric, oceanic, and climate system models.
 

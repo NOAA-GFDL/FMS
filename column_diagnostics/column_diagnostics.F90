@@ -41,11 +41,11 @@ implicit none
 private
 
 !---------------------------------------------------------------------
-!       module to locate and mark desired diagnostic columns         
+!       module to locate and mark desired diagnostic columns
 !
 !
 !--------------------------------------------------------------------
-  
+
 
 
 
@@ -67,23 +67,23 @@ public    column_diagnostics_init,  &
           close_column_diagnostics_units
 
 
-!private 
+!private
 
 
 !--------------------------------------------------------------------
 !----    namelist -----
 
-real          :: crit_xdistance = 4.0   
-                 ! model grid points must be within crit_xdistance in 
-                 ! longitude of the requested diagnostics point 
+real          :: crit_xdistance = 4.0
+                 ! model grid points must be within crit_xdistance in
+                 ! longitude of the requested diagnostics point
                  ! coordinates in order to be flagged as the desired
-                 ! point 
+                 ! point
                  ! [ degrees ]
-real          :: crit_ydistance = 4.0   
-                 ! model grid points must be within crit_ydistance in 
-                 ! latitude of the requested diagnostics point 
+real          :: crit_ydistance = 4.0
+                 ! model grid points must be within crit_ydistance in
+                 ! latitude of the requested diagnostics point
                  ! coordinates in order to be flagged as the desired
-                 ! point 
+                 ! point
                  ! [ degrees ]
 
 namelist / column_diagnostics_nml /              &
@@ -111,10 +111,10 @@ logical    :: module_is_initialized = .false.
 
 !####################################################################
 
-subroutine column_diagnostics_init 
+subroutine column_diagnostics_init
 
 !--------------------------------------------------------------------
-!    column_diagnostics_init is the constructor for 
+!    column_diagnostics_init is the constructor for
 !    column_diagnostics_mod.
 !--------------------------------------------------------------------
 
@@ -144,7 +144,7 @@ subroutine column_diagnostics_init
       call fms_init
       call time_manager_init
       call constants_init
- 
+
 !---------------------------------------------------------------------
 !    read namelist.
 !---------------------------------------------------------------------
@@ -160,7 +160,7 @@ subroutine column_diagnostics_init
         enddo
 10      call close_file (unit)
       endif
-#endif 
+#endif
 !---------------------------------------------------------------------
 !    write version number and namelist to logfile.
 !---------------------------------------------------------------------
@@ -173,7 +173,7 @@ subroutine column_diagnostics_init
       module_is_initialized = .true.
 
 
-end subroutine column_diagnostics_init 
+end subroutine column_diagnostics_init
 
 
 
@@ -197,12 +197,12 @@ subroutine initialize_diagnostic_columns     &
 character(len=*),      intent(in)    :: module
 integer,               intent(in)    :: num_diag_pts_latlon,  &
                                         num_diag_pts_ij
-integer, dimension(:), intent(in)    :: global_i, global_j   
+integer, dimension(:), intent(in)    :: global_i, global_j
 real   , dimension(:), intent(in)    :: global_lat_latlon,    &
-                                        global_lon_latlon 
+                                        global_lon_latlon
 real,    dimension(:,:), intent(in)  :: lonb_in, latb_in
 logical, dimension(:,:), intent(out) :: do_column_diagnostics
-integer, dimension(:), intent(inout) :: diag_i, diag_j        
+integer, dimension(:), intent(inout) :: diag_i, diag_j
 real   , dimension(:), intent(out)   :: diag_lat, diag_lon
 integer, dimension(:), intent(out)   :: diag_units
 !---------------------------------------------------------------------
@@ -225,9 +225,9 @@ integer, dimension(:), intent(out)   :: diag_units
 !       do_column_diagnostics is a diagnostic column in this jrow ?
 !       diag_i                processor i indices of diagnstic columns
 !       diag_j                processor j indices of diagnstic columns
-!       diag_lat              latitudes of diagnostic columns 
+!       diag_lat              latitudes of diagnostic columns
 !                             [ degrees ]
-!       diag_lon              longitudes of diagnostic columns 
+!       diag_lon              longitudes of diagnostic columns
 !                             [ degrees ]
 !       diag_units            unit number for each diagnostic column
 !
@@ -252,18 +252,18 @@ integer, dimension(:), intent(out)   :: diag_units
       character(len=8)   ::  char
       character(len=32)  ::  filename
       logical            ::  allow_ij_input
-      logical            ::  open_file        
+      logical            ::  open_file
 
 !--------------------------------------------------------------------
 !    local variables:
 !
 !       global_lat      latitudes for all diagnostic columns [ degrees ]
-!       global_lon      longitudes for all diagnostic columns 
+!       global_lon      longitudes for all diagnostic columns
 !                       [ degrees ]
 !       num_diag_pts    total number of diagnostic columns
 !       i, j, nn        do loop indices
 !       char            character string for diaganostic column index
-!       filename        filename for output file for diagnostic column 
+!       filename        filename for output file for diagnostic column
 !
 !---------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ integer, dimension(:), intent(out)   :: diag_units
       endif
 
 !----------------------------------------------------------------------
-!    initialize column_diagnostics flag and diag unit numbers. define 
+!    initialize column_diagnostics flag and diag unit numbers. define
 !    total number of diagnostic columns.
 !----------------------------------------------------------------------
       do_column_diagnostics = .false.
@@ -328,10 +328,10 @@ integer, dimension(:), intent(out)   :: diag_units
                          (global_j (nn)-1) *dellat)*RADIAN
         global_lon(nn+num_diag_pts_latlon) = (0.5*dellon +     &
                           (global_i (nn)-1)*dellon)*RADIAN
-      end do   
+      end do
 
 !----------------------------------------------------------------------
-!    loop over all diagnostic points to check for their presence on 
+!    loop over all diagnostic points to check for their presence on
 !    this processor.
 !----------------------------------------------------------------------
       do nn=1,num_diag_pts
@@ -345,16 +345,16 @@ integer, dimension(:), intent(out)   :: diag_units
           call error_mesg ('column_diagnostics_mod', &
                ' invalid longitude', FATAL)
         endif
-        if (global_lat(nn) >= -90.0 .and. global_lat(nn) <= 90.0) then 
+        if (global_lat(nn) >= -90.0 .and. global_lat(nn) <= 90.0) then
         else
           call error_mesg ('column_diagnostics_mod', &
                ' invalid latitude', FATAL)
         endif
 
 !--------------------------------------------------------------------
-!    if the desired diagnostics column is within the current 
+!    if the desired diagnostics column is within the current
 !    processor's domain, define the total and coordinate distances from
-!    each of the processor's grid points to the diagnostics point. 
+!    each of the processor's grid points to the diagnostics point.
 !--------------------------------------------------------------------
 
         if (global_lat(nn) .ge. latb_min .and.  &
@@ -377,7 +377,7 @@ integer, dimension(:), intent(out)   :: diag_units
 
 !--------------------------------------------------------------------
 !    find the grid point on the processor that is within the specified
-!    critical distance and also closest to the requested diagnostics 
+!    critical distance and also closest to the requested diagnostics
 !    column. save the (i,j) coordinates and (lon,lat) of this model
 !    grid point. set a flag indicating that a disgnostics file should
 !    be opened on this processor for this diagnostic point.
@@ -386,7 +386,7 @@ integer, dimension(:), intent(out)   :: diag_units
             do j=1,size(latb_deg,2) - 1
               do i=1,size(lonb_deg,1) - 1
                 if (distance_x(i,j) <= crit_xdistance .and. &
-                    distance_y(i,j) <= crit_ydistance ) then  
+                    distance_y(i,j) <= crit_ydistance ) then
                   if (distance(i,j) < current_distance) then
                     current_distance = distance(i,j)
                     do_column_diagnostics(i,j) = .true.
@@ -402,7 +402,7 @@ integer, dimension(:), intent(out)   :: diag_units
 !    check needed because of the 0.0 / 360.0 longitude periodicity.
 !---------------------------------------------------------------------
                 if (distance_x2(i,j) <= crit_xdistance .and. &
-                    distance_y(i,j) <= crit_ydistance ) then  
+                    distance_y(i,j) <= crit_ydistance ) then
                   if (distance2(i,j) < current_distance) then
                     current_distance = distance2(i,j)
                     do_column_diagnostics(i,j) = .true.
@@ -418,7 +418,7 @@ integer, dimension(:), intent(out)   :: diag_units
 
 !--------------------------------------------------------------------
 !    if the point has been found on this processor, open a diagnostics
-!    file. 
+!    file.
 !--------------------------------------------------------------------
             if (open_file) then
               write (char, '(i2)') nn
@@ -456,11 +456,11 @@ subroutine column_diagnostics_header     &
 
 !--------------------------------------------------------------------
 character(len=*),      intent(in)  :: module
-type(time_type),       intent(in)  :: Time 
+type(time_type),       intent(in)  :: Time
 integer,               intent(in)  :: diag_unit
 integer,               intent(in)  :: nn
 real,    dimension(:), intent(in)  :: diag_lon, diag_lat
-integer, dimension(:), intent(in)  :: diag_i, diag_j         
+integer, dimension(:), intent(in)  :: diag_i, diag_j
 
 !--------------------------------------------------------------------
 !    intent(in) variables
@@ -479,24 +479,24 @@ integer, dimension(:), intent(in)  :: diag_i, diag_j
 !--------------------------------------------------------------------
 !     local variables:
 
-      integer           :: year, month, day, hour, minute, second 
+      integer           :: year, month, day, hour, minute, second
       character(len=8)  :: mon
       character(len=64) :: header
 
 !--------------------------------------------------------------------
 !     local variables:
-!    
-!       year, month, day, hour, minute, seconds   
+!
+!       year, month, day, hour, minute, seconds
 !                      integers defining the current time
 !       mon            character string for the current month
-!       header         title for the output 
-!        
+!       header         title for the output
+!
 !--------------------------------------------------------------------
 
       if (.not. module_is_initialized) call column_diagnostics_init
 
 !--------------------------------------------------------------------
-!    convert the time type to a date and time for printing. convert 
+!    convert the time type to a date and time for printing. convert
 !    month to a character string.
 !--------------------------------------------------------------------
       call get_date (Time, year, month, day, hour, minute, second)
@@ -511,8 +511,8 @@ integer, dimension(:), intent(in)  :: diag_i, diag_j
       write (diag_unit,'(a)')   &
               '======================================================'
       write (diag_unit,'(a)')  ' '
-      header = '               PRINTING ' // module // '  DIAGNOSTICS' 
-      write (diag_unit,'(a)')  header                          
+      header = '               PRINTING ' // module // '  DIAGNOSTICS'
+      write (diag_unit,'(a)')  header
       write (diag_unit,'(a)')  ' '
       write (diag_unit,'(a, i6,2x, a,i4,i4,i4,i4)')  ' time stamp:',  &
                                            year, trim(mon), day, &

@@ -1021,7 +1021,7 @@ module oda_core_mod
                       write(mesg,*) 'out of bounds in forward_obs: k0= ',k0
                       call mpp_error(FATAL,trim(mesg))
                   endif
-                  c =	 Model_obs(n)%k_index(k) - k0
+                  c = Model_obs(n)%k_index(k) - k0
 
                   if (c >= 1.0 .or. c < 0.0 ) call mpp_error(FATAL)
 

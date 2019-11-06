@@ -1,0 +1,40 @@
+# This Travis-CI file for testing the build, and eventually the
+# functionality of the libfms library.
+#
+# This Travis-CI file was created based off the NOAA-GFDL/MOM6
+# Travis-CI file.
+
+# FMS is not a c-language project, although there are a few c-language
+# sources.  However, this is the best choice.
+language: c
+dist: bionic
+sudo: false
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev
+
+env:
+  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8' OPENMP=''
+  - CPPFLAGS_ADD='-DOVERLOAD_R4 -DOVERLOAD_R8' FCFLAGS_REAL_KIND='' OPENMP=''
+  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8' OPENMP='-fopenmp'
+
+# Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
+before_install:
+  - test -n "$CC" && unset CC
+
+before_script:
+  - export CC=mpicc
+  - export FC=mpif90
+  - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500 ${CPPFLAGS_ADD}"
+  - export FCFLAGS="-fcray-pointer -Waliasing -ffree-line-length-none -fno-range-check ${FCFLAGS_REAL_KIND} ${OPENMP}"
+  - export LDFLAGS='-L/usr/lib'
+  - export LOG_DRIVER_FLAGS="--comments"
+
+script:
+  - autoreconf -i
+  - ./configure
+  - make -j distcheck

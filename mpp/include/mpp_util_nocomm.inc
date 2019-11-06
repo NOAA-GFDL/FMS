@@ -49,7 +49,7 @@ subroutine mpp_error_basic( errortype, errormsg )
 
   if( npes.GT.1 )write( text,'(a,i5)' )trim(text)//' from PE', pe   !this is the mpp part
   if( PRESENT(errormsg) )text = trim(text)//': '//trim(errormsg)
-  
+
   errunit = stderr()
   outunit = stdout()
 
@@ -75,7 +75,7 @@ end subroutine mpp_error_basic
 !#####################################################################
 !--- makes a PE set out of a PE list. A PE list is an ordered list of PEs
 !--- a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI
-!--- if stride is non-uniform or not a power of 2, 
+!--- if stride is non-uniform or not a power of 2,
 !--- will return error (not required for MPI but enforced for uniformity)
 function get_peset(pelist)
   integer                       :: get_peset
@@ -114,4 +114,3 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type )
 
   return
 end subroutine mpp_sync_self
-

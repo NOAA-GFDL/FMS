@@ -23,14 +23,14 @@ For the more recent period, 1990-present, the in situ data were
 obtained from radio messages carried on the Global Telecommunication
 System.  The satellite observations were obtained from operational data
 produced by the National Environmental Satellite, Data and Information
-Service (NESDIS).  
+Service (NESDIS).
 
 During the period 1981-1989, the in situ data were obtained from the
 Comprehensive Ocean Atmosphere Data Set (COADS) for the 1980s.  These
 data (see Slutz, et al., 1985, and Woodruff, et al., 1993) consist of
 logbook and radio reports.  The satellite data were obtained from
 analyses of NESDIS data produced at the University of Miami's Rosentiel
-School of Marine and Atmospheric Sciences. 
+School of Marine and Atmospheric Sciences.
 
 
 The OI analysis is done over all ocean areas.  There is no analysis
@@ -81,4 +81,3 @@ PHONE:    (301) 763-8396
 FAX:      (301) 763-8125
 
 UPDATED: 29 November 1995
-

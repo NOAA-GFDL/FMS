@@ -109,6 +109,7 @@ use fms_mod,          only:  open_file, file_exist, error_mesg, &
                              stdlog, close_file
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init
+use ensemble_manager_mod, only : get_ensemble_id, get_ensemble_size
 
 !-------------------------------------------------------------------------------
 
@@ -351,7 +352,7 @@ real,dimension(:,:), intent(in), optional :: blon, blat, area_in
       integer :: unit, io, ierr, nc, logunit
       integer :: field_size_local
       real    :: sum_area_local
-
+      integer :: ensemble_size(6)
 !-------------------------------------------------------------------------------
 !    if routine has already been executed, exit.
 !-------------------------------------------------------------------------------
@@ -435,6 +436,10 @@ real,dimension(:,:), intent(in), optional :: blon, blat, area_in
 !    diag_unit.
 !-------------------------------------------------------------------------------
       if (file_name(1:1) /= ' ' ) then
+        ensemble_size = get_ensemble_size()
+        if (ensemble_size(1) > 1) then
+          file_name = ensemble_file_name(file_name)
+        endif
         nc = len_trim(file_name)
         diag_unit = open_file (file_name(1:nc), action='write')
       endif
@@ -1522,7 +1527,41 @@ real, dimension (size(data,1),size(data,2)) :: data2
 
 end function vert_diag_integral
 
-
+!> \brief Adds .ens_## to the diag_integral.out file name
+function ensemble_file_name(fname) result(updated_file_name)
+     character (len=mxch), intent(inout) :: fname
+     character (len=mxch) :: updated_file_name
+     integer :: ensemble_id_int
+     character(len=7) :: ensemble_suffix
+     character(len=2) :: ensemble_id_char
+     integer :: i
+     !> Make sure the file name short enough to handle adding the ensemble number
+     if (len(trim(fname)) > mxch-7) call error_mesg ('diag_integral_mod :: ensemble_file_name',  &
+          trim(fname)//" is too long and can not support adding ens_XX.  Please shorten the "//&
+          "file_name in the diag_integral_nml", FATAL)
+     !> Get the ensemble ID and convert it to a string
+          ensemble_id_int = get_ensemble_id()
+          write(ensemble_id_char,"(I0)") ensemble_id_int
+     !> Add a 0 if the ensemble is less than 10 (2 digit)
+          if (ensemble_id_int < 10) then
+               ensemble_suffix = ".ens_0"//trim(ensemble_id_char)
+          elseif (ensemble_id_int >= 10 .and. ensemble_id_int < 100) then
+               ensemble_suffix = ".ens_"//trim(ensemble_id_char)
+          else
+               call error_mesg ('diag_integral_mod',  &
+                ' Does not support ensemble sizes over 99.', FATAL)
+          endif
+     !> Insert the ens_ string in the correct location
+     !> Loop through to find the last period
+          do i=len(trim(fname)),2,-1
+               if (fname(i:i) == ".") then
+                    updated_file_name = fname(1:i-1)//trim(ensemble_suffix)//fname(i:mxch)
+                    return
+               endif
+          enddo
+     !> Add to the end if there is no period in the file name
+          updated_file_name = trim(fname)//trim(ensemble_suffix)
+end function ensemble_file_name
 
 
 
