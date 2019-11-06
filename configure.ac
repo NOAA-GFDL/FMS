@@ -55,7 +55,7 @@ if test -z "$FMS_BATS"; then
    AC_MSG_ERROR([Cannot find bats utility. Install bats and try again.])
 fi
 
-# Is sed installed? It is required for testing.
+# Is ncgen installed? It is required for testing.
 AC_CHECK_PROGS([FMS_SED], [sed])
 if test -z "$FMS_SED"; then
    AC_MSG_ERROR([Cannot find sed. Install sed and try again.])
