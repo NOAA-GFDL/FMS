@@ -154,6 +154,7 @@ public :: set_netcdf_mode
 public :: check_netcdf_code
 public :: check_if_open
 public :: set_fileobj_time_name
+public :: unpack_data
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
@@ -218,6 +219,14 @@ interface get_variable_attribute
   module procedure get_variable_attribute_1d
 end interface get_variable_attribute
 
+interface unpack_data
+  module procedure unpack_data_0d
+  module procedure unpack_data_1d
+  module procedure unpack_data_2d
+  module procedure unpack_data_3d
+  module procedure unpack_data_4d
+  module procedure unpack_data_5d
+end interface unpack_data
 
 contains
 
@@ -1658,7 +1667,7 @@ include "get_global_attribute.inc"
 include "get_variable_attribute.inc"
 include "compressed_write.inc"
 include "compressed_read.inc"
-
+include "unpack_data.inc"
 
 !> @brief Wrapper to distinguish interfaces.
 function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart) &
