@@ -100,7 +100,7 @@ use     constants_mod, only: TFREEZE, pi
 use      platform_mod, only: R4_KIND, I2_KIND
 use mpp_mod,           only: input_nml_file
 use fms2_io_mod,       only: FmsNetcdfFile_t, file_exists, open_file, close_file, &
-                             get_dimension_size, read_data
+                             get_dimension_size, read_data, variable_att_exists, get_variable_attribute
 
 implicit none
 private
@@ -1392,6 +1392,7 @@ endif
 
      real   (R4_KIND) :: dat4(mobs,nobs)
      integer(I2_KIND) :: idat(mobs,nobs)
+     real             :: scale_factor
      integer :: nrecords, yr, mo, dy, ierr, k
      integer, dimension(:), allocatable :: ryr, rmo, rdy
      character(len=38)   :: mesg
@@ -1468,7 +1469,11 @@ endif
      else
           call read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-     idat =  nint(dat) ! reconstruct packed data for reproducibity
+
+    if (variable_att_exists(fileobj, ncfieldname, "scale_factor")) then
+      call get_variable_attribute(fileobj, ncfieldname, "scale_factor", scale_factor)
+      idat = nint(dat/scale_factor)
+    endif
 
    !---- unpacking of data ----
 
