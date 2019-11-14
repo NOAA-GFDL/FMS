@@ -110,7 +110,6 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val
-  chksum = trim(adjustl(chksum))
 end function compute_global_checksum_2d
 
 
@@ -225,7 +224,6 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val
-  chksum = trim(adjustl(chksum))
 end function compute_global_checksum_3d
 
 
@@ -341,5 +339,4 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val
-  chksum = trim(adjustl(chksum))
 end function compute_global_checksum_4d
