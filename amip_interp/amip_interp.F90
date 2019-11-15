@@ -1470,11 +1470,12 @@ endif
           call read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
 
+    scale_factor = 1.0
     if (variable_att_exists(fileobj, ncfieldname, "scale_factor")) then
       call get_variable_attribute(fileobj, ncfieldname, "scale_factor", scale_factor)
-      idat = nint(dat/scale_factor)
     endif
 
+    idat = nint(dat/scale_factor)
    !---- unpacking of data ----
 
      if (type(1:3) == 'ice') then
