@@ -766,8 +766,11 @@
       if( PRESENT(checksum) )     field%checksum(1:size(checksum)) = checksum(:)
 
       ! Issue warning if fill and missing are different
-      if ( (present(fill).and.present(missing)) .and. (field%missing .ne. field%fill) ) then
-         call mpp_error(WARNING, 'MPP_WRITE_META: NetCDF attributes _FillValue and missing_value should be equal.')
+      if (present(fill).and.present(missing)) then
+          if (field%missing .ne. field%fill) then
+              call mpp_error(WARNING, 'MPP_WRITE_META: NetCDF attributes &
+                      &_FillValue and missing_value should be equal.')
+          end if
       end if
 !pack is currently used only for netCDF
       field%pack = 2        !default write 32-bit floats
