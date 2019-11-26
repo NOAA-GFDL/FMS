@@ -136,18 +136,12 @@ teardown () {
     [ "$status" -eq 0 ]
 }
 
-# @test "14: Test Check Parallel" {
-#     if [ "$skip_test" = "true" ]
-#     then
-#       skip "Does not work on Darwin"
-#     elif [ "x$TRAVIS" = "xtrue" ]
-#     then
-#       skip "Fails on Travis"
-#     fi
-#     sed "s/check_parallel = .false./check_parallel = .true./" $srcdir/test_fms/mpp/input_base.nml > input.nml
-#     run mpirun -n 6 ./test_mpp_domains
-#     [ "$status" -eq 0 ]
-# }
+@test "14: Test Check Parallel" {
+    skip "Does not work on Darwin or elsewhere"
+    sed "s/check_parallel = .false./check_parallel = .true./" $srcdir/test_fms/mpp/input_base.nml > input.nml
+    run mpirun -n 6 ./test_mpp_domains
+    [ "$status" -eq 0 ]
+}
 
 @test "15: Test Get Nbr" {
     if [ "$skip_test" = "true" ]
