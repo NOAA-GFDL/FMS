@@ -5270,7 +5270,7 @@ end subroutine check_message_size
 
     ntiles  = domain%ntiles
 
-    eCont(:)%ncontact = 0;
+    eCont(:)%ncontact = 0
 
     do n = 1, ntiles
        eCont(n)%ncontact = 0; sCont(n)%ncontact = 0; wCont(n)%ncontact = 0; nCont(n)%ncontact = 0;
