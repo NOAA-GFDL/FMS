@@ -23,10 +23,15 @@ check_PROGRAMS = test_axis_utils
 test_axis_utils_SOURCES = test_axis_utils.F90
 
 # Run the test program.
+if ENABLE_SHELL_TESTS
+TESTS = test_axis_utils2.sh
+else
 TESTS = test_axis_utils.sh
+endif
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_axis_utils.sh test_axis_utils.bats input_base.nml
+EXTRA_DIST = test_axis_utils.sh test_axis_utils.bats input_base.nml	\
+test_axis_utils2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out*

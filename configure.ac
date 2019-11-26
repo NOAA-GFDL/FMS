@@ -43,6 +43,7 @@ AC_ARG_ENABLE([shell-tests],
     [Use shell tests instead of bats tests.])])
 test "x$enable_shell_tests" = xyes || enable_shell_tests=no
 AC_MSG_RESULT([$enable_shell_tests])
+AM_CONDITIONAL(ENABLE_SHELL_TESTS, [test "x$enable_shell_tests" = xyes])
 
 # Find the C compiler.
 AC_PROG_CC
