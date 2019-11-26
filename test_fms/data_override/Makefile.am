@@ -3,11 +3,9 @@
 
 # uramirez, Ed Hartnett
 
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-             $(top_srcdir)/tap-driver.sh
-
 # Set srcdir as evironment variable to be reference in the job script.
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)" builddir="$(top_builddir)"
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
 
 # Find the needed mod and .inc files.
 AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp \
@@ -25,11 +23,15 @@ check_PROGRAMS = test_data_override
 test_data_override_SOURCES = test_data_override.F90
 
 # Run the test program.
+if ENABLE_SHELL_TESTS
+TESTS = test_data_override2.sh
+else
 TESTS = test_data_override.sh
+endif
 
 # Include these files with the distribution.
-EXTRA_DIST = test_data_override.sh test_data_override.bats \
-input_base.nml diag_table_base data_table_base
+EXTRA_DIST = test_data_override.sh test_data_override.bats		\
+input_base.nml diag_table_base data_table_base test_data_override2.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out diag_table data_table
