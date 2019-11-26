@@ -4,7 +4,11 @@
 AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
-AC_INIT([FMS], [2.0-development], [])
+AC_INIT([GFDL FMS Library],
+  [2019.01],
+  [gfdl.climate.model.info@noaa.gov],
+  [FMS],
+  [https://www.gfdl.noaa.gov/fms])
 
 # Find out about the host we're building on.
 AC_CANONICAL_HOST
