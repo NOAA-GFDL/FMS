@@ -3,10 +3,10 @@
 
 # uramirez, Ed Hartnett
 
-TEST_EXTENSIONS = .sh .test
+#TEST_EXTENSIONS = .test
 
 # Set srcdir as evironment variable to be reference in the job script
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+#TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 # Find the needed mod and .inc files.
 AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp \
@@ -26,9 +26,9 @@ test_diag_manager_SOURCES = test_diag_manager.F90
 if ENABLE_SHELL_TESTS
 TESTS = test_diag_manager2.sh
 else
-test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-             $(top_srcdir)/tap-driver.sh
-TESTS = test_diag_manager.test
+#test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+#             $(top_srcdir)/tap-driver.sh
+#TESTS = test_diag_manager.test
 endif
 
 # Copy over other needed files to the srcdir
