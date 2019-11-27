@@ -3,8 +3,7 @@
 
 # uramirez, Ed Hartnett
 
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-             $(top_srcdir)/tap-driver.sh
+TEST_EXTENSIONS = .sh .test
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
@@ -24,10 +23,16 @@ check_PROGRAMS = test_diag_manager
 test_diag_manager_SOURCES = test_diag_manager.F90
 
 # Run the test program.
-TESTS = test_diag_manager.sh
+if ENABLE_SHELL_TESTS
+TESTS = test_diag_manager2.sh
+else
+test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+TESTS = test_diag_manager.test
+endif
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_diag_manager.sh input.nml_base diagTables \
-test_diag_manager.bats
+EXTRA_DIST = test_diag_manager.test input.nml_base diagTables	\
+test_diag_manager.bats test_diag_manager2.sh
 
 CLEANFILES = input.nml *.nc *.out

@@ -11,7 +11,7 @@
 # Output for TAP.
 echo 1..1
 
-# Cause test to fail if any command fails.
+# Copy to builddir and rename data files for tests.
 cp $top_srcdir/test_fms/data_override/data_table_base data_table
 cp $top_srcdir/test_fms/data_override/diag_table_base diag_table
 
