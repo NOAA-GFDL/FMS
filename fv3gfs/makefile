@@ -35,15 +35,18 @@ SRCS_f90 = \
 SRCS_F   =
 
 SRCS_F90 = \
+         ../affinity/fms_affinity.F90                                       \
          ../amip_interp/amip_interp.F90                                     \
          ../astronomy/astronomy.F90                                         \
          ../axis_utils/axis_utils.F90                                       \
          ../block_control/block_control.F90                                 \
          ../column_diagnostics/column_diagnostics.F90                       \
+         ../constants/constants.F90                                         \
          ../coupler/atmos_ocean_fluxes.F90                                  \
          ../coupler/coupler_types.F90                                       \
          ../coupler/ensemble_manager.F90                                    \
          ../data_override/data_override.F90                                 \
+         ../diag_integral/diag_integral.F90                                 \
          ../diag_manager/diag_axis.F90                                      \
          ../diag_manager/diag_data.F90                                      \
          ../diag_manager/diag_grid.F90                                      \
@@ -60,7 +63,6 @@ SRCS_F90 = \
          ../drifters/drifters_io.F90                                        \
          ../drifters/quicksort.F90                                          \
          ../exchange/stock_constants.F90                                    \
-         ../exchange/test_xgrid.F90                                         \
          ../exchange/xgrid.F90                                              \
          ../fft/fft.F90                                                     \
          ../fft/fft99.F90                                                   \
@@ -68,17 +70,16 @@ SRCS_F90 = \
          ../field_manager/fm_util.F90                                       \
          ../fms/fms.F90                                                     \
          ../fms/fms_io.F90                                                  \
-         ../fms/test_fms_io.F90                                             \
-         ../constants/constants.F90                                         \
          ../horiz_interp/horiz_interp.F90                                   \
          ../horiz_interp/horiz_interp_bicubic.F90                           \
          ../horiz_interp/horiz_interp_bilinear.F90                          \
          ../horiz_interp/horiz_interp_conserve.F90                          \
          ../horiz_interp/horiz_interp_spherical.F90                         \
          ../horiz_interp/horiz_interp_type.F90                              \
-         ../horiz_interp/test_horiz_interp.F90                              \
          ../interpolator/interpolator.F90                                   \
          ../memutils/memutils.F90                                           \
+         ../monin_obukhov/monin_obukhov.F90                                 \
+         ../monin_obukhov/monin_obukhov_kernel.F90                          \
          ../mosaic/gradient.F90                                             \
          ../mosaic/grid.F90                                                 \
          ../mosaic/mosaic.F90                                               \
@@ -91,10 +92,6 @@ SRCS_F90 = \
          ../mpp/mpp_parameter.F90                                           \
          ../mpp/mpp_pset.F90                                                \
          ../mpp/mpp_utilities.F90                                           \
-         ../mpp/test_mpp.F90                                                \
-         ../mpp/test_mpp_domains.F90                                        \
-         ../mpp/test_mpp_io.F90                                             \
-         ../mpp/test_mpp_pset.F90                                           \
          ../oda_tools/oda_core.F90                                          \
          ../oda_tools/oda_core_ecda.F90                                     \
          ../oda_tools/oda_types.F90                                         \
@@ -115,13 +112,13 @@ SRCS_F90 = \
          ../tridiagonal/tridiagonal.F90
 
 SRCS_c   = \
+         ../affinity/affinity.c                                             \
          ../memutils/memuse.c                                               \
          ../mosaic/create_xgrid.c                                           \
          ../mosaic/gradient_c2l.c                                           \
          ../mosaic/interp.c                                                 \
          ../mosaic/mosaic_util.c                                            \
          ../mosaic/read_mosaic.c                                            \
-         ../mpp/affinity.c                                                  \
          ../mpp/nsclock.c                                                   \
          ../mpp/threadloc.c
 
@@ -141,7 +138,6 @@ all: esmf_make_fragment
 esmf_make_fragment: depend $(LIBRARY)
 	mkdir -p "$(FMS_INSTALL)"
 	@echo "# ESMF self-describing build dependency makefile fragment"              > fms.mk
-	@echo "# src location /lfs3/projects/hfv3gfs/Samuel.Trahan/fms-component/FV3" >> fms.mk
 	@echo ""                                                                      >> fms.mk
 	@echo "ESMF_DEP_FRONT     ="                                                  >> fms.mk
 	@echo "ESMF_DEP_INCPATH   = $(FMS_INSTALL)"                                   >> fms.mk
