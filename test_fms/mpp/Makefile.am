@@ -18,18 +18,11 @@ test_mpp_domains_SOURCES = test_mpp_domains.F90
 test_mpp_pset_SOURCES = test_mpp_pset.F90
 
 # Run the test programs.
-if ENABLE_SHELL_TESTS
 TESTS = test_mpp_domains2.sh test_mpp_pset2.sh test_mpp2.sh
-else
-test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-TESTS = test_mpp_domains.test test_mpp_pset.test test_mpp.test
-endif
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_mpp.test test_mpp.bats \
-test_mpp_domains.test test_mpp_domains.bats test_mpp_pset.test \
-test_mpp_pset.bats test_mpp_domains2.sh test_mpp_pset2.sh test_mpp2.sh
+EXTRA_DIST = input_base.nml test_mpp_domains2.sh test_mpp_pset2.sh	\
+test_mpp2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out*
