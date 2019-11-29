@@ -41,11 +41,11 @@ endif
 
 # Include these files in the distribution.
 EXTRA_DIST = input_base.nml test_cloud_interpolator.bats		\
-test_cloud_interpolator.sh test_drifters_io.bats test_drifters_io.sh	\
-test_drifters_input.bats test_drifters_input.sh				\
-test_drifters_comm.bats test_drifters_comm.sh test_drifters_core.bats	\
-test_drifters_core.sh test_quicksort.bats test_quicksort.sh		\
-test_drifters.bats test_drifters.sh drifters_inp_test_3d.cdl		\
+test_cloud_interpolator.test test_drifters_io.bats test_drifters_io.test	\
+test_drifters_input.bats test_drifters_input.test				\
+test_drifters_comm.bats test_drifters_comm.test test_drifters_core.bats	\
+test_drifters_core.test test_quicksort.bats test_quicksort.test		\
+test_drifters.bats test_drifters.test drifters_inp_test_3d.cdl		\
 test_drifters2.sh
 
 # Clean up
