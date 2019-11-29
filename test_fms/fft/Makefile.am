@@ -16,17 +16,10 @@ check_PROGRAMS = test_fft
 test_fft_SOURCES = test_fft.F90
 
 # Run the test program.
-if ENABLE_SHELL_TESTS
 TESTS = test_fft2.sh
-else
-test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL)	\
-$(top_srcdir)/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-TESTS = test_fft.test
-endif
 
 # These files are also included in the distribution.
-EXTRA_DIST = test_fft2.sh test_fft.test test_fft.bats input_base.nml
+EXTRA_DIST = test_fft2.sh input_base.nml
 
 # Clean up
 CLEANFILES = input.nml *.out*

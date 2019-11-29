@@ -19,18 +19,10 @@ check_PROGRAMS = test_xgrid
 test_xgrid_SOURCES = test_xgrid.F90
 
 # Run the test program.
-if ENABLE_SHELL_TESTS
 TESTS = test_xgrid2.sh
-else
-test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL)	\
-$(top_srcdir)/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)" builddir="$(top_builddir)"
-TESTS = test_xgrid.test
-endif
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_xgrid.test input_base.nml test_xgrid.bats	\
-test_xgrid2.sh
+EXTRA_DIST = input_base.nml test_xgrid2.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc *.out

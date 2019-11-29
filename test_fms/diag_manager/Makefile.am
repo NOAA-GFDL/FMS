@@ -17,6 +17,7 @@ check_PROGRAMS = test_diag_manager
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
 
+# Run the test.
 TESTS = test_diag_manager2.sh
 
 # Copy over other needed files to the srcdir
