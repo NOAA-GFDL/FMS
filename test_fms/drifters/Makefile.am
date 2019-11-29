@@ -17,8 +17,8 @@ AM_CPPFLAGS = -I${top_builddir}/drifters -I${top_builddir}/mpp \
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_cloud_interpolator test_drifters_input \
-test_drifters_comm test_drifters_core test_drifters_io test_quicksort \
+check_PROGRAMS = test_cloud_interpolator test_drifters_input		\
+test_drifters_comm test_drifters_core test_drifters_io test_quicksort	\
 test_drifters
 
 # This is the source code for the tests.
@@ -40,12 +40,13 @@ test_drifters_comm.test test_drifters_core.test test_quicksort.test
 endif
 
 # Include these files in the distribution.
-EXTRA_DIST = input_base.nml test_cloud_interpolator.bats		\
-test_cloud_interpolator.test test_drifters_io.bats test_drifters_io.test	\
-test_drifters_input.bats test_drifters_input.test				\
-test_drifters_comm.bats test_drifters_comm.test test_drifters_core.bats	\
-test_drifters_core.test test_quicksort.bats test_quicksort.test		\
-test_drifters.bats test_drifters.test drifters_inp_test_3d.cdl		\
+EXTRA_DIST = input_base.nml test_cloud_interpolator.bats	\
+test_cloud_interpolator.test test_drifters_io.bats		\
+test_drifters_io.test test_drifters_input.bats			\
+test_drifters_input.test test_drifters_comm.bats		\
+test_drifters_comm.test test_drifters_core.bats			\
+test_drifters_core.test test_quicksort.bats test_quicksort.test	\
+test_drifters.bats test_drifters.test drifters_inp_test_3d.cdl	\
 test_drifters2.sh
 
 # Clean up
