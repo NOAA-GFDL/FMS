@@ -25,7 +25,7 @@ TESTS = test_mpp_io.test
 endif
 
 # These files will also be distributed.
-EXTRA_DIST = test_mpp_io2.sh test_mpp_io.testtest_mpp_io.bats	\
+EXTRA_DIST = test_mpp_io2.sh test_mpp_io.test test_mpp_io.bats	\
 input_base.nml
 
 # Clean up
