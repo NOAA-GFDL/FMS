@@ -32,7 +32,7 @@ endif
 # These files will also be included in the distribution.
 EXTRA_DIST = test_time_interp.test test_time_interp.bats \
 test_time_interp_external.test test_time_interp_external.bats \
-input_base.nml test_time_inter2.sh
+input_base.nml test_time_interp2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out*
