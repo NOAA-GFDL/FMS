@@ -12,4 +12,5 @@
 cp $top_srcdir/test_fms/axis_utils/input_base.nml input.nml
 
 # Run the test.
-mpirun -n 2 ./test_axis_utils
+# Test skipped in bats file.
+#mpirun -n 2 ./test_axis_utils
