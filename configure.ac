@@ -36,6 +36,8 @@ AC_ARG_ENABLE([fortran-flag-setting],
 test "x$enable_fortran_flag_setting" = xno || enable_fortran_flag_setting=yes
 AC_MSG_RESULT([$enable_fortran_flag_setting])
 
+AM_CONDITIONAL(ENABLE_SHELL_TESTS, [test "xyes" = xyes])
+
 # Find the C compiler.
 AC_PROG_CC
 AM_PROG_CC_C_O
