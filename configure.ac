@@ -36,15 +36,6 @@ AC_ARG_ENABLE([fortran-flag-setting],
 test "x$enable_fortran_flag_setting" = xno || enable_fortran_flag_setting=yes
 AC_MSG_RESULT([$enable_fortran_flag_setting])
 
-# Does the user want to use shell script testing instead of bats?
-AC_MSG_CHECKING([whether we should use shell tests instead of bats tests])
-AC_ARG_ENABLE([shell-tests],
-  [AS_HELP_STRING([--enable-shell-tests],
-    [Use shell tests instead of bats tests.])])
-test "x$enable_shell_tests" = xyes || enable_shell_tests=no
-AC_MSG_RESULT([$enable_shell_tests])
-AM_CONDITIONAL(ENABLE_SHELL_TESTS, [test "x$enable_shell_tests" = xyes])
-
 # Find the C compiler.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -57,15 +48,6 @@ AC_PROG_F77
 
 # Find the install program.
 AC_PROG_INSTALL
-
-# Is bats installed? It is required for testing, unless we are using
-# shell tests.
-if test $enable_shell_tests == "no"; then
-   AC_CHECK_PROGS([FMS_BATS], [bats])
-   if test -z "$FMS_BATS"; then
-      AC_MSG_ERROR([Cannot find bats utility. Install bats and try again.])
-   fi
-fi
 
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
