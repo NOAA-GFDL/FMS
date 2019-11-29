@@ -3,14 +3,8 @@
 
 # uramirez, Ed Hartnett
 
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-             $(top_srcdir)/tap-driver.sh
-
-# Set srcdir as evironment variable to be reference in the job script
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-
 # Find the needed mod and include files.
-AM_CPPFLAGS = -I${top_builddir}/mosaic -I${top_builddir}/fms \
+AM_CPPFLAGS = -I${top_builddir}/mosaic -I${top_builddir}/fms	\
 -I${top_srcdir}/include -I${top_builddir}/mpp
 
 # Link to the FMS library.
@@ -23,7 +17,15 @@ check_PROGRAMS = test_mosaic
 test_mosaic_SOURCES = test_mosaic.F90
 
 # Run the test program.
-TESTS = test_mosaic.sh
+if ENABLE_SHELL_TESTS
+TESTS = test_mosaic2.sh
+else
+test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL)	\
+$(top_srcdir)/tap-driver.sh
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+TESTS = test_mosaic.test
+endif
 
 # These files are also included in the distribution.
-EXTRA_DIST = test_mosaic.sh test_mosaic.bats input.nml
+EXTRA_DIST = test_mosaic2.sh test_mosaic.test test_mosaic.bats	\
+input.nml
