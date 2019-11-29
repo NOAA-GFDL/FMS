@@ -8,8 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-set -e
-
 copy_files()
 {
 

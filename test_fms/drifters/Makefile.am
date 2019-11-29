@@ -3,8 +3,8 @@
 
 # uramirez, Ed Hartnett
 
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-             $(top_srcdir)/tap-driver.sh
+test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL)	\
+$(top_srcdir)/tap-driver.sh
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
@@ -31,17 +31,22 @@ test_quicksort_SOURCES = test_quicksort.F90
 test_drifters_SOURCES = test_drifters.F90
 
 # Run the test programs.
-TESTS = test_drifters_io.sh test_cloud_interpolator.sh		\
-test_drifters_comm.sh test_drifters_core.sh test_quicksort.sh
-#test_drifters.sh test_drifters_input.sh
+if ENABLE_SHELL_TESTS
+TESTS = test_drifters2.sh
+else
+TESTS = test_drifters_io.test test_cloud_interpolator.test		\
+test_drifters_comm.test test_drifters_core.test test_quicksort.test
+#test_drifters.test test_drifters_input.test
+endif
 
 # Include these files in the distribution.
-EXTRA_DIST = input_base.nml test_cloud_interpolator.bats \
-test_cloud_interpolator.sh test_drifters_io.bats test_drifters_io.sh \
-test_drifters_input.bats test_drifters_input.sh \
-test_drifters_comm.bats test_drifters_comm.sh test_drifters_core.bats \
-test_drifters_core.sh test_quicksort.bats test_quicksort.sh \
-test_drifters.bats test_drifters.sh drifters_inp_test_3d.cdl
+EXTRA_DIST = input_base.nml test_cloud_interpolator.bats		\
+test_cloud_interpolator.sh test_drifters_io.bats test_drifters_io.sh	\
+test_drifters_input.bats test_drifters_input.sh				\
+test_drifters_comm.bats test_drifters_comm.sh test_drifters_core.bats	\
+test_drifters_core.sh test_quicksort.bats test_quicksort.sh		\
+test_drifters.bats test_drifters.sh drifters_inp_test_3d.cdl		\
+test_drifters2.sh
 
 # Clean up
 CLEANFILES = *out *__genmod.mod *__genmod.f90 input.nml *.nc
