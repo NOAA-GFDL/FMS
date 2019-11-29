@@ -17,17 +17,10 @@ check_PROGRAMS = test_monin_obukhov
 test_monin_obukhov_SOURCES = test_monin_obukhov.F90
 
 # Run the test program.
-if ENABLE_SHELL_TESTS
 TESTS = test_monin_obukhov2.sh
-else
-test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-TESTS = test_monin_obukhov.test
-endif
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_monin_obukhov.test	\
-test_monin_obukhov.bats test_monin_obukhov2.sh
+EXTRA_DIST = input_base.nml test_monin_obukhov2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out

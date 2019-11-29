@@ -19,17 +19,10 @@ check_PROGRAMS = test_interpolator
 test_interpolator_SOURCES = test_interpolator.F90
 
 # Run the test program.
-if ENABLE_SHELL_TESTS
 TESTS = test_interpolator2.sh
-else
-test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-TESTS = test_interpolator.test
-endif
 
 # These files are also included in the distribution.
-EXTRA_DIST = test_interpolator2.sh test_interpolator.test	\
-test_interpolator.bats input_base.nml diag_table_base
+EXTRA_DIST = test_interpolator2.sh input_base.nml diag_table_base
 
 # Clean up
 CLEANFILES = input.nml diag_table

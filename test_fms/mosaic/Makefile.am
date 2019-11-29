@@ -1,5 +1,5 @@
-# This is an automake file for the test_fms/mosaic directory of the FMS
-# package.
+# This is an automake file for the test_fms/mosaic directory of the
+# FMS package.
 
 # uramirez, Ed Hartnett
 
@@ -17,15 +17,7 @@ check_PROGRAMS = test_mosaic
 test_mosaic_SOURCES = test_mosaic.F90
 
 # Run the test program.
-if ENABLE_SHELL_TESTS
 TESTS = test_mosaic2.sh
-else
-test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL)	\
-$(top_srcdir)/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-TESTS = test_mosaic.test
-endif
 
 # These files are also included in the distribution.
-EXTRA_DIST = test_mosaic2.sh test_mosaic.test test_mosaic.bats	\
-input.nml
+EXTRA_DIST = test_mosaic2.sh input.nml
