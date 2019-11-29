@@ -3,12 +3,6 @@
 
 # uramirez, Ed Hartnett
 
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-             $(top_srcdir)/tap-driver.sh
-
-# Set srcdir as evironment variable to be reference in the job script
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-
 # Find the needed mod files.
 AM_CPPFLAGS = -I${top_builddir}/horiz_interp -I${top_builddir}/fms \
 -I${top_builddir}/constants -I${top_builddir}/mpp \
@@ -25,11 +19,19 @@ test_horiz_interp_SOURCES = test_horiz_interp.F90
 test2_horiz_interp_SOURCES = test2_horiz_interp.F90
 
 # Run the test programs.
-TESTS = test_horiz_interp.sh test2_horiz_interp.sh
+if ENABLE_SHELL_TESTS
+TESTS = test_horiz_interp2.sh
+else
+TESTS = test_horiz_interp.test test2_horiz_interp.test
+test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL)	\
+$(top_srcdir)/tap-driver.sh
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+endif
 
 # These files will also be included in the distribution.
-EXTRA_DIST = test_horiz_interp.sh test_horiz_interp.bats \
-test2_horiz_interp.sh test2_horiz_interp.bats input_base.nml
+EXTRA_DIST = test_horiz_interp.test test_horiz_interp.bats	\
+test2_horiz_interp.test test2_horiz_interp.bats input_base.nml	\
+test_horiz_interp2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out*
