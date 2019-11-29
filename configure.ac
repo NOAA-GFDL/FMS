@@ -61,7 +61,7 @@ if test -z "$FMS_SED"; then
    AC_MSG_ERROR([Cannot find sed. Install sed and try again.])
 fi
 
-# Is ncget installed? It is required for testing.
+# Is ncgen installed? It is required for testing.
 AC_CHECK_PROGS([FMS_NCGEN], [ncgen])
 if test -z "$FMS_NCGEN"; then
    AC_MSG_ERROR([Cannot find ncgen. Install ncgen and try again.])
