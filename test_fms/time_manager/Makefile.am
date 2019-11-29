@@ -22,7 +22,7 @@ TESTS = test_time_manager2.sh
 else
 test_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
-TESTS = test_time_manager.shell
+TESTS = test_time_manager.test
 endif
 
 # These files will be included in the distribution.
