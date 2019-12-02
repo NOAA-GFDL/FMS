@@ -53,24 +53,6 @@ AC_PROG_F77
 # Find the install program.
 AC_PROG_INSTALL
 
-# Is bats installed? It is required for testing.
-AC_CHECK_PROGS([FMS_BATS], [bats])
-if test -z "$FMS_BATS"; then
-   AC_MSG_ERROR([Cannot find bats utility. Install bats and try again.])
-fi
-
-# Is sed installed? It is required for testing.
-AC_CHECK_PROGS([FMS_SED], [sed])
-if test -z "$FMS_SED"; then
-   AC_MSG_ERROR([Cannot find sed. Install sed and try again.])
-fi
-
-# Is ncgen installed? It is required for testing.
-AC_CHECK_PROGS([FMS_NCGEN], [ncgen])
-if test -z "$FMS_NCGEN"; then
-   AC_MSG_ERROR([Cannot find ncgen. Install ncgen and try again.])
-fi
-
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
@@ -154,6 +136,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
+        test_fms/test_common.sh
         test_fms/Makefile
         test_fms/diag_manager/Makefile
         test_fms/data_override/Makefile
