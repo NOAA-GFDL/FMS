@@ -3,6 +3,12 @@
 
 # uramirez, Ed Hartnett
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+             $(top_srcdir)/tap-driver.sh
+
+# Set srcdir as evironment variable to be reference in the job script
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+
 # Find the needed mod files.
 AM_CPPFLAGS = -I${top_builddir}/fft -I${top_builddir}/mpp
 
@@ -16,10 +22,10 @@ check_PROGRAMS = test_fft
 test_fft_SOURCES = test_fft.F90
 
 # Run the test program.
-TESTS = test_fft2.sh
+TESTS = test_fft.sh
 
 # These files are also included in the distribution.
-EXTRA_DIST = test_fft2.sh input_base.nml
+EXTRA_DIST = test_fft.sh test_fft.bats input_base.nml
 
 # Clean up
 CLEANFILES = input.nml *.out*
