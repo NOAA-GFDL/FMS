@@ -62,6 +62,9 @@ fi
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
+# Check if Linux gettid is avaiable
+AC_CHECK_FUNCS([gettid], [], [])
+
 # Require MPI.
 AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
 
