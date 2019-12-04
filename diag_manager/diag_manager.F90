@@ -3535,9 +3535,9 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
-  !>@brief The subroutine 'diag_send_complete_instant' allows the user to 
+  !>@brief The subroutine 'diag_send_complete_instant' allows the user to
   !! save diagnostic data on variable intervals (user defined in code logic)
-  !! to the same file.  The argument (time_type) will be written to the 
+  !! to the same file.  The argument (time_type) will be written to the
   !! time axis correspondingly.
   !>@details The user is responsible for any averaging of accumulated data
   !! as this routine is not designed for instantaneous values.  This routine

@@ -56,7 +56,7 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
      ermesg = 'drifters_set_field_XXX: ERROR size mismatch between data and x or y'
      return
   end if
-#if _DIMS >=3 
+#if _DIMS >=3
   if(nsizes(3) /= size(data, 3)) then
      ermesg = 'drifters_set_field_XXX: ERROR size mismatch between data and z'
      return
@@ -106,4 +106,3 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
   enddo
 
 end subroutine drifters_set_field_XXX
-

@@ -215,4 +215,3 @@ subroutine drifters_compute_k_XXX(self, positions, u, v, &
   enddo
 
 end subroutine drifters_compute_k_XXX
-

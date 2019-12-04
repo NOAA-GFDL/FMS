@@ -120,7 +120,7 @@ contains
 #endif
     module_is_initialized = .TRUE.
   end subroutine mpp_pset_init
-  
+
   subroutine mpp_pset_create(npset,pset,stacksize,pelist, commID)
 !create PSETs
 !  called by all PEs in parent pelist
@@ -173,7 +173,7 @@ contains
     write( out_unit,'(a,i6)' )'MPP_PSET_CREATE creating PSETs... npset=', npset
     if(ANY(my_pelist == pe) ) then
     if( pset%initialized )call mpp_error( FATAL, &
-         'MPP_PSET_CREATE: PSET already initialized!' )     
+         'MPP_PSET_CREATE: PSET already initialized!' )
     pset%npset = npset
     allocate( pset%pelist(0:npes-1) )
     allocate( pset%root_pelist(0:npes/npset-1) )
@@ -605,7 +605,7 @@ contains
          'MPP_PSET_ROOT: called with uninitialized PSET.' )
     mpp_pset_root = pset%root
   end function mpp_pset_root
-  
+
   function mpp_pset_numroots(pset)
 !necessary to export root_pelist: caller needs to pre-allocate
     integer :: mpp_pset_numroots
@@ -639,6 +639,5 @@ contains
 #endif
     end if
   end subroutine mpp_pset_get_root_pelist
-  
-end module mpp_pset_mod
 
+end module mpp_pset_mod

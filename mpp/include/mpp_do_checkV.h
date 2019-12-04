@@ -1,4 +1,4 @@
-! -*-f90-*- 
+! -*-f90-*-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -42,7 +42,7 @@
       pointer(ptr,buffer )
       integer :: buffer_pos
       character(len=8) :: text
-      character(len=64) :: field_name      
+      character(len=64) :: field_name
       integer :: buffer_recv_size
       integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
       integer :: nsend_x, nsend_y, nrecv_x, nrecv_y
@@ -57,10 +57,10 @@
       nlist = size(domain%list(:))
       ptr = LOC(mpp_domains_stack)
 
-      !--- if debug_update_level is not NO_DEBUG, check the consistency on the bounds 
+      !--- if debug_update_level is not NO_DEBUG, check the consistency on the bounds
       !--- (domain is symmetry or folded north edge). North bound will be checked when north edge is folded.
-      !--- when domain is symmetry, For data on T-cell, no check is needed; for data on E-cell, 
-      !--- data on East and West boundary will be checked ; For data on N-cell, data on North and South 
+      !--- when domain is symmetry, For data on T-cell, no check is needed; for data on E-cell,
+      !--- data on East and West boundary will be checked ; For data on N-cell, data on North and South
       !--- boundary will be checked; For data on C-cell, data on West, East, South, North will be checked.
       !--- The check will be done in the following way: Western boundary data sent to Eastern boundary to check
       !--- and Southern boundary to check
@@ -80,7 +80,7 @@
          allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
          msg1 = 0
          msg2 = 0
-         cur_rank = get_rank_recv(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y) 
+         cur_rank = get_rank_recv(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y)
          do while ( ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y )
             msgsize = 0
             if(cur_rank == rank_x) then
@@ -92,7 +92,7 @@
                end do
                ind_x = ind_x+1
                if(ind_x .LE. nrecv_x) then
-                  rank_x = check_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = check_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = -1
@@ -107,7 +107,7 @@
                end do
                ind_y = ind_y+1
                if(ind_y .LE. nrecv_y) then
-                  rank_y = check_y%recv(ind_y)%pe - domain%pe 
+                  rank_y = check_y%recv(ind_y)%pe - domain%pe
                   if(rank_y .LE.0) rank_y = rank_y + nlist
                else
                   rank_y = -1
@@ -119,7 +119,7 @@
             msg2(m) = msgsize
          end do
 
-         cur_rank = get_rank_send(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y) 
+         cur_rank = get_rank_send(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y)
          do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
             msgsize = 0
             if(cur_rank == rank_x) then
@@ -131,7 +131,7 @@
                enddo
                ind_x = ind_x+1
                if(ind_x .LE. nsend_x) then
-                  rank_x = check_x%send(ind_x)%pe - domain%pe 
+                  rank_x = check_x%send(ind_x)%pe - domain%pe
                   if(rank_x .LT.0) rank_x = rank_x + nlist
                else
                   rank_x = nlist+1
@@ -147,14 +147,14 @@
                end do
                ind_y = ind_y+1
                if(ind_y .LE. nsend_y) then
-                  rank_y = check_y%send(ind_y)%pe - domain%pe 
+                  rank_y = check_y%send(ind_y)%pe - domain%pe
                   if(rank_y .LT.0) rank_y = rank_y + nlist
                else
                   rank_y = nlist+1
                endif
             endif
             cur_rank = min(rank_x, rank_y)
-            call mpp_send( msgsize, plen=1, to_pe=to_pe, tag=COMM_TAG_1)        
+            call mpp_send( msgsize, plen=1, to_pe=to_pe, tag=COMM_TAG_1)
          enddo
 
          call mpp_sync_self(check=EVENT_RECV)
@@ -172,8 +172,8 @@
          deallocate(msg1, msg2)
       endif
 
-      !--- recv the data       
-      cur_rank = get_rank_recv(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y) 
+      !--- recv the data
+      cur_rank = get_rank_recv(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y)
 
       do while ( ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y )
          msgsize = 0
@@ -186,7 +186,7 @@
             end do
             ind_x = ind_x+1
             if(ind_x .LE. nrecv_x) then
-               rank_x = check_x%recv(ind_x)%pe - domain%pe 
+               rank_x = check_x%recv(ind_x)%pe - domain%pe
                if(rank_x .LE.0) rank_x = rank_x + nlist
             else
                rank_x = -1
@@ -201,7 +201,7 @@
             end do
             ind_y = ind_y+1
             if(ind_y .LE. nrecv_y) then
-               rank_y = check_y%recv(ind_y)%pe - domain%pe 
+               rank_y = check_y%recv(ind_y)%pe - domain%pe
                if(rank_y .LE.0) rank_y = rank_y + nlist
             else
                rank_y = -1
@@ -223,7 +223,7 @@
       buffer_recv_size = buffer_pos
 
       !--- send the data
-      cur_rank = get_rank_send(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y) 
+      cur_rank = get_rank_send(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y)
 
       do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
          pos = buffer_pos
@@ -238,7 +238,7 @@
                   do l = 1, l_size ! loop over number of fields
                      ptr_fieldx = f_addrsx(l, tMe)
                      ptr_fieldy = f_addrsy(l, tMe)
-                     do k = 1,ke  
+                     do k = 1,ke
                         do j = js, je
                            do i = is, ie
                               pos = pos + 1
@@ -288,7 +288,7 @@
                         end do
                      end do
                   end do
-               case(ONE_HUNDRED_EIGHTY) 
+               case(ONE_HUNDRED_EIGHTY)
                   if( BTEST(update_flags,SCALAR_BIT) ) then
                      do l = 1, l_size ! loop over number of fields
                         ptr_fieldx = f_addrsx(l, tMe)
@@ -320,7 +320,7 @@
             end do
             ind_x = ind_x+1
             if(ind_x .LE. nsend_x) then
-               rank_x = check_x%send(ind_x)%pe - domain%pe 
+               rank_x = check_x%send(ind_x)%pe - domain%pe
                if(rank_x .LT.0) rank_x = rank_x + nlist
             else
                rank_x = nlist+1
@@ -328,7 +328,7 @@
          endif
 
          if(cur_rank == rank_y) then
-            to_pe = check_y%send(ind_y)%pe            
+            to_pe = check_y%send(ind_y)%pe
             do n = 1, check_y%send(ind_y)%count
                is = check_y%send(ind_y)%is(n); ie = check_y%send(ind_y)%ie(n)
                js = check_y%send(ind_y)%js(n); je = check_y%send(ind_y)%je(n)
@@ -338,7 +338,7 @@
                   do l = 1, l_size ! loop over number of fields
                      ptr_fieldx = f_addrsx(l, tMe)
                      ptr_fieldy = f_addrsy(l, tMe)
-                     do k = 1,ke  
+                     do k = 1,ke
                         do j = js, je
                            do i = is, ie
                               pos = pos + 1
@@ -388,7 +388,7 @@
                         end do
                      end do
                   end if
-               case(ONE_HUNDRED_EIGHTY) 
+               case(ONE_HUNDRED_EIGHTY)
                   if( BTEST(update_flags,SCALAR_BIT) ) then
                      do l = 1, l_size ! loop over number of fields
                         ptr_fieldx = f_addrsx(l, tMe)
@@ -420,7 +420,7 @@
             end do
             ind_y = ind_y+1
             if(ind_y .LE. nsend_y) then
-               rank_y = check_y%send(ind_y)%pe - domain%pe 
+               rank_y = check_y%send(ind_y)%pe - domain%pe
                if(rank_y .LT.0) rank_y = rank_y + nlist
             else
                rank_y = nlist+1
@@ -444,7 +444,7 @@
       buffer_pos = buffer_recv_size
 
       !--- compare the data in reverse order
-      cur_rank = get_rank_unpack(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y) 
+      cur_rank = get_rank_unpack(domain, check_x, check_y, rank_x, rank_y, ind_x, ind_y)
 
       CHECK_LOOP: do while(ind_x >0 .OR. ind_y >0)
          if(cur_rank == rank_y) then
@@ -476,7 +476,7 @@
             end do
             ind_y = ind_y-1
             if(ind_y .GT. 0) then
-               rank_y = check_y%recv(ind_y)%pe - domain%pe 
+               rank_y = check_y%recv(ind_y)%pe - domain%pe
                if(rank_y .LE.0) rank_y = rank_y + nlist
             else
                rank_y = nlist+1
@@ -512,7 +512,7 @@
             end do
             ind_x = ind_x-1
             if(ind_x .GT. 0) then
-               rank_x = check_x%recv(ind_x)%pe - domain%pe 
+               rank_x = check_x%recv(ind_x)%pe - domain%pe
                if(rank_x .LE.0) rank_x = rank_x + nlist
             else
                rank_x = nlist+1

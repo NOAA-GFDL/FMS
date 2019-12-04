@@ -32,7 +32,7 @@ contains
 
 !##########################################################################
 
-    subroutine fft99 (a,work,trigs,ifax,inc,jump,n,lot,isign) 
+    subroutine fft99 (a,work,trigs,ifax,inc,jump,n,lot,isign)
 
 ! purpose      performs multiple fast fourier transforms.  this package
 !              will perform a number of simultaneous real/half-complex
@@ -131,7 +131,7 @@ contains
 !              'half-complex' fourier coefficient vectors, or vice
 !              versa.  the length of the transforms must be an even
 !              number that has no other factors except possibly powers
-!              of 2, 3, and 5.  this is an all-fortran version of 
+!              of 2, 3, and 5.  this is an all-fortran version of
 !              optimized routine fft991 written for xmp/ymps by
 !              dr. clive temperton of ecmwf.
 !
@@ -161,7 +161,7 @@ contains
 !
 !              jump
 !               the increment (in words) between the first elements of
-!               successive data or coefficient vectors.  on crays, 
+!               successive data or coefficient vectors.  on crays,
 !               try to arrange data so that jump is not a multiple of 8
 !               (to avoid memory bank conflicts).  for clarification of
 !               inc and jump, see the examples below.
@@ -433,7 +433,7 @@ contains
       ja=ja+nx
       jb=jb+nx
     enddo
- 
+
 !   remaining wavenumbers
       iabase=2*inc+1
       ibbase=(n-2)*inc+1
@@ -745,7 +745,7 @@ contains
       call fax (ifax, n, mode)
       i = ifax(1)
       if (ifax(i+1) .gt. 5 .or. n .le. 4) ifax(1) = -99
-      if (ifax(1) .le. 0 ) then 
+      if (ifax(1) .le. 0 ) then
         call mpp_error(FATAL,'fft99_mod: in routine set99 -- invalid n')
       endif
       call fftrig (trigs, n, mode)
@@ -1229,4 +1229,3 @@ contains
 !##########################################################################
 
 end module fft99_mod
-

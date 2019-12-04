@@ -19,7 +19,7 @@
 !!#include <fms_platform.h>
 
 module drifters_io_mod
-  implicit none  
+  implicit none
   private
 
   public :: drifters_io_type, drifters_io_new, drifters_io_del, drifters_io_set_time_units
@@ -32,14 +32,14 @@ module drifters_io_mod
 #include<file_version.h>
 
   real :: drfts_eps_t = 10.*epsilon(1.)
-  
+
 
   type drifters_io_type
      real                 :: time
      integer              :: it ! time index
      integer              :: it_id  ! infinite axis index
      integer              :: ncid
-     integer              :: nc_positions, nc_fields, nc_ids, nc_time, nc_index_time    
+     integer              :: nc_positions, nc_fields, nc_ids, nc_time, nc_index_time
      logical              :: enddef
   end type drifters_io_type
 
@@ -65,7 +65,7 @@ contains
 
     ! global attributes
     ier = nf_put_att_text(self%ncid, NF_GLOBAL, 'version', len_trim(version), trim(version))
-    
+
 
     ! dimensions
     ier = nf_def_dim(self%ncid, 'np', NF_UNLIMITED, nc_it_id)
@@ -95,7 +95,7 @@ contains
     size2 = (/nc_nf, nc_it_id/)
     ier = nf_def_var(self%ncid, 'fields', NF_DOUBLE, 2, size2, self%nc_fields)
     if(ier/=NF_NOERR) ermesg = 'drifters_io_new::nf_def_var (fields)'//nf_strerror(ier)
-    
+
     self%time  = -huge(1.)
     self%it    = -1
     self%it_id = 1
@@ -111,10 +111,10 @@ contains
     include 'netcdf.inc'
 
     ermesg = ''
-    
+
     ier = nf_close(self%ncid)
     if(ier/=NF_NOERR) ermesg = 'drifters_io_del::nf_close '//nf_strerror(ier)
-    
+
   end subroutine drifters_io_del
 
 !###############################################################################
@@ -180,7 +180,7 @@ contains
        if(ier/=NF_NOERR) &
             & ermesg = 'drifters_io_set_position_names::failed to add unit attribute to positions '//nf_strerror(ier)
     enddo
-        
+
   end subroutine drifters_io_set_position_units
 
 !###############################################################################
@@ -228,7 +228,7 @@ contains
        if(ier/=NF_NOERR) &
             & ermesg = 'drifters_io_set_field_units::failed to add unit attribute to fields '//nf_strerror(ier)
     enddo
-    
+
   end subroutine drifters_io_set_field_units
 !###############################################################################
 
@@ -250,10 +250,10 @@ contains
     include 'netcdf.inc'
 
     ermesg = ''
-    
+
     if(.not. self%enddef) then
        ier = nf_enddef(self%ncid)
-       if(ier/=NF_NOERR) then 
+       if(ier/=NF_NOERR) then
             ermesg = 'drifters_io_write::nf_enddef failure. No data will be written. '//nf_strerror(ier)
             return
        endif
@@ -293,14 +293,14 @@ contains
          & ermesg = 'drifters_io_write::failed to write positions: '//nf_strerror(ier)
 
     len2(1)   = nf
-    len2(2)   = np    
-    
+    len2(2)   = np
+
     ier = nf_put_vara_double(self%ncid, self%nc_fields, start2, len2, fields)
     if(ier/=NF_NOERR) &
          & ermesg = 'drifters_io_write::failed to write fields: '//nf_strerror(ier)
 
     self%it_id = self%it_id + np
-    
+
   end subroutine drifters_io_write
 
 end module drifters_io_mod

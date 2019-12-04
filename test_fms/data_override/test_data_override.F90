@@ -150,7 +150,7 @@
     nlon = siz(1)
     nlat = siz(2)
  else if (field_exist(grid_file, "ocn_mosaic_file" )) then
-    call read_data(grid_file, 'ocn_mosaic_file', solo_mosaic_file) 
+    call read_data(grid_file, 'ocn_mosaic_file', solo_mosaic_file)
     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
     call field_size(solo_mosaic_file, 'gridfiles', siz)
     if( siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
@@ -287,27 +287,27 @@ enddo
 
 !-------------------------------------------------------------------------------------------------------
 ! What follows is a test of calendar conversion
- 
+
 !Time = set_date(1980,2,27,0,0,0)
 !call print_time(Time)
 !call data_override('OCN','sst_obs',sst,Time)
 !if(id_sst > 0) used = send_data(id_sst, sst, Time)
- 
+
 !Time = set_date(1980,2,28,0,0,0)
 !call print_time(Time)
 !call data_override('OCN','sst_obs',sst,Time)
 !if(id_sst > 0) used = send_data(id_sst, sst, Time)
- 
+
 !Time = set_date(1980,2,29,0,0,0)
 !call print_time(Time)
 !call data_override('OCN','sst_obs',sst,Time)
 !if(id_sst > 0) used = send_data(id_sst, sst, Time)
- 
+
 !Time = set_date(1980,3,1,0,0,0)
 !call print_time(Time)
 !call data_override('OCN','sst_obs',sst,Time)
 !if(id_sst > 0) used = send_data(id_sst, sst, Time)
- 
+
 !Time = set_date(1980,3,2,0,0,0)
 !call print_time(Time)
 !call data_override('OCN','sst_obs',sst,Time)
@@ -318,7 +318,7 @@ enddo
  call fms_io_exit
  call fms_end
 
-contains 
+contains
 
 !=================================================================================================================================
  subroutine get_grid
@@ -368,7 +368,7 @@ contains
       allocate(lon_vert_glo(siz(1)+1,siz(2)+1,1), lat_vert_glo(siz(1)+1,siz(2)+1,1))
       allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
       call read_data( tile_file, 'x', lon_vert_glo, no_domain=.true.)
-      call read_data( tile_file, 'y', lat_vert_glo, no_domain=.true.)  
+      call read_data( tile_file, 'y', lat_vert_glo, no_domain=.true.)
       do j = 1, nlat
          do i = 1, nlon
             lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
@@ -398,7 +398,7 @@ contains
   integer :: unit=7
   integer :: stdunit = 6
   logical :: debug=.FALSE., opened
- 
+
   integer :: mpes = 0
   integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
   character(len=32) :: warn_level = "fatal"
@@ -427,9 +427,9 @@ contains
     integer            :: tile
     integer            :: ntotal_land, istart, iend, pos
     integer            :: outunit, errunit, k, l
- 
+
   npes = mpp_npes()
- 
+
   outunit = stdout()
   errunit = stderr()
     !--- check the type
@@ -485,7 +485,7 @@ contains
           return
        endif
        nx = nx_latlon
-       ny = ny_latlon 
+       ny = ny_latlon
        ntiles = 1
        npes_per_tile = npes
        allocate(frac_crit(ntiles))
@@ -542,7 +542,7 @@ contains
        allocate(grid_index(ntotal_land))
     endif
     call mpp_broadcast(grid_index, ntotal_land, mpp_root_pe())
-    
+
     allocate(ntiles_grid(ntotal_land))
     ntiles_grid = 1
    !--- define the unstructured grid domain
@@ -600,15 +600,15 @@ contains
     call compare_checksums(a1(:,:,1:1),a2(:,:,1:1),type//' UG2SG 2-D compute domain')
 
     deallocate(a1,a2,x1,x2)
-   
+
     !--- test the 3-D data is on computing domain
     allocate( a1(isc:iec, jsc:jec,nz), a2(isc:iec,jsc:jec,nz ) )
-    
+
 !    tile = mpp_pe()/npes_per_tile + 1
 !    do k = 1, nz
 !       do j = jsc, jec
 !          do i = isc, iec
-!             a1(i,j,k) = gdata(i,j,tile) 
+!             a1(i,j,k) = gdata(i,j,tile)
 !             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
 !          enddo
 !       enddo
@@ -642,7 +642,7 @@ contains
  !      j = (grid_index(pos+l)-1)/nx + 1
  !      do k = 1, nz
  !         x2(l,k) = gdata(i,j,tile) + k*1.e-6
- !      enddo     
+ !      enddo
  !   enddo
 
     !Now override the test UG data from the same file/field
@@ -696,7 +696,7 @@ contains
 
     if( sum1.EQ.sum2 )then
         if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-        !--- in some case, even though checksum agree, the two arrays 
+        !--- in some case, even though checksum agree, the two arrays
         !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
         !--- hence we need to check the value point by point.
     else
@@ -739,7 +739,7 @@ contains
 
     if( sum1.EQ.sum2 )then
         if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
-        !--- in some case, even though checksum agree, the two arrays 
+        !--- in some case, even though checksum agree, the two arrays
         !    actually are different, like comparing (1.1,-1.2) with (-1.1,1.2)
         !--- hence we need to check the value point by point.
     else
@@ -788,7 +788,7 @@ contains
     !--- Contact line 4, between tile 1 (SOUTH) and tile 6 (NORTH)
     tile1(4) = 1; tile2(4) = 6
     istart1(4) = 1;      iend1(4) = ni(1);  jstart1(4) = 1;      jend1(4) = 1
-    istart2(4) = 1;      iend2(4) = ni(6);  jstart2(4) = nj(6);  jend2(4) = nj(6)       
+    istart2(4) = 1;      iend2(4) = ni(6);  jstart2(4) = nj(6);  jend2(4) = nj(6)
     !--- Contact line 5, between tile 2 (NORTH) and tile 3 (SOUTH)
     tile1(5) = 2; tile2(5) = 3
     istart1(5) = 1;      iend1(5) = ni(2);  jstart1(5) = nj(2);  jend1(5) = nj(2)
@@ -822,13 +822,13 @@ contains
     istart1(12) = ni(5); iend1(12) = ni(5); jstart1(12) = 1;     jend1(12) = nj(5)
     istart2(12) = 1;     iend2(12) = 1;     jstart2(12) = 1;     jend2(12) = nj(6)
     msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo + 1 ! make sure memory domain size is no smaller than
-    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1 ! data domain size       
+    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1 ! data domain size
     call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, tile2, &
          istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
          pe_start, pe_end, symmetry = .true., whalo=whalo, ehalo=ehalo,   &
-         shalo=shalo, nhalo=nhalo, name = trim(type), memory_size = msize  )  
+         shalo=shalo, nhalo=nhalo, name = trim(type), memory_size = msize  )
 
-    return 
+    return
 
   end subroutine define_cubic_mosaic
 

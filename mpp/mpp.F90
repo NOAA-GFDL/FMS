@@ -34,7 +34,7 @@
 !
 ! For the full text of the GNU General Public License,
 ! write to: Free Software Foundation, Inc.,
-!           675 Mass Ave, Cambridge, MA 02139, USA.  
+!           675 Mass Ave, Cambridge, MA 02139, USA.
 !-----------------------------------------------------------------------
 module mpp_mod
 !a generalized communication package for use with shmem and MPI
@@ -73,7 +73,7 @@ module mpp_mod
 !   <TT>get</TT>s (e.g the SHMEM library), or in the case of
 !   negotiated communication (e.g MPI), <TT>send</TT>s and
 !   <TT>recv</TT>s.
-!   
+!
 !   The difference between SHMEM and MPI is that SHMEM uses one-sided
 !   communication, which can have very low-latency high-bandwidth
 !   implementations on tightly coupled systems. MPI is a standard
@@ -84,22 +84,22 @@ module mpp_mod
 !   <TT>get</TT>s on which it is based cannot currently be implemented in
 !   a cluster environment (there are recent announcements from Compaq that
 !   occasion hope).
-!   
+!
 !   The message-passing requirements of climate and weather codes can be
 !   reduced to a fairly simple minimal set, which is easily implemented in
 !   any message-passing API. <TT>mpp_mod</TT> provides this API.
 !
 !    Features of <TT>mpp_mod</TT> include:
-!   
+!
 !    1) Simple, minimal API, with free access to underlying API for
 !       more complicated stuff.<BR/>
 !    2) Design toward typical use in climate/weather CFD codes.<BR/>
 !    3) Performance to be not significantly lower than any native API.
-!   
-!   This module is used to develop higher-level calls for <LINK 
+!
+!   This module is used to develop higher-level calls for <LINK
 !   SRC="mpp_domains.html">domain decomposition</LINK> and <LINK
 !   SRC="mpp_io.html">parallel I/O</LINK>.
-!   
+!
 !   Parallel computing is initially daunting, but it soon becomes
 !   second nature, much the way many of us can now write vector code
 !   without much effort. The key insight required while reading and
@@ -112,16 +112,16 @@ module mpp_mod
 !   it implies. An example of erroneous code would be a global barrier
 !   call (see <LINK SRC="#mpp_sync">mpp_sync</LINK> below) placed
 !   within a code block that not all PEs will execute, e.g:
-!   
+!
 !   <PRE>
 !   if( pe.EQ.0 )call mpp_sync()
 !   </PRE>
-!   
+!
 !   Here only PE 0 reaches the barrier, where it will wait
 !   indefinitely. While this is a particularly egregious example to
 !   illustrate the coding flaw, more subtle versions of the same are
 !   among the most common errors in parallel code.
-!   
+!
 !   It is therefore important to be conscious of the context of a
 !   subroutine or function call, and the implied synchronization. There
 !   are certain calls here (e.g <TT>mpp_declare_pelist, mpp_init,
@@ -131,8 +131,8 @@ module mpp_mod
 !   <TT>pelist</TT> (e.g <TT>mpp_max, mpp_sum, mpp_sync</TT>). Still
 !   others imply no synchronization at all. I will make every effort to
 !   highlight the context of each call in the MPP modules, so that the
-!   implicit synchronization is spelt out.  
-!   
+!   implicit synchronization is spelt out.
+!
 !   For performance it is necessary to keep synchronization as limited
 !   as the algorithm being implemented will allow. For instance, a single
 !   message between two PEs should only imply synchronization across the
@@ -140,7 +140,7 @@ module mpp_mod
 !   is likely to be slow, and is best avoided. But codes first
 !   parallelized on a Cray T3E tend to have many global syncs, as very
 !   fast barriers were implemented there in hardware.
-!   
+!
 !   Another reason to use pelists is to run a single program in MPMD
 !   mode, where different PE subsets work on different portions of the
 !   code. A typical example is to assign an ocean model and atmosphere
@@ -199,19 +199,19 @@ module mpp_mod
   use mpp_parameter_mod, only : COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   use mpp_parameter_mod, only : COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
   use mpp_parameter_mod, only : MPP_FILL_INT,MPP_FILL_DOUBLE
-  use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync  
+  use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
   use mpp_data_mod,      only : mpp_data_version=>version
 
 implicit none
 private
 
-#if defined(use_libSMA) 
+#if defined(use_libSMA)
 #include <mpp/shmem.fh>
 #endif
 
 #if defined(use_libMPI) && !defined(sgi_mipspro)
-#include <mpif.h>   
+#include <mpif.h>
 !sgi_mipspro gets this from 'use mpi'
 #endif
 
@@ -342,7 +342,7 @@ private
   !    PE encountering a <TT>STOP</TT> statement, for instance, can cause the
   !    program to hang. The use of the <TT>STOP</TT> statement is strongly
   !    discouraged.
-  !    
+  !
   !    Calling mpp_error with no arguments produces an immediate error
   !    exit, i.e:
   !    <PRE>
@@ -350,14 +350,14 @@ private
   !    call mpp_error(FATAL)
   !    </PRE>
   !    are equivalent.
-  !    
+  !
   !    The argument order
   !    <PRE>
   !    call mpp_error( routine, errormsg, errortype )
   !    </PRE>
   !    is also provided to support legacy code. In this version of the
   !    call, none of the arguments may be omitted.
-  !    
+  !
   !    The behaviour of <TT>mpp_error</TT> for a <TT>WARNING</TT> can be
   !    controlled with an additional call <TT>mpp_set_warn_level</TT>.
   !    <PRE>
@@ -369,7 +369,7 @@ private
   !    call mpp_set_warn_level(WARNING)
   !    </PRE>
   !    resets to the default behaviour described above.
-  !    
+  !
   !    <TT>mpp_error</TT> also has an internal error state which
   !    maintains knowledge of whether a warning has been issued. This can be
   !    used at startup in a subroutine that checks if the model has been
@@ -378,7 +378,7 @@ private
   !    issued using the function <TT>mpp_error_state()</TT>. If the value of
   !    this is <TT>WARNING</TT>, at least one warning has been issued, and
   !    the user can take appropriate action:
-  !    
+  !
   !    <PRE>
   !    if( ... )call mpp_error( WARNING, '...' )
   !    if( ... )call mpp_error( WARNING, '...' )
@@ -391,9 +391,9 @@ private
   !    call mpp_error( errortype, routine, errormsg )
   !  </TEMPLATE>
   !  <IN NAME="errortype">
-  !    One of <TT>NOTE</TT>, <TT>WARNING</TT> or <TT>FATAL</TT> 
+  !    One of <TT>NOTE</TT>, <TT>WARNING</TT> or <TT>FATAL</TT>
   !    (these definitions are acquired by use association).
-  !    <TT>NOTE</TT> writes <TT>errormsg</TT> to <TT>STDOUT</TT>. 
+  !    <TT>NOTE</TT> writes <TT>errormsg</TT> to <TT>STDOUT</TT>.
   !    <TT>WARNING</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>.
   !    <TT>FATAL</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>,
   !    and induces a clean error exit with a call stack traceback.
@@ -540,21 +540,21 @@ private
   !  <DESCRIPTION>
   !    <TT>mpp_mod</TT> maintains a private internal array called
   !    <TT>mpp_stack</TT> for private workspace. This call sets the length,
-  !    in words, of this array. 
+  !    in words, of this array.
   !
   !    The <TT>mpp_init</TT> call sets this
   !    workspace length to a default of 32768, and this call may be used if a
   !    longer workspace is needed.
-  !    
+  !
   !    This call implies synchronization across all PEs.
-  !    
+  !
   !    This workspace is symmetrically allocated, as required for
   !    efficient communication on SGI and Cray MPP systems. Since symmetric
   !    allocation must be performed by <I>all</I> PEs in a job, this call
   !    must also be called by all PEs, using the same value of
   !    <TT>n</TT>. Calling <TT>mpp_set_stack_size</TT> from a subset of PEs,
   !    or with unequal argument <TT>n</TT>, may cause the program to hang.
-  !    
+  !
   !    If any MPP call using <TT>mpp_stack</TT> overflows the declared
   !    stack array, the program will abort with a message specifying the
   !    stack length that is required. Many users wonder why, if the required
@@ -851,18 +851,18 @@ private
   !    <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
   !    contiguous block from a multi-dimensional array may be passed by its
   !    starting address and its length, as in <TT>f77</TT>.
-  !    
+  !
   !    <TT>mpp_transmit</TT> is currently implemented as asynchronous
   !    outward transmission and synchronous inward transmission. This follows
   !    the behaviour of <TT>shmem_put</TT> and <TT>shmem_get</TT>. In MPI, it
   !    is implemented as <TT>mpi_isend</TT> and <TT>mpi_recv</TT>. For most
   !    applications, transmissions occur in pairs, and are here accomplished
   !    in a single call.
-  !    
+  !
   !    The special PE designations <TT>NULL_PE</TT>,
   !    <TT>ANY_PE</TT> and <TT>ALL_PES</TT> are provided by use
   !    association.
-  !    
+  !
   !    <TT>NULL_PE</TT>: is used to disable one of the pair of
   !    transmissions.<BR/>
   !    <TT>ANY_PE</TT>: is used for unspecific remote
@@ -870,14 +870,14 @@ private
   !    in the MPI context, though it is available in the SHMEM invocation. If
   !    portability is a concern, it is best avoided).<BR/>
   !    <TT>ALL_PES</TT>: is used for broadcast operations.
-  !    
+  !
   !    It is recommended that <LINK
   !    SRC="#mpp_broadcast"><TT>mpp_broadcast</TT></LINK> be used for
   !    broadcasts.
-  !    
+  !
   !    The following example illustrates the use of
   !    <TT>NULL_PE</TT> and <TT>ALL_PES</TT>:
-  !    
+  !
   !    <PRE>
   !    real, dimension(n) :: a
   !    if( pe.EQ.0 )then
@@ -887,19 +887,19 @@ private
   !    else
   !        call mpp_transmit( a, n, NULL_PE, a, n, 0 )
   !    end if
-  !    
+  !
   !    call mpp_transmit( a, n, ALL_PES, a, n, 0 )
   !    </PRE>
-  !    
+  !
   !    The do loop and the broadcast operation above are equivalent.
-  !    
+  !
   !    Two overloaded calls <TT>mpp_send</TT> and
   !     <TT>mpp_recv</TT> have also been
   !    provided. <TT>mpp_send</TT> calls <TT>mpp_transmit</TT>
   !    with <TT>get_pe=NULL_PE</TT>. <TT>mpp_recv</TT> calls
   !    <TT>mpp_transmit</TT> with <TT>put_pe=NULL_PE</TT>. Thus
   !    the do loop above could be written more succinctly:
-  !    
+  !
   !    <PRE>
   !    if( pe.EQ.0 )then
   !        do p = 1,npes-1
@@ -1287,7 +1287,7 @@ private
 
 !***********************************************************************
 !
-!            module variables 
+!            module variables
 !
 !***********************************************************************
   integer, parameter   :: PESET_MAX = 10000
@@ -1372,7 +1372,7 @@ private
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)
 !
-! parameter defining length of character variables 
+! parameter defining length of character variables
   integer, parameter :: INPUT_STR_LENGTH = 256
 ! public variable needed for reading input.nml from an internal file
   character(len=INPUT_STR_LENGTH), dimension(:), allocatable, target, public :: input_nml_file
@@ -1397,7 +1397,3 @@ private
 #include <mpp_comm.inc>
 
   end module mpp_mod
-
-
-
-

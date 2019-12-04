@@ -67,7 +67,7 @@ module fms_mod
 !  write_version_number  Prints to the log file (or a specified unit)
 !                        the (cvs) version id string and (cvs) tag name.
 !
-!  error_mesg          Print notes, warnings and error messages, 
+!  error_mesg          Print notes, warnings and error messages,
 !                      terminates program for error messages.
 !                      (use error levels NOTE,WARNING,FATAL)
 !
@@ -79,7 +79,7 @@ module fms_mod
 !  open_ieee32_file    Opens a file that will be used for reading or writing
 !                      unformatted 32-bit ieee data.
 !
-!  close_file          Closes a file that was opened using 
+!  close_file          Closes a file that was opened using
 !                      open_namelist_file, open_restart_file, or
 !                      open_ieee32_file.
 !
@@ -119,7 +119,7 @@ module fms_mod
 !
 !   mpp_clock_id, mpp_clock_begin , mpp_clock_end
 !   MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
-!   CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER, 
+!   CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER,
 !   CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
 !
 !-----------------------------------------------------------------------
@@ -244,7 +244,7 @@ integer, public :: clock_flag_default
 !     The level of clock granularity used for performance timing sections
 !     of code. Possible values in order of increasing detail are:
 !     'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
-!     'LOOP', and 'INFRA'.  Code sections are defined using routines in MPP 
+!     'LOOP', and 'INFRA'.  Code sections are defined using routines in MPP
 !     module: mpp_clock_id, mpp_clock_begin, and mpp_clock_end.
 !     The fms module makes these routines public.
 !     A list of timed code sections will be printed to STDOUT.
@@ -283,7 +283,7 @@ integer, public :: clock_flag_default
 !     domains_stack_size > 0, the following MPP_DOMAINS routine is called:
 !     call mpp_domains_set_stack_size (domains_stack_size). If
 !     domains_stack_size = 0 (default) then the default size set by
-!     mpp_domains_mod is used. 
+!     mpp_domains_mod is used.
 !   </DATA>
 !   <DATA NAME="print_memory_usage"  TYPE="logical"  DEFAULT=".FALSE.">
 !     If set to .TRUE., memory usage statistics will be printed at various
@@ -321,7 +321,7 @@ contains
 !   <OVERVIEW>
 !     Initializes the FMS module and also calls the initialization routines for all
 !     modules in the MPP package. Will be called automatically if the user does
-!     not call it. 
+!     not call it.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !      Initialization routine for the fms module. It also calls initialization routines
@@ -337,12 +337,12 @@ contains
 
 !   <ERROR MSG="invalid entry for namelist variable warning_level" STATUS="FATAL">
 !     The namelist variable warning_level must be either 'fatal' or 'warning'
-!     (case-insensitive). 
+!     (case-insensitive).
 !   </ERROR>
 !   <ERROR MSG="invalid entry for namelist variable clock_grain" STATUS="FATAL">
 !     The namelist variable clock_grain must be one of the following values:
 !     'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
-!     'LOOP', or 'INFRA' (case-insensitive). 
+!     'LOOP', or 'INFRA' (case-insensitive).
 !   </ERROR>
 
 ! initializes the fms module/package
@@ -393,7 +393,7 @@ subroutine fms_init (localcomm )
 !---- set severity level for warnings ----
 
     select case( trim(lowercase(warning_level)) )
-    case( 'fatal' )  
+    case( 'fatal' )
         call mpp_set_warn_level ( FATAL )
     case( 'warning' )
         call mpp_set_warn_level ( WARNING )
@@ -467,7 +467,7 @@ end subroutine fms_init
 !   <DESCRIPTION>
 !     Termination routine for the fms module. It also calls destructor routines
 !      for the mpp, mpp_domains, and mpp_io modules. If this routine is called
-!      more than once it will return silently. There are no arguments. 
+!      more than once it will return silently. There are no arguments.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call fms_end ( )
@@ -493,14 +493,14 @@ end subroutine fms_end
 ! <SUBROUTINE NAME="error_mesg">
 
 !   <OVERVIEW>
-!     Print notes, warnings and error messages; terminates program for warning 
+!     Print notes, warnings and error messages; terminates program for warning
 !     and error messages. (use error levels NOTE,WARNING,FATAL, see example below)
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     Print notes, warnings and error messages; and terminates the program for 
-!     error messages. This routine is a wrapper around mpp_error, and is provided 
+!     Print notes, warnings and error messages; and terminates the program for
+!     error messages. This routine is a wrapper around mpp_error, and is provided
 !     for backward compatibility. This module also publishes mpp_error,
-!      <B>users should try to use the mpp_error interface</B>. 
+!      <B>users should try to use the mpp_error interface</B>.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call error_mesg ( routine, message, level )
@@ -513,7 +513,7 @@ end subroutine fms_end
 !     Warning or error message to be printed.
 !   </IN>
 !   <IN NAME="level"  TYPE="integer" >
-!     Level of severity; set to NOTE, WARNING, or FATAL Termination always occurs 
+!     Level of severity; set to NOTE, WARNING, or FATAL Termination always occurs
 !     for FATAL, never for NOTE, and is settable for WARNING (see namelist).
 !   </IN>
 !   <NOTE>
@@ -594,13 +594,13 @@ end subroutine fms_end
 ! <FUNCTION NAME="check_nml_error">
 
 !   <OVERVIEW>
-!     Checks the iostat argument that is returned after reading a namelist 
-!     and determines if the error code is valid. 
+!     Checks the iostat argument that is returned after reading a namelist
+!     and determines if the error code is valid.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     The FMS allows multiple namelist records to reside in the same file. 
-!     Use this interface to check the iostat argument that is returned after 
-!     reading a record from the namelist file. If an invalid iostat value 
+!     The FMS allows multiple namelist records to reside in the same file.
+!     Use this interface to check the iostat argument that is returned after
+!     reading a record from the namelist file. If an invalid iostat value
 !     is detected this routine will produce a fatal error. See the NOTE below.
 !   </DESCRIPTION>
 !   <TEMPLATE>
@@ -611,26 +611,26 @@ end subroutine fms_end
 !     The iostat value returned when reading a namelist record.
 !   </IN>
 !   <IN NAME="nml_name"  TYPE="character" >
-!     The name of the namelist. This name will be printed if an error is 
+!     The name of the namelist. This name will be printed if an error is
 !     encountered, otherwise the name is not used.
 !   </IN>
 !   <OUT NAME=""  TYPE="integer" >
-!     This function returns the input iostat value (integer) if it is an 
+!     This function returns the input iostat value (integer) if it is an
 !     allowable error code. If the iostat error code is not
 !     allowable, an error message is printed and the program terminated.
 !   </OUT>
 !   <NOTE>
-!     Some compilers will return non-zero iostat values when reading through 
+!     Some compilers will return non-zero iostat values when reading through
 !     files with multiple namelist. This routine
 !     will try skip these errors and only terminate for true namelist errors.
 !
 !     Examples
 !
-!       The following example checks if a file exists, reads a namelist input 
+!       The following example checks if a file exists, reads a namelist input
 !       from that file, and checks for errors in that
-!       namelist. When the correct namelist is read and it has no errors the 
-!       routine check_nml_error will return zero and the while loop will exit. 
-!       This code segment should be used to read namelist files. 
+!       namelist. When the correct namelist is read and it has no errors the
+!       routine check_nml_error will return zero and the while loop will exit.
+!       This code segment should be used to read namelist files.
 !       <PRE>
 !          integer :: unit, ierr, io
 !
@@ -647,11 +647,11 @@ end subroutine fms_end
 !   </NOTE>
 
 !   <ERROR MSG="Unknown error while reading namelist ...., (IOSTAT = ####)" STATUS="FATAL">
-!     There was an error reading the namelist specified. Carefully examine all namelist and variables 
+!     There was an error reading the namelist specified. Carefully examine all namelist and variables
 !     for anything incorrect (e.g. malformed, hidden characters).
 !   </ERROR>
 !   <ERROR MSG="Unknown namelist, or mistyped namelist variable in namelist ...., (IOSTAT = ####)" STATUS="FATAL">
-!     The name list given doesn't exist in the namelist file, or a variable in the namelist is mistyped or isn't a 
+!     The name list given doesn't exist in the namelist file, or a variable in the namelist is mistyped or isn't a
 !     namelist variable.
 !   </ERROR>
 
@@ -691,7 +691,7 @@ end subroutine fms_end
 
   SUBROUTINE nml_error_init
     ! Determines the IOSTAT error value for some common Namelist errors.
-    ! Also checks if the compiler returns a non-zero status if there are 
+    ! Also checks if the compiler returns a non-zero status if there are
     ! multiple namelist records in a single file.
     INTEGER, PARAMETER :: unit_begin = 20, unit_end = 1024
     INTEGER :: fileunit, io_stat
@@ -768,7 +768,7 @@ end subroutine fms_end
              nml_iostats(3) = nml_iostats(2)
           ELSE IF ( nml_iostats(2) .EQ. 0 .AND. nml_iostats(3) .NE.0 ) THEN
              nml_iostats(2) = nml_iostats(3)
-          ELSE 
+          ELSE
              nml_iostats(2) = nml_iostats(4)
              nml_iostats(2) = nml_iostats(4)
           END IF
@@ -798,7 +798,7 @@ end subroutine fms_end
 !   <DESCRIPTION>
 !      Tries to find a match for a character string in a list of character strings.
 !      The match is case sensitive and disregards blank characters to the right of
-!      the string. 
+!      the string.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !      string_array_index ( string, string_array [, index] )
@@ -879,11 +879,11 @@ end function string_array_index
 !     If the input array is:
 !                >> monotonic (small to large) then direction = +1.
 !                >> monotonic (large to small) then direction = -1.
-!                >> not monotonic then direction = 0. 
+!                >> not monotonic then direction = 0.
 !   </OUT>
 !   <OUT NAME="monotonic_array"  TYPE="logical" >
 !     If the input array of real values either increases or decreases monotonically
-!      then TRUE is returned, otherwise FALSE is returned. 
+!      then TRUE is returned, otherwise FALSE is returned.
 !   </OUT>
 ! determines if the real input array has
 ! monotonically increasing or decreasing values
@@ -925,25 +925,25 @@ end function monotonic_array
 
 end module fms_mod
 ! <INFO>
-!   <BUG>              
+!   <BUG>
 !     Namelist error checking may not work correctly with some compilers.
 !
 !     Users should beware when mixing Fortran reads and read_data calls. If a
 !     Fortran read follows read_data and namelist variable read_all_pe = FALSE
-!     (not the default), then the code will fail. It is safest if Fortran reads 
+!     (not the default), then the code will fail. It is safest if Fortran reads
 !     precede calls to read_data.
 !   </BUG>
 !   <ERROR MSG="unexpected EOF" STATUS="FATAL">
 !     An unexpected end-of-file was encountered in a read_data call.
-!     You may want to use the optional end argument to detect the EOF. 
+!     You may want to use the optional end argument to detect the EOF.
 !   </ERROR>
 !   <NOTE>
 !     1) If the <B>MPP</B> or <B>MPP_DOMAINS</B> stack size is exceeded the
-!     program will terminate after printing the required size. 
-!   
+!     program will terminate after printing the required size.
+!
 !     2) When running on a very small number of processors or for high
 !     resolution models the default domains_stack_size will
-!     probably be insufficient. 
+!     probably be insufficient.
 !
 !     3) The following performance routines in the <B>MPP</B> module are published by this module.
 !<PRE>
@@ -966,7 +966,7 @@ end module fms_mod
 !          call mpp_clock_begin (id_mycode)
 !                        :
 !                        :
-!           ~~ this code will be timed ~~ 
+!           ~~ this code will be timed ~~
 !                        :
 !                        :
 !          call mpp_clock_end (id_mycode)
@@ -974,17 +974,16 @@ end module fms_mod
 !        Note: <TT>CLOCK_MODULE_DRIVER</TT> can be replaced with
 !        CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER, CLOCK_MODULE, CLOCK_ROUTINE,
 !        CLOCK_LOOP, or CLOCK_INFRA.
-!        
+!
 !   </NOTE>
-!   <FUTURE>           
-!     NetCDF facilities for reading and writing restart files and (IEEE32) 
+!   <FUTURE>
+!     NetCDF facilities for reading and writing restart files and (IEEE32)
 !       data files.
 !    </FUTURE>
 !    <FUTURE>
-!     May possible split the FMS module into two modules. 
+!     May possible split the FMS module into two modules.
 !
 !      i.general utilities (FMS_MOD) <BR/>
-!     ii.I/O utilities (FMS_IO_MOD) 
+!     ii.I/O utilities (FMS_IO_MOD)
 !    </FUTURE>
 ! </INFO>
-

@@ -1527,13 +1527,13 @@ real, dimension (size(data,1),size(data,2)) :: data2
 
 end function vert_diag_integral
 
-!> \brief Adds .ens_## to the diag_integral.out file name 
+!> \brief Adds .ens_## to the diag_integral.out file name
 function ensemble_file_name(fname) result(updated_file_name)
      character (len=mxch), intent(inout) :: fname
      character (len=mxch) :: updated_file_name
      integer :: ensemble_id_int
      character(len=7) :: ensemble_suffix
-     character(len=2) :: ensemble_id_char 
+     character(len=2) :: ensemble_id_char
      integer :: i
      !> Make sure the file name short enough to handle adding the ensemble number
      if (len(trim(fname)) > mxch-7) call error_mesg ('diag_integral_mod :: ensemble_file_name',  &
@@ -1556,7 +1556,7 @@ function ensemble_file_name(fname) result(updated_file_name)
           do i=len(trim(fname)),2,-1
                if (fname(i:i) == ".") then
                     updated_file_name = fname(1:i-1)//trim(ensemble_suffix)//fname(i:mxch)
-                    return 
+                    return
                endif
           enddo
      !> Add to the end if there is no period in the file name

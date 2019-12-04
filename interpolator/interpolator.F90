@@ -188,7 +188,7 @@ public interpolator_init, &
 !! character(len=*), intent(out), optional :: clim_units
 !! ~~~~~~~~~~
 !!
-!! The second option is generate ozone models. 
+!! The second option is generate ozone models.
 !!
 !! The ozone data is set by
 !! ~~~~~~~~~~{.f90}
@@ -336,7 +336,7 @@ integer, parameter :: INCREASING_DOWNWARD = 1, INCREASING_UPWARD = -1          !
 !++lwh
 ! Flags to indicate whether the time interpolation should be linear or some other scheme for seasonal data.
 ! NOTIME indicates that data file has no time axis.
-integer, parameter :: LINEAR = 1, SEASONAL = 2, BILINEAR = 3, NOTIME = 4     !< Flags to indicate whether the time interpolation 
+integer, parameter :: LINEAR = 1, SEASONAL = 2, BILINEAR = 3, NOTIME = 4     !< Flags to indicate whether the time interpolation
                                                                                                !! should be linear or some other scheme for seasonal data.
                                                                                                !! NOTIME indicates that data file has no time axis.
 
@@ -349,7 +349,7 @@ integer, parameter :: NO_CONV = 1, KG_M2 = 2          !< Flags to indicate wheth
                                                                  !< Vertical interpolation scheme requires mixing ratio at this time.
 
 ! Flags to indicate what to do when the model surface pressure exceeds the  climatology surface pressure level.
-integer, parameter, public :: CONSTANT = 1, ZERO = 2          !< Flags to indicate what to do when the model surface pressure 
+integer, parameter, public :: CONSTANT = 1, ZERO = 2          !< Flags to indicate what to do when the model surface pressure
                                                                            !< exceeds the  climatology surface pressure level.
 
 ! Flags to indicate the type of vertical interpolation
@@ -449,14 +449,14 @@ end subroutine interpolate_type_eq
 !> \brief interpolator_init receives various data as input in order
 !!        to initialize interpolating.
 !!
-!! \param [inout] <clim_type> An interpolate type containing the necessary file and field 
+!! \param [inout] <clim_type> An interpolate type containing the necessary file and field
 !!                                     data to be passed to the interpolator routine
 !! \param [in] <file_name> Climatology filename
 !! \param [in] <lonb_mod> The corners of the model grid-box longitudes
 !! \param [in] <latb_mod> The corners of the model grid_box latitudes
-!! \param [in] <data_names> OPTIONAL: A list of the names of components within the climatology 
+!! \param [in] <data_names> OPTIONAL: A list of the names of components within the climatology
 !!                                               file which you wish to read
-!! \param [in] <data_out_of_bounds> A list of the flags that are to be used in determining 
+!! \param [in] <data_out_of_bounds> A list of the flags that are to be used in determining
 !!                                             what to do if the pressure levels in the model go out of
 !!                                      bounds from those of the climatology
 !! \param [in] <vert_interp> OPTIONAL: Flag to determine type of vertical interpolation
@@ -1422,10 +1422,10 @@ end function check_climo_units
 !!        for the climatology file. This routine calculates the domain
 !!        decompostion of the climatology fields for later export
 !!        through send_data. The ids created here are for column
-!!        burdens that will diagnose the vertical interpolation 
+!!        burdens that will diagnose the vertical interpolation
 !!        routine.
 !!
-!! \param [inout] <clim_type> The interpolate type containing the 
+!! \param [inout] <clim_type> The interpolate type containing the
 !!                      names of the fields in the climatology file
 !! \param [in] <mod_axes> The axes of the model
 !! \param [in] <init_time> The model initialization time
@@ -1503,7 +1503,7 @@ end subroutine init_clim_diag
 !!        appropriate time slices are available for interpolation on
 !!        this time step.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined 
+!! \param [inout] <clim_type> The interpolate type previously defined
 !!                      by a call to interpolator_init
 !! \param [in] <Time> The model time that you wish to interpolate to
 !!
@@ -1512,8 +1512,8 @@ end subroutine init_clim_diag
 !! \throw FATAL "interpolator_timeslice 3:  file="
 !! \throw FATAL "interpolator_timeslice 4:  file="
 !! \throw FATAL "interpolator_timeslice 5:  file="
-!! \throw FATAL "interpolator_timeslice : No data from the previous 
-!!                    climatology time but we have the next time. How did 
+!! \throw FATAL "interpolator_timeslice : No data from the previous
+!!                    climatology time but we have the next time. How did
 !!                    this happen?"
 subroutine obtain_interpolator_time_slices (clim_type, Time)
 
@@ -3575,7 +3575,7 @@ end subroutine read_data
 !
 !---------------------------------------------------------------------
 !> \brief read_data_no_time_axis receives various climate data as inputs and
-!!        returns a horizontally interpolated climatology field without the 
+!!        returns a horizontally interpolated climatology field without the
 !!            time axis.
 !!
 !! \param [in] <clim_type> The interpolate type which contains the data
@@ -3637,7 +3637,7 @@ end subroutine read_data_no_time_axis
 !! \param [in] <clim_type> The interpolate type which contains the data
 !! \param [in] <model_data> The data read in from file that is being diagnosed
 !! \param [in] <i> The index of the field name that you are diagnosing
-!! \param [in] <Time> The model time. 
+!! \param [in] <Time> The model time.
 subroutine diag_read_data(clim_type,model_data, i, Time)
 !
 ! A routine to diagnose the data read in by read_data

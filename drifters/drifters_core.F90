@@ -94,7 +94,7 @@ contains
     if(iflag/=0) ier = ier + 1
     if(_ALLOCATED(self%ids)) deallocate(self%ids, stat=iflag)
     if(iflag/=0) ier = ier + 1
-    
+
     if(ier/=0) ermesg = 'drifters::ERROR in drifters_core_del'
   end subroutine drifters_core_del
 
@@ -119,7 +119,7 @@ contains
     allocate(new_instance%positions( size(old_instance%positions,1), &
          &                           size(old_instance%positions,2) ))
     new_instance%positions  = old_instance%positions
-   
+
  end subroutine drifters_core_copy_new
  !###############################################################################
   subroutine drifters_core_resize(self, npdim, ermesg)
@@ -138,7 +138,7 @@ contains
     ! temps
     allocate(positions(self%nd, self%np), stat=iflag)
     allocate(               ids(self%np), stat=iflag)
-    
+
     positions    = self%positions(:, 1:self%np)
     ids          = self%ids(1:self%np)
 
@@ -152,7 +152,7 @@ contains
     self%ids       = (/ (i, i=1,npdim) /)
     self%positions(:, 1:self%np) = positions
     self%npdim = npdim
-    
+
     if(ier/=0) ermesg = 'drifters::ERROR in drifters_core_resize'
   end subroutine drifters_core_resize
 
@@ -198,7 +198,7 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
     ermesg = ''
     ier = 0
 
-    ! copy, required so we can have indices_to_remove_in intent(in)    
+    ! copy, required so we can have indices_to_remove_in intent(in)
     indices_to_remove = indices_to_remove_in
     np_remove = size(indices_to_remove)
     np_add    = size(ids_to_add, 1)
@@ -209,7 +209,7 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
        ermesg = 'drifters::ERROR attempting to remove more elements than there are elements in drifters_core_remove_and_add'
        return
     endif
-    
+
     ! check for overflow, and resize if necessary
     if(self%np + n_diff > self%npdim)  &
          & call drifters_core_resize(self, int(1.2*(self%np + n_diff))+1, ermesg)
@@ -219,7 +219,7 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
        self%ids(j)            = ids_to_add(i)
        self%positions(:,j)    = positions_to_add(:,i)
     enddo
-    
+
     if(n_diff > 0) then
        ! all the particles to remove were removed and replaced. Just need to append
        ! remaining particles to end of list
@@ -229,10 +229,10 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
        self%np = self%np + n_diff
 
     else if(n_diff < 0) then
-       ! all the particles were added by filling in holes left by particles that 
-       ! were previously removed. Now remove remaining particles, starting from the end,  
+       ! all the particles were added by filling in holes left by particles that
+       ! were previously removed. Now remove remaining particles, starting from the end,
        ! by replacing the missing particle with a copy from the end.
-       
+
        ! sort remaining indices in ascending order
        call qksrt_quicksort(size(indices_to_remove), indices_to_remove, np_add+1, np_remove)
 
@@ -244,10 +244,10 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
           self%np = self%np - 1
        enddo
     endif
-       
+
     if(ier/=0) ermesg = 'drifters::ERROR in drifters_core_remove_and_add'
   end subroutine drifters_core_remove_and_add
-  
+
 !###############################################################################
   subroutine drifters_core_print(self1, ermesg1)
     type(drifters_core_type)        :: self1
@@ -257,12 +257,12 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
     print '(a,i10,a,i6,a,i6,a,i4,a,i4,a,i4)','it=',self1%it,  &
          & ' np=', self1%np, ' npdim=', self1%npdim
-        
+
     print *,'ids and positions:'
     do j = 1, self1%np
        print *,self1%ids(j), self1%positions(:,j)
-    enddo    
-       
+    enddo
+
   end subroutine drifters_core_print
 
 

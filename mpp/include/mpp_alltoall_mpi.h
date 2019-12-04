@@ -21,7 +21,7 @@ subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)
     MPP_TYPE_, intent(inout) :: rbuf(:)
     integer,   intent(in) :: scount, rcount
-   
+
     integer, intent(in), optional :: pelist(0:)
     integer :: n
 

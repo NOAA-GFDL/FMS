@@ -32,7 +32,7 @@ module axis_utils_mod
   !<DESCRIPTION>
   !
   ! subroutine get_axis_cart(axis,cart) : Returns X,Y,Z or T cartesian attribute
-  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of 
+  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of
   !                                                    available axes, or defined based on axis mid-points
   ! function get_axis_modulo : Returns true if axis has the modulo attribute
   ! function get_axis_fold   : Returns is axis is folded at a boundary (non-standard meta-data)
@@ -62,7 +62,7 @@ module axis_utils_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  
+
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -75,7 +75,7 @@ module axis_utils_mod
 contains
 
 
-  subroutine get_axis_cart(axis, cart)      
+  subroutine get_axis_cart(axis, cart)
 
     type(axistype), intent(in) :: axis
     character(len=1), intent(out) :: cart
@@ -184,7 +184,7 @@ contains
        enddo
        data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
        if (abs(data(1)) < epsln) data(1) = 0.0
-       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))         
+       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))
        if (data(1) == 0.0) then
           if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
        endif
@@ -229,11 +229,11 @@ contains
     integer :: natt, i
     type(atttype), dimension(:), allocatable :: atts
     logical :: found_tbeg, found_tend
-    
+
     call mpp_get_atts(axis,natts=natt)
     allocate(atts(natt))
     call mpp_get_atts(axis,atts=atts)
-  
+
     found_tbeg = .false.
     found_tend = .false.
 
@@ -261,7 +261,7 @@ contains
       call mpp_error(FATAL,'error in get: Found modulo_end but not modulo_beg')
     endif
 
-    get_axis_modulo_times = found_tbeg 
+    get_axis_modulo_times = found_tbeg
 
   end function get_axis_modulo_times
 
@@ -304,7 +304,7 @@ contains
     endif
 
     do
-       if (lon_in_range < l_strt) then          
+       if (lon_in_range < l_strt) then
           lon_in_range = lon_in_range +  f360;
        else if (lon_in_range  >  l_end) then
           lon_in_range  = lon_in_range - f360;
@@ -341,13 +341,13 @@ contains
     istrt=0
     do i=1,len-1
        if (lon(i+1) < lon(i)) then
-          istrt=i+1 
+          istrt=i+1
           exit
        endif
     enddo
 
     if (istrt>1) then ! grid is not monotonic
-       if (abs(lon(len)-lon(1)) < epsln) then 
+       if (abs(lon(len)-lon(1)) < epsln) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
           lon(len) = lon(1)
@@ -406,15 +406,15 @@ contains
     real :: value, frac_index
     real, dimension(:) :: array
     logical keep_going
-    
+
     ia = size(array(:))
 
     do i=2,ia
        if (array(i) < array(i-1)) then
-          unit = stdout() 
+          unit = stdout()
           write (unit,*) '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ',&
                               value
-          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
              write (unit,*) 'i=',ii, ' array(i)=',array(ii)
@@ -432,7 +432,7 @@ contains
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             frac_index = float(i-1) + (value-array(i-1))/(array(i)-array(i-1)) 
+             frac_index = float(i-1) + (value-array(i-1))/(array(i)-array(i-1))
              keep_going = .false.
           endif
        enddo
@@ -490,7 +490,7 @@ contains
           unit = stdout()
           write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing &
                          &when searching for nearest value to ',value
-          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
              write (unit,*) 'i=',ii, ' array(i)=',array(ii)
@@ -517,7 +517,7 @@ contains
 
   !#############################################################################
 
-  subroutine interp_1d_linear(grid1,grid2,data1,data2)  
+  subroutine interp_1d_linear(grid1,grid2,data1,data2)
 
     real, dimension(:),    intent(in) :: grid1, data1, grid2
     real, dimension(:), intent(inout) :: data2
@@ -551,8 +551,8 @@ contains
              data2(i) = data1(n)
           else
              w = (grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1))
-             data2(i) = (1.-w)*data1(n-1) + w*data1(n)   
-          endif     
+             data2(i) = (1.-w)*data1(n-1) + w*data1(n)
+          endif
        endif
     enddo
 
@@ -562,7 +562,7 @@ contains
   end subroutine interp_1d_linear
 
   !###################################################################
-  subroutine interp_1d_cubic_spline(grid1, grid2, data1, data2, yp1, ypn)  
+  subroutine interp_1d_cubic_spline(grid1, grid2, data1, data2, yp1, ypn)
 
     real, dimension(:),    intent(in) :: grid1, grid2, data1
     real, dimension(:), intent(inout) :: data2
@@ -573,7 +573,7 @@ contains
     integer                           :: n, m, i, k, klo, khi
 
     n = size(grid1(:))
-    m = size(grid2(:))    
+    m = size(grid2(:))
 
     do i=2,n
        if (grid1(i) <= grid1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
@@ -623,7 +623,7 @@ contains
        else
           if(n==1) then
             klo = n
-          else 
+          else
             klo = n -1
           endif
        endif
@@ -638,7 +638,7 @@ contains
 
   !###################################################################
 
-  subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)  
+  subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)
 
     real, dimension(:),      intent(in)    :: grid1, data1, grid2
     real, dimension(:),      intent(inout) :: data2
@@ -646,7 +646,7 @@ contains
     real,             optional, intent(in) :: yp1, yp2
 
     real              :: y1, y2
-    character(len=32) :: interp_method    
+    character(len=32) :: interp_method
     integer           :: k2, ks, ke
 
     k2 = size(grid2(:))
@@ -674,7 +674,7 @@ contains
   !###################################################################
 
 
-  subroutine interp_1d_2d(grid1,grid2,data1,data2)  
+  subroutine interp_1d_2d(grid1,grid2,data1,data2)
 
     real, dimension(:,:),    intent(in) :: grid1, data1, grid2
     real, dimension(:,:), intent(inout) :: data2
@@ -699,7 +699,7 @@ contains
 
   !###################################################################
 
-  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)  
+  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)
 
     real, dimension(:,:,:),  intent(in)    :: grid1, data1, grid2
     real, dimension(:,:,:),  intent(inout) :: data2
@@ -779,5 +779,3 @@ contains
   end subroutine find_index
 
 end module axis_utils_mod
-
-
