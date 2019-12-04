@@ -50,6 +50,7 @@ public :: Valid_t
 public :: get_valid
 public :: is_valid
 public :: get_unlimited_dimension_name
+public :: get_variable_unlimited_dimension_index
 public :: file_exists
 public :: compressed_start_and_count
 public :: get_variable_sense

@@ -100,7 +100,7 @@ function get_peset(pelist)
      if(pelist(n) <= pelist(n-1)) call mpp_error(FATAL, "GET_PESET: pelist is not monotonically increasing")
   enddo
   allocate( sorted(size(pelist(:))) )
-  sorted = pelist 
+  sorted = pelist
   if( debug )write( errunit,* )'pelist=', pelist
 
   !find if this array matches any existing peset
@@ -212,5 +212,3 @@ subroutine mpp_sync_self( pelist, check, request )
   if( current_clock.NE.0 )call increment_current_clock(EVENT_WAIT)
   return
 end subroutine mpp_sync_self
-
-

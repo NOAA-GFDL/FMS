@@ -93,8 +93,8 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
      & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,         &
      & drag_q, u_star, b_star, lavail, avail, ier)
 
-  real   , intent(in   )                :: grav     
-  real   , intent(in   )                :: vonkarm   
+  real   , intent(in   )                :: grav
+  real   , intent(in   )                :: vonkarm
   real   , intent(in   )                :: error    ! = 1.e-04
   real   , intent(in   )                :: zeta_min ! = 1.e-06
   integer, intent(in   )                :: max_iter ! = 20
@@ -108,19 +108,19 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
   real   , intent(in   ), dimension(n)  :: pt, pt0, z, z0, zt, zq, speed
   real   , intent(inout), dimension(n)  :: drag_m, drag_t, drag_q, u_star, b_star
   logical, intent(in   )                :: lavail ! whether to use provided mask or not
-  logical, intent(in   ), dimension(n)  :: avail  ! provided mask 
+  logical, intent(in   ), dimension(n)  :: avail  ! provided mask
   integer, intent(out  )                :: ier
 
   real   , dimension(n) :: rich, fm, ft, fq, zz
   logical, dimension(n) :: mask, mask_1, mask_2
   real   , dimension(n) :: delta_b !!, us, bs, qs
   real                  :: r_crit, sqrt_drag_min_heat
-  real                  :: sqrt_drag_min_moist, sqrt_drag_min_mom 
+  real                  :: sqrt_drag_min_moist, sqrt_drag_min_mom
   real                  :: us, bs, qs
   integer               :: i
 
   ier = 0
-  r_crit = 0.95*rich_crit  ! convergence can get slow if one is 
+  r_crit = 0.95*rich_crit  ! convergence can get slow if one is
                            ! close to rich_crit
   sqrt_drag_min_heat = 0.0
   if(drag_min_heat.ne.0.0) sqrt_drag_min_heat = sqrt(drag_min_heat)
@@ -132,11 +132,11 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
   mask = .true.
   if(lavail) mask = avail
 
-  where(mask) 
+  where(mask)
      delta_b = grav*(pt0 - pt)/pt0
      rich    = - z*delta_b/(speed*speed + small)
      zz      = max(z,z0,zt,zq)
-  elsewhere 
+  elsewhere
      rich = 0.0
   end where
 
@@ -238,7 +238,7 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
   ! initial guess
 
   zeta = 0.0
-  where(mask_1) 
+  where(mask_1)
      zeta = rich*ln_z_z0*ln_z_z0/ln_z_zt
   end where
 
@@ -248,7 +248,7 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
 
   iter_loop: do iter = 1, max_iter
 
-     where (mask_1 .and. abs(zeta).lt.zeta_min) 
+     where (mask_1 .and. abs(zeta).lt.zeta_min)
         zeta = 0.0
         f_m = ln_z_z0
         f_t = ln_z_zt
@@ -256,7 +256,7 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
         mask_1 = .false.  ! don't do any more calculations at these pts
      end where
 
-     
+
      zeta_0 = 0.0
      zeta_t = 0.0
      zeta_q = 0.0
@@ -285,9 +285,9 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
         df_m  = (phi_m - phi_m_0)*rzeta
         df_t  = (phi_t - phi_t_0)*rzeta
         rich_1 = zeta*f_t/(f_m*f_m)
-        d_rich = rich_1*( rzeta +  df_t/f_t - 2.0 *df_m/f_m) 
-        correction = (rich - rich_1)/d_rich  
-        corr = min(abs(correction),abs(correction/zeta)) 
+        d_rich = rich_1*( rzeta +  df_t/f_t - 2.0 *df_m/f_m)
+        correction = (rich - rich_1)/d_rich
+        corr = min(abs(correction),abs(correction/zeta))
         ! the criterion corr < error seems to work ok, but is a bit arbitrary
         !  when zeta is small the tolerance is reduced
      end where
@@ -295,9 +295,9 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
      max_cor= maxval(corr)
 
      if(max_cor > error) then
-        mask_1 = mask_1 .and. (corr > error)  
+        mask_1 = mask_1 .and. (corr > error)
         ! change the mask so computation proceeds only on non-converged points
-        where(mask_1) 
+        where(mask_1)
            zeta = zeta + correction
         end where
         cycle iter_loop
@@ -323,7 +323,7 @@ _PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_cri
   integer, intent(in   )                :: n
   real   , intent(  out), dimension(n)  :: phi_t
   real   , intent(in   ), dimension(n)  :: zeta
-  logical, intent(in   ), dimension(n)  :: mask  
+  logical, intent(in   ), dimension(n)  :: mask
   integer, intent(  out)                :: ier
 
   logical, dimension(n) :: stable, unstable
@@ -337,19 +337,19 @@ _PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_cri
 
 !miz: modified to include new monin-obukhov option
   if (new_mo_option) then
-     where (unstable) 
-     	   phi_t = (1 - 16.0*zeta)**(-1./3.)
+     where (unstable)
+        phi_t = (1 - 16.0*zeta)**(-1./3.)
      end where
   else
-  where (unstable) 
+  where (unstable)
      phi_t = (1 - 16.0*zeta)**(-0.5)
   end where
   end if
 !miz
 
-  if(stable_option == 1) then 
+  if(stable_option == 1) then
 
-     where (stable) 
+     where (stable)
         phi_t = 1.0 + zeta*(5.0 + b_stab*zeta)/(1.0 + zeta)
      end where
 
@@ -391,14 +391,14 @@ _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans
   stable   = mask .and. zeta >= 0.0
   unstable = mask .and. zeta <  0.0
 
-  where (unstable) 
+  where (unstable)
      x     = (1 - 16.0*zeta  )**(-0.5)
      phi_m = sqrt(x)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
   end where
 
-  if(stable_option == 1) then 
+  if(stable_option == 1) then
 
-     where (stable) 
+     where (stable)
         phi_m = 1.0 + zeta  *(5.0 + b_stab*zeta)/(1.0 + zeta)
      end where
 
@@ -451,7 +451,7 @@ _PURE subroutine monin_obukhov_profile_1d(vonkarm, &
   del_t = 0.0
   del_q = 0.0
 
-  where(mask) 
+  where(mask)
      ln_z_z0     = log(z/z0)
      ln_z_zt     = log(z/zt)
      ln_z_zq     = log(z/zq)
@@ -469,7 +469,7 @@ _PURE subroutine monin_obukhov_profile_1d(vonkarm, &
 
   else
 
-     where(mask .and. u_star > 0.0) 
+     where(mask .and. u_star > 0.0)
         mo_length_inv = - vonkarm * b_star/(u_star*u_star)
         zeta       = z     *mo_length_inv
         zeta_0     = z0    *mo_length_inv
@@ -525,7 +525,7 @@ _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, 
   stable   = mask .and. zeta >= 0.0
   unstable = mask .and. zeta <  0.0
 
-  where(unstable) 
+  where(unstable)
 
      x     = sqrt(1 - 16.0*zeta)
      x_0   = sqrt(1 - 16.0*zeta_0)
@@ -545,9 +545,9 @@ _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, 
 
   if( stable_option == 1) then
 
-     where (stable) 
+     where (stable)
         psi_m = ln_z_z0 + (5.0 - b_stab)*log((1.0 + zeta)/(1.0 + zeta_0)) &
-             + b_stab*(zeta - zeta_0) 
+             + b_stab*(zeta - zeta_0)
      end where
 
   else if (stable_option == 2) then
@@ -558,7 +558,7 @@ _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, 
      strongly_stable = stable .and. zeta >  zeta_trans
 
      where (weakly_stable)
-        psi_m = ln_z_z0 + 5.0*(zeta - zeta_0) 
+        psi_m = ln_z_z0 + 5.0*(zeta - zeta_0)
      end where
 
      where(strongly_stable)
@@ -590,15 +590,15 @@ _PURE subroutine monin_obukhov_integral_tq(stable_option, new_mo_option, rich_cr
   real   , intent(in)   , dimension(n)  :: zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq
   logical, intent(in)   , dimension(n)  :: mask
   integer, intent(  out)                :: ier
-  
-  real, dimension(n)     :: x, x_t, x_q                              
+
+  real, dimension(n)     :: x, x_t, x_q
   logical, dimension(n)  :: stable, unstable, &
                                   weakly_stable, strongly_stable
   real                   :: b_stab, lambda
   real                   :: s3 !miz
 
   ier = 0
-  
+
   b_stab     = 1.0/rich_crit
 
 stable   = mask .and. zeta >= 0.0
@@ -607,22 +607,22 @@ unstable = mask .and. zeta <  0.0
 !miz: modified to include a new monin-obukhov option
 if (new_mo_option) then
  s3 = sqrt(3.0)
- where(unstable) 
+ where(unstable)
   x     = (1 - 16.0*zeta)**(1./3.)
   x_t   = (1 - 16.0*zeta_t)**(1./3.)
   x_q   = (1 - 16.0*zeta_q)**(1./3.)
-  
+
   psi_t = ln_z_zt - 1.5*log((x**2+x+1)/(x_t**2 + x_t + 1)) + s3*(atan((2*x+1)/s3) - atan((2*x_t + 1)/s3))
-  psi_q = ln_z_zq - 1.5*log((x**2+x+1)/(x_q**2 + x_q + 1)) + s3*(atan((2*x+1)/s3) - atan((2*x_q + 1)/s3))  
+  psi_q = ln_z_zq - 1.5*log((x**2+x+1)/(x_q**2 + x_q + 1)) + s3*(atan((2*x+1)/s3) - atan((2*x_q + 1)/s3))
   end where
 else
 
-where(unstable) 
+where(unstable)
 
   x     = sqrt(1 - 16.0*zeta)
   x_t   = sqrt(1 - 16.0*zeta_t)
   x_q   = sqrt(1 - 16.0*zeta_q)
-  
+
   psi_t = ln_z_zt - 2.0*log( (1.0 + x)/(1.0 + x_t) )
   psi_q = ln_z_zq - 2.0*log( (1.0 + x)/(1.0 + x_q) )
 
@@ -632,15 +632,15 @@ end if
 
 if( stable_option == 1) then
 
-  where (stable) 
-  
+  where (stable)
+
     psi_t = ln_z_zt + (5.0 - b_stab)*log((1.0 + zeta)/(1.0 + zeta_t)) &
-       + b_stab*(zeta - zeta_t) 
+       + b_stab*(zeta - zeta_t)
     psi_q = ln_z_zq + (5.0 - b_stab)*log((1.0 + zeta)/(1.0 + zeta_q)) &
-       + b_stab*(zeta - zeta_q) 
-       
+       + b_stab*(zeta - zeta_q)
+
   end where
-  
+
 else if (stable_option == 2) then
 
    lambda = 1.0 + (5.0 - b_stab)*zeta_trans
@@ -649,28 +649,28 @@ else if (stable_option == 2) then
   strongly_stable = stable .and. zeta >  zeta_trans
 
   where (weakly_stable)
-    psi_t = ln_z_zt + 5.0*(zeta - zeta_t) 
-    psi_q = ln_z_zq + 5.0*(zeta - zeta_q) 
+    psi_t = ln_z_zt + 5.0*(zeta - zeta_t)
+    psi_q = ln_z_zq + 5.0*(zeta - zeta_q)
   end where
-  
+
   where(strongly_stable)
     x = (lambda - 1.0)*log(zeta/zeta_trans) + b_stab*(zeta - zeta_trans)
   endwhere
-  
+
   where (strongly_stable .and. zeta_t <= zeta_trans)
     psi_t = ln_z_zt + x + 5.0*(zeta_trans - zeta_t)
   end where
   where (strongly_stable .and. zeta_t > zeta_trans)
     psi_t = lambda*ln_z_zt + b_stab*(zeta  - zeta_t)
   endwhere
-  
+
   where (strongly_stable .and. zeta_q <= zeta_trans)
     psi_q = ln_z_zq + x + 5.0*(zeta_trans - zeta_q)
   end where
   where (strongly_stable .and. zeta_q > zeta_trans)
     psi_q = lambda*ln_z_zq + b_stab*(zeta  - zeta_q)
   endwhere
-  
+
 end if
 
 end subroutine monin_obukhov_integral_tq
@@ -683,7 +683,7 @@ _PURE subroutine monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, 
   real   , intent(in   )                 :: rich_crit, zeta_trans
   integer, intent(in   )                 :: n
   real   , intent(in   ), dimension(n)   :: rich
-  real   , intent(  out), dimension(n)   :: mix  
+  real   , intent(  out), dimension(n)   :: mix
   integer, intent(  out)                 :: ier
 
   real               :: r, a, b, c, zeta, phi
@@ -709,9 +709,9 @@ if(stable_option == 1) then
            mix(i) = 1./(phi*phi)
      endif
   end do
-  
+
 else if(stable_option == 2) then
- 
+
   lambda = 1.0 + (5.0 - b_stab)*zeta_trans
 
   where(rich > 0.0 .and. rich <= rich_trans)
@@ -720,7 +720,7 @@ else if(stable_option == 2) then
   where(rich > rich_trans .and. rich < rich_crit)
     mix = ((1.0 - b_stab*rich)/lambda)**2
   end where
-  
+
 end if
 
 end subroutine monin_obukhov_stable_mix

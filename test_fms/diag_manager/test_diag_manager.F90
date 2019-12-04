@@ -973,7 +973,7 @@ else
 
   IF ( test_number == 1 ) THEN
      !  1 window, no halos
-     ! Here dat2 is too large in both x and y direction so you should get an error. 
+     ! Here dat2 is too large in both x and y direction so you should get an error.
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat2, Time, err_msg=err_msg)
      IF ( err_msg == '' ) THEN
         WRITE (out_unit,'(a)') 'test1.1 fails: Intentional error not detected'
@@ -981,7 +981,7 @@ else
         WRITE (out_unit,'(a)') 'test1.1 successful: '//TRIM(err_msg)
      END IF
 
-     ! Here dat1 has the correct shape, so no error 
+     ! Here dat1 has the correct shape, so no error
      IF ( id_dat1 > 0 ) used = send_data(id_dat1, dat1, Time, err_msg=err_msg)
 
      IF ( err_msg == '' ) THEN

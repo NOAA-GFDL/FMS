@@ -1,4 +1,4 @@
-! -*-f90-*- 
+! -*-f90-*-
 
 
 !***********************************************************************
@@ -57,7 +57,7 @@
 
       outunit = stdout()
       update_flags = XUPDATE+YUPDATE   !default
-      if( PRESENT(flags) ) then 
+      if( PRESENT(flags) ) then
           update_flags = flags
           ! The following test is so that SCALAR_PAIR can be used alone with the
           ! same default update pattern as without.
@@ -65,8 +65,8 @@
             if (.NOT.(BTEST(update_flags,WEST) .OR. BTEST(update_flags,EAST) &
                  .OR. BTEST(update_flags,NORTH) .OR. BTEST(update_flags,SOUTH))) &
               update_flags = update_flags + XUPDATE+YUPDATE   !default with SCALAR_PAIR
-          end if 
-      end if  
+          end if
+      end if
 
       if( BTEST(update_flags,NORTH) .AND. BTEST(domain%fold,NORTH) .AND. BTEST(gridtype,SOUTH) ) &
            call mpp_error( FATAL, 'MPP_DO_UPDATE_V: Incompatible grid offset and fold.' )
@@ -106,7 +106,7 @@
          allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
          msg1 = 0
          msg2 = 0
-         cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+         cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y)
 
          do while (ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y)
             msgsize = 0
@@ -122,7 +122,7 @@
                end do
                ind_x = ind_x+1
                if(ind_x .LE. nrecv_x) then
-                  rank_x = update_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = update_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = -1
@@ -140,7 +140,7 @@
                end do
                ind_y = ind_y+1
                if(ind_y .LE. nrecv_y) then
-                  rank_y = update_y%recv(ind_y)%pe - domain%pe 
+                  rank_y = update_y%recv(ind_y)%pe - domain%pe
                   if(rank_y .LE.0) rank_y = rank_y + nlist
                else
                   rank_y = -1
@@ -152,7 +152,7 @@
             msg2(m) = msgsize
          end do
 
-         cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+         cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y)
          do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
             msgsize = 0
             if(cur_rank == rank_x) then
@@ -167,10 +167,10 @@
                end do
                ind_x = ind_x+1
                if(ind_x .LE. nsend_x) then
-                  rank_x = update_x%send(ind_x)%pe - domain%pe 
+                  rank_x = update_x%send(ind_x)%pe - domain%pe
                   if(rank_x .LT.0) rank_x = rank_x + nlist
                else
-                  rank_x = nlist+1 
+                  rank_x = nlist+1
                endif
             endif
             if(cur_rank == rank_y) then
@@ -185,14 +185,14 @@
                end do
                ind_y = ind_y+1
                if(ind_y .LE. nsend_y) then
-                  rank_y = update_y%send(ind_y)%pe - domain%pe 
+                  rank_y = update_y%send(ind_y)%pe - domain%pe
                   if(rank_y .LT.0) rank_y = rank_y + nlist
                else
                   rank_y = nlist+1
                endif
             endif
             cur_rank = min(rank_x, rank_y)
-            call mpp_send( msgsize, plen=1, to_pe=to_pe, tag=COMM_TAG_1)   
+            call mpp_send( msgsize, plen=1, to_pe=to_pe, tag=COMM_TAG_1)
          enddo
          call mpp_sync_self(check=EVENT_RECV)
          do m = 0, nlist-1
@@ -210,7 +210,7 @@
       endif
 
       buffer_pos = 0
-      cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+      cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y)
 
       do while (ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y)
          msgsize = 0
@@ -231,7 +231,7 @@
                ind_x = ind_x+1
                ind_y = ind_x
                if(ind_x .LE. nrecv_x) then
-                  rank_x = update_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = update_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = -1
@@ -251,7 +251,7 @@
                end do
                ind_x = ind_x+1
                if(ind_x .LE. nrecv_x) then
-                  rank_x = update_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = update_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = -1
@@ -269,7 +269,7 @@
                end do
                ind_y = ind_y+1
                if(ind_y .LE. nrecv_y) then
-                  rank_y = update_y%recv(ind_y)%pe - domain%pe 
+                  rank_y = update_y%recv(ind_y)%pe - domain%pe
                   if(rank_y .LE.0) rank_y = rank_y + nlist
                else
                   rank_y = -1
@@ -278,7 +278,7 @@
          end select
          cur_rank = max(rank_x, rank_y)
          msgsize = msgsize*ke*l_size
-   
+
          if( msgsize.GT.0 )then
              buffer_pos = buffer_pos + msgsize
          end if
@@ -286,20 +286,20 @@
       buffer_recv_size = buffer_pos
 
 !unpacking
-      buffer_pos = buffer_recv_size      
-      cur_rank = get_rank_unpack(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+      buffer_pos = buffer_recv_size
+      cur_rank = get_rank_unpack(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y)
 
       do while (ind_x > 0 .OR. ind_y > 0)
          pos = buffer_pos
          select case ( gridtype )
          case(BGRID_NE, BGRID_SW, AGRID)
             if(cur_rank == rank_x) then
-               do n = update_x%recv(ind_x)%count, 1, -1    
+               do n = update_x%recv(ind_x)%count, 1, -1
                   dir = update_x%recv(ind_x)%dir(n)
                   if( recv(dir) ) then
                      tMe = update_x%recv(ind_x)%tileMe(n)
                      is = update_x%recv(ind_x)%is(n); ie = update_x%recv(ind_x)%ie(n)
-                     js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n) 
+                     js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n)
                      msgsize = (ie-is+1)*(je-js+1)*ke*2*l_size
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
@@ -310,8 +310,8 @@
                            do j = js, je
                               do i = is, ie
                                  pos = pos + 2
-                                 buffer(pos-1) = fieldx(i,j,k) 
-                                 buffer(pos)   = fieldy(i,j,k) 
+                                 buffer(pos-1) = fieldx(i,j,k)
+                                 buffer(pos)   = fieldy(i,j,k)
                                  fieldx(i,j,k) = 0.
                                  fieldy(i,j,k) = 0.
                               end do
@@ -319,11 +319,11 @@
                         end do
                      end do
                   end if ! end if( recv(dir) )
-               end do  ! do dir=8,1,-1 
+               end do  ! do dir=8,1,-1
                ind_x = ind_x-1
                ind_y = ind_x
                if(ind_x .GT. 0) then
-                  rank_x = update_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = update_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = nlist+1
@@ -348,7 +348,7 @@
                            do j = js, je
                               do i = is, ie
                                  pos = pos + 1
-                                 buffer(pos) = fieldy(i,j,k) 
+                                 buffer(pos) = fieldy(i,j,k)
                                  fieldy(i,j,k) = 0.
                               end do
                            end do
@@ -370,7 +370,7 @@
                   if( recv(dir) ) then
                      tMe = update_x%recv(ind_x)%tileMe(n)
                      is = update_x%recv(ind_x)%is(n); ie = update_x%recv(ind_x)%ie(n)
-                     js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n) 
+                     js = update_x%recv(ind_x)%js(n); je = update_x%recv(ind_x)%je(n)
                      msgsize = (ie-is+1)*(je-js+1)*ke*l_size
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
@@ -381,8 +381,8 @@
                            do j = js, je
                               do i = is, ie
                                  pos = pos + 1
-                                 buffer(pos) = fieldx(i,j,k) 
-                                 fieldx(i,j,k) = 0. 
+                                 buffer(pos) = fieldx(i,j,k)
+                                 fieldx(i,j,k) = 0.
                               end do
                            end do
                         end do
@@ -391,7 +391,7 @@
                end do
                ind_x = ind_x-1
                if(ind_x .GT. 0) then
-                  rank_x = update_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = update_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = nlist+1
@@ -417,7 +417,7 @@
                   if( domain%x(1)%data%begin.LE.i .AND. i.LE. domain%x(1)%data%end+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -427,10 +427,10 @@
                end do
             endif
 
-            ! the following code code block correct an error where the data in your halo coming from 
+            ! the following code code block correct an error where the data in your halo coming from
             ! other half may have the wrong sign
             !off west edge, when update north or west direction
-            j = domain%y(1)%global%end+shift 
+            j = domain%y(1)%global%end+shift
             if ( recv(7) .OR. recv(5) ) then
                select case(gridtype)
                case(BGRID_NE)
@@ -445,11 +445,11 @@
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-north BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            do i = domain%x(1)%data%begin,is-1
-                              fieldx(2*is-i,j,k) = fieldx(2*is-i,j,k) + fieldx(i,j,k) 
-                              fieldy(2*is-i,j,k) = fieldy(2*is-i,j,k) + fieldy(i,j,k) 
+                              fieldx(2*is-i,j,k) = fieldx(2*is-i,j,k) + fieldx(i,j,k)
+                              fieldy(2*is-i,j,k) = fieldy(2*is-i,j,k) + fieldy(i,j,k)
                            end do
                         end do
                      end do
@@ -460,10 +460,10 @@
                      if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-north CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            do i = domain%x(1)%data%begin,is-1
-                              fieldy(2*is-i-1,j,k) = fieldy(2*is-i-1,j,k) + fieldy(i,j,k) 
+                              fieldy(2*is-i-1,j,k) = fieldy(2*is-i-1,j,k) + fieldy(i,j,k)
                            end do
                         end do
                      end do
@@ -482,20 +482,20 @@
                   ie = ie + shift
                   do l=1,l_size
                      ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)   
+                     ptr_fieldy = f_addrsy(l, 1)
                      do k = 1,ke
                         do i = is,ie
-                           fieldx(i,j,k) = -fieldx(i,j,k) 
-                           fieldy(i,j,k) = -fieldy(i,j,k) 
+                           fieldx(i,j,k) = -fieldx(i,j,k)
+                           fieldy(i,j,k) = -fieldy(i,j,k)
                         end do
                      end do
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldy = f_addrsy(l, 1)   
+                     ptr_fieldy = f_addrsy(l, 1)
                      do k = 1,ke
                         do i = is, ie
-                           fieldy(i,j,k) = -fieldy(i,j,k) 
+                           fieldy(i,j,k) = -fieldy(i,j,k)
                         end do
                      end do
                   end do
@@ -515,7 +515,7 @@
                   if( domain%x(1)%data%begin.LE.i .AND. i.LE. domain%x(1)%data%end+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -525,7 +525,7 @@
                end do
             endif
 
-            ! the following code code block correct an error where the data in your halo coming from 
+            ! the following code code block correct an error where the data in your halo coming from
             ! other half may have the wrong sign
             !off west edge, when update north or west direction
             j = domain%y(1)%global%begin
@@ -539,11 +539,11 @@
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-south BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            do i = domain%x(1)%data%begin,is-1
-                              fieldx(2*is-i,j,k) = fieldx(2*is-i,j,k) + fieldx(i,j,k) 
-                              fieldy(2*is-i,j,k) = fieldy(2*is-i,j,k) + fieldy(i,j,k) 
+                              fieldx(2*is-i,j,k) = fieldx(2*is-i,j,k) + fieldx(i,j,k)
+                              fieldy(2*is-i,j,k) = fieldy(2*is-i,j,k) + fieldy(i,j,k)
                            end do
                         end do
                      end do
@@ -554,10 +554,10 @@
                      if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-south CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            do i = domain%x(1)%data%begin,is-1
-                              fieldy(2*is-i-1,j,k) = fieldy(2*is-i-1,j,k) + fieldy(i,j,k) 
+                              fieldy(2*is-i-1,j,k) = fieldy(2*is-i-1,j,k) + fieldy(i,j,k)
                            end do
                         end do
                      end do
@@ -576,20 +576,20 @@
                   ie = ie + shift
                   do l=1,l_size
                      ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)   
+                     ptr_fieldy = f_addrsy(l, 1)
                      do k = 1,ke
                         do i = is,ie
-                           fieldx(i,j,k) = -fieldx(i,j,k) 
-                           fieldy(i,j,k) = -fieldy(i,j,k) 
+                           fieldx(i,j,k) = -fieldx(i,j,k)
+                           fieldy(i,j,k) = -fieldy(i,j,k)
                         end do
                      end do
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldy = f_addrsy(l, 1)   
+                     ptr_fieldy = f_addrsy(l, 1)
                      do k = 1,ke
                         do i = is, ie
-                           fieldy(i,j,k) = -fieldy(i,j,k) 
+                           fieldy(i,j,k) = -fieldy(i,j,k)
                         end do
                      end do
                   end do
@@ -609,7 +609,7 @@
                   if( domain%y(1)%data%begin.LE.j .AND. j.LE. domain%y(1)%data%end+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -619,7 +619,7 @@
                end do
             endif
 
-            ! the following code code block correct an error where the data in your halo coming from 
+            ! the following code code block correct an error where the data in your halo coming from
             ! other half may have the wrong sign
             !off south edge, when update south or west direction
             i = domain%x(1)%global%begin
@@ -633,11 +633,11 @@
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-west BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            do j = domain%y(1)%data%begin,js-1
-                              fieldx(i,2*js-j,k) = fieldx(i,2*js-j,k) + fieldx(i,j,k) 
-                              fieldy(i,2*js-j,k) = fieldy(i,2*js-j,k) + fieldy(i,j,k) 
+                              fieldx(i,2*js-j,k) = fieldx(i,2*js-j,k) + fieldx(i,j,k)
+                              fieldy(i,2*js-j,k) = fieldy(i,2*js-j,k) + fieldy(i,j,k)
                            end do
                         end do
                      end do
@@ -648,10 +648,10 @@
                      if( 2*js-domain%y(1)%data%begin-1.GT.domain%y(1)%data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-west CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)   
+                        ptr_fieldx = f_addrsx(l, 1)
                         do k = 1,ke
                            do j = domain%y(1)%data%begin,js-1
-                              fieldx(i, 2*js-j-1,k) = fieldx(i, 2*js-j-1,k) + fieldx(i,j,k) 
+                              fieldx(i, 2*js-j-1,k) = fieldx(i, 2*js-j-1,k) + fieldx(i,j,k)
                            end do
                         end do
                      end do
@@ -670,20 +670,20 @@
                   je = je + shift
                   do l=1,l_size
                      ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)   
+                     ptr_fieldy = f_addrsy(l, 1)
                      do k = 1,ke
                         do j = js,je
-                           fieldx(i,j,k) = -fieldx(i,j,k) 
+                           fieldx(i,j,k) = -fieldx(i,j,k)
                            fieldy(i,j,k) = -fieldy(i,j,k)
                         end do
                      end do
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)   
+                     ptr_fieldx = f_addrsx(l, 1)
                      do k = 1,ke
                         do j = js, je
-                           fieldx(i,j,k) = -fieldx(i,j,k) 
+                           fieldx(i,j,k) = -fieldx(i,j,k)
                         end do
                      end do
                   end do
@@ -703,7 +703,7 @@
                   if( domain%y(1)%data%begin.LE.j .AND. j.LE. domain%y(1)%data%end+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -713,7 +713,7 @@
                end do
             endif
 
-            ! the following code code block correct an error where the data in your halo coming from 
+            ! the following code code block correct an error where the data in your halo coming from
             ! other half may have the wrong sign
             !off south edge, when update south or west direction
             i = domain%x(1)%global%end+shift
@@ -727,11 +727,11 @@
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-east BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)   
+                        ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
                            do j = domain%y(1)%data%begin,js-1
-                              fieldx(i,2*js-j,k) = fieldx(i,2*js-j,k) + fieldx(i,j,k) 
-                              fieldy(i,2*js-j,k) = fieldy(i,2*js-j,k) + fieldy(i,j,k) 
+                              fieldx(i,2*js-j,k) = fieldx(i,2*js-j,k) + fieldx(i,j,k)
+                              fieldy(i,2*js-j,k) = fieldy(i,2*js-j,k) + fieldy(i,j,k)
                            end do
                         end do
                      end do
@@ -742,10 +742,10 @@
                      if( 2*js-domain%y(1)%data%begin-1.GT.domain%y(1)%data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_AD_V: folded-east CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)   
+                        ptr_fieldx = f_addrsx(l, 1)
                         do k = 1,ke
                            do j = domain%y(1)%data%begin,js-1
-                              fieldx(i, 2*js-j-1,k) = fieldx(i, 2*js-j-1,k) + fieldx(i,j,k) 
+                              fieldx(i, 2*js-j-1,k) = fieldx(i, 2*js-j-1,k) + fieldx(i,j,k)
                            end do
                         end do
                      end do
@@ -764,20 +764,20 @@
                   je = je + shift
                   do l=1,l_size
                      ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)   
+                     ptr_fieldy = f_addrsy(l, 1)
                      do k = 1,ke
                         do j = js,je
-                           fieldx(i,j,k) = -fieldx(i,j,k) 
-                           fieldy(i,j,k) = -fieldy(i,j,k) 
+                           fieldx(i,j,k) = -fieldx(i,j,k)
+                           fieldy(i,j,k) = -fieldy(i,j,k)
                         end do
                      end do
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)   
+                     ptr_fieldx = f_addrsx(l, 1)
                      do k = 1,ke
                         do j = js, je
-                           fieldx(i,j,k) = -fieldx(i,j,k) 
+                           fieldx(i,j,k) = -fieldx(i,j,k)
                         end do
                      end do
                   end do
@@ -789,7 +789,7 @@
 
       !--- recv
       buffer_pos = 0
-      cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+      cur_rank = get_rank_recv(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y)
 
       do while (ind_x .LE. nrecv_x .OR. ind_y .LE. nrecv_y)
          msgsize = 0
@@ -810,7 +810,7 @@
                ind_x = ind_x+1
                ind_y = ind_x
                if(ind_x .LE. nrecv_x) then
-                  rank_x = update_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = update_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = -1
@@ -830,7 +830,7 @@
                end do
                ind_x = ind_x+1
                if(ind_x .LE. nrecv_x) then
-                  rank_x = update_x%recv(ind_x)%pe - domain%pe 
+                  rank_x = update_x%recv(ind_x)%pe - domain%pe
                   if(rank_x .LE.0) rank_x = rank_x + nlist
                else
                   rank_x = -1
@@ -848,7 +848,7 @@
                end do
                ind_y = ind_y+1
                if(ind_y .LE. nrecv_y) then
-                  rank_y = update_y%recv(ind_y)%pe - domain%pe 
+                  rank_y = update_y%recv(ind_y)%pe - domain%pe
                   if(rank_y .LE.0) rank_y = rank_y + nlist
                else
                   rank_y = -1
@@ -857,14 +857,14 @@
          end select
          cur_rank = max(rank_x, rank_y)
          msgsize = msgsize*ke*l_size
-   
+
          if( msgsize.GT.0 )then
              call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=from_pe, tag=COMM_TAG_2 )
              buffer_pos = buffer_pos + msgsize
          end if
       end do
       buffer_recv_size = buffer_pos
-      cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+      cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y)
 
       do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
          pos = buffer_pos
@@ -893,7 +893,7 @@
                ind_x = ind_x+1
                ind_y = ind_x
                if(ind_x .LE. nsend_x) then
-                  rank_x = update_x%send(ind_x)%pe - domain%pe 
+                  rank_x = update_x%send(ind_x)%pe - domain%pe
                   if(rank_x .LT.0) rank_x = rank_x + nlist
                else
                   rank_x = nlist+1
@@ -905,17 +905,17 @@
                to_pe = update_x%send(ind_x)%pe
                ind_x = ind_x+1
                if(ind_x .LE. nsend_x) then
-                  rank_x = update_x%send(ind_x)%pe - domain%pe 
+                  rank_x = update_x%send(ind_x)%pe - domain%pe
                   if(rank_x .LT.0) rank_x = rank_x + nlist
                else
-                  rank_x = nlist+1 
+                  rank_x = nlist+1
                endif
             endif
             if(cur_rank == rank_y) then
                to_pe = update_y%send(ind_y)%pe
                ind_y = ind_y+1
                if(ind_y .LE. nsend_y) then
-                  rank_y = update_y%send(ind_y)%pe - domain%pe 
+                  rank_y = update_y%send(ind_y)%pe - domain%pe
                   if(rank_y .LT.0) rank_y = rank_y + nlist
                else
                   rank_y = nlist+1
@@ -941,7 +941,7 @@
       buffer_pos = buffer_recv_size
       pos = buffer_pos
 
-      cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y) 
+      cur_rank = get_rank_send(domain, update_x, update_y, rank_x, rank_y, ind_x, ind_y)
 
       do while (ind_x .LE. nsend_x .OR. ind_y .LE. nsend_y)
          pos = buffer_pos
@@ -967,12 +967,12 @@
                                  do i = is, ie
                                     pos = pos + 2
                                     fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos-1)
-                                    fieldy(i,j,k)=fieldy(i,j,k)+buffer(pos)  
+                                    fieldy(i,j,k)=fieldy(i,j,k)+buffer(pos)
                                  end do
                               end do
                            end do
                         end do
-                     case( MINUS_NINETY ) 
+                     case( MINUS_NINETY )
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
                               ptr_fieldx = f_addrsx(l,tMe)
@@ -982,7 +982,7 @@
                                     do j = je, js, -1
                                        pos = pos + 2
                                        fieldy(i,j,k)=fieldy(i,j,k)+buffer(pos-1)
-                                       fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos)  
+                                       fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos)
                                     end do
                                  end do
                               end do
@@ -996,7 +996,7 @@
                                     do j = je, js, -1
                                        pos = pos + 2
                                        fieldy(i,j,k)=fieldy(i,j,k)-buffer(pos-1)
-                                       fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos)  
+                                       fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos)
                                     end do
                                  end do
                               end do
@@ -1012,7 +1012,7 @@
                                     do j = js, je
                                        pos = pos + 2
                                        fieldy(i,j,k)=fieldy(i,j,k)+buffer(pos-1)
-                                       fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos)  
+                                       fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos)
                                     end do
                                  end do
                               end do
@@ -1026,7 +1026,7 @@
                                     do j = js, je
                                        pos = pos + 2
                                        fieldy(i,j,k)=fieldy(i,j,k)+buffer(pos-1)
-                                       fieldx(i,j,k)=fieldx(i,j,k)-buffer(pos)  
+                                       fieldx(i,j,k)=fieldx(i,j,k)-buffer(pos)
                                     end do
                                  end do
                               end do
@@ -1042,7 +1042,7 @@
                                     do i = ie, is, -1
                                        pos = pos + 2
                                        fieldx(i,j,k)=fieldx(i,j,k)+buffer(pos-1)
-                                       fieldy(i,j,k)=fieldy(i,j,k)+buffer(pos)  
+                                       fieldy(i,j,k)=fieldy(i,j,k)+buffer(pos)
                                     end do
                                  end do
                               end do
@@ -1056,19 +1056,19 @@
                                     do i = ie, is, -1
                                        pos = pos + 2
                                        fieldx(i,j,k)=fieldx(i,j,k)-buffer(pos-1)
-                                       fieldy(i,j,k)=fieldy(i,j,k)-buffer(pos)  
+                                       fieldy(i,j,k)=fieldy(i,j,k)-buffer(pos)
                                     end do
                                  end do
                               end do
                            end do
                         end if
                      end select ! select case( rotation(n) )
-                  end if ! if( send(dir) ) 
+                  end if ! if( send(dir) )
                end do ! do n = 1, update_x%send(ind_x)%count
                ind_x = ind_x+1
                ind_y = ind_x
                if(ind_x .LE. nsend_x) then
-                  rank_x = update_x%send(ind_x)%pe - domain%pe 
+                  rank_x = update_x%send(ind_x)%pe - domain%pe
                   if(rank_x .LT.0) rank_x = rank_x + nlist
                else
                   rank_x = nlist+1
@@ -1172,10 +1172,10 @@
                end do
                ind_x = ind_x+1
                if(ind_x .LE. nsend_x) then
-                  rank_x = update_x%send(ind_x)%pe - domain%pe 
+                  rank_x = update_x%send(ind_x)%pe - domain%pe
                   if(rank_x .LT.0) rank_x = rank_x + nlist
                else
-                  rank_x = nlist+1 
+                  rank_x = nlist+1
                endif
             endif
             if(cur_rank == rank_y) then
@@ -1275,7 +1275,7 @@
                enddo
                ind_y = ind_y+1
                if(ind_y .LE. nsend_y) then
-                  rank_y = update_y%send(ind_y)%pe - domain%pe 
+                  rank_y = update_y%send(ind_y)%pe - domain%pe
                   if(rank_y .LT.0) rank_y = rank_y + nlist
                else
                   rank_y = nlist+1
@@ -1287,7 +1287,7 @@
          if( msgsize.GT.0 )then
             buffer_pos = pos
          end if
-      end do 
+      end do
 
       call mpp_sync_self( )
 

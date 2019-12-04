@@ -210,7 +210,7 @@ be assumed to run on different PEs:
   call drifters_write_restart(drfts, filename='RESTART/drifters_inp.nc', &
        & x1=x_u, y1=y_v, geolon1=grid%geolonq, &
        & x2=x_u, y2=y_v, geolat2=grid%geolatq, &
-       & ermesg=ermesg)  
+       & ermesg=ermesg)
 
 
   ! destroy
@@ -317,4 +317,3 @@ case of floats). Use piece-wise linear interpolation or fill with missing values
 * Allow drifters to turn on/off at specific time? A predetermined life cycle?
 * Extract initial positions from databases.
 * How best to visualize drifters?
-

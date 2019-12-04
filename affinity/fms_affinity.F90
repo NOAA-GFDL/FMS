@@ -57,11 +57,11 @@ contains
     integer:: unit
 
     !--- return if module is initialized
-    if (module_is_initialized) return 
+    if (module_is_initialized) return
 
     !--- ensure fms/mpp has been initialized
     call fms_init()
-    
+
     !--- read in namelist
     read(input_nml_file, fms_affinity_nml, iostat=io_stat)
     ierr = check_nml_error(io_stat,'fms_affinity_nml')
@@ -76,21 +76,21 @@ contains
   end subroutine fms_affinity_init
 
 
-  !--- function to get affinity 
+  !--- function to get affinity
   function fms_affinity_get () result(affinity)
 
     !--- local declarations for Fortran/C affinity interoperability
     integer(c_int):: get_cpu_affinity
 
     !--- local variables
-    integer:: affinity 
+    integer:: affinity
 
     affinity = get_cpu_affinity()
 
   end function fms_affinity_get
 
 
-  !--- routine to set affinity 
+  !--- routine to set affinity
   subroutine fms_affinity_set (component, use_hyper_thread, nthreads)
     !--- interface variables
     character(len=*),  intent(in):: component
@@ -145,9 +145,9 @@ contains
        call error_mesg('fms_affinity_set',trim(component)//': issue setting cpu affinity', FATAL)
      endif
 
-     !--- set affinity for threads associated with this MPI-rank 
+     !--- set affinity for threads associated with this MPI-rank
 !$OMP PARALLEL NUM_THREADS (nthreads) &
-!$OMP&         DEFAULT (none) & 
+!$OMP&         DEFAULT (none) &
 !$OMP&         SHARED (use_hyper_thread, cpuset_sz, component, cpu_set, debug_affinity) &
 !$OMP&         PRIVATE (th_num, indx, retcode, h_name)
 !$   th_num = omp_get_thread_num()
@@ -165,7 +165,7 @@ contains
 !$   if (retcode == -1) then
 !$     call error_mesg('fms_affinity_set',trim(component)//': issue setting cpu affinity', FATAL)
 !$   endif
-     !--- output affinity placement 
+     !--- output affinity placement
 !$   if (debug_affinity) then
 !$      call hostnm(h_name)
 !$      print *, 'DEBUG:',mpp_pe(),trim(component),' ',trim(h_name),get_cpu_affinity(),th_num

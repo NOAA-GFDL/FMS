@@ -11,8 +11,8 @@ AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libdrifters_core.la libdrifters_input.la	\
-libdrifters_comm.la libdrifters_io.la libcloud_interpolator.la	\
+noinst_LTLIBRARIES = libdrifters_core.la libdrifters_input.la \
+libdrifters_comm.la libdrifters_io.la libcloud_interpolator.la \
 libdrifters.la libquicksort.la
 
 # Each convenience library depends on its source.
@@ -25,7 +25,7 @@ libcloud_interpolator_la_SOURCES = cloud_interpolator.F90
 libquicksort_la_SOURCES = quicksort.F90
 
 # These headers are in the drifters directory.
-DRIFTERS_HDRS = drifters_compute_k.h drifters_push.h	\
+DRIFTERS_HDRS = drifters_compute_k.h drifters_push.h \
 drifters_set_field.h fms_switches.h
 
 # Each mod file depends on the .o file.
@@ -37,8 +37,8 @@ cloud_interpolator_mod.mod: cloud_interpolator.$(OBJEXT)
 drifters_mod.mod: drifters.$(OBJEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = drifters_core_mod.mod drifters_input_mod.mod			\
-drifters_comm_mod.mod drifters_io_mod.mod cloud_interpolator_mod.mod	\
+MODFILES = drifters_core_mod.mod drifters_input_mod.mod \
+drifters_comm_mod.mod drifters_io_mod.mod cloud_interpolator_mod.mod \
 drifters_mod.mod
 include_HEADERS = $(MODFILES) $(DRIFTERS_HDRS)
 BUILT_SOURCES = $(MODFILES)

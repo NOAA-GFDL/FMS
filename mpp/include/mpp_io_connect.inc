@@ -185,14 +185,14 @@
 !ug support
                          domain_ug)
 !----------
-      integer,         intent(out)           :: unit   
+      integer,         intent(out)           :: unit
       character(len=*), intent(in)           :: file
-      integer,          intent(in), optional :: action, form, access 
+      integer,          intent(in), optional :: action, form, access
       integer,          intent(in), optional :: threading, fileset, recl
       character(len=*), intent(in), optional :: iospec
       logical,          intent(in), optional :: nohdrs
       integer,         intent(out), optional :: iostat
-      logical,          intent(in), optional :: is_root_pe      
+      logical,          intent(in), optional :: is_root_pe
       type(domain2d),   intent(in), optional :: domain
 !----------
 !ug support
@@ -218,14 +218,14 @@
       integer*8                             :: lenp
       integer                               :: comm
       integer                               :: info, ierror
-      integer,dimension(:), allocatable     :: glist(:)  
+      integer,dimension(:), allocatable     :: glist(:)
       integer                               ::lena, lenb
       character(len=12)                     ::ncblk
-      character(len=128)                    ::nc_name 
+      character(len=128)                    ::nc_name
       integer                               ::f_size, f_stat
       integer                               ::fsize, inital = 0
       character(len=128)                    :: f_test
-      
+
 !----------
 !ug support
      !Only allow one type of mpp domain.
@@ -239,7 +239,7 @@
       io_domain => null()
       io_domain_ug => null()
 !----------
-     
+
       call mpp_clock_begin(mpp_open_clock)
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_OPEN: must first call mpp_io_init.' )
       on_root_pe = mpp_pe() == mpp_root_pe()
@@ -254,7 +254,7 @@
 #ifndef use_netCDF
       if( form_flag.EQ.MPP_NETCDF ) &
            call mpp_error( FATAL, 'MPP_OPEN: To open a file with form=MPP_NETCDF, you must compile mpp_io with -Duse_netCDF.' )
-#endif     
+#endif
       access_flag = MPP_SEQUENTIAL
       if( PRESENT(access) )access_flag = access
       threading_flag = MPP_SINGLE
@@ -291,9 +291,9 @@
          if( fileset_flag.EQ.MPP_SINGLE .AND. .NOT.on_root_pe ) then
             write_on_this_pe = .false.
             read_on_this_pe = .false.
-         endif   
-      endif   
-   
+         endif
+      endif
+
       if( io_domain_exist) then
 
 !----------
@@ -306,7 +306,7 @@
           endif
 !----------
 
-      endif 
+      endif
       if( action_flag == MPP_RDONLY) write_on_this_pe = .false.
       !get a unit number
       if( .NOT. write_on_this_pe .AND. action_flag.NE.MPP_RDONLY .AND. .NOT. io_domain_exist)then
@@ -352,7 +352,7 @@
       nc_pos = index(file,'.nc.')
       dist_file = nc_pos>0  ! this is a distributed file ending with filename.nc.0???
       text = file
-      length = len_trim(file)      
+      length = len_trim(file)
       if(form_flag.EQ.MPP_NETCDF.AND. file(length-2:length) /= '.nc' .AND. .NOT.dist_file) &
          text = trim(file)//'.nc'
 
@@ -439,7 +439,7 @@
       mpp_file(unit)%name = text
       if( verbose )print '(a,2i6,x,a,5i5)', 'MPP_OPEN: PE, unit, filename, action, format, access, threading, fileset=', &
            pe, unit, trim(mpp_file(unit)%name), action_flag, form_flag, access_flag, threading_flag, fileset_flag
-           
+
 !action: read, write, overwrite, append: act and pos are ignored by netCDF
       if( action_flag.EQ.MPP_RDONLY )then
           act = 'READ'
@@ -476,25 +476,25 @@
           else
               call mpp_error( FATAL, 'MPP_OPEN: access must be one of MPP_SEQUENTIAL or MPP_DIRECT.' )
           end if
-      end if  
-          
+      end if
+
 !threading: SINGLE or MULTI
       if( threading_flag.EQ.MPP_MULTI )then
 !fileset: MULTI or SINGLE (only for multi-threaded I/O
           if( fileset_flag.EQ.MPP_SINGLE )then
               if( form_flag.EQ.MPP_NETCDF .AND. act.EQ.'WRITE' ) &
                    call mpp_error( FATAL, 'MPP_OPEN: netCDF currently does not support single-file multi-threaded output.' )
-                   
-#ifdef _CRAYT3E    
+
+#ifdef _CRAYT3E
               call ASSIGN( 'assign -I -F global.privpos f:'//trim(mpp_file(unit)%name), error )
-#endif        
+#endif
           else if( fileset_flag.NE.MPP_MULTI )then
               call mpp_error( FATAL, 'MPP_OPEN: fileset must be one of MPP_MULTI or MPP_SINGLE.' )
           end if
       else if( threading_flag.NE.MPP_SINGLE )then
           call mpp_error( FATAL, 'MPP_OPEN: threading must be one of MPP_SINGLE or MPP_MULTI.' )
       end if
-          
+
 !apply I/O specs before opening the file
 !note that -P refers to the scope of a fortran unit, which is always thread-private even if file is shared
 #ifdef CRAYPVP
@@ -527,29 +527,29 @@
               !call get_enviornment_variable( 'NETCDF_XFFIOSPEC', trim(iospec))
               call PXFSETENV( 'NETCDF_XFFIOSPEC', 0, trim(iospec), 0, 1, error )
           end if
-#endif        
+#endif
       end if
-      
+
 !open the file as specified above for various formats
       if( form_flag.EQ.MPP_NETCDF )then
-#ifdef PAR_ACCESS  
+#ifdef PAR_ACCESS
       !adding some items for netcdf-4.... --fmi
       if( .NOT.PRESENT(pelist)) then
         allocate (glist(0:npes-1))
-        call mpp_get_current_pelist(glist, name, comm) 
+        call mpp_get_current_pelist(glist, name, comm)
       end if
-      
+
       !create info parts...
       call MPI_INFO_CREATE(info, ierror)
-      
+
      !F2003 convention
      !call get_enviornment_variable('NC_BLKSZ', ncblk)
      call GETENV( 'NC_BLKSZ', ncblk)
      ncblk = trim(ncblk)
-     
-  
+
+
      if (ncblk /= "") then
-      
+
 
 
         call MPI_INFO_SET(info, "cb_buffer_size", ncblk, ierror)
@@ -570,8 +570,8 @@
                  !write (*,*) 'hello', trim(mpp_file(unit)%name)
                  nc_name = 'NC_BLKSZ_'//trim(mpp_file(unit)%name)
                  !write (*,*) 'nc_name: ', nc_name,  ' bcblk: ', ncblk
- 
-      
+
+
 
                  !make the call.....
                  !f2003 replaces GETENV with get_enviornment_variable so the guts are here if we need to switch
@@ -586,7 +586,7 @@
 
 
                   endif
-      
+
                  !if no general setting then use default
                   if (ncblk .EQ. '') then
                     ncblk = '64k'  !change for platform...perhaps we should set an ifdef for this....
@@ -724,7 +724,7 @@
           end if
           mpp_file(unit)%opened = .TRUE.
 
-#endif    
+#endif
 #endif
       else
 !format: ascii, native, or IEEE 32 bit
@@ -733,11 +733,11 @@
           else if( form_flag.EQ.MPP_IEEE32 )then
               for = 'UNFORMATTED'
 !assign -N is currently unsupported on SGI
-#ifdef _CRAY  
-#ifndef _CRAYX1  
+#ifdef _CRAY
+#ifndef _CRAYX1
               call ASSIGN( 'assign -I -N ieee_32 f:'//trim(mpp_file(unit)%name), error )
-#endif        
-#endif        
+#endif
+#endif
           else if( form_flag.EQ.MPP_NATIVE )then
               for = 'UNFORMATTED'
           else
@@ -753,11 +753,11 @@
               if( verbose )print '(2(x,a,i6),5(x,a),a,i8)', 'MPP_OPEN: PE=', pe, &
                    'unit=', unit, trim(mpp_file(unit)%name), 'attributes=', trim(acc), trim(for), trim(act), ' RECL=', recl
               open( unit, file=trim(mpp_file(unit)%name), access=acc, form=for, action=act, recl=recl,iostat=ios )
-          else     
+          else
               if( verbose )print '(2(x,a,i6),6(x,a))',      'MPP_OPEN: PE=', pe, &
                    'unit=', unit, trim(mpp_file(unit)%name), 'attributes=', trim(acc), trim(for), trim(pos), trim(act)
               open( unit, file=trim(mpp_file(unit)%name), access=acc, form=for, action=act, position=pos, iostat=ios)
-          end if   
+          end if
 !check if OPEN worked
           inquire( unit,OPENED=mpp_file(unit)%opened )
           if (ios/=0) then
@@ -769,14 +769,14 @@
               else
                   call mpp_error( FATAL, 'MPP_OPEN: error in OPEN for '//trim(mpp_file(unit)%name)//'.' )
               endif
-          endif   
+          endif
           if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_OPEN: error in OPEN() statement.' )
       end if
       mpp_file(unit)%action = action_flag
       mpp_file(unit)%format = form_flag
       mpp_file(unit)%access = access_flag
       if( PRESENT(nohdrs) )mpp_file(unit)%nohdrs = nohdrs
-      
+
       if( action_flag.EQ.MPP_WRONLY )then
           if( form_flag.NE.MPP_NETCDF .AND. access_flag.EQ.MPP_DIRECT )call mpp_write_meta( unit, 'record_length', ival=recl )
 !actual file name
@@ -805,7 +805,7 @@
              endif
              call mpp_write_meta( unit, 'NumFilesInSet', ival=nfiles)
           end if
-      end if   
+      end if
 
 !----------
 !ug support
@@ -818,7 +818,7 @@
       endif
 !----------
 
-      call mpp_clock_end(mpp_open_clock)              
+      call mpp_clock_end(mpp_open_clock)
       return
     end subroutine mpp_open
 
@@ -846,7 +846,7 @@
       logical :: collect
       integer :: i, j
 
-      call mpp_clock_begin(mpp_close_clock)      
+      call mpp_clock_begin(mpp_close_clock)
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOSE: must first call mpp_io_init.' )
       if( unit.EQ.NULLUNIT .OR. unit .EQ. stderr() ) then
          call mpp_clock_end(mpp_close_clock)
@@ -865,13 +865,13 @@
           else
               call mpp_error( FATAL, 'MPP_CLOSE: action must be one of MPP_DELETE or MPP_COLLECT.' )
           end if
-      end if  
+      end if
       if( mpp_file(unit)%fileset.NE.MPP_MULTI )collect = .FALSE.
       if( mpp_file(unit)%opened) then
          if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
             error = NF_CLOSE(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
-#endif    
+#endif
          else
             close(unit,status=status)
          end if
@@ -980,10 +980,10 @@
       call mpp_clock_end(mpp_close_clock)
       return
     end subroutine mpp_close
-    
-    
+
+
     subroutine file_size(fsize, fname, size)
-    
+
     character(len=12), intent(in)    ::fsize
     character(len=128)               ::filesize
     character(len=128), intent(in),optional :: fname
@@ -991,13 +991,13 @@
     integer*4 :: fstat(13)
     integer :: length
     character(len=16)   ::number
-    integer,intent(OUT) :: size 
+    integer,intent(OUT) :: size
     integer*4 ::ierr, stat
     integer   :: tend
     logical   :: there
-    
-    size = 0 
-  
+
+    size = 0
+
     filesize = fsize
 
     length = len(trim(fsize))
@@ -1041,8 +1041,5 @@
       endif
 
 return
-    
+
     end subroutine file_size
-
-
-

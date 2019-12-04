@@ -11,8 +11,8 @@ AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_srcdir}/mpp/include
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la	\
-libmpp_utilities.la libmpp_memutils.la libmpp_pset.la libmpp_efp.la	\
+noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la \
+libmpp_utilities.la libmpp_memutils.la libmpp_pset.la libmpp_efp.la \
 libmpp_domains.la libmpp_io.la libmpp_c.la
 
 # Each convenience library depends on its source.
@@ -46,12 +46,12 @@ mpp_memutils.$(OBJEXT): mpp_mod.mod
 mpp_pset.$(OBJEXT): mpp_mod.mod
 mpp_efp.$(OBJEXT): mpp_efp_mod.mod mpp_parameter_mod.mod mpp_mod.mod
 mpp_domains.$(OBJEXT): mpp_data_mod.mod mpp_parameter_mod.mod \
-	mpp_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
+  mpp_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
 mpp_io.$(OBJEXT): mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
 
 # Mod files are built and then installed as headers.
-MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod	\
-mpp_utilities_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod	\
+MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod \
+mpp_utilities_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod \
 mpp_efp_mod.mod mpp_domains_mod.mod mpp_io_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)

@@ -570,7 +570,7 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
           is_decomposed) then
         call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                     "checksum", chksum_in_file)
-        if (.not. string_compare(chksum_in_file, chksum)) then
+        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
           call error("checksum attribute does not match data in file.")
         endif
       endif
@@ -583,7 +583,7 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
           is_decomposed) then
         call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                     "checksum", chksum_in_file)
-        if (.not. string_compare(chksum_in_file, chksum)) then
+        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
           call error("checksum attribute does not match data in file.")
         endif
       endif
@@ -596,7 +596,7 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
           is_decomposed) then
         call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                     "checksum", chksum_in_file)
-        if (.not. string_compare(chksum_in_file, chksum)) then
+        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
           call error("checksum attribute does not match data in file.")
         endif
       endif

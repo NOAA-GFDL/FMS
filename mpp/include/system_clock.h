@@ -81,7 +81,7 @@ subroutine system_clock_default( count, count_rate, count_max )
 !mimics F90 SYSTEM_CLOCK intrinsic
       integer(LONG_KIND), optional :: count, count_rate, count_max
 !count must return a number between 0 and count_max
-      integer                      :: count_int, count_rate_int, count_max_int 
+      integer                      :: count_int, count_rate_int, count_max_int
       call system_clock( count_int, count_rate_int, count_max_int)
       if( PRESENT(count) )      count      = count_int
       if( PRESENT(count_rate) ) count_rate = count_rate_int

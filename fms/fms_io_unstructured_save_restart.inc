@@ -223,7 +223,7 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
         endif
     endif
 
-   !Set the directory where the restart file lives.  This defaults to 
+   !Set the directory where the restart file lives.  This defaults to
    !"./RESTART".
     dir = "RESTART"
     if (present(directory)) then
