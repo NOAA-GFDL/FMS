@@ -10,3 +10,4 @@ SUBDIRS = diag_manager data_override exchange monin_obukhov drifters \
 mosaic interpolator fms fms2_io mpp mpp_io time_interp time_manager \
 horiz_interp field_manager fft axis_utils
 
+EXTRA_DIST = test_common.sh.in
