@@ -8,8 +8,12 @@
 # Set common test settings.
 . ../test_common.sh
 
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
 # Copy file for test.
 cp $top_srcdir/test_fms/fft/input_base.nml input.nml
 
 # Test is skipped in bats file.
-#$mpi_launcher -n 2 ./test_fft
+#$mpi_launcher $npes ./test_fft

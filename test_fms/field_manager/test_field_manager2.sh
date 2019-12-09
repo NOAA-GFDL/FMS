@@ -12,4 +12,8 @@
 cp $top_srcdir/test_fms/field_manager/input_base.nml input.nml
 cp $top_srcdir/test_fms/field_manager/field_table_base field_table
 
-$mpi_launcher -n 2 ./test_field_manager
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
+$mpi_launcher $npes ./test_field_manager

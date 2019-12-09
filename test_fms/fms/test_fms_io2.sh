@@ -8,8 +8,12 @@
 # Set common test settings.
 . ../test_common.sh
 
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
 # Copy files for test.
 
 # These tests are skipped in bats files.
-#$mpi_launcher -n 2 ./test_fms_io
-#$mpi_launcher -n 2 ./test_unstructured_fms_io
+#$mpi_launcher $npes ./test_fms_io
+#$mpi_launcher $npes ./test_unstructured_fms_io

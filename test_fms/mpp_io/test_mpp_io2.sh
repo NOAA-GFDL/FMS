@@ -11,7 +11,8 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
 
-$mpi_launcher -n 1 ./test_mpp_io
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 1"
+fi
 
-# This test is skipped in bats file.
-#run mpirun -n 2 ./test_mpp_io
+$mpi_launcher $npes ./test_mpp_io

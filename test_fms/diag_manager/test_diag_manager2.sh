@@ -21,10 +21,15 @@ run_test()
 {
     echo ${2}
     copy_files ${1} 
+
+    if test "$mpi_launcher" != "" ; then  
+        npes="-n 1"
+    fi
+
     if test "x${3}" = "xfail"; then
-        if $mpi_launcher -n 1 ./test_diag_manager; then exit 1; fi
+        if $mpi_launcher $npes ./test_diag_manager; then exit 1; fi
     else
-        $mpi_launcher -n 1 ./test_diag_manager
+        $mpi_launcher $npes ./test_diag_manager
     fi
 }
 

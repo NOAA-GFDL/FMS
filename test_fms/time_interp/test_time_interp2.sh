@@ -11,7 +11,8 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/time_interp/input_base.nml input.nml
 
-$mpi_launcher -n 2 ./test_time_interp
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
 
-# This test is skipped in bats file.
-#$mpi_launcher -n 2 ./test_time_interp_external
+$mpi_launcher $npes ./test_time_interp

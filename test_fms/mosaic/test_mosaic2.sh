@@ -10,6 +10,10 @@
 
 # Test is skipped in bats file.
 
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
 # Copy files for test.
 #cp $top_srcdir/test_fms/mosaic/input_nml input_nml
-#$mpi_launcher -n 2 ./test_mosaic
+#$mpi_launcher $npes ./test_mosaic

@@ -11,4 +11,8 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/time_manager/input_base.nml input.nml
 
-$mpi_launcher -n 1 ./test_time_manager
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 1"
+fi
+
+$mpi_launcher $npes ./test_time_manager

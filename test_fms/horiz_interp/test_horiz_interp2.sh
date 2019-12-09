@@ -11,7 +11,8 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/horiz_interp/input_base.nml input.nml
 
-$mpi_launcher -n 2 ./test_horiz_interp
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
 
-# Other test is skipped in bats.
-#mpirun -n 2 ./test_horiz_interp
+$mpi_launcher $npes ./test_horiz_interp

@@ -9,11 +9,14 @@
 . ../test_common.sh
 
 # All tests are skipped in bats file.
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
 
 # Setup the run directory
 ##tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
 ##rm -f diag_test_${tnum}* > /dev/null 2>&1
 ##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
 
-#$mpi_launcher -n 2 ./test_mpp_pset
-#$mpi_launcher -n 2 ./test_mpp_pset
+#$mpi_launcher $npes ./test_mpp_pset
+#$mpi_launcher $npes ./test_mpp_pset

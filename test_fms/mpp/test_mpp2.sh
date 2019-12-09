@@ -47,6 +47,12 @@ then
     return 0
 fi
 
+#Only run if there's a mpi launcher 
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 4"
 # Ensure an input.nml file exists
-touch input.nml
-$mpi_launcher ${oversubscribe} -n 4 ./test_mpp
+    touch input.nml
+    $mpi_launcher ${oversubscribe} $npes ./test_mpp
+
+fi
+

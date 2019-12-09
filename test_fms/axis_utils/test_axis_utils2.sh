@@ -8,9 +8,13 @@
 # Set common test settings.
 . ../test_common.sh
 
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
 # Copy and rename namelist file.
 cp $top_srcdir/test_fms/axis_utils/input_base.nml input.nml
 
 # Run the test.
 # Test skipped in bats file.
-#$mpi_launcher -n 2 ./test_axis_utils
+#$mpi_launcher $npes ./test_axis_utils

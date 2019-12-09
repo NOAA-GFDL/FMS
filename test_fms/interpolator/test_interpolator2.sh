@@ -8,9 +8,13 @@
 # Set common test settings.
 . ../test_common.sh
 
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
 # Copy files for test.
 cp $top_srcdir/test_fms/interpolator/input_base.nml input.nml
 cp $top_srcdir/test_fms/interpolator/diag_table_base diag_table
 
 # Test is skipped in bats file.
-#$mpi_launcher -n 2 ./test_interpolator
+#$mpi_launcher $npes ./test_interpolator

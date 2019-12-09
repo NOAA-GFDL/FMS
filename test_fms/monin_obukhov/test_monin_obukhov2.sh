@@ -12,4 +12,8 @@
 cp $top_srcdir/test_fms/monin_obukhov/input_base.nml input.nml
 
 # Run test.
-$mpi_launcher -n 2 ./test_monin_obukhov
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
+$mpi_launcher $npes ./test_monin_obukhov

@@ -13,17 +13,21 @@ cp $top_srcdir/test_fms/drifters/input_base.nml input.nml
 
 # Run tests.
 
-echo "Test_drifters_io"
-$mpi_launcher -n 2 ./test_drifters_io
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
 
-echo "test_cloud_interpolator"
-$mpi_launcher -n 2 ./test_cloud_interpolator
+echo "1: Test_drifters_io"
+$mpi_launcher $npes ./test_drifters_io
 
-echo "test_drifters_comm"
+echo "2: Test_cloud_interpolator"
+$mpi_launcher $npes ./test_cloud_interpolator
+
+echo "3: Test_drifters_comm"
 ./test_drifters_comm
 
-echo "test_drifters_core"
-$mpi_launcher -n 2 ./test_drifters_core
+echo "4: Test_drifters_core"
+$mpi_launcher $npes ./test_drifters_core
 
-echo "test_quicksort"
-$mpi_launcher -n 2 ./test_quicksort
+echo "5: Test_quicksort"
+echo $mpi_launcher $npes ./test_quicksort

@@ -8,9 +8,13 @@
 # Set common test settings.
 . ../test_common.sh
 
+if test "$mpi_launcher" != "" ; then 
+    npes="-n 2"
+fi
+
 # Copy file for test.
 cp $top_srcdir/test_fms/exchange/input_base.nml input.nml
 
 # This test is skipped in the bats file.
 #cp -r $top_srcdir/test_fms/exchange/INPUT INPUT
-#$mpi_launcher -n 2 ./test_xgrid
+#$mpi_launcher $npes ./test_xgrid
