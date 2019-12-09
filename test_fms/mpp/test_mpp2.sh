@@ -33,11 +33,13 @@ then
     # Need to oversubscribe the MPI
     #
     # Is the oversubscribe option known?
-    $mpi_launcher -oversubscribe -version 2>&1 > /dev/null
-    if [ $? -eq 0 ]
-    then
+    if test "$mpi_launcher" != "" ; then
+        $mpi_launcher -oversubscribe -version 2>&1 > /dev/null
+        if [ $? -eq 0 ]
+        then
         # Looks like open MPI mpirun
-        oversubscribe="-oversubscribe"
+            oversubscribe="-oversubscribe"
+        fi
     fi
 fi
 
