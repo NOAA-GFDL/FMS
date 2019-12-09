@@ -99,6 +99,15 @@ AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 # Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
 AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
+# Find which mpi launcher to use
+if test `which srun | grep -in "not found" | wc -l` -eq 0; then
+    AC_SUBST(launcher, 'srun')
+elif test `which mpirun | grep -in "not found" | wc -l` -eq 0; then
+    AC_SUBST(launcher, 'mpirun')   
+else
+    AC_SUBST(launcher, 'none')
+fi
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile

@@ -15,5 +15,5 @@
 ##rm -f diag_test_${tnum}* > /dev/null 2>&1
 ##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
 
-#mpirun -n 2 ./test_mpp_pset
-#mpirun -n 2 ./test_mpp_pset
+#$mpi_launcher -n 2 ./test_mpp_pset
+#$mpi_launcher -n 2 ./test_mpp_pset

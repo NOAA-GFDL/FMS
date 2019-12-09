@@ -20,11 +20,11 @@ copy_files()
 run_test()
 {
     echo ${2}
-    copy_files ${1}
+    copy_files ${1} 
     if test "x${3}" = "xfail"; then
-        if mpirun -n 1 ./test_diag_manager; then exit 1; fi
+        if $mpi_launcher -n 1 ./test_diag_manager; then exit 1; fi
     else
-        mpirun -n 1 ./test_diag_manager
+        $mpi_launcher -n 1 ./test_diag_manager
     fi
 }
 

@@ -33,7 +33,7 @@ then
     # Need to oversubscribe the MPI
     #
     # Is the oversubscribe option known?
-    mpirun -oversubscribe -version 2>&1 > /dev/null
+    $mpi_launcher -oversubscribe -version 2>&1 > /dev/null
     if [ $? -eq 0 ]
     then
         # Looks like open MPI mpirun
@@ -49,4 +49,4 @@ fi
 
 # Ensure an input.nml file exists
 touch input.nml
-mpirun ${oversubscribe} -n 4 ./test_mpp
+$mpi_launcher ${oversubscribe} -n 4 ./test_mpp

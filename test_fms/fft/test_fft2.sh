@@ -12,4 +12,4 @@
 cp $top_srcdir/test_fms/fft/input_base.nml input.nml
 
 # Test is skipped in bats file.
-#mpirun -n 2 ./test_fft
+#$mpi_launcher -n 2 ./test_fft

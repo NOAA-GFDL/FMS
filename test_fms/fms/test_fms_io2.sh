@@ -11,5 +11,5 @@
 # Copy files for test.
 
 # These tests are skipped in bats files.
-#mpirun -n 2 ./test_fms_io
-#mpirun -n 2 ./test_unstructured_fms_io
+#$mpi_launcher -n 2 ./test_fms_io
+#$mpi_launcher -n 2 ./test_unstructured_fms_io

@@ -11,4 +11,4 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/time_manager/input_base.nml input.nml
 
-mpirun -n 1 ./test_time_manager
+$mpi_launcher -n 1 ./test_time_manager

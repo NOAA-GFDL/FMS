@@ -13,4 +13,4 @@ cp $top_srcdir/test_fms/interpolator/input_base.nml input.nml
 cp $top_srcdir/test_fms/interpolator/diag_table_base diag_table
 
 # Test is skipped in bats file.
-#mpirun -n 2 ./test_interpolator
+#$mpi_launcher -n 2 ./test_interpolator

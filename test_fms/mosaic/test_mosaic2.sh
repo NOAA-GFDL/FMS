@@ -12,4 +12,4 @@
 
 # Copy files for test.
 #cp $top_srcdir/test_fms/mosaic/input_nml input_nml
-#mpirun -n 2 ./test_mosaic
+#$mpi_launcher -n 2 ./test_mosaic

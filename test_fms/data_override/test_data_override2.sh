@@ -16,9 +16,9 @@ cp $top_srcdir/test_fms/data_override/diag_table_base diag_table
 tnum=$( printf "%2.2d" 1 )
 sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
 #cp -r $top_srcdir/test_fms/data_override/INPUT $top_builddir/test_fms/data_override/INPUT
-#mpirun -n 2 ./test_data_override
+#$mpi_launcher -n 2 ./test_data_override
 
 tnum=$( printf "%2.2d" 2 )
 sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-#mpirun -n 2 ./test_data_override
+#$mpi_launcher -n 2 ./test_data_override
 
