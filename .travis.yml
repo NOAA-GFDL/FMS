@@ -36,4 +36,4 @@ before_script:
 script:
   - autoreconf -i
   - ./configure
-  - make -j distcheck LOG_DRIVER_FLAGS=--comments
+  - make -j distcheck
