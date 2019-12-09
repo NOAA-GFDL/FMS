@@ -100,9 +100,9 @@ AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
 # Find which mpi launcher to use
-if test `srun --version | grep -in "not found" | wc -l` -eq 0; then
+if test `command -v srun | grep -in "srun" | wc -l` -eq 1; then
     AC_SUBST(launcher, 'srun')
-elif test `mpirun --version | grep -in "not found" | wc -l` -eq 0; then
+elif test `command -v mpirun | grep -in "run" | wc -l` -eq 1 ; then
     AC_SUBST(launcher, 'mpirun')   
 else
     AC_SUBST(launcher, 'none')
