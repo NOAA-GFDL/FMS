@@ -13,9 +13,8 @@ teardown () {
 }
 
 @test "1: Test update nest domain" {
-    skip "To do"
-    sed "s/test_nest_domain = .false./test_nest_domain = .true./" input.nml_base > input.nml
-    run mpirun -n 2 ./test_mpp_domains
+    sed "s/test_nest = .false./test_nest = .true./" input.nml_base > input.nml
+    run mpirun -n 15 ./test_mpp_domains
     [ "$status" -eq 0 ]
 }
 
