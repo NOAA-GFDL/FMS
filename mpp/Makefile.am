@@ -44,7 +44,7 @@ mpp.$(OBJEXT): mpp_data_mod.mod
 mpp_utilities.$(OBJEXT): mpp_mod.mod mpp_efp_mod.mod
 mpp_memutils.$(OBJEXT): mpp_mod.mod
 mpp_pset.$(OBJEXT): mpp_mod.mod
-mpp_efp.$(OBJEXT): mpp_efp_mod.mod mpp_parameter_mod.mod mpp_mod.mod
+mpp_efp.$(OBJEXT): mpp_parameter_mod.mod mpp_mod.mod
 mpp_domains.$(OBJEXT): mpp_data_mod.mod mpp_parameter_mod.mod \
   mpp_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
 mpp_io.$(OBJEXT): mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
