@@ -49,7 +49,7 @@ then
     return 0
 fi
 
-#Only run if there's a mpi launcher 
+# If there is a mpi launcher set the number of processors to 4, otherwise don't run
 if test "$mpi_launcher" != "" ; then 
     npes="-n 4"
 # Ensure an input.nml file exists

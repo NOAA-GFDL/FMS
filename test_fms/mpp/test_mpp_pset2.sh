@@ -8,7 +8,7 @@
 # Set common test settings.
 . ../test_common.sh
 
-# All tests are skipped in bats file.
+# If there is a mpi launcher set the number of processors to 2, otherwise just ./
 if test "$mpi_launcher" != "" ; then 
     npes="-n 2"
 fi

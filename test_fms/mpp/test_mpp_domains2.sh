@@ -25,6 +25,7 @@ fi
 #sed "s/test_subset = .false./test_subset = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 #run $mpi_launcher $npes ./test_mpp_domains
 
+# If there is a mpi launcher set the number of processors to 2, otherwise just ./
 if test "$mpi_launcher" != "" ; then 
     npes="-n 2"
 fi

@@ -11,6 +11,7 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
 
+# If there is a mpi launcher set the number of processors otherwise just ./
 if test "$mpi_launcher" != "" ; then 
 # Get the number of available CPUs on the system
     if [ $(command -v nproc) ]
@@ -24,7 +25,7 @@ if test "$mpi_launcher" != "" ; then
     else
         nProc=-1
     fi
-
+    #Try to set the numbers of processors to 12 if possible (skylake needs 12 to pass ...)
     if [ $nProc -gt 12 ]
     then  
         npes="-n 12"

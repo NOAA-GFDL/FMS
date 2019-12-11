@@ -22,6 +22,7 @@ run_test()
     echo ${2}
     copy_files ${1} 
 
+    # If there is a mpi launcher set the number of processors to 1, otherwise just ./
     if test "$mpi_launcher" != "" ; then  
         npes="-n 1"
     fi

@@ -13,6 +13,7 @@ cp $top_srcdir/test_fms/drifters/input_base.nml input.nml
 
 # Run tests.
 
+# If there is a mpi launcher set the number of processors to 2, otherwise just ./
 if test "$mpi_launcher" != "" ; then 
     npes="-n 2"
 fi

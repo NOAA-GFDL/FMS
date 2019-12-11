@@ -11,9 +11,10 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/monin_obukhov/input_base.nml input.nml
 
-# Run test.
+# If there is a mpi launcher set the number of processors to 2, otherwise just ./
 if test "$mpi_launcher" != "" ; then 
     npes="-n 2"
 fi
 
+# Run test.
 $mpi_launcher $npes ./test_monin_obukhov
