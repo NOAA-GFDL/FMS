@@ -101,13 +101,13 @@ AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
 # Find which mpi launcher to use
 if test `command -v srun | grep -in "srun" | wc -l` -eq 1; then
-    AC_SUBST(launcher, 'srun')
+    AC_SUBST(LAUNCHER, 'srun')
 elif test `command -v mpirun | grep -in "mpirun" | wc -l` -eq 1 ; then
-    AC_SUBST(launcher, 'mpirun')
+    AC_SUBST(LAUNCHER, 'mpirun')
 elif test `command -v aprun | grep -in "aprun" | wc -l` -eq 1 ; then
-    AC_SUBST(launcher, 'aprun')  
+    AC_SUBST(LAUNCHER, 'aprun')  
 else
-    AC_SUBST(launcher, '')
+    AC_SUBST(LAUNCHER, '')
 fi
 
 # These files will be created when the configure script is run.
