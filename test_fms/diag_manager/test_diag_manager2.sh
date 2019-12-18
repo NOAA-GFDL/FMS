@@ -11,19 +11,6 @@
 # Source function that sets up and runs tests
 . /$top_srcdir/test_fms/run_test.sh 
 
-copy_files()
-# Function that copies over the necessary input files 
-# Inputs: 
-# {1} Test number 
-
-{
-
-    tnum=$( printf "%2.2d" ${1} )
-    rm -f diag_test_${tnum}* > /dev/null 2>&1
-    sed "s/<test_num>/${tnum}/" $top_srcdir/test_fms/diag_manager/input.nml_base > input.nml
-    ln -f -s $top_srcdir/test_fms/diag_manager/diagTables/diag_table_${tnum} diag_table
-}
-
 setup_test()
 # Function sets up and runs the test 
 # Inputs: 
@@ -33,7 +20,10 @@ setup_test()
 
 {
     echo ${2}
-    copy_files ${1} 
+    tnum=$( printf "%2.2d" ${1} )
+    rm -f diag_test_${tnum}* > /dev/null 2>&1
+    sed "s/<test_num>/${tnum}/" $top_srcdir/test_fms/diag_manager/input.nml_base > input.nml
+    ln -f -s $top_srcdir/test_fms/diag_manager/diagTables/diag_table_${tnum} diag_table
 
     run_test test_diag_manager 1 ${3}
 
