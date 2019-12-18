@@ -8,15 +8,12 @@
 # Set common test settings.
 . ../test_common.sh
 
-# If there is a mpi launcher set the number of processors to 2, otherwise just ./
-if test "$mpi_launcher" != "" ; then 
-    npes="-n 2"
-fi
+# Source function that sets up and runs tests
+. ../run_test.sh
 
 # Setup the run directory
 ##tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
 ##rm -f diag_test_${tnum}* > /dev/null 2>&1
 ##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
 
-#$mpi_launcher $npes ./test_mpp_pset
-#$mpi_launcher $npes ./test_mpp_pset
+run_test test_mpp_pset 2 skip

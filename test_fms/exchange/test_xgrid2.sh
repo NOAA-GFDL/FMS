@@ -8,14 +8,12 @@
 # Set common test settings.
 . ../test_common.sh
 
-# If there is a mpi launcher set the number of processors to 2, otherwise just ./
-if test "$mpi_launcher" != "" ; then 
-    npes="-n 2"
-fi
+# Source function that sets up and runs tests
+. ../run_test.sh 
 
 # Copy file for test.
 cp $top_srcdir/test_fms/exchange/input_base.nml input.nml
 
 # This test is skipped in the bats file.
 #cp -r $top_srcdir/test_fms/exchange/INPUT INPUT
-#$mpi_launcher $npes ./test_xgrid
+run_test test_xgrid 2 skip

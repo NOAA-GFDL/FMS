@@ -8,27 +8,25 @@
 # Set common test settings.
 . ../test_common.sh
 
+# Source function that sets up and runs tests
+. ../run_test.sh 
+
 # Copy file for test_drifters_io test.
 cp $top_srcdir/test_fms/drifters/input_base.nml input.nml
 
 # Run tests.
 
-# If there is a mpi launcher set the number of processors to 2, otherwise just ./
-if test "$mpi_launcher" != "" ; then 
-    npes="-n 2"
-fi
-
 echo "1: Test_drifters_io"
-$mpi_launcher $npes ./test_drifters_io
+run_test test_drifters_io 2
 
 echo "2: Test_cloud_interpolator"
-$mpi_launcher $npes ./test_cloud_interpolator
+run_test test_cloud_interpolator 2
 
 echo "3: Test_drifters_comm"
-./test_drifters_comm
+run_test test_drifters_comm 1
 
 echo "4: Test_drifters_core"
-$mpi_launcher $npes ./test_drifters_core
+run_test test_drifters_core 2
 
 echo "5: Test_quicksort"
-echo $mpi_launcher $npes ./test_quicksort
+run_test test_quicksort 2

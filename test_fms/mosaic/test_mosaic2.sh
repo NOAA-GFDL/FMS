@@ -8,11 +8,9 @@
 # Set common test settings.
 . ../test_common.sh
 
-# If there is a mpi launcher set the number of processors to 2, otherwise just ./
-if test "$mpi_launcher" != "" ; then 
-    npes="-n 2"
-fi
+# Source function that sets up and runs tests
+. ../run_test.sh
 
 # Copy files for test.
 #cp $top_srcdir/test_fms/mosaic/input_nml input_nml
-#$mpi_launcher $npes ./test_mosaic
+run_test test_mosaic 2 skip

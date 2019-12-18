@@ -100,15 +100,11 @@ AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
 # Find which mpi launcher to use
-if test `command -v srun | grep -in "srun" | wc -l` -eq 1; then
-    AC_SUBST(LAUNCHER, 'srun')
-elif test `command -v mpirun | grep -in "mpirun" | wc -l` -eq 1 ; then
-    AC_SUBST(LAUNCHER, 'mpirun')
-elif test `command -v aprun | grep -in "aprun" | wc -l` -eq 1 ; then
-    AC_SUBST(LAUNCHER, 'aprun')  
-else
-    AC_SUBST(LAUNCHER, '')
-fi
+AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
+
+# Check if the launcher can oversubscribe the MPI processes
+AS_IF([$MPI_LAUNCHER --version 2>&1 >/dev/null], \
+      [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile

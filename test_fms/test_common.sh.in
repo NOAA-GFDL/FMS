@@ -12,4 +12,5 @@ top_srcdir='@abs_top_srcdir@'
 top_buildir='@abs_top_builddir@'
 
 # Set the name of the mpi launcher for use in test scripts. 
-mpi_launcher='@LAUNCHER@'
+mpi_launcher='@MPI_LAUNCHER@' 
+oversubscribe='@OVERSUBSCRIBE@'

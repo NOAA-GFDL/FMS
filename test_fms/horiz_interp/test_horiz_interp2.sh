@@ -8,12 +8,10 @@
 # Set common test settings.
 . ../test_common.sh
 
+# Source function that sets up and runs tests
+. ../run_test.sh
+
 # Copy file for test.
 cp $top_srcdir/test_fms/horiz_interp/input_base.nml input.nml
 
-# If there is a mpi launcher set the number of processors to 2, otherwise just ./
-if test "$mpi_launcher" != "" ; then 
-    npes="-n 2"
-fi
-
-$mpi_launcher $npes ./test_horiz_interp
+run_test test_horiz_interp 2

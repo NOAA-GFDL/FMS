@@ -8,13 +8,9 @@
 # Set common test settings.
 . ../test_common.sh
 
-# If there is a mpi launcher set the number of processors to 2, otherwise just ./
-if test "$mpi_launcher" != "" ; then 
-    npes="-n 2"
-fi
-
-# Copy files for test.
+# Source function that sets up and runs tests
+. ../run_test.sh
 
 # These tests are skipped in bats files.
-#$mpi_launcher $npes ./test_fms_io
-#$mpi_launcher $npes ./test_unstructured_fms_io
+run_test test_fms_io 2 skip
+run_test test_unstructured_fms_io 2 skip

@@ -8,28 +8,36 @@
 # Set common test settings.
 . ../test_common.sh
 
+# Source function that sets up and runs tests
+. ../run_test.sh
+
+skip_test="no"
+
 # Copy file for test.
 cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
 
-# If there is a mpi launcher set the number of processors otherwise just ./
-if test "$mpi_launcher" != "" ; then 
+
 # Get the number of available CPUs on the system
-    if [ $(command -v nproc) ]
-    then
-    # Looks like a linux system
-        nProc=$(nproc)
-    elif [ $(command -v sysctl) ]
-    then
-        # Looks like a Mac OS X system
-        nProc=$(sysctl -n hw.physicalcpu)
-    else
-        nProc=-1
-    fi
-    #Try to set the numbers of processors to 12 if possible (skylake needs 12 to pass ...)
-    if [ $nProc -gt 12 ]
-    then  
-        npes="-n 12"
-    fi
+if [ $(command -v nproc) ]
+then
+   # Looks like a linux system
+   nProc=$(nproc)
+elif [ $(command -v sysctl) ]
+then
+   # Looks like a Mac OS X system
+   nProc=$(sysctl -n hw.physicalcpu)
+else
+   nProc=-1
 fi
 
-$mpi_launcher $npes ./test_mpp_io
+if [ $nProc -lt 0 ]
+then  
+   # Couldn't get the number of CPUs, skip the test.
+   skip_test="skip"
+elif [ $nProc -lt 12 ]
+then
+   # Need to oversubscribe the MPI
+   run_test test_mpp_io 12 $skip_test "true"
+fi
+
+run_test test_mpp_io 12 $skip_test
