@@ -9,7 +9,7 @@
 . ../test_common.sh
 
 # Source function that sets up and runs tests
-. ../run_test.sh 
+. /$top_srcdir/test_fms/run_test.sh 
 
 # Copy and rename namelist file.
 cp $top_srcdir/test_fms/axis_utils/input_base.nml input.nml

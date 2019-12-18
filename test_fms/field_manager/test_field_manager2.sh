@@ -9,7 +9,7 @@
 . ../test_common.sh
 
 # Source function that sets up and runs tests
-. ../run_test.sh 
+. /$top_srcdir/test_fms/run_test.sh 
 
 # Copy files for test.
 cp $top_srcdir/test_fms/field_manager/input_base.nml input.nml

@@ -9,7 +9,7 @@
 . ../test_common.sh
 
 # Source function that sets up and runs tests
-. ../run_test.sh 
+. /$top_srcdir/test_fms/run_test.sh 
 
 copy_files()
 # Function that copies over the necessary input files 

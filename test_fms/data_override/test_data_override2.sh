@@ -9,7 +9,7 @@
 . ../test_common.sh
 
 # Source function that sets up and runs tests
-. ../run_test.sh 
+. /$top_srcdir/test_fms/run_test.sh 
 
 # Copy to builddir and rename data files for tests.
 cp $top_srcdir/test_fms/data_override/data_table_base data_table
