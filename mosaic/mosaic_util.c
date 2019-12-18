@@ -541,10 +541,10 @@ double great_circle_area(int n, const double *x, const double *y, const double *
 double spherical_angle(const double *v1, const double *v2, const double *v3)
 {
   double angle;
-#ifdef NO_QUAD_PRECISION
-  double px, py, pz, qx, qy, qz, ddd;
+#ifdef ENABLE_QUAD_PRECISION
+  long double px, py, pz, qx, qy, qz, ddd;
 #ifndef SQRT_
-#define SQRT_ sqrt
+#define SQRT_ sqrtl
 #else
 #error "SQRT_ Previously Defined"
 #endif  /* SQRT_ */
@@ -554,9 +554,9 @@ double spherical_angle(const double *v1, const double *v2, const double *v3)
 #error "ABS_ Previously Defined"
 #endif  /* ABS_ */
 #else
-  long double px, py, pz, qx, qy, qz, ddd;
+  double px, py, pz, qx, qy, qz, ddd;
 #ifndef SQRT_
-#define SQRT_ sqrtl
+#define SQRT_ sqrt
 #else
 #error "SQRT_ Previously Defined"
 #endif  /* SQRT_ */
