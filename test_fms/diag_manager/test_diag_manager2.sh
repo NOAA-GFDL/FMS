@@ -8,15 +8,12 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Source function that sets up and runs tests
-. /$top_srcdir/test_fms/run_test.sh 
-
 setup_test()
 # Function sets up and runs the test 
 # Inputs: 
 # {1} Test number 
 # {2} Description of test 
-# {3} Set to "skip" if the test is meant to fail
+# {3} Set to "skip"
 
 {
     echo ${2}

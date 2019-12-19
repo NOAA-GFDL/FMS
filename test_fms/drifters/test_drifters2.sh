@@ -8,9 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Source function that sets up and runs tests
-. /$top_srcdir/test_fms/run_test.sh 
-
 # Copy file for test_drifters_io test.
 cp $top_srcdir/test_fms/drifters/input_base.nml input.nml
 

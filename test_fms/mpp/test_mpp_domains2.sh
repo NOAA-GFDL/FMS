@@ -8,9 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Source function that sets up and runs tests
-. /$top_srcdir/test_fms/run_test.sh
-
 if [ "x$(uname -s)" = "xDarwin" ]
 then
     is_darwin='skip'

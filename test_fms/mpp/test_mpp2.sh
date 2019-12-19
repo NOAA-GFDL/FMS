@@ -8,9 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Source function that sets up and runs tests
-. /$top_srcdir/test_fms/run_test.sh
-
 skip_test="no"
 
 # Get the number of available CPUs on the system

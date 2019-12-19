@@ -8,9 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Source function that sets up and runs tests
-. /$top_srcdir/test_fms/run_test.sh
-
 # Setup the run directory
 ##tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
 ##rm -f diag_test_${tnum}* > /dev/null 2>&1

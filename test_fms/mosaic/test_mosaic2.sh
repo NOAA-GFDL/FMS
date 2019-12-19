@@ -8,9 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Source function that sets up and runs tests
-. /$top_srcdir/test_fms/run_test.sh
-
 # Copy files for test.
 #cp $top_srcdir/test_fms/mosaic/input_nml input_nml
 run_test test_mosaic 2 skip

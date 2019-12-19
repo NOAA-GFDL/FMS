@@ -8,9 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Source function that sets up and runs tests
-. /$top_srcdir/test_fms/run_test.sh
-
 # These tests are skipped in bats files.
 run_test test_fms_io 2 skip
 run_test test_unstructured_fms_io 2 skip
