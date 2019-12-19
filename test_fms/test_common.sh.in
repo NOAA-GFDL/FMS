@@ -26,9 +26,7 @@ oversubscribe='@OVERSUBSCRIBE@'
 run_test()
 {
     # If the tests is known to fail exit 
-    if test "x${3}" == "xskip" ; then 
-        exit 0
-    fi     
+    if test "x${3}" != "xskip" ; then     
 
     # If there is no mpi launcher just ./{job_script}
     if test "x$mpi_launcher" != "x" ; then  
@@ -38,15 +36,16 @@ run_test()
     # Check if the oversubscribe flag is turned on 
     if test "x${4}" == "xtrue" ; then 
     # Check if the your mpi launcher allows the oversubscribed option 
-        if "x$oversubscribed" != "x"; then  
-            $mpi_launcher $oversubscribed $npes ./${1}
-            exit 1
+        if "x$oversubscribe" != "x" ; then  
+            $mpi_launcher $oversubscribe $npes ./${1}
+            return 0
         else #If you the mpi launcher doesn't allow the oversubscribed option, don't run the test
-            exit 0
+            return 0
         fi
     fi 
 
     # Run test
     $mpi_launcher $npes ./${1}
 
+    fi
 }
