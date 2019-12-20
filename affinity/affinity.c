@@ -30,7 +30,7 @@
 #ifndef HAVE_GETTID
 static pid_t gettid(void)
 {
-  return syscall(__NR_gettid);
+  return syscall(SYS_gettid);
 }
 #endif
 
