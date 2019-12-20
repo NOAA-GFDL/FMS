@@ -39,8 +39,6 @@ program test
 
   implicit none
 
-#include <netcdf.inc>
-
   !--- namelist definition
   integer           :: nx=360, ny=200, nz=50, nt=2
   integer           :: halo=2, stackmax=1500000, stackmaxd=2000000

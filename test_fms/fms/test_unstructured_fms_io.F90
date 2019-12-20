@@ -48,8 +48,6 @@ program test_unstructured_fms_io
                                             fms_io_exit
     implicit none
 
-#include <netcdf.inc>
-
    !Local variables
     integer(INT_KIND)              :: nx = 8                               !<Total number of grid points in the x-dimension (longitude?)
     integer(INT_KIND)              :: ny = 8                               !<Total number of grid points in the y-dimension (latitude?)
