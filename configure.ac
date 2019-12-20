@@ -87,7 +87,6 @@ if test $enable_fortran_flag_setting = "yes"; then
 fi
 
 # These defines are required for the build.
-AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
 
 # Define __APPLE__ macro if on a Apple/Mac OS X

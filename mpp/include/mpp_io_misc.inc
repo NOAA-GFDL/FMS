@@ -177,10 +177,8 @@
       if( pe.EQ.mpp_root_pe() )then
           iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
           write( iunit,'(/a)' )'MPP_IO module '//trim(version)
-#ifdef use_netCDF
           text = NF_INQ_LIBVERS()
           write( iunit,'(/a)' )'Using netCDF library version '//trim(text)
-#endif
       endif
 
 #ifdef CRAYPVP
@@ -234,12 +232,10 @@
       do unit = unit_begin,unit_end
          if( mpp_file(unit)%opened )close(unit)
       end do
-#ifdef use_netCDF
 !close all open netCDF units
       do unit = maxunits+1,2*maxunits
          if( mpp_file(unit)%opened )error = NF_CLOSE(mpp_file(unit)%ncid)
       end do
-#endif
 
 !      call mpp_max(mpp_io_stack_hwm)
 
@@ -262,7 +258,6 @@
       character(len=*), optional :: string
       character(len=256) :: errmsg
 
-#ifdef use_netCDF
       if( err.EQ.NF_NOERR )return
       errmsg = NF_STRERROR(err)
       if( PRESENT(file) )errmsg = trim(errmsg)//' File='//file%name
@@ -272,7 +267,6 @@
       if( PRESENT(string) )errmsg = trim(errmsg)//string
       call mpp_io_exit('NOSYNC')        !make sure you close all open files
       call mpp_error( FATAL, 'NETCDF ERROR: '//trim(errmsg) )
-#endif
       return
     end subroutine netcdf_err
 
@@ -287,9 +281,7 @@
       if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, 'MPP_FLUSH: cannot flush a file during writing of metadata.' )
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
           error = NF_SYNC(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
-#endif
       else
           call FLUSH(unit)
       end if

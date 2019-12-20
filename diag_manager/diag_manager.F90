@@ -237,9 +237,7 @@ MODULE diag_manager_mod
   USE diag_manifest_mod, ONLY: write_diag_manifest
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
-#ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
-#endif
 
 !----------
 !ug support

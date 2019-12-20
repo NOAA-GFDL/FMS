@@ -42,7 +42,6 @@
       pointer( ptr4, r8vals )
       if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
 
-#ifdef use_netCDF
       word_sz = size(transfer(data(1),one_byte))
 
           select case (field%type)
@@ -106,10 +105,6 @@
              case default
                 call mpp_error( FATAL, 'MPP_READ: invalid pack value' )
           end select
-#else
-      call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
-#endif
-
     end subroutine READ_RECORD_CORE_
 
 

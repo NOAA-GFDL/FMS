@@ -251,10 +251,6 @@
       if( PRESENT(action) )action_flag = action
       form_flag = MPP_ASCII
       if( PRESENT(form) )form_flag = form
-#ifndef use_netCDF
-      if( form_flag.EQ.MPP_NETCDF ) &
-           call mpp_error( FATAL, 'MPP_OPEN: To open a file with form=MPP_NETCDF, you must compile mpp_io with -Duse_netCDF.' )
-#endif
       access_flag = MPP_SEQUENTIAL
       if( PRESENT(access) )access_flag = access
       threading_flag = MPP_SINGLE
@@ -602,7 +598,6 @@
                  !ends addition from fmi - oct.22.2008
 #endif
 
-#ifdef use_netCDF
 #ifdef use_netCDF3
           if( action_flag.EQ.MPP_WRONLY )then
               if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(unit)%name),' is ', fsize
@@ -724,7 +719,6 @@
           end if
           mpp_file(unit)%opened = .TRUE.
 
-#endif
 #endif
       else
 !format: ascii, native, or IEEE 32 bit
@@ -869,9 +863,7 @@
       if( mpp_file(unit)%fileset.NE.MPP_MULTI )collect = .FALSE.
       if( mpp_file(unit)%opened) then
          if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
             error = NF_CLOSE(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
-#endif
          else
             close(unit,status=status)
          end if

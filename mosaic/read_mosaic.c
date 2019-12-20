@@ -23,9 +23,8 @@
 #include "read_mosaic.h"
 #include "constant.h"
 #include "mosaic_util.h"
-#ifdef use_netCDF
 #include <netcdf.h>
-#endif
+
 /*********************************************************************
     void netcdf_error( int status )
     status is the returning value of netcdf call. this routine will
@@ -72,8 +71,6 @@ int field_exist(const char* file, const char *name)
   char msg[512];
   int existed=0;
 
-#ifdef use_netCDF
-
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
     sprintf(msg, "field_exist: in opening file %s", file);
@@ -91,10 +88,6 @@ int field_exist(const char* file, const char *name)
     handle_netcdf_error(msg, status);
   }
 
-#else  /* ndef use_netCDF */
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif  /* use_netcdf */
-
   return existed;
 
 } /* field_exist */
@@ -106,7 +99,6 @@ int get_dimlen(const char* file, const char *name)
   char msg[512];
 
   len = 0;
-#ifdef use_netCDF
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
     sprintf(msg, "in opening file %s", file);
@@ -135,9 +127,6 @@ int get_dimlen(const char* file, const char *name)
     sprintf(msg, "in closing file %s", file);
     handle_netcdf_error(msg, status);
   }
-#else
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif
 
   return len;
 
@@ -152,7 +141,6 @@ void get_string_data(const char *file, const char *name, char *data)
   int ncid, varid, status;
   char msg[512];
 
-#ifdef use_netCDF
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
     sprintf(msg, "in opening file %s", file);
@@ -173,10 +161,6 @@ void get_string_data(const char *file, const char *name, char *data)
     sprintf(msg, "in closing file %s.", file);
     handle_netcdf_error(msg, status);
   }
-#else
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif
-
 } /* get_string_data */
 
 /*******************************************************************************
@@ -189,7 +173,6 @@ void get_string_data_level(const char *file, const char *name, char *data, const
   size_t start[4], nread[4];
   char msg[512];
 
-#ifdef use_netCDF
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
     sprintf(msg, "in opening file %s", file);
@@ -214,10 +197,6 @@ void get_string_data_level(const char *file, const char *name, char *data, const
     sprintf(msg, "in closing file %s.", file);
     handle_netcdf_error(msg, status);
   }
-#else
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif
-
 } /* get_string_data_level */
 
 
@@ -232,7 +211,6 @@ void get_var_data(const char *file, const char *name, void *data)
   nc_type vartype;
   char msg[512];
 
-#ifdef use_netCDF
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
     sprintf(msg, "in opening file %s", file);
@@ -275,10 +253,6 @@ void get_var_data(const char *file, const char *name, void *data)
     sprintf(msg, "in closing file %s.", file);
     handle_netcdf_error(msg, status);
   }
-#else
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif
-
 } /* get_var_data */
 
 /*******************************************************************************
@@ -292,7 +266,6 @@ void get_var_data_region(const char *file, const char *name, const size_t *start
   nc_type vartype;
   char msg[512];
 
-#ifdef use_netCDF
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
     sprintf(msg, "get_var_data_region: in opening file %s", file);
@@ -336,10 +309,6 @@ void get_var_data_region(const char *file, const char *name, const size_t *start
     sprintf(msg, "get_var_data_region: in closing file %s.", file);
     handle_netcdf_error(msg, status);
   }
-#else
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif
-
 } /* get_var_data_region */
 
 /******************************************************************************
@@ -351,7 +320,6 @@ void get_var_text_att(const char *file, const char *name, const char *attname, c
   int ncid, varid, status;
   char msg[512];
 
-#ifdef use_netCDF
   status = nc_open(file, NC_NOWRITE, &ncid);
   if(status != NC_NOERR) {
     sprintf(msg, "in opening file %s", file);
@@ -372,10 +340,6 @@ void get_var_text_att(const char *file, const char *name, const char *attname, c
     sprintf(msg, "in closing file %s.", file);
     handle_netcdf_error(msg, status);
   }
-#else
-  error_handler("read_mosaic: Add flag -Duse_netCDF when compiling");
-#endif
-
 } /* get_var_text_att */
 
 /***********************************************************************

@@ -367,9 +367,7 @@ use mpp_domains_mod, only: domainUG, &
 implicit none
 private
 
-#ifdef use_netCDF
 #include <netcdf.inc>
-#endif
 
   !--- public parameters  -----------------------------------------------
   public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32

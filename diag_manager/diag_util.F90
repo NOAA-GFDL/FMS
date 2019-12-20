@@ -76,9 +76,7 @@ MODULE diag_util_mod
   USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
-#ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
-#endif
 
   IMPLICIT NONE
   PRIVATE

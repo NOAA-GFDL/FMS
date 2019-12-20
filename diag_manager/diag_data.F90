@@ -55,10 +55,8 @@ MODULE diag_data_mod
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE mpp_io_mod, ONLY: fieldtype
   USE fms_mod, ONLY: WARNING, write_version_number
-#ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
-#endif
 
   IMPLICIT NONE
 
@@ -740,11 +738,7 @@ MODULE diag_data_mod
   !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
   !   netCDF module, otherwise will be 9.9692099683868690e+36.
   ! </DATA>
-#ifdef use_netCDF
-  REAL :: FILL_VALUE = NF_FILL_REAL  ! from file /usr/local/include/netcdf.inc
-#else
-  REAL :: FILL_VALUE = 9.9692099683868690e+36
-#endif
+  REAL :: FILL_VALUE = NF_FILL_REAL
 
   INTEGER :: pack_size = 1 ! 1 for double and 2 for float
 

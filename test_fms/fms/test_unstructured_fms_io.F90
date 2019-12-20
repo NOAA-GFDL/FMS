@@ -48,9 +48,7 @@ program test_unstructured_fms_io
                                             fms_io_exit
     implicit none
 
-#ifdef use_netCDF
 #include <netcdf.inc>
-#endif
 
    !Local variables
     integer(INT_KIND)              :: nx = 8                               !<Total number of grid points in the x-dimension (longitude?)

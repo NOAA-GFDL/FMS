@@ -221,7 +221,6 @@
       integer, dimension(size(field%axes(:))) :: start, axsiz
       character(len=len(data))        :: text
 
-#ifdef use_netCDF
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
       if( mpp_file(unit)%threading.EQ.MPP_SINGLE .AND. pe.NE.mpp_root_pe() )return
@@ -273,9 +272,7 @@
           call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
 
       end if
-#else
-      call mpp_error( FATAL, 'mpp_read_text currently requires use_netCDF option' )
-#endif
+
       return
     end subroutine mpp_read_text
 
@@ -333,8 +330,6 @@
 
       get_time_info = .TRUE.
       if(present(read_time)) get_time_info = read_time
-
-#ifdef use_netCDF
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
         ncid = mpp_file(unit)%ncid
@@ -1077,9 +1072,7 @@
       endif
 
       mpp_file(unit)%initialized = .TRUE.
-#else
-      call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
-#endif
+
       return
     end subroutine mpp_read_meta
 
@@ -1126,7 +1119,6 @@
 
       tavg_info_exists = .false.
 
-#ifdef use_netCDF
       do n= 1, field%natt
          if (field%Att(n)%type .EQ. NF_CHAR) then
              if (field%Att(n)%name(1:13) == 'time_avg_info') then
@@ -1135,7 +1127,7 @@
              endif
          endif
       enddo
-#endif
+
       if (tavg_info_exists) then
           do n = 1, size(fields(:))
              if (trim(fields(n)%name) == 'average_T1') then

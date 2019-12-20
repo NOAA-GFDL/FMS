@@ -157,9 +157,7 @@
            call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
           call write_attribute_netcdf( unit, NF_GLOBAL, name, rval, ival, cval, pack )
-#endif
       else
           call write_attribute( unit, 'GLOBAL '//trim(name), rval, ival, cval, pack )
       end if
@@ -251,7 +249,6 @@
       naxis = size (axes)
       allocate (mpp_file(unit)%axis(naxis))
       mpp_file(unit)%axis(1:naxis) = axes(1:naxis)
-#ifdef use_netCDF
       if( mpp_file(unit)%action.EQ.MPP_WRONLY )then
          if(header_buffer_val>0) then
             error = NF__ENDDEF(mpp_file(unit)%ncid,header_buffer_val,4,0,4)
@@ -259,7 +256,6 @@
             error = NF_ENDDEF(mpp_file(unit)%ncid)
          endif
       endif
-#endif
     end subroutine mpp_write_axis_data
 
     subroutine mpp_def_dim_nodata(unit,name,size)
@@ -270,10 +266,8 @@
 
     ! This routine assumes the file is in define mode
       if(.NOT. mpp_file(unit)%write_on_this_pe) return
-#ifdef use_netCDF
       error = NF_DEF_DIM(mpp_file(unit)%ncid,name,size,did)
       call netcdf_err(error, mpp_file(unit),string='Axis='//trim(name))
-#endif
     end subroutine mpp_def_dim_nodata
 
     subroutine mpp_def_dim_int(unit,name,dsize,longname,data)
@@ -285,7 +279,6 @@
       integer :: error,did,id
 
     ! This routine assumes the file is in define mode
-#ifdef use_netCDF
       if(.NOT. mpp_file(unit)%write_on_this_pe) return
       error = NF_DEF_DIM(mpp_file(unit)%ncid,name,dsize,did)
       call netcdf_err(error, mpp_file(unit),string='Axis='//trim(name))
@@ -309,7 +302,7 @@
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
       error = NF_REDEF(mpp_file(unit)%ncid)
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
-#endif
+
     return
   end subroutine mpp_def_dim_int
 
@@ -322,7 +315,6 @@
       integer :: error,did,id
 
     ! This routine assumes the file is in define mode
-#ifdef use_netCDF
       if(.NOT. mpp_file(unit)%write_on_this_pe) return
       error = NF_DEF_DIM(mpp_file(unit)%ncid,name,dsize,did)
       call netcdf_err(error, mpp_file(unit),string='Axis='//trim(name))
@@ -346,7 +338,7 @@
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
       error = NF_REDEF(mpp_file(unit)%ncid)
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
-#endif
+
     return
   end subroutine mpp_def_dim_real
 
@@ -438,7 +430,6 @@
       endif
 !write metadata
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
 !write axis def
 !space axes are always floats, time axis is always double
           if( ASSOCIATED(axis%data) )then !space axis
@@ -463,7 +454,6 @@
               call netcdf_err( error, mpp_file(unit), axis )
               mpp_file(unit)%id = axis%id !file ID is the same as time axis varID
           end if
-#endif
       else
           varnum = varnum + 1
           axis%id = varnum
@@ -576,7 +566,6 @@
       allocate(axis%idata(axis%len))
        axis%idata = data
 !write metadata
-#ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%len, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
@@ -585,7 +574,6 @@
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_I1D: Only netCDF format is currently supported.' )
       end if
-#endif
 !write axis attributes
       call mpp_write_meta( unit, axis%id, 'long_name', cval=axis%longname) ; axis%natt = axis%natt + 1
       if (lowercase(trim(axis%units)).ne.'none' .OR. .NOT.cf_compliance) then
@@ -643,7 +631,6 @@
       allocate(axis%idata(1))
       axis%idata = data
 !write metadata
-#ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
@@ -652,7 +639,6 @@
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_UNLIMITED: Only netCDF format is currently supported.' )
       end if
-#endif
 !write axis attributes
       if(present(longname)) then
          call mpp_write_meta(unit,axis%id,'long_name',cval=axis%longname); axis%natt=axis%natt+1
@@ -725,9 +711,7 @@
       if( .NOT.mpp_file(unit)%opened ) call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%initialized )  then
 !     File has already been written to and needs to be returned to define mode.
-#ifdef use_netCDF
         error = NF_REDEF(mpp_file(unit)%ncid)
-#endif
         mpp_file(unit)%initialized = .false.
       endif
 !           call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -776,7 +760,6 @@
       field%pack = 2        !default write 32-bit floats
       if( PRESENT(pack) )field%pack = pack
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
           allocate( axis_id(size(field%axes(:))) )
           do i = 1,size(field%axes(:))
              axis_id(i) = field%axes(i)%did
@@ -807,7 +790,6 @@
              error = NF_DEF_VAR_DEFLATE(mpp_file(unit)%ncid, field%id, shuffle, deflate, deflate_level)
              call netcdf_err( error, mpp_file(unit), field=field )
           endif
-#endif
 #endif
       else
           varnum = varnum + 1
@@ -947,7 +929,7 @@
       character(len=*), intent(in), optional :: cval
       integer, intent(in), optional :: pack
       integer, allocatable :: rval_i(:)
-#ifdef use_netCDF
+
       if( PRESENT(rval) )then
 !pack was only meaningful for FP numbers, but is now extended by the ival branch of this routine
           if( PRESENT(pack) )then
@@ -1035,7 +1017,7 @@
       else
           call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: one of rval, ival, cval must be present.' )
       end if
-#endif /* use_netCDF */
+
       return
     end subroutine write_attribute_netcdf
 
@@ -1245,13 +1227,10 @@
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%initialized ) then
 !     File has already been written to and needs to be returned to define mode.
-#ifdef use_netCDF
         error = NF_REDEF(mpp_file(unit)%ncid)
-#endif
         mpp_file(unit)%initialized = .false.
       endif
 !           call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
-#ifdef use_netCDF
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
          if( gatt%type.EQ.NF_CHAR )then
             len = gatt%len
@@ -1267,10 +1246,8 @@
             call write_attribute( unit, 'GLOBAL '//trim(gatt%name), rval=gatt%fatt )
          endif
      end if
-#else
-     call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
-#endif
-      return
+
+     return
     end subroutine mpp_copy_meta_global
 
     subroutine mpp_copy_meta_axis( unit, axis, domain )
@@ -1293,9 +1270,7 @@
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%initialized )  then
 !     File has already been written to and needs to be returned to define mode.
-#ifdef use_netCDF
         error = NF_REDEF(mpp_file(unit)%ncid)
-#endif
         mpp_file(unit)%initialized = .false.
       endif
 !           call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -1307,7 +1282,6 @@
           axis%domain = NULL_DOMAIN1D
       end if
 
-#ifdef use_netCDF
 !write metadata
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 
@@ -1373,9 +1347,6 @@
       end if
       if( verbose )print '(a,2i6,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
-#else
-      call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
-#endif
 !      call mpp_clock_end(mpp_write_clock)
       return
     end subroutine mpp_copy_meta_axis
@@ -1400,9 +1371,7 @@
       if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE_META: invalid unit number.' )
       if( mpp_file(unit)%initialized )  then
 !     File has already been written to and needs to be returned to define mode.
-#ifdef use_netCDF
         error = NF_REDEF(mpp_file(unit)%ncid)
-#endif
         mpp_file(unit)%initialized = .false.
       endif
 !           call mpp_error( FATAL, 'MPP_WRITE_META: cannot write metadata to file after an mpp_write.' )
@@ -1429,7 +1398,6 @@
       endif
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
           allocate( axis_id(size(field%axes(:))) )
           do i = 1,size(field%axes(:))
              axis_id(i) = field%axes(i)%did
@@ -1452,7 +1420,6 @@
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
           deallocate( axis_id )
-#endif
       else
           varnum = varnum + 1
           field%id = varnum
