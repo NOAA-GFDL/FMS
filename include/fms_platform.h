@@ -113,6 +113,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #undef NO_QUAD_PRECISION
 #else
 #define NO_QUAD_PRECISION
+#undef QUAD_KIND
 #define QUAD_KIND DOUBLE_KIND
 #endif
 
