@@ -49,6 +49,7 @@ AC_PROG_CPP
 # Find the Fortran compiler.
 AC_PROG_FC
 AC_PROG_F77
+AC_FC_WRAPPERS
 
 # Find the install program.
 AC_PROG_INSTALL
@@ -58,6 +59,9 @@ AC_SYS_LARGEFILE
 
 # Check if Linux gettid is avaiable
 AC_CHECK_FUNCS([gettid], [], [])
+
+# Check if Linux sched_getaffinity is available
+AC_CHECK_FUNCS([sched_getaffinity], [], [])
 
 # Require MPI.
 AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([MPI C library required to build FMS])])
@@ -90,14 +94,8 @@ fi
 AC_DEFINE([use_netCDF], [1])
 AC_DEFINE([use_libMPI], [1])
 
-# Define __APPLE__ macro if on a Apple/Mac OS X
-AS_IF([test "x$target_vendor" = "xapple"], [AC_DEFINE([__APPLE__], [ ])])
-
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
-
-# Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
-AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
