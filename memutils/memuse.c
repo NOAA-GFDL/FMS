@@ -44,9 +44,16 @@
 #error "Cannot define getPeakRSS( ) or getCurrentRSS( ) for an unknown OS."
 #endif
 
+/* Ensure getpeakrss function has correct name mangling for being called from
+   Fortran.
+   The outer #ifdef FC_FUNC it for use with mkmf and other non-Autotools builds. */
+#ifdef FCFUNC
 #define GETPEAKRSS_FC FC_FUNC (getpeakrss, GETPEAKRSS)
 #ifdef __cplusplus
 extern "C" /* prevent C++ name mangling */
+#endif
+#else
+#define GETPEAKRSS_FC getpeakrss_
 #endif
 
 /*
