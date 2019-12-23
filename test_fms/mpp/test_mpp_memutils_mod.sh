@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #                   GNU Lesser General Public License
 #
@@ -17,20 +19,25 @@
 # License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# Ed Hartnett 11/26/19
+# Script to test the mpp_memutils_mod Fortran module code.
 
-# Cause test shell scripts to exit and return error if any command
-# fails.
-set -e
+# Set common test settings
+. ../test_common.sh
 
-# Set exit codes to control the failure modes.  These exit codes are found in
-# The GNU Automake manual: https://www.gnu.org/software/automake/manual/html_node/Scripts_002dbased-Testsuites.html
-# Note, any non-zero status, other than SKIP and ERROR is a FAIL
-TEST_PASS=0
-TEST_FAIL=1
-TEST_SKIP=77
-TEST_ERROR=99
+# All tests use blank input.nml file.
+touch input.nml
 
-# Set the source and build top directories for use in test scripts.
-top_srcdir='@abs_top_srcdir@'
-top_buildir='@abs_top_builddir@'
+echo "1: Test begin/end routines of mpp_memutils_mod"
+mpirun -n 1 ./test_mpp_memutils_begin_end
+
+echo "2: Test mpp_print_memuse_stats"
+mpirun -n 1 ./test_mpp_print_memuse_stats_stderr
+
+echo "3: Test mpp_print_memuse_stats to file (stdout)"
+mpirun -n 1 ./test_mpp_print_memuse_stats_file
+
+echo "4: Test failure caught if mpp_memuse_begin called multiple times"
+mpirun -n 1 ./test_mpp_memutils_begin_2x || echo "Ok"
+
+echo "5: Test failure caught if mpp_memuse_end called before mpp_memuse_begin"
+mpirun -n 1 ./test_mpp_memutils_end_before_begin || echo "Ok"
