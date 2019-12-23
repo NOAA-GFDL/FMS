@@ -113,12 +113,12 @@ SRCS_F90 = \
 
 SRCS_c   = \
          ../affinity/affinity.c                                             \
-         ../memutils/memuse.c                                               \
          ../mosaic/create_xgrid.c                                           \
          ../mosaic/gradient_c2l.c                                           \
          ../mosaic/interp.c                                                 \
          ../mosaic/mosaic_util.c                                            \
          ../mosaic/read_mosaic.c                                            \
+         ../mpp/mpp_memuse.c                                                \
          ../mpp/nsclock.c                                                   \
          ../mpp/threadloc.c
 
