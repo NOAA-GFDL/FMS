@@ -1879,7 +1879,7 @@ contains
 
       do m = 1, var_in%bc(n)%num_fields
         if (present(field_index)) then
-          if (m /= field_index) cycle 
+          if (m /= field_index) cycle
         endif
         if ( associated(var%bc(n)%field(m)%values) ) then
           do j=var%jsc-halo,var%jec+halo

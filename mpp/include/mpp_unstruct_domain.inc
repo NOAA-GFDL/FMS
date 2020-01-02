@@ -20,11 +20,11 @@
   !#####################################################################
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
-     type(domain2d), target,     intent(in) :: SG_domain 
+     type(domain2d), target,     intent(in) :: SG_domain
      integer,                    intent(in) :: npts_tile(:) ! number of unstructured points on each tile
      integer,                    intent(in) :: grid_nlev(:) ! number of levels in each unstructured grid.
-     integer,                    intent(in) :: ndivs       
-     integer,                    intent(in) :: npes_io_group  ! number of processors in a io group. Only pe with same tile_id 
+     integer,                    intent(in) :: ndivs
+     integer,                    intent(in) :: npes_io_group  ! number of processors in a io group. Only pe with same tile_id
                                                               ! in the same group
      integer,                    intent(in) :: grid_index(:)
      character(len=*), optional, intent(in) :: name
@@ -78,7 +78,7 @@
            endif
         enddo
         ndivs_used = ndivs_used-1
-        ndivs_tile(cur_tile) = ndivs_tile(cur_tile) - 1    
+        ndivs_tile(cur_tile) = ndivs_tile(cur_tile) - 1
      enddo
 
      te = -1
@@ -157,7 +157,7 @@
         write(stdout(),*) UG_domain%list(:)%compute%size
      endif
 
-     pos = mpp_pe() - mpp_root_pe() 
+     pos = mpp_pe() - mpp_root_pe()
      UG_domain%pe = mpp_pe()
      UG_domain%pos = pos
      UG_domain%tile_id = UG_domain%list(pos)%tile_id
@@ -207,20 +207,20 @@
            exit
         endif
      enddo
-     
+
      UG_domain%io_domain%tile_id            = group_id+1
      UG_domain%io_domain%compute            = UG_domain%compute
      UG_domain%io_domain%pe                 = UG_domain%pe
      UG_domain%io_domain%pos                = my_pos - ibegin(group_id) + 1
      UG_domain%io_domain%tile_root_pe       = ibegin(group_id) + UG_domain%tile_root_pe - 1
-     pos = UG_domain%io_domain%tile_root_pe - mpp_root_pe() 
+     pos = UG_domain%io_domain%tile_root_pe - mpp_root_pe()
      UG_domain%io_domain%global%begin       = UG_domain%list(pos)%compute%begin
      UG_domain%io_domain%global%begin_index = UG_domain%list(pos)%compute%begin_index
      pos = iend(group_id) + UG_domain%tile_root_pe - mpp_root_pe() - 1
      UG_domain%io_domain%global%end         = UG_domain%list(pos)%compute%end
      UG_domain%io_domain%global%end_index   = UG_domain%list(pos)%compute%end_index
      UG_domain%io_domain%global%size        = UG_domain%io_domain%global%end -  UG_domain%io_domain%global%begin + 1
-     
+
      npes_in_group = iend(group_id) - ibegin(group_id) + 1
      allocate(UG_domain%io_domain%list(0:npes_in_group-1))
      do n = 0, npes_in_group-1
@@ -229,8 +229,8 @@
         UG_domain%io_domain%list(n)%pos = n
         UG_domain%io_domain%list(n)%pe = UG_domain%list(pos)%pe
         UG_domain%io_domain%list(n)%tile_id = group_id+1
-     enddo    
- 
+     enddo
+
      call compute_overlap_SG2UG(UG_domain, SG_domain)
      call compute_overlap_UG2SG(UG_domain)
 
@@ -272,7 +272,7 @@
         do l = 1, UG_domain%compute%size
            grid_index = UG_domain%grid_index(l)
            i = mod((grid_index-1), nxg) + 1
-           j = (grid_index-1)/nxg + 1 
+           j = (grid_index-1)/nxg + 1
            if( i .GE. isc .AND. i .LE. iec .and. j .GE. jsc .AND. j .LE. jec ) then
               recv_cnt(n) = recv_cnt(n) + 1
               pos = pos + 1
@@ -333,10 +333,10 @@
            send_pos = send_pos + send_cnt(n)
         endif
         if(recv_cnt(n) > 0) then
-           recv_buffer_pos(n) = recv_pos 
+           recv_buffer_pos(n) = recv_pos
            recv_pos = recv_pos + recv_cnt(n)
         endif
-     enddo    
+     enddo
 
      call mpp_alltoall(send_buffer, send_cnt, send_buffer_pos, &
                        recv_buffer, recv_cnt, recv_buffer_pos)
@@ -700,7 +700,7 @@ subroutine deallocate_unstruct_pass_type(passobj)
 
   if(associated(passobj%send)) deallocate(passobj%send)
   if(associated(passobj%recv)) deallocate(passobj%recv)
- 
+
 end subroutine deallocate_unstruct_pass_type
 
 !------------------------------------------------------------------
@@ -765,7 +765,7 @@ end subroutine mpp_deallocate_domainUG
                       (a%ntiles .EQ. b%ntiles)               .AND. &
                       (a%tile_id .EQ. b%tile_id)             .AND. &
                       (a%tile_npes .EQ. b%tile_npes)         .AND. &
-                      (a%tile_root_pe .EQ. b%tile_root_pe) 
+                      (a%tile_root_pe .EQ. b%tile_root_pe)
 
     if(.not. mpp_domainUG_eq) return
 
@@ -774,11 +774,11 @@ end subroutine mpp_deallocate_domainUG
          a%global%begin .EQ.b%global%begin  .AND. &
          a%global%end   .EQ.b%global%end    .AND. &
          a%SG2UG%nsend  .EQ.b%SG2UG%nsend   .AND. &
-         a%SG2UG%nrecv  .EQ.b%SG2UG%nrecv   .AND. &    
-         a%UG2SG%nsend  .EQ.b%UG2SG%nsend   .AND. &    
+         a%SG2UG%nrecv  .EQ.b%SG2UG%nrecv   .AND. &
+         a%UG2SG%nsend  .EQ.b%UG2SG%nsend   .AND. &
          a%UG2SG%nrecv  .EQ.b%UG2SG%nrecv         &
     )
-    
+
     return
   end function mpp_domainUG_eq
 
@@ -892,5 +892,3 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #include <mpp_global_field_ug.h>
-
-

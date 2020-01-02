@@ -224,7 +224,7 @@
 !mpp_write writes <data> which has the domain decomposition <domain>
       integer,           intent(in)           :: unit
       type(fieldtype),   intent(in)           :: field
-      type(domain2D),    intent(inout)        :: domain 
+      type(domain2D),    intent(inout)        :: domain
       MPP_TYPE_,         intent(inout)        :: data(:,:,:)
       MPP_TYPE_,         intent(in), optional :: tstamp
       integer,           intent(in), optional :: tile_count
@@ -299,7 +299,7 @@
                  call WRITE_RECORD_( unit, field, size(data(:,:,:)), data, tstamp)
               endif
           else
-              io_domain=>mpp_get_io_domain(mpp_file(unit)%domain) 
+              io_domain=>mpp_get_io_domain(mpp_file(unit)%domain)
               call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
               if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
                  allocate( gdata(isg:ieg,jsg:jeg,size(data,3)) )
@@ -324,7 +324,7 @@
 !store compute domain as contiguous data and pass to write_record
           allocate( cdata(is:ie,js:je,size(data,3)) )
           cdata(:,:,:) = data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:)
-          call WRITE_RECORD_( unit, field, size(cdata(:,:,:)), cdata, tstamp, domain, tile_count ) 
+          call WRITE_RECORD_( unit, field, size(cdata(:,:,:)), cdata, tstamp, domain, tile_count )
       else
 !data is already contiguous
           call WRITE_RECORD_( unit, field, size(data(:,:,:)), data, tstamp, domain, tile_count )
@@ -339,7 +339,7 @@
 !mpp_write writes <data> which has the domain decomposition <domain>
       integer,           intent(in)           :: unit
       type(fieldtype),   intent(in)           :: field
-      type(domain2D),    intent(inout)        :: domain 
+      type(domain2D),    intent(inout)        :: domain
       MPP_TYPE_,         intent(inout)        :: data(:,:,:,:)
       MPP_TYPE_,         intent(in), optional :: tstamp
       integer,           intent(in), optional :: tile_count
@@ -414,7 +414,7 @@
                  call WRITE_RECORD_( unit, field, size(data(:,:,:,:)), data, tstamp)
               endif
           else
-              io_domain=>mpp_get_io_domain(mpp_file(unit)%domain) 
+              io_domain=>mpp_get_io_domain(mpp_file(unit)%domain)
               call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
               if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
                  allocate( gdata(isg:ieg,jsg:jeg,size(data,3),size(data,4)) )
@@ -439,7 +439,7 @@
 !store compute domain as contiguous data and pass to write_record
           allocate( cdata(is:ie,js:je,size(data,3),size(data,4)) )
           cdata(:,:,:,:) = data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:,:)
-          call WRITE_RECORD_( unit, field, size(cdata(:,:,:,:)), cdata, tstamp, domain, tile_count ) 
+          call WRITE_RECORD_( unit, field, size(cdata(:,:,:,:)), cdata, tstamp, domain, tile_count )
       else
 !data is already contiguous
           call WRITE_RECORD_( unit, field, size(data(:,:,:,:)), data, tstamp, domain, tile_count )
@@ -449,4 +449,3 @@
 
       return
     end subroutine MPP_WRITE_2DDECOMP_4D_
-

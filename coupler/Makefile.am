@@ -5,7 +5,6 @@
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/time_manager
@@ -14,7 +13,7 @@ AM_CPPFLAGS += -I${top_builddir}/data_override
 AM_CPPFLAGS += -I${top_builddir}/field_manager
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libcoupler_types.la libensemble_manager.la	\
+noinst_LTLIBRARIES = libcoupler_types.la libensemble_manager.la \
 libatmos_ocean_fluxes.la
 
 # Each convenience library depends on its source.
@@ -31,7 +30,7 @@ atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.$(OBJEXT)
 atmos_ocean_fluxes.$(OBJEXT): coupler_types_mod.mod
 
 # Mod files are built and then installed as headers.
-MODFILES = coupler_types_mod.mod ensemble_manager_mod.mod	\
+MODFILES = coupler_types_mod.mod ensemble_manager_mod.mod \
 atmos_ocean_fluxes_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)

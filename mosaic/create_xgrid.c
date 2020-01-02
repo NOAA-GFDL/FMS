@@ -442,7 +442,7 @@ int create_xgrid_1dx2d_order1_ug(const int *nlon_in, const int *nlat_in, const i
             if (  (y_in[0]>=ur_lat) && (y_in[1]>=ur_lat)
                   && (y_in[2]>=ur_lat) && (y_in[3]>=ur_lat) ) continue;
 
-	    x_in[0] = lon_out[l2*nv];
+            x_in[0] = lon_out[l2*nv];
             x_in[1] = lon_out[l2*nv+1];
             x_in[2] = lon_out[l2*nv+2];
             x_in[3] = lon_out[l2*nv+3];
@@ -1642,7 +1642,7 @@ int create_xgrid_great_circle_ug_(const int *nlon_in, const int *nlat_in, const 
 
 int create_xgrid_great_circle_ug(const int *nlon_in, const int *nlat_in, const int *npts_out,
                               const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
-			      const double *mask_in, int *i_in, int *j_in, int *l_out,
+                              const double *mask_in, int *i_in, int *j_in, int *l_out,
                               double *xgrid_area, double *xgrid_clon, double *xgrid_clat)
 {
 
@@ -2424,7 +2424,7 @@ double poly_ctrlon(const double x[], const double y[], int n, double clon)
     if( dphi2 > M_PI) dphi2 -= 2.0*M_PI;
     if( dphi2 <-M_PI) dphi2 += 2.0*M_PI;
 
-    if(abs(dphi2 -dphi1) < M_PI) {
+    if(fabs(dphi2 -dphi1) < M_PI) {
       ctrlon -= dphi * (dphi1*f1+dphi2*f2)/2.0;
     }
     else {
@@ -2432,7 +2432,7 @@ double poly_ctrlon(const double x[], const double y[], int n, double clon)
         fac = M_PI;
       else
         fac = -M_PI;
-      fint = f1 + (f2-f1)*(fac-dphi1)/abs(dphi);
+      fint = f1 + (f2-f1)*(fac-dphi1)/fabs(dphi);
       ctrlon -= 0.5*dphi1*(dphi1-fac)*f1 - 0.5*dphi2*(dphi2+fac)*f2
           + 0.5*fac*(dphi1+dphi2)*fint;
     }

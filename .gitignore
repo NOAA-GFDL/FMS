@@ -2,7 +2,10 @@
 *.o
 *.mod
 *.s
+*.out
 pathnames*
+/*.zip
+/*.tar.gz
 
 Makefile
 # From https://github.com/github/gitignore/blob/master/Autotools.gitignore
@@ -12,6 +15,7 @@ Makefile.in
 /mdate-sh
 /py-compile
 /test-driver
+/tap-driver.sh
 /ylwrap
 *.log
 *.trs

@@ -25,7 +25,7 @@
 subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile_fine, tile_coarse, &
                                   istart_fine, iend_fine, jstart_fine, jend_fine,                  &
                                   istart_coarse, iend_coarse, jstart_coarse, jend_coarse,         &
-                                  pelist, extra_halo, name) 
+                                  pelist, extra_halo, name)
   type(nest_domain_type),     intent(inout) :: nest_domain
   type(domain2D), target,     intent(in   ) :: domain_fine, domain_coarse
   integer,                    intent(in   ) :: tile_fine, tile_coarse
@@ -51,7 +51,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
      if(len_trim(name) > NAME_LENGTH) then
         call mpp_error(FATAL, "mpp_domains_define.inc(mpp_define_nest_domain): "// &
              "the len_trim of optional argument name ="//trim(name)// &
-             " is greater than NAME_LENGTH, change the argument name or increase NAME_LENGTH")  
+             " is greater than NAME_LENGTH, change the argument name or increase NAME_LENGTH")
      endif
      nest_domain%name = name
   endif
@@ -60,7 +60,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   if(present(extra_halo)) then
      if(extra_halo .NE. 0) call mpp_error(FATAL, "mpp_define_nest_domains.inc: only support extra_halo=0, contact developer")
      extra_halo_local = extra_halo
-  endif 
+  endif
 
   nest_domain%tile_fine = tile_fine
   nest_domain%tile_coarse = tile_coarse
@@ -182,7 +182,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_T, extra_halo_local, CENTER, trim(nest_domain%name)//" T-cell")
   call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_E, extra_halo_local, EAST,   trim(nest_domain%name)//" E-cell")
   call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_C, extra_halo_local, CORNER, trim(nest_domain%name)//" C-cell")
-  call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_N, extra_halo_local, NORTH,  trim(nest_domain%name)//" N-cell")  
+  call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_N, extra_halo_local, NORTH,  trim(nest_domain%name)//" N-cell")
 
   deallocate(pes, pes_fine, pes_coarse)
 
@@ -190,7 +190,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
 end subroutine mpp_define_nest_domains
 
 !###############################################################################
-subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, position, name) 
+subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, position, name)
    type(nest_domain_type), intent(inout) :: nest_domain
    type(nestSpec),         intent(inout) :: overlap
    integer,                intent(in   ) :: extra_halo
@@ -202,7 +202,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
    type(overlap_type), allocatable :: overlapList(:)
    logical              :: is_first
    integer              :: tile_fine, tile_coarse
-   integer              :: istart_fine, iend_fine, jstart_fine, jend_fine                  
+   integer              :: istart_fine, iend_fine, jstart_fine, jend_fine
    integer              :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
    integer              :: whalo, ehalo, shalo, nhalo
    integer              :: npes, npes_fine, npes_coarse, n, m
@@ -270,7 +270,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
       overlap%xbegin = isc_coarse - domain_coarse%whalo
       overlap%xend   = iec_coarse + domain_coarse%ehalo
       overlap%ybegin = jsc_coarse - domain_coarse%shalo
-      overlap%yend   = jec_coarse + domain_coarse%nhalo 
+      overlap%yend   = jec_coarse + domain_coarse%nhalo
    else
       overlap%xbegin = isc_fine - domain_fine%whalo
       overlap%xend   = iec_fine + domain_fine%ehalo
@@ -291,11 +291,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
    call init_index_type(overlap%north)
 
    !--- first compute the halo region and corresponding index in coarse grid.
-   if( nest_domain%is_fine_pe ) then 
+   if( nest_domain%is_fine_pe ) then
       if( ieg_fine == iec_fine .AND. domain_fine%tile_id(1) == tile_fine ) then   ! east halo
          is_coarse = iend_coarse
          ie_coarse = iend_coarse + ehalo
-         js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine  
+         js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine
          je_coarse = jstart_coarse + ( jec_fine - jsg_fine )/y_refine
          js_coarse = js_coarse - shalo
          je_coarse = je_coarse + nhalo
@@ -311,8 +311,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
       endif
 
       if( jsg_fine == jsc_fine .AND. domain_fine%tile_id(1) == tile_fine) then  ! south
-         is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine  
-         ie_coarse = istart_coarse + ( iec_fine - isg_fine )/x_refine 
+         is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine
+         ie_coarse = istart_coarse + ( iec_fine - isg_fine )/x_refine
          is_coarse = is_coarse - whalo
          ie_coarse = ie_coarse + ehalo
          js_coarse = jstart_coarse - shalo
@@ -324,13 +324,13 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
          overlap%south%is_you = is_coarse
          overlap%south%ie_you = ie_coarse
          overlap%south%js_you = js_coarse
-         overlap%south%je_you = je_coarse      
+         overlap%south%je_you = je_coarse
       endif
 
       if( isg_fine == isc_fine .AND. domain_fine%tile_id(1) == tile_fine) then ! west
          is_coarse = istart_coarse - whalo
-         ie_coarse = istart_coarse 
-         js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine  
+         ie_coarse = istart_coarse
+         js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine
          je_coarse = jstart_coarse + ( jec_fine - jsg_fine )/y_refine
          js_coarse = js_coarse - shalo
          je_coarse = je_coarse + nhalo
@@ -345,7 +345,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
       endif
 
       if( jeg_fine == jec_fine .AND. domain_fine%tile_id(1) == tile_fine) then ! north
-         is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine 
+         is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine
          ie_coarse = istart_coarse + ( iec_fine - isg_fine )/x_refine
          is_coarse = is_coarse - whalo
          ie_coarse = ie_coarse + ehalo
@@ -359,18 +359,18 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
          overlap%north%ie_you = ie_coarse
          overlap%north%js_you = js_coarse
          overlap%north%je_you = je_coarse
-      endif   
+      endif
 
       allocate(overLaplist(npes_coarse))
 
       !-------------------------------------------------------------------------
       !
-      !                 Receiving  
+      !                 Receiving
       !
       !-------------------------------------------------------------------------
       !--- loop through coarse pelist
       nrecv = 0
-      do n = 1, npes_coarse   
+      do n = 1, npes_coarse
          if( domain_coarse%list(n-1)%tile_id(1) .NE. tile_coarse ) cycle
          is_first = .true.
          !--- east halo receiving
@@ -478,11 +478,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
    endif
   !-----------------------------------------------------------------------
   !
-  !                          Sending 
+  !                          Sending
   !
   !-----------------------------------------------------------------------
 
-   if( nest_domain%is_coarse_pe ) then 
+   if( nest_domain%is_coarse_pe ) then
       nsend = 0
       if(domain_coarse%tile_id(1) == tile_coarse) then
          isc_east = iend_coarse
@@ -539,7 +539,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
             if( iec_east .GE. isc_east .AND. jec_east .GE. jsc_east ) then
                is_coarse = iend_coarse
                ie_coarse = iend_coarse + ehalo
-               js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine  
+               js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine
                je_coarse = jstart_coarse + ( jel_fine(n) - jsg_fine )/y_refine
                js_coarse = js_coarse - shalo
                je_coarse = je_coarse + nhalo
@@ -563,7 +563,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
          if( jsg_fine == jsl_fine(n) ) then
             dir = 3
             if( iec_south .GE. isc_south .AND. jec_south .GE. jsc_south ) then
-               is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine  
+               is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine
                ie_coarse = istart_coarse + ( iel_fine(n) - isg_fine )/x_refine
                is_coarse = is_coarse - shalo
                ie_coarse = ie_coarse + nhalo
@@ -591,7 +591,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
             if( iec_west .GE. isc_west .AND. jec_west .GE. jsc_west ) then
                is_coarse = istart_coarse - whalo
                ie_coarse = istart_coarse
-               js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine  
+               js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine
                je_coarse = jstart_coarse + ( jel_fine(n) - jsg_fine )/y_refine
                js_coarse = js_coarse - shalo
                je_coarse = je_coarse + nhalo
@@ -615,7 +615,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
          if( jeg_fine == jel_fine(n) ) then
             dir = 7
             if( iec_north .GE. isc_north .AND. jec_north .GE. jsc_north ) then
-               is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine  
+               is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine
                ie_coarse = istart_coarse + ( iel_fine(n) - isg_fine )/x_refine
                is_coarse = is_coarse - shalo
                ie_coarse = ie_coarse + nhalo
@@ -699,8 +699,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
 end subroutine compute_overlap_coarse_to_fine
 
 !###############################################################################
-!-- This routine will compute the send and recv information between overlapped nesting 
-!-- region. The data is assumed on T-cell center. 
+!-- This routine will compute the send and recv information between overlapped nesting
+!-- region. The data is assumed on T-cell center.
 subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
    type(nest_domain_type), intent(inout) :: nest_domain
    type(nestSpec),         intent(inout) :: overlap
@@ -783,12 +783,12 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
 
    !-----------------------------------------------------------------------------------------
    !
-   !    Sending From fine to coarse.  
+   !    Sending From fine to coarse.
    !    compute the send information from fine grid to coarse grid. This will only need to send
    !    the internal of fine grid to coarse grid.
-   !-----------------------------------------------------------------------------------------  
+   !-----------------------------------------------------------------------------------------
    nsend = 0
-   if( nest_domain%is_fine_pe ) then 
+   if( nest_domain%is_fine_pe ) then
       allocate(overLaplist(npes_coarse))
       do n = 1, npes_coarse
          if(domain_coarse%list(n-1)%tile_id(1) == tile_coarse) then
@@ -819,8 +819,8 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
       if(nsend > 0) then
          allocate(overlap%send(nsend))
          do n = 1, nsend
-            call copy_nest_overlap(overlap%send(n), overlaplist(n) )      
-            call deallocate_nest_overlap(overlaplist(n))  
+            call copy_nest_overlap(overlap%send(n), overlaplist(n) )
+            call deallocate_nest_overlap(overlaplist(n))
          enddo
       endif
       if(allocated(overlaplist))deallocate(overlaplist)
@@ -830,8 +830,8 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
    !   compute the recv information from fine grid to coarse grid. This will only need to send
    !   the internal of fine grid to coarse grid.
    !--------------------------------------------------------------------------------
-   
-   if( nest_domain%is_coarse_pe ) then 
+
+   if( nest_domain%is_coarse_pe ) then
       nrecv = 0
       if(domain_coarse%tile_id(1) == tile_coarse) then
          is_coarse = max( istart_coarse, isc_coarse )
@@ -868,7 +868,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
       if(nrecv > 0) then
          allocate(overlap%recv(nrecv))
          do n = 1, nrecv
-            call copy_nest_overlap(overlap%recv(n), overlaplist(n) )      
+            call copy_nest_overlap(overlap%recv(n), overlaplist(n) )
             call deallocate_nest_overlap( overLaplist(n) )
          enddo
       endif
@@ -957,11 +957,11 @@ end subroutine compute_overlap_fine_to_coarse
 !!$        call allocate_overlap_type(update_out%send(n), update_in%count, overlap_in%type)
 !!$        do m = 1, count
 !!$           update_out%send(n)%is      (count) = update_in%send(n)%is      (count)
-!!$           update_out%send(n)%ie      (count) = update_in%send(n)%ie      (count) + ishift  
+!!$           update_out%send(n)%ie      (count) = update_in%send(n)%ie      (count) + ishift
 !!$           update_out%send(n)%js      (count) = update_in%send(n)%js      (count)
-!!$           update_out%send(n)%je      (count) = update_in%send(n)%je      (count) + jshift    
+!!$           update_out%send(n)%je      (count) = update_in%send(n)%je      (count) + jshift
 !!$           update_out%send(n)%tileMe  (count) = update_in%send(n)%tileMe  (count)
-!!$           update_out%send(n)%dir     (count) = update_in%send(n)%dir     (count)    
+!!$           update_out%send(n)%dir     (count) = update_in%send(n)%dir     (count)
 !!$           update_out%send(n)%rotation(count) = update_in%send(n)%rotation(count)
 !!$        enddo
 !!$     enddo
@@ -975,11 +975,11 @@ end subroutine compute_overlap_fine_to_coarse
 !!$        call allocate_overlap_type(update_out%recv(n), update_in%count, overlap_in%type)
 !!$        do m = 1, count
 !!$           update_out%recv(n)%is      (count) = update_in%recv(n)%is      (count)
-!!$           update_out%recv(n)%ie      (count) = update_in%recv(n)%ie      (count) + ishift  
+!!$           update_out%recv(n)%ie      (count) = update_in%recv(n)%ie      (count) + ishift
 !!$           update_out%recv(n)%js      (count) = update_in%recv(n)%js      (count)
-!!$           update_out%recv(n)%je      (count) = update_in%recv(n)%je      (count) + jshift    
+!!$           update_out%recv(n)%je      (count) = update_in%recv(n)%je      (count) + jshift
 !!$           update_out%recv(n)%tileMe  (count) = update_in%recv(n)%tileMe  (count)
-!!$           update_out%recv(n)%dir     (count) = update_in%recv(n)%dir     (count)    
+!!$           update_out%recv(n)%dir     (count) = update_in%recv(n)%dir     (count)
 !!$           update_out%recv(n)%rotation(count) = update_in%recv(n)%rotation(count)
 !!$        enddo
 !!$     enddo
@@ -988,7 +988,7 @@ end subroutine compute_overlap_fine_to_coarse
 !!$end subroutine set_overlap_fine_to_coarse
 
 
-!###############################################################################  
+!###############################################################################
 
 subroutine init_index_type (indexData )
    type(index_type), intent(inout) :: indexData
@@ -1017,9 +1017,9 @@ subroutine allocate_nest_overlap(overlap, count)
   allocate(overlap%ie          (count) )
   allocate(overlap%js          (count) )
   allocate(overlap%je          (count) )
-  allocate(overlap%dir         (count) ) 
-  allocate(overlap%rotation    (count) ) 
-  allocate(overlap%msgsize     (count) ) 
+  allocate(overlap%dir         (count) )
+  allocate(overlap%rotation    (count) )
+  allocate(overlap%msgsize     (count) )
 
 end subroutine allocate_nest_overlap
 
@@ -1277,5 +1277,3 @@ function search_C2F_nest_overlap(nest_domain, extra_halo, position)
      je_coarse = update%center%je_me
 
   end subroutine mpp_get_F2C_index
-
-

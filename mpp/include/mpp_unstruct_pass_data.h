@@ -71,7 +71,7 @@ SUBROUTINE mpp_pass_SG_to_UG_3D_(UG_domain, field_SG, field_UG)
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
         buffer_pos = buffer_pos + msgsize
      end if
-  end do 
+  end do
 
   !---pack and send data
   do m = 1, UG_domain%SG2UG%nsend
@@ -175,7 +175,7 @@ SUBROUTINE mpp_pass_UG_to_SG_3D_(UG_domain, field_UG, field_SG)
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
         buffer_pos = buffer_pos + msgsize
      end if
-  end do 
+  end do
 
   !---pack and send data
   do m = 1, UG_domain%UG2SG%nsend
@@ -211,7 +211,7 @@ SUBROUTINE mpp_pass_UG_to_SG_3D_(UG_domain, field_UG, field_SG)
         do l = 1, UG_domain%UG2SG%recv(m)%count
            pos = pos+1
            i = UG_domain%UG2SG%recv(m)%i(l)+ioff
-           j = UG_domain%UG2SG%recv(m)%j(l)+joff     
+           j = UG_domain%UG2SG%recv(m)%j(l)+joff
            field_SG(i,j,k) = buffer(pos)
         enddo
      enddo
@@ -221,6 +221,3 @@ SUBROUTINE mpp_pass_UG_to_SG_3D_(UG_domain, field_UG, field_SG)
   call mpp_sync_self( )
 
 end SUBROUTINE mpp_pass_UG_to_SG_3D_
-
-
-

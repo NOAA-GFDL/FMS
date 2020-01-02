@@ -21,7 +21,7 @@
           <a href="#NAMELIST">NAMELIST </a>~
           <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
           <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
-          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#REFERENCES">REFERENCES </a>~
           <a href="#NOTES">NOTES</a></font>
 <hr>
 <h2>Module diag_integral_mod</h2>
@@ -41,12 +41,12 @@
 <hr>
 <h4>OVERVIEW</h4>
 <!-- BEGIN OVERVIEW -->
-<p class="text">   diag_integral_mod computes and outputs global and / or 
+<p class="text">   diag_integral_mod computes and outputs global and / or
    hemispheric physics integrals. </p>
 <!-- END OVERVIEW -->
 <a name="DESCRIPTION"></a>
 <!-- BEGIN DESCRIPTION -->
-<div> 
+<div>
 </div>
 <br>
 <!-- END DESCRIPTION -->
@@ -95,7 +95,7 @@
 <dd>   Function to convert input time to a time_type </dd>
 <dt>
 <a href="#get_field_index">get_field_index</a>:</dt>
-<dd>   get_field_index returns returns the index associated with an 
+<dd>   get_field_index returns returns the index associated with an
    integral name. </dd>
 <dt>
 <a href="#write_field_averages">write_field_averages</a>:</dt>
@@ -115,11 +115,11 @@
    units and returns it in atime. </dd>
 <dt>
 <a href="#diag_integral_alarm">diag_integral_alarm</a>:</dt>
-<dd>   Function to check if it is time to write integrals. 
+<dd>   Function to check if it is time to write integrals.
    if not writing integrals, return. </dd>
 <dt>
 <a href="#vert_diag_integral">vert_diag_integral</a>:</dt>
-<dd>   Function to perform a weighted integral in the vertical 
+<dd>   Function to perform a weighted integral in the vertical
    direction of a 3d data field </dd>
 </dl>
 </div>
@@ -224,7 +224,7 @@
 <td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   field of integrands to be summed over <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is 
+<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is
    to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
@@ -256,7 +256,7 @@
 <td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   field of integrands to be summed over <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is 
+<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is
    to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
@@ -291,7 +291,7 @@
 <td valign="top" align="left"><tt>wt&nbsp;&nbsp;&nbsp;</tt></td><td>   the weight function to be evaluated at summation <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is 
+<td valign="top" align="left"><tt>is, js&nbsp;&nbsp;&nbsp;</tt></td><td>   starting i,j indices over which summation is
    to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
@@ -323,7 +323,7 @@
 <td valign="top" align="left"><tt>data&nbsp;&nbsp;&nbsp;</tt></td><td>   field of integrands to be summed over <br>&nbsp;&nbsp;&nbsp;<span class="type">[real]</span></td>
 </tr>
 <tr>
-<td valign="top" align="left"><tt>is, js, ie, je&nbsp;&nbsp;&nbsp;</tt></td><td>   starting/ending i,j indices over which summation is 
+<td valign="top" align="left"><tt>is, js, ie, je&nbsp;&nbsp;&nbsp;</tt></td><td>   starting/ending i,j indices over which summation is
    to occur <br>&nbsp;&nbsp;&nbsp;<span class="type">[integer]</span></td>
 </tr>
 </table>
@@ -418,7 +418,7 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   get_field_index returns returns the index associated with an 
+<dd>   get_field_index returns returns the index associated with an
    integral name. </dd>
 <br>
 <br>
@@ -551,7 +551,7 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Function to check if it is time to write integrals. 
+<dd>   Function to check if it is time to write integrals.
    if not writing integrals, return. </dd>
 <br>
 <br>
@@ -576,7 +576,7 @@
 <dt>
 <b>DESCRIPTION</b>
 </dt>
-<dd>   Function to perform a weighted integral in the vertical 
+<dd>   Function to perform a weighted integral in the vertical
    direction of a 3d data field </dd>
 <br>
 <br>

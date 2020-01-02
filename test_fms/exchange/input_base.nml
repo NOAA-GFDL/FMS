@@ -1,0 +1,15 @@
+&xgrid_nml
+  interp_method = 'second_order'
+  make_exchange_reproduce=.true.
+/
+
+&xgrid_test_nml
+  test_unstruct = .false.
+  atm_layout=2,2
+  lnd_layout= 2,2
+  ice_layout=12,3
+  nk_lnd = 14
+  nk_ice = 6
+  atm_field_name = 'depth'
+  test_unstruct = .true.
+/

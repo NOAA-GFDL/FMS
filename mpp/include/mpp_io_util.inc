@@ -692,10 +692,10 @@
         endif
 #endif
     endif
-	! If valid_range is the same type as scale_factor (actually the wider of
-	! scale_factor and add_offset) and this is wider than the external data, then it
-	! will be interpreted as being in the units of the internal (unpacked) data.
-	! Otherwise it is in the units of the external (packed) data.
+   ! If valid_range is the same type as scale_factor (actually the wider of
+   ! scale_factor and add_offset) and this is wider than the external data, then it
+   ! will be interpreted as being in the units of the internal (unpacked) data.
+   ! Otherwise it is in the units of the external (packed) data.
     ! Note that it is not relevant if we went through the missing_data of _FillValue
     ! brances, because in this case all irange, imin, and imax are less then 0
     if(.not.((valid_T == scale_T).and.(scale_T>f%type))) then

@@ -14,7 +14,7 @@ AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/field_manager
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = liboda_types.la libwrite_ocean_data.la	\
+noinst_LTLIBRARIES = liboda_types.la libwrite_ocean_data.la \
 liboda_core.la
 
 # Each convenience library depends on its source.
@@ -36,7 +36,7 @@ write_ocean_data.$(OBJEXT): oda_types_mod.mod
 oda_core.$(OBJEXT): oda_types_mod.mod write_ocean_data_mod.mod
 
 # Mod files are built and then installed as headers.
-MODFILES = oda_types_mod.mod write_ocean_data_mod.mod	\
+MODFILES = oda_types_mod.mod write_ocean_data_mod.mod \
 oda_core_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
