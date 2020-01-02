@@ -5,7 +5,11 @@
 AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
-AC_INIT([FMS], [2.0-development], [])
+AC_INIT([GFDL FMS Library],
+  [2020.01-dev],
+  [gfdl.climate.model.info@noaa.gov],
+  [FMS],
+  [https://www.gfdl.noaa.gov/fms])
 
 # Find out about the host we're building on.
 AC_CANONICAL_HOST
@@ -62,17 +66,12 @@ AC_PROG_FC
 # Find the install program.
 AC_PROG_INSTALL
 
-# Is bats installed? It is required for testing.
-AC_CHECK_PROGS([BATS], [bats])
-AM_CONDITIONAL([MAKE_CHECK_ENABLED], [test -n "$BATS"])
-if test -z "$BATS"; then
-   AC_MSG_WARN([Cannot find the bats utility. All checks will be disabled.])
-fi
-
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
-# C specific checks
+# Check if Linux gettid is avaiable
+AC_CHECK_FUNCS([gettid], [], [])
+
 AC_LANG_PUSH(C)
 if test $with_mpi = yes; then
   # Require MPI
@@ -212,6 +211,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
+        test_fms/test_common.sh
         test_fms/Makefile
         test_fms/diag_manager/Makefile
         test_fms/data_override/Makefile

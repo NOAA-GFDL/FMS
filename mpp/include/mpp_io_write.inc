@@ -766,8 +766,11 @@
       if( PRESENT(checksum) )     field%checksum(1:size(checksum)) = checksum(:)
 
       ! Issue warning if fill and missing are different
-      if ( (present(fill).and.present(missing)) .and. (field%missing .ne. field%fill) ) then
-         call mpp_error(WARNING, 'MPP_WRITE_META: NetCDF attributes _FillValue and missing_value should be equal.')
+      if (present(fill).and.present(missing)) then
+          if (field%missing .ne. field%fill) then
+              call mpp_error(WARNING, 'MPP_WRITE_META: NetCDF attributes &
+                      &_FillValue and missing_value should be equal.')
+          end if
       end if
 !pack is currently used only for netCDF
       field%pack = 2        !default write 32-bit floats
@@ -1099,8 +1102,8 @@
 #include <mpp_write_2Ddecomp.h>
 
 #ifdef OVERLOAD_R8
+#undef WRITE_RECORD_
 #define WRITE_RECORD_ write_record_r8
-#undef MPP_WRITE_2DDECOMP_2D_
 #undef MPP_WRITE_2DDECOMP_2D_
 #define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d_r8
 #undef MPP_WRITE_2DDECOMP_3D_

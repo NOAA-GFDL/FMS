@@ -3,16 +3,10 @@
 
 # uramirez, Ed Hartnett
 
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-             $(top_srcdir)/tap-driver.sh
-
-# Set srcdir as evironment variable to be reference in the job script
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)" builddir="$(top_builddir)"
-
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp \
--I${top_builddir}/fms -I${top_builddir}/constants \
--I${top_builddir}/exchange -I${top_builddir}/mosaic \
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
+-I${top_builddir}/fms -I${top_builddir}/constants		\
+-I${top_builddir}/exchange -I${top_builddir}/mosaic		\
 -I${top_builddir}/coupler
 
 # Link to FMS library.
@@ -25,10 +19,10 @@ check_PROGRAMS = test_xgrid
 test_xgrid_SOURCES = test_xgrid.F90
 
 # Run the test program.
-TESTS = test_xgrid.sh
+TESTS = test_xgrid2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_xgrid.sh input.nml test_xgrid.bats
+EXTRA_DIST = input_base.nml test_xgrid2.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc *.out
