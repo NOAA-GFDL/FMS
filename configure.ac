@@ -103,7 +103,7 @@ AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 
 # Check if the launcher can oversubscribe the MPI processes
-AS_IF([$MPI_LAUNCHER --version 2>&1 >/dev/null], \
+AS_IF([$MPI_LAUNCHER --oversubscribe 2>&1 >/dev/null], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
 
 # These files will be created when the configure script is run.
