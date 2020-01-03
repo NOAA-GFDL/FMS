@@ -1,5 +1,4 @@
-# This is an automake file for the test_fms directory of the FMS
-# package.
+# This is the automake file for the test_fms directory.
 # Ed Hartnett 9/20/2019
 
 # This directory stores libtool macros, put there by aclocal.

@@ -561,7 +561,7 @@ double spherical_angle(const double *v1, const double *v2, const double *v3)
 #error "SQRT_ Previously Defined"
 #endif  /* SQRT_ */
 #ifndef ABS_
-#define ABS_ fabs
+#define ABS_ fabsl
 #else
 #error "ABS_ Previously Defined"
 #endif  /* ABS_ */
