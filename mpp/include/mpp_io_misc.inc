@@ -183,11 +183,6 @@
 #endif
       endif
 
-#ifdef CRAYPVP
-!we require every file to be assigned threadwise: PVPs default to global, and are reset here
-      call ASSIGN( 'assign -P thread p:%', error )
-#endif
-
       call mpp_io_set_stack_size(131072) ! default initial value
       call mpp_sync()
       if( io_clocks_on )then
@@ -308,4 +303,3 @@
     logical function do_cf_compliance()
       do_cf_compliance = cf_compliance
     end function do_cf_compliance
-

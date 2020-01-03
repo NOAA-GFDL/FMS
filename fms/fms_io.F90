@@ -534,7 +534,6 @@ logical           :: fms_netcdf_restart  = .true.
 character(len=32) :: threading_read      = 'multi'
 character(len=32) :: format              = 'netcdf'
 logical           :: read_all_pe         = .TRUE.
-character(len=64) :: iospec_ieee32       = '-N ieee_32'
 integer           :: max_files_w         = 40
 integer           :: max_files_r         = 40
 integer           :: dr_set_size         = 10
@@ -545,7 +544,7 @@ logical           :: show_open_namelist_file_warning = .false.
 logical           :: debug_mask_list     = .false.
 logical           :: checksum_required   = .true.
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
-       threading_read, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
+       threading_read, format, read_all_pe, max_files_w,max_files_r, &
        read_data_bug, time_stamp_restart, print_chksum, show_open_namelist_file_warning, &
        debug_mask_list, checksum_required, dr_set_size
 
@@ -7351,15 +7350,9 @@ function open_ieee32_file (file, action) result (unit)
      call mpp_error (FATAL,'fms_io(open_ieee32_file): action should be either read or write in file'//trim(file))
   end select
 
-  if (iospec_ieee32(1:1) == ' ') then
-     call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
+  call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
           access=MPP_SEQUENTIAL, threading=MPP_SINGLE,    &
           nohdrs=.true. )
-  else
-     call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
-          access=MPP_SEQUENTIAL, threading=MPP_SINGLE,    &
-          nohdrs=.true., iospec=iospec_ieee32 )
-  endif
 end function open_ieee32_file
 ! </FUNCTION>
 
@@ -7689,7 +7682,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     if ( .not.do_ieee32 ) then
        call mpp_open ( unit, file, form=mpp_format, action=mpp_action, &
                        access=mpp_access, threading=mpp_thread,        &
-                       fileset=MPP_SINGLE,nohdrs=no_headers, recl=recl )
+                       fileset=MPP_SINGLE, nohdrs=no_headers, recl=recl )
     else
      ! special open for ieee32 file
      ! fms_mod has iospec value

@@ -303,7 +303,6 @@ PROGRAM test
     integer(INT_KIND)              :: stackmaxd = 500000                   !<Default size to which the mpp_domains stack will be set.
     logical(INT_KIND)              :: debug = .false.                      !<Flag to print debugging information.
     character(len=64)              :: test_file = "test_unstructured_grid" !<Base filename for the unit tests.
-    character(len=64)              :: iospec = '-F cachea'                 !<Something cray related ???
     integer(INT_KIND)              :: pack_size = 1                        !<(Number of bits in real(DOUBLE_KIND))/(Number of bits in real)
     integer(INT_KIND)              :: npes                                 !<Total number of ranks in the current pelist.
     integer(INT_KIND)              :: io_status                            !<Namelist read error code.
