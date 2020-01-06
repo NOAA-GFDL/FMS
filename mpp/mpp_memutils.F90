@@ -96,9 +96,9 @@ contains
 
 !#######################################################################
 
-!> \brief Return the memory high water mark
+!> \brief Return the memory high water mark in MiB
 !!
-!! Query the system for the memory high water mark.
+!! Query the system for the memory high water mark, return the result in MiB.
 subroutine mpp_mem_dump ( memuse )
   real, intent(out) :: memuse
 
