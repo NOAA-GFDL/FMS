@@ -24,10 +24,12 @@
  *          http://creativecommons.org/licenses/by/3.0/deed.en_US
  */
 
+/* Include headers common for Unix and Unix-like OSs.  __unix__ is defined on Linux OSs */
 #if defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
 #include <unistd.h>
 #include <sys/resource.h>
 
+/* Include specific headers for specific OS types */
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>
 
@@ -37,17 +39,20 @@
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
 #include <stdio.h>
-
+/* #endif for specific headers checks */
 #endif
 
 #else
-#error "Cannot define getPeakRSS( ) or getCurrentRSS( ) for an unknown OS."
+/* Not a Unix-like OS.  Not supported */
+#error "Cannot define getPeakRSS( ) for an unknown OS."
 #endif
 
-/* Ensure getpeakrss function has correct name mangling for being called from
+/* Ensure getpeakrss function has correct name mangling to be callable from
    Fortran.
-   The outer #ifdef FC_FUNC it for use with mkmf and other non-Autotools builds. */
-#ifdef FCFUNC
+   The outer #ifdef FC_FUNC / #else is to allow non-Autotool build systems (e.g.
+   mkmf) to still work.  In this case, the assumption is made based on how
+   our current compilers/systems mangle the name. */
+#ifdef FC_FUNC
 #define GETPEAKRSS_FC FC_FUNC (getpeakrss, GETPEAKRSS)
 #ifdef __cplusplus
 extern "C" /* prevent C++ name mangling */
@@ -77,7 +82,7 @@ size_t GETPEAKRSS_FC( )
     close( fd );
     return (size_t)(psinfo.pr_rssize * 1024L);
 
-#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__) || defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
+#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
     /* BSD, Linux, and OSX -------------------------------------- */
     struct rusage rusage;
     getrusage( RUSAGE_SELF, &rusage );
