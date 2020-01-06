@@ -115,7 +115,6 @@ AC_CONFIG_FILES([Makefile
         tracer_manager/Makefile
         topography/Makefile
         station_data/Makefile
-        oda_tools/Makefile
         mosaic/Makefile
         monin_obukhov/Makefile
         memutils/Makefile

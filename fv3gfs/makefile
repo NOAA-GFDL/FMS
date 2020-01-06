@@ -29,9 +29,6 @@ FFLAGS   += -I../include -I../mpp/include -I../fms
 
 SRCS_f   =
 
-SRCS_f90 = \
-		   ../oda_tools/xbt_drop_rate_adjust.f90
-
 SRCS_F   =
 
 SRCS_F90 = \
@@ -92,10 +89,6 @@ SRCS_F90 = \
          ../mpp/mpp_parameter.F90                                           \
          ../mpp/mpp_pset.F90                                                \
          ../mpp/mpp_utilities.F90                                           \
-         ../oda_tools/oda_core.F90                                          \
-         ../oda_tools/oda_core_ecda.F90                                     \
-         ../oda_tools/oda_types.F90                                         \
-         ../oda_tools/write_ocean_data.F90                                  \
          ../platform/platform.F90                                           \
          ../random_numbers/MersenneTwister.F90                              \
          ../random_numbers/random_numbers.F90                               \
