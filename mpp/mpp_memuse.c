@@ -77,7 +77,7 @@ size_t GETPEAKRSS_FC( )
     close( fd );
     return (size_t)(psinfo.pr_rssize * 1024L);
 
-#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
+#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__) || defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
     /* BSD, Linux, and OSX -------------------------------------- */
     struct rusage rusage;
     getrusage( RUSAGE_SELF, &rusage );
