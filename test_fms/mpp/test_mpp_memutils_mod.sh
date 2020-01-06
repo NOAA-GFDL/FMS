@@ -1,5 +1,7 @@
 #!/bin/sh
-
+#
+# author @underwoo
+#
 #***********************************************************************
 #                   GNU Lesser General Public License
 #
@@ -18,7 +20,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
-
+#
 # Script to test the mpp_memutils_mod Fortran module code.
 
 # Set common test settings
