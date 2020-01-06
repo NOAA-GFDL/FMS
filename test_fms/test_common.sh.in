@@ -1,0 +1,13 @@
+# This file is part of the GFDL FMS system. It defines some common
+# settings for a shell tests.
+
+# Ed Hartnett 11/26/19
+
+# Cause test shell scripts to exit and return error if any command
+# fails.
+set -e
+
+# Set the source and build top directories for use in test scripts.
+top_srcdir='@abs_top_srcdir@'
+top_buildir='@abs_top_builddir@'
+

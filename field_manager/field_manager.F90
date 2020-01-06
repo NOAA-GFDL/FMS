@@ -1193,7 +1193,7 @@ do i = 1, num_elem
   if (val_name(1:1) .eq. squote) then  !{
 
     if (val_name(length:length) .eq. squote) then
-      val_name = val_name(2:length-1)
+      val_name = val_name(2:length-1)//repeat(" ",len(val_name)-length+2)
       val_type = string_type
     elseif (val_name(length:length) .eq. dquote) then
       call mpp_error(FATAL, trim(error_header) // ' Quotes do not match in ' // trim(val_name) //       &

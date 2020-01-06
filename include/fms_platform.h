@@ -107,11 +107,13 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
 
 !If you want to use quad-precision.
+#if defined(QUAD_PRECISION) && defined(__PGI)
+#error "cannot define QUAD_PRECISION and use PGI compiler"
+#elif !defined(QUAD_PRECISION) && defined(__PGI)
 #define NO_QUAD_PRECISION
-#if defined(QUAD_PRECISION) && !defined(__PGI)
-#undef NO_QUAD_PRECISION
-#else
 #define QUAD_KIND DOUBLE_KIND
+#else
+#undef NO_QUAD_PRECISION
 #endif
 
 
