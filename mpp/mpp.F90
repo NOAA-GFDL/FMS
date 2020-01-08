@@ -582,6 +582,8 @@ private
       module procedure mpp_type_create_int8
       module procedure mpp_type_create_real4
       module procedure mpp_type_create_real8
+      module procedure mpp_type_create_cmplx4
+      module procedure mpp_type_create_cmplx8
       module procedure mpp_type_create_logical4
       module procedure mpp_type_create_logical8
   end interface mpp_type_create
@@ -823,18 +825,24 @@ private
      module procedure mpp_alltoall_int8
      module procedure mpp_alltoall_real4
      module procedure mpp_alltoall_real8
+     module procedure mpp_alltoall_cmplx4
+     module procedure mpp_alltoall_cmplx8
      module procedure mpp_alltoall_logical4
      module procedure mpp_alltoall_logical8
      module procedure mpp_alltoall_int4_v
      module procedure mpp_alltoall_int8_v
      module procedure mpp_alltoall_real4_v
      module procedure mpp_alltoall_real8_v
+     module procedure mpp_alltoall_cmplx4_v
+     module procedure mpp_alltoall_cmplx8_v
      module procedure mpp_alltoall_logical4_v
      module procedure mpp_alltoall_logical8_v
      module procedure mpp_alltoall_int4_w
      module procedure mpp_alltoall_int8_w
      module procedure mpp_alltoall_real4_w
      module procedure mpp_alltoall_real8_w
+     module procedure mpp_alltoall_cmplx4_w
+     module procedure mpp_alltoall_cmplx8_w
      module procedure mpp_alltoall_logical4_w
      module procedure mpp_alltoall_logical8_w
   end interface
