@@ -32,7 +32,7 @@
 /block_control   @bensonr
 /data_override   @GFDL-Eric
 /diag_manager    @thomas-robinson @underwoo
-/fv2gfs          @bensonr
+/fv3gfs          @bensonr
 /libFMS          @underwoo
 
 # GNU autotools files
