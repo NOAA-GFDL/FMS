@@ -1,6 +1,5 @@
 # This is an automake file for the test_fms/diag_manager directory of the FMS
 # package.
-
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.

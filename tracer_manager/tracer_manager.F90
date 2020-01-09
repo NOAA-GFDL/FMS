@@ -70,11 +70,6 @@ use           mpp_mod, only : mpp_error,          &
                               WARNING,            &
                               NOTE,               &
                               stdlog
-use        mpp_io_mod, only : mpp_open,           &
-                              mpp_close,          &
-                              MPP_ASCII,          &
-                              MPP_APPEND,         &
-                              MPP_RDONLY
 use           fms_mod, only : lowercase,          &
                               write_version_number
 

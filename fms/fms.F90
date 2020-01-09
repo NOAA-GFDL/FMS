@@ -139,7 +139,8 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL,    &
                              mpp_set_stack_size,                 &
                              stdin, stdout, stderr, stdlog,      &
                              mpp_error_state, lowercase,         &
-                             uppercase, mpp_broadcast, input_nml_file
+                             uppercase, mpp_broadcast, input_nml_file, &
+                             get_unit, read_input_nml
 
 use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_update_domains, GLOBAL_DATA_DOMAIN, &
@@ -201,7 +202,8 @@ public :: mpp_error, NOTE, WARNING, FATAL, &
           mpp_error_state,                 &
           mpp_pe, mpp_npes, mpp_root_pe,   &
           stdin, stdout, stderr, stdlog,   &
-          mpp_chksum
+          mpp_chksum, get_unit, read_input_nml
+public :: input_nml_file
 public :: mpp_clock_id, mpp_clock_begin, mpp_clock_end
 public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &

@@ -35,6 +35,7 @@ MODULE diag_axis_mod
 
   USE mpp_domains_mod, ONLY: domainUG, domain1d, domain2d, mpp_get_compute_domain,&
        & mpp_get_domain_components, null_domain1d, null_domain2d, null_domainUG,&
+       & NORTH, EAST, CENTER, &
        & OPERATOR(.NE.), mpp_get_global_domain, mpp_get_domain_name
   USE fms_mod, ONLY: error_mesg, write_version_number, lowercase, uppercase,&
        & fms_error_handler, FATAL, NOTE
@@ -153,7 +154,7 @@ CONTAINS
   !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
-       & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count)
+       & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, pos)
     CHARACTER(len=*), INTENT(in) :: name
     REAL, DIMENSION(:), INTENT(in) :: DATA
     CHARACTER(len=*), INTENT(in) :: units
@@ -165,6 +166,8 @@ CONTAINS
     TYPE(domainUG), INTENT(in), OPTIONAL :: DomainU
     CHARACTER(len=*), INTENT(in), OPTIONAL :: aux, req
     INTEGER, INTENT(in), OPTIONAL :: tile_count
+    INTEGER, INTENT(in), OPTIONAL :: pos
+
 
     TYPE(domain1d) :: domain_x, domain_y
     INTEGER :: ierr, axlen
@@ -255,7 +258,7 @@ CONTAINS
        Axes(diag_axis_init)%cart_name = TRIM(uppercase(cart_name))
     ELSE
        ! <ERROR STATUS="FATAL">Invalid cart_name name.</ERROR>
-       CALL error_mesg('diag_axis_mod::diag_axis_init', 'Invalid cart_name name.', FATAL)
+       CALL error_mesg('diag_axis_mod::diag_axis_init', 'Invalid cart_name name. '//TRIM(uppercase(cart_name)), FATAL)
     END IF
 
     !---- allocate storage for coordinate values of axis ----
@@ -296,7 +299,16 @@ CONTAINS
     ELSE
        Axes(diag_axis_init)%req = 'none'
     END IF
-
+    IF ( PRESENT(pos) ) THEN
+       if (pos == NORTH .or. pos == EAST .or. pos == CENTER) then
+          Axes(diag_axis_init)%pos = pos
+       else
+          CALL error_mesg('diag_axis_mod::diag_axis_init', "Position must be NORTH, EAST, or CENTER" ,&
+                         FATAL)
+       endif
+    ELSE
+       Axes(diag_axis_init)%pos = CENTER
+    END IF
 
     !---- axis direction (-1, 0, or +1) ----
     IF ( PRESENT(direction) )THEN
@@ -524,7 +536,7 @@ CONTAINS
   !     Array of coordinate values for this axis.
   !   </OUT>
   SUBROUTINE get_diag_axis(id, name, units, long_name, cart_name,&
-       & direction, edges, Domain, DomainU, DATA, num_attributes, attributes)
+       & direction, edges, Domain, DomainU, DATA, num_attributes, attributes, pos)
     CHARACTER(len=*), INTENT(out) :: name, units, long_name, cart_name
     INTEGER, INTENT(in) :: id
     TYPE(domain1d), INTENT(out) :: Domain
@@ -533,6 +545,7 @@ CONTAINS
     REAL, DIMENSION(:), INTENT(out) :: DATA
     INTEGER, INTENT(out), OPTIONAL :: num_attributes
     TYPE(diag_atttype), ALLOCATABLE, DIMENSION(:), INTENT(out), OPTIONAL :: attributes
+    INTEGER, INTENT(out), OPTIONAL :: pos
 
     INTEGER :: i, j, istat
 
@@ -545,6 +558,7 @@ CONTAINS
     edges     = Axes(id)%edges
     Domain    = Axes(id)%Domain
     DomainU   = Axes(id)%DomainUG
+    if (present(pos)) pos = Axes(id)%pos
     IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
