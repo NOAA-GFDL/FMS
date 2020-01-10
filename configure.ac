@@ -35,24 +35,18 @@ AC_ARG_ENABLE([mixed-mode],
 AS_IF([test ${enable_mixed_mode:-no} = no],
   [enable_mixed_mode=no],
   [enable_mixed_mode=yes])
-AC_ARG_WITH([mpi],
-  [AS_HELP_STRING([--with-mpi],
-    [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
-AS_IF([test ${with_mpi:-yes} = yes],
-  [with_mpi=yes],
-  [with_mpi=no])
-AC_ARG_WITH([openmp],
-  [AS_HELP_STRING([--with-openmp],
-    [Build with OpenMPI support. This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
-AS_IF([test ${with_openmp:-yes} = yes],
-  [with_openmp=yes],
-  [with_openmp=no])
 AC_ARG_ENABLE([setting-flags],
   [AS_HELP_STRING([--enable-setting-flags],
     [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
 AS_IF([test ${enable_setting_flags:-yes} = yes],
   [enable_setting_flags=yes],
   [enable_setting_flags=no])
+AC_ARG_WITH([mpi],
+  [AS_HELP_STRING([--with-mpi],
+    [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
+AS_IF([test ${with_mpi:-yes} = yes],
+  [with_mpi=yes],
+  [with_mpi=no])
 
 # Find the C compiler.
 AC_PROG_CC
@@ -62,15 +56,13 @@ AC_PROG_CPP
 
 # Find the Fortran compiler.
 AC_PROG_FC
+AC_FC_WRAPPERS
 
 # Find the install program.
 AC_PROG_INSTALL
 
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
-
-# Check if Linux gettid is avaiable
-AC_CHECK_FUNCS([gettid], [], [])
 
 AC_LANG_PUSH(C)
 if test $with_mpi = yes; then
@@ -85,10 +77,14 @@ fi
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
-if test $with_openmp = yes && test $enable_setting_flags = yes; then
-  # Check if the compiler needs special OpenMP flags
-  AC_OPENMP()
-fi
+# Check if Linux gettid is avaiable
+AC_CHECK_FUNCS([gettid], [], [])
+
+# Check if Linux sched_getaffinity is available
+AC_CHECK_FUNCS([sched_getaffinity], [], [])
+
+# Check if the compiler needs special OpenMP flags
+AC_OPENMP()
 AC_LANG_POP(C)
 
 # Fortran specific checks
@@ -117,10 +113,9 @@ GX_FC_QUAD_PRECISION()
 # Check if Fortran compiler supports reading namelists from internal files
 GX_FC_INTERNAL_FILE_NML()
 
-if test $with_openmp = yes && test $enable_setting_flags = yes; then
-  # Check if the compiler needs special OpenMP flags
-  AC_OPENMP()
-fi
+# Check if the compiler needs special OpenMP flags
+AC_OPENMP()
+
 AC_LANG_POP(Fortran)
 
 # We passed all the tests.  Set the required defines.
@@ -166,11 +161,6 @@ if test $enable_setting_flags = yes; then
   fi
 fi
 
-# Settings based on the system and hardware
-# Define __APPLE__ macro if on a Apple/Mac OS X
-AS_IF([test "x$target_vendor" = "xapple"], [AC_DEFINE([__APPLE__], [ ])])
-# Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
-AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
@@ -184,13 +174,13 @@ AC_CONFIG_FILES([Makefile
         constants/Makefile
         platform/Makefile
         fms/Makefile
+        fms2_io/Makefile
+        fms2_io/include/Makefile
         mpp/Makefile
         mpp/include/Makefile
         tridiagonal/Makefile
         tracer_manager/Makefile
         topography/Makefile
-        station_data/Makefile
-        oda_tools/Makefile
         mosaic/Makefile
         monin_obukhov/Makefile
         memutils/Makefile
@@ -219,6 +209,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/monin_obukhov/Makefile
         test_fms/drifters/Makefile
         test_fms/interpolator/Makefile
+        test_fms/fms2_io/Makefile
         test_fms/fms/Makefile
         test_fms/mpp/Makefile
         test_fms/mpp_io/Makefile

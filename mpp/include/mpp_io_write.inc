@@ -1563,3 +1563,91 @@
 
       return
     end subroutine mpp_modify_field_meta
+
+
+!> \brief Fills in a fieldtype variable, and is used with the diag_manager when using 
+!! fms2_io
+    subroutine fillin_fieldtype(field, axes, name, units, longname,&
+         min, max, missing, fill, scale, add, pack, time_method, standard_name, checksum)
+!define field: must have already called mpp_write_meta(axis) for each axis
+      type(fieldtype), intent(inout) :: field
+      type(axistype), intent(in) :: axes(:)
+      character(len=*), intent(in) :: name, units, longname
+      real, intent(in), optional :: min, max, missing, fill, scale, add
+      integer, intent(in), optional :: pack
+      character(len=*), intent(in), optional :: time_method
+      character(len=*), intent(in), optional :: standard_name
+      integer(LONG_KIND), dimension(:), intent(in), optional :: checksum
+!this array is required because of f77 binding on netCDF interface
+      integer, allocatable :: axis_id(:)
+      real :: a, b
+      integer :: i, istat, ishift, jshift
+      character(len=64) :: checksum_char
+
+!      call mpp_clock_begin(mpp_write_clock)
+
+      !--- figure out the location of data, this is needed in mpp_write.
+      !--- for NON-symmetry domain, the position is not an issue.
+      !--- we may need to rethink how to address the symmetric issue.
+      ishift = 0; jshift = 0
+      do i = 1, size(axes(:))
+         select case ( lowercase( axes(i)%cartesian ) )
+         case ( 'x' )
+            ishift = axes(i)%shift
+         case ( 'y' )
+            jshift = axes(i)%shift
+         end select
+      end do
+
+      field%position = CENTER
+      if(ishift == 1 .AND. jshift == 1) then
+         field%position = CORNER
+      else if(ishift == 1) then
+         field%position = EAST
+      else if(jshift == 1) then
+         field%position = NORTH
+      endif
+
+!pre-existing pointers need to be nullified
+      if( ASSOCIATED(field%axes) ) DEALLOCATE(field%axes, stat=istat)
+      if( ASSOCIATED(field%size) ) DEALLOCATE(field%size, stat=istat)
+!fill in field metadata
+      field%name = name
+      field%units = units
+      field%longname = longname
+      allocate( field%axes(size(axes(:))) )
+      field%axes = axes
+      field%ndim = size(axes(:))
+      field%time_axis_index = -1 !this value will never match any axis index
+!size is buffer area for the corresponding axis info: it is required to buffer this info in the fieldtype
+!because axis might be reused in different files
+      allocate( field%size(size(axes(:))) )
+      do i = 1,size(axes(:))
+         if( ASSOCIATED(axes(i)%data) )then !space axis
+             field%size(i) = size(axes(i)%data(:))
+         else               !time
+             field%size(i) = 1
+             field%time_axis_index = i
+         end if
+      end do
+!attributes
+      if( PRESENT(min) )          field%min           = min
+      if( PRESENT(max) )          field%max           = max
+      if( PRESENT(scale) )        field%scale         = scale
+      if( PRESENT(add) )          field%add           = add
+      if( PRESENT(standard_name)) field%standard_name = standard_name
+      if( PRESENT(missing) )      field%missing       = missing
+      if( PRESENT(fill) )         field%fill          = fill
+      field%checksum      = 0
+      if( PRESENT(checksum) )     field%checksum(1:size(checksum)) = checksum(:)
+
+      ! Issue warning if fill and missing are different
+      if ( (present(fill).and.present(missing)) .and. (field%missing .ne. field%fill) ) then
+         call mpp_error(WARNING, 'MPP_WRITE_META: NetCDF attributes _FillValue and missing_value should be equal.')
+      end if
+!pack is currently used only for netCDF
+      field%pack = 2        !default write 32-bit floats
+      if( PRESENT(pack) )field%pack = pack
+
+      return
+    end subroutine fillin_fieldtype

@@ -13,6 +13,8 @@ AM_CPPFLAGS += -I${top_builddir}/time_interp
 AM_CPPFLAGS += -I${top_builddir}/time_manager
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/axis_utils
+AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS += -I${top_builddir}/mosaic
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libdata_override.la

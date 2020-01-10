@@ -28,20 +28,20 @@ program xgrid_test
   use mpp_domains_mod, only : mpp_define_mosaic_pelist, mpp_define_mosaic, mpp_global_sum
   use mpp_domains_mod, only : mpp_get_data_domain, mpp_get_global_domain, mpp_update_domains
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_ug_compute_domain
-  use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug
-  use mpp_io_mod,      only : mpp_open, MPP_RDONLY,MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_close
-  use mpp_io_mod,      only : mpp_get_att_value
-  use fms_mod,         only : fms_init, file_exist, field_exist, field_size, open_namelist_file
-  use fms_mod,         only : check_nml_error, close_file, read_data, stdout, fms_end
-  use fms_mod,         only : get_mosaic_tile_grid, write_data, set_domain
-  use fms_io_mod,      only : fms_io_exit, nullify_domain, set_domain
+  use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug, mpp_define_io_domain
+  use fms_mod,         only : fms_init
+  use fms_mod,         only : check_nml_error, stdout, fms_end
+  use fms_io_mod,      only : fms_io_exit
+  use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file
+  use fms2_io_mod,     only : read_data, write_data, variable_exists, get_dimension_size
+  use fms2_io_mod,     only : get_variable_size
   use constants_mod,   only : DEG_TO_RAD
   use xgrid_mod,       only : xgrid_init, setup_xmap, put_to_xgrid, get_from_xgrid
   use xgrid_mod,       only : xmap_type, xgrid_count, grid_box_type, SECOND_ORDER
   use xgrid_mod,       only : get_xmap_grid_area, set_frac_area
   use xgrid_mod,       only : get_from_xgrid_ug, put_to_xgrid_ug
-  use mosaic_mod,      only : get_mosaic_ntiles, get_mosaic_grid_sizes
-  use mosaic_mod,      only : get_mosaic_ncontacts, get_mosaic_contact
+  use mosaic2_mod,     only : get_mosaic_ntiles, get_mosaic_grid_sizes
+  use mosaic2_mod,     only : get_mosaic_ncontacts, get_mosaic_contact, get_mosaic_tile_grid
   use grid_mod,        only : get_grid_comp_area
   use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
@@ -80,7 +80,8 @@ implicit none
 
   integer              :: remap_method
   integer              :: pe, npes, ierr, nml_unit, io, n
-  integer              :: siz(4), ntile_lnd, ntile_atm, ntile_ice, ncontact
+  integer              :: ntile_lnd, ntile_atm, ntile_ice, ncontact
+  integer, allocatable :: siz(:)
   integer, allocatable :: layout(:,:), global_indices(:,:)
   integer, allocatable :: atm_nx(:), atm_ny(:), ice_nx(:), ice_ny(:), lnd_nx(:), lnd_ny(:)
   integer, allocatable :: pe_start(:), pe_end(:), dummy(:)
@@ -124,6 +125,9 @@ implicit none
   integer, allocatable :: atm_pelist(:), ocn_pelist(:), ice_pelist(:), lnd_pelist(:)
   integer, allocatable :: atm_global_pelist(:), atm_nest_pelist(:)
   integer, allocatable :: tile_id(:)
+  type(FmsNetcdfFile_t)       :: gridfileobj, amosaicfileobj, lmosaicfileobj, imosaicfileobj
+  type(FmsNetcdfFile_t)       :: tilefileobj
+  type(FmsNetcdfDomainFile_t) :: atminputfileobj, runoffinputfileobj, outputfileobj
 
   call fms_init
 
@@ -136,20 +140,8 @@ implicit none
   pe       = mpp_pe()
   out_unit = stdout()
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, xgrid_test_nml, iostat=io)
-      ierr = check_nml_error(io, 'xgrid_test_nml')
-#else
-  if (file_exist('input.nml')) then
-     ierr=1
-     nml_unit = open_namelist_file()
-     do while (ierr /= 0)
-        read(nml_unit, nml=xgrid_test_nml, iostat=io, end=10)
-        ierr = check_nml_error(io, 'xgrid_test_nml')
-     enddo
-10   call close_file(nml_unit)
-  endif
-#endif
+  read (input_nml_file, xgrid_test_nml, iostat=io)
+  ierr = check_nml_error(io, 'xgrid_test_nml')
 
   !--- get ensemble size
   ens_siz = get_ensemble_size()
@@ -210,18 +202,23 @@ implicit none
   ntile_ice = 1
   ntile_lnd = 1
 
-  if(field_exist(grid_file, "AREA_ATM" ) ) then
+  if(.not. open_file(gridfileobj, grid_file, 'read' )) then
+     call mpp_error(FATAL, 'test_xgrid: Error in opening grid_file '//trim(grid_file), FATAL)
+  endif
+
+  if(variable_exists(gridfileobj, "AREA_ATM" ) ) then
      if( atm_nest_npes > 0 ) call mpp_error(FATAL,  &
            'xgrid_test: nested atmosphere model is only supported for mosaic grid')
      allocate(atm_nx(1), atm_ny(1))
      allocate(lnd_nx(1), lnd_ny(1))
      allocate(ice_nx(1), ice_ny(1))
-     call field_size(grid_file, "AREA_ATM", siz )
-     atm_nx = siz(1); atm_ny = siz(2)
-     call field_size(grid_file, "AREA_OCN", siz )
-     ice_nx = siz(1); ice_ny = siz(2)
-     call field_size(grid_file, "AREA_LND", siz )
-     lnd_nx = siz(1); lnd_ny = siz(2)
+     call get_dimension_size(gridfileobj, 'xta', atm_nx(1))
+     call get_dimension_size(gridfileobj, 'yta', atm_ny(1))
+     call get_dimension_size(gridfileobj, 'xto', ice_nx(1))
+     call get_dimension_size(gridfileobj, 'yto', ice_ny(1))
+     call get_dimension_size(gridfileobj, 'xtl', lnd_nx(1))
+     call get_dimension_size(gridfileobj, 'ytl', lnd_ny(1))
+
      if( atm_layout(1)*atm_layout(2) .NE. npes ) then
         call mpp_define_layout( (/1,atm_nx,1,atm_ny/), npes, atm_layout)
      endif
@@ -234,34 +231,45 @@ implicit none
         call mpp_define_layout( (/1,ice_nx,1,ice_ny/), npes, ice_layout)
      endif
      call mpp_define_domains( (/1,ice_nx,1,ice_ny/), ice_layout, Ice_domain, name="Ice")
-  else if (field_exist(grid_file, "atm_mosaic" ) ) then
-     !--- Get the mosaic data of each component model
-     call read_data(grid_file, 'atm_mosaic', atm_mosaic)
-     call read_data(grid_file, 'lnd_mosaic', lnd_mosaic)
-     call read_data(grid_file, 'ocn_mosaic', ocn_mosaic)
+
+  else if (variable_exists(gridfileobj, "atm_mosaic" ) ) then
+     !--- Get the mosaic data of each component model 
+     call read_data(gridfileobj, 'atm_mosaic', atm_mosaic)
+     call read_data(gridfileobj, 'lnd_mosaic', lnd_mosaic)
+     call read_data(gridfileobj, 'ocn_mosaic', ocn_mosaic)
+
      atm_mosaic_file = 'INPUT/'//trim(atm_mosaic)//'.nc'
      lnd_mosaic_file = 'INPUT/'//trim(lnd_mosaic)//'.nc'
      ocn_mosaic_file = 'INPUT/'//trim(ocn_mosaic)//'.nc'
 
-     ntile_lnd = get_mosaic_ntiles(lnd_mosaic_file);
-     ntile_ice = get_mosaic_ntiles(ocn_mosaic_file);
-     ntile_atm = get_mosaic_ntiles(atm_mosaic_file);
+     if(.not. open_file(amosaicfileobj, atm_mosaic_file, 'read' )) then
+        call mpp_error(FATAL, 'test_xgrid: Error in opening atm_mosaic_file '//trim(atm_mosaic_file), FATAL)
+     endif
+     ntile_atm = get_mosaic_ntiles(amosaicfileobj);
+     allocate(atm_nx(ntile_atm), atm_ny(ntile_atm))
+     call get_mosaic_grid_sizes(amosaicfileobj, atm_nx, atm_ny)
 
+     if(.not. open_file(imosaicfileobj, ocn_mosaic_file, 'read' )) then
+        call mpp_error(FATAL, 'test_xgrid: Error in opening ocn_mosaic_file '//trim(ocn_mosaic_file), FATAL)
+     endif
+     ntile_ice = get_mosaic_ntiles(imosaicfileobj);
      if(ntile_ice > 1) call mpp_error(FATAL,  &
            'xgrid_test: there is more than one tile in ocn_mosaic, which is not implemented yet')
+     allocate(ice_nx(ntile_ice), ice_ny(ntile_ice))
+     call get_mosaic_grid_sizes(imosaicfileobj, ice_nx, ice_ny)
+
+     if(.not. open_file(lmosaicfileobj, lnd_mosaic_file, 'read' )) then
+        call mpp_error(FATAL, 'test_xgrid: Error in opening lnd_mosaic_file '//trim(lnd_mosaic_file), FATAL)
+     endif
+     ntile_lnd = get_mosaic_ntiles(lmosaicfileobj);
+     allocate(lnd_nx(ntile_lnd), lnd_ny(ntile_lnd))
+     call get_mosaic_grid_sizes(lmosaicfileobj, lnd_nx, lnd_ny)
 
      write(out_unit,*)" There is ", ntile_atm, " tiles in atmos mosaic"
      write(out_unit,*)" There is ", ntile_lnd, " tiles in land  mosaic"
      write(out_unit,*)" There is ", ntile_ice, " tiles in ocean mosaic"
-     allocate(atm_nx(ntile_atm), atm_ny(ntile_atm))
-     allocate(lnd_nx(ntile_lnd), lnd_ny(ntile_lnd))
-     allocate(ice_nx(ntile_ice), ice_ny(ntile_ice))
 
-     call get_mosaic_grid_sizes(atm_mosaic_file, atm_nx, atm_ny)
-     call get_mosaic_grid_sizes(lnd_mosaic_file, lnd_nx, lnd_ny)
-     call get_mosaic_grid_sizes(ocn_mosaic_file, ice_nx, ice_ny)
-
-     ncontact = get_mosaic_ncontacts(atm_mosaic_file)
+     ncontact = get_mosaic_ncontacts(amosaicfileobj)
 
      if(ncontact > 0) then
         allocate(tile1(ncontact),   tile2(ncontact) )
@@ -269,7 +277,7 @@ implicit none
         allocate(jstart1(ncontact), jend1(ncontact) )
         allocate(istart2(ncontact), iend2(ncontact) )
         allocate(jstart2(ncontact), jend2(ncontact) )
-        call get_mosaic_contact( atm_mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1, &
+        call get_mosaic_contact( amosaicfileobj, tile1, tile2, istart1, iend1, jstart1, jend1, &
                                  istart2, iend2, jstart2, jend2)
      endif
 
@@ -316,6 +324,7 @@ implicit none
                                jstart2(1:ncontact_global), jend2(1:ncontact_global),                  &
                                pe_start, pe_end, whalo=1, ehalo=1, shalo=1, nhalo=1,                  &
                                tile_id=tile_id, name="atmosphere")
+        call mpp_define_io_domain(Atm_domain, (/1,1/))
         deallocate( pe_start, pe_end, global_indices, layout, tile_id )
      endif
      if( atm_nest_pe ) then
@@ -339,6 +348,8 @@ implicit none
         call mpp_define_mosaic(global_indices, layout, Atm_domain, ntile_atm_nest, ncontact, dummy, dummy, &
                                dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, pe_start, pe_end, &
                                whalo=1, ehalo=1, shalo=1, nhalo=1, tile_id=tile_id, name="atmos nest")
+        call mpp_define_io_domain(Atm_domain, (/1,1/))
+
         deallocate( pe_start, pe_end, global_indices, layout, tile_id )
      endif
 
@@ -369,6 +380,8 @@ implicit none
 
         call mpp_define_mosaic(global_indices, layout, Lnd_domain, ntile_lnd, ncontact, dummy, dummy, &
              dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, pe_start, pe_end, tile_id=tile_id, name="land")
+        call mpp_define_io_domain(Lnd_domain, (/1,1/))
+
         deallocate( pe_start, pe_end, global_indices, layout, tile_id )
      endif
 
@@ -395,6 +408,8 @@ implicit none
 
         call mpp_define_mosaic(global_indices, layout, Ice_domain, ntile_ice, ncontact, dummy, dummy, &
              dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, pe_start, pe_end, tile_id=tile_id, name="Ice")
+        call mpp_define_io_domain(Ice_domain, (/1,1/))
+
         deallocate( pe_start, pe_end, global_indices, layout, tile_id )
      endif
   else
@@ -430,11 +445,17 @@ implicit none
         allocate(atm_grid%vlon(3,isc_atm:iec_atm,jsc_atm:jec_atm), atm_grid%vlat(3,isc_atm:iec_atm,jsc_atm:jec_atm) )
         allocate(atm_grid%area(isc_atm:iec_atm,jsc_atm:jec_atm) )
 
-        ! first get grid from grid file
-        call get_mosaic_tile_grid(tile_file, atm_mosaic_file, atm_domain)
+        ! first get grid from grid file 
+        call get_mosaic_tile_grid(tile_file, amosaicfileobj, atm_domain)
         allocate(tmpx(nxa*2+1, nya*2+1), tmpy(nxa*2+1, nya*2+1))
-        call read_data( tile_file, 'x', tmpx, no_domain=.true.)
-        call read_data( tile_file, 'y', tmpy, no_domain=.true.)
+        if(.not. open_file(tilefileobj, tile_file, 'read' )) then
+           call mpp_error(FATAL, 'test_xgrid: Error in opening tile_file '//trim(tile_file), FATAL)
+        endif
+
+        call read_data( tilefileobj, 'x', tmpx)
+        call read_data( tilefileobj, 'y', tmpy) 
+        call close_file(tilefileobj)
+
         xt = 0; yt = 0;
         do j = jsc_atm, jec_atm
            do i = isc_atm, iec_atm
@@ -459,6 +480,10 @@ implicit none
   end if
 
   call mpp_set_current_pelist()
+  call close_file(amosaicfileobj)
+  call close_file(imosaicfileobj)
+  call close_file(lmosaicfileobj)
+  call close_file(gridfileobj)
 
   !--- conservation check is done in setup_xmap.
   call setup_xmap(Xmap, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ice_domain, Lnd_domain /), grid_file, atm_grid)
@@ -501,17 +526,18 @@ implicit none
 
   deallocate(atm_nx, atm_ny, lnd_nx, lnd_ny, ice_nx, ice_ny)
 
-  !--- remap "realistic" data and write the output file when atmos_input_file does exist
-  atm_input_file_exist = file_exist(atm_input_file, domain=atm_domain)
+  !--- remap realistic data and write the output file when atmos_input_file does exist
+  atm_input_file_exist = open_file(atminputfileobj, atm_input_file, 'read', atm_domain)
+
   if( atm_input_file_exist ) then
      if(trim(atm_input_file) == trim(atm_output_file) ) call mpp_error(FATAL, &
           "test_xgrid: atm_input_file should have a different name from atm_output_file")
-     call field_size(atm_input_file, atm_field_name, siz, domain=Atm_domain )
+     call get_variable_size(atminputfileobj, atm_field_name, siz)
      if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(atm_field_name) &
             //" in file "//trim(atm_input_file) //" does not compabile with the grid size" )
      if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(atm_field_name) &
             //" in file "//trim(atm_input_file) //" should be no larger than 1")
-
+     deallocate(siz)
      allocate(atm_data_in (isc_atm:iec_atm, jsc_atm:jec_atm   ) )
      allocate(atm_data_out(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
      allocate(lnd_data_out(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd) )
@@ -535,7 +561,8 @@ implicit none
      atm_data_out_2 = 0
      atm_data_out_3 = 0
      ! test one time level should be sufficient
-     call read_data(atm_input_file, atm_field_name, atm_data_in, atm_domain)
+     call read_data(atminputfileobj, atm_field_name, atm_data_in)
+     call close_file(atminputfileobj)
      call put_to_xgrid(atm_data_in, 'ATM', x_1, Xmap, remap_method=remap_method)
      call put_to_xgrid(atm_data_in, 'ATM', x_2, Xmap, remap_method=remap_method, complete=.false.)
      call put_to_xgrid(atm_data_in, 'ATM', x_3, Xmap, remap_method=remap_method, complete=.false.)
@@ -563,10 +590,22 @@ implicit none
         call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_2 are not equal")
      if(ANY(atm_data_out .NE. atm_data_out_3)) &
         call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_3 are not equal")
+    
+     !--- write out data
+     if(.not. open_file(outputfileobj, atm_output_file, 'write', atm_domain) ) call mpp_error(FATAL, &
+           "test_xgrid: failed to open atm_output_file "//trim(atm_output_file) )
+     call write_data(outputfileobj, atm_field_name, atm_data_out)
+     call close_file(outputfileobj)
 
-     call write_data( atm_output_file, atm_field_name, atm_data_out, atm_domain)
-     call write_data( lnd_output_file, atm_field_name, lnd_data_out, lnd_domain)
-     call write_data( ice_output_file, atm_field_name, ice_data_out, Ice_domain)
+     if(.not. open_file(outputfileobj, lnd_output_file, 'write', lnd_domain) ) call mpp_error(FATAL, &
+           "test_xgrid: failed to open lnd_output_file "//trim(lnd_output_file) )
+     call write_data(outputfileobj, atm_field_name, lnd_data_out)
+     call close_file(outputfileobj)
+
+     if(.not. open_file(outputfileobj, ice_output_file, 'write', ice_domain) ) call mpp_error(FATAL, &
+           "test_xgrid: failed to open ice_output_file "//trim(ice_output_file) )
+     call write_data(outputfileobj, atm_field_name, ice_data_out)
+     call close_file(outputfileobj)
      !--- print out checksum
      write(out_unit,*) "chksum for atm_data_in",  mpp_chksum(atm_data_in)
      write(out_unit,*) "chksum for lnd_data_out", mpp_chksum(lnd_data_out)
@@ -621,13 +660,15 @@ implicit none
      write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."
   end if
 
-  runoff_input_file_exist = file_exist(runoff_input_file, domain=atm_domain)
+  runoff_input_file_exist = open_file(runoffinputfileobj, runoff_input_file, "read", lnd_domain)     
+
   if( runoff_input_file_exist ) then
      if( atm_nest_npes > 0 ) call mpp_error(FATAL, &
           "test_xgrid: runoff_input_file_exist should be false when atmos_nest_npes > 0")
      if(trim(runoff_input_file) == trim(runoff_output_file) ) call mpp_error(FATAL, &
           "test_xgrid: runoff_input_file should have a different name from runoff_output_file")
-     call field_size(runoff_input_file, runoff_field_name, siz )
+     call get_variable_size(runoffinputfileobj, runoff_field_name, siz )
+     deallocate(siz)
      if(siz(1) .NE. nxl .OR. siz(2) .NE. nyl ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(runoff_field_name) &
             //" in file "//trim(runoff_input_file) //" does not compabile with the grid size" )
      if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(runoff_field_name) &
@@ -641,10 +682,16 @@ implicit none
      runoff_data_in  = 0
      runoff_data_out = 0
      ! test one time level should be sufficient
-     call read_data(runoff_input_file, runoff_field_name, runoff_data_in, lnd_domain)
+     call read_data(runoffinputfileobj, runoff_field_name, runoff_data_in)
+     call close_file(runoffinputfileobj)
      call put_to_xgrid(runoff_data_in, 'LND', x_1, Xmap_runoff)
      call get_from_xgrid(runoff_data_out, 'OCN', x_1, xmap_runoff)
-     call write_data( runoff_output_file, runoff_field_name, runoff_data_out, ice_domain)
+
+     if(.not. open_file(outputfileobj, runoff_output_file, 'write', ice_domain) ) call mpp_error(FATAL, &
+           "test_xgrid: failed to open runoff_output_file "//trim(runoff_output_file) )
+     call write_data(outputfileobj, runoff_field_name, runoff_data_out)
+     call close_file(outputfileobj)
+
      ! conservation check
      allocate(lnd_area(isc_lnd:iec_lnd, jsc_lnd:jec_lnd ) )
      allocate(ice_area(isc_ice:iec_ice, jsc_ice:jec_ice ) )
@@ -750,7 +797,7 @@ contains
     if(mpp_pe() == mpp_root_pe() ) then
        allocate(rmask(nx,ny))
        !--- construct gmask.
-       call set_domain(Lnd_domain)
+!       call set_domain(Lnd_domain)
        do n = 1, ntiles
           rmask = 0
           call get_grid_comp_area('LND', n, rmask)
@@ -763,7 +810,7 @@ contains
           enddo
           npts_tile(n) = count(lmask(:,:,n))
        enddo
-       call nullify_domain()
+!       call nullify_domain()
        ntotal_land = sum(npts_tile)
        allocate(grid_index(ntotal_land))
        l = 0

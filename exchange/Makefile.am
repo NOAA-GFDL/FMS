@@ -11,6 +11,7 @@ AM_CPPFLAGS += -I${top_builddir}/time_manager
 AM_CPPFLAGS += -I${top_builddir}/diag_manager
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/mosaic
+AM_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libstock_constants.la libxgrid.la
