@@ -20,7 +20,9 @@
 # @uramirez, Ed Hartnett, @underwoo
 
 # Find the needed mod and inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp
+AM_CPPFLAGS = -I${top_srcdir}/include \
+  -I${top_builddir}/mpp \
+  -I${top_builddir}/affinity
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
