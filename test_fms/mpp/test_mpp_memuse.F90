@@ -29,10 +29,16 @@
 program test_mpp_memuse
 #include "../../include/fms_platform.h"
   implicit none
+
+  interface
+    integer(KIND=c_size_t) function getpeakrss() result(gp) bind(c, name="getpeakrss")
+      use, intrinsic :: iso_c_binding
+    end function getpeakrss
+  end interface
+
   ! Real to hold results from getpeakrss
   real :: memuse
 
-  integer(kind=LONG_KIND) :: getpeakrss !< Integer to _define_ getpearkrss, which is a C function
   integer(kind=INT_KIND) :: return_val = 0 !< Return value for the program
 
   ! Cast to real, this is how getpeakrss is called in mpp_memutils.F90

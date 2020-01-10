@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+
+!> Routines to initialize and report on memory usage during the model run.
 module mpp_memutils_mod
 
 #include "../include/fms_platform.h"
@@ -35,6 +37,7 @@ module mpp_memutils_mod
 contains
 
   !#######################################################################
+  !> Initialize the memory module, and record the initial memory use.
   subroutine mpp_memuse_begin
     if(memuse_started) then
        call mpp_error(FATAL, "mpp_memutils_mod: mpp_memuse_begin was already called")
@@ -45,10 +48,12 @@ contains
   end subroutine mpp_memuse_begin
 
   !#######################################################################
-  subroutine mpp_memuse_end( text, unit )
-
-    character(len=*), intent(in) :: text
-    integer, intent(in), optional :: unit
+  !> End the memory collection, and report on total memory used during the
+  !! execution of the model run.
+  subroutine mpp_memuse_end(text, unit)
+    character(len=*), intent(in) :: text !< Text to include in memory use statement
+    integer, intent(in), optional :: unit !< Fortran unit number where memory report should go.
+                                          !! Default is stderr.
     real    :: m, mmin, mmax, mavg, mstd, end_memuse
     integer :: mu
 
@@ -69,15 +74,15 @@ contains
          'Memory(MB) used in '//trim(text)//'=', mmin, mmax, mstd, mavg
 
     return
-
   end subroutine mpp_memuse_end
 
   !#######################################################################
-
-  subroutine mpp_print_memuse_stats( text, unit )
-
-    character(len=*), intent(in) :: text
-    integer, intent(in), optional :: unit
+  !> Print the current memory high water mark to stderr, or the unit
+  !! specified.
+  subroutine mpp_print_memuse_stats(text, unit)
+    character(len=*), intent(in) :: text !< Text to include in memory print statement
+    integer, intent(in), optional :: unit !< Fortran unit number where print statement should go.
+                                          !! Default is stderr.
     real :: m, mmin, mmax, mavg, mstd
     integer :: mu
 
@@ -94,24 +99,26 @@ contains
     return
   end subroutine mpp_print_memuse_stats
 
-!#######################################################################
+  !#######################################################################
 
-!> \brief Return the memory high water mark in MiB
-!!
-!! Query the system for the memory high water mark, return the result in MiB.
-subroutine mpp_mem_dump ( memuse )
-  real, intent(out) :: memuse
+  !> \brief Return the memory high water mark in MiB
+  !!
+  !! Query the system for the memory high water mark, return the result in MiB.
+  subroutine mpp_mem_dump(memuse)
+    real, intent(out) :: memuse !< Memory, high water mark, in MiB
 
-  ! getpeakrss is an external C function that return a size_t variable that
-  ! contains the max RSS memory size in Bytes
-  integer(kind=LONG_KIND) :: getpeakrss
-  ! Value of Bytes to Mebibytes
-  real, parameter :: B_to_MiB = 1048576.0
+    interface
+      integer(KIND=c_size_t) function getpeakrss() bind(c, name="getpeakrss")
+        use, intrinsic :: iso_c_binding
+      end function getpeakrss
+    end interface
 
-  ! Get the max memory use, convert to MiB
-  memuse = real(getpeakrss())/B_to_MiB
+    ! Value of Bytes to Mebibytes
+    real, parameter :: B_to_MiB = 1048576.0
 
-  return
-end subroutine mpp_mem_dump
+    ! Get the max memory use, convert to MiB
+    memuse = real(getpeakrss())/B_to_MiB
 
+    return
+  end subroutine mpp_mem_dump
 end module mpp_memutils_mod

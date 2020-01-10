@@ -17,8 +17,8 @@
  * License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
 
-/*
- * Author:  David Robert Nadeau
+/**
+ * \Author  David Robert Nadeau
  * Site:    http://NadeauSoftware.com/
  * License: Creative Commons Attribution 3.0 Unported License
  *          http://creativecommons.org/licenses/by/3.0/deed.en_US
@@ -47,26 +47,12 @@
 #error "Cannot define getPeakRSS( ) for an unknown OS."
 #endif
 
-/* Ensure getpeakrss function has correct name mangling to be callable from
-   Fortran.
-   The outer #ifdef FC_FUNC / #else is to allow non-Autotool build systems (e.g.
-   mkmf) to still work.  In this case, the assumption is made based on how
-   our current compilers/systems mangle the name. */
-#ifdef FC_FUNC
-#define GETPEAKRSS_FC FC_FUNC (getpeakrss, GETPEAKRSS)
-#ifdef __cplusplus
-extern "C" /* prevent C++ name mangling */
-#endif
-#else
-#define GETPEAKRSS_FC getpeakrss_
-#endif
-
-/*
+/**
  * Returns the peak (maximum so far) resident set size (physical
  * memory use) measured in bytes, or zero if the value cannot be
  * determined on this OS.
  */
-size_t GETPEAKRSS_FC( )
+size_t getpeakrss( )
 {
 #if (defined(_AIX) || defined(__TOS__AIX__)) || (defined(__sun__) || defined(__sun) || defined(sun) && (defined(__SVR4) || defined(__svr4__)))
     /* AIX and Solaris ------------------------------------------ */
