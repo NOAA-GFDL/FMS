@@ -87,7 +87,9 @@ program test
   use mpp_domains_mod,   only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod,   only : mpp_get_ug_global_domain, mpp_global_field_ug
   use mpp_memutils_mod,  only : mpp_memuse_begin, mpp_memuse_end
-#include "../../fms_platform.h"
+
+#include "../../include/fms_platform.h"
+
  implicit none
 
  integer                           :: stdoutunit
