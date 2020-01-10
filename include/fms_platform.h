@@ -107,10 +107,13 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
 
 !If you want to use quad-precision.
-#define NO_QUAD_PRECISION
-#if defined(QUAD_PRECISION) && !defined(__PGI)
+! The NO_QUAD_PRECISION macro will be deprecated and removed at some future time.
+! Model code will rely solely upon the ENABLE_QUAD_PRECISION macro thereafer.
+#if defined(ENABLE_QUAD_PRECISION) 
 #undef NO_QUAD_PRECISION
 #else
+#define NO_QUAD_PRECISION
+#undef QUAD_KIND
 #define QUAD_KIND DOUBLE_KIND
 #endif
 

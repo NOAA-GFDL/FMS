@@ -8,14 +8,17 @@ AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms
+AM_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libmosaic.la libgrid.la libgradient.la \
+
+noinst_LTLIBRARIES = libmosaic.la libmosaic2.la libgrid.la libgradient.la \
 libmosaic_c.la
 
 # Each convenience library depends on its source. Lump all the C code
 # into libmosaic_c.la.
 libmosaic_la_SOURCES = mosaic.F90
+libmosaic2_la_SOURCES = mosaic2.F90
 libgrid_la_SOURCES = grid.F90
 libgradient_la_SOURCES = gradient.F90
 libmosaic_c_la_SOURCES = create_xgrid.c gradient_c2l.c interp.c \
@@ -24,6 +27,7 @@ interp.h mosaic_util.h read_mosaic.h
 
 # Each mod file depends on the .o file.
 mosaic_mod.mod: mosaic.$(OBJEXT)
+mosaic2_mod.mod: mosaic2.$(OBJEXT)
 grid_mod.mod: grid.$(OBJEXT)
 gradient_mod.mod: gradient.$(OBJEXT)
 
@@ -31,7 +35,7 @@ gradient_mod.mod: gradient.$(OBJEXT)
 grid.$(OBJEXT): mosaic_mod.mod
 
 # Mod files are built and then installed as headers.
-MODFILES = mosaic_mod.mod grid_mod.mod gradient_mod.mod
+MODFILES = mosaic_mod.mod mosaic2_mod.mod grid_mod.mod gradient_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

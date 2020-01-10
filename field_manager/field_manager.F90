@@ -187,15 +187,12 @@ use    mpp_mod, only : mpp_error,   &
                        mpp_pe,      &
                        mpp_root_pe, &
                        stdlog,      &
-                       stdout
-use mpp_io_mod, only : mpp_io_init, &
-                       mpp_open,    &
-                       mpp_close,   &
-                       MPP_ASCII,   &
-                       MPP_RDONLY
+                       stdout,      &
+                       get_unit
+use mpp_io_mod, only : mpp_io_init
 use    fms_mod, only : lowercase,   &
-                       file_exist,  &
                        write_version_number
+use fms2_io_mod, only: file_exists
 
 implicit none
 private
@@ -630,6 +627,7 @@ integer                          :: m
 integer                          :: midcont
 integer                          :: model
 integer                          :: startcont
+integer                          :: io_status
 logical                          :: flag_method
 logical                          :: fm_success
 type(field_names_type_short)     :: text_names_short
@@ -665,7 +663,7 @@ else
    tbl_name = trim(table_name)
 endif
 
-if (.not. file_exist(trim(tbl_name))) then
+if (.not. file_exists(trim(tbl_name))) then
 !   <ERROR MSG="No field table available, so no fields are being registered." STATUS="NOTE">
 !      The field table does not exist.
 !   </ERROR>
@@ -679,8 +677,9 @@ if(present(nfields)) nfields = 0
 return
 endif
 
-
-call mpp_open(iunit,file=trim(tbl_name), form=MPP_ASCII, action=MPP_RDONLY)
+iunit = get_unit()
+open(iunit, file=trim(tbl_name), action='READ', iostat=io_status)
+if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in opening file '//trim(tbl_name))
 !write_version_number should precede all writes to stdlog from field_manager
 call write_version_number("FIELD_MANAGER_MOD", version)
 log_unit = stdlog()
@@ -1012,7 +1011,9 @@ do while (.TRUE.)
 enddo
 
 89 continue
-close(iunit)
+close(iunit, iostat=io_status)
+if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in closing file '//trim(tbl_name))
+
 
 if(present(nfields)) nfields = num_fields
 if (verb .gt. verb_level_warn) &
@@ -1193,7 +1194,7 @@ do i = 1, num_elem
   if (val_name(1:1) .eq. squote) then  !{
 
     if (val_name(length:length) .eq. squote) then
-      val_name = val_name(2:length-1)
+      val_name = val_name(2:length-1)//repeat(" ",len(val_name)-length+2)
       val_type = string_type
     elseif (val_name(length:length) .eq. dquote) then
       call mpp_error(FATAL, trim(error_header) // ' Quotes do not match in ' // trim(val_name) //       &

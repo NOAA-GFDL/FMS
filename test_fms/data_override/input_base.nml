@@ -1,0 +1,19 @@
+&test_data_override_nml
+nx_cubic = 90
+ny_cubic = 90
+nx_latlon = 144
+ny_latlon = 90
+test_num = <test_num>
+/
+
+&data_override_nml
+/
+
+&fms_nml
+  domains_stack_size=1000000
+/
+
+&mpp_io_nml
+  io_clocks_on = .true.
+/
+

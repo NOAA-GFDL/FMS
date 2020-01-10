@@ -53,7 +53,7 @@
 !!     <td> fms_mod </td>
 !!     <td> open_file, file_exist, error_mesg, open_namelist_file,
 !!          check_nml_error, fms_init, mpp_pe, mpp_root_pe, FATAL,
-!!          write_version_number, stdlog, close_file </td>
+!!          write_version_number, stdlog </td>
 !!   </tr>
 !!   <tr>
 !!     <td> constants_mod </td>
@@ -100,13 +100,14 @@ use time_manager_mod, only:  time_type, get_time, set_time,  &
                              operator(+),  operator(-),      &
                              operator(==), operator(>=),     &
                              operator(/=)
-use mpp_mod,          only:  input_nml_file
-use fms_mod,          only:  open_file, file_exist, error_mesg, &
-                             open_namelist_file, check_nml_error, &
+use mpp_mod,          only:  input_nml_file, get_unit
+use fms_mod,          only:  open_file, error_mesg, &
+                             check_nml_error, &
                              fms_init, &
                              mpp_pe, mpp_root_pe,&
                              FATAL, write_version_number, &
-                             stdlog, close_file
+                             stdlog
+use fms2_io_mod,      only:  file_exists
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init
 use ensemble_manager_mod, only : get_ensemble_id, get_ensemble_size
@@ -349,7 +350,7 @@ real,dimension(:,:), intent(in), optional :: blon, blat, area_in
 !       i,j
 !-------------------------------------------------------------------------------
       real    :: rsize
-      integer :: unit, io, ierr, nc, logunit
+      integer :: io, ierr, nc, logunit
       integer :: field_size_local
       real    :: sum_area_local
       integer :: ensemble_size(6)
@@ -377,18 +378,9 @@ real,dimension(:,:), intent(in), optional :: blon, blat, area_in
 !-------------------------------------------------------------------------------
 !    read namelist.
 !-------------------------------------------------------------------------------
-      if ( file_exist('input.nml')) then
-#ifdef INTERNAL_FILE_NML
+      if ( file_exists('input.nml')) then
         read (input_nml_file, nml=diag_integral_nml, iostat=io)
         ierr = check_nml_error(io,'diag_integral_nml')
-#else
-        unit =  open_namelist_file ( )
-        ierr=1; do while (ierr /= 0)
-        read  (unit, nml=diag_integral_nml, iostat=io, end=10)
-        ierr = check_nml_error(io,'diag_integral_nml')
-        end do
-10      call close_file (unit)
-#endif
       endif
 
 !-------------------------------------------------------------------------------

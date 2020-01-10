@@ -5,7 +5,11 @@
 AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
-AC_INIT([FMS], [2.0-development], [])
+AC_INIT([GFDL FMS Library],
+  [2020.01-dev],
+  [gfdl.climate.model.info@noaa.gov],
+  [FMS],
+  [https://www.gfdl.noaa.gov/fms])
 
 # Find out about the host we're building on.
 AC_CANONICAL_HOST
@@ -62,13 +66,6 @@ AC_PROG_FC
 # Find the install program.
 AC_PROG_INSTALL
 
-# Is bats installed? It is required for testing.
-AC_CHECK_PROGS([BATS], [bats])
-AM_CONDITIONAL([MAKE_CHECK_ENABLED], [test -n "$BATS"])
-if test -z "$BATS"; then
-   AC_MSG_WARN([Cannot find the bats utility. All checks will be disabled.])
-fi
-
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
@@ -81,6 +78,9 @@ if test $with_mpi = yes; then
   AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([Can't find the MPI C header file.  Set CC/CPPFLAGS/CFLAGS])])
   AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([Can't find the MPI C library.  Set CC/LDFLAGS/LIBS])])
 fi
+
+# Check if Linux gettid is avaiable
+AC_CHECK_FUNCS([gettid], [], [])
 
 # Require netCDF
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
@@ -185,12 +185,13 @@ AC_CONFIG_FILES([Makefile
         constants/Makefile
         platform/Makefile
         fms/Makefile
+        fms2_io/Makefile
+        fms2_io/include/Makefile
         mpp/Makefile
         mpp/include/Makefile
         tridiagonal/Makefile
         tracer_manager/Makefile
         topography/Makefile
-        oda_tools/Makefile
         mosaic/Makefile
         monin_obukhov/Makefile
         memutils/Makefile
@@ -210,6 +211,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
+        test_fms/test_common.sh
         test_fms/Makefile
         test_fms/diag_manager/Makefile
         test_fms/data_override/Makefile
@@ -217,6 +219,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/monin_obukhov/Makefile
         test_fms/drifters/Makefile
         test_fms/interpolator/Makefile
+        test_fms/fms2_io/Makefile
         test_fms/fms/Makefile
         test_fms/mpp/Makefile
         test_fms/mpp_io/Makefile
