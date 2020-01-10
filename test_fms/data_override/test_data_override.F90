@@ -39,55 +39,55 @@
 ! "LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
 !--------------------------------------------------------------------------------------------------
 
- program test
+program test
 
- ! Input data and path_names file for this program is in:
- ! /archive/pjp/unit_tests/test_data_override/lima/exp1
-
- use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
- use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_get_compute_domain, mpp_define_layout
- use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file
- use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
- use        fms_io_mod, only: read_data, fms_io_exit
- use     constants_mod, only: constants_init, pi
- use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
- use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
- use  diag_manager_mod, only: send_data, diag_axis_init
- use data_override_mod, only: data_override_init, data_override, data_override_UG
-  use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
-  use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
-  use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
-  use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
-  use mpp_mod,         only : input_nml_file
-  use mpp_mod,         only : mpp_get_current_pelist, mpp_broadcast
-  use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE
-  use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
-  use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
-  use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D, BITWISE_EFP_SUM
-  use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
-  use mpp_domains_mod, only : mpp_global_field, mpp_global_sum, mpp_global_max, mpp_global_min
-  use mpp_domains_mod, only : mpp_domains_init, mpp_domains_exit, mpp_broadcast_domain
-  use mpp_domains_mod, only : mpp_update_domains, mpp_check_field, mpp_redistribute, mpp_get_memory_domain
-  use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains, mpp_modify_domain
-  use mpp_domains_mod, only : mpp_get_neighbor_pe, mpp_define_mosaic, mpp_nullify_domain_list
-  use mpp_domains_mod, only : NORTH, NORTH_EAST, EAST, SOUTH_EAST, CORNER, CENTER
-  use mpp_domains_mod, only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST, mpp_define_mosaic_pelist
-  use mpp_domains_mod, only : mpp_get_global_domain, ZERO, NINETY, MINUS_NINETY
-  use mpp_domains_mod, only : mpp_get_boundary, mpp_start_update_domains, mpp_complete_update_domains
-  use mpp_domains_mod, only : mpp_define_nest_domains, nest_domain_type
-  use mpp_domains_mod, only : mpp_get_C2F_index, mpp_update_nest_fine
-  use mpp_domains_mod, only : mpp_get_F2C_index, mpp_update_nest_coarse
-  use mpp_domains_mod, only : mpp_get_domain_shift, EDGEUPDATE, mpp_deallocate_domain
-  use mpp_domains_mod, only : mpp_group_update_type, mpp_create_group_update
-  use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
-  use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
-  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains
-  use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
-  use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
-  use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
-  use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-#include "fms_platform.h"
+  ! Input data and path_names file for this program is in:
+  ! /archive/pjp/unit_tests/test_data_override/lima/exp1
+  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
+  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_get_compute_domain, mpp_define_layout
+  use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file
+  use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
+  use        fms_io_mod, only: read_data, fms_io_exit
+  use  fms_affinity_mod, only: fms_affinity_set
+  use     constants_mod, only: constants_init, pi
+  use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
+  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
+  use  diag_manager_mod, only: send_data, diag_axis_init
+  use data_override_mod, only: data_override_init, data_override, data_override_UG
+  use mpp_mod,           only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
+  use mpp_mod,           only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
+  use mpp_mod,           only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
+  use mpp_mod,           only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
+  use mpp_mod,           only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
+  use mpp_mod,           only : input_nml_file
+  use mpp_mod,           only : mpp_get_current_pelist, mpp_broadcast
+  use mpp_domains_mod,   only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE
+  use mpp_domains_mod,   only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
+  use mpp_domains_mod,   only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
+  use mpp_domains_mod,   only : domain1D, domain2D, DomainCommunicator2D, BITWISE_EFP_SUM
+  use mpp_domains_mod,   only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
+  use mpp_domains_mod,   only : mpp_global_field, mpp_global_sum, mpp_global_max, mpp_global_min
+  use mpp_domains_mod,   only : mpp_domains_init, mpp_domains_exit, mpp_broadcast_domain
+  use mpp_domains_mod,   only : mpp_update_domains, mpp_check_field, mpp_redistribute, mpp_get_memory_domain
+  use mpp_domains_mod,   only : mpp_define_layout, mpp_define_domains, mpp_modify_domain
+  use mpp_domains_mod,   only : mpp_get_neighbor_pe, mpp_define_mosaic, mpp_nullify_domain_list
+  use mpp_domains_mod,   only : NORTH, NORTH_EAST, EAST, SOUTH_EAST, CORNER, CENTER
+  use mpp_domains_mod,   only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST, mpp_define_mosaic_pelist
+  use mpp_domains_mod,   only : mpp_get_global_domain, ZERO, NINETY, MINUS_NINETY
+  use mpp_domains_mod,   only : mpp_get_boundary, mpp_start_update_domains, mpp_complete_update_domains
+  use mpp_domains_mod,   only : mpp_define_nest_domains, nest_domain_type
+  use mpp_domains_mod,   only : mpp_get_C2F_index, mpp_update_nest_fine
+  use mpp_domains_mod,   only : mpp_get_F2C_index, mpp_update_nest_coarse
+  use mpp_domains_mod,   only : mpp_get_domain_shift, EDGEUPDATE, mpp_deallocate_domain
+  use mpp_domains_mod,   only : mpp_group_update_type, mpp_create_group_update
+  use mpp_domains_mod,   only : mpp_do_group_update, mpp_clear_group_update
+  use mpp_domains_mod,   only : mpp_start_group_update, mpp_complete_group_update
+  use mpp_domains_mod,   only : WUPDATE, SUPDATE, mpp_get_compute_domains
+  use mpp_domains_mod,   only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
+  use mpp_domains_mod,   only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
+  use mpp_domains_mod,   only : mpp_get_ug_global_domain, mpp_global_field_ug
+  use mpp_memutils_mod,  only : mpp_memuse_begin, mpp_memuse_end
+#include "../../fms_platform.h"
  implicit none
 
  integer                           :: stdoutunit
@@ -112,7 +112,6 @@
  character(len=256)                :: solo_mosaic_file, tile_file
  character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
  integer                           :: window(2) = (/1,1/)
- integer                           :: get_cpu_affinity, base_cpu
  integer                           :: nthreads=1
  integer                           :: nwindows
  integer                           :: nx_cubic=90, ny_cubic=90, nx_latlon=90, ny_latlon=90
@@ -217,9 +216,8 @@ if( mod( ny_dom, window(2) ) .NE. 0 ) call error_mesg('test_data_override', &
 
 nwindows = window(1)*window(2)
 !$ call omp_set_num_threads(nthreads)
-!$ base_cpu = get_cpu_affinity()
 !$OMP PARALLEL
-!$ call set_cpu_affinity( base_cpu + omp_get_thread_num() )
+!$ call fms_affinity_set("test_data_override", .FALSE., omp_get_thread_num() )
 !$OMP END PARALLEL
 
 nx_win = nx_dom/window(1)
