@@ -59,7 +59,7 @@ MODULE diag_data_mod
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
-
+use fms2_io_mod
   IMPLICIT NONE
 
   PUBLIC
@@ -320,6 +320,11 @@ MODULE diag_data_mod
      logical(INT_KIND) :: use_domainUG = .false.
      logical(INT_KIND) :: use_domain2D = .false.
 !----------
+!Check if time axis was already registered
+     logical, allocatable :: is_time_axis_registered
+!Support for fms2_io time
+     real :: rtime_current
+     integer :: time_index
   END TYPE file_type
   ! </TYPE>
 
@@ -597,6 +602,9 @@ MODULE diag_data_mod
   !   <DATA NAME="num_attributes" TYPE="INTEGER" >
   !     Number of defined attibutes
   !   </DATA>
+  !   <DATA NAME="pos" TYPE="INTEGER" >
+  !     The position in the doman (NORTH or EAST or CENTER)
+  !   </DATA>
   TYPE diag_axis_type
      CHARACTER(len=128) :: name
      CHARACTER(len=256) :: units, long_name
@@ -614,6 +622,7 @@ MODULE diag_data_mod
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
+     INTEGER :: pos !< The position in the doman (NORTH or EAST or CENTER)
   END TYPE diag_axis_type
   ! </TYPE>
 
@@ -780,6 +789,10 @@ MODULE diag_data_mod
   TYPE(file_type), SAVE, ALLOCATABLE :: files(:)
   TYPE(input_field_type), ALLOCATABLE :: input_fields(:)
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
+    type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
+    type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
+    type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
+    character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
 
   ! <!-- Even More Variables -->
   ! <DATA NAME="time_zero" TYPE="TYPE(time_type)" />

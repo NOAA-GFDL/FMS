@@ -246,6 +246,75 @@
 #endif
 
 #undef DO_EFP_SUM_
+
+#ifdef OVERLOAD_C4
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c4_2d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#include <mpp_global_sum.h>
+
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c4_3d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_ ,:
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#include <mpp_global_sum.h>
+
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c4_4d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_ ,:,:
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#include <mpp_global_sum.h>
+
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c4_5d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_ ,:,:,:
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#include <mpp_global_sum.h>
+#endif
+
+#ifdef OVERLOAD_C8
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c8_2d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#include <mpp_global_sum.h>
+
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c8_3d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_ ,:
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#include <mpp_global_sum.h>
+
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c8_4d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_ ,:,:
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#include <mpp_global_sum.h>
+
+#undef MPP_GLOBAL_SUM_
+#define MPP_GLOBAL_SUM_ mpp_global_sum_c8_5d
+#undef MPP_EXTRA_INDICES_
+#define MPP_EXTRA_INDICES_ ,:,:,:
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#include <mpp_global_sum.h>
+#endif
+
 #ifndef no_8byte_integers
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_i8_2d

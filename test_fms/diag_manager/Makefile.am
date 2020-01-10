@@ -1,6 +1,5 @@
 # This is an automake file for the test_fms/diag_manager directory of the FMS
 # package.
-
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
@@ -23,4 +22,4 @@ TESTS = test_diag_manager2.sh
 # Copy over other needed files to the srcdir
 EXTRA_DIST = input.nml_base diagTables test_diag_manager2.sh
 
-CLEANFILES = input.nml *.nc *.out
+CLEANFILES = input.nml *.nc *.out diag_table

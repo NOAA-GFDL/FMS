@@ -107,13 +107,13 @@ AC_CONFIG_FILES([Makefile
         constants/Makefile
         platform/Makefile
         fms/Makefile
+        fms2_io/Makefile
+        fms2_io/include/Makefile
         mpp/Makefile
         mpp/include/Makefile
         tridiagonal/Makefile
         tracer_manager/Makefile
         topography/Makefile
-        station_data/Makefile
-        oda_tools/Makefile
         mosaic/Makefile
         monin_obukhov/Makefile
         memutils/Makefile
@@ -142,6 +142,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/monin_obukhov/Makefile
         test_fms/drifters/Makefile
         test_fms/interpolator/Makefile
+        test_fms/fms2_io/Makefile
         test_fms/fms/Makefile
         test_fms/mpp/Makefile
         test_fms/mpp_io/Makefile

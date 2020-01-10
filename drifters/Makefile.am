@@ -42,5 +42,5 @@ drifters_comm_mod.mod drifters_io_mod.mod cloud_interpolator_mod.mod \
 drifters_mod.mod
 include_HEADERS = $(MODFILES) $(DRIFTERS_HDRS)
 BUILT_SOURCES = $(MODFILES)
-
 CLEANFILES = *.mod *__genmod.f90
+

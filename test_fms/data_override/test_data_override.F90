@@ -172,6 +172,7 @@ program test
 
 
  call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_data_override')
+ call mpp_define_io_domain(Domain, (/1,1/))
  call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
  call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
  call mpp_get_compute_domain(Domain, is, ie, js, je)
