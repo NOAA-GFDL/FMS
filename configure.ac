@@ -41,12 +41,12 @@ AC_ARG_WITH([mpi],
 AS_IF([test ${with_mpi:-yes} = yes],
   [with_mpi=yes],
   [with_mpi=no])
-AC_ARG_WITH([openmp],
-  [AS_HELP_STRING([--with-openmp],
+AC_ARG_ENABLE([openmp],
+  [AS_HELP_STRING([--enable-openmp],
     [Build with OpenMPI support. This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
-AS_IF([test ${with_openmp:-yes} = yes],
-  [with_openmp=yes],
-  [with_openmp=no])
+AS_IF([test ${enable_openmp:-yes} = yes],
+  [enable_openmp=yes],
+  [enable_openmp=no])
 AC_ARG_ENABLE([setting-flags],
   [AS_HELP_STRING([--enable-setting-flags],
     [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
@@ -86,7 +86,7 @@ AC_CHECK_FUNCS([gettid], [], [])
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
-if test $with_openmp = yes && test $enable_setting_flags = yes; then
+if test $enable_openmp = yes && test $enable_setting_flags = yes; then
   # Check if the compiler needs special OpenMP flags
   AC_OPENMP()
 fi
@@ -118,7 +118,7 @@ GX_FC_QUAD_PRECISION()
 # Check if Fortran compiler supports reading namelists from internal files
 GX_FC_INTERNAL_FILE_NML()
 
-if test $with_openmp = yes && test $enable_setting_flags = yes; then
+if test $enable_openmp = yes && test $enable_setting_flags = yes; then
   # Check if the compiler needs special OpenMP flags
   AC_OPENMP()
 fi
