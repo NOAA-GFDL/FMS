@@ -38,8 +38,8 @@ module horiz_interp_spherical_mod
   use mpp_mod,               only : mpp_error, FATAL, WARNING, stdout
   use mpp_mod,               only : mpp_root_pe, mpp_pe
   use mpp_mod,               only : input_nml_file
-  use fms_mod,               only : write_version_number, file_exist, close_file
-  use fms_mod,               only : check_nml_error, open_namelist_file
+  use fms_mod,               only : write_version_number
+  use fms_mod,               only : check_nml_error
   use constants_mod,         only : pi
   use horiz_interp_type_mod, only : horiz_interp_type, stats
 
@@ -99,19 +99,8 @@ contains
 
     if(module_is_initialized) return
     call write_version_number("horiz_interp_spherical_mod", version)
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, horiz_interp_spherical_nml, iostat=io)
-      ierr = check_nml_error(io,'horiz_interp_spherical_nml')
-#else
-    if (file_exist('input.nml')) then
-       unit = open_namelist_file ( )
-       ierr=1; do while (ierr /= 0)
-       read  (unit, nml=horiz_interp_spherical_nml, iostat=io, end=10)
-       ierr = check_nml_error(io,'horiz_interp_spherical_nml')  ! also initializes nml error codes
-    enddo
-10  call close_file (unit)
-    endif
-#endif
+    read (input_nml_file, horiz_interp_spherical_nml, iostat=io)
+    ierr = check_nml_error(io,'horiz_interp_spherical_nml')
 
  module_is_initialized = .true.
 

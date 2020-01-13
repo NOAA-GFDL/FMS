@@ -124,12 +124,9 @@ module xgrid_mod
 
 #include <fms_platform.h>
 
-use       fms_mod,   only: file_exist, open_namelist_file, check_nml_error,  &
-                           error_mesg, close_file, FATAL, NOTE, stdlog,      &
-                           write_version_number, read_data, field_exist,     &
-                           field_size, lowercase, string,                    &
-                           get_mosaic_tile_grid
-use     fms_io_mod,  only: get_var_att_value
+use       fms_mod,   only: check_nml_error,  &
+                           error_mesg, FATAL, NOTE, stdlog,      &
+                           write_version_number, lowercase, string
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self, stdout, mpp_max, EVENT_RECV,        &
                            mpp_get_current_pelist, mpp_clock_id, mpp_min,     &
@@ -152,15 +149,18 @@ use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            domainUG, mpp_get_ug_compute_domains,            &
                            mpp_get_ug_domains_index, mpp_get_ug_domain_grid_index, &
                            mpp_get_ug_domain_tile_list, mpp_pass_sg_to_ug
-use mpp_io_mod,      only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR
 use constants_mod,   only: PI, RADIUS
-use mosaic_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size, &
+use mosaic2_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size, &
                                get_mosaic_ntiles, get_mosaic_ncontacts, &
-                               get_mosaic_contact, get_mosaic_grid_sizes
+                               get_mosaic_contact, get_mosaic_grid_sizes, &
+                               get_mosaic_tile_grid
 
 use stock_constants_mod, only: ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, STOCK_NAMES, &
                                STOCK_UNITS, NELEMS, stocks_file, stock_type
 use gradient_mod,        only: gradient_cubic
+use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
+use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
+use fms2_io_mod,         only: get_variable_units
 
 implicit none
 private
@@ -191,9 +191,6 @@ integer, parameter :: MAX_FIELDS         = 80
 !     exchange grid interpolation method. It has two options:
 !     "first_order", "second_order".
 !   </DATA>
-!   <DATA NAME="xgrid_log" TYPE="logical"  DEFAULT=" .false. ">
-!     Outputs exchange grid information to xgrid.out.<pe> for debug/diag purposes.
-!   </DATA>
 !   <DATA NAME="nsubset" TYPE="integer" DEFAULT="0">
 !     number of processors to read exchange grid information. Those processors that read
 !     the exchange grid information will send data to other processors to prepare for flux exchange.
@@ -211,7 +208,7 @@ logical :: monotonic_exchange = .false.
 integer :: nsubset = 0 ! 0 means mpp_npes()
 logical :: do_alltoall = .true.
 logical :: do_alltoallv = .false.
-namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid_log, xgrid_clocks_on, &
+namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid_clocks_on, &
     monotonic_exchange, nsubset, do_alltoall, do_alltoallv
 ! </NAMELIST>
 logical :: init = .true.
@@ -537,21 +534,8 @@ subroutine xgrid_init(remap_method)
   module_is_initialized = .TRUE.
 
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, xgrid_nml, iostat=io)
-      ierr = check_nml_error ( io, 'xgrid_nml' )
-#else
-  if ( file_exist( 'input.nml' ) ) then
-      unit = open_namelist_file ( )
-      ierr = 1
-      do while ( ierr /= 0 )
-        read ( unit,  nml = xgrid_nml, iostat = io, end = 10 )
-        ierr = check_nml_error ( io, 'xgrid_nml' )
-      enddo
-  10 continue
-      call close_file ( unit )
-  endif
-#endif
+  read (input_nml_file, xgrid_nml, iostat=io)
+  ierr = check_nml_error ( io, 'xgrid_nml' )
 
 !--------- write version number and namelist ------------------
   call write_version_number("XGRID_MOD", version)
@@ -559,7 +543,6 @@ subroutine xgrid_init(remap_method)
   unit = stdlog ( )
   out_unit = stdout()
   if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
-  call close_file (unit)
 
 !--------- check interp_method has suitable value
 !--- when monotonic_exchange is true, interp_method must be second order.
@@ -660,6 +643,11 @@ logical,        intent(in)             :: use_higher_order
   logical                              :: last_grid
   integer                              :: nxgrid1_old
   integer                              :: lll
+  type(FmsNetcdfFile_t)                :: fileobj
+
+  if(.not. open_file(fileobj, grid_file, 'read' )) then
+     call error_mesg('xgrid_mod(load_xgrid)', 'Error in opening file '//trim(grid_file), FATAL)
+  endif
 
   scale_exist = .false.
   grid1 => xmap%grids(1)
@@ -677,12 +665,11 @@ logical,        intent(in)             :: use_higher_order
 
   select case(xmap%version)
   case(VERSION1)
-     call field_size(grid_file, 'AREA_'//grid1_id//'x'//grid_id, siz)
-     nxgrid = siz(1);
+     call get_dimension_size(fileobj, 'i_'//lowercase(grid1_id)//'X'//lowercase(grid_id), nxgrid)
      if(nxgrid .LE. 0) return
   case(VERSION2)
      !--- max_size is the exchange grid size between super grid.
-     nxgrid = get_mosaic_xgrid_size(grid_file)
+     nxgrid = get_mosaic_xgrid_size(fileobj)
      if(nxgrid .LE. 0) return
   end select
 
@@ -743,34 +730,34 @@ logical,        intent(in)             :: use_higher_order
      case(VERSION1)
         start(1) = isc; nread(1) = nxgrid_local
         allocate(tmp(nxgrid_local,1))
-        call read_data(grid_file, 'I_'//grid1_id//'_'//grid1_id//'x'//grid_id, tmp, start, nread, no_domain=.TRUE.)
+        call read_data(fileobj, 'I_'//grid1_id//'_'//grid1_id//'x'//grid_id, tmp, corner=start, edge_lengths=nread)
         i1_tmp = tmp(:,1)
-        call read_data(grid_file, 'J_'//grid1_id//'_'//grid1_id//'x'//grid_id, tmp, start, nread, no_domain=.TRUE.)
+        call read_data(fileobj, 'J_'//grid1_id//'_'//grid1_id//'x'//grid_id, tmp, corner=start, edge_lengths=nread)
         j1_tmp = tmp(:,1)
-        call read_data(grid_file, 'I_'//grid_id//'_'//grid1_id//'x'//grid_id, tmp, start, nread, no_domain=.TRUE.)
+        call read_data(fileobj, 'I_'//grid_id//'_'//grid1_id//'x'//grid_id, tmp, corner=start, edge_lengths=nread)
         i2_tmp = tmp(:,1)
-        call read_data(grid_file, 'J_'//grid_id//'_'//grid1_id//'x'//grid_id, tmp, start, nread, no_domain=.TRUE.)
+        call read_data(fileobj, 'J_'//grid_id//'_'//grid1_id//'x'//grid_id, tmp, corner=start, edge_lengths=nread)
         j2_tmp = tmp(:,1)
-        call read_data(grid_file, 'AREA_'//grid1_id//'x'//grid_id, tmp, start, nread, no_domain=.TRUE.)
+        call read_data(fileobj, 'AREA_'//grid1_id//'x'//grid_id, tmp, corner=start, edge_lengths=nread)
         area_tmp = tmp(:,1)
         if(use_higher_order) then
-           call read_data(grid_file, 'DI_'//grid1_id//'x'//grid_id, tmp, start, nread, no_domain=.TRUE.)
+           call read_data(fileobj, 'DI_'//grid1_id//'x'//grid_id, tmp, corner=start, edge_lengths=nread)
            di_tmp = tmp(:,1)
-           call read_data(grid_file, 'DJ_'//grid1_id//'x'//grid_id, tmp, start, nread, no_domain=.TRUE.)
+           call read_data(fileobj, 'DJ_'//grid1_id//'x'//grid_id, tmp, corner=start, edge_lengths=nread)
            dj_tmp = tmp(:,1)
         end if
         deallocate(tmp)
      case(VERSION2)
         nread(1) = 2; start(2) = isc; nread(2) = nxgrid_local
         allocate(tmp(2, isc:iec))
-        call read_data(grid_file, "tile1_cell", tmp, start, nread, no_domain=.TRUE.)
+        call read_data(fileobj, "tile1_cell", tmp, corner=start, edge_lengths=nread)
         i1_tmp(isc:iec) = tmp(1, isc:iec)
         j1_tmp(isc:iec) = tmp(2, isc:iec)
-        call read_data(grid_file, "tile2_cell", tmp, start, nread, no_domain=.TRUE.)
+        call read_data(fileobj, "tile2_cell", tmp, corner=start, edge_lengths=nread)
         i2_tmp(isc:iec) = tmp(1, isc:iec)
         j2_tmp(isc:iec) = tmp(2, isc:iec)
         if(use_higher_order) then
-           call read_data(grid_file, "tile1_distance", tmp, start, nread, no_domain=.TRUE.)
+           call read_data(fileobj, "tile1_distance", tmp, corner=start, edge_lengths=nread)
            di_tmp(isc:iec) = tmp(1, isc:iec)
            dj_tmp(isc:iec) = tmp(2, isc:iec)
         end if
@@ -778,9 +765,11 @@ logical,        intent(in)             :: use_higher_order
         start(1) = isc; nread(1) = nxgrid_local
         deallocate(tmp)
         allocate(tmp(isc:iec,1) )
-        call read_data(grid_file, "xgrid_area", tmp(:,1:1), start, nread, no_domain=.TRUE.)
-        ! check the units of "xgrid_area
-        call get_var_att_value(grid_file, "xgrid_area", "units", attvalue)
+
+        call read_data(fileobj, "xgrid_area", tmp(:,1:1), corner=start, edge_lengths=nread)
+        ! check the units of "xgrid_area 
+        call get_variable_units(fileobj, "xgrid_area", attvalue)
+
         if( trim(attvalue) == 'm2' ) then
            garea = 4.0*PI*RADIUS*RADIUS;
            area_tmp = tmp(:,1)/garea
@@ -794,11 +783,11 @@ logical,        intent(in)             :: use_higher_order
         !--- if field "scale" exist, read this field. Normally this
         !--- field only exist in landXocean exchange grid cell.
         if(grid1_id == 'LND' .AND. grid_id == 'OCN') then
-           if(field_exist(grid_file, "scale")) then
+           if(variable_exists(fileobj, "scale")) then
               allocate(scale(isc:iec))
               write(out_unit, *)"NOTE from load_xgrid(xgrid_mod): field 'scale' exist in the file "// &
                    trim(grid_file)//", this field will be read and the exchange grid cell area will be multiplied by scale"
-              call read_data(grid_file, "scale", tmp, start, nread, no_domain=.TRUE.)
+              call read_data(fileobj, "scale", tmp, corner=start, edge_lengths=nread)
               scale = tmp(:,1)
               scale_exist = .true.
            endif
@@ -857,6 +846,8 @@ logical,        intent(in)             :: use_higher_order
      nxgrid_local = 0
      nxgrid_local_orig = 0
   endif
+
+  call close_file(fileobj)
 
   call mpp_clock_end(id_load_xgrid1)
 
@@ -1302,142 +1293,179 @@ end subroutine load_xgrid
 
 !#######################################################################
 !
-! get_grid - read the center point of the grid from grid_spec.nc.
-!          - only the grid at the side 1 is needed, so we only read
+! get_grid - read the center point of the grid from version 1 grid file.
+!          - only the grid at the side 1 is needed, so we only read 
 !          - atm and land grid
 !
-!
 
-subroutine get_grid(grid, grid_id, grid_file, grid_version)
-  type(grid_type), intent(inout) :: grid
-  character(len=3), intent(in)   :: grid_id
-  character(len=*), intent(in)   :: grid_file
-  integer,          intent(in)   :: grid_version
+subroutine get_grid_version1(grid, grid_id, grid_file)
+  type(grid_type), intent(inout)          :: grid
+  character(len=3), intent(in)            :: grid_id
+  character(len=*), intent(in)            :: grid_file
 
   real, dimension(grid%im) :: lonb
   real, dimension(grid%jm) :: latb
   real, allocatable        :: tmpx(:,:), tmpy(:,:)
   real                     :: d2r
-  integer                  :: is, ie, js, je, nlon, nlat, siz(4), i, j
+  integer                  :: is, ie, js, je, nlon, nlat, i, j
   integer                  :: start(4), nread(4), isc2, iec2, jsc2, jec2
+  type(FmsNetcdfDomainFile_t) :: fileobj
+
+  d2r = PI/180.0
+
+  if(.not. open_file(fileobj, grid_file, 'read', grid%domain) ) then
+     call error_mesg('xgrid_mod(get_grid_version1)', 'Error in opening file '//trim(grid_file), FATAL)
+  endif
+
+  call mpp_get_compute_domain(grid%domain, is, ie, js, je)
+
+  allocate(grid%lon(grid%im), grid%lat(grid%jm))
+  if(grid_id == 'ATM') then
+     call read_data(fileobj, 'xta', lonb)
+     call read_data(fileobj, 'yta', latb)
+
+     if(.not. allocated(AREA_ATM_MODEL)) then
+        allocate(AREA_ATM_MODEL(is:ie, js:je))
+        call get_area_elements(fileobj, 'AREA_ATM_MODEL', AREA_ATM_MODEL)
+     endif
+     if(.not. allocated(AREA_ATM_SPHERE)) then
+        allocate(AREA_ATM_SPHERE(is:ie, js:je))
+        call get_area_elements(fileobj, 'AREA_ATM', AREA_ATM_SPHERE)
+     endif
+  else if(grid_id == 'LND') then
+     call read_data(fileobj, 'xtl', lonb)
+     call read_data(fileobj, 'ytl', latb)
+     if(.not. allocated(AREA_LND_MODEL)) then
+        allocate(AREA_LND_MODEL(is:ie, js:je))
+        call get_area_elements(fileobj, 'AREA_LND_MODEL', AREA_LND_MODEL)
+     endif
+     if(.not. allocated(AREA_LND_SPHERE)) then
+        allocate(AREA_LND_SPHERE(is:ie, js:je))
+        call get_area_elements(fileobj, 'AREA_LND', AREA_LND_SPHERE)
+     endif
+  else if(grid_id == 'OCN' ) then
+     if(.not. allocated(AREA_OCN_SPHERE)) then
+        allocate(AREA_OCN_SPHERE(is:ie, js:je))
+        call get_area_elements(fileobj, 'AREA_OCN', AREA_OCN_SPHERE)
+     endif
+  endif
+  !--- second order remapping suppose second order
+  if(grid_id == 'LND' .or. grid_id == 'ATM') then
+     grid%lon   = lonb * d2r
+     grid%lat   = latb * d2r
+  endif
+  grid%is_latlon = .true.
+
+  call close_file(fileobj)
+
+  return
+
+end subroutine get_grid_version1
+
+
+!#######################################################################
+!
+! get_grid - read the center point of the grid from version 2 grid file.
+!          - only the grid at the side 1 is needed, so we only read 
+!          - atm and land grid
+!
+!
+
+subroutine get_grid_version2(grid, grid_id, grid_file)
+  type(grid_type), intent(inout)          :: grid
+  character(len=3), intent(in)            :: grid_id
+  character(len=*), intent(in)            :: grid_file
+
+  real, dimension(grid%im) :: lonb
+  real, dimension(grid%jm) :: latb
+  real, allocatable        :: tmpx(:,:), tmpy(:,:)
+  real                     :: d2r
+  integer                  :: is, ie, js, je, nlon, nlat, i, j
+  integer                  :: start(4), nread(4), isc2, iec2, jsc2, jec2
+  type(FmsNetcdfFile_t) :: fileobj
+
+  if(.not. open_file(fileobj, grid_file, 'read') ) then
+     call error_mesg('xgrid_mod(get_grid_version2)', 'Error in opening file '//trim(grid_file), FATAL)
+  endif
 
   d2r = PI/180.0
 
   call mpp_get_compute_domain(grid%domain, is, ie, js, je)
 
-  select case(grid_version)
-  case(VERSION1)
-     allocate(grid%lon(grid%im), grid%lat(grid%jm))
-     if(grid_id == 'ATM') then
-        call read_data(grid_file, 'xta', lonb)
-        call read_data(grid_file, 'yta', latb)
+  call get_dimension_size(fileobj, "nx", nlon)
+  call get_dimension_size(fileobj, "ny", nlat)
+  if( mod(nlon,2) .NE. 0) call error_mesg('xgrid_mod',  &
+       'flux_exchange_mod: atmos supergrid longitude size can not be divided by 2', FATAL)
+  if( mod(nlat,2) .NE. 0) call error_mesg('xgrid_mod',  &
+       'flux_exchange_mod: atmos supergrid latitude size can not be divided by 2', FATAL)
+  nlon = nlon/2
+  nlat = nlat/2
+  if(nlon .NE. grid%im .OR. nlat .NE. grid%jm) call error_mesg('xgrid_mod', &
+       'grid size in tile_file does not match the global grid size', FATAL)
 
-        if(.not. allocated(AREA_ATM_MODEL)) then
-           allocate(AREA_ATM_MODEL(is:ie, js:je))
-           call get_area_elements(grid_file, 'AREA_ATM_MODEL', grid%domain, AREA_ATM_MODEL)
-        endif
-        if(.not. allocated(AREA_ATM_SPHERE)) then
-           allocate(AREA_ATM_SPHERE(is:ie, js:je))
-           call get_area_elements(grid_file, 'AREA_ATM', grid%domain, AREA_ATM_SPHERE)
-        endif
-     else if(grid_id == 'LND') then
-        call read_data(grid_file, 'xtl', lonb)
-        call read_data(grid_file, 'ytl', latb)
-        if(.not. allocated(AREA_LND_MODEL)) then
-           allocate(AREA_LND_MODEL(is:ie, js:je))
-           call get_area_elements(grid_file, 'AREA_LND_MODEL', grid%domain, AREA_LND_MODEL)
-        endif
-        if(.not. allocated(AREA_LND_SPHERE)) then
-           allocate(AREA_LND_SPHERE(is:ie, js:je))
-           call get_area_elements(grid_file, 'AREA_LND', grid%domain, AREA_LND_SPHERE)
-        endif
-     else if(grid_id == 'OCN' ) then
-        if(.not. allocated(AREA_OCN_SPHERE)) then
-           allocate(AREA_OCN_SPHERE(is:ie, js:je))
-           call get_area_elements(grid_file, 'AREA_OCN', grid%domain, AREA_OCN_SPHERE)
-        endif
-     endif
-     !--- second order remapping suppose second order
-     if(grid_id == 'LND' .or. grid_id == 'ATM') then
-        grid%lon   = lonb * d2r
-        grid%lat   = latb * d2r
-     endif
-     grid%is_latlon = .true.
-  case(VERSION2)
-     call field_size(grid_file, 'area', siz)
-     nlon = siz(1); nlat = siz(2)
-     if( mod(nlon,2) .NE. 0) call error_mesg('xgrid_mod',  &
-          'flux_exchange_mod: atmos supergrid longitude size can not be divided by 2', FATAL)
-     if( mod(nlat,2) .NE. 0) call error_mesg('xgrid_mod',  &
-          'flux_exchange_mod: atmos supergrid latitude size can not be divided by 2', FATAL)
-     nlon = nlon/2
-     nlat = nlat/2
-     if(nlon .NE. grid%im .OR. nlat .NE. grid%jm) call error_mesg('xgrid_mod', &
-         'grid size in tile_file does not match the global grid size', FATAL)
-
-     if( grid_id == 'LND' .or. grid_id == 'ATM'  .or. grid_id == 'WAV' ) then
-        isc2 = 2*grid%is_me-1; iec2 = 2*grid%ie_me+1
-        jsc2 = 2*grid%js_me-1; jec2 = 2*grid%je_me+1
-        allocate(tmpx(isc2:iec2, jsc2:jec2) )
-        allocate(tmpy(isc2:iec2, jsc2:jec2) )
-        start = 1; nread = 1
-        start(1) = isc2; nread(1) = iec2 - isc2 + 1
-        start(2) = jsc2; nread(2) = jec2 - jsc2 + 1
-        call read_data(grid_file, 'x', tmpx, start, nread, no_domain=.TRUE.)
-        call read_data(grid_file, 'y', tmpy, start, nread, no_domain=.TRUE.)
-        if(is_lat_lon(tmpx, tmpy) ) then
-           deallocate(tmpx, tmpy)
-           start = 1; nread = 1
-           start(2) = 2; nread(1) = nlon*2+1
-           allocate(tmpx(nlon*2+1, 1), tmpy(1, nlat*2+1))
-           call read_data(grid_file, "x", tmpx, start, nread, no_domain=.TRUE.)
-           allocate(grid%lon(grid%im), grid%lat(grid%jm))
-           do i = 1, grid%im
-              grid%lon(i) = tmpx(2*i,1) * d2r
-           end do
-           start = 1; nread = 1
-           start(1) = 2; nread(2) = nlat*2+1
-           call read_data(grid_file, "y", tmpy, start, nread, no_domain=.TRUE.)
-           do j = 1, grid%jm
-              grid%lat(j) = tmpy(1, 2*j) * d2r
-           end do
-           grid%is_latlon = .true.
-        else
-           allocate(grid%geolon(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
-           allocate(grid%geolat(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
-           grid%geolon = 1e10
-           grid%geolat = 1e10
-           !--- area_ocn_sphere, area_lnd_sphere, area_atm_sphere is not been defined.
-           do j = grid%js_me,grid%je_me
-              do i = grid%is_me,grid%ie_me
-                 grid%geolon(i, j) = tmpx(i*2,j*2)*d2r
-                 grid%geolat(i, j) = tmpy(i*2,j*2)*d2r
-              end do
-           end do
-           call mpp_update_domains(grid%geolon, grid%domain)
-           call mpp_update_domains(grid%geolat, grid%domain)
-           grid%is_latlon = .false.
-        end if
+  if( grid_id == 'LND' .or. grid_id == 'ATM'  .or. grid_id == 'WAV' ) then
+     isc2 = 2*grid%is_me-1; iec2 = 2*grid%ie_me+1
+     jsc2 = 2*grid%js_me-1; jec2 = 2*grid%je_me+1
+     allocate(tmpx(isc2:iec2, jsc2:jec2) )
+     allocate(tmpy(isc2:iec2, jsc2:jec2) )   
+     start = 1; nread = 1          
+     start(1) = isc2; nread(1) = iec2 - isc2 + 1
+     start(2) = jsc2; nread(2) = jec2 - jsc2 + 1 
+     call read_data(fileobj, 'x', tmpx, corner=start, edge_lengths=nread)
+     call read_data(fileobj, 'y', tmpy, corner=start, edge_lengths=nread)      
+     if(is_lat_lon(tmpx, tmpy) ) then
         deallocate(tmpx, tmpy)
+        start = 1; nread = 1
+        start(2) = 2; nread(1) = nlon*2+1
+        allocate(tmpx(nlon*2+1, 1), tmpy(1, nlat*2+1))
+        call read_data(fileobj, "x", tmpx, corner=start, edge_lengths=nread)    
+        allocate(grid%lon(grid%im), grid%lat(grid%jm))
+        do i = 1, grid%im
+           grid%lon(i) = tmpx(2*i,1) * d2r
+        end do
+        start = 1; nread = 1
+        start(1) = 2; nread(2) = nlat*2+1
+        call read_data(fileobj, "y", tmpy, corner=start, edge_lengths=nread)    
+        do j = 1, grid%jm
+           grid%lat(j) = tmpy(1, 2*j) * d2r
+        end do
+        grid%is_latlon = .true.
+     else
+        allocate(grid%geolon(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
+        allocate(grid%geolat(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
+        grid%geolon = 1e10
+        grid%geolat = 1e10
+        !--- area_ocn_sphere, area_lnd_sphere, area_atm_sphere is not been defined.
+        do j = grid%js_me,grid%je_me
+           do i = grid%is_me,grid%ie_me
+              grid%geolon(i, j) = tmpx(i*2,j*2)*d2r
+              grid%geolat(i, j) = tmpy(i*2,j*2)*d2r
+           end do
+        end do
+        call mpp_update_domains(grid%geolon, grid%domain)
+        call mpp_update_domains(grid%geolat, grid%domain)
+        grid%is_latlon = .false.
      end if
-  end select
+     deallocate(tmpx, tmpy)
+  end if
 
-  return
+  call close_file(fileobj)
 
-end subroutine get_grid
+return
 
+end subroutine get_grid_version2
+  
 !#######################################################################
 ! Read the area elements from NetCDF file
-subroutine get_area_elements(file, name, domain, data)
-  character(len=*), intent(in) :: file
+subroutine get_area_elements(fileobj, name, data)
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
-  type(domain2d),   intent(in) :: domain
   real, intent(out)            :: data(:,:)
 
-  if(field_exist(file, name)) then
-     call read_data(file, name, data, domain)
+  if(variable_exists(fileobj, name)) then
+     call read_data(fileobj, name, data)
   else
-     call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file '//trim(file)// &
+     call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file '//trim(fileobj%path)// &
                      ' Will set data to negative values...', NOTE)
      ! area elements no present in grid_spec file, set to negative values....
      data = -1.0
@@ -1469,6 +1497,7 @@ subroutine get_ocean_model_area_elements(domain, grid_file)
   type(Domain2d), intent(in) :: domain
   character(len=*), intent(in) :: grid_file
   integer :: is, ie, js, je
+  type(FmsNetcdfFile_t) :: fileobj
 
   if(allocated(AREA_OCN_MODEL)) return
 
@@ -1478,12 +1507,16 @@ subroutine get_ocean_model_area_elements(domain, grid_file)
   allocate(AREA_OCN_MODEL(is:ie, js:je))
   if(ie < is .or. je < js ) return
 
+  if(.not. open_file(fileobj, grid_file, 'read') ) then
+     call error_mesg('xgrid_mod(get_ocean_model_area_elements)', 'Error in opening file '//trim(grid_file), FATAL)
+  endif
 
-  if(field_exist(grid_file, 'AREA_OCN_MODEL') )then
-     call read_data(grid_file, 'AREA_OCN_MODEL', AREA_OCN_MODEL, domain)
+  if(variable_exists(fileobj, 'AREA_OCN_MODEL') )then
+     call read_data(fileobj, 'AREA_OCN_MODEL', AREA_OCN_MODEL)
   else
      deallocate(AREA_OCN_MODEL)
   endif
+  call close_file(fileobj)
 
 
 end subroutine get_ocean_model_area_elements
@@ -1518,7 +1551,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   type(grid_box_type), optional,             intent(in ) :: atm_grid
   type(domainUG), optional,                  intent(in ) :: lnd_ug_domain
 
-  integer :: g,     p, send_size, recv_size, i, siz(4)
+  integer :: g, p, i
   integer :: unit, nxgrid_file, i1, i2, i3, tile1, tile2, j
   integer :: nxc, nyc, out_unit
   type (grid_type), pointer, save :: grid =>NULL(), grid1 =>NULL()
@@ -1526,17 +1559,18 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   real, dimension(:,:), allocatable   :: check_data
   real, dimension(:,:,:), allocatable :: check_data_3D
   real,                 allocatable   :: tmp_2d(:,:), tmp_3d(:,:,:)
-  character(len=256)                  :: xgrid_file, xgrid_name
+  character(len=256)                  :: xgrid_file, xgrid_name, xgrid_dimname
   character(len=256)                  :: tile_file, mosaic_file
   character(len=256)                  :: mosaic1, mosaic2, contact
   character(len=256)                  :: tile1_name, tile2_name
-  character(len=256),     allocatable :: tile1_list(:), tile2_list(:)
+  character(len=256),     allocatable :: tile1_list(:), tile2_list(:), xgrid_filelist(:)
   integer                             :: npes, npes2
   integer,                allocatable :: pelist(:)
   type(domain2d), save                :: domain2
   logical :: use_higher_order = .false.
   integer :: lnd_ug_id, l
   integer, allocatable :: grid_index(:)
+  type(FmsNetcdfFile_t) :: gridfileobj, mosaicfileobj, fileobj
 
   call mpp_clock_begin(id_setup_xmap)
 
@@ -1555,14 +1589,20 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   xmap%your1my2 = .false.; xmap%your2my1 = .false.;
   xmap%your2my1_size = 0
 
+  if(.not. open_file(gridfileobj,trim(grid_file), "read")) then
+     call error_mesg('xgrid_mod', 'Error when opening file'//trim(grid_file), FATAL)
+  endif
+
 !  check the exchange grid file version to be used by checking the field in the file
-  if(field_exist(grid_file, "AREA_ATMxOCN" ) ) then
+  if(variable_exists(gridfileobj, "AREA_ATMxOCN" ) ) then
+     call close_file(gridfileobj)
      xmap%version = VERSION1
-  else if(field_exist(grid_file, "ocn_mosaic_file" ) ) then
+  else if(variable_exists(gridfileobj, "ocn_mosaic_file" ) ) then
      xmap%version = VERSION2
   else
      call error_mesg('xgrid_mod', 'both AREA_ATMxOCN and ocn_mosaic_file does not exist in '//trim(grid_file), FATAL)
   end if
+
 
   if(xmap%version==VERSION1) then
      call error_mesg('xgrid_mod', 'reading exchange grid information from grid spec file', NOTE)
@@ -1601,8 +1641,11 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      case(VERSION1)
         grid%ntile = 1
      case(VERSION2)
-        call read_data(grid_file, lowercase(grid_ids(g))//'_mosaic_file', mosaic_file)
-        grid%ntile = get_mosaic_ntiles('INPUT/'//trim(mosaic_file))
+        call read_data(gridfileobj, lowercase(grid_ids(g))//'_mosaic_file', mosaic_file)
+        if(.not. open_file(mosaicfileobj,'INPUT/'//trim(mosaic_file), "read")) then
+           call error_mesg('xgrid_mod', 'Error when opening solo mosaic file INPUT/'//trim(mosaic_file), FATAL)
+        endif
+        call get_dimension_size(mosaicfileobj, 'ntiles', grid%ntile)
      end select
 
      if( g == 1 .AND. grid_ids(1) == 'ATM' ) then
@@ -1719,21 +1762,22 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            if( grid%npes .NE. xmap%npes ) then
               call error_mesg('xgrid_mod', ' grid%npes .NE. xmap%npes ', FATAL)
            endif
-           call get_grid(grid, grid_ids(g), grid_file, xmap%version)
+           call get_grid_version1(grid, grid_ids(g), grid_file)
         case(VERSION2)
            allocate(pelist(0:xmap%npes-1))
            call mpp_get_current_pelist(pelist)
            if( grid%on_this_pe ) then
               call mpp_set_current_pelist(grid%pelist)
-              call get_mosaic_tile_grid(tile_file, 'INPUT/'//trim(mosaic_file), grid%domain)
-              call get_grid(grid, grid_ids(g), tile_file, xmap%version)
+              call get_mosaic_tile_grid(tile_file, mosaicfileobj, grid%domain)
+              call get_grid_version2(grid, grid_ids(g), tile_file)
            endif
            call mpp_set_current_pelist(pelist)
            deallocate(pelist)
            ! read the contact information from mosaic_file to check if atmosphere is nested model
            if( g == 1 .AND. grid_ids(1) == 'ATM' ) then
-              nnest = get_nest_contact('INPUT/'//trim(mosaic_file), tile_nest, tile_parent, is_nest, &
-                   ie_nest, js_nest, je_nest, is_parent, ie_parent, js_parent, je_parent)
+              nnest = get_nest_contact(mosaicfileobj, tile_nest, tile_parent, is_nest, &
+                   ie_nest, js_nest, je_nest, is_parent, ie_parent, js_parent, je_parent)         
+
            endif
         end select
 
@@ -1799,7 +1843,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            end if
         end if
      end if
-
+     if(xmap%version==VERSION2) call close_file(mosaicfileobj)
      if (g>1) then
         if(grid%on_this_pe) then
            if(grid%is_ug) then
@@ -1827,38 +1871,53 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            end select
            select case(grid_ids(g))
            case( 'LND' )
+              xgrid_dimname = 'nfile_'//trim(xgrid_name)//'Xl'
               xgrid_name = trim(xgrid_name)//'Xl_file'
            case( 'OCN' )
+              xgrid_dimname = 'nfile_'//trim(xgrid_name)//'Xo'
               xgrid_name = trim(xgrid_name)//'Xo_file'
            case( 'WAV' )
+              xgrid_dimname = 'nfile_'//trim(xgrid_name)//'Xw'
               xgrid_name = trim(xgrid_name)//'Xw_file'
            case default
               call error_mesg('xgrid_mod', 'grid_ids(g) should be LND, OCN or WAV', FATAL)
            end select
            ! get the tile list for each mosaic
-           call read_data(grid_file, lowercase(grid_ids(1))//'_mosaic_file', mosaic1)
-           call read_data(grid_file, lowercase(grid_ids(g))//'_mosaic_file', mosaic2)
+
+           call read_data(gridfileobj, lowercase(grid_ids(1))//'_mosaic_file', mosaic1) 
+           call read_data(gridfileobj, lowercase(grid_ids(g))//'_mosaic_file', mosaic2) 
+
            mosaic1 = 'INPUT/'//trim(mosaic1)
            mosaic2 = 'INPUT/'//trim(mosaic2)
+
            allocate(tile1_list(grid1%ntile), tile2_list(grid%ntile) )
-           do j = 1, grid1%ntile
-              call read_data(mosaic1, 'gridtiles', tile1_list(j), level=j)
-           end do
-           do j = 1, grid%ntile
-              call read_data(mosaic2, 'gridtiles', tile2_list(j), level=j)
-           end do
-           if(field_exist(grid_file, xgrid_name)) then
-              call field_size(grid_file, xgrid_name, siz)
-              nxgrid_file = siz(2)
+           if(.not. open_file(fileobj,mosaic1, "read")) then
+              call error_mesg('xgrid_mod(setup_xmap)', 'Error when opening mosaic1 file '//trim(mosaic1), FATAL)
+           endif
+           call read_data(fileobj, 'gridtiles', tile1_list)
+           call close_file(fileobj)
+
+           if(.not. open_file(fileobj,mosaic2, "read")) then
+              call error_mesg('xgrid_mod(setup_xmap)', 'Error when opening mosaic2 file '//trim(mosaic2), FATAL)
+           endif
+           call read_data(fileobj, 'gridtiles', tile2_list)
+           call close_file(fileobj)
+
+           if(variable_exists(gridfileobj, xgrid_name)) then
+              call get_dimension_size(gridfileobj, xgrid_dimname, nxgrid_file)
+              if(nxgrid_file>0) then
+                 allocate(xgrid_filelist(nxgrid_file))
+                 call read_data(gridfileobj, xgrid_name, xgrid_filelist)
+              endif
               ! loop through all the exchange grid file
               do i = 1, nxgrid_file
-                 call read_data(grid_file, xgrid_name, xgrid_file, level = i)
-                 xgrid_file = 'INPUT/'//trim(xgrid_file)
-                 if( .NOT. file_exist(xgrid_file) )call error_mesg('xgrid_mod', &
-                      'file '//trim(xgrid_file)//' does not exist, check your xgrid file.', FATAL)
+                 xgrid_file = 'INPUT/'//trim(xgrid_filelist(i)) 
+                 if(.not. open_file(fileobj,xgrid_file, "read")) then
+                     call error_mesg('xgrid_mod(setup_xmap)', 'Error when opening xgrid file '//trim(xgrid_file), FATAL)
+                 endif
 
                  ! find the tile number of side 1 and side 2 mosaic, which is contained in field contact
-                 call read_data(xgrid_file, "contact", contact)
+                 call read_data(fileobj, "contact", contact)
                  i1 = index(contact, ":")
                  i2 = index(contact, "::")
                  i3 = index(contact, ":", back=.true. )
@@ -1870,7 +1929,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                  tile2_name = contact(i3+1:len_trim(contact))
                  tile1 = 0; tile2 = 0
                  do j = 1, grid1%ntile
-                    if( tile1_name == tile1_list(j) ) then
+                    if( trim(tile1_name) == trim(tile1_list(j)) ) then
                        tile1 = j
                        exit
                     end if
@@ -1881,14 +1940,16 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                        exit
                     end if
                  end do
+
                  if(tile1 == 0) call error_mesg('xgrid_mod', &
                       trim(tile1_name)//' is not a tile of mosaic '//trim(mosaic1), FATAL)
                  if(tile2 == 0) call error_mesg('xgrid_mod', &
                       trim(tile2_name)//' is not a tile of mosaic '//trim(mosaic2), FATAL)
-
+                 call close_file(fileobj)
                  call load_xgrid (xmap, grid, xgrid_file, grid_ids(1), grid_ids(g), tile1, tile2, &
                                   use_higher_order)
               end do
+              deallocate(xgrid_filelist)
            endif
            deallocate(tile1_list, tile2_list)
         end select
@@ -1898,6 +1959,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
         endif
      end if
   end do
+
+  if(xmap%version == VERSION2) call close_file(gridfileobj)
 
   call mpp_clock_end(id_load_xgrid)
 
@@ -1930,18 +1993,6 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      xmap%send_count_repro_tot = 0
      xmap%recv_count_repro_tot = 0
   end if
-
-  if (xgrid_log) then
-    call mpp_open( unit, 'xgrid.out', action=MPP_OVERWR, threading=MPP_MULTI, &
-         fileset=MPP_MULTI, nohdrs=.TRUE. )
-
-    write( unit,* )xmap%grids(:)%id, ' GRID: PE ', xmap%me, ' #XCELLS=', &
-       xmap%grids(2:size(xmap%grids(:)))%size, ' #COMM. PARTNERS=', &
-       count(xmap%your1my2), '/', count(xmap%your2my1), &
-       pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your1my2),  &
-       '/', pack((/(p+xmap%root_pe,p=0,xmap%npes-1)/), xmap%your2my1)
-    call close_file (unit)
-  endif
 
   allocate( xmap%x1(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x2(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
@@ -2033,10 +2084,10 @@ end subroutine setup_xmap
 
 !----------------------------------------------------------------------------
 ! currently we are assuming there is only one nest region
-function get_nest_contact(mosaic_file, tile_nest_out, tile_parent_out, is_nest_out, &
+function get_nest_contact(fileobj, tile_nest_out, tile_parent_out, is_nest_out, &
                           ie_nest_out, js_nest_out, je_nest_out, is_parent_out, &
                           ie_parent_out, js_parent_out, je_parent_out)
-character(len=*), intent(in) :: mosaic_file
+type(FmsNetcdfFile_t), intent(in) :: fileobj
 integer,         intent(out) :: tile_nest_out, tile_parent_out
 integer,         intent(out) :: is_nest_out, ie_nest_out
 integer,         intent(out) :: js_nest_out, je_nest_out
@@ -2060,12 +2111,13 @@ integer, allocatable, dimension(:) :: istart2, iend2, jstart2, jend2
   get_nest_contact = 0
 
   ! first read the contact information
-  ntiles = get_mosaic_ntiles(mosaic_file)
+  ntiles = get_mosaic_ntiles(fileobj)
   if( ntiles == 1 ) return
-  allocate(nx(ntiles), ny(ntiles))
-  call get_mosaic_grid_sizes(mosaic_file, nx, ny)
 
-  ncontacts = get_mosaic_ncontacts(mosaic_file)
+  allocate(nx(ntiles), ny(ntiles))  
+  call get_mosaic_grid_sizes(fileobj, nx, ny)
+
+  ncontacts = get_mosaic_ncontacts(fileobj)
   if(ncontacts == 0) return
   allocate(tile1(ncontacts), tile2(ncontacts))
   allocate(istart1(ncontacts), iend1(ncontacts))
@@ -2073,7 +2125,7 @@ integer, allocatable, dimension(:) :: istart2, iend2, jstart2, jend2
   allocate(istart2(ncontacts), iend2(ncontacts))
   allocate(jstart2(ncontacts), jend2(ncontacts))
 
-  call get_mosaic_contact( mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1, &
+  call get_mosaic_contact( fileobj, tile1, tile2, istart1, iend1, jstart1, jend1, &
                            istart2, iend2, jstart2, jend2)
 
   do n = 1, ncontacts

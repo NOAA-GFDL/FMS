@@ -22,7 +22,7 @@
 module ensemble_manager_mod
 
 
-  use fms_mod, only : open_namelist_file,close_file,check_nml_error
+  use fms_mod, only : check_nml_error
   use mpp_mod, only : mpp_npes, stdout, stdlog, mpp_error, FATAL
   use mpp_mod, only : mpp_pe, mpp_declare_pelist
   use mpp_mod, only : input_nml_file
@@ -74,13 +74,7 @@ contains
 
     namelist /ensemble_nml/ ensemble_size
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, ensemble_nml, iostat=io_status)
-#else
-    ioun = open_namelist_file()
-    read(ioun,nml=ensemble_nml,iostat = io_status)
-    call close_file(ioun)
-#endif
+    read (input_nml_file, ensemble_nml, iostat=io_status)
     ierr = check_nml_error(io_status, 'ensemble_nml')
 
     if(ensemble_size < 1) call mpp_error(FATAL, &
