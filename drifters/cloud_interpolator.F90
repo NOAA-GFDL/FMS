@@ -21,7 +21,6 @@
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 MODULE cloud_interpolator_mod
-#include <fms_platform.h>
   implicit none
   private
 

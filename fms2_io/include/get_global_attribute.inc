@@ -15,22 +15,22 @@ subroutine get_global_attribute_0d(fileobj, &
     integer :: err
     if (fileobj%is_root) then
         select type(attribute_value)
-            type is (integer(kind=int32))
+            type is (integer(kind=i4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=int64))
+            type is (integer(kind=i8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real32))
+            type is (real(kind=r4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real64))
+            type is (real(kind=r8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
@@ -46,22 +46,22 @@ subroutine get_global_attribute_0d(fileobj, &
         endif
     endif
     select type(attribute_value)
-        type is (integer(kind=int32))
+        type is (integer(kind=i4_kind))
             call mpp_broadcast(attribute_value, &
                                
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (integer(kind=int64))
+        type is (integer(kind=i8_kind))
             call mpp_broadcast(attribute_value, &
                                
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real32))
+        type is (real(kind=r4_kind))
             call mpp_broadcast(attribute_value, &
                                
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real64))
+        type is (real(kind=r8_kind))
             call mpp_broadcast(attribute_value, &
                                
                                fileobj%io_root, &
@@ -87,22 +87,22 @@ subroutine get_global_attribute_1d(fileobj, &
     integer :: err
     if (fileobj%is_root) then
         select type(attribute_value)
-            type is (integer(kind=int32))
+            type is (integer(kind=i4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=int64))
+            type is (integer(kind=i8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real32))
+            type is (real(kind=r4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real64))
+            type is (real(kind=r8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
@@ -118,22 +118,22 @@ subroutine get_global_attribute_1d(fileobj, &
         endif
     endif
     select type(attribute_value)
-        type is (integer(kind=int32))
+        type is (integer(kind=i4_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (integer(kind=int64))
+        type is (integer(kind=i8_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real32))
+        type is (real(kind=r4_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real64))
+        type is (real(kind=r8_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &

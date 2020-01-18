@@ -19,7 +19,6 @@
 
 
 module time_interp_external_mod
-#include  <fms_platform.h>
 !
 !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
 !
@@ -108,7 +107,7 @@ module time_interp_external_mod
      type(validtype) :: valid ! data validator
      integer :: nbuf
      logical :: domain_present
-     real(DOUBLE_KIND) :: slope, intercept
+     real(r8_kind) :: slope, intercept
      integer :: isc,iec,jsc,jec
      type(time_type) :: modulo_time_beg, modulo_time_end
      logical :: have_modulo_times, correct_leap_year_inconsistency
@@ -137,8 +136,8 @@ module time_interp_external_mod
   type(ext_fieldtype), save, private, pointer :: field(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
 !Balaji: really should use field%missing
-  integer, private, parameter :: dk = DOUBLE_KIND
-  real(DOUBLE_KIND), private, parameter :: time_interp_missing=-1e99_dk
+  integer, private, parameter :: dk = r8_kind
+  real(r8_kind), private, parameter :: time_interp_missing=-1e99_dk
   contains
 
 ! <SUBROUTINE NAME="time_interp_external_init">
@@ -255,7 +254,7 @@ module time_interp_external_mod
       type(axistype) :: time_axis
       type(atttype), allocatable, dimension(:) :: global_atts
 
-      real(DOUBLE_KIND) :: slope, intercept
+      real(r8_kind) :: slope, intercept
       integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max

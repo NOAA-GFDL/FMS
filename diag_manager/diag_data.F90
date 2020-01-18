@@ -59,7 +59,8 @@ MODULE diag_data_mod
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
-use fms2_io_mod
+  USE fms2_io_mod
+  USE platform_mod
   IMPLICIT NONE
 
   PUBLIC
@@ -317,8 +318,8 @@ use fms2_io_mod
      INTEGER :: num_attributes
 !----------
 !ug support
-     logical(INT_KIND) :: use_domainUG = .false.
-     logical(INT_KIND) :: use_domain2D = .false.
+     logical(i4_kind) :: use_domainUG = .false.
+     logical(i4_kind) :: use_domain2D = .false.
 !----------
 !Check if time axis was already registered
      logical, allocatable :: is_time_axis_registered

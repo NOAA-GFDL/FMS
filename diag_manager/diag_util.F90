@@ -18,37 +18,7 @@
 !***********************************************************************
 
 MODULE diag_util_mod
-!#include <fms_platform.h>
-#define QUAD_KIND real128
-#define DOUBLE_KIND c_double
-#define FLOAT_KIND c_float
-#define LONG_KIND c_int64_t
-#define INT_KIND c_int32_t
-#define SHORT_KIND c_int16_t
-#define POINTER_KIND c_intptr_t
-#define _PURE pure
-#define _ALLOCATABLE allocatable
-#define _NULL
-#define _ALLOCATED allocated
-!DEC$ MESSAGE:'Using allocatable derived type array members.'
-
-
-!Control use of cray pointers.
-#define use_CRI_pointers
-!DEC$ MESSAGE:'Using cray pointers.'
-!If you want to use quad-precision.
-
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-
-  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of
-  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
-  !   field-meta-data and field data
-  ! </OVERVIEW>
-use,intrinsic :: iso_fortran_env, only: real128
-use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
-                                      c_int32_t,c_int16_t,c_intptr_t
+#include <fms_platform.h>
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -105,7 +75,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_mod, ONLY: mpp_npes
   USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-use fms2_io_mod
+  USE fms2_io_mod
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
@@ -2522,7 +2492,7 @@ CONTAINS
     IF ( PRESENT(final_call_in) ) final_call = final_call_in
     static_write = .FALSE.
     IF ( PRESENT(static_write_in) ) static_write = static_write_in
-!> dif is the time as a real that is evaluated 
+!> dif is the time as a real that is evaluated
     dif = get_date_dif(time, base_time, files(file)%time_units)
 
     ! get file_unit, open new file and close curent file if necessary

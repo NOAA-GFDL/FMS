@@ -3,10 +3,10 @@
 !> @brief Create a netcdf type, which can be extended to meet
 !!        our various I/O needs.
 module netcdf_io_mod
-use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
+use platform_mod
 implicit none
 private
 
@@ -66,7 +66,7 @@ type, public :: FmsNetcdfFile_t
                      !! I/O root.
   logical :: is_restart !< Flag telling if the this file is a restart
                         !! file (that has internal pointers to data).
-  logical, allocatable :: is_open !< Allocated and set to true if opened.  
+  logical, allocatable :: is_open !< Allocated and set to true if opened.
   type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
   integer :: num_restart_vars !< Number of registered restart variables.
@@ -82,10 +82,10 @@ type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_fill !< Flag that's true a user defined fill value.
   logical :: has_missing !< Flag that's true a user defined missing value.
-  real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
-  real(kind=real64) :: min_val !< Unpacked minimum value allowed for a variable.
-  real(kind=real64) :: max_val !< Unpacked maximum value allowed for a variable.
-  real(kind=real64) :: missing_val !< Unpacked missing value for a variable.
+  real(kind=r8_kind) :: fill_val !< Unpacked fill value for a variable.
+  real(kind=r8_kind) :: min_val !< Unpacked minimum value allowed for a variable.
+  real(kind=r8_kind) :: max_val !< Unpacked maximum value allowed for a variable.
+  real(kind=r8_kind) :: missing_val !< Unpacked missing value for a variable.
 endtype Valid_t
 
 
@@ -409,7 +409,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       success = .true.
       return
     endif
-  endif 
+  endif
   !Add ".res" to the file path if necessary.
   is_res = .false.
   if (present(is_restart)) then
@@ -1472,9 +1472,9 @@ function get_valid(fileobj, variable_name) &
   type(Valid_t) :: valid
 
   integer :: varid
-  real(kind=real64) :: scale_factor
-  real(kind=real64) :: add_offset
-  real(kind=real64), dimension(2) :: buffer
+  real(kind=r8_kind) :: scale_factor
+  real(kind=r8_kind) :: add_offset
+  real(kind=r8_kind), dimension(2) :: buffer
   logical :: has_max
   logical :: has_min
   integer :: xtype
@@ -1490,16 +1490,16 @@ function get_valid(fileobj, variable_name) &
     if (attribute_exists(fileobj%ncid, varid, "scale_factor")) then
       call get_variable_attribute(fileobj, variable_name, "scale_factor", scale_factor)
     else
-      scale_factor = 1._real64
+      scale_factor = 1._r8_kind
     endif
     if (attribute_exists(fileobj%ncid, varid, "add_offset")) then
       call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset)
     else
-      add_offset = 0._real64
+      add_offset = 0._r8_kind
     endif
 
-	 !Max and and min data values are defined by the valid_range, valid_min, and valid_max attributes if they are present. 
-	 !If the fill_value attribute is present and valid_range is not, then fill_value determines valid_data values. 
+	 !Max and and min data values are defined by the valid_range, valid_min, and valid_max attributes if they are present.
+	 !If the fill_value attribute is present and valid_range is not, then fill_value determines valid_data values.
 	 !Otherwise, the missing_value attribute determines valid data_values if it is present, and valid_range fill_value attributes are not.
 
     !Get default max/min from missing_value.  These could be overwritten by
@@ -1510,10 +1510,10 @@ function get_valid(fileobj, variable_name) &
       valid%missing_val = buffer(1)*scale_factor + add_offset
       valid%has_missing = .true.
       if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
-          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
+          valid%min_val = (buffer(1) + 1._r8_kind)*scale_factor + add_offset
           has_min = .true.
       elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
-          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
+          valid%min_val = (nearest(nearest(buffer(1), 1._r8_kind), 1._r8_kind)) &
                           *scale_factor + add_offset
           has_min = .true.
       else
@@ -1530,19 +1530,19 @@ function get_valid(fileobj, variable_name) &
       xtype = get_variable_type(fileobj%ncid, varid)
       if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
         if (buffer(1) .gt. 0) then
-          valid%max_val = (buffer(1) - 1._real64)*scale_factor + add_offset
+          valid%max_val = (buffer(1) - 1._r8_kind)*scale_factor + add_offset
           has_max = .true.
         else
-          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
+          valid%min_val = (buffer(1) + 1._r8_kind)*scale_factor + add_offset
           has_min = .true.
         endif
       elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
         if (buffer(1) .gt. 0) then
-          valid%max_val = (nearest(nearest(buffer(1), -1._real64), -1._real64)) &
+          valid%max_val = (nearest(nearest(buffer(1), -1._r8_kind), -1._r8_kind)) &
                           *scale_factor + add_offset
           has_max = .true.
         else
-          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
+          valid%min_val = (nearest(nearest(buffer(1), 1._r8_kind), 1._r8_kind)) &
                           *scale_factor + add_offset
           has_min = .true.
         endif
@@ -1595,15 +1595,15 @@ elemental function is_valid(datum, validobj) &
   type(Valid_t), intent(in) :: validobj !< Valid object.
   logical :: valid_data
 
-  real(kind=real64) :: rdatum
+  real(kind=r8_kind) :: rdatum
 
   select type (datum)
-    type is (integer(kind=int32))
-      rdatum = real(datum, kind=real64)
-    type is (real(kind=real32))
-      rdatum = real(datum, kind=real64)
-    type is (real(kind=real64))
-      rdatum = real(datum, kind=real64)
+    type is (integer(kind=i4_kind))
+      rdatum = real(datum, kind=r8_kind)
+    type is (real(kind=r4_kind))
+      rdatum = real(datum, kind=r8_kind)
+    type is (real(kind=r8_kind))
+      rdatum = real(datum, kind=r8_kind)
  !  class default
  !    call error("unsupported type.")
   end select
@@ -1613,7 +1613,7 @@ elemental function is_valid(datum, validobj) &
     valid_data = rdatum .ge. validobj%min_val .and. rdatum .le. validobj%max_val
   elseif (validobj%has_fill) then
     valid_data = rdatum .ne. validobj%fill_val
-  elseif (validobj%has_missing) then 
+  elseif (validobj%has_missing) then
     valid_data = rdatum .ne. validobj%missing_val
   endif
 end function is_valid
@@ -1789,7 +1789,7 @@ function get_variable_missing(fileobj, variable_name) &
 
   type(FmsNetcdfFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: variable_name
-  real(kind=real64) :: variable_missing
+  real(kind=r8_kind) :: variable_missing
 
   if (variable_att_exists(fileobj, variable_name, "_FillValue")) then
     call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing)
@@ -1870,9 +1870,9 @@ function check_if_open(fileobj, fname) result(is_open)
   endif
 
   if (present(fname)) then
-    !If the filename does not match the name in path, 
+    !If the filename does not match the name in path,
     !then this is considered not open
-     if (is_open .AND. trim(fname) .ne. trim(fileobj%path)) is_open = .false. 
+     if (is_open .AND. trim(fname) .ne. trim(fileobj%path)) is_open = .false.
   endif
 end function check_if_open
 

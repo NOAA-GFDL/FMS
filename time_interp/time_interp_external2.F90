@@ -19,7 +19,6 @@
 
 
 module time_interp_external2_mod
-#include  <fms_platform.h>
 !
 !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
 !
@@ -110,7 +109,7 @@ module time_interp_external2_mod
      type(valid_t) :: valid ! data validator
      integer :: nbuf
      logical :: domain_present
-     real(DOUBLE_KIND) :: slope, intercept
+     real(r8_kind) :: slope, intercept
      integer :: isc,iec,jsc,jec
      type(time_type) :: modulo_time_beg, modulo_time_end
      logical :: have_modulo_times, correct_leap_year_inconsistency
@@ -139,9 +138,9 @@ module time_interp_external2_mod
   type(ext_fieldtype), save, private, pointer :: field(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
 !Balaji: really should use field%missing
-  integer, private, parameter :: dk = DOUBLE_KIND ! ensures that time_interp_missing is in range for mixed-mode 
+  integer, private, parameter :: dk = r8_kind ! ensures that time_interp_missing is in range for mixed-mode
                                                   ! compiling
-  real(DOUBLE_KIND), private, parameter :: time_interp_missing=-1e99_dk
+  real(r8_kind), private, parameter :: time_interp_missing=-1e99_dk
   contains
 
 ! <SUBROUTINE NAME="time_interp_external_init">
@@ -242,7 +241,7 @@ module time_interp_external2_mod
 
       integer :: init_external_field
 
-      real(DOUBLE_KIND) :: slope, intercept
+      real(r8_kind) :: slope, intercept
       integer :: unit,ndim,nvar,natt,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
@@ -417,7 +416,7 @@ module time_interp_external2_mod
       field(num_fields)%ndim = ndim
       field(num_fields)%tdim = 4
       !--- get field missing value
-      field(num_fields)%missing = get_variable_missing(fileobj, fieldname) 
+      field(num_fields)%missing = get_variable_missing(fileobj, fieldname)
 
       allocate(axisname(ndim), axislen(ndim))
 
@@ -670,17 +669,17 @@ module time_interp_external2_mod
       return
     end subroutine time_interp_external_2d
 
-   
+
     function get_external_fileobj(filename, fileobj)
        character(len=*),             intent(in) :: filename
-       type(FmsNetcdfFile_t), intent(out) :: fileobj      
+       type(FmsNetcdfFile_t), intent(out) :: fileobj
        logical                                  :: get_external_fileobj
        integer :: i
 
        get_external_fileobj = .false.
        do i=1,num_files
           if(trim(opened_files(i)%filename) == trim(filename)) then
-            fileobj = opened_files(i)%fileobj 
+            fileobj = opened_files(i)%fileobj
             get_external_fileobj = .true.
             exit  ! file is already opened
          endif

@@ -199,8 +199,6 @@ integer            :: n, ier
 integer, parameter :: max_iter = 20
 real   , parameter :: error=1.e-04, zeta_min=1.e-06, small=1.e-04
 
-! #include "monin_obukhov_interfaces.h"
-
 if(.not.module_is_initialized) call error_mesg('mo_drag_1d in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)
 
@@ -241,8 +239,6 @@ logical, intent(in) , optional, dimension(:) :: avail
 
 logical                            :: dummy_avail(1)
 integer                            :: n, ier
-
-! #include "monin_obukhov_interfaces.h"
 
 if(.not.module_is_initialized) call error_mesg('mo_profile_1d in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)

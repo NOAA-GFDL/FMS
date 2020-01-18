@@ -1,10 +1,12 @@
 module blackboxio
 use netcdf
+use mpp_mod
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
+use platform_mod
 implicit none
 private
 
@@ -149,9 +151,9 @@ subroutine copy_metadata(fileobj, new_fileobj)
   integer :: i
   integer :: j
   integer :: k
-  integer(kind=int32), dimension(:), allocatable :: buf_int
-  real(kind=real32), dimension(:), allocatable :: buf_float
-  real(kind=real64), dimension(:), allocatable :: buf_double
+  integer(kind=i4_kind), dimension(:), allocatable :: buf_int
+  real(kind=r4_kind), dimension(:), allocatable :: buf_float
+  real(kind=r8_kind), dimension(:), allocatable :: buf_double
 
   if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
     !Copy global attributes to the new file.

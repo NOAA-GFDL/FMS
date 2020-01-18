@@ -52,8 +52,6 @@ module axis_utils_mod
 
   implicit none
 
-# include <netcdf.inc>
-
   public get_axis_cart, get_axis_bounds, get_axis_modulo, get_axis_fold, lon_in_range, &
          tranlon, frac_index, nearest_index, interp_1d, get_axis_modulo_times
 

@@ -236,6 +236,7 @@ MODULE diag_manager_mod
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE diag_manifest_mod, ONLY: write_diag_manifest
   USE constants_mod, ONLY: SECONDS_PER_DAY
+  USE platform_mod
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -3802,8 +3803,8 @@ CONTAINS
 
     CHARACTER(len=*), PARAMETER :: SEP = '|'
 
-    INTEGER, PARAMETER :: FltKind = FLOAT_KIND
-    INTEGER, PARAMETER :: DblKind = DOUBLE_KIND
+    INTEGER, PARAMETER :: FltKind = r4_kind
+    INTEGER, PARAMETER :: DblKind = r8_kind
     INTEGER :: diag_subset_output
     INTEGER :: mystat
     INTEGER, ALLOCATABLE, DIMENSION(:) :: pelist
@@ -3837,7 +3838,7 @@ CONTAINS
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init', 'unknown pack_size.  Must be 1, or 2.', err_msg) ) RETURN
     END IF
 
-    ! Get min and max values for real(kind=FLOAT_KIND)
+    ! Get min and max values for real(kind=r4_kind)
     min_value = HUGE(0.0_FltKind)
     max_value = -min_value
 
@@ -3932,7 +3933,7 @@ CONTAINS
     ALLOCATE(fnum_for_domain(max_files))
     ALLOCATE(pelist(mpp_npes()))
     !> Initialize fnum_for_domain with "dn" which stands for done
-     fnum_for_domain(:) = "dn" 
+     fnum_for_domain(:) = "dn"
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
     ! set the diag_init_time if time_init present.  Otherwise, set it to base_time

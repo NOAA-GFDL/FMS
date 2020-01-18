@@ -2,12 +2,12 @@
 
 !> @brief Domain-specific I/O wrappers.
 module fms_netcdf_domain_io_mod
-use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
+use platform_mod
 implicit none
 private
 
@@ -469,7 +469,7 @@ subroutine register_domain_variable(fileobj, variable_name, variable_type, dimen
   type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
-                                                !! values are: "int", "int64",
+                                                !! values are: "int", "i8_kind",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
 
@@ -685,7 +685,7 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
                               position=xpos)
   ! If the xpos is east and the ending x index is NOT equal to max allowed, set extra_x_point to true
   if (present(extra_x_point)) then
-	 if ((xpos .eq. east) .and. (iec .ne. xmax)) then 
+	 if ((xpos .eq. east) .and. (iec .ne. xmax)) then
 		extra_x_point = .true.
     	else
 		extra_x_point = .false.
@@ -696,7 +696,7 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
                               position=ypos)
   ! If the ypost is north and the ending y index is NOT equal to max allowed, set extra_y_point to true
   if (present(extra_y_point)) then
-	 if ((ypos .eq. north) .and. (jec .ne. ymax)) then 
+	 if ((ypos .eq. north) .and. (jec .ne. ymax)) then
 		extra_y_point = .true.
 	 else
 		extra_y_point = .false.

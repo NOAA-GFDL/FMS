@@ -54,8 +54,8 @@ endif(OPENMP)
 include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${libFMS_SOURCE_DIR}/include
-  ${libFMS_SOURCE_DIR}/mpp/include
   ${libFMS_SOURCE_DIR}/fms
+  ${libFMS_SOURCE_DIR}/mpp/include
   ${libFMS_SOURCE_DIR}/fms2_io/include
   ${MPI_C_INCLUDE_PATH}
   ${MPI_Fortran_INCLUDE_PATH}
@@ -106,24 +106,24 @@ add_library(FMS
   field_manager/fm_util.F90
   fms/fms_io.F90
   fms/fms.F90
-  fms2_io/blackboxio.F90
+  fms2_io/blackboxio.f90
   fms2_io/fms_io_utils.F90
-  fms2_io/fms_netcdf_domain_io.F90
-  fms2_io/fms_netcdf_unstructured_domain_io.F90
-  fms2_io/fms2_io.F90
-  fms2_io/legacy.F90
-  fms2_io/netcdf_io.F90
+  fms2_io/fms_netcdf_domain_io.f90
+  fms2_io/fms_netcdf_unstructured_domain_io.f90
+  fms2_io/fms2_io.f90
+  fms2_io/legacy.f90
+  fms2_io/netcdf_io.f90
   horiz_interp/horiz_interp_bicubic.F90
   horiz_interp/horiz_interp_bilinear.F90
   horiz_interp/horiz_interp_conserve.F90
   horiz_interp/horiz_interp_spherical.F90
-  horiz_interp/horiz_interp_type.F90
+  horiz_interp/horiz_interp_type.f90
   horiz_interp/horiz_interp.F90
   interpolator/interpolator.F90
   memutils/memuse.c
   memutils/memutils.F90
   monin_obukhov/monin_obukhov_kernel.F90
-  monin_obukhov/monin_obukhov.F90
+  monin_obukhov/monin_obukhov.f90
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/gradient.F90
@@ -145,8 +145,8 @@ add_library(FMS
   mpp/nsclock.c
   mpp/threadloc.c
   platform/platform.F90
-  random_numbers/MersenneTwister.F90
-  random_numbers/random_numbers.F90
+  random_numbers/MersenneTwister.f90
+  random_numbers/random_numbers.f90
   sat_vapor_pres/sat_vapor_pres_k.F90
   sat_vapor_pres/sat_vapor_pres.F90
   time_interp/time_interp_external.F90
@@ -157,5 +157,5 @@ add_library(FMS
   topography/gaussian_topog.F90
   topography/topography.F90
   tracer_manager/tracer_manager.F90
-  tridiagonal/tridiagonal.F90
+  tridiagonal/tridiagonal.f90
 )

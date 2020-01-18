@@ -1,6 +1,5 @@
 !> @file
 module fms_netcdf_unstructured_domain_io_mod
-use,intrinsic :: iso_fortran_env
 use netcdf
 use mpp_domains_mod
 use fms_io_utils_mod
@@ -159,7 +158,7 @@ subroutine register_unstructured_domain_variable(fileobj, variable_name, &
   type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
-                                                !! values are: "int", "int64",
+                                                !! values are: "int", "i8_kind",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
 

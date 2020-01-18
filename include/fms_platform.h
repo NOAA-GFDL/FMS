@@ -1,32 +1,29 @@
-! -*-f90-*-*
-!***********************************************************************
-!*                   GNU Lesser General Public License
-!*
-!* This file is part of the GFDL Flexible Modeling System (FMS).
-!*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
-!*
-!* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
-!***********************************************************************
+/***********************************************************************
+ *                   GNU Lesser General Public License
+ *
+ * This file is part of the GFDL Flexible Modeling System (FMS).
+ *
+ * FMS is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at
+ * your option) any later version.
+ *
+ * FMS is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+ ***********************************************************************/
 
 #ifndef __FMS_PLATFORM_
 #define __FMS_PLATFORM_
 
-
-!Set type kinds.
-#ifdef PORTABLE_KINDS
-use,intrinsic :: iso_fortran_env, only: real128
-use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
-                                      c_int32_t,c_int16_t,c_intptr_t
+/* Set Fortran type kinds. */
+#if defined (PORTABLE_KINDS) && defined (HAVE_ISO_FORTRAN_ENV) && defined (HAVE_ISO_C_BINDING)
+/* Fortran files using this _must_ add `use iso_fortran_env` and
+ * `use iso_c_binding` before #including this file */
 #define QUAD_KIND real128
 #define DOUBLE_KIND c_double
 #define FLOAT_KIND c_float
@@ -34,6 +31,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #define INT_KIND c_int32_t
 #define SHORT_KIND c_int16_t
 #define POINTER_KIND c_intptr_t
+#define BOOL_KIND c_bool
 #else
 !These values are not necessarily portable.
 #define QUAD_KIND 16
@@ -43,11 +41,12 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #define INT_KIND 4
 #define SHORT_KIND 2
 #define POINTER_KIND 8
+#define BOOL_KIND 1
 !DEC$ MESSAGE:'Using 8-byte addressing'
 #endif
 
 
-!Control "pure" functions.
+/* Control Fortran "pure" functions. */
 #ifdef NO_F95
 #define _PURE
 !DEC$ MESSAGE:'Not using pure routines.'
@@ -57,7 +56,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #endif
 
 
-!Control array members of derived types.
+/* Control Fortran array members of derived types. */
 #ifdef NO_F2000
 #define _ALLOCATABLE pointer
 #define _NULL =>null()
@@ -71,7 +70,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #endif
 
 
-!Control use of cray pointers.
+/* Control use of cray pointers. */
 #ifdef NO_CRAY_POINTERS
 #undef use_CRI_pointers
 !DEC$ MESSAGE:'Not using cray pointers.'
@@ -81,22 +80,25 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #endif
 
 
-!Control size of integers that will hold address values.
-!Appears for legacy reasons, but seems rather dangerous.
+/* Control size of integers that will hold address values.
+ * Appears for legacy reasons, but seems rather dangerous.*/
 #ifdef _32bits
+#undef POINTER_KIND
 #define POINTER_KIND 4
 !DEC$ MESSAGE:'Using 4-byte addressing'
 #endif
 
 
-!If you do not want to use 64-bit integers.
+/* If you do not want to use 64-bit integers. */
 #ifdef no_8byte_integers
+#undef LONG_KIND
 #define LONG_KIND INT_KIND
 #endif
 
 
-!If you do not want to use 32-bit floats.
+/* If you do not want to use 32-bit floats. */
 #ifdef no_4byte_reals
+#undef FLOAT_KIND
 #define FLOAT_KIND DOUBLE_KIND
 #define NF_GET_VAR_REAL nf_get_var_double
 #define NF_GET_VARA_REAL nf_get_vara_double
@@ -106,10 +108,10 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #endif
 
 
-!If you want to use quad-precision.
-! The NO_QUAD_PRECISION macro will be deprecated and removed at some future time.
-! Model code will rely solely upon the ENABLE_QUAD_PRECISION macro thereafer.
-#if defined(ENABLE_QUAD_PRECISION) 
+/* If you want to use quad-precision.
+ * The NO_QUAD_PRECISION macro will be deprecated and removed at some future time.
+ * Model code will rely solely upon the ENABLE_QUAD_PRECISION macro thereafer.*/
+#if defined(ENABLE_QUAD_PRECISION)
 #undef NO_QUAD_PRECISION
 #else
 #define NO_QUAD_PRECISION

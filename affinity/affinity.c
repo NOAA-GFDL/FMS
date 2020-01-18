@@ -30,7 +30,7 @@
 #include <pthread.h>
 #endif
 
-#ifndef HAVE_GETTID
+#ifdef HAVE_GETTID
 static pid_t gettid(void)
 {
 #if defined(__APPLE__)

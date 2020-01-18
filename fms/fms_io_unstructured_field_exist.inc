@@ -25,24 +25,25 @@ function fms_io_unstructured_field_exist(file_name, &
                                          field_name, &
                                          domain) &
                                          result(does_field_exist)
+    use platform_mod
 
    !Inputs/Outputs
     character(len=*),intent(in) :: file_name        !<Name of a file.
     character(len=*),intent(in) :: field_name       !<Name of a field.
     type(domainUG),intent(in)   :: domain           !<An unstructured mpp domain.
-    logical(INT_KIND)           :: does_field_exist !<Flag telling if the inputted field exists in the inputted file.
+    logical(i4_kind)           :: does_field_exist !<Flag telling if the inputted field exists in the inputted file.
 
    !Local variables
-    logical(INT_KIND)                        :: file_exist !<Flag telling if the inputted file or one of its variants exists.
+    logical(i4_kind)                        :: file_exist !<Flag telling if the inputted file or one of its variants exists.
     character(len=256)                       :: fname      !<Actual name of the found file.
-    logical(INT_KIND)                        :: read_dist  !<Flag telling if the file is "distributed" (has IO domain tile id appended onto the end).
-    integer(INT_KIND)                        :: funit      !<A file unit.
-    integer(INT_KIND)                        :: nfile      !<Index of the inputted file in the "files_read" module array.
-    integer(INT_KIND)                        :: i          !<Loop variable.
-    integer(INT_KIND)                        :: ndim       !<Number of dimensions in a file.
-    integer(INT_KIND)                        :: nvar       !<Number of fields in a file.
-    integer(INT_KIND)                        :: natt       !<Number of attributes in a file.
-    integer(INT_KIND)                        :: ntime      !<Number of time levels in a file.
+    logical(i4_kind)                        :: read_dist  !<Flag telling if the file is "distributed" (has IO domain tile id appended onto the end).
+    integer(i4_kind)                        :: funit      !<A file unit.
+    integer(i4_kind)                        :: nfile      !<Index of the inputted file in the "files_read" module array.
+    integer(i4_kind)                        :: i          !<Loop variable.
+    integer(i4_kind)                        :: ndim       !<Number of dimensions in a file.
+    integer(i4_kind)                        :: nvar       !<Number of fields in a file.
+    integer(i4_kind)                        :: natt       !<Number of attributes in a file.
+    integer(i4_kind)                        :: ntime      !<Number of time levels in a file.
     character(len=64)                        :: tmp_name   !<Name of a field.
     type(fieldtype),dimension(:),allocatable :: fields     !<An array of fields found in the input file.
 
