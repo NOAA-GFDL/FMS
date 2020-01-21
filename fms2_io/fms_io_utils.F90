@@ -9,6 +9,8 @@ use omp_lib
 use mpp_mod
 
 
+implicit none
+
 public :: char_linked_list
 public :: error
 public :: file_exists
