@@ -7,7 +7,8 @@ use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real6
 use omp_lib
 #endif
 use mpp_mod
-
+implicit none
+private
 
 public :: char_linked_list
 public :: error
@@ -25,7 +26,8 @@ public :: get_array_section
 public :: get_data_type_string
 public :: get_checksum
 public :: open_check
-
+public :: string_compare
+public :: restart_filepath_mangle
 
 !> @brief A linked list of strings.
 type :: char_linked_list
@@ -130,7 +132,6 @@ interface get_checksum
   module procedure get_checksum_4d
   module procedure get_checksum_5d
 end interface get_checksum
-
 
 contains
 
@@ -358,7 +359,7 @@ end function has_io_domain_tile_string
 
 
 !> @brief Add the I/O domain tile id to an input filepath.
-!! @internal
+!! 
 subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
 
   character(len=*), intent(inout) :: dest !< Output filepath.
@@ -385,7 +386,7 @@ end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
-!! @internal
+!! 
 subroutine restart_filepath_mangle(dest, source)
 
   character(len=*), intent(inout) :: dest

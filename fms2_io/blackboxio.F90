@@ -5,6 +5,8 @@ use fms_io_utils_mod
 use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
+use mpp_mod, only: mpp_pe
+use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
 implicit none
 private
 
