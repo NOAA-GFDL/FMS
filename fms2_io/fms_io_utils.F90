@@ -386,7 +386,7 @@ end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
-!! @internal
+!! 
 subroutine restart_filepath_mangle(dest, source)
 
   character(len=*), intent(inout) :: dest
