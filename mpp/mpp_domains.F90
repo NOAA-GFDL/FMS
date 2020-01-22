@@ -2786,7 +2786,7 @@ include "include/mpp_define_nest_domains.inc"
 #include "include/mpp_domains_define.INC"
 #include "include/mpp_domains_misc.INC"
 #include "include/mpp_domains_reduce.INC"
-#include "include/mpp_unstruct_domain.inc"
+#include "include/mpp_unstruct_domain.INC"
 
 end module mpp_domains_mod
 

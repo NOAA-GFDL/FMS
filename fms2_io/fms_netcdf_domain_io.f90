@@ -688,7 +688,7 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
   if (present(extra_x_point)) then
 	 if ((xpos .eq. east) .and. (iec .ne. xmax)) then
 		extra_x_point = .true.
-    	else
+	else
 		extra_x_point = .false.
 	endif
   endif
@@ -701,7 +701,7 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
 		extra_y_point = .true.
 	 else
 		extra_y_point = .false.
-   	 endif
+	 endif
   endif
 
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
