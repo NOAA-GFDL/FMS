@@ -587,7 +587,7 @@ end function fms_io_unstructured_register_restart_field_r_3d
 
 #ifdef OVERLOAD_R8
 !------------------------------------------------------------------------------
-!>Add a r8_kind 2D field to a restart object (restart_file_type), where the
+!>Add a DOUBLE_KIND 2D field to a restart object (restart_file_type), where the
 !!field's 1st axis assumed to be along the unstructured axis and the field's
 !!2nd axis is assumed to be along the z-axis.  Return the index of the
 !!inputted field in the fileObj%var array.
@@ -608,11 +608,11 @@ function fms_io_unstructured_register_restart_field_r8_2d(fileObj, &
     type(restart_file_type),intent(inout) :: fileObj           !<A restart object.
     character(len=*),intent(in)           :: filename          !<The name of a file.
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
-    real(r8_kind),dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
+    real(DOUBLE_KIND),dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
     integer(INT_KIND),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
-    real(r8_kind),intent(in),optional              :: data_default      !<A default value for the data.
+    real(DOUBLE_KIND),intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
     logical(INT_KIND),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
@@ -748,7 +748,7 @@ function fms_io_unstructured_register_restart_field_r8_2d(fileObj, &
 end function fms_io_unstructured_register_restart_field_r8_2d
 
 !------------------------------------------------------------------------------
-!>Add a r8_kind 3D field to a restart object (restart_file_type), where the
+!>Add a DOUBLE_KIND 3D field to a restart object (restart_file_type), where the
 !!field's 1st axis assumed to be along the unstructured axis, the fields's
 !!second axis is assumed to be along the z-axis, and the field's third axis
 !!is assumed to be along the cc-axis (???).  Return the index of the
@@ -770,11 +770,11 @@ function fms_io_unstructured_register_restart_field_r8_3d(fileObj, &
     type(restart_file_type),intent(inout)   :: fileObj           !<A restart object.
     character(len=*),intent(in)             :: filename          !<The name of a file.
     character(len=*),intent(in)             :: fieldname         !<The name of a field.
-    real(r8_kind),dimension(:,:,:),intent(in),target :: fdata_3d          !<Some data.
+    real(DOUBLE_KIND),dimension(:,:,:),intent(in),target :: fdata_3d          !<Some data.
     integer(INT_KIND),dimension(3)          :: fdata_3d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target        :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional             :: mandatory         !<Flag telling if the field is mandatory for the restart.
-    real(r8_kind),intent(in),optional                :: data_default      !<A default value for the data.
+    real(DOUBLE_KIND),intent(in),optional                :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional    :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional    :: units             !<Units for the field.
     logical(INT_KIND),intent(in),optional   :: read_only         !<Tells whether or not the variable will be written to the restart file.
