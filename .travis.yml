@@ -30,7 +30,7 @@ before_script:
   - export CC=mpicc
   - export FC=mpif90
   - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500 ${CPPFLAGS_ADD}"
-  - export FCFLAGS="-fcray-pointer -Waliasing -ffree-line-length-none -fno-range-check ${FCFLAGS_REAL_KIND} ${OPENMP}"
+  - export FCFLAGS="-I/usr/include -fcray-pointer -Waliasing -ffree-line-length-none -fno-range-check ${FCFLAGS_REAL_KIND} ${OPENMP}"
   - export LDFLAGS='-L/usr/lib'
 
 script:
