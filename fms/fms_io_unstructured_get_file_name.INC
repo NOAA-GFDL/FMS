@@ -45,18 +45,17 @@ function fms_io_unstructured_get_file_name(orig_file, &
                                            read_dist, &
                                            domain) &
                                            result(does_file_exist)
-    use platform_mod
    !Inputs/Outputs
     character(len=*),intent(in)   :: orig_file       !<The name of file we're looking for.
     character(len=*),intent(out)  :: actual_file     !<Name of the file we found.
-    logical(i4_kind),intent(out) :: read_dist       !<Flag telling if the file is "distributed" (has IO domain tile id appended onto the end).
+    logical(INT_KIND),intent(out) :: read_dist       !<Flag telling if the file is "distributed" (has IO domain tile id appended onto the end).
     type(domainUG),intent(in)     :: domain          !<Unstructured mpp domain.
-    logical(i4_kind)             :: does_file_exist !<Flag telling if the inputted file exists or one its variants.
+    logical(INT_KIND)             :: does_file_exist !<Flag telling if the inputted file exists or one its variants.
 
    !Local variables
-    logical(i4_kind)      :: fexist          !<Flag that tells if a file exists.
+    logical(INT_KIND)      :: fexist          !<Flag that tells if a file exists.
     type(domainUG),pointer :: io_domain       !<Pointer to an unstructured I/O domain.
-    integer(i4_kind)      :: io_tile_id      !<Tile id for the I/O domain.
+    integer(INT_KIND)      :: io_tile_id      !<Tile id for the I/O domain.
     character(len=256)     :: fname           !<A character buffer used to test different file names.
     character(len=512)     :: actual_file_tmp !<A character buffer used to test different file names.
 

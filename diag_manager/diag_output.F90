@@ -44,7 +44,6 @@ MODULE diag_output_mod
   USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype, files
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
   USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, fms_error_handler, FATAL, note
-  USE platform_mod
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -292,9 +291,9 @@ integer :: domain_size, axis_length, axis_pos
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
     type(domainUG),pointer                     :: io_domain
-    integer(i4_kind)                          :: io_domain_npes
-    integer(i4_kind),dimension(:),allocatable :: io_pelist
-    integer(i4_kind),dimension(:),allocatable :: unstruct_axis_sizes
+    integer(INT_KIND)                          :: io_domain_npes
+    integer(INT_KIND),dimension(:),allocatable :: io_pelist
+    integer(INT_KIND),dimension(:),allocatable :: unstruct_axis_sizes
     real,dimension(:),allocatable              :: unstruct_axis_data
     integer                                    :: id_axis_current
     logical :: is_time_axis_registered

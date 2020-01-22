@@ -60,7 +60,6 @@ MODULE diag_data_mod
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
   USE fms2_io_mod
-  USE platform_mod
   IMPLICIT NONE
 
   PUBLIC
@@ -318,8 +317,8 @@ MODULE diag_data_mod
      INTEGER :: num_attributes
 !----------
 !ug support
-     logical(i4_kind) :: use_domainUG = .false.
-     logical(i4_kind) :: use_domain2D = .false.
+     logical(INT_KIND) :: use_domainUG = .false.
+     logical(INT_KIND) :: use_domain2D = .false.
 !----------
 !Check if time axis was already registered
      logical, allocatable :: is_time_axis_registered

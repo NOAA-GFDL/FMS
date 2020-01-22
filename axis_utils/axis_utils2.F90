@@ -42,13 +42,12 @@ module axis_utils2_mod
   !
   !</DESCRIPTION>
   !
-  !use, intrinsic :: iso_fortran_env
+  use, intrinsic :: iso_fortran_env, only: real32, real64
   use mpp_mod,    only: mpp_error, FATAL, stdout
   use fms_mod,    only: lowercase, string_array_index, fms_error_handler
   use fms2_io_mod, only: FmsNetcdfDomainFile_t, variable_att_exists, FmsNetcdfFile_t, &
                          get_variable_num_dimensions, get_variable_attribute,  &
                          get_variable_size, read_data
-  use platform_mod
   implicit none
 
   public get_axis_cart, get_axis_modulo, lon_in_range, &
@@ -152,10 +151,10 @@ contains
   integer :: ndims
   character(len=128) :: buffer
   integer, dimension(:), allocatable :: dim_sizes
-  real(kind=r4_kind), dimension(:), allocatable :: r32
-  real(kind=r4_kind), dimension(:,:), allocatable :: r322d
-  real(kind=r8_kind), dimension(:), allocatable :: r64
-  real(kind=r8_kind), dimension(:,:), allocatable :: r642d
+  real(kind=real32), dimension(:), allocatable :: r32
+  real(kind=real32), dimension(:,:), allocatable :: r322d
+  real(kind=real64), dimension(:), allocatable :: r64
+  real(kind=real64), dimension(:,:), allocatable :: r642d
   integer :: i
   integer :: n
 
@@ -183,9 +182,9 @@ contains
         call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
       endif
       select type (edge_data)
-        type is (real(kind=r4_kind))
+        type is (real(kind=real32))
           call read_data(fileobj, buffer, edge_data)
-        type is (real(kind=r8_kind))
+        type is (real(kind=real64))
           call read_data(fileobj, buffer, edge_data)
         class default
           call mpp_error(FATAL, "axis_edges: unsupported kind.")
@@ -198,13 +197,13 @@ contains
         call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
       endif
       select type (edge_data)
-        type is (real(kind=r4_kind))
+        type is (real(kind=real32))
           allocate(r322d(dim_sizes(1), dim_sizes(2)))
           call read_data(fileobj, buffer, r322d)
           edge_data(1:dim_sizes(2)) = r322d(1,:)
           edge_data(dim_sizes(2)+1) = r322d(2,dim_sizes(2))
           deallocate(r322d)
-        type is (real(kind=r8_kind))
+        type is (real(kind=real64))
           allocate(r642d(dim_sizes(1), dim_sizes(2)))
           call read_data(fileobj, buffer, r642d)
           edge_data(1:dim_sizes(2)) = r642d(1,:)
@@ -217,29 +216,29 @@ contains
     deallocate(dim_sizes)
   else
     select type (edge_data)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         allocate(r32(n))
         call read_data(fileobj, name, r32)
         do i = 2, n
-          edge_data(i) = r32(i-1) + 0.5_r4_kind*(r32(i) - r32(i-1))
+          edge_data(i) = r32(i-1) + 0.5_real32*(r32(i) - r32(i-1))
         enddo
-        edge_data(1) = r32(1) - 0.5_r4_kind*(r32(2) - r32(1))
+        edge_data(1) = r32(1) - 0.5_real32*(r32(2) - r32(1))
         if (abs(edge_data(1)) .lt. 1.e-10) then
-          edge_data(1) = 0._r4_kind
+          edge_data(1) = 0._real32
         endif
-        edge_data(n+1) = r32(n) + 0.5_r4_kind*(r32(n) - r32(n-1))
+        edge_data(n+1) = r32(n) + 0.5_real32*(r32(n) - r32(n-1))
         deallocate(r32)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         allocate(r64(n))
         call read_data(fileobj, name, r64)
         do i = 2, n
-          edge_data(i) = r64(i-1) + 0.5_r8_kind*(r64(i) - r64(i-1))
+          edge_data(i) = r64(i-1) + 0.5_real64*(r64(i) - r64(i-1))
         enddo
-        edge_data(1) = r64(1) - 0.5_r8_kind*(r64(2) - r64(1))
+        edge_data(1) = r64(1) - 0.5_real64*(r64(2) - r64(1))
         if (abs(edge_data(1)) .lt. 1.d-10) then
-          edge_data(1) = 0._r8_kind
+          edge_data(1) = 0._real64
         endif
-        edge_data(n+1) = r64(n) + 0.5_r8_kind*(r64(n) - r64(n-1))
+        edge_data(n+1) = r64(n) + 0.5_real64*(r64(n) - r64(n-1))
         deallocate(r64)
       class default
         call mpp_error(FATAL, "axis_edges: unsupported kind.")

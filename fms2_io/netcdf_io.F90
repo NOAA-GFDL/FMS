@@ -3,6 +3,7 @@
 !> @brief Create a netcdf type, which can be extended to meet
 !!        our various I/O needs.
 module netcdf_io_mod
+use, intrinsic :: iso_fortran_env, only: int32, int64, real32, real64
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
@@ -82,10 +83,10 @@ type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_fill !< Flag that's true a user defined fill value.
   logical :: has_missing !< Flag that's true a user defined missing value.
-  real(kind=r8_kind) :: fill_val !< Unpacked fill value for a variable.
-  real(kind=r8_kind) :: min_val !< Unpacked minimum value allowed for a variable.
-  real(kind=r8_kind) :: max_val !< Unpacked maximum value allowed for a variable.
-  real(kind=r8_kind) :: missing_val !< Unpacked missing value for a variable.
+  real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
+  real(kind=real64) :: min_val !< Unpacked minimum value allowed for a variable.
+  real(kind=real64) :: max_val !< Unpacked maximum value allowed for a variable.
+  real(kind=real64) :: missing_val !< Unpacked missing value for a variable.
 endtype Valid_t
 
 
@@ -1472,9 +1473,9 @@ function get_valid(fileobj, variable_name) &
   type(Valid_t) :: valid
 
   integer :: varid
-  real(kind=r8_kind) :: scale_factor
-  real(kind=r8_kind) :: add_offset
-  real(kind=r8_kind), dimension(2) :: buffer
+  real(kind=real64) :: scale_factor
+  real(kind=real64) :: add_offset
+  real(kind=real64), dimension(2) :: buffer
   logical :: has_max
   logical :: has_min
   integer :: xtype
@@ -1490,12 +1491,12 @@ function get_valid(fileobj, variable_name) &
     if (attribute_exists(fileobj%ncid, varid, "scale_factor")) then
       call get_variable_attribute(fileobj, variable_name, "scale_factor", scale_factor)
     else
-      scale_factor = 1._r8_kind
+      scale_factor = 1._real64
     endif
     if (attribute_exists(fileobj%ncid, varid, "add_offset")) then
       call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset)
     else
-      add_offset = 0._r8_kind
+      add_offset = 0._real64
     endif
 
 	 !Max and and min data values are defined by the valid_range, valid_min, and valid_max attributes if they are present.
@@ -1510,10 +1511,10 @@ function get_valid(fileobj, variable_name) &
       valid%missing_val = buffer(1)*scale_factor + add_offset
       valid%has_missing = .true.
       if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
-          valid%min_val = (buffer(1) + 1._r8_kind)*scale_factor + add_offset
+          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
           has_min = .true.
       elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
-          valid%min_val = (nearest(nearest(buffer(1), 1._r8_kind), 1._r8_kind)) &
+          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
                           *scale_factor + add_offset
           has_min = .true.
       else
@@ -1530,19 +1531,19 @@ function get_valid(fileobj, variable_name) &
       xtype = get_variable_type(fileobj%ncid, varid)
       if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
         if (buffer(1) .gt. 0) then
-          valid%max_val = (buffer(1) - 1._r8_kind)*scale_factor + add_offset
+          valid%max_val = (buffer(1) - 1._real64)*scale_factor + add_offset
           has_max = .true.
         else
-          valid%min_val = (buffer(1) + 1._r8_kind)*scale_factor + add_offset
+          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
           has_min = .true.
         endif
       elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
         if (buffer(1) .gt. 0) then
-          valid%max_val = (nearest(nearest(buffer(1), -1._r8_kind), -1._r8_kind)) &
+          valid%max_val = (nearest(nearest(buffer(1), -1._real64), -1._real64)) &
                           *scale_factor + add_offset
           has_max = .true.
         else
-          valid%min_val = (nearest(nearest(buffer(1), 1._r8_kind), 1._r8_kind)) &
+          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
                           *scale_factor + add_offset
           has_min = .true.
         endif
@@ -1595,15 +1596,15 @@ elemental function is_valid(datum, validobj) &
   type(Valid_t), intent(in) :: validobj !< Valid object.
   logical :: valid_data
 
-  real(kind=r8_kind) :: rdatum
+  real(kind=real64) :: rdatum
 
   select type (datum)
-    type is (integer(kind=i4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r8_kind))
-      rdatum = real(datum, kind=r8_kind)
+    type is (integer(kind=int32))
+      rdatum = real(datum, kind=real64)
+    type is (real(kind=real32))
+      rdatum = real(datum, kind=real64)
+    type is (real(kind=real64))
+      rdatum = real(datum, kind=real64)
  !  class default
  !    call error("unsupported type.")
   end select
@@ -1789,7 +1790,7 @@ function get_variable_missing(fileobj, variable_name) &
 
   type(FmsNetcdfFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: variable_name
-  real(kind=r8_kind) :: variable_missing
+  real(kind=real64) :: variable_missing
 
   if (variable_att_exists(fileobj, variable_name, "_FillValue")) then
     call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing)

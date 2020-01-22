@@ -34,7 +34,6 @@ function fms_io_unstructured_register_restart_field_r_0d(fileObj, &
                                                          read_only, &
                                                          restart_owns_data) &
                                                          result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout) :: fileObj           !<A restart object.
     character(len=*),intent(in)           :: filename          !<The name of a file.
@@ -45,18 +44,18 @@ function fms_io_unstructured_register_restart_field_r_0d(fileObj, &
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(i4_kind)                          :: io_domain_npes        !<The number of ranks in the unstructured I/O domain pelist.
-    integer(i4_kind),dimension(:),allocatable :: pelist                !<A pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The number of ranks in the unstructured I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
     real,dimension(:),allocatable              :: fdata_per_rank        !<Array used to gather the scalar field values.
-    integer(i4_kind)                          :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX)          :: field_dimension_sizes !<Array of dimension sizes for the field.
-    integer(i4_kind),dimension(1)             :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND)                          :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX)          :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND),dimension(1)             :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -146,25 +145,24 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
                                                          read_only, &
                                                          restart_owns_data) &
                                                          result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout) :: fileObj           !<A restart object.
     character(len=*),intent(in)           :: filename          !<The name of a file.
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
     real,dimension(:),intent(in),target   :: fdata_1d          !<Some data.
-    integer(i4_kind),dimension(1)        :: fdata_1d_axes     !<An array describing the axes for the data.
+    integer(INT_KIND),dimension(1)        :: fdata_1d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(i4_kind)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -263,25 +261,24 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
                                                          read_only, &
                                                          restart_owns_data) &
                                                          result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout) :: fileObj           !<A restart object.
     character(len=*),intent(in)           :: filename          !<The name of a file.
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
     real,dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
-    integer(i4_kind),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
+    integer(INT_KIND),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(i4_kind)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -421,25 +418,24 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
                                                          read_only, &
                                                          restart_owns_data) &
                                                          result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout)   :: fileObj           !<A restart object.
     character(len=*),intent(in)             :: filename          !<The name of a file.
     character(len=*),intent(in)             :: fieldname         !<The name of a field.
     real,dimension(:,:,:),intent(in),target :: fdata_3d          !<Some data.
-    integer(i4_kind),dimension(3)          :: fdata_3d_axes     !<An array describing the axes for the data.
+    integer(INT_KIND),dimension(3)          :: fdata_3d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target        :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional             :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional                :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional    :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional    :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional   :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional   :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                       :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional   :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional   :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                       :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(i4_kind)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -608,25 +604,24 @@ function fms_io_unstructured_register_restart_field_r8_2d(fileObj, &
                                                           read_only, &
                                                           restart_owns_data) &
                                                           result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout) :: fileObj           !<A restart object.
     character(len=*),intent(in)           :: filename          !<The name of a file.
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
     real(r8_kind),dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
-    integer(i4_kind),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
+    integer(INT_KIND),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real(r8_kind),intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(i4_kind)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !QUICK ERROR OUT AS SUPPORT NOT YET FULLY IMPLEMENTED
     call mpp_error(FATAL, &
@@ -771,25 +766,24 @@ function fms_io_unstructured_register_restart_field_r8_3d(fileObj, &
                                                           read_only, &
                                                           restart_owns_data) &
                                                           result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout)   :: fileObj           !<A restart object.
     character(len=*),intent(in)             :: filename          !<The name of a file.
     character(len=*),intent(in)             :: fieldname         !<The name of a field.
     real(r8_kind),dimension(:,:,:),intent(in),target :: fdata_3d          !<Some data.
-    integer(i4_kind),dimension(3)          :: fdata_3d_axes     !<An array describing the axes for the data.
+    integer(INT_KIND),dimension(3)          :: fdata_3d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target        :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional             :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real(r8_kind),intent(in),optional                :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional    :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional    :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional   :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional   :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                       :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional   :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional   :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                       :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(i4_kind)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !QUICK ERROR OUT AS SUPPORT NOT YET FULLY IMPLEMENTED
     call mpp_error(FATAL, &
@@ -960,7 +954,6 @@ function fms_io_unstructured_register_restart_field_i_0d(fileObj, &
                                                          read_only, &
                                                          restart_owns_data) &
                                                          result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout) :: fileObj           !<A restart object.
     character(len=*),intent(in)           :: filename          !<The name of a file.
@@ -971,18 +964,18 @@ function fms_io_unstructured_register_restart_field_i_0d(fileObj, &
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                     :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(i4_kind)                          :: io_domain_npes        !<The number of ranks in the unstructured I/O domain pelist.
-    integer(i4_kind),dimension(:),allocatable :: pelist                !<A pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The number of ranks in the unstructured I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
     integer,dimension(:),allocatable           :: fdata_per_rank        !<Array used to gather the scalar field values.
-    integer(i4_kind)                          :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX)          :: field_dimension_sizes !<Array of dimension sizes for the field.
-    integer(i4_kind),dimension(1)             :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND)                          :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX)          :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND),dimension(1)             :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -1072,25 +1065,24 @@ function fms_io_unstructured_register_restart_field_i_1d(fileObj, &
                                                          read_only, &
                                                          restart_owns_data) &
                                                          result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout)  :: fileObj           !<A restart object.
     character(len=*),intent(in)            :: filename          !<The name of a file.
     character(len=*),intent(in)            :: fieldname         !<The name of a field.
     integer,dimension(:),intent(in),target :: fdata_1d          !<Some data.
-    integer(i4_kind),dimension(1)         :: fdata_1d_axes     !<An array describing the axes for the data.
+    integer(INT_KIND),dimension(1)         :: fdata_1d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target       :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional            :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional               :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional   :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional   :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional  :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional  :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                      :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional  :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional  :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                      :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(i4_kind)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -1189,25 +1181,24 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
                                                          read_only, &
                                                          restart_owns_data) &
                                                          result(restart_index)
-    use platform_mod
    !Inputs/Outputs
     type(restart_file_type),intent(inout)    :: fileObj           !<A restart object.
     character(len=*),intent(in)              :: filename          !<The name of a file.
     character(len=*),intent(in)              :: fieldname         !<The name of a field.
     integer,dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
-    integer(i4_kind),dimension(2)           :: fdata_2d_axes     !<An array describing the axes for the data.
+    integer(INT_KIND),dimension(2)           :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target         :: domain            !<An unstructured mpp_domain.
     logical,intent(in),optional              :: mandatory         !<Flag telling if the field is mandatory for the restart.
     real,intent(in),optional                 :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional     :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional     :: units             !<Units for the field.
-    logical(i4_kind),intent(in),optional    :: read_only         !<Tells whether or not the variable will be written to the restart file.
-    logical(i4_kind),intent(in),optional    :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
-    integer(i4_kind)                        :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    logical(INT_KIND),intent(in),optional    :: read_only         !<Tells whether or not the variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional    :: restart_owns_data !<Tells if the data will be deallocated when the restart object is deallocated.
+    integer(INT_KIND)                        :: restart_index     !<Index of the inputted field in the fileObj%var array.
 
    !Local variables
-    integer(i4_kind)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
+    integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of dimension sizes for the field.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -1327,7 +1318,3 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
 
     return
 end function fms_io_unstructured_register_restart_field_i_2d
-
-!------------------------------------------------------------------------------
-
-!----------

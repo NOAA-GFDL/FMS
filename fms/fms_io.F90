@@ -126,8 +126,6 @@ use mpp_mod,         only: input_nml_file, mpp_get_current_pelist_name, uppercas
 use mpp_mod,         only: mpp_gather, mpp_scatter, mpp_send, mpp_recv, mpp_sync_self, COMM_TAG_1, EVENT_RECV
 use mpp_mod,         only: MPP_FILL_DOUBLE,MPP_FILL_INT
 
-use platform_mod, only: r8_kind
-
 !----------
 !ug support
 use mpp_parameter_mod, only: COMM_TAG_2
@@ -139,7 +137,6 @@ use mpp_io_mod,        only: mpp_io_unstructured_write
 use mpp_io_mod,        only: mpp_io_unstructured_read
 use mpp_io_mod,        only: mpp_file_is_opened
 !----------
-use platform_mod
 
 implicit none
 private
@@ -161,14 +158,14 @@ integer, parameter          :: max_axis_size=10000
 
 !----------
 !ug support
-integer(i4_kind),parameter,public :: XIDX = 1
-integer(i4_kind),parameter,public :: YIDX = 2
-integer(i4_kind),parameter,public :: CIDX = 3
-integer(i4_kind),parameter,public :: ZIDX = 4
-integer(i4_kind),parameter,public :: HIDX = 5
-integer(i4_kind),parameter,public :: TIDX = 6
-integer(i4_kind),parameter,public :: UIDX = 7
-integer(i4_kind),parameter,public :: CCIDX = 8
+integer(INT_KIND),parameter,public :: XIDX = 1
+integer(INT_KIND),parameter,public :: YIDX = 2
+integer(INT_KIND),parameter,public :: CIDX = 3
+integer(INT_KIND),parameter,public :: ZIDX = 4
+integer(INT_KIND),parameter,public :: HIDX = 5
+integer(INT_KIND),parameter,public :: TIDX = 6
+integer(INT_KIND),parameter,public :: UIDX = 7
+integer(INT_KIND),parameter,public :: CCIDX = 8
 !---------
 
 integer, parameter, private :: NIDX=8
@@ -207,7 +204,7 @@ type ax_type
 !----------
 !ug support
    type(domainUG),pointer :: domain_ug => null()     !<A pointer to an unstructured mpp domain.
-   integer(i4_kind)      :: nelems_for_current_rank !<The number of grid points registered to the current rank (used for error checking).
+   integer(INT_KIND)      :: nelems_for_current_rank !<The number of grid points registered to the current rank (used for error checking).
 !----------
 
 end type ax_type
@@ -243,8 +240,8 @@ type var_type
 !----------
 !ug support
     type(domainUG),pointer            :: domain_ug => null()   !<A pointer to an unstructured mpp domain.
-    integer(i4_kind),dimension(5)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
-    integer(i4_kind),dimension(NIDX) :: field_dimension_sizes !<Array of sizes of the dimensions for the field.
+    integer(INT_KIND),dimension(5)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of sizes of the dimensions for the field.
 !----------
 
 end type var_type
@@ -266,11 +263,11 @@ type Ptr3Dr
 end type Ptr3Dr
 
 type Ptr2Dr8
-   real(r8_kind), dimension(:,:),   pointer :: p => NULL()
+   real(DOUBLE_KIND), dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Dr8
 
 type Ptr3Dr8
-   real(r8_kind), dimension(:,:,:), pointer :: p => NULL()
+   real(DOUBLE_KIND), dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr8
 
 type Ptr4Dr
@@ -639,7 +636,7 @@ subroutine fms_io_init()
 
   integer                            :: i, unit, io_status, logunit
   integer, allocatable, dimension(:) :: pelist
-  real(r8_kind)                  :: doubledata = 0
+  real(DOUBLE_KIND)                  :: doubledata = 0
   real                               :: realarray(4)
   character(len=256)                 :: grd_file, filename
   logical                            :: is_mosaic_grid
@@ -1715,9 +1712,9 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
                                     compressed_axis, read_only, restart_owns_data)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
-  real(r8_kind),     dimension(:,:),   intent(in), target :: data
+  real(DOUBLE_KIND),     dimension(:,:),   intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  real(r8_kind),             optional, intent(in)         :: data_default
+  real(DOUBLE_KIND),             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   logical,          optional, intent(in)         :: compressed
   integer,          optional, intent(in)         :: position, tile_count
@@ -1728,13 +1725,13 @@ function register_restart_field_r2d8(fileObj, filename, fieldname, data, domain,
   logical                                        :: is_compressed
   integer                                        :: index_field
   integer                                        :: register_restart_field_r2d8
-  real(r4_kind)                               :: data_default_r4
+  real(FLOAT_KIND)                               :: data_default_r4
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r2d8): need to call fms_io_init')
   is_compressed = .false.
   if(present(compressed)) is_compressed=compressed
   if(present(data_default)) then
-     data_default_r4=REAL(data_default, r4_kind)
+     data_default_r4=REAL(data_default, FLOAT_KIND)
      call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), 1, 1/), &
                           index_field, domain, mandatory, no_domain, is_compressed, &
                           position, tile_count, data_default_r4, longname, units, compressed_axis, &
@@ -1764,9 +1761,9 @@ function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain,
                              compressed, compressed_axis, restart_owns_data)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
-  real(r8_kind),     dimension(:,:,:), intent(in), target :: data
+  real(DOUBLE_KIND),     dimension(:,:,:), intent(in), target :: data
   type(domain2d),   optional, intent(in), target :: domain
-  real(r8_kind),             optional, intent(in)         :: data_default
+  real(DOUBLE_KIND),             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
   integer,          optional, intent(in)         :: position, tile_count
   logical,          optional, intent(in)         :: mandatory
@@ -1777,13 +1774,13 @@ function register_restart_field_r3d8(fileObj, filename, fieldname, data, domain,
   logical                                        :: is_compressed
   integer                                        :: index_field
   integer                                        :: register_restart_field_r3d8
-  real(r4_kind)                               :: data_default_r4
+  real(FLOAT_KIND)                               :: data_default_r4
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_r3d8): need to call fms_io_init')
   is_compressed = .false.
   if(present(compressed)) is_compressed=compressed
   if(present(data_default)) then
-     data_default_r4=REAL(data_default, r4_kind)
+     data_default_r4=REAL(data_default, FLOAT_KIND)
      call setup_one_field(fileObj, filename, fieldname, (/size(data,1), size(data,2), size(data,3), 1/), &
                           index_field, domain, mandatory, no_domain, is_compressed, &
                           position, tile_count, data_default_r4, longname, units, compressed_axis, &
@@ -2141,7 +2138,7 @@ function register_restart_field_r2d8_2level(fileObj, filename, fieldname, data1,
                              no_domain, position, tile_count, data_default, longname, units, read_only)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
-  real(r8_kind),     dimension(:,:),   intent(in), target :: data1, data2
+  real(DOUBLE_KIND),     dimension(:,:),   intent(in), target :: data1, data2
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
@@ -2175,7 +2172,7 @@ function register_restart_field_r3d8_2level(fileObj, filename, fieldname, data1,
                              no_domain, position, tile_count, data_default, longname, units, read_only)
   type(restart_file_type), intent(inout)         :: fileObj
   character(len=*),           intent(in)         :: filename, fieldname
-  real(r8_kind),     dimension(:,:,:), intent(in), target :: data1, data2
+  real(DOUBLE_KIND),     dimension(:,:,:), intent(in), target :: data1, data2
   type(domain2d),   optional, intent(in), target :: domain
   real,             optional, intent(in)         :: data_default
   logical,          optional, intent(in)         :: no_domain
@@ -2594,7 +2591,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
   real, allocatable, dimension(:,:)   :: r2d
   real, allocatable, dimension(:)     :: r1d
   real                                :: r0d
-  integer(i8_kind), allocatable, dimension(:)    :: check_val
+  integer(LONG_KIND), allocatable, dimension(:)    :: check_val
   character(len=256)                  :: checksum_char
   logical                             :: domain_present, write_meta_data, write_field_data
   logical                             :: c_axis_defined, h_axis_defined, CC_axis_defined
@@ -2896,7 +2893,7 @@ subroutine save_unlimited_axis_restart(fileObj,restartpath)
   type(var_type), pointer, save       :: cur_var=>NULL()
   integer                             :: i, j, k, l, num_var_axes, cpack, idx
   real, allocatable, dimension(:)     :: r1d
-  integer(i8_kind)                  :: check_val
+  integer(LONG_KIND)                  :: check_val
   character(len=256)                  :: checksum_char
   type(domain2d), pointer :: domain =>NULL()
   type(ax_type),  pointer :: axis   =>NULL()
@@ -2995,7 +2992,7 @@ subroutine save_default_restart(fileObj,restartpath)
   integer                             :: i, j, k, l, siz, ind_dom
   logical                             :: domain_present
   real                                :: tlev
-  real(r8_kind)                   :: tlev_r8
+  real(DOUBLE_KIND)                   :: tlev_r8
   character(len=10)                   :: axisname
   integer                             :: meta_size
   type(domain2d)                      :: domain
@@ -3004,7 +3001,7 @@ subroutine save_default_restart(fileObj,restartpath)
   real, allocatable, dimension(:,:)   :: r2d
   real, allocatable, dimension(:)     :: r1d
   real                                :: r0d
-  integer(i8_kind), allocatable, dimension(:)    :: check_val
+  integer(LONG_KIND), allocatable, dimension(:)    :: check_val
   character(len=256)                  :: checksum_char
   integer :: isc, iec, jsc, jec
   integer :: isg, ieg, jsg, jeg
@@ -3294,10 +3291,10 @@ subroutine save_default_restart(fileObj,restartpath)
                                 default_data=cur_var%default_data)
               else if( Associated(fileObj%p2dr8(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p2dr8(k,j)%p, tlev_r8, &
-                                default_data=real(cur_var%default_data,kind=r8_kind))
+                                default_data=real(cur_var%default_data,kind=DOUBLE_KIND))
               else if( Associated(fileObj%p3dr8(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p3dr8(k,j)%p, tlev_r8, &
-                                default_data=real(cur_var%default_data,kind=r8_kind))
+                                default_data=real(cur_var%default_data,kind=DOUBLE_KIND))
               else if( Associated(fileObj%p4dr(k,j)%p) ) then
                  call mpp_write(unit, cur_var%field, array_domain(cur_var%domain_idx), fileObj%p4dr(k,j)%p, tlev, &
                                 default_data=cur_var%default_data)
@@ -3401,7 +3398,7 @@ subroutine save_restart_border (fileObj, time_stamp, directory)
 
   real, allocatable, dimension(:,:)   :: r2d
   real, allocatable, dimension(:,:,:) :: r3d
-  integer(i8_kind), allocatable, dimension(:)    :: check_val
+  integer(LONG_KIND), allocatable, dimension(:)    :: check_val
 
   !-- no need to proceed if all the variables are read only.
   if( all_field_read_only(fileObj) ) return
@@ -3684,8 +3681,8 @@ subroutine restore_state_border(fileObj, directory, nonfatal_missing_files)
   integer                             :: i1, i2, j1, j2
   integer                             :: ishift, jshift, i_add, j_add
   integer                             :: i_glob, j_glob, k_glob
-  integer(i8_kind), dimension(3)    :: checksum_file
-  integer(i8_kind)                  :: checksum_data
+  integer(LONG_KIND), dimension(3)    :: checksum_file
+  integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
   logical                             :: fatal_missing_files
 
@@ -3821,7 +3818,7 @@ end subroutine restore_state_border
 subroutine write_chksum(fileObj, action)
   type(restart_file_type), intent(inout) :: fileObj
   integer,                 intent(in)    :: action
-  integer(i8_kind)                     :: data_chksum
+  integer(LONG_KIND)                     :: data_chksum
   integer                                :: j, k, outunit
   integer                                :: isc, iec, jsc, jec
   integer                                :: isg, ieg, jsg, jeg
@@ -3943,8 +3940,8 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
   logical                             :: check_exist
   integer                             :: isg, ieg, jsg, jeg
   integer                             :: ishift, jshift, iadd, jadd
-  integer(i8_kind), dimension(3)    :: checksum_file
-  integer(i8_kind)                  :: checksum_data
+  integer(LONG_KIND), dimension(3)    :: checksum_file
+  integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
   logical                             :: fatal_missing_files
 
@@ -4280,8 +4277,8 @@ subroutine restore_state_one_field(fileObj, id_field, directory, nonfatal_missin
   logical                             :: check_exist
   integer                             :: isg, ieg, jsg, jeg
   integer                             :: ishift, jshift, iadd, jadd
-  integer(i8_kind), dimension(3)    :: checksum_file ! There should be no more than 3 timelevels in a restart file.
-  integer(i8_kind)                  :: checksum_data
+  integer(LONG_KIND), dimension(3)    :: checksum_file ! There should be no more than 3 timelevels in a restart file.
+  integer(LONG_KIND)                  :: checksum_data
   logical                             :: is_there_a_checksum
   logical                             :: fatal_missing_files
 
@@ -6171,7 +6168,7 @@ subroutine read_data_2d ( unit, data, end)
   integer                                    :: len
   logical                                    :: no_halo
 
-  include "read_data_2d.inc"
+#include "read_data_2d.INC"
 end subroutine read_data_2d
 
 !#######################################################################
@@ -6185,7 +6182,7 @@ subroutine read_ldata_2d ( unit, data, end)
   integer                                    :: len
   logical                                    :: no_halo
 
-  include "read_data_2d.inc"
+#include "read_data_2d.INC"
 end subroutine read_ldata_2d
 !#######################################################################
 
@@ -6198,7 +6195,7 @@ subroutine read_idata_2d ( unit, data, end)
   integer                                    :: len
   logical                                    :: no_halo
 
-  include "read_data_2d.inc"
+#include "read_data_2d.INC"
 end subroutine read_idata_2d
 
 !#######################################################################
@@ -6213,7 +6210,7 @@ subroutine read_cdata_2d ( unit, data, end)
   integer                                       :: len
   logical                                       :: no_halo
 
-  include "read_data_2d.inc"
+#include "read_data_2d.INC"
 end subroutine read_cdata_2d
 #endif
 
@@ -6228,7 +6225,7 @@ subroutine read_data_3d ( unit, data, end)
   integer                                       :: len
   logical                                       :: no_halo
 
-  include "read_data_3d.inc"
+#include "read_data_3d.INC"
 end subroutine read_data_3d
 
 !#######################################################################
@@ -6243,7 +6240,7 @@ subroutine read_cdata_3d ( unit, data, end)
   integer                                          :: len
   logical                                          :: no_halo
 
-  include "read_data_3d.inc"
+#include "read_data_3d.INC"
 end subroutine read_cdata_3d
 #endif
 
@@ -6259,7 +6256,7 @@ subroutine read_data_4d ( unit, data, end)
   logical                                                    :: no_halo
 ! WARNING: memory usage with this routine could be costly
 
-  include "read_data_4d.inc"
+#include "read_data_4d.INC"
 end subroutine read_data_4d
 
 !#######################################################################
@@ -6275,7 +6272,7 @@ subroutine read_cdata_4d ( unit, data, end)
   logical                                                       :: no_halo
 ! WARNING: memory usage with this routine could be costly
 
-  include "read_data_4d.inc"
+#include "read_data_4d.INC"
 end subroutine read_cdata_4d
 #endif
 
@@ -6289,7 +6286,7 @@ subroutine write_data_2d ( unit, data )
   real,    intent(in), dimension(isd:,jsd:) :: data
   real, dimension(isg:ieg,jsg:jeg) :: gdata
 
-  include "write_data.inc"
+#include "write_data.INC"
 end subroutine write_data_2d
 
 !#######################################################################
@@ -6300,7 +6297,7 @@ subroutine write_ldata_2d ( unit, data )
   logical, intent(in), dimension(isd:,jsd:) :: data
   logical, dimension(isg:ieg,jsg:jeg) :: gdata
 
-  include "write_data.inc"
+#include "write_data.INC"
 end subroutine write_ldata_2d
 
 !#######################################################################
@@ -6310,7 +6307,7 @@ subroutine write_idata_2d ( unit, data )
   integer, intent(in), dimension(isd:,jsd:) :: data
   integer, dimension(isg:ieg,jsg:jeg) :: gdata
 
-  include "write_data.inc"
+#include "write_data.INC"
 end subroutine write_idata_2d
 
 !#######################################################################
@@ -6322,7 +6319,7 @@ subroutine write_cdata_2d ( unit, data )
   complex, intent(in), dimension(isd:,jsd:) :: data
   complex, dimension(isg:ieg,jsg:jeg) :: gdata
 
-  include "write_data.inc"
+#include "write_data.INC"
 end subroutine write_cdata_2d
 #endif
 
@@ -6334,7 +6331,7 @@ subroutine write_data_3d ( unit, data )
   real,    intent(in), dimension(isd:,jsd:,:) :: data
   real, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
 
-  include "write_data.inc"
+#include "write_data.INC"
 end subroutine write_data_3d
 
 !#######################################################################
@@ -6346,7 +6343,7 @@ subroutine write_cdata_3d ( unit, data )
   complex, intent(in), dimension(isd:,jsd:,:) :: data
   complex, dimension(isg:ieg,jsg:jeg,size(data,3)) :: gdata
 
-  include "write_data.inc"
+#include "write_data.INC"
 end subroutine write_cdata_3d
 #endif
 
@@ -8654,16 +8651,16 @@ end subroutine write_version_number
 
 !----------
 !ug support
-include "fms_io_unstructured_register_restart_axis.inc"
-include "fms_io_unstructured_setup_one_field.inc"
+#include "fms_io_unstructured_register_restart_axis.INC"
+#include "fms_io_unstructured_setup_one_field.INC"
 #include "fms_io_unstructured_register_restart_field.INC"
-include "fms_io_unstructured_save_restart.inc"
-include "fms_io_unstructured_read.inc"
-include "fms_io_unstructured_get_file_name.inc"
-include "fms_io_unstructured_get_file_unit.inc"
-include "fms_io_unstructured_file_unit.inc"
-include "fms_io_unstructured_get_field_size.inc"
-include "fms_io_unstructured_field_exist.inc"
+#include "fms_io_unstructured_save_restart.INC"
+#include "fms_io_unstructured_read.INC"
+#include "fms_io_unstructured_get_file_name.INC"
+#include "fms_io_unstructured_get_file_unit.INC"
+#include "fms_io_unstructured_file_unit.INC"
+#include "fms_io_unstructured_get_field_size.INC"
+#include "fms_io_unstructured_field_exist.INC"
 !----------
 
 end module fms_io_mod

@@ -22,15 +22,15 @@ module memutils_mod
 !these currently include efficient methods for memory-to-memory copy
 !including strided data and arbitrary gather-scatter vectors
 !also various memory and cache inquiry operators
-  use platform_mod
+#include "../include/fms_platform.h"
   implicit none
   private
 #ifdef _CRAYT3E
   integer :: pe, shmem_my_pe
 #endif
 
-  integer(kind=r8_kind) :: l1_cache_line_size, l1_cache_size, l1_associativity
-  integer(kind=r8_kind) :: l2_cache_line_size, l2_cache_size, l2_associativity
+  integer(kind=DOUBLE_KIND) :: l1_cache_line_size, l1_cache_size, l1_associativity
+  integer(kind=DOUBLE_KIND) :: l2_cache_line_size, l2_cache_size, l2_associativity
 
   logical :: memutils_initialized=.FALSE.
 
@@ -131,8 +131,8 @@ module memutils_mod
 !base routine: handles constant stride memcpy
 !default strides are of course 1
       integer, intent(in) :: dim
-      real(kind=r8_kind), dimension(0:dim-1), intent(in)  :: rhs
-      real(kind=r8_kind), dimension(0:dim-1), intent(out) :: lhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(in)  :: rhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(out) :: lhs
       integer, intent(in), optional :: nelems, lhs_stride, rhs_stride
       integer :: n, rs, ls
 
@@ -165,12 +165,12 @@ module memutils_mod
     subroutine memcpy_r8_gather( lhs, rhs, dim, nelems, lhs_stride, rhs_indx )
 !memcpy routine with gather: copies nelems words from rhs(indx(:)) to lhs(:)
       integer, intent(in) :: dim, nelems, lhs_stride
-      real(kind=r8_kind), dimension(0:dim-1), intent(in)  :: rhs
-      real(kind=r8_kind), dimension(0:dim-1), intent(out) :: lhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(in)  :: rhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(out) :: lhs
       integer, intent(in), dimension(nelems) :: rhs_indx
 #ifdef _CRAYT3E
 !dir$ CACHE_BYPASS lhs, rhs, rhs_indx
-      real(kind=r8_kind), dimension(nelems) :: tmp
+      real(kind=DOUBLE_KIND), dimension(nelems) :: tmp
 
       if( lhs_stride.EQ.1 )then
           call SHMEM_IXGET( lhs(0), rhs(0), rhs_indx, nelems, pe )
@@ -187,12 +187,12 @@ module memutils_mod
     subroutine memcpy_r8_scatter( lhs, rhs, dim, nelems, lhs_indx, rhs_stride )
 !memcpy routine with scatter: copies nelems words from rhs(:) to lhs(indx(:))
       integer, intent(in) :: dim, nelems, rhs_stride
-      real(kind=r8_kind), dimension(0:dim-1), intent(in)  :: rhs
-      real(kind=r8_kind), dimension(0:dim-1), intent(out) :: lhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(in)  :: rhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(out) :: lhs
       integer, intent(in), dimension(nelems) :: lhs_indx
 #ifdef _CRAYT3E
 !dir$ CACHE_BYPASS lhs, rhs, lhs_indx
-      real(kind=r8_kind), dimension(nelems) :: tmp
+      real(kind=DOUBLE_KIND), dimension(nelems) :: tmp
 
       if( rhs_stride.EQ.1 )then
           call SHMEM_IXPUT( lhs(0), rhs(0), lhs_indx, nelems, pe )
@@ -210,12 +210,12 @@ module memutils_mod
     subroutine memcpy_r8_gather_scatter( lhs, rhs, dim, nelems, lhs_indx, rhs_indx )
 !memcpy routine with gather/scatter: copies nelems words from rhs(indx(:)) to lhs(indx(:))
       integer, intent(in) :: dim, nelems
-      real(kind=r8_kind), dimension(0:dim-1), intent(in)  :: rhs
-      real(kind=r8_kind), dimension(0:dim-1), intent(out) :: lhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(in)  :: rhs
+      real(kind=DOUBLE_KIND), dimension(0:dim-1), intent(out) :: lhs
       integer, intent(in), dimension(nelems) :: lhs_indx, rhs_indx
 #ifdef _CRAYT3E
 !dir$ CACHE_BYPASS lhs, rhs, lhs_indx, rhs_indx
-      real(kind=r8_kind), dimension(nelems) :: tmp
+      real(kind=DOUBLE_KIND), dimension(nelems) :: tmp
 
       call SHMEM_IXGET( tmp, rhs(0), rhs_indx, nelems, pe )
       call SHMEM_IXPUT( lhs(0), tmp, lhs_indx, nelems, pe )
@@ -264,17 +264,17 @@ module memutils_mod
 
 !cache utilities: need to write version for other argument types
   function get_l1_cache_line(a)
-    integer(kind=r8_kind) :: get_l1_cache_line
+    integer(kind=DOUBLE_KIND) :: get_l1_cache_line
     real, intent(in) :: a
-    integer(kind=r8_kind) :: i
+    integer(kind=DOUBLE_KIND) :: i
     i = LOC(a)
     get_l1_cache_line = mod(i,l1_cache_size/l1_associativity)/l1_cache_line_size
   end function get_l1_cache_line
 
   function get_l2_cache_line(a)
-    integer(kind=r8_kind) :: get_l2_cache_line
+    integer(kind=DOUBLE_KIND) :: get_l2_cache_line
     real, intent(in) :: a
-    integer(kind=r8_kind) :: i
+    integer(kind=DOUBLE_KIND) :: i
     i = LOC(a)
     get_l2_cache_line = mod(i,l2_cache_size/l2_associativity)/l2_cache_line_size
   end function get_l2_cache_line

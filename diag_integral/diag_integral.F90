@@ -21,7 +21,7 @@
 !! \brief Contains the \ref diag_integral_mod module
 
                      module diag_integral_mod
-
+#include "../include/fms_platform.h"
 
 
 !###############################################################################
@@ -110,7 +110,6 @@ use fms2_io_mod,      only:  file_exists
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init
 use ensemble_manager_mod, only : get_ensemble_id, get_ensemble_size
-use platform_mod
 
 !-------------------------------------------------------------------------------
 
@@ -1152,7 +1151,7 @@ type (time_type), intent(in) :: Time
       real    :: xtime, rcount
       integer :: nn, ninc, nst, nend, fields_to_print
       integer :: i, kount
-      integer(i8_kind) :: icount
+      integer(LONG_KIND) :: icount
 
 !-------------------------------------------------------------------------------
 !    each header and data format may be different and must be generated

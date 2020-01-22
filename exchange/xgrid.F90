@@ -3233,8 +3233,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   integer,                                   save :: xsize=0
   integer,                                   save :: method_saved=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      method = FIRST_ORDER      ! default
@@ -3359,8 +3359,8 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -3554,8 +3554,8 @@ end subroutine get_2_from_xgrid
 !#######################################################################
 
 subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in) :: d_addrs
-  integer(i8_kind), dimension(:), intent(in) :: x_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
@@ -3643,8 +3643,8 @@ end subroutine put_1_to_xgrid_order_1
 
 
 subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in) :: d_addrs
-  integer(i8_kind), dimension(:), intent(in) :: x_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
@@ -3880,8 +3880,8 @@ end subroutine put_1_to_xgrid_order_2
 !#######################################################################
 
 subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in) :: d_addrs
-  integer(i8_kind), dimension(:), intent(in) :: x_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
@@ -4013,8 +4013,8 @@ end subroutine get_1_from_xgrid
 !#######################################################################
 
 subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in) :: d_addrs
-  integer(i8_kind), dimension(:), intent(in) :: x_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: xsize, lsize
 
@@ -4878,8 +4878,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -4957,8 +4957,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -5077,8 +5077,8 @@ end subroutine get_side2_from_xgrid_ug
 !#######################################################################
 
 subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in) :: d_addrs
-  integer(i8_kind), dimension(:), intent(in) :: x_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: dsize, xsize, lsize
 
@@ -5182,8 +5182,8 @@ end subroutine put_2_to_xgrid_ug
 
 
 subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in) :: d_addrs
-  integer(i8_kind), dimension(:), intent(in) :: x_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, xsize, lsize
 
@@ -5313,8 +5313,8 @@ end subroutine get_1_from_xgrid_ug
 !#######################################################################
 
 subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in) :: d_addrs
-  integer(i8_kind), dimension(:), intent(in) :: x_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
+  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: xsize, lsize
 

@@ -2,12 +2,12 @@
 
 !> @brief Utility routines.
 module fms_io_utils_mod
-!use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
+use, intrinsic :: iso_fortran_env, only: int32, int64, real32, real64
 #ifdef _OPENMP
 use omp_lib
 #endif
 use mpp_mod
-use platform_mod
+
 implicit none
 private
 

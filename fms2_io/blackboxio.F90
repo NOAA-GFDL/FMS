@@ -6,10 +6,11 @@ use fms_io_utils_mod
 use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
-use platform_mod
+
+use, intrinsic :: iso_fortran_env, only: int32, real32, real64
+
 implicit none
 private
-
 
 public :: create_diskless_netcdf_file_wrap
 public :: netcdf_save_restart_wrap2
@@ -20,9 +21,7 @@ public :: restore_domain_state_wrap
 public :: create_diskless_unstructured_domain_file
 public :: unstructured_write_restart_wrap
 
-
 contains
-
 
 !> @brief Create a new file path.
 !! @internal
@@ -151,9 +150,9 @@ subroutine copy_metadata(fileobj, new_fileobj)
   integer :: i
   integer :: j
   integer :: k
-  integer(kind=i4_kind), dimension(:), allocatable :: buf_int
-  real(kind=r4_kind), dimension(:), allocatable :: buf_float
-  real(kind=r8_kind), dimension(:), allocatable :: buf_double
+  integer(kind=int32), dimension(:), allocatable :: buf_int
+  real(kind=real32), dimension(:), allocatable :: buf_float
+  real(kind=real64), dimension(:), allocatable :: buf_double
 
   if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
     !Copy global attributes to the new file.

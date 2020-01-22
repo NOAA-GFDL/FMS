@@ -158,7 +158,7 @@ subroutine register_unstructured_domain_variable(fileobj, variable_name, &
   type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
-                                                !! values are: "int", "i8_kind",
+                                                !! values are: "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
 

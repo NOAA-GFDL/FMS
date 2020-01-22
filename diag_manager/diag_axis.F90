@@ -42,7 +42,6 @@ MODULE diag_axis_mod
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
        & first_send_data_call, diag_atttype
-  USE platform_mod
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
@@ -65,9 +64,9 @@ MODULE diag_axis_mod
 
 !----------
 !ug support
-  integer(i4_kind),parameter,public :: DIAG_AXIS_NODOMAIN = 0
-  integer(i4_kind),parameter,public :: DIAG_AXIS_2DDOMAIN = 1
-  integer(i4_kind),parameter,public :: DIAG_AXIS_UGDOMAIN = 2
+  integer(INT_KIND),parameter,public :: DIAG_AXIS_NODOMAIN = 0
+  integer(INT_KIND),parameter,public :: DIAG_AXIS_2DDOMAIN = 1
+  integer(INT_KIND),parameter,public :: DIAG_AXIS_UGDOMAIN = 2
 !----------
 
   ! counter of number of axes defined
@@ -934,7 +933,7 @@ CONTAINS
    !Inputs/Outputs
     integer,dimension(:),intent(in)  :: id          !<The array of axis IDs
     character(*),intent(in),optional :: varname     !<The name of the variable
-    integer(i4_kind)                :: domain_type !<DIAG_AXIS_NODOMAIN = no domain.
+    integer(INT_KIND)                :: domain_type !<DIAG_AXIS_NODOMAIN = no domain.
                                                     !<DIAG_AXIS_2DDOMAIN = structured domain.
                                                     !<DIAG_AXIS_UGDOMAIN = unstructured domain.
 

@@ -11,10 +11,10 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
   integer :: err
   integer :: axtype
   integer :: xtype
-  integer(kind=i4_kind), dimension(2) :: i32_range
-  integer(kind=i8_kind), dimension(2) :: i64_range
-  real(kind=r4_kind), dimension(2) :: r32_range
-  real(kind=r8_kind), dimension(2) :: r64_range
+  integer(kind=int32), dimension(2) :: i32_range
+  integer(kind=int64), dimension(2) :: i64_range
+  real(kind=real32), dimension(2) :: r32_range
+  real(kind=real64), dimension(2) :: r64_range
 
   if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
@@ -23,16 +23,16 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
       type is (character(len=*))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            trim(attribute_value))
-      type is (integer(kind=i4_kind))
+      type is (integer(kind=int32))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
-      type is (integer(kind=i8_kind))
+      type is (integer(kind=int64))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       class default
@@ -58,28 +58,28 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
     if (string_compare(attribute_name, "_FillValue")) then
       if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
         select type(attribute_value)
-          type is (integer(kind=i4_kind))
+          type is (integer(kind=int32))
             call get_variable_attribute(fileobj, variable_name, "valid_range", &
                                         i32_range, .false.)
             if (attribute_value .lt. i32_range(1) .or. &
                 attribute_value .gt. i32_range(2)) then
               call error("_FillValue inside valid_range.")
             endif
-          type is (integer(kind=i8_kind))
+          type is (integer(kind=int64))
             call get_variable_attribute(fileobj, variable_name, "valid_range", &
                                         i64_range, .false.)
             if (attribute_value .lt. i64_range(1) .or. &
                 attribute_value .gt. i64_range(2)) then
               call error("_FillValue inside valid_range.")
             endif
-          type is (real(kind=r4_kind))
+          type is (real(kind=real32))
             call get_variable_attribute(fileobj, variable_name, "valid_range", &
                                         r32_range, .false.)
             if (attribute_value .lt. r32_range(1) .or. &
                 attribute_value .gt. r32_range(2)) then
               call error("_FillValue inside valid_range.")
             endif
-          type is (real(kind=r8_kind))
+          type is (real(kind=real64))
             call get_variable_attribute(fileobj, variable_name, "valid_range", &
                                         r64_range, .false.)
             if (attribute_value .lt. r64_range(1) .or. &
@@ -118,16 +118,16 @@ subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name
     call set_netcdf_mode(fileobj%ncid, define_mode)
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(attribute_value)
-      type is (integer(kind=i4_kind))
+      type is (integer(kind=int32))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
-      type is (integer(kind=i8_kind))
+      type is (integer(kind=int64))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       class default

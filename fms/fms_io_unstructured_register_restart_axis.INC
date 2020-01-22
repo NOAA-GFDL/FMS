@@ -33,7 +33,6 @@ subroutine fms_io_unstructured_register_restart_axis_r1D(fileObj, &
                                                          sense, &
                                                          fmin, &
                                                          calendar)
-    use platform_mod
     !Inputs/Outputs
     type(restart_file_type),intent(inout) :: fileObj   !<A restart object.
     character(len=*),intent(in)           :: filename  !<A name of a file.
@@ -43,20 +42,20 @@ subroutine fms_io_unstructured_register_restart_axis_r1D(fileObj, &
     type(domainUG),intent(in),target      :: domain    !<An unustructured mpp domain.
     character(len=*),intent(in),optional  :: units     !<Units for the axis.
     character(len=*),intent(in),optional  :: longname  !<A more descriptive name for the axis.
-    integer(i4_kind),intent(in),optional :: sense     !<Positive direction.
+    integer(INT_KIND),intent(in),optional :: sense     !<Positive direction.
     real,intent(in),optional              :: fmin      !<Minimum value for this axis.
     character(len=*),intent(in),optional  :: calendar  !<Type of calendar (only for time axis.)
 
    !Local variables
-    integer(i4_kind)                          :: input_filename_length !<The length of the trimmed input filename.
+    integer(INT_KIND)                          :: input_filename_length !<The length of the trimmed input filename.
     character(len=256)                         :: tmp_filename          !<A character buffer used to store various file names.
     character(len=256)                         :: filename_suffix       !<A string appended to the end of the inputted file name.
     character(len=256)                         :: mosaic_filename       !<The filename returned by the get_mosaic_tile_file_ug routine.
-    integer(i4_kind)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
+    integer(INT_KIND)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(i4_kind)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
-    integer(i4_kind),dimension(:),allocatable :: pelist                !<A pelist.
-    integer(i4_kind),dimension(:),allocatable :: fdata_sizes           !<Size of the axis data for each rank in the I/O domain pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
+    integer(INT_KIND),dimension(:),allocatable :: fdata_sizes           !<Size of the axis data for each rank in the I/O domain pelist.
 
    !Make sure that the module is initialized.
     if (.not. module_is_initialized) then
@@ -251,31 +250,30 @@ subroutine fms_io_unstructured_register_restart_axis_i1D(fileObj, &
                                                          units, &
                                                          longname, &
                                                          imin)
-    use platform_mod
     !Inputs/Outputs
     type(restart_file_type),intent(inout)            :: fileObj         !<A restart object.
     character(len=*),intent(in)                      :: filename        !<A name of a file.
     character(len=*),intent(in)                      :: fieldname       !<A name for the axis field.
-    integer(i4_kind),dimension(:),intent(in),target :: fdata           !<Data for the axis.
+    integer(INT_KIND),dimension(:),intent(in),target :: fdata           !<Data for the axis.
     character(len=*),intent(in)                      :: compressed      !<"Compressed" string (???)
     character(len=*),intent(in)                      :: compressed_axis !<"Compressed" axis string.
-    integer(i4_kind),intent(in)                     :: dimlen          !<Length of the compressed dimension.
+    integer(INT_KIND),intent(in)                     :: dimlen          !<Length of the compressed dimension.
     type(domainUG),intent(in),target                 :: domain          !<An unustructured mpp domain.
     character(len=*),intent(in),optional             :: dimlen_name     !<(???)
     character(len=*),intent(in),optional             :: dimlen_lname    !<(???)
     character(len=*),intent(in),optional             :: units           !<Units for the axis.
     character(len=*),intent(in),optional             :: longname        !<A more descriptive name for the axis.
-    integer(i4_kind),intent(in),optional            :: imin            !<Minium value for the dimension.
+    integer(INT_KIND),intent(in),optional            :: imin            !<Minium value for the dimension.
 
    !Local variables
-    integer(i4_kind)                          :: input_filename_length !<The length of the trimmed input filename.
+    integer(INT_KIND)                          :: input_filename_length !<The length of the trimmed input filename.
     character(len=256)                         :: tmp_filename          !<A character buffer used to store various file names.
     character(len=256)                         :: filename_suffix       !<A string appended to the end of the inputted file name.
     character(len=256)                         :: mosaic_filename       !<The filename returned by the get_mosaic_tile_file_ug routine.
-    integer(i4_kind)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
+    integer(INT_KIND)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(i4_kind)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
-    integer(i4_kind),dimension(:),allocatable :: pelist                !<A pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
 
    !Make sure that the module is initialized.
     if (.not. module_is_initialized) then
@@ -457,25 +455,24 @@ subroutine fms_io_unstructured_register_restart_axis_u(fileObj, &
                                                        domain, &
                                                        units, &
                                                        longname)
-    use platform_mod
     !Inputs/Outputs
     type(restart_file_type),intent(inout) :: fileObj   !<A restart object.
     character(len=*),intent(in)           :: filename  !<A name of a file.
     character(len=*),intent(in)           :: fieldname !<A name for the axis field.
-    integer(i4_kind),intent(in)          :: nelems    !<Number of elements on the axis for the current rank.
+    integer(INT_KIND),intent(in)          :: nelems    !<Number of elements on the axis for the current rank.
     type(domainUG),intent(in),target      :: domain    !<An unustructured mpp domain.
     character(len=*),intent(in),optional  :: units     !<Units for the axis.
     character(len=*),intent(in),optional  :: longname  !<A more descriptive name for the axis.
 
    !Local variables
-    integer(i4_kind)                          :: input_filename_length !<The length of the trimmed input filename.
+    integer(INT_KIND)                          :: input_filename_length !<The length of the trimmed input filename.
     character(len=256)                         :: tmp_filename          !<A character buffer used to store various file names.
     character(len=256)                         :: filename_suffix       !<A string appended to the end of the inputted file name.
     character(len=256)                         :: mosaic_filename       !<The filename returned by the get_mosaic_tile_file_ug routine.
-    integer(i4_kind)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
+    integer(INT_KIND)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(i4_kind)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
-    integer(i4_kind),dimension(:),allocatable :: pelist                !<A pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
 
    !Make sure that the module is initialized.
     if (.not. module_is_initialized) then

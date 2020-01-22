@@ -9,7 +9,7 @@ subroutine compressed_write_0d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), intent(in) :: cdata !< Compressed data that
                                 !! will be gathered and
-                                !! written to the 
+                                !! written to the
                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -39,7 +39,7 @@ subroutine compressed_write_0d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), intent(in) :: cdata !< Compressed data that
                                 !! will be gathered and
-                                !! written to the 
+                                !! written to the
                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -63,7 +63,7 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:), intent(in) :: cdata !< Compressed data that
                                               !! will be gathered and
-                                              !! written to the 
+                                              !! written to the
                                               !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -80,10 +80,10 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
   integer, dimension(1) :: c
   integer, dimension(1) :: e
   integer :: i
-  integer(kind=i4_kind), dimension(:), allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:), allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:), allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:), allocatable :: buf_r8_kind
+  integer(kind=int32), dimension(:), allocatable :: buf_int32
+  integer(kind=int64), dimension(:), allocatable :: buf_int64
+  real(kind=real32), dimension(:), allocatable :: buf_real32
+  real(kind=real64), dimension(:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
 
@@ -107,34 +107,34 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
                                edge_lengths=e)
       else
         select type(cdata)
-          type is (integer(kind=i4_kind))
-            call allocate_array(buf_i4_kind, e)
-            call mpp_recv(buf_i4_kind, size(buf_i4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
+          type is (integer(kind=int32))
+            call allocate_array(buf_int32, e)
+            call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i4_kind)
-          type is (integer(kind=i8_kind))
-            call allocate_array(buf_i8_kind, e)
-            call mpp_recv(buf_i8_kind, size(buf_i8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
+            deallocate(buf_int32)
+          type is (integer(kind=int64))
+            call allocate_array(buf_int64, e)
+            call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i8_kind)
-          type is (real(kind=r4_kind))
-            call allocate_array(buf_r4_kind, e)
-            call mpp_recv(buf_r4_kind, size(buf_r4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
+            deallocate(buf_int64)
+          type is (real(kind=real32))
+            call allocate_array(buf_real32, e)
+            call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r4_kind)
-          type is (real(kind=r8_kind))
-            call allocate_array(buf_r8_kind, e)
-            call mpp_recv(buf_r8_kind, size(buf_r8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &
+            deallocate(buf_real32)
+          type is (real(kind=real64))
+            call allocate_array(buf_real64, e)
+            call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r8_kind)
+            deallocate(buf_real64)
           class default
             call error("unsupported type.")
         end select
@@ -142,13 +142,13 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
     enddo
   else
     select type(cdata)
-      type is (integer(kind=i4_kind))
+      type is (integer(kind=int32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (integer(kind=i8_kind))
+      type is (integer(kind=int64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
       class default
         call error("unsupported type.")
@@ -169,7 +169,7 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:), intent(in) :: cdata !< Compressed data that
                                                 !! will be gathered and
-                                                !! written to the 
+                                                !! written to the
                                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -186,10 +186,10 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
   integer, dimension(2) :: c
   integer, dimension(2) :: e
   integer :: i
-  integer(kind=i4_kind), dimension(:,:), allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:,:), allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:,:), allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:,:), allocatable :: buf_r8_kind
+  integer(kind=int32), dimension(:,:), allocatable :: buf_int32
+  integer(kind=int64), dimension(:,:), allocatable :: buf_int64
+  real(kind=real32), dimension(:,:), allocatable :: buf_real32
+  real(kind=real64), dimension(:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
   if (compressed_dim_index(1) .eq. dimension_not_found) then
@@ -212,34 +212,34 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
                                edge_lengths=e)
       else
         select type(cdata)
-          type is (integer(kind=i4_kind))
-            call allocate_array(buf_i4_kind, e)
-            call mpp_recv(buf_i4_kind, size(buf_i4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
+          type is (integer(kind=int32))
+            call allocate_array(buf_int32, e)
+            call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i4_kind)
-          type is (integer(kind=i8_kind))
-            call allocate_array(buf_i8_kind, e)
-            call mpp_recv(buf_i8_kind, size(buf_i8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
+            deallocate(buf_int32)
+          type is (integer(kind=int64))
+            call allocate_array(buf_int64, e)
+            call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i8_kind)
-          type is (real(kind=r4_kind))
-            call allocate_array(buf_r4_kind, e)
-            call mpp_recv(buf_r4_kind, size(buf_r4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
+            deallocate(buf_int64)
+          type is (real(kind=real32))
+            call allocate_array(buf_real32, e)
+            call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r4_kind)
-          type is (real(kind=r8_kind))
-            call allocate_array(buf_r8_kind, e)
-            call mpp_recv(buf_r8_kind, size(buf_r8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &
+            deallocate(buf_real32)
+          type is (real(kind=real64))
+            call allocate_array(buf_real64, e)
+            call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r8_kind)
+            deallocate(buf_real64)
           class default
             call error("unsupported type.")
         end select
@@ -247,13 +247,13 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
     enddo
   else
     select type(cdata)
-      type is (integer(kind=i4_kind))
+      type is (integer(kind=int32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (integer(kind=i8_kind))
+      type is (integer(kind=int64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
       class default
         call error("unsupported type.")
@@ -274,7 +274,7 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:), intent(in) :: cdata !< Compressed data that
                                                   !! will be gathered and
-                                                  !! written to the 
+                                                  !! written to the
                                                   !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -291,10 +291,10 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
   integer, dimension(3) :: c
   integer, dimension(3) :: e
   integer :: i
-  integer(kind=i4_kind), dimension(:,:,:), allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:,:,:), allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:,:,:), allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:,:,:), allocatable :: buf_r8_kind
+  integer(kind=int32), dimension(:,:,:), allocatable :: buf_int32
+  integer(kind=int64), dimension(:,:,:), allocatable :: buf_int64
+  real(kind=real32), dimension(:,:,:), allocatable :: buf_real32
+  real(kind=real64), dimension(:,:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
   if (compressed_dim_index(1) .eq. dimension_not_found) then
@@ -317,34 +317,34 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
                                edge_lengths=e)
       else
         select type(cdata)
-          type is (integer(kind=i4_kind))
-            call allocate_array(buf_i4_kind, e)
-            call mpp_recv(buf_i4_kind, size(buf_i4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
+          type is (integer(kind=int32))
+            call allocate_array(buf_int32, e)
+            call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i4_kind)
-          type is (integer(kind=i8_kind))
-            call allocate_array(buf_i8_kind, e)
-            call mpp_recv(buf_i8_kind, size(buf_i8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
+            deallocate(buf_int32)
+          type is (integer(kind=int64))
+            call allocate_array(buf_int64, e)
+            call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i8_kind)
-          type is (real(kind=r4_kind))
-            call allocate_array(buf_r4_kind, e)
-            call mpp_recv(buf_r4_kind, size(buf_r4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
+            deallocate(buf_int64)
+          type is (real(kind=real32))
+            call allocate_array(buf_real32, e)
+            call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r4_kind)
-          type is (real(kind=r8_kind))
-            call allocate_array(buf_r8_kind, e)
-            call mpp_recv(buf_r8_kind, size(buf_r8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &
+            deallocate(buf_real32)
+          type is (real(kind=real64))
+            call allocate_array(buf_real64, e)
+            call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r8_kind)
+            deallocate(buf_real64)
           class default
             call error("unsupported type.")
         end select
@@ -352,13 +352,13 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
     enddo
   else
     select type(cdata)
-      type is (integer(kind=i4_kind))
+      type is (integer(kind=int32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (integer(kind=i8_kind))
+      type is (integer(kind=int64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
       class default
         call error("unsupported type.")
@@ -379,7 +379,7 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                     !! will be gathered and
-                                                    !! written to the 
+                                                    !! written to the
                                                     !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -396,10 +396,10 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
   integer, dimension(4) :: c
   integer, dimension(4) :: e
   integer :: i
-  integer(kind=i4_kind), dimension(:,:,:,:), allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:,:,:,:), allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:,:,:,:), allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:,:,:,:), allocatable :: buf_r8_kind
+  integer(kind=int32), dimension(:,:,:,:), allocatable :: buf_int32
+  integer(kind=int64), dimension(:,:,:,:), allocatable :: buf_int64
+  real(kind=real32), dimension(:,:,:,:), allocatable :: buf_real32
+  real(kind=real64), dimension(:,:,:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
   if (compressed_dim_index(1) .eq. dimension_not_found) then
@@ -422,34 +422,34 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
                                edge_lengths=e)
       else
         select type(cdata)
-          type is (integer(kind=i4_kind))
-            call allocate_array(buf_i4_kind, e)
-            call mpp_recv(buf_i4_kind, size(buf_i4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
+          type is (integer(kind=int32))
+            call allocate_array(buf_int32, e)
+            call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i4_kind)
-          type is (integer(kind=i8_kind))
-            call allocate_array(buf_i8_kind, e)
-            call mpp_recv(buf_i8_kind, size(buf_i8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
+            deallocate(buf_int32)
+          type is (integer(kind=int64))
+            call allocate_array(buf_int64, e)
+            call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i8_kind)
-          type is (real(kind=r4_kind))
-            call allocate_array(buf_r4_kind, e)
-            call mpp_recv(buf_r4_kind, size(buf_r4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
+            deallocate(buf_int64)
+          type is (real(kind=real32))
+            call allocate_array(buf_real32, e)
+            call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r4_kind)
-          type is (real(kind=r8_kind))
-            call allocate_array(buf_r8_kind, e)
-            call mpp_recv(buf_r8_kind, size(buf_r8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &
+            deallocate(buf_real32)
+          type is (real(kind=real64))
+            call allocate_array(buf_real64, e)
+            call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r8_kind)
+            deallocate(buf_real64)
           class default
             call error("unsupported type.")
         end select
@@ -457,13 +457,13 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
     enddo
   else
     select type(cdata)
-      type is (integer(kind=i4_kind))
+      type is (integer(kind=int32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (integer(kind=i8_kind))
+      type is (integer(kind=int64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
       class default
         call error("unsupported type.")
@@ -484,7 +484,7 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                       !! will be gathered and
-                                                      !! written to the 
+                                                      !! written to the
                                                       !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -501,10 +501,10 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
   integer, dimension(5) :: c
   integer, dimension(5) :: e
   integer :: i
-  integer(kind=i4_kind), dimension(:,:,:,:,:), allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:,:,:,:,:), allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:,:,:,:,:), allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:,:,:,:,:), allocatable :: buf_r8_kind
+  integer(kind=int32), dimension(:,:,:,:,:), allocatable :: buf_int32
+  integer(kind=int64), dimension(:,:,:,:,:), allocatable :: buf_int64
+  real(kind=real32), dimension(:,:,:,:,:), allocatable :: buf_real32
+  real(kind=real64), dimension(:,:,:,:,:), allocatable :: buf_real64
 
   compressed_dim_index = get_variable_compressed_dimension_index(fileobj, variable_name)
   if (compressed_dim_index(1) .eq. dimension_not_found) then
@@ -527,34 +527,34 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
                                edge_lengths=e)
       else
         select type(cdata)
-          type is (integer(kind=i4_kind))
-            call allocate_array(buf_i4_kind, e)
-            call mpp_recv(buf_i4_kind, size(buf_i4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
+          type is (integer(kind=int32))
+            call allocate_array(buf_int32, e)
+            call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i4_kind)
-          type is (integer(kind=i8_kind))
-            call allocate_array(buf_i8_kind, e)
-            call mpp_recv(buf_i8_kind, size(buf_i8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
+            deallocate(buf_int32)
+          type is (integer(kind=int64))
+            call allocate_array(buf_int64, e)
+            call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_int64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_i8_kind)
-          type is (real(kind=r4_kind))
-            call allocate_array(buf_r4_kind, e)
-            call mpp_recv(buf_r4_kind, size(buf_r4_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
+            deallocate(buf_int64)
+          type is (real(kind=real32))
+            call allocate_array(buf_real32, e)
+            call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real32, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r4_kind)
-          type is (real(kind=r8_kind))
-            call allocate_array(buf_r8_kind, e)
-            call mpp_recv(buf_r8_kind, size(buf_r8_kind), fileobj%pelist(i), block=.true.)
-            call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &
+            deallocate(buf_real32)
+          type is (real(kind=real64))
+            call allocate_array(buf_real64, e)
+            call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
+            call netcdf_write_data(fileobj, variable_name, buf_real64, &
                                    unlim_dim_level=unlim_dim_level, corner=c, &
                                    edge_lengths=e)
-            deallocate(buf_r8_kind)
+            deallocate(buf_real64)
           class default
             call error("unsupported type.")
         end select
@@ -562,13 +562,13 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
     enddo
   else
     select type(cdata)
-      type is (integer(kind=i4_kind))
+      type is (integer(kind=int32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (integer(kind=i8_kind))
+      type is (integer(kind=int64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r4_kind))
+      type is (real(kind=real32))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
-      type is (real(kind=r8_kind))
+      type is (real(kind=real64))
         call mpp_send(cdata, size(cdata), fileobj%io_root)
       class default
         call error("unsupported type.")
@@ -586,7 +586,7 @@ subroutine compressed_write_1d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:), intent(in) :: cdata !< Compressed data that
                                               !! will be gathered and
-                                              !! written to the 
+                                              !! written to the
                                               !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -613,7 +613,7 @@ subroutine compressed_write_2d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:), intent(in) :: cdata !< Compressed data that
                                                 !! will be gathered and
-                                                !! written to the 
+                                                !! written to the
                                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -639,7 +639,7 @@ subroutine compressed_write_3d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:), intent(in) :: cdata !< Compressed data that
                                                   !! will be gathered and
-                                                  !! written to the 
+                                                  !! written to the
                                                   !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -665,7 +665,7 @@ subroutine compressed_write_4d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                     !! will be gathered and
-                                                    !! written to the 
+                                                    !! written to the
                                                     !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -691,7 +691,7 @@ subroutine compressed_write_5d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                       !! will be gathered and
-                                                      !! written to the 
+                                                      !! written to the
                                                       !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.

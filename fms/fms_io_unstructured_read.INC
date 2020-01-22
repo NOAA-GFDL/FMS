@@ -81,7 +81,6 @@ subroutine fms_io_unstructured_read_r_1D(filename, &
                                          start, &
                                          nread, &
                                          threading)
-    use platform_mod
    !Inputs/Outputs
     character(len=*),intent(in)              :: filename  !<The name of a file.
     character(len=*),intent(in)              :: fieldname !<The name of field in the input file.
@@ -93,12 +92,12 @@ subroutine fms_io_unstructured_read_r_1D(filename, &
     integer,intent(in),optional              :: threading !<Threading flag.
 
    !Local variables
-    logical(i4_kind)  :: found_file  !<Flag telling if the input file or any of its variants exist.
+    logical(INT_KIND)  :: found_file  !<Flag telling if the input file or any of its variants exist.
     character(len=256) :: fname       !<Name of file that is actually found.
-    logical(i4_kind)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
-    integer(i4_kind)  :: funit       !<File unit for the inputted file.
-    integer(i4_kind)  :: file_index  !<Index of the inputted file in the "files_read" module array.
-    integer(i4_kind)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
+    integer(INT_KIND)  :: funit       !<File unit for the inputted file.
+    integer(INT_KIND)  :: file_index  !<Index of the inputted file in the "files_read" module array.
+    integer(INT_KIND)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -168,7 +167,6 @@ subroutine fms_io_unstructured_read_r_2D(filename, &
                                          start, &
                                          nread, &
                                          threading)
-    use platform_mod
    !Inputs/Outputs
     character(len=*),intent(in)              :: filename  !<The name of a file.
     character(len=*),intent(in)              :: fieldname !<The name of field in the input file.
@@ -180,12 +178,12 @@ subroutine fms_io_unstructured_read_r_2D(filename, &
     integer,intent(in),optional              :: threading !<Threading flag.
 
    !Local variables
-    logical(i4_kind)  :: found_file  !<Flag telling if the input file or any of its variants exist.
+    logical(INT_KIND)  :: found_file  !<Flag telling if the input file or any of its variants exist.
     character(len=256) :: fname       !<Name of file that is actually found.
-    logical(i4_kind)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
-    integer(i4_kind)  :: funit       !<File unit for the inputted file.
-    integer(i4_kind)  :: file_index  !<Index of the inputted file in the "files_read" module array.
-    integer(i4_kind)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
+    integer(INT_KIND)  :: funit       !<File unit for the inputted file.
+    integer(INT_KIND)  :: file_index  !<Index of the inputted file in the "files_read" module array.
+    integer(INT_KIND)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -255,7 +253,6 @@ subroutine fms_io_unstructured_read_r_3D(filename, &
                                          start, &
                                          nread, &
                                          threading)
-    use platform_mod
    !Inputs/Outputs
     character(len=*),intent(in)              :: filename  !<The name of a file.
     character(len=*),intent(in)              :: fieldname !<The name of field in the input file.
@@ -267,12 +264,12 @@ subroutine fms_io_unstructured_read_r_3D(filename, &
     integer,intent(in),optional              :: threading !<Threading flag.
 
    !Local variables
-    logical(i4_kind)  :: found_file  !<Flag telling if the input file or any of its variants exist.
+    logical(INT_KIND)  :: found_file  !<Flag telling if the input file or any of its variants exist.
     character(len=256) :: fname       !<Name of file that is actually found.
-    logical(i4_kind)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
-    integer(i4_kind)  :: funit       !<File unit for the inputted file.
-    integer(i4_kind)  :: file_index  !<Index of the inputted file in the "files_read" module array.
-    integer(i4_kind)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
+    integer(INT_KIND)  :: funit       !<File unit for the inputted file.
+    integer(INT_KIND)  :: file_index  !<Index of the inputted file in the "files_read" module array.
+    integer(INT_KIND)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
 
    !Make sure that the module has been initialized.
     if (.not. module_is_initialized) then
@@ -393,7 +390,6 @@ subroutine fms_io_unstructured_read_i_1D(filename, &
                                          start, &
                                          nread, &
                                          threading)
-    use platform_mod
    !Inputs/Outputs
     character(len=*),intent(in)              :: filename  !<The name of a file.
     character(len=*),intent(in)              :: fieldname !<The name of field in the input file.
@@ -406,7 +402,7 @@ subroutine fms_io_unstructured_read_i_1D(filename, &
 
    !Local variables
     real,dimension(size(fdata)) :: tmp !<Dummy variable.
-    integer(i4_kind)           :: i   !<Loop variable.
+    integer(INT_KIND)           :: i   !<Loop variable.
 
    !Read in the data.
     call fms_io_unstructured_read_r_1D(filename, &
@@ -435,7 +431,6 @@ subroutine fms_io_unstructured_read_i_2D(filename, &
                                          start, &
                                          nread, &
                                          threading)
-    use platform_mod
    !Inputs/Outputs
     character(len=*),intent(in)              :: filename  !<The name of a file.
     character(len=*),intent(in)              :: fieldname !<The name of field in the input file.
@@ -448,8 +443,8 @@ subroutine fms_io_unstructured_read_i_2D(filename, &
 
    !Local variables
     real,dimension(size(fdata,1),size(fdata,2)) :: tmp !<Dummy variable.
-    integer(i4_kind)                           :: i   !<Loop variable.
-    integer(i4_kind)                           :: j   !<Loop variable.
+    integer(INT_KIND)                           :: i   !<Loop variable.
+    integer(INT_KIND)                           :: j   !<Loop variable.
 
    !Read in the data.
     call fms_io_unstructured_read_r_2D(filename, &

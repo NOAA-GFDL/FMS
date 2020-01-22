@@ -17,20 +17,20 @@ libfms_la_SOURCES = fms.F90
 libfms_io_la_SOURCES = fms_io.F90
 
 # These inc files are in the fms directory.
-FMS_INC_FILES = fms_io_unstructured_field_exist.inc \
-fms_io_unstructured_get_file_name.inc \
-fms_io_unstructured_register_restart_axis.inc \
-fms_io_unstructured_setup_one_field.inc \
-read_data_4d.inc \
-fms_io_unstructured_file_unit.inc \
-fms_io_unstructured_get_file_unit.inc \
+FMS_INC_FILES = fms_io_unstructured_field_exist.INC \
+fms_io_unstructured_get_file_name.INC \
+fms_io_unstructured_register_restart_axis.INC \
+fms_io_unstructured_setup_one_field.INC \
+read_data_4d.INC \
+fms_io_unstructured_file_unit.INC \
+fms_io_unstructured_get_file_unit.INC \
 fms_io_unstructured_register_restart_field.INC \
-read_data_2d.inc \
-write_data.inc \
-fms_io_unstructured_get_field_size.inc \
-fms_io_unstructured_read.inc \
-fms_io_unstructured_save_restart.inc \
-read_data_3d.inc
+read_data_2d.INC \
+write_data.INC \
+fms_io_unstructured_get_field_size.INC \
+fms_io_unstructured_read.INC \
+fms_io_unstructured_save_restart.INC \
+read_data_3d.INC
 
 # Each mod file depends on the .o file.
 fms_io_mod.mod: fms_io.$(OBJEXT)

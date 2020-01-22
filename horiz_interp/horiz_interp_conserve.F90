@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module horiz_interp_conserve_mod
-
+#include "../include/fms_platform.h"
   ! <CONTACT EMAIL="Bruce.Wyman@noaa.gov"> Bruce Wyman </CONTACT>
   ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
 
@@ -48,7 +48,6 @@ module horiz_interp_conserve_mod
   use fms_io_mod,            only: get_great_circle_algorithm
   use constants_mod,         only: PI
   use horiz_interp_type_mod, only: horiz_interp_type
-  use platform_mod
 
   implicit none
   private
@@ -355,14 +354,14 @@ contains
     integer :: create_xgrid_1DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i, j
-    real(r8_kind), dimension(size(lon_in(:))-1, size(lat_in(:))-1) :: mask_src
+    real(DOUBLE_KIND), dimension(size(lon_in(:))-1, size(lat_in(:))-1) :: mask_src
     integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
-    real(r8_kind),    allocatable, dimension(:)   :: xgrid_area, clon, clat
-    real(r8_kind),    allocatable, dimension(:,:) :: dst_area, lon_src, lat_src
-    real(r8_kind),    allocatable, dimension(:)   :: lat_in_flip
-    real(r8_kind),    allocatable, dimension(:,:) :: mask_src_flip
-    real(r8_kind),    allocatable, dimension(:)   :: lon_in_r8, lat_in_r8
-    real(r8_kind),    allocatable, dimension(:,:) :: lon_out_r8, lat_out_r8
+    real(DOUBLE_KIND),    allocatable, dimension(:)   :: xgrid_area, clon, clat
+    real(DOUBLE_KIND),    allocatable, dimension(:,:) :: dst_area, lon_src, lat_src
+    real(DOUBLE_KIND),    allocatable, dimension(:)   :: lat_in_flip
+    real(DOUBLE_KIND),    allocatable, dimension(:,:) :: mask_src_flip
+    real(DOUBLE_KIND),    allocatable, dimension(:)   :: lon_in_r8, lat_in_r8
+    real(DOUBLE_KIND),    allocatable, dimension(:,:) :: lon_out_r8, lat_out_r8
 
     integer :: nincrease, ndecrease
     logical :: flip_lat
@@ -640,12 +639,12 @@ contains
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i
-    real(r8_kind), dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
+    real(DOUBLE_KIND), dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
     integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
-    real(r8_kind), allocatable, dimension(:)   :: xgrid_area, clon, clat
-    real(r8_kind), allocatable, dimension(:,:) :: dst_area
-    real(r8_kind), allocatable, dimension(:,:) :: lon_in_r8, lat_in_r8
-    real(r8_kind), allocatable, dimension(:,:) :: lon_out_r8, lat_out_r8
+    real(DOUBLE_KIND), allocatable, dimension(:)   :: xgrid_area, clon, clat
+    real(DOUBLE_KIND), allocatable, dimension(:,:) :: dst_area
+    real(DOUBLE_KIND), allocatable, dimension(:,:) :: lon_in_r8, lat_in_r8
+    real(DOUBLE_KIND), allocatable, dimension(:,:) :: lon_out_r8, lat_out_r8
     integer :: wordsz
     integer(kind=1) :: one_byte(8)
 

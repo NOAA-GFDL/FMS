@@ -2,6 +2,7 @@
 
 !> @brief Domain-specific I/O wrappers.
 module fms_netcdf_domain_io_mod
+use, intrinsic :: iso_fortran_env, only: int32, int64, real32, real64
 use netcdf
 use mpp_mod
 use mpp_domains_mod
@@ -469,7 +470,7 @@ subroutine register_domain_variable(fileobj, variable_name, variable_type, dimen
   type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
-                                                !! values are: "int", "i8_kind",
+                                                !! values are: "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
 

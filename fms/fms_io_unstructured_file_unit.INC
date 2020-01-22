@@ -24,18 +24,17 @@
 subroutine fms_io_unstructured_file_unit(filename, &
                                          funit, &
                                          domain)
-    use platform_mod
 
    !Inputs/Outputs
     character(len=*),intent(in)   :: filename   !<The name of a file.
-    integer(i4_kind),intent(out) :: funit      !<The file unit for the input file.
+    integer(INT_KIND),intent(out) :: funit      !<The file unit for the input file.
     type(domainUG),intent(in)     :: domain     !<An unstructured mpp domain.
 
    !Local variables
-    logical(i4_kind)  :: found_file  !<Flag telling if the file exists.
+    logical(INT_KIND)  :: found_file  !<Flag telling if the file exists.
     character(len=256) :: actual_file !<Name of the found file.
-    logical(i4_kind)  :: read_dist   !<Flag telling if the file is "distributed" (has IO domain tile id appended to the end).
-    integer(i4_kind)  :: nfile       !<Index of the inputted file in the "files_read" module array.
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has IO domain tile id appended to the end).
+    integer(INT_KIND)  :: nfile       !<Index of the inputted file in the "files_read" module array.
 
    !Get the actual name of the file, searching for all possible variants. If
    !the file is not found, then throw a fatal error.

@@ -15,22 +15,22 @@ type is (character(len=*))
                                    nf90_global, &
                                    trim(attribute_name), &
                                    trim(attribute_value))
-            type is (integer(kind=i4_kind))
+            type is (integer(kind=int32))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=i8_kind))
+            type is (integer(kind=int64))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=r4_kind))
+            type is (real(kind=real32))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=r8_kind))
+            type is (real(kind=real64))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
@@ -54,22 +54,22 @@ subroutine register_global_attribute_1d(fileobj, &
                              define_mode)
         select type(attribute_value)
 
-            type is (integer(kind=i4_kind))
+        type is (integer(kind=int32))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=i8_kind))
+            type is (integer(kind=int64))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=r4_kind))
+            type is (real(kind=real32))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=r8_kind))
+            type is (real(kind=real64))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
