@@ -33,4 +33,4 @@
     end subroutine MPP_SUM_AD_
 
 !#######################################################################
-#include <mpp_sum_ad.inc>
+#include "mpp_sum_ad.INC"

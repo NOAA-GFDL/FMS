@@ -61,7 +61,7 @@ module axis_utils2_mod
   real, parameter    :: fp5 = 0.5, f360 = 360.0
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
   interface interp_1d
      module procedure interp_1d_1d

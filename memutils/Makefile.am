@@ -4,8 +4,8 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS = -I${top_builddir}/mpp
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # The convenience library depends on its source.
 libmemutils_la_SOURCES = memutils.F90

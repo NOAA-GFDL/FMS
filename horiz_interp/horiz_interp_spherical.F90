@@ -79,7 +79,7 @@ module horiz_interp_spherical_mod
 
   !-----------------------------------------------------------------------
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
   logical            :: module_is_initialized = .FALSE.
 
 contains

@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module mpp_efp_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE
 use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_npes

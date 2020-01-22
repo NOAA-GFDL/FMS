@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module mpp_data_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
 #if defined(use_libMPI) && defined(sgi_mipspro)
   use mpi
@@ -29,7 +29,7 @@ module mpp_data_mod
   private
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
   public version
 
 #if defined(use_libSMA) || defined(use_MPI_SMA)
@@ -37,7 +37,7 @@ module mpp_data_mod
 #endif
 
 #if defined(use_libMPI) && !defined(sgi_mipspro)
-#include <mpif.h>
+include "mpif.h"
 !sgi_mipspro gets this from 'use mpi'
 #endif
 
@@ -55,12 +55,12 @@ module mpp_data_mod
   !-------------------------------------------------------------------------------!
 
 #ifdef use_libSMA
-#include <mpp_data_sma.inc>
+#include "include/mpp_data_sma.FH"
 #else
 #ifdef use_libMPI
-#include <mpp_data_mpi.inc>
+#include "include/mpp_data_mpi.FH"
 #else
-#include <mpp_data_nocomm.inc>
+#include "include/mpp_data_nocomm.FH"
 #endif
 #endif
 

@@ -43,7 +43,7 @@ public :: gradient_cubic
 public :: calc_cubic_grid_info
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 contains
 

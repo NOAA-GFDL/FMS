@@ -216,7 +216,7 @@ integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
    logical :: mod_leapyear
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
    logical :: module_is_initialized=.FALSE.
    logical :: perthlike_behavior=.FALSE.

@@ -53,10 +53,6 @@ endif(OPENMP)
 
 include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${libFMS_SOURCE_DIR}/include
-  ${libFMS_SOURCE_DIR}/fms
-  ${libFMS_SOURCE_DIR}/mpp/include
-  ${libFMS_SOURCE_DIR}/fms2_io/include
   ${MPI_C_INCLUDE_PATH}
   ${MPI_Fortran_INCLUDE_PATH}
 )

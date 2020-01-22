@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_data_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -641,7 +641,7 @@ MODULE diag_data_mod
   ! </TYPE>
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">

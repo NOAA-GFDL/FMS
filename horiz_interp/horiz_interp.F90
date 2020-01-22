@@ -230,7 +230,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
  logical            :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
@@ -1467,4 +1467,3 @@ implicit none
 
 end program horiz_interp_test
 #endif
-

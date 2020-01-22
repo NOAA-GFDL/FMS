@@ -95,4 +95,4 @@ libFMS_la_LIBADD += ${top_builddir}/topography/libtopography.la
 libFMS_la_LIBADD += ${top_builddir}/tracer_manager/libtracer_manager.la
 
 # At least one source file must be included to please Automake.
-libFMS_la_SOURCES = ${top_builddir}/include/file_version.h
+libFMS_la_SOURCES = ${top_builddir}/include/file_version.FH

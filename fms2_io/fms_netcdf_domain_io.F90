@@ -741,10 +741,10 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
 end subroutine get_global_io_domain_indices
 
 
-include "register_domain_restart_variable.inc"
-include "domain_read.inc"
-include "domain_write.inc"
-include "compute_global_checksum.inc"
+include "include/register_domain_restart_variable.inc"
+include "include/domain_read.inc"
+include "include/domain_write.inc"
+include "include/compute_global_checksum.inc"
 
 
 end module fms_netcdf_domain_io_mod

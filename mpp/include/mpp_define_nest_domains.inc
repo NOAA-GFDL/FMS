@@ -49,7 +49,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
 
   if(PRESENT(name)) then
      if(len_trim(name) > NAME_LENGTH) then
-        call mpp_error(FATAL, "mpp_domains_define.inc(mpp_define_nest_domain): "// &
+        call mpp_error(FATAL, "mpp_define_nest_domains.inc(mpp_define_nest_domain): "// &
              "the len_trim of optional argument name ="//trim(name)// &
              " is greater than NAME_LENGTH, change the argument name or increase NAME_LENGTH")
      endif
@@ -106,13 +106,13 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   do n = 1, npes_coarse
      pes_coarse(n) = domain_coarse%list(n-1)%pe
      if( .NOT. ANY(pes(:) == pes_coarse(n)) ) then
-        call mpp_error(FATAL, "mpp_domains_define.inc: pelist_coarse is not subset of pelist")
+        call mpp_error(FATAL, "mpp_define_nest_domains.inc: pelist_coarse is not subset of pelist")
      endif
   enddo
   do n = 1, npes_fine
      pes_fine(n) = domain_fine%list(n-1)%pe
      if( .NOT. ANY(pes(:) == pes_fine(n)) ) then
-        call mpp_error(FATAL, "mpp_domains_define.inc: pelist_fine is not subset of pelist")
+        call mpp_error(FATAL, "mpp_define_nest_domains.inc: pelist_fine is not subset of pelist")
      endif
   enddo
 
@@ -127,7 +127,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   if( nest_domain%is_fine_pe ) then
      if( iend_fine - istart_fine + 1 .NE. domain_fine%x(1)%global%size .OR.  &
         jend_fine - jstart_fine + 1 .NE. domain_fine%y(1)%global%size ) then
-        call mpp_error(FATAL, "mpp_domains_define.inc: The fine global domain is not covered by coarse domain")
+        call mpp_error(FATAL, "mpp_define_nest_domains.inc: The fine global domain is not covered by coarse domain")
      endif
   endif
   ! First computing the send and recv information from find to coarse.
@@ -136,7 +136,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   else if( npes_fine + npes_coarse == npes ) then
      concurrent = .true.
   else
-     call mpp_error(FATAL, "mpp_domains_define.inc: size(pelist_coarse) .NE. size(pelist) and "// &
+     call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(pelist_coarse) .NE. size(pelist) and "// &
               "size(pelist_coarse)+size(pelist_fine) .NE. size(pelist)")
   endif
 
@@ -147,19 +147,19 @@ subroutine mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile
   ny_fine   = jend_fine - jstart_fine + 1
 
   if( mod(nx_fine,nx_coarse) .NE. 0 ) call mpp_error(FATAL, &
-      "mpp_domains_define.inc: The refinement in x-direction is not integer for nest domain"//trim(nest_domain%name) )
+      "mpp_define_nest_domains.inc: The refinement in x-direction is not integer for nest domain"//trim(nest_domain%name) )
   x_refine = nx_fine/nx_coarse
   if( mod(ny_fine,ny_coarse) .NE. 0 ) call mpp_error(FATAL, &
-      "mpp_domains_define.inc: The refinement in y-direction is not integer for nest domain"//trim(nest_domain%name) )
+      "mpp_define_nest_domains.inc: The refinement in y-direction is not integer for nest domain"//trim(nest_domain%name) )
   y_refine = ny_fine/ny_coarse
 
   !--- coarse grid and fine grid should be both symmetry or non-symmetry.
   if(domain_coarse%symmetry .AND. .NOT. domain_fine%symmetry) then
-     call mpp_error(FATAL, "mpp_domains_define.inc: coarse grid domain is symmetric, fine grid domain is not")
+     call mpp_error(FATAL, "mpp_define_nest_domains.inc: coarse grid domain is symmetric, fine grid domain is not")
   endif
 
   if(.NOT. domain_coarse%symmetry .AND. domain_fine%symmetry) then
-     call mpp_error(FATAL, "mpp_domains_define.inc: fine grid domain is symmetric, coarse grid domain is not")
+     call mpp_error(FATAL, "mpp_define_nest_domains.inc: fine grid domain is symmetric, coarse grid domain is not")
   endif
 
   nest_domain%x_refine = x_refine
@@ -941,7 +941,7 @@ end subroutine compute_overlap_fine_to_coarse
 !!$  case (NORTH)
 !!$     update_out => nest_domain%F2C_N
 !!$  case default
-!!$     call mpp_error(FATAL, "mpp_domains_define.inc(set_overlap_fine_to_coarse): the position should be CORNER, EAST or NORTH")
+!!$     call mpp_error(FATAL, "mpp_define_nest_domains.inc(set_overlap_fine_to_coarse): the position should be CORNER, EAST or NORTH")
 !!$  end select
 !!$
 !!$  nsend = update_in%nsend

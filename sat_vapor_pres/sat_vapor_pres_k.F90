@@ -47,7 +47,7 @@
  private
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
  public :: sat_vapor_pres_init_k
  public :: lookup_es_k

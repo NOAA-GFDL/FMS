@@ -9,8 +9,8 @@ use omp_lib
 use mpp_mod
 use platform_mod
 implicit none
-
 private
+
 public :: char_linked_list
 public :: error
 public :: file_exists
@@ -28,6 +28,7 @@ public :: get_data_type_string
 public :: get_checksum
 public :: open_check
 public :: string_compare
+public :: restart_filepath_mangle
 
 !> @brief A linked list of strings.
 type :: char_linked_list
@@ -387,7 +388,6 @@ end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
-!! @internal
 subroutine restart_filepath_mangle(dest, source)
 
   character(len=*), intent(inout) :: dest
@@ -425,10 +425,10 @@ subroutine open_check(flag, fname)
 end subroutine open_check
 
 
-include "array_utils.inc"
-include "array_utils_char.inc"
-include "get_data_type_string.inc"
-include "get_checksum.inc"
+include "include/array_utils.inc"
+include "include/array_utils_char.inc"
+include "include/get_data_type_string.inc"
+include "include/get_checksum.inc"
 
 
 end module fms_io_utils_mod

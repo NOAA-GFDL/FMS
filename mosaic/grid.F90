@@ -80,7 +80,7 @@ character(len=*), parameter :: &
      module_name = 'grid_mod'
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 character(len=*), parameter :: &
      grid_dir  = 'INPUT/',     &      ! root directory for all grid files

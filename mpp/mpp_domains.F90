@@ -128,7 +128,7 @@
 module mpp_domains_mod
 !a generalized domain decomposition package for use with mpp_mod
 !Balaji (vb@gfdl.gov) 15 March 1999
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
 #if defined(use_libMPI) && defined(sgi_mipspro)
   use mpi
@@ -626,7 +626,7 @@ module mpp_domains_mod
 
   integer                         :: group_update_buffer_pos = 0
   logical                         :: complete_group_update_on = .false.
-  !-------- The following variables are used in mpp_domains_comm.h
+  !-------- The following variables are used in mpp_domains_comm.INC
 
   integer, parameter :: MAX_ADDRS=512
   integer(LONG_KIND),dimension(MAX_ADDRS),save :: addrs_sorted=-9999  ! list of sorted local addrs
@@ -2774,19 +2774,19 @@ end interface
   end interface
 
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
   public version
 
 
 contains
 
-#include <mpp_define_nest_domains.inc>
-#include <mpp_domains_util.inc>
-#include <mpp_domains_comm.inc>
-#include <mpp_domains_define.inc>
-#include <mpp_domains_misc.inc>
-#include <mpp_domains_reduce.inc>
-#include <mpp_unstruct_domain.inc>
+include "include/mpp_define_nest_domains.inc"
+#include "include/mpp_domains_util.INC"
+#include "include/mpp_domains_comm.INC"
+#include "include/mpp_domains_define.INC"
+#include "include/mpp_domains_misc.INC"
+#include "include/mpp_domains_reduce.INC"
+#include "include/mpp_unstruct_domain.inc"
 
 end module mpp_domains_mod
 
@@ -2818,10 +2818,10 @@ end module mpp_domains_mod
 !     <TT>mpp_domains.F90</TT> and also requires the following include files:
 !    <PRE>
 !     <TT>fms_platform.h</TT>
-!     <TT>mpp_update_domains2D.h</TT>
-!     <TT>mpp_global_reduce.h</TT>
-!     <TT>mpp_global_sum.h</TT>
-!     <TT>mpp_global_field.h</TT>
+!     <TT>mpp_update_domains2D.INC</TT>
+!     <TT>mpp_global_reduce.INC</TT>
+!     <TT>mpp_global_sum.INC</TT>
+!     <TT>mpp_global_field.INC</TT>
 !    </PRE>
 !    GFDL users can check it out of the main CVS repository as part of
 !    the <TT>mpp</TT> CVS module. The current public tag is <TT>galway</TT>.

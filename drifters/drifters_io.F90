@@ -29,7 +29,7 @@ module drifters_io_mod
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
   real :: drfts_eps_t = 10.*epsilon(1.)
 

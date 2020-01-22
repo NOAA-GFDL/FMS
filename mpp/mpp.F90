@@ -172,7 +172,7 @@ module mpp_mod
 #define rank(X) size(shape(X))
 #endif
 
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
 #if defined(use_libSMA) && defined(sgi_mipspro)
   use shmem_interface
@@ -240,7 +240,7 @@ private
   public :: get_ascii_file_num_lines
   public :: mpp_record_time_start, mpp_record_time_end
 
-  !--- public interface from mpp_comm.h ------------------------------
+  !--- public interface from mpp_comm.INC ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
   public :: mpp_sum_ad
   public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
@@ -432,7 +432,7 @@ private
 
 !***********************************************************************
 !
-!    public interface from mpp_comm.h
+!    public interface from mpp_comm.INC
 !
 !***********************************************************************
 #ifdef use_libSMA
@@ -1350,7 +1350,7 @@ private
   integer              :: error_state=0
   integer              :: clock_grain=CLOCK_LOOP-1
 
-  !--- variables used in mpp_comm.h
+  !--- variables used in mpp_comm.INC
 #ifdef use_libMPI
 #ifdef _CRAYT3E
   !BWA: mpif.h on t3e currently does not contain MPI_INTEGER8 datatype
@@ -1375,7 +1375,7 @@ private
   integer(INT_KIND)  :: word(1)
 #endif
 
-  integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.h
+  integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.INC
 
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)
@@ -1388,7 +1388,7 @@ private
 !***********************************************************************
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
   public version
 
   integer, parameter :: MAX_REQUEST_MIN  = 10000
@@ -1400,8 +1400,8 @@ private
   namelist /mpp_nml/ etc_unit_is_stderr, request_multiply, mpp_record_timing_data, sync_all_clocks
 
   contains
-#include <system_clock.h>
-#include <mpp_util.inc>
-#include <mpp_comm.inc>
+#include "include/system_clock.INC"
+#include "include/mpp_util.INC"
+#include "include/mpp_comm.INC"
 
   end module mpp_mod

@@ -542,7 +542,7 @@
                position_x = EAST
                position_y = NORTH
             case default
-               call mpp_error(FATAL, "mpp_update_domains2D.h: invalid value of grid_offset_type")
+               call mpp_error(FATAL, "mpp_update_domains2D.INC: invalid value of grid_offset_type")
             end select
 
             if(debug_update_level .NE. NO_CHECK) then

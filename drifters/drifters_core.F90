@@ -21,7 +21,7 @@
 
 
 module drifters_core_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
   implicit none
   private
 
@@ -34,7 +34,7 @@ module drifters_core_mod
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
   type drifters_core_type
      ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new

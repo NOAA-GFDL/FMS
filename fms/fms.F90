@@ -309,7 +309,7 @@ integer, public :: clock_flag_default
 !  ---- version number -----
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
   logical :: module_is_initialized = .FALSE.
 

@@ -1649,15 +1649,15 @@ subroutine compressed_start_and_count(fileobj, nelems, npes_start, npes_count)
 end subroutine compressed_start_and_count
 
 
-include "netcdf_add_restart_variable.inc"
-include "netcdf_read_data.inc"
-include "netcdf_write_data.inc"
-include "register_global_attribute.inc"
-include "register_variable_attribute.inc"
-include "get_global_attribute.inc"
-include "get_variable_attribute.inc"
-include "compressed_write.inc"
-include "compressed_read.inc"
+include "include/netcdf_add_restart_variable.inc"
+include "include/netcdf_read_data.inc"
+include "include/netcdf_write_data.inc"
+include "include/register_global_attribute.inc"
+include "include/register_variable_attribute.inc"
+include "include/get_global_attribute.inc"
+include "include/get_variable_attribute.inc"
+include "include/compressed_write.inc"
+include "include/compressed_read.inc"
 
 
 !> @brief Wrapper to distinguish interfaces.

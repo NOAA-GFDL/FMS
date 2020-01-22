@@ -19,7 +19,7 @@
 
 
 module drifters_input_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
   implicit none
   private
 
@@ -28,7 +28,7 @@ module drifters_input_mod
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
   character, parameter, private :: SEPARATOR = ' '
 
   type drifters_input_type

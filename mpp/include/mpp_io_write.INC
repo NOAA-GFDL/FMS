@@ -1099,7 +1099,7 @@
 #define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_write_2Ddecomp.h>
+#include "mpp_write_2Ddecomp.INC"
 
 #ifdef OVERLOAD_R8
 #undef WRITE_RECORD_
@@ -1112,7 +1112,7 @@
 #define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d_r8
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_write_2Ddecomp.h>
+#include "mpp_write_2Ddecomp.INC"
 #endif
 
 #undef MPP_WRITE_COMPRESSED_1D_
@@ -1123,13 +1123,13 @@
 #define MPP_WRITE_COMPRESSED_3D_ mpp_write_compressed_r3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_write_compressed.h>
+#include "mpp_write_compressed.INC"
 
 #undef MPP_WRITE_UNLIMITED_AXIS_1D_
 #define MPP_WRITE_UNLIMITED_AXIS_1D_ mpp_write_unlimited_axis_r1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_write_unlimited_axis.h>
+#include "mpp_write_unlimited_axis.INC"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r0D
@@ -1139,7 +1139,7 @@
 #define MPP_RANK_ !
 #undef MPP_WRITE_RECORD_
 #define MPP_WRITE_RECORD_ call write_record_default( unit, field, 1, (/data/), tstamp)
-#include <mpp_write.h>
+#include "mpp_write.INC"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r1D
@@ -1149,7 +1149,7 @@
 #define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
-#include <mpp_write.h>
+#include "mpp_write.INC"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r2D
@@ -1159,7 +1159,7 @@
 #define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:)), data, tstamp )
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
-#include <mpp_write.h>
+#include "mpp_write.INC"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r3D
@@ -1169,7 +1169,7 @@
 #define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
-#include <mpp_write.h>
+#include "mpp_write.INC"
 
 #undef MPP_WRITE_
 #define MPP_WRITE_ mpp_write_r4D
@@ -1179,7 +1179,7 @@
 #define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
-#include <mpp_write.h>
+#include "mpp_write.INC"
 
     subroutine mpp_write_axis( unit, axis )
       integer, intent(in) :: unit
@@ -1565,7 +1565,7 @@
     end subroutine mpp_modify_field_meta
 
 
-!> \brief Fills in a fieldtype variable, and is used with the diag_manager when using 
+!> \brief Fills in a fieldtype variable, and is used with the diag_manager when using
 !! fms2_io
     subroutine fillin_fieldtype(field, axes, name, units, longname,&
          min, max, missing, fill, scale, add, pack, time_method, standard_name, checksum)

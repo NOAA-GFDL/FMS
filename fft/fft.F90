@@ -240,7 +240,7 @@ integer :: leng, leng1, leng2, lenc    ! related to transform size
 logical :: module_is_initialized=.false.
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 contains
 

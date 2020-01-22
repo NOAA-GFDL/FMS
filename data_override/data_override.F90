@@ -74,7 +74,7 @@ module data_override_mod
 ! A field can be overriden globally (by default) or users can specify one or two regions in which
 ! data_override will take place, field values outside the region will not be affected.
 !</OVERVIEW>
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 use platform_mod, only: r8_kind
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NOTE, mpp_min, mpp_max, mpp_chksum
@@ -102,7 +102,7 @@ implicit none
 private
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 type data_type
    character(len=3)   :: gridname
@@ -262,7 +262,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        data_table(i) = default_table
     enddo
 
-!  Read coupler_table 
+!  Read coupler_table
     iunit = get_unit()
     open(iunit, file='data_table', action='READ', iostat=io_status)
     if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
@@ -833,11 +833,11 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
         !  get lon and lat of the input (source) grid, assuming that axis%data contains
         !  lat and lon of the input grid (in degrees)
-        
+
         allocate(override_array(curr_position)%horz_interp(nwindows))
         allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
         allocate(override_array(curr_position)%lat_in(axis_sizes(2)+1))
-        if(get_external_fileobj(filename, fileobj)) then       
+        if(get_external_fileobj(filename, fileobj)) then
            call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in)
            call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in)
         else
@@ -1433,7 +1433,7 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   ! get the grid file to read
 
   if(variable_exists(fileobj, trim(mod_name)//'_mosaic_file' )) then
-     call read_data(fileobj, trim(mod_name)//'_mosaic_file', solo_mosaic_file) 
+     call read_data(fileobj, trim(mod_name)//'_mosaic_file', solo_mosaic_file)
 
      solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
      if(.not. open_file(mosaicfileobj, solo_mosaic_file, 'read')) then
@@ -1441,7 +1441,7 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
      endif
      open_solo_mosaic=.true.
   else
-     mosaicfileobj = fileobj  
+     mosaicfileobj = fileobj
      open_solo_mosaic = .false.
   end if
 
@@ -1469,7 +1469,7 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   allocate(tmpx(isc2:iec2, jsc2:jec2), tmpy(isc2:iec2, jsc2:jec2) )
 
   call read_data( tilefileobj, 'x', tmpx, corner=start,edge_lengths=nread)
-  call read_data( tilefileobj, 'y', tmpy, corner=start,edge_lengths=nread)     
+  call read_data( tilefileobj, 'y', tmpy, corner=start,edge_lengths=nread)
 
   ! copy data onto model grid
   if(trim(mod_name) == 'ocn' .OR. trim(mod_name) == 'ice') then

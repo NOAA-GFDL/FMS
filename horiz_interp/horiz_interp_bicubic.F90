@@ -60,7 +60,7 @@ module horiz_interp_bicubic_mod
   end interface
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
    logical            :: module_is_initialized = .FALSE.
    integer            :: verbose_bicubic = 0
 

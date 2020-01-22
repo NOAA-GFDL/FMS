@@ -70,7 +70,7 @@ public :: is_inside_polygon
 
 logical :: module_is_initialized = .true.
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 contains
 
@@ -372,7 +372,7 @@ end subroutine mosaic_init
     call read_data(fileobj, 'gridtiles', gridtiles)
 
     ncontacts = get_mosaic_ncontacts(fileobj)
-    if(ncontacts>0) then 
+    if(ncontacts>0) then
        allocate(contacts(ncontacts), contacts_index(ncontacts))
        call read_data(fileobj, "contacts", contacts)
        call read_data(fileobj, "contact_index", contacts_index)

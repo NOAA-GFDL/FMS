@@ -3,9 +3,6 @@
 
 # Ed Hartnett 2/22/19
 
-# Include .h files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libplatform.la
 

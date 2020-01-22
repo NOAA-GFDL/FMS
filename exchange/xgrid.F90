@@ -122,7 +122,7 @@ module xgrid_mod
 !     by the <TT>make_xgrids</TT> utility.
 ! </DATASET>
 
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
 use       fms_mod,   only: check_nml_error,  &
                            error_mesg, FATAL, NOTE, stdlog,      &
@@ -463,7 +463,7 @@ end type xmap_type
 
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
  real, parameter                              :: EPS = 1.0e-10
  real, parameter                              :: LARGE_NUMBER = 1.e20

@@ -157,7 +157,7 @@ type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 logical            :: module_is_initialized = .false.
 

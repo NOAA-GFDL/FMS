@@ -17,13 +17,13 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module mpp_parameter_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
   implicit none
   private
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
   public version
 
   !--- public paramters which is used by mpp_mod and its components.

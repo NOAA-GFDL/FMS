@@ -5,7 +5,9 @@ SUBDIRS = include
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_srcdir}/fms2_io/include
+AM_CPPFLAGS += -I${top_builddir}/platform
+
+AM_FCFLAGS = $(AM_CPPFLAGS)
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfms2_io.la libfms_io_utils.la libnetcdf_io.la \
@@ -13,13 +15,13 @@ noinst_LTLIBRARIES = libfms2_io.la libfms_io_utils.la libnetcdf_io.la \
                      liblegacy.la libblackboxio.la
 
 # Each convenience library depends on its source.
-libfms2_io_la_SOURCES = fms2_io.F90
+libfms2_io_la_SOURCES = fms2_io.f90
 libfms_io_utils_la_SOURCES = fms_io_utils.F90
-libnetcdf_io_la_SOURCES = netcdf_io.F90
-libfms_netcdf_domain_io_la_SOURCES = fms_netcdf_domain_io.F90
-libfms_netcdf_unstructured_domain_io_la_SOURCES = fms_netcdf_unstructured_domain_io.F90
-liblegacy_la_SOURCES = legacy.F90
-libblackboxio_la_SOURCES = blackboxio.F90
+libnetcdf_io_la_SOURCES = netcdf_io.f90
+libfms_netcdf_domain_io_la_SOURCES = fms_netcdf_domain_io.f90
+libfms_netcdf_unstructured_domain_io_la_SOURCES = fms_netcdf_unstructured_domain_io.f90
+liblegacy_la_SOURCES = legacy.f90
+libblackboxio_la_SOURCES = blackboxio.f90
 
 # Each mod file depends on the .o file.
 fms2_io_mod.mod: fms2_io.$(OBJEXT)

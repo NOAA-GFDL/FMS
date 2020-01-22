@@ -239,7 +239,7 @@ end interface interp_weighted_scalar
 !----------- version number for this module --------------------------
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 logical            :: module_is_initialized = .false.
 logical            :: clim_diag_initialized = .false.
 

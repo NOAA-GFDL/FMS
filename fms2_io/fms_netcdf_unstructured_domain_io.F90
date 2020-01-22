@@ -176,9 +176,9 @@ subroutine unstructured_write_restart(fileobj, unlim_dim_level)
 end subroutine unstructured_write_restart
 
 
-include "register_unstructured_domain_restart_variable.inc"
-include "unstructured_domain_read.inc"
-include "unstructured_domain_write.inc"
+include "include/register_unstructured_domain_restart_variable.inc"
+include "include/unstructured_domain_read.inc"
+include "include/unstructured_domain_write.inc"
 
 
 end module fms_netcdf_unstructured_domain_io_mod

@@ -494,7 +494,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   call mpp_clock_begin(group_pack_clock)
   !pack the data
   buffer_start_pos = 0
-#include <group_update_pack.inc>
+  include "include/group_update_pack.inc"
   call mpp_clock_end(group_pack_clock)
 
   call mpp_clock_begin(group_send_clock)
@@ -517,7 +517,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   !---unpack the buffer
   nunpack = group%nunpack
   call mpp_clock_begin(group_unpk_clock)
-#include <group_update_unpack.inc>
+include "include/group_update_unpack.inc"
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
@@ -725,7 +725,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   call mpp_clock_begin(nonblock_group_pack_clock)
   npack = group%npack
   buffer_start_pos = group%buffer_start_pos
-#include <group_update_pack.inc>
+  include "include/group_update_pack.inc"
   call mpp_clock_end(nonblock_group_pack_clock)
 
   call mpp_clock_begin(nonblock_group_send_clock)
@@ -793,7 +793,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
   call mpp_clock_begin(nonblock_group_unpk_clock)
   buffer_start_pos = group%buffer_start_pos
-#include <group_update_unpack.inc>
+include "include/group_update_unpack.inc"
   call mpp_clock_end(nonblock_group_unpk_clock)
 
   ! ---northern boundary fold

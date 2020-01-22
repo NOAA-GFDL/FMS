@@ -18,7 +18,7 @@
 !***********************************************************************
 
 module fms_io_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
 !
 !
@@ -553,7 +553,7 @@ logical           :: checksum_required   = .true.
 integer            :: pack_size  ! = 1 for double = 2 for float
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 !----------
 !ug support

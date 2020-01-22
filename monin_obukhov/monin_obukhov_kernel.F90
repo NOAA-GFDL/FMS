@@ -19,7 +19,7 @@
 
 
 module monin_obukhov_inter
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 implicit none
 private
 

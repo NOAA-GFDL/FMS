@@ -68,7 +68,7 @@ public :: is_inside_polygon
 
 logical :: module_is_initialized = .true.
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 contains
 
@@ -640,5 +640,3 @@ end function transfer_to_model_index
 
 
 end module mosaic_mod
-
-

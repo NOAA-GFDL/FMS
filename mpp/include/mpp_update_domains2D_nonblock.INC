@@ -724,7 +724,7 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
            position_x = EAST
            position_y = NORTH
         case default
-           call mpp_error(FATAL, "mpp_update_domains2D_nonblock.h: invalid value of grid_offset_type")
+           call mpp_error(FATAL, "mpp_update_domains2D_nonblock.INC: invalid value of grid_offset_type")
         end select
         updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
         updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
@@ -985,7 +985,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
            position_x = EAST
            position_y = NORTH
         case default
-           call mpp_error(FATAL, "mpp_update_domains2D.h: invalid value of grid_offset_type")
+           call mpp_error(FATAL, "mpp_update_domains2D.INC: invalid value of grid_offset_type")
         end select
         updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
         updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)

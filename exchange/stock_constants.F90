@@ -28,7 +28,7 @@ module stock_constants_mod
   implicit none
 
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
   integer,public,    parameter                :: NELEMS=3
   integer,           parameter                :: NELEMS_report=3

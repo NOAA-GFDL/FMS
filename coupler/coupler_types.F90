@@ -38,7 +38,7 @@ module coupler_types_mod
 
 
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
   public coupler_types_init
   public coupler_type_copy, coupler_type_spawn, coupler_type_set_diags

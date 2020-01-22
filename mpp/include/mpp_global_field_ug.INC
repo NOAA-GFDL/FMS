@@ -196,6 +196,3 @@
       gptr = LOC(global)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
     end subroutine MPP_GLOBAL_FIELD_UG_5D_
-
-
-

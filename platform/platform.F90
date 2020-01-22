@@ -26,7 +26,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #endif
 
 ! Include fms_platform.h.  It has the *_KIND defines
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
   public
   integer, parameter :: r8_kind=DOUBLE_KIND, r4_kind=FLOAT_KIND, &

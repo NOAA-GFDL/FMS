@@ -4,8 +4,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/constants
+AM_CPPFLAGS = -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/platform
 AM_CPPFLAGS += -I${top_builddir}/memutils
@@ -21,12 +20,16 @@ libfms_io_la_SOURCES = fms_io.F90
 FMS_INC_FILES = fms_io_unstructured_field_exist.inc \
 fms_io_unstructured_get_file_name.inc \
 fms_io_unstructured_register_restart_axis.inc \
-fms_io_unstructured_setup_one_field.inc read_data_4d.inc \
+fms_io_unstructured_setup_one_field.inc \
+read_data_4d.inc \
 fms_io_unstructured_file_unit.inc \
 fms_io_unstructured_get_file_unit.inc \
-fms_io_unstructured_register_restart_field.inc read_data_2d.inc \
-write_data.inc fms_io_unstructured_get_field_size.inc \
-fms_io_unstructured_read.inc fms_io_unstructured_save_restart.inc \
+fms_io_unstructured_register_restart_field.INC \
+read_data_2d.inc \
+write_data.inc \
+fms_io_unstructured_get_field_size.inc \
+fms_io_unstructured_read.inc \
+fms_io_unstructured_save_restart.inc \
 read_data_3d.inc
 
 # Each mod file depends on the .o file.

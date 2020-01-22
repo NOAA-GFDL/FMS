@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_output_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood

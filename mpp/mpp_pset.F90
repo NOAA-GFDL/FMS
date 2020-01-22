@@ -27,7 +27,7 @@
 #endif
 
 module mpp_pset_mod
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &
        mpp_sync, mpp_error, FATAL, WARNING, stdout, stderr, mpp_chksum, &
        mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist, &

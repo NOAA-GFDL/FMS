@@ -29,7 +29,7 @@ implicit none
 private
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 !-----------------------------------------------------------------------
 ! version is public so that write_version_number can be called for constants_mod
 ! by fms_init

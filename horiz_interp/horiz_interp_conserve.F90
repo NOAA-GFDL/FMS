@@ -109,7 +109,7 @@ module horiz_interp_conserve_mod
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
   ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
   logical            :: module_is_initialized = .FALSE.
 
   logical         :: great_circle_algorithm = .false.

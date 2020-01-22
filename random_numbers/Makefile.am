@@ -4,15 +4,14 @@
 # Ed Hartnett 2/28/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/time_manager
+AM_FCFLAGS = -I${top_builddir}/time_manager
 
 # Build these uninstalled convenience library.
 noinst_LTLIBRARIES = libMersenneTwister.la librandom_numbers.la
 
 # Each convenience library depends on its source.
-librandom_numbers_la_SOURCES = random_numbers.F90
-libMersenneTwister_la_SOURCES = MersenneTwister.F90
+librandom_numbers_la_SOURCES = random_numbers.f90
+libMersenneTwister_la_SOURCES = MersenneTwister.f90
 
 # Each mod file depends on the .o file.
 random_numbers_mod.mod: random_numbers.$(OBJEXT)

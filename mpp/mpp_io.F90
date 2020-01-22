@@ -326,7 +326,7 @@
 
 module mpp_io_mod
 
-#include <fms_platform.h>
+#include "../include/fms_platform.h"
 #define _MAX_FILE_UNITS 1024
 
 use mpp_parameter_mod,  only : MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII
@@ -368,7 +368,7 @@ implicit none
 private
 
 #ifdef use_netCDF
-#include <netcdf.inc>
+include "netcdf.inc"
 #endif
 
   !--- public parameters  -----------------------------------------------
@@ -1076,7 +1076,7 @@ type :: atttype
   integer :: pack_size ! = 1 when compiling with -r8 and = 2 when compiling with -r4.
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 !----------
 !ug support
@@ -1099,16 +1099,16 @@ end interface mpp_io_unstructured_read
 
 contains
 
-#include <mpp_io_util.inc>
-#include <mpp_io_misc.inc>
-#include <mpp_io_connect.inc>
-#include <mpp_io_read.inc>
-#include <mpp_io_write.inc>
+#include "include/mpp_io_util.inc"
+#include "include/mpp_io_misc.INC"
+#include "include/mpp_io_connect.INC"
+#include "include/mpp_io_read.INC"
+#include "include/mpp_io_write.INC"
 
 !----------
 !ug support
-#include <mpp_io_unstructured_write.inc>
-#include <mpp_io_unstructured_read.inc>
+#include "include/mpp_io_unstructured_write.inc"
+#include "include/mpp_io_unstructured_read.inc"
 !----------
 
 end module mpp_io_mod

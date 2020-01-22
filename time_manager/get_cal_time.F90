@@ -58,7 +58,7 @@ namelist / get_cal_time_nml / allow_calendar_conversion
 ! </NAMELIST>
 
 ! Include variable "version" to be written to log file.
-#include<file_version.h>
+#include "../include/file_version.FH"
 
 contains
 !------------------------------------------------------------------------
