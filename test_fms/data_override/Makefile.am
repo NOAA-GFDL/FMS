@@ -13,10 +13,11 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_data_override
+check_PROGRAMS = test_data_override test_data_override_3D
 
 # This is the source code for the test.
 test_data_override_SOURCES = test_data_override.F90
+test_data_override_3D_SOURCES = test_data_override_3D.F90
 
 # Run the test program.
 TESTS = test_data_override2.sh

@@ -479,7 +479,7 @@ module time_interp_external2_mod
             endif
          case ('Z')
             field(num_fields)%axisname(3) = axisname(j)
-            field(num_fields)%siz(3) = siz_in(3)
+            field(num_fields)%siz(3) = len
          case ('T')
             field(num_fields)%axisname(4) = axisname(j)
             field(num_fields)%siz(4) = ntime

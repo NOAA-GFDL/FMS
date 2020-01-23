@@ -115,6 +115,29 @@ type data_type
    integer            :: region_type
 end type data_type
 
+type nudge3D
+   character(len=3)                 :: gridname
+   character(len=128)               :: varname
+   character(len=128)               :: obs_coefficient_name
+   character(len=128)               :: mod_coefficient_name
+   real, _ALLOCATABLE               :: model_input(:,:,:) _NULL
+   real, _ALLOCATABLE               :: nudge_output(:,:,:) _NULL
+   real, _ALLOCATABLE               :: observed_data(:,:,:) _NULL
+   real, _ALLOCATABLE               :: observation_coefficient(:,:,:) _NULL
+   real, _ALLOCATABLE               :: model_coefficient(:,:,:) _NULL
+end type nudge3D
+
+type nudge2D
+   character(len=3)                 :: gridname
+   character(len=128)               :: varname
+   character(len=128)               :: obs_coefficient_name
+   character(len=128)               :: mod_coefficient_name
+   real, _ALLOCATABLE               :: model_input(:,:) _NULL
+   real, _ALLOCATABLE               :: nudge_output(:,:) _NULL
+   real, _ALLOCATABLE               :: observed_data(:,:) _NULL
+   real, _ALLOCATABLE               :: observation_coefficient(:,:) _NULL
+   real, _ALLOCATABLE               :: model_coefficient(:,:) _NULL
+end type nudge2D
 
 type override_type
    character(len=3)                 :: gridname
@@ -168,13 +191,18 @@ interface data_override
      module procedure data_override_3d
 end interface
 
+interface data_nudge
+     module procedure data_nudge_2d
+     module procedure data_nudge_3d
+end interface
+
 interface data_override_UG
      module procedure data_override_UG_1d
      module procedure data_override_UG_2d
 end interface
 
-public :: data_override_init, data_override, data_override_unset_domains
-public :: data_override_UG
+public :: data_override_init, data_override, data_nudge, new_nudge3D, data_override_unset_domains
+public :: data_override_UG, nudge3D
 
 contains
 !===============================================================================================
@@ -604,6 +632,84 @@ subroutine get_domainUG(gridname, UGdomain, comp_domain)
      call mpp_get_UG_SG_domain(UGdomain,SGdomain)
      call mpp_get_compute_domain(SGdomain,comp_domain(1),comp_domain(2),comp_domain(3),comp_domain(4))
 end subroutine get_domainUG
+!===============================================================================================
+! <FUNCTION NAME="new_nudge3D">
+!   <DESCRIPTION>
+! This function constructs a 3D data_nudge object.
+!   </DESCRIPTION>
+function new_nudge3D(newgridname, newvarname, xbounds, ybounds, zbounds, newobscoeffname, newmodcoeffname)
+
+   character(len=3),           intent(in) :: newgridname
+   character(len=*),           intent(in) :: newvarname
+   integer, dimension(2),      intent(in) :: xbounds, ybounds, zbounds
+   character(len=*), optional, intent(in) :: newobscoeffname
+   character(len=*), optional, intent(in) :: newmodcoeffname
+
+   type(nudge3D)                          :: new_nudge3D
+ 
+   new_nudge3D%gridname = newgridname
+   new_nudge3D%varname = newvarname
+   new_nudge3D%obs_coefficient_name = trim(new_nudge3D%varname) // '_coeff'
+   if(present(newobscoeffname)) then
+      new_nudge3D%obs_coefficient_name = newobscoeffname
+   endif
+   new_nudge3D%mod_coefficient_name = trim(new_nudge3D%varname) // '_mod_coeff'
+   if(present(newmodcoeffname)) then
+      new_nudge3D%mod_coefficient_name = newmodcoeffname
+   endif
+   allocate(new_nudge3D%model_input(xbounds(1):xbounds(2),ybounds(1):ybounds(2),zbounds(1):zbounds(2)))
+   allocate(new_nudge3D%nudge_output(xbounds(1):xbounds(2),ybounds(1):ybounds(2),zbounds(1):zbounds(2)))
+   allocate(new_nudge3D%observed_data(xbounds(1):xbounds(2),ybounds(1):ybounds(2),zbounds(1):zbounds(2)))
+   allocate(new_nudge3D%observation_coefficient(xbounds(1):xbounds(2),ybounds(1):ybounds(2),zbounds(1):zbounds(2)))
+   allocate(new_nudge3D%model_coefficient(xbounds(1):xbounds(2),ybounds(1):ybounds(2),zbounds(1):zbounds(2)))
+
+end function new_nudge3D
+!===============================================================================================
+! <SUBROUTINE NAME="data_nudge_3d">
+!   <DESCRIPTION>
+! This routine performs data nudge for a variable, its observations, and the associated coefficients.
+!   </DESCRIPTION>
+subroutine data_nudge_3d(nudgeobj, nudge_time, nudge_success, is_in, ie_in, js_in, je_in)
+   type(nudge3D),             intent(inout) :: nudgeobj
+   type(time_type),              intent(in) :: nudge_time !(target) model time
+   logical,           optional, intent(out) :: nudge_success ! true if the variable has been nudged succesfully
+   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
+
+   logical, dimension(3)                    :: nudge_override
+ 
+   call data_override_3d(nudgeobj%gridname, trim(nudgeobj%varname), nudgeobj%observed_data, nudge_time, &
+   override=nudge_override(1), is_in=is_in, ie_in=ie_in, js_in=js_in, je_in=je_in)
+   call data_override_3d(nudgeobj%gridname, trim(nudgeobj%obs_coefficient_name), nudgeobj%observation_coefficient, nudge_time, &
+   override=nudge_override(2), is_in=is_in, ie_in=ie_in, js_in=js_in, je_in=je_in)
+   call data_override_3d(nudgeobj%gridname, trim(nudgeobj%mod_coefficient_name), nudgeobj%model_coefficient, nudge_time, &
+   override=nudge_override(3), is_in=is_in, ie_in=ie_in, js_in=js_in, je_in=je_in)
+
+   nudgeobj%nudge_output = nudgeobj%model_input * nudgeobj%model_coefficient + nudgeobj%observed_data * nudgeobj%observation_coefficient
+   nudge_success = ALL(nudge_override)
+end subroutine data_nudge_3d
+!===============================================================================================
+! <SUBROUTINE NAME="data_nudge_2d">
+!   <DESCRIPTION>
+! This routine performs data nudge for a variable, its observations, and the associated coefficients.
+!   </DESCRIPTION>
+subroutine data_nudge_2d(nudgeobj, nudge_time, nudge_success, is_in, ie_in, js_in, je_in)
+   type(nudge2D),             intent(inout) :: nudgeobj
+   type(time_type),              intent(in) :: nudge_time !(target) model time
+   logical,           optional, intent(out) :: nudge_success ! true if the variable has been nudged succesfully
+   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
+
+   logical, dimension(3)                    :: nudge_override
+ 
+   call data_override_2d(nudgeobj%gridname, trim(nudgeobj%varname), nudgeobj%observed_data, nudge_time, &
+   override=nudge_override(1), is_in=is_in, ie_in=ie_in, js_in=js_in, je_in=je_in)
+   call data_override_2d(nudgeobj%gridname, trim(nudgeobj%obs_coefficient_name), nudgeobj%observation_coefficient, nudge_time, &
+   override=nudge_override(2), is_in=is_in, ie_in=ie_in, js_in=js_in, je_in=je_in)
+   call data_override_2d(nudgeobj%gridname, trim(nudgeobj%mod_coefficient_name), nudgeobj%model_coefficient, nudge_time, &
+   override=nudge_override(3), is_in=is_in, ie_in=ie_in, js_in=js_in, je_in=je_in)
+
+   nudgeobj%nudge_output = nudgeobj%model_input * nudgeobj%model_coefficient + nudgeobj%observed_data * nudgeobj%observation_coefficient
+   nudge_success = ALL(nudge_override)
+end subroutine data_nudge_2d
 !===============================================================================================
 
 ! <SUBROUTINE NAME="data_override_2d">
