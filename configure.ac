@@ -175,6 +175,13 @@ AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
+# Find which mpi launcher to use
+AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
+
+# Check if the launcher can oversubscribe the MPI processes
+AS_IF([$MPI_LAUNCHER --oversubscribe 2>&1 >/dev/null], \
+      [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
@@ -229,6 +236,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/field_manager/Makefile
         test_fms/axis_utils/Makefile
         test_fms/mosaic/Makefile
+        test_fms/affinity/Makefile
         FMS.pc
         ])
 AC_OUTPUT()
