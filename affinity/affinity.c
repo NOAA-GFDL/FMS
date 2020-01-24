@@ -26,11 +26,21 @@
 #include <errno.h>
 #include <sys/resource.h>
 #include <sys/syscall.h>
+#ifdef __APPLE__
+#include <pthread.h>
+#endif
 
 #ifndef HAVE_GETTID
 static pid_t gettid(void)
 {
-  return syscall(__NR_gettid);
+#if defined(__APPLE__)
+  uint64_t tid64;
+  pthread_threadid_np(NULL, &tid64);
+  pid_t tid = (pid_t)tid64;
+#else
+  pid_t tid = syscall(__NR_gettid);
+#endif
+  return tid;
 }
 #endif
 
