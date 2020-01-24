@@ -19,7 +19,7 @@
 module fms_affinity_mod
 
   !--- standard system modules
-  use platform_mod
+  use, intrinsic ::  iso_c_binding, only: c_int, c_bool
   use omp_lib
 
   !--- FMS modules
@@ -35,7 +35,7 @@ module fms_affinity_mod
   logical:: affinity = .true.
   logical:: strict = .true.
   logical:: debug_affinity = .false.
-  logical(b_kind):: debug_cpuset = .false.
+  logical(c_bool):: debug_cpuset = .false.
   namelist /fms_affinity_nml/ affinity, strict, debug_affinity, debug_cpuset
 
   public fms_affinity_init, fms_affinity_get, fms_affinity_set
@@ -80,7 +80,7 @@ contains
   function fms_affinity_get () result(affinity)
 
     !--- local declarations for Fortran/C affinity interoperability
-    integer(l4_kind):: get_cpu_affinity
+    integer(c_int):: get_cpu_affinity
 
     !--- local variables
     integer:: affinity
@@ -98,12 +98,12 @@ contains
     integer,           intent(in):: nthreads
 
     !--- local declarations for Fortran/C affinity interoperability
-    integer(l4_kind):: get_cpuset
-    integer(l4_kind):: get_cpu_affinity
-    integer(l4_kind):: set_cpu_affinity
-    integer(l4_kind):: cpuset_sz
-    integer(l4_kind), dimension(:), allocatable:: cpu_set
-    integer(l4_kind):: retcode
+    integer(c_int):: get_cpuset
+    integer(c_int):: get_cpu_affinity
+    integer(c_int):: set_cpu_affinity
+    integer(c_int):: cpuset_sz
+    integer(c_int), dimension(:), allocatable:: cpu_set
+    integer(c_int):: retcode
 
     !--- local variables
     character(len=32):: h_name
