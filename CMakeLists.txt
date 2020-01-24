@@ -34,7 +34,7 @@ add_definitions(-Duse_netCDF)
 # Set the default build variables
 # These can be changed via `cmake -D<var>`, e.g. cmake -DOPENMP=FALSE to disable
 # OpenMP
-set(OPENMP TRUE CACHE BOOL "To Determin if libFMS should be build with OpenMP support")
+option(USE_OPENMP "To Determin if libFMS should be build with OpenMP support" ON)
 
 # Add directory that contains custom CMake Modules for building libFMS
 list(INSERT CMAKE_MODULE_PATH 0 ${libFMS_SOURCE_DIR}/CMakeModules)
@@ -53,6 +53,10 @@ endif(OPENMP)
 
 include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${libFMS_SOURCE_DIR}/include
+  ${libFMS_SOURCE_DIR}/mpp/include
+  ${libFMS_SOURCE_DIR}/fms
+  ${libFMS_SOURCE_DIR}/fms2_io/include
   ${MPI_C_INCLUDE_PATH}
   ${MPI_Fortran_INCLUDE_PATH}
 )
@@ -67,12 +71,12 @@ message("Build Target: ${BUILD_TARGET}")
 message("OpenMP Enabled: ${OPENMP}")
 message("Using NetCDF C: ${NETCDF_C_VERSION}")
 message("Using NetCDF Fortran: ${NETCDF_Fortran_VERSION}")
-message("************************************************************")
-
 message("MPI: ${MPI_C_FOUND} ${MPI_Fortran_FOUND}")
 message("MPI Compiler: ${MPI_C_COMPILER} ${MPI_Fortran_COMPILER}")
 message("MPI Compiler Flags: ${MPI_C_COMPILE_FLAGS} | ${MPI_F_COMPILE_FLAGS}")
 message("MPI INCLUDES: ${MPI_C_INCLUDE_PATH} | ${MPI_Fortran_INCLUDE_PATH}")
+message("************************************************************")
+
 add_library(FMS
   affinity/affinity.c
   affinity/fms_affinity.F90
