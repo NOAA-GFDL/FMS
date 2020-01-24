@@ -182,6 +182,8 @@ AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 AS_IF([$MPI_LAUNCHER --oversubscribe 2>&1 >/dev/null], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
 
+TYPE_IS_CHECK()
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
