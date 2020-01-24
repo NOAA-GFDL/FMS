@@ -31,10 +31,10 @@ project(libFMS
 add_definitions(-Duse_libMPI)
 add_definitions(-Duse_netCDF)
 
-# Set the default build variables
-# These can be changed via `cmake -D<var>`, e.g. cmake -DOPENMP=FALSE to disable
-# OpenMP
-option(USE_OPENMP "To Determin if libFMS should be build with OpenMP support" ON)
+# Set the build options
+# These can be changed via `cmake -D<var>=[ON|OFF]`, e.g. cmake -DOPENMP=OFF to
+# disable OpenMP
+option(USE_OPENMP "Determine if libFMS should be built with OpenMP support" ON)
 
 # Add directory that contains custom CMake Modules for building libFMS
 list(INSERT CMAKE_MODULE_PATH 0 ${libFMS_SOURCE_DIR}/CMakeModules)
