@@ -1,5 +1,5 @@
 ## Check is compiler supports "type is (character(len=*))"
-AC_DEFUN([TYPE_IS_CHECK],[
+AC_DEFUN([GX_TYPE_IS_CHECK],[
 AC_LANG_PUSH([Fortran])
 AC_COMPILE_IFELSE([subroutine test_sub(ctype)
   class(*), intent(out) :: ctype
