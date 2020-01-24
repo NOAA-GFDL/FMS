@@ -27,7 +27,7 @@
 # Set common test settings.
 . ../test_common.sh
 
-#bats $srcdir/test_fms/mpp/test_mpp.bats
+skip_test="no"
 
 # Get the number of available CPUs on the system
 if [ $(command -v nproc) ]
@@ -46,26 +46,13 @@ fi
 if [ ${nProc} -lt 0 ]
 then
     # Couldn't get the number of CPUs, skip the test.
-    skip_test=true
+    skip_test="skip"
 elif [ $nProc -lt 4 ]
 then
     # Need to oversubscribe the MPI
-    #
-    # Is the oversubscribe option known?
-    mpirun -oversubscribe -version 2>&1 > /dev/null
-    if [ $? -eq 0 ]
-    then
-        # Looks like open MPI mpirun
-        oversubscribe="-oversubscribe"
-    fi
+    run_test test_mpp 4 $skip_test "true"
 fi
 
-if [ "$skip_test" = "true" ]
-then
-    echo "Unable to determine number of available cpus"
-    return 0
-fi
-
-# Ensure an input.nml file exists
 touch input.nml
-mpirun ${oversubscribe} -n 4 ./test_mpp
+run_test test_mpp 4 $skip_test
+

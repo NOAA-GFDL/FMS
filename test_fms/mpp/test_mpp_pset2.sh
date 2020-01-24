@@ -27,12 +27,9 @@
 # Set common test settings.
 . ../test_common.sh
 
-# All tests are skipped in bats file.
-
 # Setup the run directory
 ##tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
 ##rm -f diag_test_${tnum}* > /dev/null 2>&1
 ##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
 
-#mpirun -n 2 ./test_mpp_pset
-#mpirun -n 2 ./test_mpp_pset
+run_test test_mpp_pset 2 skip
