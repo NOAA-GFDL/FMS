@@ -24,7 +24,7 @@
 ! Currently the contact will be limited to overlap contact.
 subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, npes_nest_tile, &
-                                  x_refine, y_refine, extra_halo, name) 
+                                  x_refine, y_refine, extra_halo, name)
   type(nest_domain_type),     intent(inout) :: nest_domain
   type(domain2D), target,     intent(in   ) :: domain
   integer,                    intent(in   ) :: num_nest
@@ -62,7 +62,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   if(present(extra_halo)) then
      if(extra_halo .NE. 0) call mpp_error(FATAL, "mpp_define_nest_domains.inc: only support extra_halo=0, contact developer")
      extra_halo_local = extra_halo
-  endif 
+  endif
 
   !---make sure dimension size is correct
   if(size(tile_fine(:)) .NE. num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(tile_fine) .NE. num_nest")
@@ -117,11 +117,11 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   nest_domain%iend_coarse = iend_coarse(1:num_nest)
   nest_domain%jstart_coarse = jstart_coarse(1:num_nest)
   nest_domain%jend_coarse = jend_coarse(1:num_nest)
-  
+
   !--- make sure the tile_id of top level of grid is continuous and starting from 1
   if(mpp_pe()==mpp_root_pe()) then
      ntiles_top = domain%ntiles
-     do n = 1, ntiles_top    
+     do n = 1, ntiles_top
         if(domain%tile_id_all(n) .NE. n) call mpp_error(FATAL, &
             "mpp_define_nest_domains.inc: top level grid tile_id should be 1, 2, ..,ntiles")
      enddo
@@ -133,7 +133,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
         print*, "tile_fine, ntile_top, n=", tile_fine(n), ntiles_top, n, mpp_pe()
         call mpp_error(FATAL, "mpp_define_nest_domains.inc: tile_id is not continuous")
      endif
-  enddo  
+  enddo
 
   allocate(pe_start_pos(ntiles_top+num_nest))
   allocate(pe_end_pos(ntiles_top+num_nest))
@@ -156,14 +156,14 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
      pe_start_pos(ntiles_top+n) = pe_end_pos(ntiles_top+n-1) + 1
      pe_end_pos(ntiles_top+n)   = pe_end_pos(ntiles_top+n-1) + npes_nest_tile(tile_fine(n))
   enddo
-  
+
   nest_domain%num_level = nlevels
   allocate(nest_domain%nest(nlevels))
   allocate(pelist_level(mpp_npes()))
   allocate(is_nest_fine(nlevels))
-  allocate(is_nest_coarse(nlevels))  
+  allocate(is_nest_coarse(nlevels))
 
-  !--- setup pelist for each level 
+  !--- setup pelist for each level
   pos = 0
   is_nest_fine(:) = .false.
   is_nest_coarse(:) = .false.
@@ -223,7 +223,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
 
   do l = 1, nlevels
      !--- setup for each level
-     if(nest_domain%nest(l)%on_level) then  
+     if(nest_domain%nest(l)%on_level) then
         call mpp_set_current_pelist(nest_domain%nest(l)%pelist)
         nnest = count(nest_level==l)
         nest_domain%nest(l)%num_nest = nnest
@@ -233,7 +233,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
         allocate(nest_domain%nest(l)%istart_coarse(nnest), nest_domain%nest(l)%iend_coarse(nnest) )
         allocate(nest_domain%nest(l)%jstart_coarse(nnest), nest_domain%nest(l)%jend_coarse(nnest) )
         my_tile_coarse = 0
-       
+
         pos=0
         do n = 1, num_nest
            if(nest_level(n) ==l) then
@@ -252,7 +252,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
                  my_tile_coarse = 1
               else if((mpp_pe() .GE. pes(pe_start_pos(tile_fine(n))) .AND. mpp_pe() .LE. pes(pe_end_pos(tile_fine(n)))) .OR.  &
                  (mpp_pe() .GE. pes(pe_start_pos(tile_coarse(n))) .AND. mpp_pe() .LE. pes(pe_end_pos(tile_coarse(n)))) ) then
-                 my_tile_coarse = tile_coarse(n)                 
+                 my_tile_coarse = tile_coarse(n)
               endif
            endif
         enddo
@@ -280,7 +280,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
 
 end subroutine mpp_define_nest_domains
 
-subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo) 
+subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
   type(nest_level_type), intent(inout) :: nest_domain
   integer,               intent(in   ) :: extra_halo
   integer,               intent(in   ) :: x_refine, y_refine
@@ -328,7 +328,7 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
   !--- figure out the the corresponding nested region.
   !--- on coarse grid pe, it might overlap multiple fine regon.
   !--- on fine grid pe, it always only overlap at most 1 coarse region.
-  my_num_nest= 0 
+  my_num_nest= 0
   my_nest_id(:) = 0
   if( nest_domain%is_fine_pe ) then
      !--- figure out the nest number on current pe
@@ -363,7 +363,7 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
          nest_domain%jend_fine(my_nest_id(1))-nest_domain%jstart_fine(my_nest_id(1))+1 &
          .NE. nest_domain%domain_fine%y(1)%global%size ) then
         print*, "x size are", nest_domain%domain_fine%x(1)%global%size, &
-                   nest_domain%istart_fine(my_nest_id(1)), nest_domain%iend_fine(my_nest_id(1)) 
+                   nest_domain%istart_fine(my_nest_id(1)), nest_domain%iend_fine(my_nest_id(1))
         print*, "y size are", nest_domain%domain_fine%y(1)%global%size, &
                    nest_domain%jstart_fine(my_nest_id(1)), nest_domain%jend_fine(my_nest_id(1))
         call mpp_error(FATAL, "mpp_define_nest_domains.inc: The fine global domain is not covered by coarse domain")
@@ -402,7 +402,7 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
   call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_T, extra_halo, CENTER, "C2F T-cell")
   call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_E, extra_halo, EAST,   "C2F E-cell")
   call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_C, extra_halo, CORNER, "C2F C-cell")
-  call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_N, extra_halo, NORTH,  "C2F N-cell")  
+  call compute_overlap_coarse_to_fine(nest_domain, nest_domain%C2F_N, extra_halo, NORTH,  "C2F N-cell")
 
   deallocate(pes_fine, pes_coarse)
 
@@ -411,7 +411,7 @@ end subroutine define_nest_level_type
 
 
 !###############################################################################
-subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, position, name) 
+subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, position, name)
   type(nest_level_type),  intent(inout) :: nest_domain
   type(nestSpec),         intent(inout) :: overlap
   integer,                intent(in   ) :: extra_halo
@@ -423,7 +423,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
   type(overlap_type), allocatable :: overlapList(:)
   logical              :: is_first
   integer              :: tile_fine, tile_coarse
-  integer              :: istart_fine, iend_fine, jstart_fine, jend_fine                  
+  integer              :: istart_fine, iend_fine, jstart_fine, jend_fine
   integer              :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
   integer              :: whalo, ehalo, shalo, nhalo
   integer              :: npes, npes_fine, npes_coarse, n, m
@@ -485,7 +485,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      overlap%yend   = jec_coarse + domain_coarse%nhalo + jshift
   else
      allocate(overLaplist(npes_coarse))
-     overlap%xbegin = isc_fine - domain_fine%whalo 
+     overlap%xbegin = isc_fine - domain_fine%whalo
      overlap%xend   = iec_fine + domain_fine%ehalo + ishift
      overlap%ybegin = jsc_fine - domain_fine%shalo
      overlap%yend   = jec_fine + domain_fine%nhalo + jshift
@@ -527,11 +527,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      jend_coarse   = nest_domain%jend_coarse(nn)
 
      !--- first compute the halo region and corresponding index in coarse grid.
-     if( nest_domain%is_fine_pe .and.  domain_fine%tile_id(1) == tile_fine) then 
+     if( nest_domain%is_fine_pe .and.  domain_fine%tile_id(1) == tile_fine) then
         if( ieg_fine == iec_fine ) then   ! east halo
            is_coarse = iend_coarse
            ie_coarse = iend_coarse + ehalo
-           js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine  
+           js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine
            je_coarse = jstart_coarse + ( jec_fine - jsg_fine )/y_refine
            js_coarse = js_coarse - shalo
            je_coarse = je_coarse + nhalo
@@ -543,12 +543,12 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
            overlap%east%is_you = is_coarse
            overlap%east%ie_you = ie_coarse
            overlap%east%js_you = js_coarse
-           overlap%east%je_you = je_coarse 
+           overlap%east%je_you = je_coarse
         endif
 
         if( jsg_fine == jsc_fine ) then  ! south
-           is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine  
-           ie_coarse = istart_coarse + ( iec_fine - isg_fine )/x_refine 
+           is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine
+           ie_coarse = istart_coarse + ( iec_fine - isg_fine )/x_refine
            is_coarse = is_coarse - whalo
            ie_coarse = ie_coarse + ehalo
            js_coarse = jstart_coarse - shalo
@@ -560,13 +560,13 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
            overlap%south%is_you = is_coarse
            overlap%south%ie_you = ie_coarse
            overlap%south%js_you = js_coarse
-           overlap%south%je_you = je_coarse      
+           overlap%south%je_you = je_coarse
         endif
 
         if( isg_fine == isc_fine ) then ! west
            is_coarse = istart_coarse - whalo
-           ie_coarse = istart_coarse 
-           js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine  
+           ie_coarse = istart_coarse
+           js_coarse = jstart_coarse + ( jsc_fine - jsg_fine )/y_refine
            je_coarse = jstart_coarse + ( jec_fine - jsg_fine )/y_refine
            js_coarse = js_coarse - shalo
            je_coarse = je_coarse + nhalo
@@ -581,7 +581,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
         endif
 
         if( jeg_fine == jec_fine ) then ! north
-           is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine 
+           is_coarse = istart_coarse + ( isc_fine - isg_fine )/x_refine
            ie_coarse = istart_coarse + ( iec_fine - isg_fine )/x_refine
            is_coarse = is_coarse - whalo
            ie_coarse = ie_coarse + ehalo
@@ -599,11 +599,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
 
         !-------------------------------------------------------------------------
         !
-        !                 Receiving  
+        !                 Receiving
         !
         !-------------------------------------------------------------------------
         !--- loop through coarse pelist
-        do n = 1, npes_coarse   
+        do n = 1, npes_coarse
            is_first = .true.
            do m = 1, 4
               select case (m)
@@ -649,11 +649,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                           is_coarse2 = is_coarse2+ishift
                           ie_coarse2 = ie_coarse2+ishift
                           if(je_coarse2 == overlap%east%je_you) je_coarse2 = je_coarse2+jshift
-                       case (2)          !--- south halo 
+                       case (2)          !--- south halo
                           if(ie_coarse2 == overlap%south%ie_you) ie_coarse2 = ie_coarse2+ishift
-                       case (3)          !--- west halo 
+                       case (3)          !--- west halo
                           if(je_coarse2 == overlap%west%je_you) je_coarse2 = je_coarse2+jshift
-                       case (4)          !--- north halo 
+                       case (4)          !--- north halo
                           if(ie_coarse2 == overlap%north%ie_you) ie_coarse2 = ie_coarse2+ishift
                           js_coarse2 = js_coarse2+jshift
                           je_coarse2 = je_coarse2+jshift
@@ -676,11 +676,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      endif
      !-----------------------------------------------------------------------
      !
-     !                          Sending 
+     !                          Sending
      !
      !-----------------------------------------------------------------------
 
-     if( nest_domain%is_coarse_pe ) then 
+     if( nest_domain%is_coarse_pe ) then
         do n = 1, npes_fine
            if( domain_fine%list(n-1)%tile_id(1) .NE. tile_fine ) cycle
            is_first = .true.
@@ -694,7 +694,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               dir = 1
               is_coarse = iend_coarse
               ie_coarse = iend_coarse + ehalo
-              js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine  
+              js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine
               je_coarse = jstart_coarse + ( jel_fine(n) - jsg_fine )/y_refine
               js_coarse = js_coarse - shalo
               je_coarse = je_coarse + nhalo
@@ -738,7 +738,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
            !--- to_pe's south
            if( jsg_fine == jsl_fine(n) ) then
               dir = 3
-              is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine  
+              is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine
               ie_coarse = istart_coarse + ( iel_fine(n) - isg_fine )/x_refine
               is_coarse = is_coarse - shalo
               ie_coarse = ie_coarse + nhalo
@@ -778,7 +778,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               dir = 5
               is_coarse = istart_coarse - whalo
               ie_coarse = istart_coarse
-              js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine  
+              js_coarse = jstart_coarse + ( jsl_fine(n) - jsg_fine )/y_refine
               je_coarse = jstart_coarse + ( jel_fine(n) - jsg_fine )/y_refine
               js_coarse = js_coarse - shalo
               je_coarse = je_coarse + nhalo
@@ -813,7 +813,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
            !--- to_pe's north
            if( jeg_fine == jel_fine(n) ) then
               dir = 7
-              is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine  
+              is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine
               ie_coarse = istart_coarse + ( iel_fine(n) - isg_fine )/x_refine
               is_coarse = is_coarse - shalo
               ie_coarse = ie_coarse + nhalo
@@ -886,7 +886,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
   deallocate(isgl_fine, iegl_fine, jsgl_fine, jegl_fine)
 
   !--- add shift value accoring grid position
-  if( nest_domain%is_fine_pe ) then 
+  if( nest_domain%is_fine_pe ) then
      if( ieg_fine == iec_fine ) then   ! east halo
         overlap%east%is_me  = overlap%east%is_me + ishift
         overlap%east%ie_me  = overlap%east%ie_me + ishift
@@ -948,7 +948,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
   integer              :: isc_fine, iec_fine, jsc_fine, jec_fine
   integer              :: is_you, ie_you, js_you, je_you
   integer              :: x_refine, y_refine
-  integer              :: nsend, nrecv, dir 
+  integer              :: nsend, nrecv, dir
   integer, allocatable :: isl_coarse(:), iel_coarse(:), jsl_coarse(:), jel_coarse(:)
   integer, allocatable :: isl_fine(:), iel_fine(:), jsl_fine(:), jel_fine(:)
   integer              :: is_convert, ie_convert, js_convert, je_convert
@@ -1019,9 +1019,9 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
 
      !--- set up the data range for fine and coarse grid.
      !--- on coarse grid pelist, xbegin_f, ybegin_f, xend_f, yend_f is dummy value
-     !--- on fine grid pelist, xbegin_c, xend_c, ybegin_c, yend_c are the coarse grid index that 
-     !--- the fine grid overlapped with. 
-     !--- One coarse grid box might overlap with multiple fine grid processor. We use 
+     !--- on fine grid pelist, xbegin_c, xend_c, ybegin_c, yend_c are the coarse grid index that
+     !--- the fine grid overlapped with.
+     !--- One coarse grid box might overlap with multiple fine grid processor. We use
      !--- the west/south/southwest processor to store the coarse grid data.
         if(tile_fine .NE. domain_fine%tile_id(1)) cycle
         is_coarse = istart_coarse + (isc_fine-istart_fine)/x_refine
@@ -1031,9 +1031,9 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
         je_coarse = jstart_coarse + (jec_fine-jstart_fine)/y_refine
         if(mod(jsc_fine-jstart_fine, y_refine) .NE. 0 ) js_coarse = js_coarse + 1
         overlap%xbegin_c = is_coarse
-        overlap%xend_c   = ie_coarse 
+        overlap%xend_c   = ie_coarse
         overlap%ybegin_c = js_coarse
-        overlap%yend_c   = je_coarse 
+        overlap%yend_c   = je_coarse
         overlap%xbegin_f = istart_fine + (overlap%xbegin_c-istart_coarse)*x_refine
         overlap%xend_f = istart_fine + (overlap%xend_c-istart_coarse+1)*x_refine - 1
         overlap%ybegin_f = jstart_fine + (overlap%ybegin_c-jstart_coarse)*y_refine
@@ -1056,10 +1056,10 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
 
         !-----------------------------------------------------------------------------------------
         !
-        !    Sending From fine to coarse.  
+        !    Sending From fine to coarse.
         !    compute the send information from fine grid to coarse grid. This will only need to send
         !    the internal of fine grid to coarse grid.
-        !-----------------------------------------------------------------------------------------  
+        !-----------------------------------------------------------------------------------------
         do n = 1, npes_coarse
            nconvert = convert_index_to_nest(domain_coarse, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
                 jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%list(n-1)%tile_id(1), &
@@ -1094,9 +1094,9 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
      if(nsend > 0) then
         allocate(overlap%send(nsend))
         do n = 1, nsend
-           call copy_nest_overlap(overlap%send(n), overlaplist(n) )      
+           call copy_nest_overlap(overlap%send(n), overlaplist(n) )
 !           call print_nest_overlap(overlap%send(n), "SEND")
-           call deallocate_nest_overlap(overlaplist(n))  
+           call deallocate_nest_overlap(overlaplist(n))
         enddo
      endif
      if(allocated(overlaplist))deallocate(overlaplist)
@@ -1106,7 +1106,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
      !   the internal of fine grid to coarse grid.
      !--------------------------------------------------------------------------------
 
-  if( nest_domain%is_coarse_pe ) then 
+  if( nest_domain%is_coarse_pe ) then
      nrecv = 0
      allocate(overLaplist(npes_fine))
      do nn = 1, nest_domain%num_nest
@@ -1228,7 +1228,7 @@ subroutine  debug_message_size(overlap, name)
          l = find_index(pelist, overlap%send(m)%pe, l+1)
          msg3(l) = msgsize
       enddo
-      
+
       call mpp_alltoall(msg3, 1, msg1, 1)
 
       do m = 1, npes
@@ -1652,15 +1652,15 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           endif
           if( ieg .GE. ie .AND. jeg .GE. je) then
              is_coarse(nnest) = is; ie_coarse(nnest) = ie
-             js_coarse(nnest) = js; je_coarse(nnest) = je             
+             js_coarse(nnest) = js; je_coarse(nnest) = je
              call get_coarse_index(rotate, is_coarse(nnest), ie_coarse(nnest), js_coarse(nnest), je_coarse(nnest), &
-                                   iadd, jadd, is_c, ie_c, js_c, je_c)                                   
+                                   iadd, jadd, is_c, ie_c, js_c, je_c)
              is = ie + 1; js = je + 1
           else if( ieg .GE. ie ) then  ! jeg < je, will cross the north edge
              is_coarse(nnest) = is; ie_coarse(nnest) = ie
              js_coarse(nnest) = js; je_coarse(nnest) = jeg
              call get_coarse_index(rotate, is_coarse(nnest), ie_coarse(nnest), js_coarse(nnest), je_coarse(nnest), &
-                                   iadd, jadd, is_c, ie_c, js_c, je_c)        
+                                   iadd, jadd, is_c, ie_c, js_c, je_c)
              if(rotate ==0) then
                 jadd = jadd + jeg
              else
@@ -1685,7 +1685,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
              is_coarse(nnest) = is; ie_coarse(nnest) = ieg
              js_coarse(nnest) = js; je_coarse(nnest) = je
              call get_coarse_index(rotate, is_coarse(nnest), ie_coarse(nnest), js_coarse(nnest), je_coarse(nnest), &
-                                   iadd, jadd, is_c, ie_c, js_c, je_c)        
+                                   iadd, jadd, is_c, ie_c, js_c, je_c)
              if(rotate ==0) then
                 iadd = iadd + ieg
              else
@@ -1693,7 +1693,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
              endif
              is = 1; ie = ie-ieg
              ncross = ncross+1
-             if(mod(tile,2) ==0) then ! rotate -90 
+             if(mod(tile,2) ==0) then ! rotate -90
                 tile = tile + 2
                 if(tile>6) tile=tile-6
                 i1 = is; i2 = ie
@@ -1707,7 +1707,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           else
              call mpp_error(FATAL, "get_nnest: do not support cross the corner")
           endif
-          
+
           !--- is_c:ie_c,js_c:je_c must be inside istart_coarse(n):iend_coarse(n), jstart_coarse(n):jend_coarse(n)
           if(is_c < istart_coarse(n)) call mpp_error(FATAL, "get_nnest: is_c < istart_coarse")
           if(ie_c > iend_coarse(n)) call mpp_error(FATAL, "get_nnest: ie_c > iend_coarse")
@@ -1716,7 +1716,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           is_fine(nnest) = (is_c - istart_coarse(n)) * x_refine + 1
           ie_fine(nnest) = (ie_c - istart_coarse(n)+1) * x_refine
           js_fine(nnest) = (js_c - jstart_coarse(n)) * y_refine + 1
-          je_fine(nnest) = (je_c - jstart_coarse(n)+1) * y_refine         
+          je_fine(nnest) = (je_c - jstart_coarse(n)+1) * y_refine
 
           !--- it should not cross the edge more than 3 times.
           if(ncross > 3) call mpp_error(FATAL, "get_nnest: nncross > 3")
@@ -1774,25 +1774,25 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
        case (0)
           rotate = ZERO
           ncross = 4
-       case (1) 
+       case (1)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = ZERO
              ncross = 1
           endif
-       case (2) 
+       case (2)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = MINUS_NINETY
              ncross = 1
           endif
-       case (3) 
+       case (3)
           rotate = MINUS_NINETY
           ncross = 2
-       case (4) 
+       case (4)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = MINUS_NINETY
              ncross = 3
           endif
-       case (5) 
+       case (5)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = ZERO
              ncross = 3
@@ -1810,7 +1810,7 @@ print*,"diff=", diff, tile_in, tile, ntiles
              je_out(nout) = je_in + jshift
              is_out(nout) = is_in+ncross*ieg
              ie_out(nout) = ie_in+ncross*ieg + ishift
-          else if(rotate_out(nout) == MINUS_NINETY) then  
+          else if(rotate_out(nout) == MINUS_NINETY) then
              js_out(nout) = ieg-ie_in + 1
              je_out(nout) = ieg-is_in + 1 + ishift
              is_out(nout) = js_in+ncross*jeg
@@ -1822,25 +1822,25 @@ print*,"diff=", diff, tile_in, tile, ntiles
        case (0)
           rotate = ZERO
           ncross = 4
-       case (1) 
+       case (1)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = ZERO
              ncross = 1
           endif
-       case (2) 
+       case (2)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = NINETY
              ncross = 1
           endif
-       case (3) 
+       case (3)
           rotate = NINETY
           ncross = 2
-       case (4) 
+       case (4)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = NINETY
              ncross = 3
           endif
-       case (5) 
+       case (5)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = ZERO
              ncross = 3
@@ -1856,10 +1856,10 @@ print*,"diff=", diff, tile_in, tile, ntiles
              je_out(nout) = je_in + jshift
              is_out(nout) = is_in+ncross*ieg
              ie_out(nout) = ie_in+ncross*ieg + ishift
-          else if(rotate_out(nout) == NINETY) then  
+          else if(rotate_out(nout) == NINETY) then
              is_out(nout) = ieg-je_in + 1
              ie_out(nout) = ieg-js_in+1 + jshift
-             js_out(nout) = is_in+ncross*jeg 
+             js_out(nout) = is_in+ncross*jeg
              je_out(nout) = ie_in+ncross*jeg + ishift
           endif
        endif
@@ -1914,25 +1914,25 @@ print*,"diff=", diff, tile_in, tile, ntiles
        case (0)
           rotate = ZERO
           ncross = 4
-       case (1) 
+       case (1)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = ZERO
              ncross = 1
           endif
-       case (2) 
+       case (2)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = MINUS_NINETY
              ncross = 1
           endif
-       case (3) 
+       case (3)
           rotate = MINUS_NINETY
           ncross = 2
-       case (4) 
+       case (4)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = MINUS_NINETY
              ncross = 3
           endif
-       case (5) 
+       case (5)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = ZERO
              ncross = 3
@@ -1949,7 +1949,7 @@ print*,"diff=", diff, tile_in, tile, ntiles
              je_out(nout) = je_in + jshift
              is_out(nout) = is_in-ncross*ieg
              ie_out(nout) = ie_in-ncross*ieg + ishift
-          else if(rotate_out(nout) == MINUS_NINETY) then  
+          else if(rotate_out(nout) == MINUS_NINETY) then
              is_out(nout) = ieg-je_in + 1
              ie_out(nout) = ieg-js_in + 1 + ishift
              js_out(nout) = is_in-ncross*jeg
@@ -1961,25 +1961,25 @@ print*,"diff=", diff, tile_in, tile, ntiles
        case (0)
           rotate = ZERO
           ncross = 4
-       case (1) 
+       case (1)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = ZERO
              ncross = 1
           endif
-       case (2) 
+       case (2)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = NINETY
              ncross = 1
           endif
-       case (3) 
+       case (3)
           rotate = NINETY
           ncross = 2
-       case (4) 
+       case (4)
           if(mod(tile,2) ==0) then ! tile 2 4 6
              rotate = NINETY
              ncross = 3
           endif
-       case (5) 
+       case (5)
           if(mod(tile,2) ==1) then ! tile 1 3 5
              rotate = ZERO
              ncross = 3
@@ -2037,7 +2037,7 @@ print*,"diff=", diff, tile_in, tile, ntiles
           je_out = jeg - is_in + 1
        case default
           call mpp_error(FATAL, "convert_index_back: rotate should be 0 or 90 when je_in>jeg")
-       end select         
+       end select
     else if (ie_in > ieg+ishift) then
        ncross = ie_in/ieg
        select case(rotate)
@@ -2053,7 +2053,7 @@ print*,"diff=", diff, tile_in, tile, ntiles
           ie_out = ieg - js_in + 1
        case default
           call mpp_error(FATAL, "convert_index_back: rotate should be 0 or -90 when ie_in>ieg")
-       end select         
+       end select
     else
        is_out = is_in
        ie_out = ie_in
@@ -2087,7 +2087,7 @@ print*,"diff=", diff, tile_in, tile, ntiles
     iy = 1
     ind_x = -1
     ind_y = -1
-    nrecv = 0 
+    nrecv = 0
     cur_pos = 0
     do while (n<=ntot)
        if(ix <= nrecv_x ) then

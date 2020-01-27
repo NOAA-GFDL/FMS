@@ -18,7 +18,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer, &
-                                    nest_level, flags, complete, position, extra_halo, name, tile_count) 
+                                    nest_level, flags, complete, position, extra_halo, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field(:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: wbuffer(:,:)
@@ -49,7 +49,7 @@ subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffe
       ptr_s = LOC(sbuffer)
       ptr_n = LOC(nbuffer)
       call mpp_update_nest_fine( field3D, nest_domain, wbuffer3D, ebuffer3D, sbuffer3D, nbuffer3D, &
-                                 nest_level, flags, complete, position, extra_halo, name, tile_count) 
+                                 nest_level, flags, complete, position, extra_halo, name, tile_count)
 
       return
 
@@ -57,7 +57,7 @@ subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffe
 end subroutine MPP_UPDATE_NEST_FINE_2D_
 
 subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer, &
-                                    nest_level, flags, complete, position, extra_halo, name, tile_count) 
+                                    nest_level, flags, complete, position, extra_halo, name, tile_count)
     MPP_TYPE_,             intent(in)      :: field(:,:,:)
     type(nest_domain_type), intent(inout)  :: nest_domain
     MPP_TYPE_,             intent(inout)   :: wbuffer(:,:,:)
@@ -183,7 +183,7 @@ end subroutine MPP_UPDATE_NEST_FINE_3D_
 
 !###############################################################################
 subroutine MPP_UPDATE_NEST_FINE_4D_(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer, &
-                                    nest_level, flags, complete, position, extra_halo, name, tile_count) 
+                                    nest_level, flags, complete, position, extra_halo, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field(:,:,:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: wbuffer(:,:,:,:)
@@ -215,7 +215,7 @@ subroutine MPP_UPDATE_NEST_FINE_4D_(field, nest_domain, wbuffer, ebuffer, sbuffe
       ptr_s = LOC(sbuffer)
       ptr_n = LOC(nbuffer)
       call mpp_update_nest_fine( field3D, nest_domain, wbuffer3D, ebuffer3D, sbuffer3D, nbuffer3D, &
-                                 nest_level, flags, complete, position, extra_halo, name, tile_count) 
+                                 nest_level, flags, complete, position, extra_halo, name, tile_count)
 
       return
 
@@ -225,8 +225,8 @@ end subroutine MPP_UPDATE_NEST_FINE_4D_
 #ifdef VECTOR_FIELD_
 subroutine MPP_UPDATE_NEST_FINE_2D_V_(fieldx, fieldy, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, &
                                       ebufferx, ebuffery, nbufferx, nbuffery, nest_level, &
-                                      flags, gridtype, complete, extra_halo, name, tile_count) 
-    MPP_TYPE_,             intent(in)      :: fieldx(:,:), fieldy(:,:) 
+                                      flags, gridtype, complete, extra_halo, name, tile_count)
+    MPP_TYPE_,             intent(in)      :: fieldx(:,:), fieldy(:,:)
     type(nest_domain_type), intent(inout)  :: nest_domain
     MPP_TYPE_,             intent(inout)   :: wbufferx(:,:), wbuffery(:,:)
     MPP_TYPE_,             intent(inout)   :: ebufferx(:,:), ebuffery(:,:)
@@ -274,14 +274,14 @@ subroutine MPP_UPDATE_NEST_FINE_2D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
 
     call MPP_UPDATE_NEST_FINE_3D_V_(field3Dx, field3Dy, nest_domain, wbuffer3Dx, wbuffer3Dy, sbuffer3Dx, sbuffer3Dy, &
                                     ebuffer3Dx, ebuffer3Dy, nbuffer3Dx, nbuffer3Dy, nest_level, &
-                                      flags, gridtype, complete, extra_halo, name, tile_count) 
+                                      flags, gridtype, complete, extra_halo, name, tile_count)
 
 end subroutine MPP_UPDATE_NEST_FINE_2D_V_
 
 subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, &
                                       ebufferx, ebuffery, nbufferx, nbuffery, nest_level, &
-                                      flags, gridtype, complete, extra_halo, name, tile_count) 
-    MPP_TYPE_,             intent(in)      :: fieldx(:,:,:), fieldy(:,:,:) 
+                                      flags, gridtype, complete, extra_halo, name, tile_count)
+    MPP_TYPE_,             intent(in)      :: fieldx(:,:,:), fieldy(:,:,:)
     type(nest_domain_type), intent(inout)  :: nest_domain
     MPP_TYPE_,             intent(inout)   :: wbufferx(:,:,:), wbuffery(:,:,:)
     MPP_TYPE_,             intent(inout)   :: ebufferx(:,:,:), ebuffery(:,:,:)
@@ -322,7 +322,7 @@ subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
    integer, save    :: wbufferszx_save=0, ebufferszx_save=0, sbufferszx_save=0, nbufferszx_save=0
    integer, save    :: wbufferszy_save=0, ebufferszy_save=0, sbufferszy_save=0, nbufferszy_save=0
    integer, save    :: add_halo_save=0, update_flags_save=0, grid_offset_type_save
-   integer, save    :: list=0 
+   integer, save    :: list=0
 
    add_halo = 0
    if(present(extra_halo)) add_halo = add_halo
@@ -369,7 +369,7 @@ subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
         'MPP_UPDATE_NEST_FINE_3D_V: size(fieldx,3) .NE. size(fieldy,3)')
    ksize = size(fieldx,3)
 
-   if(nest_domain%nest(nest_level)%is_coarse_pe) then       
+   if(nest_domain%nest(nest_level)%is_coarse_pe) then
       f_addrsx(list) = LOC(fieldx)
       f_addrsy(list) = LOC(fieldy)
       isizex=size(fieldx,1); jsizex=size(fieldx,2)
@@ -377,7 +377,7 @@ subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
       if(size(fieldx,3) .NE. size(fieldy,3)) call mpp_error(FATAL, &
            'MPP_UPDATE_NEST_FINE_3D_V: size(fieldx,3) .NE. size(fieldy,3)')
    endif
-   
+
    if(nest_domain%nest(nest_level)%is_fine_pe) then
       wb_addrsx(list) = LOC(wbufferx)
       eb_addrsx(list) = LOC(ebufferx)
@@ -460,7 +460,6 @@ subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
             call mpp_error(FATAL, "MPP_UPDATE_NEST_FINE_3D_V: mismatch between size of fieldy and updatey")
       endif
 
-      
       if(nest_domain%nest(nest_level)%is_fine_pe) then
          call check_data_size("MPP_UPDATE_NEST_FINE_3D_V", "wbufferx", wbufferszx, "updatex", &
                               (updatex%west%ie_you-updatex%west%is_you+1)*(updatex%west%je_you-updatex%west%js_you+1)*ksize )
@@ -491,8 +490,8 @@ end subroutine MPP_UPDATE_NEST_FINE_3D_V_
 
 subroutine MPP_UPDATE_NEST_FINE_4D_V_(fieldx, fieldy, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, &
                                       ebufferx, ebuffery, nbufferx, nbuffery, nest_level, &
-                                      flags, gridtype, complete, extra_halo, name, tile_count) 
-    MPP_TYPE_,             intent(in)      :: fieldx(:,:,:,:), fieldy(:,:,:,:) 
+                                      flags, gridtype, complete, extra_halo, name, tile_count)
+    MPP_TYPE_,             intent(in)      :: fieldx(:,:,:,:), fieldy(:,:,:,:)
     type(nest_domain_type), intent(inout)  :: nest_domain
     MPP_TYPE_,             intent(inout)   :: wbufferx(:,:,:,:), wbuffery(:,:,:,:)
     MPP_TYPE_,             intent(inout)   :: ebufferx(:,:,:,:), ebuffery(:,:,:,:)
@@ -539,13 +538,13 @@ subroutine MPP_UPDATE_NEST_FINE_4D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
 
     call MPP_UPDATE_NEST_FINE_3D_V_(field3Dx, field3Dy, nest_domain, wbuffer3Dx, wbuffer3Dy, sbuffer3Dx, sbuffer3Dy, &
                                     ebuffer3Dx, ebuffer3Dy, nbuffer3Dx, nbuffer3Dy, nest_level, &
-                                    flags, gridtype, complete, extra_halo, name, tile_count) 
+                                    flags, gridtype, complete, extra_halo, name, tile_count)
 
 end subroutine MPP_UPDATE_NEST_FINE_4D_V_
 
 #endif VECTOR_FIELD_
 
-subroutine MPP_UPDATE_NEST_COARSE_2D_(field_in, nest_domain, field_out, nest_level, complete, position, name, tile_count) 
+subroutine MPP_UPDATE_NEST_COARSE_2D_(field_in, nest_domain, field_out, nest_level, complete, position, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field_in(:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: field_out(:,:)
@@ -556,12 +555,12 @@ subroutine MPP_UPDATE_NEST_COARSE_2D_(field_in, nest_domain, field_out, nest_lev
       integer,          intent(in), optional :: tile_count
 
       MPP_TYPE_ :: field3D_in(size(field_in,1),size(field_in,2),1)
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),1) 
+      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),1)
       pointer( ptr_in, field3D_in )
       pointer( ptr_out, field3D_out)
       ptr_in = LOC(field_in)
       ptr_out = LOC(field_out)
-      call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, nest_level, complete, position, name, tile_count) 
+      call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, nest_level, complete, position, name, tile_count)
 
       return
 
@@ -571,7 +570,7 @@ end subroutine MPP_UPDATE_NEST_COARSE_2D_
 
 !--- field_in is the data on fine grid pelist to be passed to coarse grid pelist.
 !--- field_in and field_out are all on the coarse grid. field_in is remapped from fine grid to coarse grid.
-subroutine MPP_UPDATE_NEST_COARSE_3D_(field_in, nest_domain, field_out, nest_level, complete, position, name, tile_count) 
+subroutine MPP_UPDATE_NEST_COARSE_3D_(field_in, nest_domain, field_out, nest_level, complete, position, name, tile_count)
    MPP_TYPE_,             intent(in)      :: field_in(:,:,:)
    type(nest_domain_type), intent(inout)  :: nest_domain
    MPP_TYPE_,             intent(inout)   :: field_out(:,:,:)
@@ -676,7 +675,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field_in, nest_domain, field_out, nest_lev
 end subroutine MPP_UPDATE_NEST_COARSE_3D_
 
 !###############################################################################
-subroutine MPP_UPDATE_NEST_COARSE_4D_(field_in, nest_domain, field_out, nest_level, complete, position, name, tile_count) 
+subroutine MPP_UPDATE_NEST_COARSE_4D_(field_in, nest_domain, field_out, nest_level, complete, position, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field_in(:,:,:,:)
       type(nest_domain_type), intent(inout)  :: nest_domain
       MPP_TYPE_,             intent(inout)   :: field_out(:,:,:,:)
@@ -692,7 +691,7 @@ subroutine MPP_UPDATE_NEST_COARSE_4D_(field_in, nest_domain, field_out, nest_lev
       pointer( ptr_out, field3D_out )
       ptr_in = LOC(field_in)
       ptr_out = LOC(field_out)
-      call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, nest_level, complete, position, name, tile_count) 
+      call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, nest_level, complete, position, name, tile_count)
 
       return
 
@@ -739,7 +738,7 @@ end subroutine MPP_UPDATE_NEST_COARSE_2D_V_
 !--- field_in is the data on fine grid pelist to be passed to coarse grid pelist.
 !--- field_in and field_out are all on the coarse grid. field_in is remapped from fine grid to coarse grid.
 subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, fieldx_out, fieldy_out, nest_level, &
-                                        flags, gridtype, complete, name, tile_count) 
+                                        flags, gridtype, complete, name, tile_count)
    MPP_TYPE_,             intent(in)      :: fieldx_in(:,:,:)
    MPP_TYPE_,             intent(in)      :: fieldy_in(:,:,:)
    type(nest_domain_type), intent(inout)  :: nest_domain
@@ -773,7 +772,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
    integer, save    :: isizey_out_save=0, jsizey_out_save=0
    integer, save    :: grid_offset_type_save=0
    integer, save    :: update_flags_save=0
-   integer, save    :: list=0 
+   integer, save    :: list=0
 
    grid_offset_type = AGRID
    if( PRESENT(gridtype) ) grid_offset_type = gridtype
@@ -817,7 +816,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
       fin_addrsy(list) = LOC(fieldy_in)
       isizex_in=size(fieldx_in,1); jsizex_in=size(fieldx_in,2)
       isizey_in=size(fieldy_in,1); jsizey_in=size(fieldy_in,2)
-      ksize = size(fieldx_in,3) 
+      ksize = size(fieldx_in,3)
       if(size(fieldx_in,3) .NE. size(fieldy_in,3)) call mpp_error(FATAL, &
            'MPP_UPDATE_NEST_COARSE_3D_V: size(fieldx_in,3) .NE. size(fieldy_in,3)')
    endif
@@ -837,7 +836,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
       isizey_in_save = isizey_in; jsizey_in_save = jsizey_in
       isizey_out_save = isizey_out; jsizey_out_save = jsizey_out
       update_flags_save = update_flags
-      grid_offset_type_save = grid_offset_type     
+      grid_offset_type_save = grid_offset_type
    else
       set_mismatch = .false.
       set_mismatch = set_mismatch .OR. (isizex_in_save /= isizex_in)
@@ -862,7 +861,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
       l_size = list
       list = 0
    end if
-      
+
    if(is_complete)then
       select case(grid_offset_type)
       case (AGRID)
@@ -884,7 +883,7 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
 
       updatex => search_F2C_nest_overlap(nest_domain, nest_level, position_x)
       updatey => search_F2C_nest_overlap(nest_domain, nest_level, position_y)
-      
+
       if(nest_domain%nest(nest_level)%is_fine_pe) then
          if(isizex_in .NE. updatex%xsize_c .OR. jsizex_in .NE. updatex%ysize_c) then
            print*,"isizex_in,jsizex_in=", isizex_in, jsizex_in, updatex%xsize_c, updatex%ysize_c, mpp_pe()

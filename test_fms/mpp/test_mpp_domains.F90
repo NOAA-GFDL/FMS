@@ -7288,7 +7288,7 @@ end subroutine test_halosize_update
   end subroutine test_define_mosaic_pelist
 
 !###############################################################################
-! test halo update for grid nested in global cubic sphere grid. The nested region may cross the edge. 
+! test halo update for grid nested in global cubic sphere grid. The nested region may cross the edge.
 ! It is assumed the boundary condition of nested region is solid wall in both direction.
   subroutine test_nest_halo_update( domain )
     type(domain2D), intent(inout) :: domain
@@ -7326,7 +7326,7 @@ end subroutine test_halosize_update
 
     deallocate(global, x)
     !------------------------------------------------------------------
-    !              vector update : BGRID_NE, one extra point in each direction 
+    !              vector update : BGRID_NE, one extra point in each direction
     !------------------------------------------------------------------
     !--- setup data
     shift = 1
@@ -7377,11 +7377,11 @@ end subroutine test_halosize_update
           end do
        end do
     end do
-     
+
     x = 0.; y = 0
     x (isc:iec+shift,jsc:jec,:) = global1(isc:iec+shift,jsc:jec,:)
     y (isc:iec,jsc:jec+shift,:) = global2(isc:iec,jsc:jec+shift,:)
- 
+
     type = "nest grid CGRID_NE"
     call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, name=trim(type))
 
@@ -7405,7 +7405,7 @@ end subroutine test_halosize_update
     ntiles = 6
     call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
     nnest = 0
- 
+
     do n = 1, num_nest
        is = istart_coarse(n); ie = iend_coarse(n)
        js = jstart_coarse(n); je = jend_coarse(n)
@@ -7446,13 +7446,13 @@ end subroutine test_halosize_update
                 else
                    is = 0; js = 0
                 endif
-             else 
+             else
                 iadd_coarse(nnest) = 0
                 jadd_coarse(nnest) = 0
                 is = 0; js = 0
              endif
              rotate_coarse(nnest) = rotate
-             t_coarse(nnest) = tile      
+             t_coarse(nnest) = tile
           else
              if(je > jeg) then
                 js = js-jeg; je = je-jeg
@@ -7528,7 +7528,7 @@ end subroutine test_halosize_update
     ntiles = 6
     call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
     nnest = 0
- 
+
     do n = 1, num_nest
        is = istart_coarse(n); ie = iend_coarse(n)
        js = jstart_coarse(n); je = jend_coarse(n)
@@ -7554,7 +7554,7 @@ end subroutine test_halosize_update
                 endif
              else if(iend_coarse(n) > ieg) then
                 is_coarse(nnest) = is2+ncross*ieg; ie_coarse(nnest) = ie2+ncross*ieg
-                js_coarse(nnest) = js2           ; je_coarse(nnest) = je2                
+                js_coarse(nnest) = js2           ; je_coarse(nnest) = je2
                 iadd_coarse(nnest) = ncross*ieg
                 jadd_coarse(nnest) = 0
                 if(ie>ieg) then
@@ -7570,7 +7570,7 @@ end subroutine test_halosize_update
                 is = 0; js = 0
              endif
              rotate_coarse(nnest) = rotate
-             t_coarse(nnest) = tile      
+             t_coarse(nnest) = tile
           else
              if(je > jeg) then
                 js = js-jeg; je = je-jeg
@@ -7826,7 +7826,7 @@ end subroutine test_halosize_update
 
     npes = mpp_npes()
 
-    !--- make sure sum(npes_nest_tile) == npes 
+    !--- make sure sum(npes_nest_tile) == npes
     if(sum(npes_nest_tile(1:ntiles_nest_all)) .NE. npes ) &
          call mpp_error(FATAL, "test_mpp_domains: sum(npes_nest_tile) .NE. npes")
 
@@ -7856,7 +7856,7 @@ end subroutine test_halosize_update
     enddo
 
     !--- first define the top level grid mosaic domain.
-    
+
     !--- setup pelist for top level
     allocate(my_pelist(npes_nest_top))
     do n = 1, npes_nest_top
@@ -7930,9 +7930,9 @@ end subroutine test_halosize_update
     do l = 1, num_nest_level
        npes_my_level = mpp_get_nest_npes(nest_domain, l)
        npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
-       allocate(my_pelist(npes_my_level)) 
+       allocate(my_pelist(npes_my_level))
        allocate(my_pelist_fine(npes_my_fine))
-       call mpp_get_nest_pelist(nest_domain, l, my_pelist)      
+       call mpp_get_nest_pelist(nest_domain, l, my_pelist)
        call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
 
        call mpp_declare_pelist(my_pelist(:))
@@ -7959,7 +7959,7 @@ end subroutine test_halosize_update
                 if(my_tile_id(1) == tile_fine(n)) my_fine_id = n
              endif
           enddo
-          !--- each nest region might be over multiple face of cubic sphere grid. 
+          !--- each nest region might be over multiple face of cubic sphere grid.
           !---Get the number of nest region with consideration of face.
           call get_nnest(domain_coarse, my_num_nest, my_tile_coarse, my_istart_coarse, my_iend_coarse, &
                my_jstart_coarse, my_jend_coarse, nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, &
@@ -8110,7 +8110,7 @@ end subroutine test_halosize_update
              is_c = max(is_coarse(n), isc_coarse)
              ie_c = min(ie_coarse(n),   iec_coarse)
              js_c = max(js_coarse(n), jsc_coarse)
-             je_c = min(je_coarse(n),   jec_coarse) 
+             je_c = min(je_coarse(n),   jec_coarse)
              if( tile == t_coarse(n) .AND. ie_c+shift .GE. is_c .AND. je_c .GE. js_c ) then
                 call fill_coarse_data(x2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
                      is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, shift, 0, 1.0E-6, 2.0E-6, 1, 1, &
@@ -8197,7 +8197,7 @@ end subroutine test_halosize_update
              is_c = max(is_coarse(n), isc_coarse)
              ie_c = min(ie_coarse(n),   iec_coarse)
              js_c = max(js_coarse(n), jsc_coarse)
-             je_c = min(je_coarse(n),   jec_coarse) 
+             je_c = min(je_coarse(n),   jec_coarse)
              if( tile == t_coarse(n) .AND. ie_c+shift .GE. is_c .AND. je_c .GE. js_c ) then
                 call fill_coarse_data(x2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
                      is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, shift, 0, 1.0E-6, 2.0E-6, 1, -1, &
@@ -8284,7 +8284,7 @@ end subroutine test_halosize_update
              is_c = max(is_coarse(n), isc_coarse)
              ie_c = min(ie_coarse(n),   iec_coarse)
              js_c = max(js_coarse(n), jsc_coarse)
-             je_c = min(je_coarse(n),   jec_coarse) 
+             je_c = min(je_coarse(n),   jec_coarse)
              if( tile == t_coarse(n) .AND. ie_c .GE. is_c .AND. je_c+shift .GE. js_c ) then
                 call fill_coarse_data(x2, rotate_coarse(n), iadd_coarse(n), jadd_coarse(n), &
                      is_c, ie_c, js_c, je_c, nz, isd_coarse, jsd_coarse, nx, ny, 0, shift, 1.0E-6, 2.0E-6, 1, -1, &
@@ -8545,7 +8545,7 @@ end subroutine test_halosize_update
           if( isc_fine == 1 ) then
              isw_fx2 = isd_fine
              iew_fx2 = isc_fine - 1
-             jsw_fx2 = jsd_fine 
+             jsw_fx2 = jsd_fine
              jew_fx2 = jed_fine + shift
              isw_cx2 = istart_coarse(my_fine_id)-whalo
              iew_cx2 = istart_coarse(my_fine_id)
@@ -8553,7 +8553,7 @@ end subroutine test_halosize_update
              jew_cx2 = jstart_coarse(my_fine_id) + (jec_fine - jstart_fine(my_fine_id))/y_refine(my_fine_id) + nhalo + shift
              isw_fy2 = isd_fine
              iew_fy2 = isc_fine - 1
-             jsw_fy2 = jsd_fine 
+             jsw_fy2 = jsd_fine
              jew_fy2 = jed_fine + shift
              isw_cy2 = istart_coarse(my_fine_id)-whalo
              iew_cy2 = istart_coarse(my_fine_id)
@@ -8564,7 +8564,7 @@ end subroutine test_halosize_update
           if( iec_fine == nx_fine ) then
              ise_fx2 = iec_fine+1+shift
              iee_fx2 = ied_fine + shift
-             jse_fx2 = jsd_fine 
+             jse_fx2 = jsd_fine
              jee_fx2 = jed_fine + shift
              ise_cx2 = iend_coarse(my_fine_id)+shift
              iee_cx2 = iend_coarse(my_fine_id)+ehalo+shift
@@ -8600,7 +8600,7 @@ end subroutine test_halosize_update
           endif
           !--- north
           if( jec_fine == ny_fine ) then
-             isn_fx2 = isd_fine  
+             isn_fx2 = isd_fine
              ien_fx2 = ied_fine + shift
              jsn_fx2 = jec_fine+1 + shift
              jen_fx2 = jed_fine + shift
@@ -8608,7 +8608,7 @@ end subroutine test_halosize_update
              ien_cx2 = istart_coarse(my_fine_id) + (iec_fine - istart_fine(my_fine_id))/x_refine(my_fine_id) + ehalo + shift
              jsn_cx2 = jend_coarse(my_fine_id) + shift
              jen_cx2 = jend_coarse(my_fine_id)+nhalo + shift
-             isn_fy2 = isd_fine  
+             isn_fy2 = isd_fine
              ien_fy2 = ied_fine + shift
              jsn_fy2 = jec_fine+1 + shift
              jen_fy2 = jed_fine + shift
@@ -8677,7 +8677,7 @@ end subroutine test_halosize_update
           enddo
        else
           allocate(x(isd_fine:ied_fine+shift, jsd_fine:jed_fine+shift, nz))
-          allocate(y(isd_fine:ied_fine+shift, jsd_fine:jed_fine+shift, nz))  
+          allocate(y(isd_fine:ied_fine+shift, jsd_fine:jed_fine+shift, nz))
           x = 0
           y = 0
           do k = 1, nz
@@ -8964,7 +8964,7 @@ end subroutine test_halosize_update
           if( isc_fine == 1 ) then
              isw_fx2 = isd_fine
              iew_fx2 = isc_fine - 1
-             jsw_fx2 = jsd_fine 
+             jsw_fx2 = jsd_fine
              jew_fx2 = jed_fine
              isw_cx2 = istart_coarse(my_fine_id)-whalo
              iew_cx2 = istart_coarse(my_fine_id)
@@ -8972,7 +8972,7 @@ end subroutine test_halosize_update
              jew_cx2 = jstart_coarse(my_fine_id) + (jec_fine - jstart_fine(my_fine_id))/y_refine(my_fine_id) + nhalo
              isw_fy2 = isd_fine
              iew_fy2 = isc_fine - 1
-             jsw_fy2 = jsd_fine 
+             jsw_fy2 = jsd_fine
              jew_fy2 = jed_fine + shift
              isw_cy2 = istart_coarse(my_fine_id)-whalo
              iew_cy2 = istart_coarse(my_fine_id)
@@ -9019,7 +9019,7 @@ end subroutine test_halosize_update
           endif
           !--- north
           if( jec_fine == ny_fine ) then
-             isn_fx2 = isd_fine  
+             isn_fx2 = isd_fine
              ien_fx2 = ied_fine + shift
              jsn_fx2 = jec_fine+1
              jen_fx2 = jed_fine
@@ -9027,7 +9027,7 @@ end subroutine test_halosize_update
              ien_cx2 = istart_coarse(my_fine_id) + (iec_fine - istart_fine(my_fine_id))/x_refine(my_fine_id) + ehalo + shift
              jsn_cx2 = jend_coarse(my_fine_id)
              jen_cx2 = jend_coarse(my_fine_id)+nhalo
-             isn_fy2 = isd_fine  
+             isn_fy2 = isd_fine
              ien_fy2 = ied_fine
              jsn_fy2 = jec_fine+1 + shift
              jen_fy2 = jed_fine + shift
@@ -9096,7 +9096,7 @@ end subroutine test_halosize_update
           enddo
        else
           allocate(x(isd_fine:ied_fine+shift, jsd_fine:jed_fine, nz))
-          allocate(y(isd_fine:ied_fine, jsd_fine:jed_fine+shift, nz))  
+          allocate(y(isd_fine:ied_fine, jsd_fine:jed_fine+shift, nz))
           x = 0
           y = 0
           do k = 1, nz
@@ -9363,7 +9363,7 @@ end subroutine test_halosize_update
           enddo
        else
           allocate(y(isd_fine:ied_fine+shift, jsd_fine:jed_fine, nz))
-          allocate(x(isd_fine:ied_fine, jsd_fine:jed_fine+shift, nz))  
+          allocate(x(isd_fine:ied_fine, jsd_fine:jed_fine+shift, nz))
           x = 0
           y = 0
           do k = 1, nz

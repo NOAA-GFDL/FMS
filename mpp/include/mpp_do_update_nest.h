@@ -39,7 +39,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
   integer   :: is, ie, js, je, l_size
   integer   :: buffer_pos, msgsize
   integer   :: buffer_recv_size, pos
-  MPP_TYPE_ :: field(xbegin:xend, ybegin:yend,ke)  
+  MPP_TYPE_ :: field(xbegin:xend, ybegin:yend,ke)
   MPP_TYPE_ :: wbuffer(update%west%is_you :update%west%ie_you,  update%west%js_you :update%west%je_you, ke)
   MPP_TYPE_ :: ebuffer(update%east%is_you :update%east%ie_you,  update%east%js_you :update%east%je_you, ke)
   MPP_TYPE_ :: sbuffer(update%south%is_you:update%south%ie_you, update%south%js_you:update%south%je_you,ke)
@@ -136,7 +136,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
            case(MINUS_NINETY)
               do l=1,l_size  ! loop over number of fields
                  ptr_field = f_addrs(l)
-                 do k = 1,ke  
+                 do k = 1,ke
                     do i = is, ie
                        do j = je, js, -1
                           pos = pos + 1
@@ -148,7 +148,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
            case(NINETY)
               do l=1,l_size  ! loop over number of fields
                  ptr_field = f_addrs(l)
-                 do k = 1,ke  
+                 do k = 1,ke
                     do i = ie, is, -1
                        do j = js, je
                           pos = pos + 1
@@ -284,8 +284,8 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
   integer   :: from_pelist(update_x%nrecv+update_y%nrecv), to_pelist(update_x%nsend+update_y%nsend)
   integer   :: start_pos_recv(update_x%nrecv+update_y%nrecv), start_pos_send(update_x%nsend+update_y%nsend)
 
-  MPP_TYPE_ :: fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke)  
-  MPP_TYPE_ :: fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke)  
+  MPP_TYPE_ :: fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke)
+  MPP_TYPE_ :: fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke)
   MPP_TYPE_ :: wbufferx(update_x%west%is_you :update_x%west%ie_you,  update_x%west%js_you :update_x%west%je_you, ke)
   MPP_TYPE_ :: ebufferx(update_x%east%is_you :update_x%east%ie_you,  update_x%east%js_you :update_x%east%je_you, ke)
   MPP_TYPE_ :: sbufferx(update_x%south%is_you:update_x%south%ie_you, update_x%south%js_you:update_x%south%je_you,ke)
@@ -298,7 +298,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
 
   pointer(ptr_fieldx, fieldx)
   pointer(ptr_fieldy, fieldy)
-  pointer(ptr_buffer, buffer )   
+  pointer(ptr_buffer, buffer )
   pointer(ptr_wbufferx, wbufferx)
   pointer(ptr_ebufferx, ebufferx)
   pointer(ptr_sbufferx, sbufferx)
@@ -313,7 +313,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
   recv(5) = BTEST(flags,WEST)
   recv(7) = BTEST(flags,NORTH)
 
-  send    = recv   
+  send    = recv
 
   ptr_buffer = LOC(mpp_domains_stack)
   l_size = size(f_addrsx(:))
@@ -321,7 +321,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
   nrecv = get_nest_vector_recv(nest_domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pelist)
   nsend = get_nest_vector_send(nest_domain, update_x, update_y, ind_send_x, ind_send_y, start_pos_send, to_pelist)
   !--- pre-post receiving
-  buffer_pos = 0  
+  buffer_pos = 0
   call mpp_clock_begin(nest_recv_clock)
   do m = 1, nrecv
      msgsize = 0
@@ -394,7 +394,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
               case(ZERO)
                  do l=1,l_size  ! loop over number of fields
                     ptr_fieldx = f_addrsx(l)
-                    do k = 1,ke  
+                    do k = 1,ke
                        do j = js, je
                           do i = is, ie
                              pos = pos + 1
@@ -407,7 +407,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size  ! loop over number of fields
                        ptr_fieldy = f_addrsy(l)
-                       do k = 1,ke  
+                       do k = 1,ke
                           do i = is, ie
                              do j = je, js, -1
                                 pos = pos + 1
@@ -432,7 +432,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
               case(NINETY)
                  do l=1,l_size  ! loop over number of fields
                     ptr_fieldy = f_addrsy(l)
-                    do k = 1,ke  
+                    do k = 1,ke
                        do i = ie, is, -1
                           do j = js, je
                              pos = pos + 1
@@ -459,7 +459,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
               case(ZERO)
                  do l=1,l_size  ! loop over number of fields
                     ptr_fieldy = f_addrsy(l)
-                    do k = 1,ke  
+                    do k = 1,ke
                        do j = js, je
                           do i = is, ie
                              pos = pos + 1
@@ -471,7 +471,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
               case(MINUS_NINETY)
                  do l=1,l_size  ! loop over number of fields
                     ptr_fieldx = f_addrsx(l)
-                    do k = 1,ke  
+                    do k = 1,ke
                        do i = is, ie
                           do j = je, js, -1
                              pos = pos + 1
@@ -484,7 +484,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size  ! loop over number of fields
                        ptr_fieldx = f_addrsx(l)
-                       do k = 1,ke  
+                       do k = 1,ke
                           do i = ie, is, -1
                              do j = js, je
                                 pos = pos + 1
@@ -529,7 +529,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
   call mpp_sync_self(check=EVENT_RECV)
   call mpp_clock_end(nest_wait_clock)
 
-  buffer_pos = buffer_recv_size      
+  buffer_pos = buffer_recv_size
 
   call mpp_clock_begin(nest_unpk_clock)
   do m = nrecv, 1, -1
@@ -668,7 +668,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
   call mpp_clock_begin(nest_wait_clock)
   call mpp_sync_self( )
   call mpp_clock_end(nest_wait_clock)
-  return  
+  return
 
 end subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_
 
@@ -691,7 +691,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs_in, f_addrs_out, nest_domain, u
   integer   :: is, ie, js, je, l_size
   integer   :: buffer_pos, msgsize
   integer   :: buffer_recv_size, pos
-  MPP_TYPE_ :: field_in(update%xbegin_c:update%xend_c, update%ybegin_c:update%yend_c,ke)  
+  MPP_TYPE_ :: field_in(update%xbegin_c:update%xend_c, update%ybegin_c:update%yend_c,ke)
   MPP_TYPE_ :: field_out(update%xbegin:update%xend, update%ybegin:update%yend,ke)
   MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
 
@@ -754,7 +754,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs_in, f_addrs_out, nest_domain, u
      do n = 1, overPtr%count
         is = overPtr%is(n); ie = overPtr%ie(n)
         js = overPtr%js(n); je = overPtr%je(n)
-        
+
         select case(overPtr%rotation(n))
         case(ZERO)
         do l=1,l_size  ! loop over number of fields
@@ -779,7 +779,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs_in, f_addrs_out, nest_domain, u
                     end do
                  end do
               end do
-           end do          
+           end do
         case(NINETY)
            do l=1,l_size  ! loop over number of fields
               ptr_field_in = f_addrs_in(l)
@@ -876,17 +876,17 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   integer   :: from_pelist(update_x%nrecv+update_y%nrecv), to_pelist(update_x%nsend+update_y%nsend)
   integer   :: start_pos_recv(update_x%nrecv+update_y%nrecv), start_pos_send(update_x%nsend+update_y%nsend)
 
-  MPP_TYPE_ :: fieldx_in(update_x%xbegin_c:update_x%xend_c, update_x%ybegin_c:update_x%yend_c,ke)  
-  MPP_TYPE_ :: fieldy_in(update_y%xbegin_c:update_y%xend_c, update_y%ybegin_c:update_y%yend_c,ke) 
-  MPP_TYPE_ :: fieldx_out(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke)  
-  MPP_TYPE_ :: fieldy_out(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke) 
+  MPP_TYPE_ :: fieldx_in(update_x%xbegin_c:update_x%xend_c, update_x%ybegin_c:update_x%yend_c,ke)
+  MPP_TYPE_ :: fieldy_in(update_y%xbegin_c:update_y%xend_c, update_y%ybegin_c:update_y%yend_c,ke)
+  MPP_TYPE_ :: fieldx_out(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke)
+  MPP_TYPE_ :: fieldy_out(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke)
   MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
 
   pointer(ptr_fieldx_in, fieldx_in)
   pointer(ptr_fieldy_in, fieldy_in)
   pointer(ptr_fieldx_out, fieldx_out)
   pointer(ptr_fieldy_out, fieldy_out)
-  pointer(ptr_buffer, buffer )   
+  pointer(ptr_buffer, buffer )
 
   ptr_buffer = LOC(mpp_domains_stack)
   l_size = size(f_addrsx_in(:))
@@ -894,7 +894,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   nrecv = get_nest_vector_recv(nest, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pelist)
   nsend = get_nest_vector_send(nest, update_x, update_y, ind_send_x, ind_send_y, start_pos_send, to_pelist)
   !--- pre-post receiving
-  buffer_pos = 0  
+  buffer_pos = 0
   call mpp_clock_begin(nest_recv_clock)
   do m = 1, nrecv
      msgsize = 0
@@ -944,7 +944,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
         do n = 1, update_y%send(ind_y)%count
            msgsize = msgsize + update_y%send(ind_y)%msgsize(n)
         end do
-     endif     
+     endif
 
      if( msgsize.GT.0 )then
         msgsize = msgsize*ke*l_size
@@ -965,7 +965,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
            case(ZERO)
               do l=1,l_size  ! loop over number of fields
                  ptr_fieldx_in = f_addrsx_in(l)
-                 do k = 1,ke  
+                 do k = 1,ke
                     do j = js, je
                        do i = is, ie
                           pos = pos + 1
@@ -1015,7 +1015,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
               end do
            case default
               call mpp_error(FATAL, "MPP_DO_UPDATE_NEST_COARSE_3D: pack rotate must be ZERO, MINUS_NINETY or NINETY")
-           end select   
+           end select
         end do ! do n = 1, update_x%send(ind_x)%count
      end if
 
@@ -1028,7 +1028,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
            case(ZERO)
               do l=1,l_size  ! loop over number of fields
                  ptr_fieldy_in = f_addrsy_in(l)
-                 do k = 1,ke  
+                 do k = 1,ke
                     do j = js, je
                        do i = is, ie
                           pos = pos + 1
@@ -1077,7 +1077,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
               end if
            case default
               call mpp_error(FATAL, "MPP_DO_UPDATE_NEST_COARSE_3D: pack rotate must be ZERO, MINUS_NINETY or NINETY")
-           end select   
+           end select
         end do ! do n = 1, update_y%send(ind_y)%count
      end if
 
@@ -1097,7 +1097,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   call mpp_sync_self(check=EVENT_RECV)
   call mpp_clock_end(nest_wait_clock)
 
-  buffer_pos = buffer_recv_size      
+  buffer_pos = buffer_recv_size
 
   call mpp_clock_begin(nest_unpk_clock)
   do m = nrecv, 1, -1
@@ -1123,7 +1123,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
                  end do
               end do
            end do
-        end do 
+        end do
      end if
      if(ind_x>=0) then
         do n = update_x%recv(ind_x)%count, 1, -1
@@ -1144,7 +1144,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
                  end do
               end do
            end do
-        end do 
+        end do
      end if
   end do
   call mpp_clock_end(nest_unpk_clock)
@@ -1152,7 +1152,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   call mpp_clock_begin(nest_wait_clock)
   call mpp_sync_self( )
   call mpp_clock_end(nest_wait_clock)
-  return  
+  return
 
 end subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_
 

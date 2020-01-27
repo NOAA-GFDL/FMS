@@ -513,7 +513,7 @@ end subroutine init_nonblock_type
       integer :: listsize, listpos
       integer :: n
       integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
-      integer                :: errunit      
+      integer                :: errunit
 
       errunit = stderr()
       if( .NOT.module_is_initialized ) &
@@ -744,16 +744,16 @@ end subroutine init_nonblock_type
       integer :: listsize, listpos, nestsize(size(tile_nest(:)))
       integer :: n, tile, ind, num_nest
       integer, dimension(15) :: msg, info         !pe and compute domain of each item in list
-      integer                :: errunit      
+      integer                :: errunit
 
       errunit = stderr()
       if( .NOT.module_is_initialized ) &
-                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_FINE: You must first call mpp_domains_init.' ) 
-      
+                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_FINE: You must first call mpp_domains_init.' )
+
 !get the current pelist
       allocate( pes(0:mpp_npes()-1) )
       call mpp_get_current_pelist(pes)
-      
+
 !am I part of this domain?
       native = ASSOCIATED(domain%list)
       num_nest = size(tile_nest(:))
@@ -773,7 +773,7 @@ end subroutine init_nonblock_type
       end if
       call mpp_max(nestsize, num_nest)
       listsize = sum(nestsize)
-      
+
       if( .NOT.native )then
 !initialize domain%list and set null values in message
           allocate( domain%list(0:listsize-1) )
@@ -845,7 +845,7 @@ end subroutine init_nonblock_type
              listpos = listpos + 1
              if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
          end if
-      end do 
+      end do
 
     end subroutine mpp_broadcast_domain_nest_fine
 
@@ -859,16 +859,16 @@ end subroutine init_nonblock_type
       integer, allocatable :: tile_pesize(:)
       integer :: n, tile, maxtile
       integer, dimension(17) :: msg, info         !pe and compute domain of each item in list
-      integer                :: errunit      
+      integer                :: errunit
 
       errunit = stderr()
       if( .NOT.module_is_initialized ) &
-                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_COARSE: You must first call mpp_domains_init.' ) 
-      
+                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_COARSE: You must first call mpp_domains_init.' )
+
 !get the current pelist
       allocate( pes(0:mpp_npes()-1) )
       call mpp_get_current_pelist(pes)
-      
+
       maxtile = tile_coarse
       call mpp_max(maxtile)
       allocate(tile_pesize(maxtile))
@@ -880,13 +880,13 @@ end subroutine init_nonblock_type
 !          tile = domain%tile_id(1)
 !          if(tile .NE. tile_coarse) then
 !             print*, "tile,tile_coarse=", tile, tile_coarse, mpp_pe()
-!             call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_COARSE: tile .NE. tile_coarse')  
+!             call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_COARSE: tile .NE. tile_coarse')
 !          endif
           tile_pesize(tile_coarse) = size(domain%list(:))
       end if
       call mpp_max(tile_pesize, maxtile)
       listsize = tile_pesize(tile_coarse)
-      
+
       if( .NOT.native )then
 !initialize domain%list and set null values in message
           allocate( domain%list(0:listsize-1) )
@@ -910,7 +910,7 @@ end subroutine init_nonblock_type
           domain%shalo           = -1
           domain%nhalo           = -1
           domain%symmetry        = .false.
-          domain%ntiles          = 0         
+          domain%ntiles          = 0
       end if
 !initialize values in info
       info(1) = domain%pe
@@ -965,7 +965,7 @@ end subroutine init_nonblock_type
              listpos = listpos + 1
              if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
          end if
-      end do 
+      end do
 
     end subroutine mpp_broadcast_domain_nest_coarse
 
