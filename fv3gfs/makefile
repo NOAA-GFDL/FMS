@@ -29,9 +29,6 @@ FFLAGS   += -I../include -I../mpp/include -I../fms
 
 SRCS_f   =
 
-SRCS_f90 = \
-		   ../oda_tools/xbt_drop_rate_adjust.f90
-
 SRCS_F   =
 
 SRCS_F90 = \
@@ -50,7 +47,6 @@ SRCS_F90 = \
          ../diag_manager/diag_axis.F90                                      \
          ../diag_manager/diag_data.F90                                      \
          ../diag_manager/diag_grid.F90                                      \
-         ../diag_manager/diag_manifest.F90                                  \
          ../diag_manager/diag_manager.F90                                   \
          ../diag_manager/diag_output.F90                                    \
          ../diag_manager/diag_table.F90                                     \
@@ -64,8 +60,6 @@ SRCS_F90 = \
          ../drifters/quicksort.F90                                          \
          ../exchange/stock_constants.F90                                    \
          ../exchange/xgrid.F90                                              \
-         ../fft/fft.F90                                                     \
-         ../fft/fft99.F90                                                   \
          ../field_manager/field_manager.F90                                 \
          ../field_manager/fm_util.F90                                       \
          ../fms/fms.F90                                                     \
@@ -92,16 +86,11 @@ SRCS_F90 = \
          ../mpp/mpp_parameter.F90                                           \
          ../mpp/mpp_pset.F90                                                \
          ../mpp/mpp_utilities.F90                                           \
-         ../oda_tools/oda_core.F90                                          \
-         ../oda_tools/oda_core_ecda.F90                                     \
-         ../oda_tools/oda_types.F90                                         \
-         ../oda_tools/write_ocean_data.F90                                  \
          ../platform/platform.F90                                           \
          ../random_numbers/MersenneTwister.F90                              \
          ../random_numbers/random_numbers.F90                               \
          ../sat_vapor_pres/sat_vapor_pres.F90                               \
          ../sat_vapor_pres/sat_vapor_pres_k.F90                             \
-         ../station_data/station_data.F90                                   \
          ../time_interp/time_interp.F90                                     \
          ../time_interp/time_interp_external.F90                            \
          ../time_manager/get_cal_time.F90                                   \

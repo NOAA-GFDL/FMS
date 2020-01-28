@@ -407,7 +407,7 @@ private
 
   !--- public interface from mpp_io_switch.h ---------------------
   public :: mpp_open, mpp_close
-
+  public :: fillin_fieldtype
   !-----------------------------------------------------------------------------
   !--- mpp_io data types
   !-----------------------------------------------------------------------------

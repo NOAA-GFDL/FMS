@@ -77,26 +77,27 @@ module data_override_mod
 #include <fms_platform.h>
 use platform_mod, only: r8_kind
 use constants_mod, only: PI
-use mpp_io_mod, only: axistype,mpp_close,mpp_open,mpp_get_axis_data,MPP_RDONLY,MPP_ASCII
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NOTE, mpp_min, mpp_max, mpp_chksum
-use mpp_mod, only : input_nml_file
+use mpp_mod, only : input_nml_file, get_unit
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=), horiz_interp_del
-use time_interp_external_mod, only:time_interp_external_init, time_interp_external, &
+use time_interp_external2_mod, only:time_interp_external_init, time_interp_external, &
                                    init_external_field, get_external_field_size, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
-                                   set_override_region, reset_src_data_region
-use fms_io_mod, only: field_size, read_data, fms_io_init,get_mosaic_tile_grid, get_mosaic_tile_file
-use fms_mod, only: write_version_number, field_exist, lowercase, file_exist, open_namelist_file, check_nml_error, close_file
-use axis_utils_mod, only: get_axis_bounds, nearest_index
+                                   set_override_region, reset_src_data_region,   &
+                                   get_external_fileobj
+use fms_io_mod, only: fms_io_init,get_mosaic_tile_file
+use fms_mod, only: write_version_number, lowercase, check_nml_error
+use axis_utils2_mod,  only : nearest_index, axis_edges
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_copy_domain, mpp_get_global_domain
 use mpp_domains_mod, only : mpp_get_data_domain, mpp_set_compute_domain, mpp_set_data_domain
 use mpp_domains_mod, only : mpp_set_global_domain, mpp_deallocate_domain
 use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
-
 use time_manager_mod, only: time_type
-
+use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file, &
+                            variable_exists, read_data, get_variable_size
+use mosaic2_mod,      only : get_mosaic_tile_grid
 implicit none
 private
 
@@ -212,23 +213,14 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   logical               :: file_open
   logical               :: ongrid
   character(len=128)    :: region, region_type
-
+  type(FmsNetcdfFile_t) :: fileobj
 
   type(data_type)  :: data_entry
 
   debug_data_override = .false.
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, data_override_nml, iostat=io_status)
   ierr = check_nml_error(io_status, 'data_override_nml')
-#else
-  iunit = open_namelist_file ()
-  ierr=1; do while (ierr /= 0)
-  read  (iunit, nml=data_override_nml, iostat=io_status, end=10)
-  ierr = check_nml_error(io_status, 'data_override_nml')
-  enddo
-10 call close_file (iunit)
-#endif
   unit = stdlog()
   write(unit, data_override_nml)
 
@@ -270,8 +262,11 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        data_table(i) = default_table
     enddo
 
-!  Read coupler_table
-    call mpp_open(iunit, 'data_table', action=MPP_RDONLY)
+!  Read coupler_table 
+    iunit = get_unit()
+    open(iunit, file='data_table', action='READ', iostat=io_status)
+    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
+
     ntable = 0
     ntable_lima = 0
     ntable_new = 0
@@ -381,7 +376,9 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     table_size = ntable
     if(ntable_new*ntable_lima /= 0) call mpp_error(FATAL, &
        'data_override_mod: New and old formats together in same data_table not supported')
-    call mpp_close(iunit)
+    close(iunit, iostat=io_status)
+    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in closing file data_table')
+
 !  Initialize override array
     default_array%gridname = 'NONE'
     default_array%fieldname = 'NONE'
@@ -402,8 +399,12 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 ! Test if grid_file is already opened
  inquire (file=trim(grid_file), opened=file_open)
  if(file_open) call mpp_error(FATAL, trim(grid_file)//' already opened')
+ if(.not. open_file(fileobj, grid_file, 'read' )) then
+     call mpp_error(FATAL, 'data_override_mod: Error in opening file '//trim(grid_file))
+ endif
 
- if(field_exist(grid_file, "x_T" ) .OR. field_exist(grid_file, "geolon_t" ) ) then
+ if(variable_exists(fileobj, "x_T" ) .OR. variable_exists(fileobj, "geolon_t" ) ) then
+    call close_file(fileobj)
     if (atm_on .and. .not. allocated(lon_local_atm) ) then
        call mpp_get_compute_domain( atm_domain,is,ie,js,je)
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
@@ -430,8 +431,8 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        call get_grid_version_1(grid_file, 'ice', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
             min_glo_lon_ice, max_glo_lon_ice )
     endif
- else if(field_exist(grid_file, "ocn_mosaic_file" ) .OR. field_exist(grid_file, "gridfiles" ) ) then
-    if(field_exist(grid_file, "gridfiles" ) ) then
+ else if(variable_exists(fileobj, "ocn_mosaic_file" ) .OR. variable_exists(fileobj, "gridfiles" ) ) then
+    if(variable_exists(fileobj, "gridfiles" ) ) then
        count = 0
        if (atm_on) count = count + 1
        if (lnd_on) count = count + 1
@@ -442,30 +443,31 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
    if (atm_on .and. .not. allocated(lon_local_atm) ) then
        call mpp_get_compute_domain(atm_domain,is,ie,js,je)
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
-       call get_grid_version_2(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
+       call get_grid_version_2(fileobj, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
             min_glo_lon_atm, max_glo_lon_atm )
     endif
 
     if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
-       call get_grid_version_2(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
+       call get_grid_version_2(fileobj, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
             min_glo_lon_ocn, max_glo_lon_ocn )
     endif
 
     if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
        call mpp_get_compute_domain( lnd_domain,is,ie,js,je)
        allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
-       call get_grid_version_2(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
+       call get_grid_version_2(fileobj, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
             min_glo_lon_lnd, max_glo_lon_lnd )
     endif
 
     if (ice_on .and. .not. allocated(lon_local_ice) ) then
        call mpp_get_compute_domain( ice_domain,is,ie,js,je)
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
-       call get_grid_version_2(grid_file, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
+       call get_grid_version_2(fileobj, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
             min_glo_lon_ice, max_glo_lon_ice )
     endif
+    call close_file(fileobj)
  else
     call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '//trim(grid_file))
  end if
@@ -684,11 +686,11 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer            :: index1 ! field index in data_table
   integer            :: id_time !index for time interp in override array
   integer            :: axis_sizes(4)
+  character(len=32)  :: axis_names(4)
   real, dimension(:,:), pointer :: lon_local =>NULL(), &
                                    lat_local =>NULL() !of output (target) grid cells
   real, dimension(:), allocatable :: lon_tmp, lat_tmp
 
-  type(axistype) :: axis_centers(4), axis_bounds(4)
   logical :: data_file_is_2D = .false.  !data in netCDF file is 2D
   logical :: ongrid, use_comp_domain
   type(domain2D) :: domain
@@ -704,6 +706,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   real    :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src
   logical :: exists
+  type(FmsNetcdfFile_t) :: fileobj
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -820,7 +823,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
         override_array(curr_position)%t_index = id_time
      else !ongrid=false
-        id_time = init_external_field(filename,fieldname,domain=domain, axis_centers=axis_centers,&
+        id_time = init_external_field(filename,fieldname,domain=domain, axis_names=axis_names,&
              axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
              nwindows = nwindows)
         dims = get_external_field_size(id_time)
@@ -830,15 +833,16 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
         !  get lon and lat of the input (source) grid, assuming that axis%data contains
         !  lat and lon of the input grid (in degrees)
-        call get_axis_bounds(axis_centers(1),axis_bounds(1), axis_centers)
-        call get_axis_bounds(axis_centers(2),axis_bounds(2), axis_centers)
-
+        
         allocate(override_array(curr_position)%horz_interp(nwindows))
         allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
         allocate(override_array(curr_position)%lat_in(axis_sizes(2)+1))
-        call mpp_get_axis_data(axis_bounds(1),override_array(curr_position)%lon_in)
-        call mpp_get_axis_data(axis_bounds(2),override_array(curr_position)%lat_in)
-
+        if(get_external_fileobj(filename, fileobj)) then       
+           call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in)
+           call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in)
+        else
+           call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
+        endif
 ! convert lon_in and lat_in from deg to radian
         override_array(curr_position)%lon_in = override_array(curr_position)%lon_in * deg_to_radian
         override_array(curr_position)%lat_in = override_array(curr_position)%lat_in * deg_to_radian
@@ -895,8 +899,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 !       Find the index of lon_start, lon_end, lat_start and lat_end in the input grid (nearest points)
         if( data_table(index1)%region_type .NE. NO_REGION ) then
            allocate( lon_tmp(axis_sizes(1)), lat_tmp(axis_sizes(2)) )
-           call mpp_get_axis_data(axis_centers(1), lon_tmp)
-           call mpp_get_axis_data(axis_centers(2), lat_tmp)
+           call read_data(fileobj, axis_names(1), lon_tmp)
+           call read_data(fileobj, axis_names(2), lat_tmp)
            ! limit lon_start, lon_end are inside lon_in
            !       lat_start, lat_end are inside lat_in
            if( data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1))) &
@@ -1283,8 +1287,14 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   integer                                      :: is, ie, js, je
   integer                                      :: isd, ied, jsd, jed
   integer                                      :: isg, ieg, jsg, jeg
-  type(domain2d)                               :: domain2
   character(len=3)                             :: xname, yname
+  integer                                      :: start(2), nread(2)
+  type(FmsNetcdfDomainFile_t)                  :: fileobj
+
+
+  if(.not. open_file(fileobj, grid_file, 'read', domain )) then
+     call mpp_error(FATAL, 'data_override_mod(get_grid_version_1): Error in opening file '//trim(grid_file))
+  endif
 
   call mpp_get_data_domain(domain, isd, ied, jsd, jed)
   call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
@@ -1292,21 +1302,22 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   select case(mod_name)
   case('ocn', 'ice')
     is_new_grid = .FALSE.
-    if(field_exist(grid_file, 'x_T')) then
+    if(variable_exists(fileobj, 'x_T')) then
        is_new_grid = .true.
-    else if(field_exist(grid_file, 'geolon_t')) then
+    else if(variable_exists(fileobj, 'geolon_t')) then
        is_new_grid = .FALSE.
     else
        call mpp_error(FATAL,'data_override: both x_T and geolon_t is not in the grid file '//trim(grid_file) )
     endif
 
     if(is_new_grid) then
-      call field_size(grid_file, 'x_T', siz)
+      call get_variable_size(fileobj, 'x_T', siz)
       nlon = siz(1); nlat = siz(2)
       call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
       allocate(lon_vert(isc:iec,jsc:jec,4), lat_vert(isc:iec,jsc:jec,4) )
-      call read_data(trim(grid_file), 'x_vert_T', lon_vert, domain)
-      call read_data(trim(grid_file), 'y_vert_T', lat_vert, domain)
+
+      call read_data(fileobj, 'x_vert_T', lon_vert)
+      call read_data(fileobj, 'y_vert_T', lat_vert)
 
 !2 Global lon and lat of ocean grid cell centers are determined from adjacent vertices
       lon(:,:) = (lon_vert(:,:,1) + lon_vert(:,:,2) + lon_vert(:,:,3) + lon_vert(:,:,4))*0.25
@@ -1314,17 +1325,18 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
     else
       if(grid_center_bug) call mpp_error(NOTE, &
            'data_override: grid_center_bug is set to true, the grid center location may be incorrect')
-      call field_size(grid_file, 'geolon_vert_t', siz)
+      call get_variable_size(fileobj, 'geolon_vert_t', siz)
       nlon = siz(1) - 1; nlat = siz(2) - 1;
       call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
-      call mpp_copy_domain(domain, domain2)
-      call mpp_set_compute_domain(domain2, isc, iec+1, jsc, jec+1, iec-isc+2, jec-jsc+2 )
-      call mpp_set_data_domain   (domain2, isd, ied+1, jsd, jed+1, ied-isd+2, jed-jsd+2 )
-      call mpp_set_global_domain (domain2, isg, ieg+1, jsg, jeg+1, ieg-isg+2, jeg-jsg+2 )
+
+      start(1) = isc; nread(1) = iec-isc+2
+      start(2) = jsc; nread(2) = jec-jsc+2
+
       allocate(lon_vert(isc:iec+1,jsc:jec+1,1))
       allocate(lat_vert(isc:iec+1,jsc:jec+1,1))
-      call read_data(trim(grid_file), 'geolon_vert_t', lon_vert, domain2)
-      call read_data(trim(grid_file), 'geolat_vert_t', lat_vert, domain2)
+
+      call read_data(fileobj, 'geolon_vert_t', lon_vert(:,:,1), corner=start, edge_lengths=nread)
+      call read_data(fileobj, 'geolat_vert_t', lat_vert(:,:,1), corner=start, edge_lengths=nread)
 
       if(grid_center_bug) then
          do j = jsc, jec
@@ -1343,7 +1355,6 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
             enddo
          enddo
       end if
-      call mpp_deallocate_domain(domain2)
     endif
     deallocate(lon_vert)
     deallocate(lat_vert)
@@ -1353,13 +1364,13 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
      else
         xname = 'xtl'; yname = 'ytl'
      endif
-     call field_size(grid_file, xname, siz)
+     call get_variable_size(fileobj, xname, siz)
      nlon = siz(1); allocate(glon(nlon))
-     call read_data(grid_file, xname, glon, no_domain = .true.)
+     call read_data(fileobj, xname, glon)
 
-     call field_size(grid_file, yname, siz)
+     call get_variable_size(fileobj, yname, siz)
      nlat = siz(1); allocate(glat(nlat))
-     call read_data(grid_file, yname, glat, no_domain = .true.)
+     call read_data(fileobj, yname, glat)
      call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
 
      is = isc - isg + 1; ie = iec - isg + 1
@@ -1376,6 +1387,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
      call mpp_error(FATAL, "data_override_mod: mod_name should be 'atm', 'ocn', 'ice' or 'lnd' ")
   end select
 
+  call close_file(fileobj)
+
   ! convert from degree to radian
   lon = lon * deg_to_radian
   lat = lat* deg_to_radian
@@ -1389,15 +1402,15 @@ end subroutine get_grid_version_1
 
 ! Get global lon and lat of three model (target) grids from mosaic.nc
 ! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
-subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  character(len=*),            intent(in) :: mosaic_file
+subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+  type(FmsNetcdfFile_t),       intent(in) :: fileobj
   character(len=*),            intent(in) :: mod_name
   type(domain2d),              intent(in) :: domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon
 
-  integer            :: i, j, siz(4)
+  integer            :: i, j, siz(2)
   integer            :: nlon, nlat             ! size of global grid
   integer            :: nlon_super, nlat_super ! size of global supergrid.
   integer            :: isd, ied, jsd, jed
@@ -1406,6 +1419,9 @@ subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec,
   character(len=256) :: solo_mosaic_file, grid_file
   real, allocatable  :: tmpx(:,:), tmpy(:,:)
   type(domain2d)     :: domain2
+  logical            :: open_solo_mosaic
+  type(FmsNetcdfFile_t) :: mosaicfileobj, tilefileobj
+  integer            :: start(2), nread(2)
 
   if(trim(mod_name) .NE. 'atm' .AND. trim(mod_name) .NE. 'ocn' .AND. &
      trim(mod_name) .NE. 'ice' .AND. trim(mod_name) .NE. 'lnd' ) call mpp_error(FATAL, &
@@ -1415,15 +1431,27 @@ subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec,
   call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
 
   ! get the grid file to read
-  if(field_exist(mosaic_file, trim(mod_name)//'_mosaic_file' )) then
-     call read_data(mosaic_file, trim(mod_name)//'_mosaic_file', solo_mosaic_file)
-     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
-  else
-     solo_mosaic_file = mosaic_file
-  end if
-  call get_mosaic_tile_grid(grid_file, solo_mosaic_file, domain)
 
-  call field_size(grid_file, 'area', siz)
+  if(variable_exists(fileobj, trim(mod_name)//'_mosaic_file' )) then
+     call read_data(fileobj, trim(mod_name)//'_mosaic_file', solo_mosaic_file) 
+
+     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
+     if(.not. open_file(mosaicfileobj, solo_mosaic_file, 'read')) then
+        call mpp_error(FATAL, 'data_override_mod(get_grid_version_2: Error in opening solo mosaic file '//trim(solo_mosaic_file))
+     endif
+     open_solo_mosaic=.true.
+  else
+     mosaicfileobj = fileobj  
+     open_solo_mosaic = .false.
+  end if
+
+  call get_mosaic_tile_grid(grid_file, mosaicfileobj, domain)
+
+  if(.not. open_file(tilefileobj, grid_file, 'read')) then
+     call mpp_error(FATAL, 'data_override_mod(get_grid_version_2: Error in opening tile file '//trim(grid_file))
+  endif
+
+  call get_variable_size(tilefileobj, 'area', siz)
   nlon_super = siz(1); nlat_super = siz(2)
   if( mod(nlon_super,2) .NE. 0) call mpp_error(FATAL,  &
        'data_override_mod: '//trim(mod_name)//' supergrid longitude size can not be divided by 2')
@@ -1432,21 +1460,17 @@ subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec,
   nlon = nlon_super/2;
   nlat = nlat_super/2;
   call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
+  isc2 = 2*isc-1; iec2 = 2*iec+1
+  jsc2 = 2*jsc-1; jec2 = 2*jec+1
 
-  !--- setup the domain for super grid.
-  call mpp_copy_domain(domain, domain2)
-  call mpp_set_compute_domain(domain2, 2*isc-1, 2*iec+1, 2*jsc-1, 2*jec+1, 2*iec-2*isc+3, 2*jec-2*jsc+3 )
-  call mpp_set_data_domain   (domain2, 2*isd-1, 2*ied+1, 2*jsd-1, 2*jed+1, 2*ied-2*isd+3, 2*jed-2*jsd+3 )
-  call mpp_set_global_domain (domain2, 2*isg-1, 2*ieg+1, 2*jsg-1, 2*jeg+1, 2*ieg-2*isg+3, 2*jeg-2*jsg+3 )
-
-  call mpp_get_compute_domain(domain2, isc2, iec2, jsc2, jec2)
-  if(isc2 .NE. 2*isc-1 .OR. iec2 .NE. 2*iec+1 .OR. jsc2 .NE. 2*jsc-1 .OR. jec2 .NE. 2*jec+1) then
-     call mpp_error(FATAL, 'data_override_mod: '//trim(mod_name)//' supergrid domain is not set properly')
-  endif
+  start(1) = isc2; nread(1) = iec2-isc2+1
+  start(2) = jsc2; nread(2) = jec2-jsc2+1
 
   allocate(tmpx(isc2:iec2, jsc2:jec2), tmpy(isc2:iec2, jsc2:jec2) )
-  call read_data( grid_file, 'x', tmpx, domain2)
-  call read_data( grid_file, 'y', tmpy, domain2)
+
+  call read_data( tilefileobj, 'x', tmpx, corner=start,edge_lengths=nread)
+  call read_data( tilefileobj, 'y', tmpy, corner=start,edge_lengths=nread)     
+
   ! copy data onto model grid
   if(trim(mod_name) == 'ocn' .OR. trim(mod_name) == 'ice') then
      do j = jsc, jec
@@ -1474,7 +1498,8 @@ subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec,
   call mpp_min(min_lon)
   call mpp_max(max_lon)
 
-  call mpp_deallocate_domain(domain2)
+  call close_file(tilefileobj)
+  if(open_solo_mosaic)  call close_file(mosaicfileobj)
 
 end subroutine get_grid_version_2
 
