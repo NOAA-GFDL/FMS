@@ -52,7 +52,7 @@ use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, ope
 use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
 use  diag_manager_mod, only: send_data, diag_axis_init
 use data_override_mod, only: data_override_init, data_override, data_override_UG
-use data_override_mod, only: nudge3D, new_nudge3D, data_nudge
+use data_override_mod, only: nudge3D, nudge3D_construct, data_nudge
 use           mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_error, FATAL, NOTE
 use           mpp_mod, only: input_nml_file, stdout, stderr, mpp_chksum
 use           mpp_mod, only: mpp_sync_self, mpp_broadcast
@@ -231,7 +231,7 @@ do n = 1, nwindows
    iew = isw + nx_win - 1
    jsw = js_win(n)
    jew = jsw + ny_win - 1
-   this_nudge(n) = new_nudge3D('ATM', 'so2_cont_volc', (/isw,iew/), (/jsw,jew/), (/1,nlev/))
+   this_nudge(n) = nudge3D_construct('ATM', 'so2_cont_volc', (/isw,iew/), (/jsw,jew/), (/1,nlev/))
    this_nudge(n)%model_input = mod_so2(isw:iew,jsw:jew,1:nlev)
    call data_nudge(this_nudge(n), Time, ov_so2(n), is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
    so2(isw:iew,jsw:jew,1:nlev) = this_nudge(n)%nudge_output

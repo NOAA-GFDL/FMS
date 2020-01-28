@@ -24,8 +24,8 @@ run_test test_data_override 2 skip
 
 tnum=$( printf "%2.2d" 3 )
 sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-srun -n 1 ./test_data_override
+run_test test_data_override 1 skip
 
 tnum=$( printf "%2.2d" 4 )
 sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-srun -n 1 ./test_data_override_3D
+run_test test_data_override_3D 1 skip
