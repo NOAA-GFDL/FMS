@@ -18,7 +18,7 @@ else
 fi
 
 #echo "1: Test update nest domain"
-#sed "s/test_nest_domain = .false./test_nest_domain = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+#sed "s/test_nest = .false./test_nest = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 #run mpirun -n 2 ./test_mpp_domains
 
 #echo "2:  Test Subset Update"

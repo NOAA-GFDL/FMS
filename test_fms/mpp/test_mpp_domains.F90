@@ -7981,7 +7981,7 @@ end subroutine test_halosize_update
           endif
 
           if(is_fine_pe) then
-             call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f,l, position=CENTER)
+             call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f, l, position=CENTER)
              allocate(x(is_c:ie_c, js_c:je_c, nz))
              x = 0
              do k = 1, nz
@@ -8039,8 +8039,8 @@ end subroutine test_halosize_update
        shift = 1
 
        if(is_fine_pe) then
-          call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, nest_level=l, position=EAST)
-          call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, nest_level=l, position=NORTH)
+          call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, l, position=EAST)
+          call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, l, position=NORTH)
           allocate(x(is_cx:ie_cx, js_cx:je_cx, nz))
           allocate(y(is_cy:ie_cy, js_cy:je_cy, nz))
           x = 0
@@ -8146,8 +8146,8 @@ end subroutine test_halosize_update
        shift = 1
 
        if(is_fine_pe) then
-          call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, nest_level=l, position=EAST)
-          call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, nest_level=l, position=NORTH)
+          call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, l, position=EAST)
+          call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, l, position=NORTH)
           allocate(x(is_cx:ie_cx, js_cx:je_cx, nz))
           allocate(y(is_cy:ie_cy, js_cy:je_cy, nz))
           x = 0
@@ -8233,8 +8233,8 @@ end subroutine test_halosize_update
        shift = 1
 
        if(is_fine_pe) then
-          call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, nest_level=l, position=NORTH)
-          call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, nest_level=l, position=EAST)
+          call mpp_get_F2C_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, l, position=NORTH)
+          call mpp_get_F2C_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, l, position=EAST)
           allocate(x(is_cx:ie_cx, js_cx:je_cx, nz))
           allocate(y(is_cy:ie_cy, js_cy:je_cy, nz))
           x = 0
@@ -8321,10 +8321,10 @@ end subroutine test_halosize_update
 
        !--- first check the index is correct or not
        !--- The index from nest domain
-       call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, nest_level=l)
-       call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, nest_level=l)
-       call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, nest_level=l)
-       call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, nest_level=l)
+       call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, l)
+       call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, l)
+       call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, l)
+       call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, l)
 
        if(is_fine_pe) then
           call mpp_get_compute_domain(domain, isc_fine, iec_fine, jsc_fine, jec_fine)
