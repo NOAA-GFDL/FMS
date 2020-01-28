@@ -12,4 +12,4 @@
 cp $top_srcdir/test_fms/field_manager/input_base.nml input.nml
 cp $top_srcdir/test_fms/field_manager/field_table_base field_table
 
-mpirun -n 2 ./test_field_manager
+run_test test_field_manager 2

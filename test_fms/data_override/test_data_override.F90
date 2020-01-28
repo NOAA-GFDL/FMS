@@ -45,7 +45,7 @@
  ! /archive/pjp/unit_tests/test_data_override/lima/exp1
 
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
- use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_get_compute_domain, mpp_define_layout
+ use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, mpp_define_layout
  use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file
  use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
  use        fms_io_mod, only: read_data, fms_io_exit
@@ -171,6 +171,7 @@
 
 
  call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_data_override')
+ call mpp_define_io_domain(Domain, (/1,1/))
  call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
  call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
  call mpp_get_compute_domain(Domain, is, ie, js, je)

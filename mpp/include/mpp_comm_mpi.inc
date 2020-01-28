@@ -1354,6 +1354,34 @@ end subroutine mpp_gsm_free
 #undef MPP_TYPE_
 #undef MPP_TYPE_BYTELEN_
 #undef MPI_TYPE_
+#define MPP_ALLTOALL_ mpp_alltoall_cmplx4
+#define MPP_ALLTOALLV_ mpp_alltoall_cmplx4_v
+#define MPP_ALLTOALLW_ mpp_alltoall_cmplx4_w
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_BYTELEN_ 8
+#define MPI_TYPE_ MPI_COMPLEX8
+#include <mpp_alltoall_mpi.h>
+
+#undef MPP_ALLTOALL_
+#undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
+#undef MPP_TYPE_
+#undef MPP_TYPE_BYTELEN_
+#undef MPI_TYPE_
+#define MPP_ALLTOALL_ mpp_alltoall_cmplx8
+#define MPP_ALLTOALLV_ mpp_alltoall_cmplx8_v
+#define MPP_ALLTOALLW_ mpp_alltoall_cmplx8_w
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_BYTELEN_ 16
+#define MPI_TYPE_ MPI_COMPLEX16
+#include <mpp_alltoall_mpi.h>
+
+#undef MPP_ALLTOALL_
+#undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
+#undef MPP_TYPE_
+#undef MPP_TYPE_BYTELEN_
+#undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_logical4
 #define MPP_ALLTOALLV_ mpp_alltoall_logical4_v
 #define MPP_ALLTOALLW_ mpp_alltoall_logical4_w
@@ -1412,6 +1440,22 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_real8
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPI_TYPE_ MPI_REAL8
+#include <mpp_type_mpi.h>
+
+#undef MPP_TYPE_CREATE_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx4
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPI_TYPE_ MPI_COMPLEX8
+#include <mpp_type_mpi.h>
+
+#undef MPP_TYPE_CREATE_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx8
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPI_TYPE_ MPI_COMPLEX16
 #include <mpp_type_mpi.h>
 
 #undef MPP_TYPE_CREATE_

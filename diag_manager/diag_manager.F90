@@ -230,11 +230,10 @@ MODULE diag_manager_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & write_manifest_file
+       & fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE diag_manifest_mod, ONLY: write_diag_manifest
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -3392,7 +3391,7 @@ CONTAINS
     INTEGER :: b1,b2,b3,b4 ! size of buffer along x,y,z,and diurnal axes
     INTEGER :: i, j, k, m
     REAL    :: missvalue, num
-
+    real,allocatable,dimension(:,:,:,:) :: diurnal_buffer
     writing_field = 0
 
     need_compute = output_fields(out_num)%need_compute
@@ -3491,14 +3490,36 @@ CONTAINS
 
     ! Output field
     IF ( at_diag_end .AND. freq == END_OF_RUN ) output_fields(out_num)%next_output = time
+! if (time .eq. output_fields(out_num)%next_output) then
+    if (output_fields(out_num)%n_diurnal_samples > 1) then
+          !> allocate the buffer for diurnal data
+          allocate(diurnal_buffer(size(output_fields(out_num)%buffer,1),size(output_fields(out_num)%buffer,2),&
+                    size(output_fields(out_num)%buffer,4),size(output_fields(out_num)%buffer,3)))
+          !> swap the last 2 axes in the data buffer to match the netcdf output order
+          do i = 1,size(output_fields(out_num)%buffer,4)
+          do j = 1,size(output_fields(out_num)%buffer,3)
+               diurnal_buffer(:,:,i,j) = output_fields(out_num)%buffer(:,:,j,i)
+          enddo
+          enddo
+    endif
     IF ( (output_fields(out_num)%time_ops) .AND. (.NOT. mix_snapshot_average_fields) ) THEN
        middle_time = (output_fields(out_num)%last_output+output_fields(out_num)%next_output)/2
-       CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time)
+       if (output_fields(out_num)%n_diurnal_samples > 1) then
+          CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time)
+       else
+          CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time)
+       endif
     ELSE
-       CALL diag_data_out(file_num, out_num, &
-            & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
+       if (output_fields(out_num)%n_diurnal_samples > 1) then
+            CALL diag_data_out(file_num, out_num, &
+                 & diurnal_buffer, output_fields(out_num)%next_output)
+       else
+            CALL diag_data_out(file_num, out_num, &
+                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
+       endif
     END IF
-
+!output_fields(out_num)%last_output = output_fields(out_num)%next_output
+! endif
     IF ( at_diag_end ) RETURN
 
     ! Take care of cleaning up the time counters and the storeage size
@@ -3524,7 +3545,7 @@ CONTAINS
        END IF
        IF ( input_fields(in_num)%mask_variant .AND. average ) output_fields(out_num)%counter = 0.0
     END IF
-
+    if (allocated(diurnal_buffer))deallocate(diurnal_buffer)
   END FUNCTION writing_field
 
   SUBROUTINE diag_manager_set_time_end(Time_end_in)
@@ -3669,10 +3690,11 @@ CONTAINS
     INTEGER, INTENT(in) :: file
     TYPE(time_type), INTENT(in) :: time
 
-    INTEGER :: j, i, input_num, freq, status
+    INTEGER :: j, i, input_num, freq, status, loop1, loop2
     INTEGER :: stdout_unit
     LOGICAL :: reduced_k_range, need_compute, local_output
     CHARACTER(len=128) :: message
+    real,allocatable,dimension(:,:,:,:) :: diurnal_buffer
 
     stdout_unit = stdout()
 
@@ -3710,6 +3732,7 @@ CONTAINS
              IF ( mpp_pe() .EQ. mpp_root_pe() ) &
                   & CALL error_mesg('diag_manager_mod::closing_file', 'module/output_field ' //&
                   & TRIM(message)//', skip one time level, maybe send_data never called', WARNING)
+             status = writing_field(i, .TRUE.,message,time)
           ELSE
              status = writing_field(i, .TRUE., message, time)
           END IF
@@ -3722,16 +3745,25 @@ CONTAINS
                & TRIM(output_fields(i)%output_name)//' NOT available,'//&
                & ' check if output interval > runlength. Netcdf fill_values are written', NOTE)
           output_fields(i)%buffer = FILL_VALUE
+          if (output_fields(i)%n_diurnal_samples > 1) then
+               !> allocate the buffer for diurnal data
+               if (.not. allocated(diurnal_buffer)) &
+                    allocate(diurnal_buffer(size(output_fields(i)%buffer,1),size(output_fields(i)%buffer,2),&
+                    size(output_fields(i)%buffer,4),size(output_fields(i)%buffer,3)))
+               !> swap the last 2 axes in the data buffer to match the netcdf output order
+               do loop1 = 1,size(output_fields(i)%buffer,4)
+               do loop2 = 1,size(output_fields(i)%buffer,3)
+                    diurnal_buffer(:,:,loop1,loop2) = output_fields(i)%buffer(:,:,loop2,loop1)
+               enddo
+               enddo
+               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE.)
+          else
           CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)
+          endif
        END IF
     END DO
     ! Now it's time to output static fields
     CALL write_static(file)
-
-    !::sdu:: Write the manifest file here
-    IF ( write_manifest_file ) THEN
-       CALL write_diag_manifest(file)
-    END IF
 
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
@@ -3740,6 +3772,7 @@ CONTAINS
             & WRITE (stdout_unit,'(a,i12,a,a)') 'Diag_Manager: ',files(file)%bytes_written, &
             & ' bytes of data written to file ',TRIM(files(file)%name)
     END IF
+     if (allocated(diurnal_buffer)) deallocate(diurnal_buffer)
   END SUBROUTINE closing_file
   ! </SUBROUTINE>
 
@@ -3779,7 +3812,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, write_manifest_file
+         & max_file_attributes, max_axis_attributes, prepend_date
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3887,7 +3920,13 @@ CONTAINS
       ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
     END DO
     ALLOCATE(files(max_files))
+    ALLOCATE(fileobjU(max_files))
+    ALLOCATE(fileobj(max_files))
+    ALLOCATE(fileobjND(max_files))
+    ALLOCATE(fnum_for_domain(max_files))
     ALLOCATE(pelist(mpp_npes()))
+    !> Initialize fnum_for_domain with "dn" which stands for done
+     fnum_for_domain(:) = "dn" 
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
     ! set the diag_init_time if time_init present.  Otherwise, set it to base_time

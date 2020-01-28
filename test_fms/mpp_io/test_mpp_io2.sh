@@ -8,10 +8,33 @@
 # Set common test settings.
 . ../test_common.sh
 
+skip_test="no"
+
 # Copy file for test.
 cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
 
-mpirun -n 1 ./test_mpp_io
 
-# This test is skipped in bats file.
-#run mpirun -n 2 ./test_mpp_io
+# Get the number of available CPUs on the system
+if [ $(command -v nproc) ]
+then
+   # Looks like a linux system
+   nProc=$(nproc)
+elif [ $(command -v sysctl) ]
+then
+   # Looks like a Mac OS X system
+   nProc=$(sysctl -n hw.physicalcpu)
+else
+   nProc=-1
+fi
+
+if [ $nProc -lt 0 ]
+then  
+   # Couldn't get the number of CPUs, skip the test.
+   skip_test="skip"
+elif [ $nProc -lt 12 ]
+then
+   # Need to oversubscribe the MPI
+   run_test test_mpp_io 12 $skip_test "true"
+fi
+
+run_test test_mpp_io 12 $skip_test

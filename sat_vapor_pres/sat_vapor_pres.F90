@@ -132,10 +132,8 @@ module sat_vapor_pres_mod
 
  use         constants_mod, only:  TFREEZE, RDGAS, RVGAS, HLV, ES0
  use        fms_mod, only:  write_version_number, stdout, stdlog, mpp_pe, mpp_root_pe, &
-                            mpp_error, FATAL, fms_error_handler, open_namelist_file,   &
-                            error_mesg, &
-                            file_exist, check_nml_error
- use     mpp_io_mod, only:  mpp_close
+                            mpp_error, FATAL, fms_error_handler,   &
+                            error_mesg, check_nml_error
  use        mpp_mod, only: input_nml_file
  use  sat_vapor_pres_k_mod, only:  sat_vapor_pres_init_k, lookup_es_k, &
                                    lookup_des_k, lookup_es_des_k, &
@@ -2314,19 +2312,8 @@ real,  intent(in),              optional :: hc
   if (module_is_initialized) return
 
 !---- read namelist input ----
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, sat_vapor_pres_nml, iostat=io)
-      ierr = check_nml_error(io,'sat_vapor_pres_nml')
-#else
-  if (file_exist('input.nml')) then
-     unit = open_namelist_file ( )
-     ierr=1; do while (ierr /= 0)
-        read  (unit, nml=sat_vapor_pres_nml, iostat=io, end=10)
-        ierr = check_nml_error(io,'sat_vapor_pres_nml')
-     enddo
-10   call mpp_close (unit)
-  endif
-#endif
+  read (input_nml_file, sat_vapor_pres_nml, iostat=io)
+  ierr = check_nml_error(io,'sat_vapor_pres_nml')
 
 ! write version number and namelist to log file
   call write_version_number("SAT_VAPOR_PRES_MOD", version)
