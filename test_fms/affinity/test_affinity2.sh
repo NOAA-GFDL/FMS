@@ -9,7 +9,9 @@
 . ../test_common.sh
 
 # Copy and rename namelist file.
-cp $top_srcdir/test_fms/axis_utils/input_base.nml input.nml
+cp $top_srcdir/test_fms/affinity/input_base.nml input.nml
 
-# Run the test.
-run_test test_axis_utils 2 skip
+# Only run the test if on slurm: 
+if test "x$mpi_launcher" == "xsrun" ; then 
+   run_test test_affinity 6
+fi

@@ -8,8 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Test is skipped in bats file.
-
 # Copy files for test.
 #cp $top_srcdir/test_fms/mosaic/input_nml input_nml
-#mpirun -n 2 ./test_mosaic
+run_test test_mosaic 2 skip

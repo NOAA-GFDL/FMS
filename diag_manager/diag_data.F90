@@ -741,8 +741,6 @@ use fms2_io_mod
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
-  LOGICAL :: write_manifest_file = .FALSE. !< Indicates if the manifest file should be written.  If writing many
-                                           !! regional files, then the termination time may increase causing job to time out.
 
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
