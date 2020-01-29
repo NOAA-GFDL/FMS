@@ -11,7 +11,4 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/horiz_interp/input_base.nml input.nml
 
-mpirun -n 2 ./test_horiz_interp
-
-# Other test is skipped in bats.
-#mpirun -n 2 ./test_horiz_interp
+run_test test_horiz_interp 2

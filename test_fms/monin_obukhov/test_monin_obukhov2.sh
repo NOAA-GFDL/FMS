@@ -12,4 +12,5 @@
 cp $top_srcdir/test_fms/monin_obukhov/input_base.nml input.nml
 
 # Run test.
-mpirun -n 2 ./test_monin_obukhov
+run_test test_monin_obukhov 2
+

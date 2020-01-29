@@ -35,18 +35,18 @@ AC_ARG_ENABLE([mixed-mode],
 AS_IF([test ${enable_mixed_mode:-no} = no],
   [enable_mixed_mode=no],
   [enable_mixed_mode=yes])
-AC_ARG_ENABLE([setting-flags],
-  [AS_HELP_STRING([--enable-setting-flags],
-    [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
-AS_IF([test ${enable_setting_flags:-yes} = yes],
-  [enable_setting_flags=yes],
-  [enable_setting_flags=no])
 AC_ARG_WITH([mpi],
   [AS_HELP_STRING([--with-mpi],
     [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
 AS_IF([test ${with_mpi:-yes} = yes],
   [with_mpi=yes],
   [with_mpi=no])
+AC_ARG_ENABLE([setting-flags],
+  [AS_HELP_STRING([--enable-setting-flags],
+    [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
+AS_IF([test ${enable_setting_flags:-yes} = yes],
+  [enable_setting_flags=yes],
+  [enable_setting_flags=no])
 
 # Find the C compiler.
 AC_PROG_CC
@@ -64,6 +64,7 @@ AC_PROG_INSTALL
 # Check to see if any macros must be set to enable large (>2GB) files.
 AC_SYS_LARGEFILE
 
+# C specific checks
 AC_LANG_PUSH(C)
 if test $with_mpi = yes; then
   # Require MPI
@@ -164,6 +165,13 @@ fi
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
+# Find which mpi launcher to use
+AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
+
+# Check if the launcher can oversubscribe the MPI processes
+AS_IF([$MPI_LAUNCHER --oversubscribe hostname >/dev/null 2>&1], \
+      [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
@@ -187,7 +195,6 @@ AC_CONFIG_FILES([Makefile
         interpolator/Makefile
         horiz_interp/Makefile
         field_manager/Makefile
-        fft/Makefile
         exchange/Makefile
         drifters/Makefile
         diag_manager/Makefile
@@ -217,9 +224,9 @@ AC_CONFIG_FILES([Makefile
         test_fms/time_manager/Makefile
         test_fms/horiz_interp/Makefile
         test_fms/field_manager/Makefile
-        test_fms/fft/Makefile
         test_fms/axis_utils/Makefile
         test_fms/mosaic/Makefile
+        test_fms/affinity/Makefile
         FMS.pc
         ])
 AC_OUTPUT()
