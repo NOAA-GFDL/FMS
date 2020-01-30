@@ -622,7 +622,7 @@ use fms2_io_mod
      INTEGER :: tile_count
      TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
-     INTEGER :: pos !< The position in the doman (NORTH or EAST or CENTER)
+     INTEGER :: domain_position !< The position in the doman (NORTH or EAST or CENTER)
   END TYPE diag_axis_type
   ! </TYPE>
 
