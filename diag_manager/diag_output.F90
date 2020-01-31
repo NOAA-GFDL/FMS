@@ -18,25 +18,7 @@
 !***********************************************************************
 
 MODULE diag_output_mod
-!#include <fms_platform.h>
-#define QUAD_KIND real128
-#define DOUBLE_KIND c_double
-#define FLOAT_KIND c_float
-#define LONG_KIND c_int64_t
-#define INT_KIND c_int32_t
-#define SHORT_KIND c_int16_t
-#define POINTER_KIND c_intptr_t
-#define _PURE pure
-#define _ALLOCATABLE allocatable
-#define _NULL
-#define _ALLOCATED allocated
-!DEC$ MESSAGE:'Using allocatable derived type array members.'
-
-
-!Control use of cray pointers.
-#define use_CRI_pointers
-!DEC$ MESSAGE:'Using cray pointers.'
-!If you want to use quad-precision.
+#include <fms_platform.h>
 
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
