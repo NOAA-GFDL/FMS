@@ -19,16 +19,20 @@
 
 ### General
 
-* Two space indentation.
+* Use Fortran 95 standard or newer
+* Two space indentation
 * Use `KIND` parameters from intrinsic fortran modules such as iso_fortran_env
-  or iso_c_binding to ensure portability.
-* Never use implicit variables (i.e., always specify `IMPLICIT NONE`).
-* Lines must be <= 120 characters long (including comments).
-# logical, compound logical, and relational if statements may be one line,
+  or iso_c_binding to ensure portability
+* Never use implicit variables (i.e., always specify `IMPLICIT NONE`)
+* Lines must be <= 120 characters long (including comments)
+* logical, compound logical, and relational if statements may be one line,
   using “&” for line continuation if necessary:
   ```Fortran
   if(file_exists(fileName)) call open_file(fileObj,fileName, is_restart=.false)
   ```
+* Avoid the use of `GOTO` statements
+* Avoid the use of Fortran reserved words as variables (e.g. `DATA`, `NAME`)
+* Avoid the use of `COMMON` blocks
 
 ### Derived types
 
