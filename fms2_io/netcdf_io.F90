@@ -66,6 +66,7 @@ type, public :: FmsNetcdfFile_t
                      !! I/O root.
   logical :: is_restart !< Flag telling if the this file is a restart
                         !! file (that has internal pointers to data).
+  logical :: mode_is_append !! true if file is open in "append" mode
   logical, allocatable :: is_open !< Allocated and set to true if opened.  
   type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
@@ -404,6 +405,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   character(len=256) :: buf
   logical :: is_res
 
+  fileobj%is_root = .false.
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
       success = .true.
@@ -483,6 +485,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
     fileobj%num_restart_vars = 0
   endif
   fileobj%is_readonly = string_compare(mode, "read", .true.)
+  fileobj%mode_is_append = string_compare(mode, "append", .true.)
   allocate(fileobj%compressed_dims(max_num_compressed_dims))
   fileobj%num_compressed_dims = 0
   ! Set the is_open flag to true for this file object.
