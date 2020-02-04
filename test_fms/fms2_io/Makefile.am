@@ -1,4 +1,4 @@
-# This is an automake file for the test_fms/diag_manager directory of the FMS
+# This is an automake file for the test_fms/fms2_io directory of the FMS
 # package.
 
 # J.Liptak, R.Menzel
@@ -14,7 +14,7 @@ check_PROGRAMS = test_fms2_io test_atmosphere_io
 
 # This is the source code for the test.
 test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90
-test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90
+test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 create_atmosphere_domain.inc
 EXTRA_DIST = test_atmosphere_io.sh input_base.nml 
 
 argparse.mod: argparse.$(OBJEXT)
