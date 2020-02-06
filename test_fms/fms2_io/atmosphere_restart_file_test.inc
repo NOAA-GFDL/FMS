@@ -241,11 +241,11 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
     !Write out "intermdiate" restart files.
     tstamp = ""
     write(tstamp, *) i
-    call write_restart(fileobj, unlim_dim_level=1, timestamp=trim(tstamp))
+    call write_data(fileobj, unlim_dim_level=1, timestamp=trim(tstamp))
   enddo
 
   !Write out the restart file.
-  call write_restart(fileobj, unlim_dim_level=nt)
+  call write_data(fileobj, unlim_dim_level=nt)
   out_chksum(1) = mpp_chksum(temperature_data, pelist=(/mpp_pe()/))
   chksum_unlim_level(1) = nt
 
