@@ -7,3 +7,4 @@ test_data_override
 #output variables
  "test_data_override_mod", "sst", "sst", "test_data_override",  "all", .false., "none", 2
  "test_data_override_mod", "ice", "ice", "test_data_override",  "all", .false., "none", 2
+ "test_data_override_mod", "so2", "so2", "test_data_override",  "all", .false., "none", 2
