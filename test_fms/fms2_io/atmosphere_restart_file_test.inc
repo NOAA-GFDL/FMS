@@ -240,7 +240,7 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   enddo
 
   !Write out the restart file.
-  call write_data(fileobj, unlim_dim_level=nt)
+  call write_restart(fileobj, unlim_dim_level=nt)
   out_chksum(1) = mpp_chksum(temperature_data, pelist=(/mpp_pe()/))
   chksum_unlim_level(1) = nt
 
