@@ -359,8 +359,8 @@ module time_interp_external2_mod
       tend = tstamp
       if(variable_att_exists(fileobj, fieldname, 'time_avg_info')) then
         if(variable_exists(fileobj, 'average_T1')) call read_data(fileobj, 'average_T1', tstart)
-        if(variable_exists(fileobj, 'average_T2')) call read_data(fileobj, 'average_T1', tend)
-        if(variable_exists(fileobj, 'average_DT')) call read_data(fileobj, 'average_T1', tavg)
+        if(variable_exists(fileobj, 'average_T2')) call read_data(fileobj, 'average_T2', tend)
+        if(variable_exists(fileobj, 'average_DT')) call read_data(fileobj, 'average_DT', tavg)
       endif
 
       if (.not. variable_exists(fileobj, fieldname) ) then
