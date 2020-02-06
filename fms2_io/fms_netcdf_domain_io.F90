@@ -730,7 +730,7 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
     dpos = fileobj%xdims(dpos)%pos
     call mpp_get_global_domain(io_domain, xbegin=is, xend=ie, position=dpos)
   else
-    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%nx)
+    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%ny)
     if (dpos .ne. variable_not_found) then
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_global_domain(io_domain, ybegin=is, yend=ie, position=dpos)
