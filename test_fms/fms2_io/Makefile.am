@@ -14,7 +14,11 @@ check_PROGRAMS = test_fms2_io test_atmosphere_io
 
 # This is the source code for the test.
 test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90
-test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 create_atmosphere_domain.inc
+test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 \
+                             create_atmosphere_domain.inc create_land_domain.inc create_ocean_domain.inc \
+                             atmosphere_restart_file_test.inc ocean_restart_file_test.inc \
+                             land_compressed_restart_file_test.inc land_unstructured_restart_file_test.inc
+
 EXTRA_DIST = test_atmosphere_io.sh input_base.nml 
 
 argparse.mod: argparse.$(OBJEXT)
