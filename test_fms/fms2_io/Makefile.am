@@ -28,7 +28,7 @@ test_atmosphere_io.$(OBJEXT): setup.mod
 test_fms2_io.$(OBJEXT): argparse.mod
 
 # Run the test program.
-TESTS = test_fms2_io test_atmosphere_io.sh
+TESTS = test_fms2_io.sh test_atmosphere_io.sh
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
