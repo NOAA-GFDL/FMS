@@ -399,18 +399,21 @@ integer :: domain_size, axis_length, axis_pos
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     type is (FmsNetcdfFile_t) !< For regional X and Y axes
-                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
-                         call register_field(fptr, axis_name, "double", (/axis_name/) ) 
-                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                         call register_axis(fptr, axis_name, dimension_length=size(axis_data))
+                         istart = lbound(axis_data,1)
+                         iend = ubound(axis_data,1)
+                         call register_field(fptr, axis_name, "double", (/axis_name/) )
+                         call register_field(fileob, axis_name, "double", (/axis_name/) )
+                         call register_variable_attribute(fileob, axis_name, "long_name", axis_long_name)
+                         call register_variable_attribute(fileob, axis_name, "units", axis_units)
+                         call register_variable_attribute(fileob, axis_name, "axis",trim(axis_cart_name))
                          select case (axis_direction)
                               case (1)
                                    call register_variable_attribute(fptr, axis_name, "positive", "up")
                               case (-1)
                                    call register_variable_attribute(fptr, axis_name, "positive", "down")
                          end select
-                         call write_data(fptr, axis_name, axis_data(istart:iend) )
+                         call write_data(fileob, axis_name, axis_data(istart:iend) )
                     class default
                          call error_mesg("diag_output_mod::write_axis_meta_data", &
                               "The file object is not the right type. It must be FmsNetcdfDomainFile_t for a "//&
