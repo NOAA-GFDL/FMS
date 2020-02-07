@@ -155,6 +155,8 @@ CONTAINS
     character(len=:),allocatable :: fname_no_tile
     integer :: len_file_name
     integer, allocatable, dimension(:) :: current_pelist
+integer :: mype
+character(len=4) :: mype_string
     !---- initialize mpp_io ----
     IF ( .NOT.module_is_initialized ) THEN
        CALL mpp_io_init ()
@@ -214,11 +216,21 @@ CONTAINS
 
     !---- open output file (return file_unit id) -----
     IF ( domain .NE. NULL_DOMAIN2D ) THEN
-       fileob => fileobj
-       if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
-                            domain, nc_format="64bit", is_restart=.false.))
-       fnum_domain = "2d" ! 2d domain
-       file_unit = 2
+!       fileob => fileobj
+!       if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
+!                            domain, nc_format="64bit", is_restart=.false.))
+!       fnum_domain = "2d" ! 2d domain
+!       file_unit = 2
+       fileob => fileobjND
+       mype = mpp_pe()
+       write(mype_string,'(I0)') mype
+        if (.not.check_if_open(fileob)) then
+               call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
+                            nc_format="64bit", is_restart=.false.))
+        endif
+       fnum_domain = "nd" ! no domain
+       if (file_unit < 0) file_unit = 10
+
     ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        fileob => fileobjU
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, trim(fname_no_tile)//".nc", "overwrite", &
