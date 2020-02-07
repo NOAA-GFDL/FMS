@@ -1578,7 +1578,7 @@ function get_valid(fileobj, variable_name) &
       endif
     endif
     valid%has_range = has_min .and. has_max
-  endif
+  endif !if (fileobj%is_root)
 
   if (valid%has_range) then !If it found has_range broadcast to the rest of the pes
     call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
@@ -1592,7 +1592,6 @@ function get_valid(fileobj, variable_name) &
     call mpp_broadcast(valid%missing_val, fileobj%io_root, pelist=fileobj%pelist)     
   endif
 
-  endif
 end function get_valid
 
 
