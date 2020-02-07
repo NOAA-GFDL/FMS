@@ -30,4 +30,4 @@ sequential patch number (starting from `01`).
 ### Added
 ### Fixed
 ### Removed
-`fms2_io/legacy.F90` The `axis_edges` function was moved to [axis_utils/axis_utils2.F90](axis_utils/axis_utils2.F90).
+- `fms2_io/legacy.F90` The `axis_edges` function was moved to [axis_utils/axis_utils2.F90](axis_utils/axis_utils2.F90).
