@@ -216,11 +216,13 @@ character(len=4) :: mype_string
 
     !---- open output file (return file_unit id) -----
     IF ( domain .NE. NULL_DOMAIN2D ) THEN
-!       fileob => fileobj
-!       if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
-!                            domain, nc_format="64bit", is_restart=.false.))
-!       fnum_domain = "2d" ! 2d domain
-!       file_unit = 2
+     iF (allocated(domain%io_domain) .or. associated(domain%io_domain) ) then
+       fileob => fileobj
+       if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
+                            domain, nc_format="64bit", is_restart=.false.))
+       fnum_domain = "2d" ! 2d domain
+       file_unit = 2
+     elSE !< No io domain, so every core is going to write its own file.
        fileob => fileobjND
        mype = mpp_pe()
        write(mype_string,'(I0)') mype
@@ -235,16 +237,15 @@ character(len=4) :: mype_string
                mype_string = trim(mype_string)
           case default
                CALL error_mesg('diag_output_init', "The PE number is above 9999, so you can not add 4 digits to the "//&
-                    "end of the file name "//trim(file_name) ,FATAL) 
+                    "end of the file name "//trim(file_name) ,FATAL)
         end select
-
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
                             nc_format="64bit", is_restart=.false.))
         endif
        fnum_domain = "nd" ! no domain
        if (file_unit < 0) file_unit = 10
-
+     endiF
     ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        fileob => fileobjU
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, trim(fname_no_tile)//".nc", "overwrite", &
