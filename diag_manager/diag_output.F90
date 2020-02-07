@@ -216,7 +216,7 @@ character(len=4) :: mype_string
 
     !---- open output file (return file_unit id) -----
     IF ( domain .NE. NULL_DOMAIN2D ) THEN
-     iF (allocated(domain%io_domain) .or. associated(domain%io_domain) ) then
+     iF ( associated(mpp_get_io_domain(domain)) ) then
        fileob => fileobj
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
                             domain, nc_format="64bit", is_restart=.false.))
