@@ -415,7 +415,7 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   else
     call error("unrecognized xory flag value.")
   endif
-  if (fileobj%is_readonly) then
+  if (fileobj%is_readonly .or. (fileobj%mode_is_append .and. dimension_exists(fileobj, dim_name))) then
     call get_dimension_size(fileobj, dim_name, dim_size, broadcast=.true.)
     if (dim_size .lt. domain_size) then
       call error("dimension "//trim(dim_name)//" is smaller than the size of" &
@@ -730,7 +730,7 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
     dpos = fileobj%xdims(dpos)%pos
     call mpp_get_global_domain(io_domain, xbegin=is, xend=ie, position=dpos)
   else
-    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%nx)
+    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%ny)
     if (dpos .ne. variable_not_found) then
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_global_domain(io_domain, ybegin=is, yend=ie, position=dpos)

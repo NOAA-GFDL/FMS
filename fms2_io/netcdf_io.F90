@@ -66,6 +66,7 @@ type, public :: FmsNetcdfFile_t
                      !! I/O root.
   logical :: is_restart !< Flag telling if the this file is a restart
                         !! file (that has internal pointers to data).
+  logical :: mode_is_append !! true if file is open in "append" mode
   logical, allocatable :: is_open !< Allocated and set to true if opened.  
   type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
@@ -404,6 +405,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   character(len=256) :: buf
   logical :: is_res
 
+  fileobj%is_root = .false.
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
       success = .true.
@@ -483,6 +485,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
     fileobj%num_restart_vars = 0
   endif
   fileobj%is_readonly = string_compare(mode, "read", .true.)
+  fileobj%mode_is_append = string_compare(mode, "append", .true.)
   allocate(fileobj%compressed_dims(max_num_compressed_dims))
   fileobj%num_compressed_dims = 0
   ! Set the is_open flag to true for this file object.
@@ -1479,11 +1482,15 @@ function get_valid(fileobj, variable_name) &
   logical :: has_min
   integer :: xtype
 
+  ! Initiliaze valid_t to false for all ranks
+  has_max = .false.
+  has_min = .false.
+  valid%has_fill = .false.
+  valid%has_missing = .false.
+  valid%has_range = .false.
+
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, variable_name)
-    has_max = .false.
-    has_min = .false.
-    valid%has_fill = .false.
 
     !This routine makes use of netcdf's automatic type conversion to
     !store all range information in double precision.
@@ -1571,18 +1578,20 @@ function get_valid(fileobj, variable_name) &
       endif
     endif
     valid%has_range = has_min .and. has_max
-  endif
+  endif !if (fileobj%is_root)
 
-  call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
-  if (valid%has_range) then
+  if (valid%has_range) then !If it found has_range broadcast to the rest of the pes
+    call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
     call mpp_broadcast(valid%max_val, fileobj%io_root, pelist=fileobj%pelist)
     call mpp_broadcast(valid%min_val, fileobj%io_root, pelist=fileobj%pelist)
-  else
+  else if (valid%has_fill) then !If it found has_fill broadcast to the rest of the pes
     call mpp_broadcast(valid%has_fill, fileobj%io_root, pelist=fileobj%pelist)
-    if (valid%has_fill) then
-      call mpp_broadcast(valid%fill_val, fileobj%io_root, pelist=fileobj%pelist)
-    endif
+    call mpp_broadcast(valid%fill_val, fileobj%io_root, pelist=fileobj%pelist)
+  else if (valid%has_missing) then !If it found has_missing broadcast to the rest of the pes
+    call mpp_broadcast(valid%has_missing, fileobj%io_root, pelist=fileobj%pelist)
+    call mpp_broadcast(valid%missing_val, fileobj%io_root, pelist=fileobj%pelist)     
   endif
+
 end function get_valid
 
 

@@ -359,8 +359,8 @@ module time_interp_external2_mod
       tend = tstamp
       if(variable_att_exists(fileobj, fieldname, 'time_avg_info')) then
         if(variable_exists(fileobj, 'average_T1')) call read_data(fileobj, 'average_T1', tstart)
-        if(variable_exists(fileobj, 'average_T2')) call read_data(fileobj, 'average_T1', tend)
-        if(variable_exists(fileobj, 'average_DT')) call read_data(fileobj, 'average_T1', tavg)
+        if(variable_exists(fileobj, 'average_T2')) call read_data(fileobj, 'average_T2', tend)
+        if(variable_exists(fileobj, 'average_DT')) call read_data(fileobj, 'average_DT', tavg)
       endif
 
       if (.not. variable_exists(fileobj, fieldname) ) then
@@ -1001,18 +1001,13 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      field%ibuf(ib) = rec
      field%need_compute(ib,:) = .true.
 
-     if (field%domain_present .and. .not.PRESENT(interp)) then
-        if (debug_this_module) write(outunit,*) 'reading record with domain for field ',trim(field%name)
-        call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),unlim_dim_level=rec)
-     else
-        if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
-        start = 1; nread = 1
-        start(1) = field%is_src; nread(1) = field%ie_src - field%is_src + 1
-        start(2) = field%js_src; nread(2) = field%je_src - field%js_src + 1
-        start(3) = 1;            nread(3) = size(field%src_data,3)
-        start(field%tdim) = rec; nread(field%tdim) = 1
-        call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
-     endif
+     if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
+     start = 1; nread = 1
+     start(1) = field%is_src; nread(1) = field%ie_src - field%is_src + 1
+     start(2) = field%js_src; nread(2) = field%je_src - field%js_src + 1
+     start(3) = 1;            nread(3) = size(field%src_data,3)
+     start(field%tdim) = rec; nread(field%tdim) = 1
+     call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
   endif
 !$OMP END CRITICAL
   isw=field%isc;iew=field%iec

@@ -17,30 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!                                                                   !!
-!!                   GNU General Public License                      !!
-!!                                                                   !!
-!! This file is part of the Flexible Modeling System (FMS).          !!
-!!                                                                   !!
-!! FMS is free software; you can redistribute it and/or modify       !!
-!! it and are expected to follow the terms of the GNU General Public !!
-!! License as published by the Free Software Foundation.             !!
-!!                                                                   !!
-!! FMS is distributed in the hope that it will be useful,            !!
-!! but WITHOUT ANY WARRANTY; without even the implied warranty of    !!
-!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the     !!
-!! GNU General Public License for more details.                      !!
-!!                                                                   !!
-!! You should have received a copy of the GNU General Public License !!
-!! along with FMS; if not, write to:                                 !!
-!!          Free Software Foundation, Inc.                           !!
-!!          59 Temple Place, Suite 330                               !!
-!!          Boston, MA  02111-1307  USA                              !!
-!! or see:                                                           !!
-!!          http://www.gnu.org/licenses/gpl.txt                      !!
-!!                                                                   !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module data_override_mod
 !
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
@@ -262,7 +238,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        data_table(i) = default_table
     enddo
 
-!  Read coupler_table 
+!  Read coupler_table
     iunit = get_unit()
     open(iunit, file='data_table', action='READ', iostat=io_status)
     if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
@@ -833,11 +809,11 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
         !  get lon and lat of the input (source) grid, assuming that axis%data contains
         !  lat and lon of the input grid (in degrees)
-        
+
         allocate(override_array(curr_position)%horz_interp(nwindows))
         allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
         allocate(override_array(curr_position)%lat_in(axis_sizes(2)+1))
-        if(get_external_fileobj(filename, fileobj)) then       
+        if(get_external_fileobj(filename, fileobj)) then
            call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in)
            call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in)
         else
@@ -1433,7 +1409,7 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   ! get the grid file to read
 
   if(variable_exists(fileobj, trim(mod_name)//'_mosaic_file' )) then
-     call read_data(fileobj, trim(mod_name)//'_mosaic_file', solo_mosaic_file) 
+     call read_data(fileobj, trim(mod_name)//'_mosaic_file', solo_mosaic_file)
 
      solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
      if(.not. open_file(mosaicfileobj, solo_mosaic_file, 'read')) then
@@ -1441,7 +1417,7 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
      endif
      open_solo_mosaic=.true.
   else
-     mosaicfileobj = fileobj  
+     mosaicfileobj = fileobj
      open_solo_mosaic = .false.
   end if
 
@@ -1469,7 +1445,7 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   allocate(tmpx(isc2:iec2, jsc2:jec2), tmpy(isc2:iec2, jsc2:jec2) )
 
   call read_data( tilefileobj, 'x', tmpx, corner=start,edge_lengths=nread)
-  call read_data( tilefileobj, 'y', tmpy, corner=start,edge_lengths=nread)     
+  call read_data( tilefileobj, 'y', tmpy, corner=start,edge_lengths=nread)
 
   ! copy data onto model grid
   if(trim(mod_name) == 'ocn' .OR. trim(mod_name) == 'ice') then
