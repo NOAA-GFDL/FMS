@@ -26,3 +26,8 @@ sequential patch number (starting from `01`).
 - Fixed `time_interp_missing` parameter in [time_interp/time_interp_external.F90](time_interp/time_interp_external.F90) to be within range when compiled in mixed-mode.
 - reverted `QUAD_PRECISION` cpp macro behavior to pre-Xanadu behavior in [include/fms_platform.h](include/fms_platform.h)
 - Fixed a GNU compiler issue with the logical check to set the netCDF fill value in `mpp_io_write` by separating the logical `.AND.` into nested `if` statements.
+## [2020.01] - 2020-##-##
+### Added
+### Fixed
+### Removed
+[fms2_io/legacy.F90] The [axis_edges] function was moved to [axis_utils/axis_utils2.F90].
