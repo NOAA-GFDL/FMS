@@ -8,6 +8,7 @@ sequential patch number (starting from `01`).
 
 ## [Unreleased]
 ### Added
+- Calls to register_diag_axis using an X or Y axis that is shifted from the `CENTER` position need to include the optional argument `domain_position` and should be equal to `EAST` or `NORTH` based on the position relative to the domain.  `EAST` and `NORTH` are exposed through `diag_manager_mod`.
 ### Changed
 ### Deprecated
 ### Removed
