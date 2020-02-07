@@ -1487,6 +1487,8 @@ function get_valid(fileobj, variable_name) &
     has_max = .false.
     has_min = .false.
     valid%has_fill = .false.
+    valid%has_missing = .false.
+    valid%has_range = .false.
 
     !This routine makes use of netcdf's automatic type conversion to
     !store all range information in double precision.
