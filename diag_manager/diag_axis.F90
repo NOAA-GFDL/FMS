@@ -55,7 +55,8 @@ MODULE diag_axis_mod
        & get_tile_count, get_axes_shift, get_diag_axis_name,&
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
        & get_domainUG, axis_compatible_check, axis_is_compressed, &
-       & get_compressed_axes_ids, get_axis_reqfld
+       & get_compressed_axes_ids, get_axis_reqfld, &
+       & NORTH, EAST, CENTER
 
   ! Module variables
   ! Parameters
