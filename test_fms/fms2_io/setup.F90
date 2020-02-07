@@ -1,5 +1,5 @@
 module setup
-use iso_fortran_env
+use, intrinsic :: iso_fortran_env, only : real32, real64, int32, error_unit
 use mpi
 use argparse
 use mpp_mod

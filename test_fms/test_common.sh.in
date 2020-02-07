@@ -1,5 +1,21 @@
-# This file is part of the GFDL FMS system. It defines some common
-# settings for a shell tests.
+#***********************************************************************
+#                   GNU Lesser General Public License
+#
+# This file is part of the GFDL Flexible Modeling System (FMS).
+#
+# FMS is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# FMS is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
 
 # Ed Hartnett 11/26/19
 
@@ -7,10 +23,17 @@
 # fails.
 set -e
 
+# Set exit codes to control the failure modes.  These exit codes are found in
+# The GNU Automake manual: https://www.gnu.org/software/automake/manual/html_node/Scripts_002dbased-Testsuites.html
+# Note, any non-zero status, other than SKIP and ERROR is a FAIL
+TEST_PASS=0
+TEST_FAIL=1
+TEST_SKIP=77
+TEST_ERROR=99
+
 # Set the source and build top directories for use in test scripts.
 top_srcdir='@abs_top_srcdir@'
 top_buildir='@abs_top_builddir@'
-
 # Set the name of the mpi launcher for use in test scripts. 
 mpi_launcher='@MPI_LAUNCHER@' 
 oversubscribe='@OVERSUBSCRIBE@'

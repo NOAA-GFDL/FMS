@@ -62,6 +62,7 @@ AC_PROG_CPP
 
 # Find the Fortran compiler.
 AC_PROG_FC
+AC_FC_WRAPPERS
 
 # Find the install program.
 AC_PROG_INSTALL
@@ -167,11 +168,10 @@ if test $enable_setting_flags = yes; then
   fi
 fi
 
-# Settings based on the system and hardware
-# Define __APPLE__ macro if on a Apple/Mac OS X
-AS_IF([test "x$target_vendor" = "xapple"], [AC_DEFINE([__APPLE__], [ ])])
-# Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
-AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
+# These defines are required for the build.
+AC_DEFINE([use_netCDF], [1])
+AC_DEFINE([use_libMPI], [1])
+
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
