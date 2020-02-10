@@ -1482,15 +1482,13 @@ function get_valid(fileobj, variable_name) &
   logical :: has_min
   integer :: xtype
 
-  ! Initiliaze valid_t to false for all ranks
-  has_max = .false.
-  has_min = .false.
-  valid%has_fill = .false.
-  valid%has_missing = .false.
-  valid%has_range = .false.
-
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, variable_name)
+    has_max = .false.
+    has_min = .false.
+    valid%has_fill = .false.
+    valid%has_missing = .false.
+    valid%has_range = .false.
 
     !This routine makes use of netcdf's automatic type conversion to
     !store all range information in double precision.
@@ -1578,20 +1576,18 @@ function get_valid(fileobj, variable_name) &
       endif
     endif
     valid%has_range = has_min .and. has_max
-  endif !if (fileobj%is_root)
-
-  if (valid%has_range) then !If it found has_range broadcast to the rest of the pes
-    call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
-    call mpp_broadcast(valid%max_val, fileobj%io_root, pelist=fileobj%pelist)
-    call mpp_broadcast(valid%min_val, fileobj%io_root, pelist=fileobj%pelist)
-  else if (valid%has_fill) then !If it found has_fill broadcast to the rest of the pes
-    call mpp_broadcast(valid%has_fill, fileobj%io_root, pelist=fileobj%pelist)
-    call mpp_broadcast(valid%fill_val, fileobj%io_root, pelist=fileobj%pelist)
-  else if (valid%has_missing) then !If it found has_missing broadcast to the rest of the pes
-    call mpp_broadcast(valid%has_missing, fileobj%io_root, pelist=fileobj%pelist)
-    call mpp_broadcast(valid%missing_val, fileobj%io_root, pelist=fileobj%pelist)     
   endif
 
+  call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
+  if (valid%has_range) then
+    call mpp_broadcast(valid%max_val, fileobj%io_root, pelist=fileobj%pelist)
+    call mpp_broadcast(valid%min_val, fileobj%io_root, pelist=fileobj%pelist)
+  else
+    call mpp_broadcast(valid%has_fill, fileobj%io_root, pelist=fileobj%pelist)
+    if (valid%has_fill) then
+      call mpp_broadcast(valid%fill_val, fileobj%io_root, pelist=fileobj%pelist)
+    endif
+  endif
 end function get_valid
 
 
