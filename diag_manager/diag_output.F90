@@ -156,7 +156,7 @@ CONTAINS
     integer :: len_file_name
     integer, allocatable, dimension(:) :: current_pelist
     integer :: mype  !< The pe you are on
-    character(len=4) :: mype_string !< a string to store the pe
+    character(len=9) :: mype_string !< a string to store the pe
     !---- initialize mpp_io ----
     IF ( .NOT.module_is_initialized ) THEN
        CALL mpp_io_init ()
@@ -226,20 +226,7 @@ CONTAINS
      elSE !< No io domain, so every core is going to write its own file.
        fileob => fileobjND
        mype = mpp_pe()
-       write(mype_string,'(I0)') mype
-       select case (mype)
-          case ( : 9)
-               mype_string = "000"//trim(mype_string)
-          case (10 : 99)
-               mype_string = "00"//trim(mype_string)
-          case (100 : 999)
-               mype_string = "0"//trim(mype_string)
-          case (1000 : 9999)
-               mype_string = trim(mype_string)
-          case default
-               CALL error_mesg('diag_output_init', "The PE number is above 9999, so you can not add 4 digits to the "//&
-                    "end of the file name "//trim(file_name) ,FATAL)
-        end select
+       write(mype_string,'(I0.4)') mype
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
                             nc_format="64bit", is_restart=.false.))
