@@ -56,7 +56,6 @@ AC_PROG_CPP
 
 # Find the Fortran compiler.
 AC_PROG_FC
-AC_FC_WRAPPERS
 
 # Find the install program.
 AC_PROG_INSTALL
