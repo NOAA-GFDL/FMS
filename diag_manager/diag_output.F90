@@ -364,7 +364,7 @@ integer :: domain_size, axis_length, axis_pos
 
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
             & axis_cart_name, axis_direction, axis_edges, Domain, DomainU, axis_data,&
-            & num_attributes, attributes, pos=axis_pos)
+            & num_attributes, attributes, domain_position=axis_pos)
 
        IF ( Domain .NE. null_domain1d ) THEN
           IF ( length > 0 ) THEN
