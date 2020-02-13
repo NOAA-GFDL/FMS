@@ -11,7 +11,5 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/time_interp/input_base.nml input.nml
 
-mpirun -n 2 ./test_time_interp
-
-# This test is skipped in bats file.
-#mpirun -n 2 ./test_time_interp_external
+# Run the test. 
+run_test test_time_interp 2

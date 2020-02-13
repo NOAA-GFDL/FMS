@@ -8,8 +8,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Copy files for test.
-
 # These tests are skipped in bats files.
-#mpirun -n 2 ./test_fms_io
-#mpirun -n 2 ./test_unstructured_fms_io
+run_test test_fms_io 2 skip
+run_test test_unstructured_fms_io 2 skip

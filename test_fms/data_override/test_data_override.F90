@@ -39,15 +39,15 @@
 ! "LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
 !--------------------------------------------------------------------------------------------------
 
- program test
+program test
 
- ! Input data and path_names file for this program is in:
- ! /archive/pjp/unit_tests/test_data_override/lima/exp1
-
+  ! Input data and path_names file for this program is in:
+  ! /archive/pjp/unit_tests/test_data_override/lima/exp1
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, mpp_define_layout
  use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file
  use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
+ use  fms_affinity_mod, only: fms_affinity_set
  use        fms_io_mod, only: read_data, fms_io_exit
  use     constants_mod, only: constants_init, pi
  use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
@@ -87,12 +87,14 @@
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-#include "fms_platform.h"
+
+#include "../../include/fms_platform.h"
+
  implicit none
 
  integer                           :: stdoutunit
  integer                           :: num_threads = 1
- integer                           :: omp_get_thread_num
+ integer                           :: omp_get_num_threads
  integer                           :: isw, iew, jsw, jew
  integer, allocatable              :: is_win(:), js_win(:)
  integer                           :: nx_dom, ny_dom, nx_win, ny_win
@@ -112,7 +114,6 @@
  character(len=256)                :: solo_mosaic_file, tile_file
  character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
  integer                           :: window(2) = (/1,1/)
- integer                           :: get_cpu_affinity, base_cpu
  integer                           :: nthreads=1
  integer                           :: nwindows
  integer                           :: nx_cubic=90, ny_cubic=90, nx_latlon=90, ny_latlon=90
@@ -218,9 +219,8 @@ if( mod( ny_dom, window(2) ) .NE. 0 ) call error_mesg('test_data_override', &
 
 nwindows = window(1)*window(2)
 !$ call omp_set_num_threads(nthreads)
-!$ base_cpu = get_cpu_affinity()
 !$OMP PARALLEL
-!$ call set_cpu_affinity( base_cpu + omp_get_thread_num() )
+!$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
 !$OMP END PARALLEL
 
 nx_win = nx_dom/window(1)

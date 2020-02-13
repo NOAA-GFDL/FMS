@@ -1,5 +1,24 @@
 #!/bin/sh
 
+#***********************************************************************
+#                   GNU Lesser General Public License
+#
+# This file is part of the GFDL Flexible Modeling System (FMS).
+#
+# FMS is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# FMS is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
@@ -8,12 +27,9 @@
 # Set common test settings.
 . ../test_common.sh
 
-# All tests are skipped in bats file.
-
 # Setup the run directory
 ##tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
 ##rm -f diag_test_${tnum}* > /dev/null 2>&1
 ##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
 
-#mpirun -n 2 ./test_mpp_pset
-#mpirun -n 2 ./test_mpp_pset
+run_test test_mpp_pset 2 skip

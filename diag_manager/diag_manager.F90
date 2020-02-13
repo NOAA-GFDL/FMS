@@ -213,7 +213,7 @@ MODULE diag_manager_mod
        & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
   USE fms_io_mod, ONLY: get_instance_filename
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
-       & diag_axis_add_attribute, axis_compatible_check
+       & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
@@ -230,11 +230,10 @@ MODULE diag_manager_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & write_manifest_file, fileobj, fileobjU, fnum_for_domain, fileobjND
+       & fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE diag_manifest_mod, ONLY: write_diag_manifest
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -256,6 +255,7 @@ MODULE diag_manager_mod
        & DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_diag_global_att,&
        & set_diag_global_att, diag_field_add_attribute, diag_field_add_cell_measures,&
        & get_diag_field_id, diag_axis_add_attribute
+  PUBLIC :: CENTER, NORTH, EAST !< Used for diag_axis_init
   ! Public interfaces from diag_grid_mod
   PUBLIC :: diag_grid_init, diag_grid_end
   PUBLIC :: diag_manager_set_time_end, diag_send_complete
@@ -3766,11 +3766,6 @@ CONTAINS
     ! Now it's time to output static fields
     CALL write_static(file)
 
-    !::sdu:: Write the manifest file here
-    IF ( write_manifest_file ) THEN
-       CALL write_diag_manifest(file)
-    END IF
-
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
        CALL mpp_sum (files(file)%bytes_written)
@@ -3818,7 +3813,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, write_manifest_file
+         & max_file_attributes, max_axis_attributes, prepend_date
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN

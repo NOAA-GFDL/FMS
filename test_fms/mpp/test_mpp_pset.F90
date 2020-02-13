@@ -16,8 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-
 program test_mpp_pset
   use mpp_mod, only: mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
        mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_error, FATAL

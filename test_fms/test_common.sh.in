@@ -1,5 +1,21 @@
-# This file is part of the GFDL FMS system. It defines some common
-# settings for a shell tests.
+#***********************************************************************
+#                   GNU Lesser General Public License
+#
+# This file is part of the GFDL Flexible Modeling System (FMS).
+#
+# FMS is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# FMS is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
 
 # Ed Hartnett 11/26/19
 
@@ -7,7 +23,52 @@
 # fails.
 set -e
 
+# Set exit codes to control the failure modes.  These exit codes are found in
+# The GNU Automake manual: https://www.gnu.org/software/automake/manual/html_node/Scripts_002dbased-Testsuites.html
+# Note, any non-zero status, other than SKIP and ERROR is a FAIL
+TEST_PASS=0
+TEST_FAIL=1
+TEST_SKIP=77
+TEST_ERROR=99
+
 # Set the source and build top directories for use in test scripts.
 top_srcdir='@abs_top_srcdir@'
 top_buildir='@abs_top_builddir@'
+# Set the name of the mpi launcher for use in test scripts. 
+mpi_launcher='@MPI_LAUNCHER@' 
+oversubscribe='@OVERSUBSCRIBE@'
 
+# Function to set up and run tests. 
+# Inputs: 
+# {1} Name of test 
+# {2} Number of processors 
+# {3} Set to skip
+# {4} Set to true if you want mpi launcher to oversubscribe, IF possible
+# For example: run_test test_time_manager 1
+
+run_test()
+{
+    # If the tests is known to fail exit 
+    if test "x${3}" != "xskip" ; then     
+
+    # If there is no mpi launcher just ./{job_script}
+    if test "x$mpi_launcher" != "x" ; then  
+        npes="-n ${2}"
+    fi
+
+    # Check if the oversubscribe flag is turned on 
+    if test "x${4}" == "xtrue" ; then 
+    # Check if the your mpi launcher allows the oversubscribed option 
+        if "x$oversubscribe" != "x" ; then  
+            $mpi_launcher $oversubscribe $npes ./${1}
+            return 0
+        else #If you the mpi launcher doesn't allow the oversubscribed option, don't run the test
+            return 0
+        fi
+    fi 
+
+    # Run test
+    $mpi_launcher $npes ./${1}
+
+    fi
+}

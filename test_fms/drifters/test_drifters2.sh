@@ -12,8 +12,18 @@
 cp $top_srcdir/test_fms/drifters/input_base.nml input.nml
 
 # Run tests.
-mpirun -n 2 ./test_drifters_io
-mpirun -n 2 ./test_cloud_interpolator
-./test_drifters_comm
-mpirun -n 2 ./test_drifters_core
-mpirun -n 2 ./test_quicksort
+
+echo "1: Test_drifters_io"
+run_test test_drifters_io 2
+
+echo "2: Test_cloud_interpolator"
+run_test test_cloud_interpolator 2
+
+echo "3: Test_drifters_comm"
+run_test test_drifters_comm 1
+
+echo "4: Test_drifters_core"
+run_test test_drifters_core 2
+
+echo "5: Test_quicksort"
+run_test test_quicksort 2
