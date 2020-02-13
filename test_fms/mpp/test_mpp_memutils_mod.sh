@@ -1,5 +1,7 @@
 #!/bin/sh
-
+#
+# author @underwoo
+#
 #***********************************************************************
 #                   GNU Lesser General Public License
 #
@@ -18,18 +20,26 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
+#
+# Script to test the mpp_memutils_mod Fortran module code.
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/mpp directory.
-
-# Ed Hartnett 11/29/19
-
-# Set common test settings.
+# Set common test settings
 . ../test_common.sh
 
-# Setup the run directory
-##tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
-##rm -f diag_test_${tnum}* > /dev/null 2>&1
-##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
+# All tests use blank input.nml file.
+touch input.nml
 
-run_test test_mpp_pset 2 skip
+echo "1: Test begin/end routines of mpp_memutils_mod"
+mpirun -n 1 ./test_mpp_memutils_begin_end
+
+echo "2: Test mpp_print_memuse_stats"
+mpirun -n 1 ./test_mpp_print_memuse_stats_stderr
+
+echo "3: Test mpp_print_memuse_stats to file (stdout)"
+mpirun -n 1 ./test_mpp_print_memuse_stats_file
+
+echo "4: Test failure caught if mpp_memuse_begin called multiple times"
+mpirun -n 1 ./test_mpp_memutils_begin_2x || echo "Ok"
+
+echo "5: Test failure caught if mpp_memuse_end called before mpp_memuse_begin"
+mpirun -n 1 ./test_mpp_memutils_end_before_begin || echo "Ok"
