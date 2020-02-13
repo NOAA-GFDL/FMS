@@ -25,10 +25,8 @@ libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_pset.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_efp.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_c.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_memutils.la
+libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_memuse_c.la
 libFMS_la_LIBADD += ${top_builddir}/memutils/libmemutils.la
-if APPLE
-libFMS_la_LIBADD += ${top_builddir}/memutils/libmemuse_c.la
-endif
 libFMS_la_LIBADD += ${top_builddir}/fms/libfms_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms/libfms.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms2_io.la
@@ -36,7 +34,6 @@ libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_io_utils.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libnetcdf_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_netcdf_domain_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_netcdf_unstructured_domain_io.la
-libFMS_la_LIBADD += ${top_builddir}/fms2_io/liblegacy.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libblackboxio.la
 libFMS_la_LIBADD += ${top_builddir}/affinity/libfms_affinity.la
 libFMS_la_LIBADD += ${top_builddir}/affinity/libfms_affinity_c.la

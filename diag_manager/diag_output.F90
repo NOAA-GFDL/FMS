@@ -18,25 +18,7 @@
 !***********************************************************************
 
 MODULE diag_output_mod
-!#include <fms_platform.h>
-#define QUAD_KIND real128
-#define DOUBLE_KIND c_double
-#define FLOAT_KIND c_float
-#define LONG_KIND c_int64_t
-#define INT_KIND c_int32_t
-#define SHORT_KIND c_int16_t
-#define POINTER_KIND c_intptr_t
-#define _PURE pure
-#define _ALLOCATABLE allocatable
-#define _NULL
-#define _ALLOCATED allocated
-!DEC$ MESSAGE:'Using allocatable derived type array members.'
-
-
-!Control use of cray pointers.
-#define use_CRI_pointers
-!DEC$ MESSAGE:'Using cray pointers.'
-!If you want to use quad-precision.
+#include <fms_platform.h>
 
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -57,7 +39,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
-       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
+       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain
   USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe, mpp_get_current_pelist
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
@@ -75,8 +57,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   use mpp_domains_mod, only: mpp_get_UG_domain_pelist
   use mpp_mod,         only: mpp_gather
   use mpp_mod,         only: uppercase,lowercase
-use fms2_io_mod
-use legacy_mod
+  use fms2_io_mod
+  use axis_utils2_mod,   only: axis_edges
 
 
   IMPLICIT NONE
@@ -155,6 +137,8 @@ CONTAINS
     character(len=:),allocatable :: fname_no_tile
     integer :: len_file_name
     integer, allocatable, dimension(:) :: current_pelist
+    integer :: mype  !< The pe you are on
+    character(len=9) :: mype_string !< a string to store the pe
     !---- initialize mpp_io ----
     IF ( .NOT.module_is_initialized ) THEN
        CALL mpp_io_init ()
@@ -214,11 +198,24 @@ CONTAINS
 
     !---- open output file (return file_unit id) -----
     IF ( domain .NE. NULL_DOMAIN2D ) THEN
+     !> Check if there is an io_domain
+     iF ( associated(mpp_get_io_domain(domain)) ) then
        fileob => fileobj
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
                             domain, nc_format="64bit", is_restart=.false.))
        fnum_domain = "2d" ! 2d domain
        file_unit = 2
+     elSE !< No io domain, so every core is going to write its own file.
+       fileob => fileobjND
+       mype = mpp_pe()
+       write(mype_string,'(I0.4)') mype
+        if (.not.check_if_open(fileob)) then
+               call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
+                            nc_format="64bit", is_restart=.false.))
+        endif
+       fnum_domain = "nd" ! no domain
+       if (file_unit < 0) file_unit = 10
+     endiF
     ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        fileob => fileobjU
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, trim(fname_no_tile)//".nc", "overwrite", &
@@ -364,7 +361,7 @@ integer :: domain_size, axis_length, axis_pos
 
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name,&
             & axis_cart_name, axis_direction, axis_edges, Domain, DomainU, axis_data,&
-            & num_attributes, attributes, pos=axis_pos)
+            & num_attributes, attributes, domain_position=axis_pos)
 
        IF ( Domain .NE. null_domain1d ) THEN
           IF ( length > 0 ) THEN
@@ -386,10 +383,25 @@ integer :: domain_size, axis_length, axis_pos
                          end select 
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
+                    type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
+                         call register_axis(fptr, axis_name, dimension_length=size(axis_data))
+                         istart = lbound(axis_data,1)
+                         iend = ubound(axis_data,1)
+                         call register_field(fptr, axis_name, "double", (/axis_name/) )
+                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
+                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
+                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                         select case (axis_direction)
+                              case (1)
+                                   call register_variable_attribute(fptr, axis_name, "positive", "up")
+                              case (-1)
+                                   call register_variable_attribute(fptr, axis_name, "positive", "down")
+                         end select
+                         call write_data(fptr, axis_name, axis_data(istart:iend) )
                     class default
                          call error_mesg("diag_output_mod::write_axis_meta_data", &
-                              "The file object is not the right type. It must be FmsNetcdfDomainFile_t for a "//&
-                              "X or Y axis", FATAL)
+                              "The file object is not the right type. It must be FmsNetcdfDomainFile_t or "//&
+                                "FmsNetcdfFile_t for a X or Y axis, ", FATAL)
                   end select
              endif
              
