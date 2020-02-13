@@ -1582,12 +1582,18 @@ function get_valid(fileobj, variable_name) &
   if (valid%has_range) then
     call mpp_broadcast(valid%max_val, fileobj%io_root, pelist=fileobj%pelist)
     call mpp_broadcast(valid%min_val, fileobj%io_root, pelist=fileobj%pelist)
-  else
-    call mpp_broadcast(valid%has_fill, fileobj%io_root, pelist=fileobj%pelist)
-    if (valid%has_fill) then
-      call mpp_broadcast(valid%fill_val, fileobj%io_root, pelist=fileobj%pelist)
-    endif
   endif
+
+  call mpp_broadcast(valid%has_fill, fileobj%io_root, pelist=fileobj%pelist)
+  if (valid%has_fill) then
+     call mpp_broadcast(valid%fill_val, fileobj%io_root, pelist=fileobj%pelist)
+  endif
+
+  call mpp_broadcast(valid%has_missing, fileobj%io_root, pelist=fileobj%pelist)
+  if (valid%has_missing) then
+     call mpp_broadcast(valid%missing_val, fileobj%io_root, pelist=fileobj%pelist)
+  endif  
+
 end function get_valid
 
 
