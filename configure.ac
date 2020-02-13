@@ -161,10 +161,6 @@ if test $enable_setting_flags = yes; then
   fi
 fi
 
-es are required for the build.
-AC_DEFINE([use_netCDF], [1])
-AC_DEFINE([use_libMPI], [1])
-
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
