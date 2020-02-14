@@ -49,7 +49,7 @@ oversubscribe='@OVERSUBSCRIBE@'
 run_test()
 {
     # If the tests is known to fail exit 
-    if test "x${3}" == "xskip" ; then     
+    if test "x${3}" = "xskip" ; then     
         return $TEST_SKIP
     else
         # If there is no mpi launcher just ./{job_script}
