@@ -109,6 +109,9 @@ GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 
+# Check if Fortran compiler has the Class, Character array assign bug
+GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
+
 # Check if Fortran compiler has Cray pointer support
 GX_FC_CRAY_POINTER_FLAG()
 
@@ -181,9 +184,6 @@ AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 # Check if the launcher can oversubscribe the MPI processes
 AS_IF([$MPI_LAUNCHER --oversubscribe 2>&1 >/dev/null], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
-
-# Check if compile supports supports "type is (character(len=*))
-GX_TYPE_IS_CHECK()
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
