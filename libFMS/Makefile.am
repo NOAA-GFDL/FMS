@@ -34,7 +34,6 @@ libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_io_utils.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libnetcdf_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_netcdf_domain_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_netcdf_unstructured_domain_io.la
-libFMS_la_LIBADD += ${top_builddir}/fms2_io/liblegacy.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libblackboxio.la
 libFMS_la_LIBADD += ${top_builddir}/affinity/libfms_affinity.la
 libFMS_la_LIBADD += ${top_builddir}/affinity/libfms_affinity_c.la

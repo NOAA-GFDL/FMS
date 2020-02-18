@@ -41,12 +41,6 @@ AC_ARG_WITH([mpi],
 AS_IF([test ${with_mpi:-yes} = yes],
   [with_mpi=yes],
   [with_mpi=no])
-AC_ARG_ENABLE([openmp],
-  [AS_HELP_STRING([--enable-openmp],
-    [Build with OpenMPI support. This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
-AS_IF([test ${enable_openmp:-yes} = yes],
-  [enable_openmp=yes],
-  [enable_openmp=no])
 AC_ARG_ENABLE([setting-flags],
   [AS_HELP_STRING([--enable-setting-flags],
     [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
@@ -62,7 +56,6 @@ AC_PROG_CPP
 
 # Find the Fortran compiler.
 AC_PROG_FC
-AC_FC_WRAPPERS
 
 # Find the install program.
 AC_PROG_INSTALL
@@ -80,17 +73,18 @@ if test $with_mpi = yes; then
   AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([Can't find the MPI C library.  Set CC/LDFLAGS/LIBS])])
 fi
 
-# Check if Linux gettid is avaiable
-AC_CHECK_FUNCS([gettid], [], [])
-
 # Require netCDF
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
-if test $enable_openmp = yes && test $enable_setting_flags = yes; then
-  # Check if the compiler needs special OpenMP flags
-  AC_OPENMP()
-fi
+# Check if Linux gettid is avaiable
+AC_CHECK_FUNCS([gettid], [], [])
+
+# Check if Linux sched_getaffinity is available
+AC_CHECK_FUNCS([sched_getaffinity], [], [])
+
+# Check if the compiler needs special OpenMP flags
+AC_OPENMP()
 AC_LANG_POP(C)
 
 # Fortran specific checks
@@ -119,10 +113,9 @@ GX_FC_QUAD_PRECISION()
 # Check if Fortran compiler supports reading namelists from internal files
 GX_FC_INTERNAL_FILE_NML()
 
-if test $enable_openmp = yes && test $enable_setting_flags = yes; then
-  # Check if the compiler needs special OpenMP flags
-  AC_OPENMP()
-fi
+# Check if the compiler needs special OpenMP flags
+AC_OPENMP()
+
 AC_LANG_POP(Fortran)
 
 # We passed all the tests.  Set the required defines.
@@ -168,10 +161,6 @@ if test $enable_setting_flags = yes; then
   fi
 fi
 
-# These defines are required for the build.
-AC_DEFINE([use_netCDF], [1])
-AC_DEFINE([use_libMPI], [1])
-
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 
@@ -179,7 +168,7 @@ AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 
 # Check if the launcher can oversubscribe the MPI processes
-AS_IF([$MPI_LAUNCHER --oversubscribe 2>&1 >/dev/null], \
+AS_IF([$MPI_LAUNCHER --oversubscribe hostname >/dev/null 2>&1], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
 
 # These files will be created when the configure script is run.

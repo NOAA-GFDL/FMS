@@ -58,4 +58,3 @@ AS_IF([test "x$gx_cv_fc_08_open_newfile" = xno],[$2],[dnl
   $1
 ])dnl
 ])# GC_FC_08_OPEN_NEWUNIT
-
