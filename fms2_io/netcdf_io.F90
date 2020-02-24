@@ -1503,8 +1503,10 @@ function get_valid(fileobj, variable_name) &
       add_offset = 0._real64
     endif
 
-	!Max and and min data values are defined by the valid_range, valid_min, and valid_max attributes if they are present. 
-    !Assign max/min values using "valid" attributes.
+	!valid%max_val and valid%min_val are defined by the "valid_range", "valid_min", and
+    !"valid_max" variable attributes if they are present in the file. If either the maximum value
+    !or minimum value is defined, valid%has_range is set to .true. (i.e. open ended ranges
+    !are valid and should be tested within the is_valid function).
     if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
       call get_variable_attribute(fileobj, variable_name, "valid_range", buffer)
       valid%max_val = buffer(2)*scale_factor + add_offset
@@ -1526,15 +1528,21 @@ function get_valid(fileobj, variable_name) &
     valid%has_range = valid%has_min .or. valid%has_max
 
 
+    !Get the missing value from the file if it exists.
     if (attribute_exists(fileobj%ncid, varid, "missing_value")) then
       call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1))
-      xtype = get_variable_type(fileobj%ncid, varid)
       valid%missing_val = buffer(1)*scale_factor + add_offset
       valid%has_missing = .true.
     endif
 
-    !Get default max/min from _Fillvalue.
-	!If the fill_value attribute is present and valid_range is not, then fill_value determines valid_data values. 
+    !Get the fill value from the file if it exists.
+	!If the _FillValue attribute is present and the maximum or minimum value is not defined,
+    !then the maximum or minimum value will be determined by the _FillValue according to the NUG convention. 
+    !The NUG convention states that a positive fill value will be the exclusive upper
+    !bound (i.e. valid values are less than the fill value), while a
+    !non-positive fill value will be the exclusive lower bound (i.e. valis
+    !values are greater than the fill value). As before, valid%has_range is true
+    !if either a maximum or minimum value is set.
     if (attribute_exists(fileobj%ncid, varid, "_FillValue")) then
       call get_variable_attribute(fileobj, variable_name, "_FillValue", buffer(1))
       valid%fill_val = buffer(1)*scale_factor + add_offset
@@ -1614,6 +1622,8 @@ elemental function is_valid(datum, validobj) &
   end select
 
   valid_data = .true.
+  ! If the variable has a range (open or closed), valid values must be in that
+  ! range.
   if (validobj%has_range) then
     if (validobj%has_min .and. .not. validobj%has_max) then
       valid_data = rdatum .ge. validobj%min_val
@@ -1623,6 +1633,8 @@ elemental function is_valid(datum, validobj) &
       valid_data = .not. (rdatum .lt. validobj%min_val .or. rdatum .gt. validobj%max_val)
     endif
   endif
+  ! If the variable has a fill value or missing value, valid values must not be
+  ! equal to either. 
   if (validobj%has_fill .or. validobj%has_missing) then
     if (validobj%has_fill .and. .not. validobj%has_missing) then
       valid_data = rdatum .ne. validobj%fill_val
