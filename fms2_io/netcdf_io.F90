@@ -81,8 +81,8 @@ endtype FmsNetcdfFile_t
 !> @brief Range type for a netcdf variable.
 type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
-  logical :: has_min !< Flag that's true if both min exists for a variable.
-  logical :: has_max !< Flag that's true if both max exists for a variable.
+  logical :: has_min !< Flag that's true if min exists for a variable.
+  logical :: has_max !< Flag that's true if max exists for a variable.
   logical :: has_fill !< Flag that's true a user defined fill value.
   logical :: has_missing !< Flag that's true a user defined missing value.
   real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
