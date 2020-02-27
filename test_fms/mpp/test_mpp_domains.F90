@@ -199,6 +199,7 @@ program test_mpp_domains
      "test_mpp_domain: nx_cubic and ny_cubic should be both zero or both positive")
 
   if( test_nest .and. (num_nest>0) ) then
+    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain <-------------------'
      do n = 1, num_nest
         if( istart_coarse(n) == 0 .OR. jstart_coarse(n) == 0 ) call mpp_error(FATAL, &
         "test_mpp_domain: check the setting of namelist variable istart_coarse, jstart_coarse")
