@@ -8,10 +8,15 @@ sequential patch number (starting from `01`).
 
 ## [Unreleased]
 ### Added
+- Added axis_utils2, and time_interp_external2 which use fms2io
+- Added affinity unit tests in test_fms/affinity
+- Autotools unit tests are now run with `srun, mpirun, or aprun` (whichever is present in your system)
 ### Changed
 - The diag_manager IO is now handled by fms2_io instead of mpp_io.  This always acts as if the the mpp_io namelist variabe was set to `cf_compliant = .true.`
 - Calls to register_diag_axis using an X or Y axis that is shifted from the `CENTER` position need to include the optional argument `domain_position` and should be equal to `EAST` or `NORTH` based on the position relative to the domain.  `EAST` and `NORTH` are exposed through `diag_manager_mod`.
+- The interpolator, xgrid, and amip_interp are now handled by fms2_io
 ### Deprecated
+- During netcdf variable reads, fms2io does **NOT** use the `scale_factor` and `add_offset` attributes to unpack data, so the variable is read as is in the file
 ### Removed
 ### Fixed
 
