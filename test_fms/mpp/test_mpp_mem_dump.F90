@@ -32,13 +32,10 @@ program test_mpp_mem_dump
   implicit none
 
   real :: memuse
-  integer(kind=INT_KIND) :: return_val = 0
 
   call mpp_mem_dump(memuse)
 
   if (memuse .LT. 0.0) then
-    return_val = 1
+    stop "mpp_mem_dump return negative value for memory"
   endif
-
-  stop return_val
 end program test_mpp_mem_dump
