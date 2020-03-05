@@ -11,6 +11,7 @@ sequential patch number (starting from `01`).
 ### Changed
 - The diag_manager IO is now handled by fms2_io instead of mpp_io.  This always acts as if the the mpp_io namelist variabe was set to `cf_compliant = .true.`
 - Calls to register_diag_axis using an X or Y axis that is shifted from the `CENTER` position need to include the optional argument `domain_position` and should be equal to `EAST` or `NORTH` based on the position relative to the domain.  `EAST` and `NORTH` are exposed through `diag_manager_mod`.
+- data_override now uses fms2_io for most I/O needs (there is still a routine from fms_io being used)
 ### Deprecated
 ### Removed
 ### Fixed
