@@ -39,14 +39,10 @@ program test_mpp_memuse
   ! Real to hold results from getpeakrss
   real :: memuse
 
-  integer(kind=INT_KIND) :: return_val = 0 !< Return value for the program
-
   ! Cast to real, this is how getpeakrss is called in mpp_memutils.F90
   memuse = real(getpeakrss())
 
   if ( memuse < 0 ) then
-    return_val = 1
+    stop "getpeakrss returned negative value for memory"
   endif
-
-  stop return_val
 end program test_mpp_memuse
