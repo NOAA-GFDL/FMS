@@ -19,7 +19,7 @@ jobs:
           find . -type f -and \( -name \*.INC -or -name \*.inc -or \
                                  -name \*.fh -or -name \*.FH -or \
                                  -name \*.\[fF\]90 -or -name \*.\[fF\] \) \
-                                 -exec grep -l '\t' {}  \; | tee files_tabs.txt
+                                 -exec grep -l $'\t' {}  \; | tee files_tabs.txt
           echo "::set-output name=nfiles::$(wc -l files_tabs.txt | awk '{print $1}')"
       - name: Check for Failure
         run: |
