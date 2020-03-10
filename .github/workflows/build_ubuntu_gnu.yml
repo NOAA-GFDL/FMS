@@ -31,6 +31,7 @@ jobs:
           fi
       - name: Report Artifacts
         uses: actions/upload-artifact@v1
+        if: failure()
         with:
           name: non-compliant-files
           path: files_*.txt
