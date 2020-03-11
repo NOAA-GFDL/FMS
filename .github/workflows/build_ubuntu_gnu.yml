@@ -23,22 +23,28 @@ jobs:
           echo "::set-output name=nfiles::$(wc -l files_tabs.txt | awk '{print $1}')"
       - name: Check for Failure
         run: |
+          let exitval=0
           if test ${{ steps.twspace.outputs.nfiles }} -gt 0
           then
-            echo "::error::${{ steps.twspace.outputs.nfiles }} file(s) contain trailing\n whitespace."
+            echo -n "::error::${{ steps.twspace.outputs.nfiles }} file(s) contain trailing whitespace.\n$(cat files_trailwspace.txt)"
             cat files_trailwspace.txt
+            let exitval++
           fi
           if test ${{ steps.ftntab.outputs.nfiles }} -gt 0
           then
             echo "::error::${{steps.ftntab.outputs.nfiles}} Fortran file(s) contain tab characters."
             cat files_tabs.txt
+            let exitval++
           fi
-#      - name: Report Artifacts
-#        uses: actions/upload-artifact@v1
-#        if: failure()
-#        with:
-#          name: non-compliant-files
-#          path: files_*.txt
+          echo "::stop-commands::pause-logging"
+          exit $exitval
+          echo ""::pause-logging"
+      - name: Report Artifacts
+        uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: non-compliant-files
+          path: files_*.txt
   build:
     runs-on: ubuntu-latest
     strategy:
