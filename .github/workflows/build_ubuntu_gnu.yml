@@ -38,13 +38,13 @@ jobs:
           fi
           echo "::stop-commands::pause-logging"
           exit $exitval
-          echo ""::pause-logging"
+          echo ""::pause-logging::"
       - name: Report Artifacts
         uses: actions/upload-artifact@v1
         if: failure()
         with:
           name: non-compliant-files
-          path: files_*.txt
+          path: hashFiles('files_*.txt')
   build:
     runs-on: ubuntu-latest
     strategy:
