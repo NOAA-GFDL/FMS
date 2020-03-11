@@ -25,7 +25,7 @@ jobs:
         run: |
           if test ${{ steps.twspace.outputs.nfiles }} -gt 0
           then
-            echo -n "::error::${{ steps.twspace.outputs.nfiles }} file(s) contain trailing whitespace.\n$(cat files_trailwspace.txt)"
+            echo -e "::error::${{ steps.twspace.outputs.nfiles }} file(s) contain trailing whitespace.\n$(cat files_trailwspace.txt)"
             cat files_trailwspace.txt
           fi
           if test ${{ steps.ftntab.outputs.nfiles }} -gt 0
