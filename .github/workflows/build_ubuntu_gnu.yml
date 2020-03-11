@@ -25,12 +25,12 @@ jobs:
         run: |
           if test ${{ steps.twspace.outputs.nfiles }} -gt 0
           then
-            echo "::error::One or more files have trailing white space or one or more Fortran files have tab characters"
+            echo "::error::${{ steps.twspace.outputs.nfiles }} file(s) contain trailing\n whitespace."
             cat files_trailwspace.txt
           fi
           if test ${{ steps.ftntab.outputs.nfiles }} -gt 0
           then
-            echo "::error::${{steps.ftntab.outputs.nfiles}} Fortran files contain tab characters."
+            echo "::error::${{steps.ftntab.outputs.nfiles}} Fortran file(s) contain tab characters."
             cat files_tabs.txt
           fi
 #      - name: Report Artifacts
