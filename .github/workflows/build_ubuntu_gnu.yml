@@ -11,7 +11,7 @@ jobs:
       - name: Check for trailing white spaces
         id: twspace
         run: |
-          find . -type f -not -path "./.git/*" -exec egrep -l " +$" {} \; | tee files_trailwspace.txt
+          find . -type f -not -path "./.git/*" -exec egrep -l " +$" {} \; > files_trailwspace.txt
           echo "::set-output name=nfiles::$(wc -l files_trailwspace.txt | awk '{print $1}')"
       - name: Check Fortran for tabs
         id: ftntab
@@ -19,7 +19,7 @@ jobs:
           find . -type f -and \( -name \*.INC -or -name \*.inc -or \
                                  -name \*.fh -or -name \*.FH -or \
                                  -name \*.\[fF\]90 -or -name \*.\[fF\] \) \
-                                 -exec grep -l $'\t' {}  \; | tee files_tabs.txt
+                                 -exec grep -l $'\t' {}  \; > files_tabs.txt
           echo "::set-output name=nfiles::$(wc -l files_tabs.txt | awk '{print $1}')"
       - name: Check for Failure
         run: |
