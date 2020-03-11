@@ -23,7 +23,6 @@ jobs:
           echo "::set-output name=nfiles::$(wc -l files_tabs.txt | awk '{print $1}')"
       - name: Check for Failure
         run: |
-          ls
           if test ${{ steps.twspace.outputs.nfiles }} -gt 0 || \
              test ${{ steps.ftntab.outputs.nfiles }} -gt 0
           then
