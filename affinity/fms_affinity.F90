@@ -20,7 +20,7 @@
 !> \file
 !! \author @bensonr
 
-!> Fortran API interfaces to set the thread affinity.
+	!> Fortran API interfaces to set the thread affinity.
 !!
 !! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
 !! are managed in the C routines in affinity.c.
