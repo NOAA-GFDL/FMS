@@ -23,20 +23,16 @@ jobs:
           echo "::set-output name=nfiles::$(wc -l files_tabs.txt | awk '{print $1}')"
       - name: Check for Failure
         run: |
-          let exitval=0
           if test ${{ steps.twspace.outputs.nfiles }} -gt 0
           then
             echo -n "::error::${{ steps.twspace.outputs.nfiles }} file(s) contain trailing whitespace.\n$(cat files_trailwspace.txt)"
             cat files_trailwspace.txt
-            let exitval++
           fi
           if test ${{ steps.ftntab.outputs.nfiles }} -gt 0
           then
             echo "::error::${{steps.ftntab.outputs.nfiles}} Fortran file(s) contain tab characters."
             cat files_tabs.txt
-            let exitval++
           fi
-          exit $exitval
   build:
     runs-on: ubuntu-latest
     strategy:
