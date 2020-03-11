@@ -36,15 +36,7 @@ jobs:
             cat files_tabs.txt
             let exitval++
           fi
-          echo "::stop-commands::pause-logging"
           exit $exitval
-          echo ""::pause-logging::"
-      - name: Report Artifacts
-        uses: actions/upload-artifact@v1
-        if: failure()
-        with:
-          name: non-compliant-files
-          path: hashFiles('files_*.txt')
   build:
     runs-on: ubuntu-latest
     strategy:
