@@ -1,38 +1,8 @@
-name: libFMS tests
+name: Build libFMS test
 
 on: [push, pull_request]
 
 jobs:
-  whitespace:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check code
-        uses: actions/checkout@v2
-      - name: Check for trailing white spaces
-        id: twspace
-        run: |
-          find . -type f -not -path "./.git/*" -exec egrep -l " +$" {} \; > files_trailwspace.txt
-          echo "::set-output name=nfiles::$(wc -l files_trailwspace.txt | awk '{print $1}')"
-      - name: Check Fortran for tabs
-        id: ftntab
-        run: |
-          find . -type f -and \( -name \*.INC -or -name \*.inc -or \
-                                 -name \*.fh -or -name \*.FH -or \
-                                 -name \*.\[fF\]90 -or -name \*.\[fF\] \) \
-                                 -exec grep -l $'\t' {}  \; > files_tabs.txt
-          echo "::set-output name=nfiles::$(wc -l files_tabs.txt | awk '{print $1}')"
-      - name: Check for Failure
-        run: |
-          if test ${{ steps.twspace.outputs.nfiles }} -gt 0
-          then
-            echo -e "::error::${{ steps.twspace.outputs.nfiles }} file(s) contain trailing whitespace.\n$(cat files_trailwspace.txt)"
-            cat files_trailwspace.txt
-          fi
-          if test ${{ steps.ftntab.outputs.nfiles }} -gt 0
-          then
-            echo "::error::${{steps.ftntab.outputs.nfiles}} Fortran file(s) contain tab characters."
-            cat files_tabs.txt
-          fi
   build:
     runs-on: ubuntu-latest
     strategy:
