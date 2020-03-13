@@ -81,6 +81,8 @@ endtype FmsNetcdfFile_t
 !> @brief Range type for a netcdf variable.
 type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
+  logical :: has_min !< Flag that's true if min exists for a variable.
+  logical :: has_max !< Flag that's true if max exists for a variable.
   logical :: has_fill !< Flag that's true a user defined fill value.
   logical :: has_missing !< Flag that's true a user defined missing value.
   real(kind=real64) :: fill_val !< Unpacked fill value for a variable.
@@ -1478,14 +1480,12 @@ function get_valid(fileobj, variable_name) &
   real(kind=real64) :: scale_factor
   real(kind=real64) :: add_offset
   real(kind=real64), dimension(2) :: buffer
-  logical :: has_max
-  logical :: has_min
   integer :: xtype
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, variable_name)
-    has_max = .false.
-    has_min = .false.
+    valid%has_max = .false.
+    valid%has_min = .false.
     valid%has_fill = .false.
     valid%has_missing = .false.
     valid%has_range = .false.
@@ -1503,86 +1503,88 @@ function get_valid(fileobj, variable_name) &
       add_offset = 0._real64
     endif
 
-	 !Max and and min data values are defined by the valid_range, valid_min, and valid_max attributes if they are present. 
-	 !If the fill_value attribute is present and valid_range is not, then fill_value determines valid_data values. 
-	 !Otherwise, the missing_value attribute determines valid data_values if it is present, and valid_range fill_value attributes are not.
-
-    !Get default max/min from missing_value.  These could be overwritten by
-    !vaild_range/valid_min/valid_max/_Fill_Value.
-    if (attribute_exists(fileobj%ncid, varid, "missing_value")) then
-      call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1))
-      xtype = get_variable_type(fileobj%ncid, varid)
-      valid%missing_val = buffer(1)*scale_factor + add_offset
-      valid%has_missing = .true.
-      if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
-          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
-          has_min = .true.
-      elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
-          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
-                          *scale_factor + add_offset
-          has_min = .true.
-      else
-        call error("unsupported type.")
+	!valid%max_val and valid%min_val are defined by the "valid_range", "valid_min", and
+    !"valid_max" variable attributes if they are present in the file. If either the maximum value
+    !or minimum value is defined, valid%has_range is set to .true. (i.e. open ended ranges
+    !are valid and should be tested within the is_valid function).
+    if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
+      call get_variable_attribute(fileobj, variable_name, "valid_range", buffer)
+      valid%max_val = buffer(2)*scale_factor + add_offset
+      valid%has_max = .true.
+      valid%min_val = buffer(1)*scale_factor + add_offset
+      valid%has_min = .true.
+    else
+      if (attribute_exists(fileobj%ncid, varid, "valid_max")) then
+        call get_variable_attribute(fileobj, variable_name, "valid_max", buffer(1))
+        valid%max_val = buffer(1)*scale_factor + add_offset
+        valid%has_max = .true.
+      endif
+      if (attribute_exists(fileobj%ncid, varid, "valid_min")) then
+        call get_variable_attribute(fileobj, variable_name, "valid_min", buffer(1))
+        valid%min_val = buffer(1)*scale_factor + add_offset
+        valid%has_min = .true.
       endif
     endif
+    valid%has_range = valid%has_min .or. valid%has_max
 
-    !Get default max/min from _Fillvalue.  These could be overwritten by
-    !vaild_range/valid_min/valid_max.
+
+    !Get the missing value from the file if it exists.
+    if (attribute_exists(fileobj%ncid, varid, "missing_value")) then
+      call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1))
+      valid%missing_val = buffer(1)*scale_factor + add_offset
+      valid%has_missing = .true.
+    endif
+
+    !Get the fill value from the file if it exists.
+	!If the _FillValue attribute is present and the maximum or minimum value is not defined,
+    !then the maximum or minimum value will be determined by the _FillValue according to the NUG convention. 
+    !The NUG convention states that a positive fill value will be the exclusive upper
+    !bound (i.e. valid values are less than the fill value), while a
+    !non-positive fill value will be the exclusive lower bound (i.e. valis
+    !values are greater than the fill value). As before, valid%has_range is true
+    !if either a maximum or minimum value is set.
     if (attribute_exists(fileobj%ncid, varid, "_FillValue")) then
       call get_variable_attribute(fileobj, variable_name, "_FillValue", buffer(1))
       valid%fill_val = buffer(1)*scale_factor + add_offset
       valid%has_fill = .true.
       xtype = get_variable_type(fileobj%ncid, varid)
-      if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
-        if (buffer(1) .gt. 0) then
-          valid%max_val = (buffer(1) - 1._real64)*scale_factor + add_offset
-          has_max = .true.
+      if (.not. valid%has_range) then
+        if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
+          if (buffer(1) .gt. 0) then
+            valid%max_val = (buffer(1) - 1._real64)*scale_factor + add_offset
+            valid%has_max = .true.
+          else
+            valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
+            valid%has_min = .true.
+          endif
+        elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
+          if (buffer(1) .gt. 0) then
+            valid%max_val = (nearest(nearest(buffer(1), -1._real64), -1._real64)) &
+                            *scale_factor + add_offset
+            valid%has_max = .true.
+          else
+            valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
+                            *scale_factor + add_offset
+            valid%has_min = .true.
+          endif
         else
-          valid%min_val = (buffer(1) + 1._real64)*scale_factor + add_offset
-          has_min = .true.
+          call error("unsupported type.")
         endif
-      elseif (xtype .eq. nf90_float .or. xtype .eq. nf90_double) then
-        if (buffer(1) .gt. 0) then
-          valid%max_val = (nearest(nearest(buffer(1), -1._real64), -1._real64)) &
-                          *scale_factor + add_offset
-          has_max = .true.
-        else
-          valid%min_val = (nearest(nearest(buffer(1), 1._real64), 1._real64)) &
-                          *scale_factor + add_offset
-          has_min = .true.
-        endif
-      else
-        call error("unsupported type.")
+        valid%has_range = .true.
       endif
     endif
 
-    !Override fill value max/min with using "valid" attributes.
-    if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
-      call get_variable_attribute(fileobj, variable_name, "valid_range", buffer)
-      valid%max_val = buffer(2)*scale_factor + add_offset
-      has_max = .true.
-      valid%min_val = buffer(1)*scale_factor + add_offset
-      has_min = .true.
-    else
-      if (attribute_exists(fileobj%ncid, varid, "valid_max")) then
-        call get_variable_attribute(fileobj, variable_name, "valid_max", buffer(1))
-        valid%max_val = buffer(1)*scale_factor + add_offset
-        has_max = .true.
-      endif
-      if (attribute_exists(fileobj%ncid, varid, "valid_min")) then
-        call get_variable_attribute(fileobj, variable_name, "valid_min", buffer(1))
-        valid%min_val = buffer(1)*scale_factor + add_offset
-        has_min = .true.
-      endif
-    endif
-    valid%has_range = has_min .and. has_max
   endif
 
-  call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
-  if (valid%has_range) then
-    call mpp_broadcast(valid%max_val, fileobj%io_root, pelist=fileobj%pelist)
+  call mpp_broadcast(valid%has_min, fileobj%io_root, pelist=fileobj%pelist)
+  if (valid%has_min) then
     call mpp_broadcast(valid%min_val, fileobj%io_root, pelist=fileobj%pelist)
   endif
+  call mpp_broadcast(valid%has_max, fileobj%io_root, pelist=fileobj%pelist)
+  if (valid%has_max) then
+    call mpp_broadcast(valid%max_val, fileobj%io_root, pelist=fileobj%pelist)
+  endif
+  call mpp_broadcast(valid%has_range, fileobj%io_root, pelist=fileobj%pelist)
 
   call mpp_broadcast(valid%has_fill, fileobj%io_root, pelist=fileobj%pelist)
   if (valid%has_fill) then
@@ -1620,12 +1622,27 @@ elemental function is_valid(datum, validobj) &
   end select
 
   valid_data = .true.
+  ! If the variable has a range (open or closed), valid values must be in that
+  ! range.
   if (validobj%has_range) then
-    valid_data = rdatum .ge. validobj%min_val .and. rdatum .le. validobj%max_val
-  elseif (validobj%has_fill) then
-    valid_data = rdatum .ne. validobj%fill_val
-  elseif (validobj%has_missing) then 
-    valid_data = rdatum .ne. validobj%missing_val
+    if (validobj%has_min .and. .not. validobj%has_max) then
+      valid_data = rdatum .ge. validobj%min_val
+    elseif (validobj%has_max .and. .not. validobj%has_min) then
+      valid_data = rdatum .le. validobj%max_val
+    else
+      valid_data = .not. (rdatum .lt. validobj%min_val .or. rdatum .gt. validobj%max_val)
+    endif
+  endif
+  ! If the variable has a fill value or missing value, valid values must not be
+  ! equal to either. 
+  if (validobj%has_fill .or. validobj%has_missing) then
+    if (validobj%has_fill .and. .not. validobj%has_missing) then
+      valid_data = rdatum .ne. validobj%fill_val
+    elseif (validobj%has_missing .and. .not. validobj%has_fill) then 
+      valid_data = rdatum .ne. validobj%missing_val
+    else
+      valid_data = .not. (rdatum .eq. validobj%missing_val .or. rdatum .eq. validobj%fill_val)
+    endif
   endif
 end function is_valid
 

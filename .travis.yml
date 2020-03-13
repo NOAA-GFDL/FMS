@@ -7,8 +7,8 @@
 # FMS is not a c-language project, although there are a few c-language
 # sources.  However, this is the best choice.
 language: c
+os: linux
 dist: bionic
-sudo: false
 
 addons:
   apt:
