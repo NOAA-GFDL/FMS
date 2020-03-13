@@ -1,5 +1,5 @@
 program test_atmosphere_io
-use iso_fortran_env
+use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64, error_unit, output_unit
 use mpi
 use fms2_io_mod
 use mpp_domains_mod

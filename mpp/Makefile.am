@@ -13,7 +13,7 @@ AM_CPPFLAGS += -I${top_srcdir}/mpp/include
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la \
 libmpp_utilities.la libmpp_memutils.la libmpp_pset.la libmpp_efp.la \
-libmpp_domains.la libmpp_io.la libmpp_c.la
+libmpp_domains.la libmpp_io.la libmpp_c.la libmpp_memuse_c.la
 
 # Each convenience library depends on its source.
 libmpp_parameter_la_SOURCES = mpp_parameter.F90
@@ -26,6 +26,7 @@ libmpp_pset_la_SOURCES = mpp_pset.F90
 libmpp_efp_la_SOURCES = mpp_efp.F90
 libmpp_c_la_SOURCES = nsclock.c threadloc.c
 libmpp_memutils_la_SOURCES = mpp_memutils.F90
+libmpp_memuse_c_la_SOURCES = mpp_memuse.c
 
 # Each mod file depends on the .o file.
 mpp_parameter_mod.mod: mpp_parameter.$(OBJEXT)

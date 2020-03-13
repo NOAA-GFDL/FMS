@@ -73,6 +73,7 @@ public :: save_domain_restart
 public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
+public :: is_dimension_registered
 
 
 interface compute_global_checksum
@@ -265,6 +266,34 @@ function is_variable_domain_decomposed(fileobj, variable_name, broadcast, &
     endif
   endif
 end function is_variable_domain_decomposed
+
+
+!> @brief Determine whether a domain-decomposed dimension has been registered to the file object
+!! @return Flag telling if the dimension is registered to the file object
+function is_dimension_registered(fileobj, dimension_name) &
+  result(is_registered)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+
+  ! local
+  logical :: is_registered
+
+  integer :: dpos
+  integer :: ndims
+  character(len=nf90_max_name), dimension(:), allocatable :: dim_names
+
+  dpos = 0
+  is_registered = .false. 
+  dpos = get_domain_decomposed_index(dimension_name, fileobj%xdims, fileobj%nx)
+  if (dpos .ne. variable_not_found) then
+    is_registered = .true.
+  else
+    dpos = get_domain_decomposed_index(dimension_name, fileobj%ydims, fileobj%ny)
+    if (dpos .ne. variable_not_found) is_registered = .true.
+  endif
+ 
+end function is_dimension_registered
 
 
 !> @brief Open a domain netcdf file.
@@ -730,7 +759,7 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
     dpos = fileobj%xdims(dpos)%pos
     call mpp_get_global_domain(io_domain, xbegin=is, xend=ie, position=dpos)
   else
-    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%nx)
+    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%ny)
     if (dpos .ne. variable_not_found) then
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_global_domain(io_domain, ybegin=is, yend=ie, position=dpos)
@@ -748,3 +777,4 @@ include "compute_global_checksum.inc"
 
 
 end module fms_netcdf_domain_io_mod
+
