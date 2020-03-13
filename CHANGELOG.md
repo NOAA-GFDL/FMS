@@ -6,14 +6,28 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
-## [Unreleased]
+## [2020.01] - 2020-03-13
 ### Added
+- Adds axis_utils2, mosaic2, and time_interp_external2 which use fms2io
+- Adds affinity unit tests in test_fms/affinity
+- Autotools unit tests are now run with `srun, mpirun, or aprun` (whichever is present on your system)
+- FMS2_io provides three new derived types, which target the different I/O paradigms used in GFDL GCMs.
+  - type(FmsNetcdfFile_t) - This type provides a thin wrapper over the netCDF4 library, but allows the user to assign a “pelist” to the file.  If a pelist is assigned, only the first rank on the list directly interacts with the netCDF library, and performs broadcasts to relay the information to the rest of the ranks on the list.  This derived type also allows the user to perform “compressed” reads/writes and restart variable “registration” (i.e. the ability to store pointers to user defined/allocated buffers) and reads/writes in a manner similar to the existing calls in fms_io.
+  - type(FmsNetcdfUnstructuredDomainFile_t) - This type extends the FmsNetcdfFile_t type to support “domain-decomposed” reads/writes on a user defined mpp_domains unstructured grid.  Users are required to inform the FMS2_io module which dimensions correspond to the unstructured grid using the appropriate register_axis call before any domain-decomposed reads/writes can be performed.
+  - type(FmsNetcdfDomainFile_t) - This type extends the FmsNetcdfFile_t type to support “domain-decomposed” reads/writes on a user defined mpp_domains two-dimensional lon-lat or cubed-sphere grid.  Users are required to inform the FMS2_io module which dimensions correspond to the two-dimensional grid using the appropriate register_axis calls before any domain-decomposed reads/writes can be performed.
+- FMS2_io requires the user to manage objects of the types described above.  Calls to open_file (close_file) act as constructors (destructors) for each of the objects, and must be explicitly made by the user.  Each object must be constructed before any I/O can be performed.  Examples describing how to use these new types are available in [test_fms/fms2_io](https://github.com/NOAA-GFDL/FMS/tree/master/test_fms/fms2_io)
+- Fms2_io treats `_FillValue` attributes as valid max or valid min range specifiers if none of `valid_range`, `valid_min`, and `valid_max` are specified as described in these [netcdf conventions](https://www.unidata.ucar.edu/software/netcdf/docs/attribute_conventions.html)
 ### Changed
-- The diag_manager IO is now handled by fms2_io instead of mpp_io.  This always acts as if the the mpp_io namelist variabe was set to `cf_compliant = .true.`
-- Calls to register_diag_axis using an X or Y axis that is shifted from the `CENTER` position need to include the optional argument `domain_position` and should be equal to `EAST` or `NORTH` based on the position relative to the domain.  `EAST` and `NORTH` are exposed through `diag_manager_mod`.
+- The diag_manager IO is now handled by fms2_io instead of mpp_io. This always acts as if the mpp_io namelist variable was set to cf_compliant = .true.
+- Diagnostic attributes are only output if specifically set by the user.  Example: If there is no *units* attribute, then the variable metadata will not include *units*, and it will not automatically add *units = “none”*. 
+- Calls to register_diag_axis for an X or Y axis that is shifted from the CENTER position need to include the optional argument domain_position and should be equal to EAST or NORTH based on the position relative to the domain. EAST and NORTH are exposed through diag_manager_mod.
+- Handling of average_*T* and time_bnds variables is changed.  The variables are set to values that are sent in and are not manipulated as was the case in mpp_io.
+- The interpolator, xgrid, data_override, and amip_interp now utilize calls to fms2_io
+- Support for enabling/disabling quad-precision (used in certain calculations) has been changed to a hard on/off switch.  Default behavior is quad-precision disabled - to enable, add the following CPP macro -DENABLE_QUAD_PRECISION.  This change was necessary to remove guessing at the proper setting via a mix of compiler vendor and system-defined environment variables which resulted in different behaviors on machines unbeknownst to the user.
 ### Deprecated
+- fms2_io does **NOT** use the `scale_factor`, `add_offset`, or other attributes to manipulate the data.  The variable/data is returned to the caller as it appears in the file.  All post-read data manipulations should be handled by the caller.
 ### Removed
-### Fixed
+- Removes the use of bats when running unit tests
 
 ## [2019.01] - 2019-11-26
 ### Added
