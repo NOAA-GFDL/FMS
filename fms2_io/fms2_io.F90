@@ -61,6 +61,7 @@ public :: open_check
 public :: is_registered_to_restart
 public :: check_if_open
 public :: set_fileobj_time_name
+public :: is_dimension_registered
 
 
 interface open_file
