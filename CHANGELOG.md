@@ -36,7 +36,6 @@ sequential patch number (starting from `01`).
 - 2020.01-beta1 (e1c0d9d01d844938adc0d18afa09532f336bcdfe)
 - 2020.01-beta2 (b68de5382a5ce631ddd6167de8d85f7c9ae54351)
 
-
 ## [2019.01] - 2019-11-26
 ### Added
 - switch from "city" versioning style to `yyyy.<2_digit_version_number>[.<2-digit-patch number>]` style
