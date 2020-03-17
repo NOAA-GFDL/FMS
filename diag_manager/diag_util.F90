@@ -2495,7 +2495,7 @@ CONTAINS
     IF ( PRESENT(final_call_in) ) final_call = final_call_in
     static_write = .FALSE.
     IF ( PRESENT(static_write_in) ) static_write = static_write_in
-!> dif is the time as a real that is evaluated 
+!> dif is the time as a real that is evaluated
     dif = get_date_dif(time, base_time, files(file)%time_units)
 
     ! get file_unit, open new file and close curent file if necessary
