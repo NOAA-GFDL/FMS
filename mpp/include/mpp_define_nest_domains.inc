@@ -1798,7 +1798,6 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
              ncross = 3
           endif
        case default
-print*,"diff=", diff, tile_in, tile, ntiles
           call mpp_error(FATAL,"convert_index_to_nest: invalid value of diff")
        end select
 
