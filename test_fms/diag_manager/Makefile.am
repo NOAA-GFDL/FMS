@@ -3,9 +3,13 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp	\
--I${top_builddir}/fms -I${top_builddir}/diag_manager		\
--I${top_builddir}/time_manager -I${top_builddir}/constants
+AM_CPPFLAGS = -I${top_srcdir}/include \
+  -I${top_builddir}/mpp	\
+  -I${top_builddir}/fms \
+  -I${top_builddir}/axis_utils \
+  -I${top_builddir}/diag_manager \
+  -I${top_builddir}/time_manager \
+  -I${top_builddir}/constants
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la

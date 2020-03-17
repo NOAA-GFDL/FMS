@@ -6,7 +6,7 @@ AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2020.01-dev],
+  [2020.02-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -104,6 +104,9 @@ GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 
+# Check if Fortran compiler has the Class, Character array assign bug
+GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
+
 # Check if Fortran compiler has Cray pointer support
 GX_FC_CRAY_POINTER_FLAG()
 
@@ -160,10 +163,6 @@ if test $enable_setting_flags = yes; then
     FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
   fi
 fi
-
-es are required for the build.
-AC_DEFINE([use_netCDF], [1])
-AC_DEFINE([use_libMPI], [1])
 
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
 AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
