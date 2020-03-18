@@ -430,6 +430,7 @@ else
      IF ( err_msg /= '' ) THEN
         WRITE (out_unit,'(a)') 'test12 successful: err_msg='//TRIM(err_msg)
         CALL error_mesg('test_diag_manager','test12 successful.',NOTE)
+        CALL diag_manager_end(TIME)
         STOP
      ELSE
         WRITE (out_unit,'(a)') 'test12 fails'
