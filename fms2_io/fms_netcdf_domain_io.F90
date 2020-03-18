@@ -749,10 +749,11 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
   character(len=*), intent(in) :: dimname !< Name of dimension variable.
   integer, intent(out) :: is !< Staring index of I/O global domain.
   integer, intent(out) :: ie !< Ending index of I/O global domain.
-  integer, dimension(:), allocatable, intent(inout), optional :: indices
+  integer, dimension(:), allocatable, intent(out), optional :: indices !< Global domain indices
 
   type(domain2d), pointer :: io_domain
-  integer :: dpos, i
+  integer :: dpos
+  integer :: i
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(dimname, fileobj%xdims, fileobj%nx)
@@ -769,9 +770,11 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
     endif
   endif
 
+! Allocate indices to the difference between the ending and starting indices and
+! fill indices with the data
   if (present(indices)) then 
     if(allocated(indices)) then
-      deallocate(indices)
+      call error("get_global_io_domain_indices: the variable indices should not be allocated.")
     endif
     allocate(indices(ie-is+1))
     do i = is, ie
