@@ -3627,7 +3627,7 @@ CONTAINS
        CALL error_mesg('diag_manager_mod::diag_send_complete',&
             & "diag_manager_set_time_end must be called before diag_send_complete", FATAL)
     END IF
-    
+
     DO file = 1, num_files
        freq = files(file)%output_freq
        DO j = 1, files(file)%num_fields
@@ -3841,13 +3841,15 @@ CONTAINS
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
+    
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
+    
     ! Initialize diag_util_mod and diag_data_mod
     ! These init routine only write out the version number to the log file
     call diag_util_init()
     call diag_data_init()
-        
+
     ! Determine pack_size from how many bytes a real value has (how compiled)
     pack_size = SIZE(TRANSFER(0.0_DblKind, (/0.0, 0.0, 0.0, 0.0/)))
     IF ( pack_size.NE.1 .AND. pack_size.NE.2 ) THEN
