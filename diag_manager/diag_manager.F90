@@ -3841,10 +3841,10 @@ CONTAINS
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
-    
+
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
-    
+
     ! Initialize diag_util_mod and diag_data_mod
     ! These init routine only write out the version number to the log file
     call diag_util_init()
