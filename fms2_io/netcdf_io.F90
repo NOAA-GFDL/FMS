@@ -407,7 +407,6 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   character(len=256) :: buf
   logical :: is_res
 
-  fileobj%is_root = .false.
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
       success = .true.
