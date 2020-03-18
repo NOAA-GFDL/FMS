@@ -370,8 +370,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
                                  is_restart)
-		!If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
-		if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
+!If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
+      if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
     endif
   endif
   if (.not. success) then
@@ -714,22 +714,22 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
                               position=xpos)
   ! If the xpos is east and the ending x index is NOT equal to max allowed, set extra_x_point to true
   if (present(extra_x_point)) then
-	 if ((xpos .eq. east) .and. (iec .ne. xmax)) then 
-		extra_x_point = .true.
-    	else
-		extra_x_point = .false.
-	endif
+     if ((xpos .eq. east) .and. (iec .ne. xmax)) then 
+        extra_x_point = .true.
+     else
+        extra_x_point = .false.
+     endif
   endif
 
   call mpp_get_compute_domain(io_domain, ybegin=jsc, yend=jec, ysize=yc_size, &
                               position=ypos)
   ! If the ypost is north and the ending y index is NOT equal to max allowed, set extra_y_point to true
   if (present(extra_y_point)) then
-	 if ((ypos .eq. north) .and. (jec .ne. ymax)) then 
-		extra_y_point = .true.
-	 else
-		extra_y_point = .false.
-   	 endif
+      if ((ypos .eq. north) .and. (jec .ne. ymax)) then 
+         extra_y_point = .true.
+      else
+         extra_y_point = .false.
+      endif
   endif
 
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
