@@ -225,7 +225,7 @@ PROGRAM test
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
   USE mpp_domains_mod, ONLY: mpp_domains_init, mpp_domains_set_stack_size
   USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
-  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, stdlog, stdout
+  USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, stdout
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
 #else
@@ -429,7 +429,8 @@ else
      CALL diag_manager_init(err_msg=err_msg)
      IF ( err_msg /= '' ) THEN
         WRITE (out_unit,'(a)') 'test12 successful: err_msg='//TRIM(err_msg)
-        CALL error_mesg('test_diag_manager','test12 successful.',FATAL)
+        CALL error_mesg('test_diag_manager','test12 successful.',NOTE)
+        STOP
      ELSE
         WRITE (out_unit,'(a)') 'test12 fails'
         CALL error_mesg('test_diag_manager','test12 fails',FATAL)
@@ -607,7 +608,7 @@ else
           & volume=id_dat1, area=id_dat1, err_msg=err_msg)
      IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
         CALL error_mesg ('test_diag_manager',&
-             & 'Expected error registering dat2h '//err_msg, FATAL)
+             & 'Expected error registering dat2h '//err_msg, NOTE)
      END IF
   END IF
 
