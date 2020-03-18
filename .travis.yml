@@ -38,3 +38,7 @@ script:
   - autoreconf -i
   - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
   - make -j distcheck
+  
+after_failure:
+  - cat /home/travis/build/NOAA-GFDL/FMS/FMS-2020.02-dev/_build/sub/test_fms/diag_manager/test-suite.log
+
