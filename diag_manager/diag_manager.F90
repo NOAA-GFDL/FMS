@@ -613,13 +613,13 @@ CONTAINS
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
                   & Contact the developers.'
                 register_diag_field_array = -1
+                RETURN
              ELSE 
                 CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
                   & Contact the developers.',&
                   & FATAL)
              ENDIF
-             RETURN
           END IF
        END IF
 
@@ -628,16 +628,16 @@ CONTAINS
           IF ( area < 0 ) THEN
              IF (PRESENT(err_msg)) THEN
                 err_msg = 'diag_manager_mod::register_diag_field: module/output_field '&
-                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
-                  & Contact the developers.'
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
+                  & Contact the model liaison.'
                 register_diag_field_array = -1
+                RETURN
              ELSE 
                 CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
                   & Contact the model liaison.',&
                   & FATAL)
              ENDIF
-             RETURN
           END IF
        END IF
        IF ( PRESENT(volume) ) THEN
@@ -647,13 +647,13 @@ CONTAINS
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table.&
                   & Contact the model liaison.'
                 register_diag_field_array = -1
+                RETURN
              ELSE 
                 CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table.&
                   & Contact the model liaison.',&
                   & FATAL)
              ENDIF
-             RETURN
           END IF
        END IF
 
