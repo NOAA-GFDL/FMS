@@ -608,28 +608,52 @@ CONTAINS
        ! Verify that area and volume do not point to the same variable
        IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
           IF ( area.EQ.volume ) THEN
-             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+             IF (PRESENT(err_msg)) THEN
+                err_msg = 'diag_manager_mod::register_diag_field: module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
+                  & Contact the developers.'
+                register_diag_field_array = -1
+             ELSE 
+                CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
                   & Contact the developers.',&
                   & FATAL)
+             ENDIF
+             RETURN
           END IF
        END IF
 
        ! Check for the existence of the area/volume field(s)
        IF ( PRESENT(area) ) THEN
           IF ( area < 0 ) THEN
-             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+             IF (PRESENT(err_msg)) THEN
+                err_msg = 'diag_manager_mod::register_diag_field: module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
+                  & Contact the developers.'
+                register_diag_field_array = -1
+             ELSE 
+                CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
                   & Contact the model liaison.',&
                   & FATAL)
+             ENDIF
+             RETURN
           END IF
        END IF
        IF ( PRESENT(volume) ) THEN
           IF ( volume < 0 ) THEN
-             CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+             IF (PRESENT(err_msg)) THEN
+                err_msg = 'diag_manager_mod::register_diag_field: module/output_field '&
+                  &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table.&
+                  & Contact the model liaison.'
+                register_diag_field_array = -1
+             ELSE 
+                CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
                   &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table.&
                   & Contact the model liaison.',&
                   & FATAL)
+             ENDIF
+             RETURN
           END IF
        END IF
 
@@ -3603,7 +3627,7 @@ CONTAINS
        CALL error_mesg('diag_manager_mod::diag_send_complete',&
             & "diag_manager_set_time_end must be called before diag_send_complete", FATAL)
     END IF
-
+    
     DO file = 1, num_files
        freq = files(file)%output_freq
        DO j = 1, files(file)%num_fields
@@ -3817,15 +3841,13 @@ CONTAINS
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
-
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
-
     ! Initialize diag_util_mod and diag_data_mod
     ! These init routine only write out the version number to the log file
     call diag_util_init()
     call diag_data_init()
-
+        
     ! Determine pack_size from how many bytes a real value has (how compiled)
     pack_size = SIZE(TRANSFER(0.0_DblKind, (/0.0, 0.0, 0.0, 0.0/)))
     IF ( pack_size.NE.1 .AND. pack_size.NE.2 ) THEN
