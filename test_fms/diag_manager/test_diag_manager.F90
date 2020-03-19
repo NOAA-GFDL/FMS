@@ -371,8 +371,9 @@ PROGRAM test
   END IF
   WRITE (log_unit,test_diag_manager_nml)
 
-!> If the test_number == 23, then call the unstrcutured grid unit test and skip everything else.
-if (test_number == 23) then
+SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
+  ! If the test_number == 23, then call the unstrcutured grid unit test and skip everything else.
+  CASE ( 23 )
    !Initialize the mpp_domains module
     if (debug) then
         call mpp_domains_init(MPP_DEBUG)
@@ -423,10 +424,9 @@ if (test_number == 23) then
     call set_calendar_type(JULIAN)
     time = set_date(1990,1,1,0,0,0)
    CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 1, time,io_tile_factor)
-else
-!!!!!! ALL OTHER TESTS !!!!!!
-  SELECT CASE( test_number ) ! Closes just before the CONTAINS block.
-  CASE ( 12 ) 
+
+   ! If the test_number == 12, check for the correct error and skip everything else.
+   CASE ( 12 ) 
      CALL diag_manager_init(err_msg=err_msg)
      IF ( err_msg /= '' ) THEN
         WRITE (out_unit,'(a)') 'test12 successful: err_msg='//TRIM(err_msg)
@@ -435,6 +435,8 @@ else
         WRITE (out_unit,'(a)') 'test12 fails'
         CALL error_mesg('test_diag_manager','test12 fails',FATAL)
      END IF
+
+  ! If the test number is not 12 or 23, run all other tests.
   CASE DEFAULT ! Contains all remaining code up to CONTAINS block.
      CALL diag_manager_init
 
