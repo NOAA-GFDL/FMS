@@ -425,20 +425,18 @@ if (test_number == 23) then
    CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 1, time,io_tile_factor)
 else
 !!!!!! ALL OTHER TESTS !!!!!!
-  IF ( test_number == 12 ) THEN
+  SELECT CASE( test_number ) ! Closes just before the CONTAINS block.
+  CASE ( 12 ) 
      CALL diag_manager_init(err_msg=err_msg)
      IF ( err_msg /= '' ) THEN
         WRITE (out_unit,'(a)') 'test12 successful: err_msg='//TRIM(err_msg)
         CALL error_mesg('test_diag_manager','test12 successful.',NOTE)
-        CALL diag_manager_end(TIME)
-        STOP
      ELSE
         WRITE (out_unit,'(a)') 'test12 fails'
         CALL error_mesg('test_diag_manager','test12 fails',FATAL)
      END IF
-  ELSE
+  CASE DEFAULT ! Contains all remaining code up to CONTAINS block.
      CALL diag_manager_init
-  END IF
 
   IF ( layout(1)*layout(2) .NE. mpp_npes() ) THEN
      CALL mpp_define_layout((/1,nlon,1,nlat/), mpp_npes(), layout )
@@ -993,6 +991,7 @@ else
      END IF
   END IF
   CALL diag_manager_end(Time)
+END SELECT ! End of case handling opened for test 12. 
 endif !! This is the endif for the unstructured grid if
 
   CALL fms_io_exit
