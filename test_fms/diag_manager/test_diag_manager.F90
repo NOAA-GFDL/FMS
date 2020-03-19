@@ -994,7 +994,6 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
   END IF
   CALL diag_manager_end(Time)
 END SELECT ! End of case handling opened for test 12. 
-endif !! This is the endif for the unstructured grid if
 
   CALL fms_io_exit
   CALL fms_end
