@@ -11,5 +11,5 @@
 # Copy file for test.
 cp $top_srcdir/test_fms/time_interp/input_base.nml input.nml
 
-# Run the test. 
+# Run the test.
 run_test test_time_interp 2

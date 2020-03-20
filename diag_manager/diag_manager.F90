@@ -3951,7 +3951,7 @@ CONTAINS
     ALLOCATE(fnum_for_domain(max_files))
     ALLOCATE(pelist(mpp_npes()))
     !> Initialize fnum_for_domain with "dn" which stands for done
-     fnum_for_domain(:) = "dn" 
+     fnum_for_domain(:) = "dn"
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
     ! set the diag_init_time if time_init present.  Otherwise, set it to base_time

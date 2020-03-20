@@ -233,7 +233,7 @@ implicit none
      call mpp_define_domains( (/1,ice_nx,1,ice_ny/), ice_layout, Ice_domain, name="Ice")
 
   else if (variable_exists(gridfileobj, "atm_mosaic" ) ) then
-     !--- Get the mosaic data of each component model 
+     !--- Get the mosaic data of each component model
      call read_data(gridfileobj, 'atm_mosaic', atm_mosaic)
      call read_data(gridfileobj, 'lnd_mosaic', lnd_mosaic)
      call read_data(gridfileobj, 'ocn_mosaic', ocn_mosaic)
@@ -445,7 +445,7 @@ implicit none
         allocate(atm_grid%vlon(3,isc_atm:iec_atm,jsc_atm:jec_atm), atm_grid%vlat(3,isc_atm:iec_atm,jsc_atm:jec_atm) )
         allocate(atm_grid%area(isc_atm:iec_atm,jsc_atm:jec_atm) )
 
-        ! first get grid from grid file 
+        ! first get grid from grid file
         call get_mosaic_tile_grid(tile_file, amosaicfileobj, atm_domain)
         allocate(tmpx(nxa*2+1, nya*2+1), tmpy(nxa*2+1, nya*2+1))
         if(.not. open_file(tilefileobj, tile_file, 'read' )) then
@@ -453,7 +453,7 @@ implicit none
         endif
 
         call read_data( tilefileobj, 'x', tmpx)
-        call read_data( tilefileobj, 'y', tmpy) 
+        call read_data( tilefileobj, 'y', tmpy)
         call close_file(tilefileobj)
 
         xt = 0; yt = 0;
@@ -590,7 +590,7 @@ implicit none
         call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_2 are not equal")
      if(ANY(atm_data_out .NE. atm_data_out_3)) &
         call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_3 are not equal")
-    
+
      !--- write out data
      if(.not. open_file(outputfileobj, atm_output_file, 'write', atm_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open atm_output_file "//trim(atm_output_file) )
@@ -660,7 +660,7 @@ implicit none
      write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."
   end if
 
-  runoff_input_file_exist = open_file(runoffinputfileobj, runoff_input_file, "read", lnd_domain)     
+  runoff_input_file_exist = open_file(runoffinputfileobj, runoff_input_file, "read", lnd_domain)
 
   if( runoff_input_file_exist ) then
      if( atm_nest_npes > 0 ) call mpp_error(FATAL, &
