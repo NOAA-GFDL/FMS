@@ -87,8 +87,8 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
         chksum_val = mpp_chksum(buf_int64)
       endif
       deallocate(buf_int64)
+#ifdef OVERLOAD_R4
    type is (real(kind=real32)
-#ifdef OVERLOAD_R4)
      call allocate_array(buf_real32, e)
      call get_array_section(buf_real32, variable_data, c, e)
      if (get_fill_value(fileobj, variable_name, fill_real32)) then
@@ -320,8 +320,8 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
         chksum_val = mpp_chksum(buf_int64)
       endif
       deallocate(buf_int64)
-   type is (real(kind=real32))
 #ifdef OVERLOAD_R4
+   type is (real(kind=real32))
      call allocate_array(buf_real32, e)
      call get_array_section(buf_real32, variable_data, c, e)
      if (get_fill_value(fileobj, variable_name, fill_real32)) then
