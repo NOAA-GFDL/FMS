@@ -687,7 +687,7 @@ endif
 !get time informaiton
 if(dimension_exists(fileobj, "time")) then
    call get_dimension_size(fileobj, "time", ntime)
-   
+
    call get_variable_units(fileobj, "time", units)
    call get_time_calendar(fileobj, "time", file_calendar)
    model_calendar = get_calendar_type()
@@ -731,11 +731,11 @@ if(dimension_exists(fileobj, "time")) then
      case default
        call mpp_error(FATAL,'Interpolator_init : Time units not recognised in file '//file_name)
    end select
-  
+
    clim_type%climatological_year = (fileyr == 0)
- 
+
    if (.not. clim_type%climatological_year) then
-      
+
       !----------------------------------------------------------------------
       !    if file date has a non-zero year in the base time, determine that
       !    base_time based on the netcdf info.
@@ -1058,7 +1058,7 @@ if(present(data_names)) then
    endif
 ! Only read the fields named in data_names
    do j=1,size(data_names(:))
-      if(variable_exists(fileobj, data_names(j)) ) then 
+      if(variable_exists(fileobj, data_names(j)) ) then
          call get_variable_units(fileobj, data_names(j), units)
          ndim = get_variable_num_dimensions(fileobj, data_names(j))
          clim_type%has_level(j) = .false.
@@ -1188,7 +1188,7 @@ subroutine get_axis_latlon_data(fileobj, name, data)
    type(FmsNetcdfFile_t), intent(in) :: fileobj
    character(len=*),      intent(in) :: name
    real, dimension(:),   intent(out) :: data
-  
+
 
    if(variable_exists(fileobj, name)) then
       call fms_read_data(fileobj, name, data)
@@ -1208,7 +1208,7 @@ end subroutine get_axis_latlon_data
 
 
 subroutine get_axis_level_data(fileobj, name, data, level_type, vertical_indices)
-   type(FmsNetcdfFile_t), intent(in) :: fileobj 
+   type(FmsNetcdfFile_t), intent(in) :: fileobj
    character(len=*),      intent(in) :: name
    real, dimension(:),   intent(out) :: data
    integer,              intent(out) :: level_type, vertical_indices
@@ -3591,10 +3591,10 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
       allocate(climdata(size(clim_type%lon(:)),size(clim_type%lat(:)), size(clim_type%levs(:))))
 
-      if(clim_type%has_level(i)) then ! has vertical level      
+      if(clim_type%has_level(i)) then ! has vertical level
          call fms_read_data(clim_type%fileobj,field_name, climdata)
       else  ! no vertical level
-         call fms_read_data(clim_type%fileobj,field_name, climdata(:,:,1))      
+         call fms_read_data(clim_type%fileobj,field_name, climdata(:,:,1))
       endif
 !  if vertical index increases upward, flip the data so that lowest
 !  pressure level data is at index 1, rather than the highest pressure

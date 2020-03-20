@@ -577,8 +577,8 @@ else
 
         if(.not. open_file(fileobj, trim(ncfilename), 'read')) &
              call error_mesg ('get_amip_sst', 'Error in opening file '//trim(ncfilename), FATAL)
- 
-        call get_dimension_size(fileobj, 'TIME', nrecords) 
+
+        call get_dimension_size(fileobj, 'TIME', nrecords)
         if (nrecords < 1) call mpp_error('amip_interp_mod', &
                            'Invalid number of SST records in daily SST data file: '//trim(ncfilename), FATAL)
         allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
@@ -1434,7 +1434,7 @@ endif
        Curr_date = Adate
        if (verbose > 2 .and. mpp_pe() == 0)  &
              print *, '....... checking   ', Adate
-       if (Date == Adate) ierr = 0 
+       if (Date == Adate) ierr = 0
        if (yr == 0 .and. mo == Date%month) ierr = 0
        if (ierr == 0) exit
      enddo

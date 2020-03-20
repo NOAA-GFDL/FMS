@@ -147,6 +147,7 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_type, mpp_byte
   use mpp_mod,                only : mpp_type_create, mpp_type_free
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
+  use mpp_mod,                only : mpp_declare_pelist, mpp_set_current_pelist
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_pset_mod,           only : mpp_pset_init
   use mpp_efp_mod,            only : mpp_reproducing_sum
@@ -194,6 +195,7 @@ module mpp_domains_mod
   public :: mpp_get_domain_npes, mpp_get_domain_pelist
   public :: mpp_clear_group_update
   public :: mpp_group_update_initialized, mpp_group_update_is_set
+  public :: mpp_get_global_domains
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
@@ -227,6 +229,10 @@ module mpp_domains_mod
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
+  public :: mpp_get_nest_coarse_domain, mpp_get_nest_fine_domain
+  public :: mpp_is_nest_coarse, mpp_is_nest_fine
+  public :: mpp_get_nest_pelist, mpp_get_nest_npes
+  public :: mpp_get_nest_fine_pelist, mpp_get_nest_fine_npes
 
 !----------
 !ug support
@@ -311,6 +317,7 @@ module mpp_domains_mod
   type domain1D_spec
      private
      type(domain_axis_spec) :: compute
+     type(domain_axis_spec) :: global
      integer                :: pos
   end type domain1D_spec
 
@@ -381,7 +388,8 @@ module mpp_domains_mod
      integer                     :: io_layout(2)            ! io_layout, will be set through mpp_define_io_domain
                                                             ! default = domain layout
      integer,            pointer :: pearray(:,:)  => NULL() ! pe of each layout position
-     integer,            pointer :: tile_id(:)    => NULL() ! tile id of each tile
+     integer,            pointer :: tile_id(:)    => NULL() ! tile id of each tile on current processor
+     integer,            pointer :: tile_id_all(:)=> NULL() ! tile id of all the tiles of domain
      type(domain1D),     pointer :: x(:)          => NULL() ! x-direction domain decomposition
      type(domain1D),     pointer :: y(:)          => NULL() ! y-direction domain decomposition
      type(domain2D_spec),pointer :: list(:)       => NULL() ! domain decomposition on pe list
@@ -422,6 +430,9 @@ module mpp_domains_mod
   type nestSpec
      private
      integer                     :: xbegin, xend, ybegin, yend
+     integer                     :: xbegin_c, xend_c, ybegin_c, yend_c
+     integer                     :: xbegin_f, xend_f, ybegin_f, yend_f
+     integer                     :: xsize_c, ysize_c
      type(index_type)            :: west, east, south, north, center
      integer                     :: nsend, nrecv
      integer                     :: extra_halo
@@ -431,18 +442,31 @@ module mpp_domains_mod
 
   end type nestSpec
 
-
-
   type nest_domain_type
+     character(len=NAME_LENGTH)     :: name
+     integer                        :: num_level
+     type(nest_level_type), pointer :: nest(:) => NULL()
+     integer                        :: num_nest
+     integer,               pointer :: tile_fine(:), tile_coarse(:)
+     integer,               pointer :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
+     integer,               pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
+  end type nest_domain_type
+
+  type nest_level_type
      private
-     integer                    :: tile_fine, tile_coarse
-     integer                    :: istart_fine, iend_fine, jstart_fine, jend_fine
-     integer                    :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
+     logical                    :: on_level
+     logical                    :: is_fine, is_coarse
+     integer                    :: num_nest
+     integer                    :: my_num_nest
+     integer,           pointer :: my_nest_id(:)
+     integer,           pointer :: tile_fine(:), tile_coarse(:)
+     integer,           pointer :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
+     integer,           pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
      integer                    :: x_refine, y_refine
      logical                    :: is_fine_pe, is_coarse_pe
+     integer,           pointer :: pelist(:) => NULL()
      integer,           pointer :: pelist_fine(:) => NULL()
      integer,           pointer :: pelist_coarse(:) => NULL()
-     character(len=NAME_LENGTH) :: name
      type(nestSpec), pointer :: C2F_T => NULL()
      type(nestSpec), pointer :: C2F_C => NULL()
      type(nestSpec), pointer :: C2F_E => NULL()
@@ -453,7 +477,7 @@ module mpp_domains_mod
      type(nestSpec), pointer :: F2C_N => NULL()
      type(domain2d), pointer :: domain_fine   => NULL()
      type(domain2d), pointer :: domain_coarse => NULL()
-  end type nest_domain_type
+  end type nest_level_type
 
 
 
@@ -1417,18 +1441,17 @@ module mpp_domains_mod
 
   ! <INTERFACE NAME="mpp_define_nest_domains">
   !   <OVERVIEW>
-  !     Set up a domain to pass data between coarse and fine grid of nested model.
+  !     Set up a domain to pass data between aligned coarse and fine grid of nested
+  !     model.
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     Set up a domain to pass data between coarse and fine grid of nested model.
-  !     Currently it only support one fine nest region over the corase grid region.
-  !     It supports both serial and concurrent nesting. The serial nesting is that
-  !     both coarse and fine grid are on the exact same processor list. Concurrent
-  !     nesting is that coarse and fine grid are on individual processor list and
-  !     no overlapping. Coarse and fine grid domain need to be defined before
-  !     calling mpp_define_nest_domains. For concurrent nesting, mpp_broadcast
-  !     need to be called to broadcast both fine and coarse grid domain onto
-  !     all the processors.
+  !     Set up a domain to pass data between aligned coarse and fine grid of a nested
+  !     model. Supports multiple and telescoping nests. A telescoping nest is defined as
+  !     a nest within a nest. Nest domains may span multiple tiles, but cannot contain a
+  !     coarse-grid, cube corner. Concurrent nesting is the only supported mechanism,
+  !     i.e. coarse and fine grid are on individual, non-overlapping, processor lists.
+  !     Coarse and fine grid domain need to be defined before calling mpp_define_nest_domains.
+  !     An mpp_broadcast is needed to broadcast both fine and coarse grid domain onto all processors.
   !     <BR>
   !     </BR>
   !     <BR>
@@ -1443,13 +1466,16 @@ module mpp_domains_mod
   !     <BR>
   !     </BR>
 
-  !     NOTE: The following tests are done in test_mpp_domains: the coarse grid is cubic sphere
-  !           grid and the fine grid is a regular-latlon grid (symmetric domain) nested inside
-  !           face 3 of the cubic sphere grid. Tests are done for data at T, E, C, N-cell center.
+  !     NOTE: The following tests for nesting of regular lat-lon grids upon a cubed-sphere
+  !           grid are done in test_mpp_domains:
+  !              a) a first-level nest spanning multiple cubed-sphere faces (tiles 1, 2, & 4)
+  !              b) a first-level nest wholly contained within tile 3
+  !              c) a second-level nest contained within the nest mentioned in a)
+  !           Tests are done for data at T, E, C, N-cell center.
   !
   !     Below is an example to pass data between fine and coarse grid (More details on how to
-  !     use the nesting domain update are available in routing test_update_nest_domain of
-  !     shared/mpp/test_mpp_domains.F90.
+  !     use the nesting domain update are available in routine test_update_nest_domain of
+  !     test_fms/mpp/test_mpp_domains.F90.
   !
   !    <PRE>
   !    if( concurrent ) then
@@ -1457,14 +1483,17 @@ module mpp_domains_mod
   !       call mpp_broadcast_domain(domain_coarse)
   !    endif
   !
-  !     call mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile_fine, tile_coarse, &
-  !                                  istart_fine, iend_fine, jstart_fine, jend_fine,                  &
-  !                                  istart_coarse, iend_coarse, jstart_coarse, jend_coarse,         &
-  !                                  pelist, extra_halo, name="nest_domain")
-  !     call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST)
-  !     call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST)
-  !     call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH)
-  !     call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH)
+  !     call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level(1:num_nest),      &
+  !                                   tile_fine(1:num_nest), tile_coarse(1:num_nest),             &
+  !                                   istart_coarse(1:num_nest), icount_coarse(1:num_nest),       &
+  !                                   jstart_coarse(1:num_nest), jcount_coarse(1:num_nest),       &
+  !                                   npes_nest_tile, x_refine(1:num_nest), y_refine(1:num_nest), &
+  !                                   extra_halo=extra_halo, name="nest_domain")
+  !
+  !     call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, level)
+  !     call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, level)
+  !     call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, level)
+  !     call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, level)
   !
   !     allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))
   !     allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))
@@ -1472,49 +1501,56 @@ module mpp_domains_mod
   !     allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))
   !     call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer)
   !
-  !     call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f)
+  !     call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f, nest_level=level)
   !     allocate(buffer (is_f:ie_f, js_f:je_f,nz))
   !     call mpp_update_nest_coarse(x, nest_domain, buffer)
   !     </PRE>
 
   !   </DESCRIPTION>
   !   <TEMPLATE>
-  !     call mpp_define_nest_domains(nest_domain, domain_fine, domain_coarse, tile_fine, tile_coarse,
-  !                                 istart_fine, iend_fine, jstart_fine, jend_fine,
-  !                                 istart_coarse, iend_coarse, jstart_coarse, jend_coarse,
-  !                                 pelist, extra_halo, name)
+  !     call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
+  !                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse,        &
+  !                                   npes_nest_tile, x_refine, y_refine, extra_halo, name)
   !   </TEMPLATE>
   !
   !   <INOUT NAME="nest_domain">
-  !     Holds the information to pass data between fine and coarse grid.
+  !     holds the information to pass data between nest and parent grids.
   !   </INOUT>
-  !   <IN NAME="domain_fine">
-  !     domain for fine grid.
+  !   <IN NAME="domain">
+  !     domain for the grid defined in the current pelist
   !   </IN>
-  !   <IN NAME="domain_coarse">
-  !     domain for coarse grid.
+  !   <IN NAME="num_nest">
+  !     number of nests
+  !   </IN>
+  !   <IN NAME="nest_level">
+  !     array containing the nest level for each nest (>1 implies a telescoping nest)
   !   </IN>
   !   <IN NAME="tile_fine">
-  !     tile number of the fine grid. Currently this value should be 1.
+  !     array containing tile number of the nest grid (monotonically increasing starting with 7)
   !   </IN>
   !   <IN NAME="tile_coarse">
-  !     tile numuber of the coarse grid.
+  !     array containing tile number of the parent grid corresponding to the lower left corner of a given nest
   !   </IN>
-  !   <IN NAME="istart_fine, iend_fine, jstart_fine, jend_fine">
-  !     index in the fine grid of the nested region
+  !   <IN NAME="istart_coarse, jstart_coarse">
+  !     array containing index in the parent grid of the lower left corner of a given nest
   !   </IN>
-  !   <IN NAME="istart_coarse, iend_coarse, jstart_coarse, jend_coarse">
-  !     index in the coarse grid of the nested region
+  !   <IN NAME="icount_coarse, jcount_coarse">
+  !     array containing span of the nest on the parent grid
   !   </IN>
-  !   <IN NAME="pelist">
-  !     List of PEs to which the domains are to be assigned.
+  !   <IN NAME="npes_nest_tile">
+  !     array containing number of pes to allocated to each defined tile
+  !   </IN>
+  !   <IN NAME="x_refine, y_refine">
+  !     array containing refinement ratio for each nest
   !   </IN>
   !   <IN NAME="extra_halo">
-  !     optional argument. extra halo for passing data from coarse grid to fine grid.
-  !     Default is 0 and currently only support extra_halo = 0.
+  !     extra halo for passing data from coarse grid to fine grid.
+  !     default is 0 and currently only support extra_halo = 0.
+  !     optional argument
   !   </IN>
   !   <IN NAME="name">
-  !     opitonal argument. Name of the nest domain.
+  !     name of the nest domain
+  !     optional argument
   !   </IN>
   ! </INTERFACE>
 
@@ -1527,11 +1563,12 @@ module mpp_domains_mod
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
-  !                            is_coarse, ie_coarse, js_coarse, je_coarse, dir, position)
+  !                            is_coarse, ie_coarse, js_coarse, je_coarse, dir,
+  !                            nest_level, position)
   !   </TEMPLATE>
   !
   !   <IN NAME="nest_domain">
-  !     Holds the information to pass data between fine and coarse grid.
+  !     holds the information to pass data between fine and coarse grid.
   !   </IN>
   !   <OUT NAME="istart_fine, iend_fine, jstart_fine, jend_fine">
   !     index in the fine grid of the nested region
@@ -1542,8 +1579,12 @@ module mpp_domains_mod
   !   <IN NAME="dir">
   !     direction of the halo update. Its value should be WEST, EAST, SOUTH or NORTH.
   !   </IN>
+  !   <IN NAME="nest_level">
+  !     level of the nest (> 1 implies a telescoping nest)
+  !   </IN>
   !   <IN NAME="position">
-  !     Cell position. It value should be CENTER, EAST, NORTH or SOUTH.
+  !     Cell position. It value should be CENTER, EAST, CORNER, or NORTH.
+  !     optional argument.
   !   </IN>
   ! </INTERFACE>
 
@@ -1556,7 +1597,7 @@ module mpp_domains_mod
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call mpp_get_F2C_index(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse,
-  !                            is_fine, ie_fine, js_fine, je_fine, position)
+  !                            is_fine, ie_fine, js_fine, je_fine, nest_level, position)
   !   </TEMPLATE>
   !
   !   <IN NAME="nest_domain">
@@ -1568,8 +1609,11 @@ module mpp_domains_mod
   !   <OUT NAME="istart_coarse, iend_coarse, jstart_coarse, jend_coarse">
   !     index in the coarse grid of the nested region
   !   </OUT>
+  !   <IN NAME="nest_level">
+  !     level of the nest (> 1 implies a telescoping nest)
+  !   </IN>
   !   <IN NAME="position">
-  !     Cell position. It value should be CENTER, EAST, NORTH or SOUTH.
+  !     Cell position. It value should be CENTER, EAST, CORNER, or NORTH.
   !   </IN>
   ! </INTERFACE>
 
@@ -1584,7 +1628,8 @@ module mpp_domains_mod
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer,
-  !                               flags, complete, position, extra_halo, name, tile_count)
+  !                               nest_level, flags, complete, position, extra_halo, name,
+  !                               tile_count)
   !   </TEMPLATE>
   !
   !   <IN    NAME="field">
@@ -1605,26 +1650,35 @@ module mpp_domains_mod
   !   <OUT   NAME="nbuffer">
   !     north side buffer to be filled with data on coarse grid.
   !   </OUT>
+  !   <IN    NAME="nest_level">
+  !     level of the nest (> 1 implies a telescoping nest)
+  !   </IN>
   !   <IN    NAME="flags">
-  !     optional arguments. Specify the direction of fine grid halo buffer to be filled.
+  !     Specify the direction of fine grid halo buffer to be filled.
   !     Default value is XUPDATE+YUPDATE.
+  !     optional argument
   !   </IN>
   !   <IN    NAME="complete">
-  !     optional argument. When true, do the buffer filling. Default value is true.
+  !     When true, do the buffer filling. Default value is true.
+  !     optional argument
   !   </IN>
-  !   <IN NAME="position">
-  !     Cell position. It value should be CENTER, EAST, NORTH or SOUTH. Default is CENTER.
+  !   <IN    NAME="position">
+  !     Cell position. It value should be CENTER, EAST, CORNER, or NORTH. Default is CENTER.
+  !     optional argument
   !   </IN>
-  !   <IN NAME="extra_halo">
-  !     optional argument. extra halo for passing data from coarse grid to fine grid.
+  !   <IN    NAME="extra_halo">
+  !     extra halo for passing data from coarse grid to fine grid.
   !     Default is 0 and currently only support extra_halo = 0.
+  !     optional argument
   !   </IN>
-  !   <IN NAME="name">
-  !     opitonal argument. Name of the nest domain.
+  !   <IN    NAME="name">
+  !     Name of the nest domain.
+  !     optional argument
   !   </IN>
-  !   <IN NAME="tile_count">
-  !     optional argument. Used to support multiple-tile-per-pe. default is 1 and currently
+  !   <IN    NAME="tile_count">
+  !     Used to support multiple-tile-per-pe. default is 1 and currently
   !     only support tile_count = 1.
+  !     optional argument
   !   </IN>
   ! </INTERFACE>
 
@@ -1638,7 +1692,8 @@ module mpp_domains_mod
   !     onto coarse grid.
   !   </DESCRIPTION>
   !   <TEMPLATE>
-  !     call mpp_update_nest_coarse(field, nest_domain, buffer, complete, position, name, tile_count)
+  !     call mpp_update_nest_coarse(field, nest_domain, field_out, nest_level, complete,
+  !                                 position, name, tile_count)
   !   </TEMPLATE>
   !
   !   <IN    NAME="field">
@@ -1647,21 +1702,28 @@ module mpp_domains_mod
   !   <INOUT NAME="nest_domain">
   !     Holds the information to pass data between fine and coarse grid.
   !   </INOUT>
-  !   <OUT   NAME="buffer">
-  !     buffer to be filled with data on coarse grid.
+  !   <OUT   NAME="field_out">
+  !     field_out to be filled with data on coarse grid.
   !   </OUT>
+  !   <IN    NAME="nest_level">
+  !     level of the nest (> 1 implies a telescoping nest)
+  !   </IN>
   !   <IN    NAME="complete">
-  !     optional argument. When true, do the buffer filling. Default value is true.
+  !     When true, do the buffer filling. Default value is true.
+  !     optional argument
   !   </IN>
-  !   <IN NAME="position">
-  !     Cell position. It value should be CENTER, EAST, NORTH or SOUTH. Default is CENTER.
+  !   <IN    NAME="position">
+  !     Cell position. It value should be CENTER, EAST, CORNER, or NORTH. Default is CENTER.
+  !     optional argument
   !   </IN>
-  !   <IN NAME="name">
-  !     opitonal argument. Name of the nest domain.
+  !   <IN    NAME="name">
+  !     Name of the nest domain.
+  !     optional argument
   !   </IN>
-  !   <IN NAME="tile_count">
-  !     optional argument. Used to support multiple-tile-per-pe. default is 1 and currently
+  !   <IN    NAME="tile_count">
+  !     Used to support multiple-tile-per-pe. default is 1 and currently
   !     only support tile_count = 1.
+  !     optional argument
   !   </IN>
   ! </INTERFACE>
 
@@ -1669,6 +1731,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_fine_r8_2d
      module procedure mpp_update_nest_fine_r8_3d
      module procedure mpp_update_nest_fine_r8_4d
+     module procedure mpp_update_nest_fine_r8_2dv
+     module procedure mpp_update_nest_fine_r8_3dv
+     module procedure mpp_update_nest_fine_r8_4dv
 #ifdef OVERLOAD_C8
      module procedure mpp_update_nest_fine_c8_2d
      module procedure mpp_update_nest_fine_c8_3d
@@ -1683,6 +1748,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_fine_r4_2d
      module procedure mpp_update_nest_fine_r4_3d
      module procedure mpp_update_nest_fine_r4_4d
+     module procedure mpp_update_nest_fine_r4_2dv
+     module procedure mpp_update_nest_fine_r4_3dv
+     module procedure mpp_update_nest_fine_r4_4dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_update_nest_fine_c4_2d
@@ -1696,6 +1764,7 @@ module mpp_domains_mod
 
   interface mpp_do_update_nest_fine
      module procedure mpp_do_update_nest_fine_r8_3d
+     module procedure mpp_do_update_nest_fine_r8_3dv
 #ifdef OVERLOAD_C8
      module procedure mpp_do_update_nest_fine_c8_3d
 #endif
@@ -1704,6 +1773,7 @@ module mpp_domains_mod
 #endif
 #ifdef OVERLOAD_R4
      module procedure mpp_do_update_nest_fine_r4_3d
+     module procedure mpp_do_update_nest_fine_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_do_update_nest_fine_c4_3d
@@ -1715,6 +1785,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_coarse_r8_2d
      module procedure mpp_update_nest_coarse_r8_3d
      module procedure mpp_update_nest_coarse_r8_4d
+     module procedure mpp_update_nest_coarse_r8_2dv
+     module procedure mpp_update_nest_coarse_r8_3dv
+     module procedure mpp_update_nest_coarse_r8_4dv
 #ifdef OVERLOAD_C8
      module procedure mpp_update_nest_coarse_c8_2d
      module procedure mpp_update_nest_coarse_c8_3d
@@ -1729,6 +1802,9 @@ module mpp_domains_mod
      module procedure mpp_update_nest_coarse_r4_2d
      module procedure mpp_update_nest_coarse_r4_3d
      module procedure mpp_update_nest_coarse_r4_4d
+     module procedure mpp_update_nest_coarse_r4_2dv
+     module procedure mpp_update_nest_coarse_r4_3dv
+     module procedure mpp_update_nest_coarse_r4_4dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_update_nest_coarse_c4_2d
@@ -1742,6 +1818,7 @@ module mpp_domains_mod
 
   interface mpp_do_update_nest_coarse
      module procedure mpp_do_update_nest_coarse_r8_3d
+     module procedure mpp_do_update_nest_coarse_r8_3dv
 #ifdef OVERLOAD_C8
      module procedure mpp_do_update_nest_coarse_c8_3d
 #endif
@@ -1750,6 +1827,7 @@ module mpp_domains_mod
 #endif
 #ifdef OVERLOAD_R4
      module procedure mpp_do_update_nest_coarse_r4_3d
+     module procedure mpp_do_update_nest_coarse_r4_3dv
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_do_update_nest_coarse_c4_3d
@@ -1757,11 +1835,18 @@ module mpp_domains_mod
      module procedure mpp_do_update_nest_coarse_i4_3d
   end interface
 
+  interface mpp_get_F2C_index
+    module procedure mpp_get_F2C_index_fine
+    module procedure mpp_get_F2C_index_coarse
+  end interface
+
 
 interface mpp_broadcast_domain
   module procedure mpp_broadcast_domain_1
   module procedure mpp_broadcast_domain_2
   module procedure mpp_broadcast_domain_ug
+  module procedure mpp_broadcast_domain_nest_fine
+  module procedure mpp_broadcast_domain_nest_coarse
 end interface
 
 !--------------------------------------------------------------
@@ -2588,6 +2673,12 @@ end interface
      module procedure mpp_get_compute_domains2D
   end interface
 
+  interface mpp_get_global_domains
+     module procedure mpp_get_global_domains1D
+     module procedure mpp_get_global_domains2D
+  end interface
+
+
   ! <INTERFACE NAME="mpp_get_data_domain">
   !  <OVERVIEW>
   !    These routines retrieve the axis specifications associated with the data domains.
@@ -2741,6 +2832,11 @@ end interface
   interface mpp_get_layout
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
+  end interface
+
+  interface check_data_size
+     module procedure check_data_size_1d
+     module procedure check_data_size_2d
   end interface
 
   ! <INTERFACE NAME="mpp_nullify_domain_list">

@@ -34,29 +34,29 @@ TEST_ERROR=99
 # Set the source and build top directories for use in test scripts.
 top_srcdir='@abs_top_srcdir@'
 top_buildir='@abs_top_builddir@'
-# Set the name of the mpi launcher for use in test scripts. 
-mpi_launcher='@MPI_LAUNCHER@' 
+# Set the name of the mpi launcher for use in test scripts.
+mpi_launcher='@MPI_LAUNCHER@'
 oversubscribe='@OVERSUBSCRIBE@'
 
-# Function to set up and run tests. 
-# Inputs: 
-# {1} Name of test 
-# {2} Number of processors 
+# Function to set up and run tests.
+# Inputs:
+# {1} Name of test
+# {2} Number of processors
 # {3} Set to skip
 # {4} Set to true if you want mpi launcher to oversubscribe, IF possible
 # For example: run_test test_time_manager 1
 
 run_test()
 {
-    # If the tests is known to fail exit 
-    if test "x${3}" = "xskip" ; then     
+    # If the tests is known to fail exit
+    if test "x${3}" = "xskip" ; then
         return $TEST_SKIP
     else
         # If there is no mpi launcher just ./{job_script}
-        if test "x$mpi_launcher" != "x" ; then  
+        if test "x$mpi_launcher" != "x" ; then
             npes="-n ${2}"
         fi
-    fi 
+    fi
 
     # Run test
     $mpi_launcher $oversubscribe $npes ./${1}
