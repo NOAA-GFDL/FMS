@@ -9,10 +9,10 @@
 . ../test_common.sh
 
 setup_test()
-# Function sets up and runs the test 
-# Inputs: 
-# {1} Test number 
-# {2} Description of test 
+# Function sets up and runs the test
+# Inputs:
+# {1} Test number
+# {2} Description of test
 # {3} Set to "skip"
 
 {

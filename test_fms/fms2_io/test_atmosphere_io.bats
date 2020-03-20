@@ -8,7 +8,7 @@ setup() {
 }
 
 @test "1" {
-   skip 
+   skip
    run mpirun -n 6 ./test_atmosphere_io
    [ "$status" -eq 0 ]
 }

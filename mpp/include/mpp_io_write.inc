@@ -1565,7 +1565,7 @@
     end subroutine mpp_modify_field_meta
 
 
-!> \brief Fills in a fieldtype variable, and is used with the diag_manager when using 
+!> \brief Fills in a fieldtype variable, and is used with the diag_manager when using
 !! fms2_io
     subroutine fillin_fieldtype(field, axes, name, units, longname,&
          min, max, missing, fill, scale, add, pack, time_method, standard_name, checksum)

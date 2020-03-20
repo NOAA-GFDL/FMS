@@ -238,7 +238,7 @@ integer, dimension(:), intent(out)   :: diag_units
       character(len=8)   ::  char
       character(len=32)  ::  filename
       logical            ::  allow_ij_input
-      logical            ::  open_file        
+      logical            ::  open_file
       integer            ::  io
 !--------------------------------------------------------------------
 !    local variables:

@@ -288,11 +288,11 @@ function has_domain_tile_string(string) &
 
   has_string = .false.
 ! Assigns i to the index where ".tile" starts
-  i = index(trim(string), ".tile", back=.true.) 
+  i = index(trim(string), ".tile", back=.true.)
   if (i .ne. 0) then
     l = len_trim(string)
-! Sets i to the index after .tile 
-    i = i + 5 
+! Sets i to the index after .tile
+    i = i + 5
     j = i
     do while (i .le. l)
 ! If the ith characters is a dot but i not equal to the index after .tile set has_string to true
@@ -359,7 +359,7 @@ end function has_io_domain_tile_string
 
 
 !> @brief Add the I/O domain tile id to an input filepath.
-!! 
+!!
 subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
 
   character(len=*), intent(inout) :: dest !< Output filepath.
@@ -386,7 +386,7 @@ end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
-!! 
+!!
 subroutine restart_filepath_mangle(dest, source)
 
   character(len=*), intent(inout) :: dest
@@ -413,7 +413,7 @@ subroutine open_check(flag, fname)
 
   logical, intent(in) :: flag
   character(len=*), intent(in), optional :: fname !< The file name
-  
+
   if (.not. flag) then
      if (present(fname)) then
           call mpp_error(fatal, "Error occured while opening file "//trim(fname))
