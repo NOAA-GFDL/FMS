@@ -1503,7 +1503,7 @@ function get_valid(fileobj, variable_name) &
       add_offset = 0._real64
     endif
 
-	!valid%max_val and valid%min_val are defined by the "valid_range", "valid_min", and
+    !valid%max_val and valid%min_val are defined by the "valid_range", "valid_min", and
     !"valid_max" variable attributes if they are present in the file. If either the maximum value
     !or minimum value is defined, valid%has_range is set to .true. (i.e. open ended ranges
     !are valid and should be tested within the is_valid function).
@@ -1536,7 +1536,7 @@ function get_valid(fileobj, variable_name) &
     endif
 
     !Get the fill value from the file if it exists.
-	!If the _FillValue attribute is present and the maximum or minimum value is not defined,
+    !If the _FillValue attribute is present and the maximum or minimum value is not defined,
     !then the maximum or minimum value will be determined by the _FillValue according to the NUG convention. 
     !The NUG convention states that a positive fill value will be the exclusive upper
     !bound (i.e. valid values are less than the fill value), while a
