@@ -743,15 +743,17 @@ end subroutine domain_offsets
 
 !> @brief Get starting/ending global indices of the I/O domain for a domain decomposed
 !!        file.
-subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
+subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: dimname !< Name of dimension variable.
   integer, intent(out) :: is !< Staring index of I/O global domain.
   integer, intent(out) :: ie !< Ending index of I/O global domain.
+  integer, dimension(:), allocatable, intent(out), optional :: indices !< Global domain indices
 
   type(domain2d), pointer :: io_domain
   integer :: dpos
+  integer :: i
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(dimname, fileobj%xdims, fileobj%nx)
@@ -767,6 +769,20 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
       call error("input dimension is not associated with the domain.")
     endif
   endif
+
+! Allocate indices to the difference between the ending and starting indices and
+! fill indices with the data
+  if (present(indices)) then
+    if(allocated(indices)) then
+      call error("get_global_io_domain_indices: the variable indices should not be allocated.")
+    endif
+    allocate(indices(ie-is+1))
+    do i = is, ie
+      indices(i-is+1) = i
+    enddo
+  endif
+
+
 end subroutine get_global_io_domain_indices
 
 
