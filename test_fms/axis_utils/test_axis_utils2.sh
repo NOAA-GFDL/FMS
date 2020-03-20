@@ -12,4 +12,4 @@
 cp $top_srcdir/test_fms/axis_utils/input_base.nml input.nml
 
 # Run the test.
-run_test test_axis_utils 2 skip
+run_test test_axis_utils 2
