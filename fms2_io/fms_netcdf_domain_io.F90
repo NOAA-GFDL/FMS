@@ -773,7 +773,7 @@ end subroutine get_global_io_domain_indices
 include "register_domain_restart_variable.inc"
 include "domain_read.inc"
 include "domain_write.inc"
-#include "compute_global_checksum.inc"
+include "compute_global_checksum.inc"
 
 
 end module fms_netcdf_domain_io_mod
