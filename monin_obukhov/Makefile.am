@@ -25,4 +25,5 @@ MODFILES = monin_obukhov_mod.mod monin_obukhov_inter.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
+EXTRA_DIST = monin_obukhov_tech.tex monin_obukhov_v1vs2.eps
 CLEANFILES = *.mod
