@@ -27,7 +27,7 @@ Garratt, J. R. ``The Atmospheric Boundary Layer'', Cambridge University Press, 1
 The surface stress provides a velocity scale, $u_*$, defined so that
 the magnitude of the surface stress $\tau$ is given by
 \begin{equation}
-  \tau = \rho_s u_s^2
+  \tau = \rho_s u_*^2
 \end{equation}
 where $\rho_s$ is the surface air density.  The upward surface
 buoyancy flux $B$ can then be used to define a buoyancy scale, $b_*$,
@@ -189,7 +189,7 @@ $R_b$, $z_0/z$, and $z_b/z$.
 
 Given $\zeta$, one can then compute
 \begin{equation}
-  u_* = \frac{\kappa |u(z)|}{\big(F_m(\zeta) - F_h(\zeta z_0/z)\big)^2}
+  u_* = \frac{\kappa |u(z)|}{F_m(\zeta) - F_h(\zeta z_0/z)}
 \end{equation}
 and
 \begin{equation}
@@ -209,7 +209,7 @@ of tabulating the solution for the relevant range of inputs, and,
 potentially, fitting the results with easily evaluated functions.
 Given that there are three inputs, the typical (but not universal)
 choice is to iterate.  If there were only two inputs -- i.e., if one
-could assume that the ration of $z_0$ to $_h$ were fixed, tabulation
+could assume that the ration of $z_0$ to $z_h$ were fixed, tabulation
 and curve fitting would be more straightforward.  In FMS, the solution
 is obtained by iteration.
 
@@ -301,7 +301,7 @@ zero by some theory of ``gustiness''.
 
 The stability functions \eqref{eq:stabfuncm} and \eqref{eq:stabfuncb}
 have the property that $\Phi_M^2 = \Phi_h$.  This implies that the
-local (as opposed to the buld) Richardson's number is equal to
+local (as opposed to the bulk) Richardson's number is equal to
 $\zeta$, and, in particular, that $Ri$ is a linear function of $z$.
 If there were some dynamical argument for this simple structure, it
 would help in justifying this choice of stability functions, but we
@@ -311,7 +311,7 @@ These forms have the convenient property that we can evaluate the
 integral stability functions, $F_m$ and $F_b$ analytically.  One
 finds, with considerable effort, that (using the notation
 $F(\zeta;\zeta_0) = F(\zeta) - F(\zeta_0)$ where $\zeta_0 = z_0/L =
-\zeta z_z/z$)
+\zeta z_0/z$)
 \begin{multline}
   F_m(\zeta;\zeta_0) =
   \ln\left(\frac{z}{z_0}\right) - 2\ln\left(\frac{1+x}{1+x_0}\right) - \ln\left(\frac{1+x^2}{1+x_0^2}\right) + \\
@@ -429,7 +429,7 @@ so in this limit, $\ell = \kappa z$.  In the stratified case, we write
 \end{equation}
 so that
 \begin{equation}
-  K = (\kappa z_)^2 \left|\frac{\partial u}{\partial z}\right|f(Ri) \label{eq:stratifiedcase}
+  K = (\kappa z)^2 \left|\frac{\partial u}{\partial z}\right|f(Ri) \label{eq:stratifiedcase}
 \end{equation}
 In terms of our stability function $\Phi$, assumed to be the same for
 momentum and buoyancy, we have for the stratified case
