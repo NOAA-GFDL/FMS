@@ -799,7 +799,9 @@
        domain%tileList(1)%yend   = global_indices(4)
        allocate(domain%x(1), domain%y(1) )
        allocate(domain%tile_id(1))
+       allocate(domain%tile_id_all(1))
        domain%tile_id        = cur_tile_id
+       domain%tile_id_all    = cur_tile_id
        domain%ntiles         = 1
        domain%max_ntile_pe   = 1
        domain%ncontacts      = 0
@@ -1346,6 +1348,9 @@ end subroutine check_message_size
           domain%tile_id(pos) = tile_id_local(n)
        end if
     end do
+
+    allocate(domain%tile_id_all(num_tile))
+    domain%tile_id_all(:) = tile_id_local(:)
 
     domain%initialized    = .true.
     domain%rotated_ninety = .FALSE.
@@ -4976,6 +4981,7 @@ end subroutine check_message_size
     overlap_out%xend   = overlap_in%xend
     overlap_out%ybegin = overlap_in%ybegin
     overlap_out%yend   = overlap_in%yend
+
     !--- setting up overlap.
     do m = 1, nsend_in
        ptrIn  => overlap_in%send(m)
@@ -5138,6 +5144,7 @@ end subroutine check_message_size
           call init_overlap_type(overlap)
        endif
     end do ! end do list = 0, nlist-1
+
     if(nrecv>0) then
        overlap_out%nrecv = nrecv
        allocate(overlap_out%recv(nrecv));
@@ -5218,7 +5225,6 @@ end subroutine check_message_size
     case default
        call mpp_error(FATAL, "mpp_domains_define.inc: the value of rotation should be ZERO, NINETY or MINUS_NINETY")
     end select
-
 
   end subroutine set_single_overlap
 
@@ -6456,13 +6462,6 @@ subroutine set_bound_overlap( domain, position )
         endif
      endif
 
-!write(1000+mpp_pe(),*)"send south 1", pe_south1, is_south1, ie_south1, js_south1, je_south1
-!write(1000+mpp_pe(),*)"send south 2", pe_south2, is_south2, ie_south2, js_south2, je_south2
-!write(1000+mpp_pe(),*)"send west 0", pe_west0, is_west0, ie_west0, js_west0, je_west0
-!write(1000+mpp_pe(),*)"send west 1", pe_west1, is_west1, ie_west1, js_west1, je_west1
-!write(1000+mpp_pe(),*)"send west 2", pe_west2, is_west2, ie_west2, js_west2, je_west2
-
-
      do list = 0,nlist-1
         m = mod( domain%pos+list, nlist )
         count = 0
@@ -6520,10 +6519,6 @@ subroutine set_bound_overlap( domain, position )
            bound%send(nsend)%dir(:)      = dir(1:count)
            bound%send(nsend)%tileMe(:)   = 1
            bound%send(nsend)%rotation(:) = rotation(1:count)
-!write(1000+mpp_pe(),*) "send:", count, my_pe
-!do i = 1, count
-!   write(1000+mpp_pe(),*) "send index:", is(i), ie(i), js(i), je(i), dir(i), rotation(i)
-!enddo
         endif
      enddo
   else
@@ -6710,12 +6705,6 @@ subroutine set_bound_overlap( domain, position )
         endif
      endif
 
-!write(1000+mpp_pe(),*)"recv south 1", pe_south1, is_south1, ie_south1, js_south1, je_south1
-!write(1000+mpp_pe(),*)"recv south 2", pe_south2, is_south2, ie_south2, js_south2, je_south2
-!write(1000+mpp_pe(),*)"recv west 0", pe_west0, is_west0, ie_west0, js_west0, je_west0
-!write(1000+mpp_pe(),*)"recv west 1", pe_west1, is_west1, ie_west1, js_west1, je_west1
-!write(1000+mpp_pe(),*)"recv west 2", pe_west2, is_west2, ie_west2, js_west2, je_west2
-
      tMe = 1
      do list = 0,nlist-1
         m = mod( domain%pos+nlist-list, nlist )
@@ -6780,11 +6769,6 @@ subroutine set_bound_overlap( domain, position )
            bound%recv(nrecv)%tileMe(:)   = 1
            bound%recv(nrecv)%rotation(:) = rotation(1:count)
            bound%recv(nrecv)%index(:)        = index(1:count)
-!write(1000+mpp_pe(),*) "recv:", count, my_pe
-!do i = 1, count
-!   write(1000+mpp_pe(),*) "recv index:", is(i), ie(i), js(i), je(i), dir(i), rotation(i)
-!enddo
-
         endif
      enddo
   else

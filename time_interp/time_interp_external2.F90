@@ -139,7 +139,7 @@ module time_interp_external2_mod
   type(ext_fieldtype), save, private, pointer :: field(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
 !Balaji: really should use field%missing
-  integer, private, parameter :: dk = DOUBLE_KIND ! ensures that time_interp_missing is in range for mixed-mode 
+  integer, private, parameter :: dk = DOUBLE_KIND ! ensures that time_interp_missing is in range for mixed-mode
                                                   ! compiling
   real(DOUBLE_KIND), private, parameter :: time_interp_missing=-1e99_dk
   contains
@@ -417,7 +417,7 @@ module time_interp_external2_mod
       field(num_fields)%ndim = ndim
       field(num_fields)%tdim = 4
       !--- get field missing value
-      field(num_fields)%missing = get_variable_missing(fileobj, fieldname) 
+      field(num_fields)%missing = get_variable_missing(fileobj, fieldname)
 
       allocate(axisname(ndim), axislen(ndim))
 
@@ -670,17 +670,17 @@ module time_interp_external2_mod
       return
     end subroutine time_interp_external_2d
 
-   
+
     function get_external_fileobj(filename, fileobj)
        character(len=*),             intent(in) :: filename
-       type(FmsNetcdfFile_t), intent(out) :: fileobj      
+       type(FmsNetcdfFile_t), intent(out) :: fileobj
        logical                                  :: get_external_fileobj
        integer :: i
 
        get_external_fileobj = .false.
        do i=1,num_files
           if(trim(opened_files(i)%filename) == trim(filename)) then
-            fileobj = opened_files(i)%fileobj 
+            fileobj = opened_files(i)%fileobj
             get_external_fileobj = .true.
             exit  ! file is already opened
          endif
