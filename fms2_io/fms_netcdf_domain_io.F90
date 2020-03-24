@@ -572,7 +572,7 @@ end subroutine save_domain_restart
 !!        a netcdf file.
 subroutine restore_domain_state(fileobj, unlim_dim_level)
 
-  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
 
   integer :: i
