@@ -380,7 +380,7 @@ end subroutine netcdf_save_restart_wrap2
 subroutine netcdf_restore_state_wrap(fileobj, unlim_dim_level, directory, timestamp, &
                                      filename)
 
-  type(FmsNetcdfFile_t), intent(in), target :: fileobj !< File object.
+  type(FmsNetcdfFile_t), intent(inout), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
   character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
