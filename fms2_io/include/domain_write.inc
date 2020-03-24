@@ -97,8 +97,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(2) :: c
   integer, dimension(2) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -315,8 +315,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(3) :: c
   integer, dimension(3) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -533,8 +533,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(4) :: c
   integer, dimension(4) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -751,8 +751,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(5) :: c
   integer, dimension(5) :: e
   integer, dimension(:), allocatable :: pe_isc

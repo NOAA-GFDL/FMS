@@ -118,11 +118,9 @@ implicit none
 private
 
 !-------------------------------------------------------------------------------
-!----------- version number for this module -------------------
-
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
-
+! version number of this module
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 !-------------------------------------------------------------------------------
 !------ interfaces ------
@@ -386,7 +384,7 @@ real,dimension(:,:), intent(in), optional :: blon, blat, area_in
 !-------------------------------------------------------------------------------
 !    write version number and namelist to logfile.
 !-------------------------------------------------------------------------------
-      call write_version_number (version, tagname)
+      call write_version_number ('DIAG_INTEGRAL_MOD', version)
       logunit = stdlog()
       if (mpp_pe() == mpp_root_pe() ) &
                        write (logunit, nml=diag_integral_nml)

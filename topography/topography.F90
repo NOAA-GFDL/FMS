@@ -97,7 +97,7 @@ end interface
                          water_file = 'DATA/navy_pctwater.data'
    namelist /topography_nml/ topog_file, water_file
 ! </NAMELIST>
- 
+
    integer, parameter    :: TOPOG_INDEX = 1
    integer, parameter    :: WATER_INDEX = 2
    type(FmsNetcdfFile_t) :: fileobj(2)
@@ -674,11 +674,11 @@ end interface
   if ( file_exists(topog_file) .AND. topog_file(namelen-2:namelen) == '.nc') then
      if (mpp_pe() == mpp_root_pe()) call mpp_error ('topography_mod', &
             'Reading NetCDF formatted input data file: '//trim(topog_file), NOTE)
-     if(.not. file_is_opened(TOPOG_INDEX) ) then   
+     if(.not. file_is_opened(TOPOG_INDEX) ) then
         if(.not. open_file(fileobj(TOPOG_INDEX), topog_file, 'read' )) then
            call mpp_error(FATAL, 'topography_mod: Error in opening file '//trim(topog_file))
         endif
-     endif 
+     endif
 
      call read_data(fileobj(TOPOG_INDEX), 'ipts', r_ipts)
      call read_data(fileobj(TOPOG_INDEX), 'jpts', r_jpts)
