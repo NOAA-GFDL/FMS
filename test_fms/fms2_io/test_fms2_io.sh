@@ -12,5 +12,7 @@
 rm -f *.nc > /dev/null 2>&1
 rm -f *.nc.* > /dev/null 2>&1
 rm -f logfile.*.out > /dev/null 2>&1
+rm -f input.nml > /dev/null 2>&1
+cp input_base.nml input.nml
 # run the tests
 run_test test_fms2_io 6
