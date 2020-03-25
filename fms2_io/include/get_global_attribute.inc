@@ -48,22 +48,22 @@ subroutine get_global_attribute_0d(fileobj, &
     select type(attribute_value)
         type is (integer(kind=int32))
             call mpp_broadcast(attribute_value, &
-                               
+
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         type is (integer(kind=int64))
             call mpp_broadcast(attribute_value, &
-                               
+
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         type is (real(kind=real32))
             call mpp_broadcast(attribute_value, &
-                               
+
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         type is (real(kind=real64))
             call mpp_broadcast(attribute_value, &
-                               
+
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         class default

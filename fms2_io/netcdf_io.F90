@@ -67,7 +67,7 @@ type, public :: FmsNetcdfFile_t
   logical :: is_restart !< Flag telling if the this file is a restart
                         !! file (that has internal pointers to data).
   logical :: mode_is_append !! true if file is open in "append" mode
-  logical, allocatable :: is_open !< Allocated and set to true if opened.  
+  logical, allocatable :: is_open !< Allocated and set to true if opened.
   type(RestartVariable_t), dimension(:), allocatable :: restart_vars !< Array of registered
                                                                      !! restart variables.
   integer :: num_restart_vars !< Number of registered restart variables.
@@ -407,13 +407,12 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   character(len=256) :: buf
   logical :: is_res
 
-  fileobj%is_root = .false.
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
       success = .true.
       return
     endif
-  endif 
+  endif
   !Add ".res" to the file path if necessary.
   is_res = .false.
   if (present(is_restart)) then
@@ -1503,7 +1502,7 @@ function get_valid(fileobj, variable_name) &
       add_offset = 0._real64
     endif
 
-	!valid%max_val and valid%min_val are defined by the "valid_range", "valid_min", and
+    !valid%max_val and valid%min_val are defined by the "valid_range", "valid_min", and
     !"valid_max" variable attributes if they are present in the file. If either the maximum value
     !or minimum value is defined, valid%has_range is set to .true. (i.e. open ended ranges
     !are valid and should be tested within the is_valid function).
@@ -1536,8 +1535,8 @@ function get_valid(fileobj, variable_name) &
     endif
 
     !Get the fill value from the file if it exists.
-	!If the _FillValue attribute is present and the maximum or minimum value is not defined,
-    !then the maximum or minimum value will be determined by the _FillValue according to the NUG convention. 
+    !If the _FillValue attribute is present and the maximum or minimum value is not defined,
+    !then the maximum or minimum value will be determined by the _FillValue according to the NUG convention.
     !The NUG convention states that a positive fill value will be the exclusive upper
     !bound (i.e. valid values are less than the fill value), while a
     !non-positive fill value will be the exclusive lower bound (i.e. valis
@@ -1594,7 +1593,7 @@ function get_valid(fileobj, variable_name) &
   call mpp_broadcast(valid%has_missing, fileobj%io_root, pelist=fileobj%pelist)
   if (valid%has_missing) then
      call mpp_broadcast(valid%missing_val, fileobj%io_root, pelist=fileobj%pelist)
-  endif  
+  endif
 
 end function get_valid
 
@@ -1634,11 +1633,11 @@ elemental function is_valid(datum, validobj) &
     endif
   endif
   ! If the variable has a fill value or missing value, valid values must not be
-  ! equal to either. 
+  ! equal to either.
   if (validobj%has_fill .or. validobj%has_missing) then
     if (validobj%has_fill .and. .not. validobj%has_missing) then
       valid_data = rdatum .ne. validobj%fill_val
-    elseif (validobj%has_missing .and. .not. validobj%has_fill) then 
+    elseif (validobj%has_missing .and. .not. validobj%has_fill) then
       valid_data = rdatum .ne. validobj%missing_val
     else
       valid_data = .not. (rdatum .eq. validobj%missing_val .or. rdatum .eq. validobj%fill_val)
@@ -1898,9 +1897,9 @@ function check_if_open(fileobj, fname) result(is_open)
   endif
 
   if (present(fname)) then
-    !If the filename does not match the name in path, 
+    !If the filename does not match the name in path,
     !then this is considered not open
-     if (is_open .AND. trim(fname) .ne. trim(fileobj%path)) is_open = .false. 
+     if (is_open .AND. trim(fname) .ne. trim(fileobj%path)) is_open = .false.
   endif
 end function check_if_open
 

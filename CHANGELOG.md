@@ -20,7 +20,7 @@ sequential patch number (starting from `01`).
 
 ### Changed
 - The `diag_manager` IO is handled by fms2_io instead of mpp_io. Default behavior assumes that the mpp_io namelist variable is set to *cf_compliant = .true.*
-- The user must specify the diagnostic attributes that they want to write to the output files.  Example: If there is no *units* attribute, then the variable metadata will not include *units*, and it will not automatically add *units = “none”*. 
+- The user must specify the diagnostic attributes that they want to write to the output files.  Example: If there is no *units* attribute, then the variable metadata will not include *units*, and it will not automatically add *units = “none”*.
 - Calls to `register_diag_axis` for an X or Y axis that is shifted from the *CENTER* position need to include the optional argument *domain_position* and should be equal to *EAST* or *NORTH* based on the position relative to the domain. EAST and *NORTH* are exposed through `diag_manager_mod`.
 - Changed the handling of *average_T* and *time_bnds* variables so that they are set to values that are sent in and are not manipulated as was the case in mpp_io.
 - `interpolator`, `xgrid`, `data_override`, and `amip_interp` now call  `fms2_io` routines
@@ -30,6 +30,11 @@ sequential patch number (starting from `01`).
 - fms2_io does **NOT** use the *scale_factor*, *add_offset*, or other attributes to manipulate the data.  The variable/data is returned to the caller as it appears in the file.  All post-read data manipulations should be handled by the caller.
 ### Removed
 - Removes the use of bats when running unit tests
+
+### Tag Commit Hashes
+- 2020.01-alpha1 (09dc8e9e0f1c852e9e9190834176d16943cd3729)
+- 2020.01-beta1 (e1c0d9d01d844938adc0d18afa09532f336bcdfe)
+- 2020.01-beta2 (b68de5382a5ce631ddd6167de8d85f7c9ae54351)
 
 ## [2019.01] - 2019-11-26
 ### Added
