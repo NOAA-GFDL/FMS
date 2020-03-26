@@ -8,11 +8,7 @@
 
 # Set common test settings.
 . ../test_common.sh
-# Clear out any previous test files
-rm -f *.nc > /dev/null 2>&1
-rm -f *.nc.* > /dev/null 2>&1
-rm -f logfile.*.out > /dev/null 2>&1
-rm -f input.nml > /dev/null 2>&1
-cp input_base.nml input.nml
+# create a new input namelist from template
+cp ${srcdir}/test_fms/fms2_io/input_base.nml input.nml
 # run the tests
-run_test test_fms2_io 6
+run_test test_fms2_io 6 skip

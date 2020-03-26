@@ -17,7 +17,7 @@ test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90 create_atmosphere_domain.in
                        create_land_domain.inc create_ocean_domain.inc \
                        ocean_restart_file_test.inc land_compressed_restart_file_test.inc \
                        land_unstructured_restart_file_test.inc
-test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 \ 
+test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 \
                              atmosphere_restart_file_test.inc
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh input_base.nml 
@@ -34,7 +34,7 @@ TESTS = test_fms2_io.sh test_atmosphere_io.sh
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
-CLEANFILES = *.mod *.nc input.nml logfile.000000.out
+CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out
 
 ## Build this test program.
 #check_PROGRAMS = test_fms2_io
