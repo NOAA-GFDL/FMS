@@ -5,8 +5,5 @@
 # Set common test settings.
 . ../test_common.sh
 
-# link to the input namelist
-cp ${srcdir}/test_fms/fms2_io/input_base.nml input.nml
-
 # run the tests
 run_test test_atmosphere_io 6 skip
