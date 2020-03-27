@@ -20,7 +20,7 @@ test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90 create_atmosphere_domain.in
 test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 \
                              atmosphere_restart_file_test.inc
 
-EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh input_base.nml 
+EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh
 
 argparse.mod: argparse.$(OBJEXT)
 setup.mod: setup.$(OBJEXT)
