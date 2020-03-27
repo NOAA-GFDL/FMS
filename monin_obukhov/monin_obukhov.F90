@@ -73,11 +73,10 @@ interface stable_mix
                       stable_mix_2d, stable_mix_3d
 end interface
 
-
-!--------------------- version number ---------------------------------
-
-character(len=128) :: version = '$Id$'
-character(len=128) :: tagname = '$Name$'
+!-----------------------------------------------------------------------
+! version number of this module
+! Include variable "version" to be written to log file.
+#include<file_version.h>
 
 !=======================================================================
 
@@ -123,7 +122,7 @@ integer :: unit, ierr, io, logunit
 !---------- output namelist to log-------------------------------------
 
       if ( mpp_pe() == mpp_root_pe() ) then
-           call write_version_number(version, tagname)
+           call write_version_number('MONIN_OBUKOV_MOD', version)
            logunit = stdlog()
            write (logunit, nml=monin_obukhov_nml)
       endif

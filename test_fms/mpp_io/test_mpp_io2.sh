@@ -28,7 +28,7 @@ else
 fi
 
 if [ $nProc -lt 0 ]
-then  
+then
    # Couldn't get the number of CPUs, skip the test.
    skip_test="skip"
 elif [ $nProc -lt 12 ]

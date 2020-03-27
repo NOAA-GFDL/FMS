@@ -32,7 +32,7 @@ module axis_utils2_mod
   !<DESCRIPTION>
   !
   ! subroutine get_axis_cart(axis,cart) : Returns X,Y,Z or T cartesian attribute
-  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of 
+  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of
   !                                                    available axes, or defined based on axis mid-points
   ! function get_axis_modulo : Returns true if axis has the modulo attribute
   ! function get_axis_fold   : Returns is axis is folded at a boundary (non-standard meta-data)
@@ -59,7 +59,7 @@ module axis_utils2_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-  
+
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -340,13 +340,13 @@ end subroutine axis_edges
     istrt=0
     do i=1,len-1
        if (lon(i+1) < lon(i)) then
-          istrt=i+1 
+          istrt=i+1
           exit
        endif
     enddo
 
     if (istrt>1) then ! grid is not monotonic
-       if (abs(lon(len)-lon(1)) < epsln) then 
+       if (abs(lon(len)-lon(1)) < epsln) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
           lon(len) = lon(1)
@@ -405,15 +405,15 @@ end subroutine axis_edges
     real :: value, frac_index
     real, dimension(:) :: array
     logical keep_going
-    
+
     ia = size(array(:))
 
     do i=2,ia
        if (array(i) < array(i-1)) then
-          unit = stdout() 
+          unit = stdout()
           write (unit,*) '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ',&
                               value
-          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
              write (unit,*) 'i=',ii, ' array(i)=',array(ii)
@@ -431,7 +431,7 @@ end subroutine axis_edges
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             frac_index = float(i-1) + (value-array(i-1))/(array(i)-array(i-1)) 
+             frac_index = float(i-1) + (value-array(i-1))/(array(i)-array(i-1))
              keep_going = .false.
           endif
        enddo
@@ -489,7 +489,7 @@ end subroutine axis_edges
           unit = stdout()
           write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing &
                          &when searching for nearest value to ',value
-          write (unit,*) '          array(i) < array(i-1) for i=',i 
+          write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
              write (unit,*) 'i=',ii, ' array(i)=',array(ii)
@@ -516,7 +516,7 @@ end subroutine axis_edges
 
   !#############################################################################
 
-  subroutine interp_1d_linear(grid1,grid2,data1,data2)  
+  subroutine interp_1d_linear(grid1,grid2,data1,data2)
 
     real, dimension(:),    intent(in) :: grid1, data1, grid2
     real, dimension(:), intent(inout) :: data2
@@ -550,8 +550,8 @@ end subroutine axis_edges
              data2(i) = data1(n)
           else
              w = (grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1))
-             data2(i) = (1.-w)*data1(n-1) + w*data1(n)   
-          endif     
+             data2(i) = (1.-w)*data1(n-1) + w*data1(n)
+          endif
        endif
     enddo
 
@@ -561,7 +561,7 @@ end subroutine axis_edges
   end subroutine interp_1d_linear
 
   !###################################################################
-  subroutine interp_1d_cubic_spline(grid1, grid2, data1, data2, yp1, ypn)  
+  subroutine interp_1d_cubic_spline(grid1, grid2, data1, data2, yp1, ypn)
 
     real, dimension(:),    intent(in) :: grid1, grid2, data1
     real, dimension(:), intent(inout) :: data2
@@ -572,7 +572,7 @@ end subroutine axis_edges
     integer                           :: n, m, i, k, klo, khi
 
     n = size(grid1(:))
-    m = size(grid2(:))    
+    m = size(grid2(:))
 
     do i=2,n
        if (grid1(i) <= grid1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
@@ -622,7 +622,7 @@ end subroutine axis_edges
        else
           if(n==1) then
             klo = n
-          else 
+          else
             klo = n -1
           endif
        endif
@@ -637,7 +637,7 @@ end subroutine axis_edges
 
   !###################################################################
 
-  subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)  
+  subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)
 
     real, dimension(:),      intent(in)    :: grid1, data1, grid2
     real, dimension(:),      intent(inout) :: data2
@@ -645,7 +645,7 @@ end subroutine axis_edges
     real,             optional, intent(in) :: yp1, yp2
 
     real              :: y1, y2
-    character(len=32) :: interp_method    
+    character(len=32) :: interp_method
     integer           :: k2, ks, ke
 
     k2 = size(grid2(:))
@@ -673,7 +673,7 @@ end subroutine axis_edges
   !###################################################################
 
 
-  subroutine interp_1d_2d(grid1,grid2,data1,data2)  
+  subroutine interp_1d_2d(grid1,grid2,data1,data2)
 
     real, dimension(:,:),    intent(in) :: grid1, data1, grid2
     real, dimension(:,:), intent(inout) :: data2
@@ -698,7 +698,7 @@ end subroutine axis_edges
 
   !###################################################################
 
-  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)  
+  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)
 
     real, dimension(:,:,:),  intent(in)    :: grid1, data1, grid2
     real, dimension(:,:,:),  intent(inout) :: data2
@@ -797,7 +797,7 @@ integer, parameter :: maxsize = 100
 
 integer :: n_src = 0
 integer :: n_dst = 0
-real, dimension(MAXSIZE) :: grid_src = 0 
+real, dimension(MAXSIZE) :: grid_src = 0
 real, dimension(MAXSIZE) :: grid_dst = 0
 real, dimension(MAXSIZE) :: data_src = 0
 
@@ -839,7 +839,7 @@ integer           :: unit, ierr, io
                          371.054289820675, 395.098187506342, 446.150726850039 /)
 
 
-  !---reading namelist 
+  !---reading namelist
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, test_axis_utils_nml, iostat=io)
       ierr = check_nml_error(io,'test_axis_utils_nml')
