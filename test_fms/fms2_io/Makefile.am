@@ -34,4 +34,4 @@ TESTS = test_fms2_io.sh test_atmosphere_io.sh
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
-CLEANFILES = *.mod *.nc *.nc.* logfile.000000.out
+CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out
