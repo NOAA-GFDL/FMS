@@ -117,7 +117,7 @@ integer           :: unit, ierr, io
   write(*,*) "MAXSIZE, n_src, n_dist"
   write(*,*) MAXSIZE
   write(*,*) n_src
-  write(*,*) n_dist
+  write(*,*) n_dst
   if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
   if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')
 
