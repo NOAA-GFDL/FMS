@@ -871,10 +871,3 @@ integer           :: unit, ierr, io
   write(unit,*)' the destination data using cublic spline interpolation is ', data_dst(1:n_dst)
 
 end program test
-
-
-#endif /* test_axis_utils */
-
-
-
-
