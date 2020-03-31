@@ -158,7 +158,7 @@ integer           :: unit, ierr, io
   write(*,*) "out_linear_dst"
   write(*,*) out_cubic_dst(1:n_dst)
   write(unit,*)' the total difference between the result and the expected result is ', diff
-  if(diff > 1.0e-8) call mpp_error(NOTE, 'test_axis_utils: the result with cubic spline interpolation is different')
+  if(diff > 1.0e-8) call mpp_error(FATAL, 'test_axis_utils: the result with cubic spline interpolation is different')
 
    call fms_end()
 end program test_axis_utils
