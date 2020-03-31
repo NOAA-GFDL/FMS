@@ -673,7 +673,6 @@ end function transfer_to_model_index
 end module mosaic2_mod
 
 
-#ifdef TEST_MOSAIC
 program test_mosaic
 
 use mosaic_mod, only : get_mosaic_ntiles, get_mosaic_ncontacts
@@ -725,4 +724,3 @@ deallocate(istart2, iend2, jstart2, jend2)
 
 
 end program test_mosaic
-#endif
