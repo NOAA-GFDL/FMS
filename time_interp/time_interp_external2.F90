@@ -1350,8 +1350,6 @@ end subroutine
 
 end module time_interp_external2_mod
 
-#ifdef test_time_interp_external
-
 program test_time_interp_ext
 use constants_mod, only: constants_init
 use fms_mod,       only: open_namelist_file, check_nml_error
@@ -1555,4 +1553,3 @@ call mpp_exit
 stop
 
 end program test_time_interp_ext
-#endif
