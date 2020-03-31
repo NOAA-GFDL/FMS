@@ -21,7 +21,7 @@ program test_axis_utils
 
 use fms_mod,       only : fms_init, fms_end, file_exist, open_namelist_file, check_nml_error
 use fms_mod,       only : close_file
-use mpp_mod,       only : mpp_error, FATAL, stdout
+use mpp_mod,       only : mpp_error, FATAL, NOTE, stdout
 use mpp_mod,       only : input_nml_file
 use axis_utils_mod, only: interp_1d
 
