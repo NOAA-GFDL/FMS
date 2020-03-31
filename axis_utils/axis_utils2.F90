@@ -779,8 +779,6 @@ end subroutine axis_edges
 
 end module axis_utils2_mod
 
-#ifdef test_axis_utils
-
 program test
 
 use fms_mod,       only : fms_init, file_exist, open_namelist_file, check_nml_error
