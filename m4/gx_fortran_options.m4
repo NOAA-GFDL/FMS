@@ -198,7 +198,6 @@ for ac_flag in none \
                '-Mcray=pointer'; do
   test "x$ac_flag" != xnone && FCFLAGS="$gx_cray_ptr_flag_FCFLAGS_save ${ac_flag}"
   AC_COMPILE_IFELSE([[      program test
-      integer(kind=8) :: ipt
       integer iarri(10)
       pointer (ipt, iarr)
       end program test]],

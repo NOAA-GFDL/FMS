@@ -861,7 +861,7 @@ end subroutine netcdf_save_restart
 !!        a netcdf file.
 subroutine netcdf_restore_state(fileobj, unlim_dim_level)
 
-  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
 

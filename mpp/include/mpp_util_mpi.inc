@@ -28,6 +28,10 @@
 subroutine mpp_error_basic( errortype, errormsg )
   !a very basic error handler
   !uses ABORT and FLUSH calls, may need to use cpp to rename
+#ifdef __INTEL_COMPILER
+  ! Intel module containing tracebackQQ
+   use ifcore
+#endif
   integer,                    intent(in) :: errortype
   character(len=*), intent(in), optional :: errormsg
   character(len=512)                     :: text
@@ -55,16 +59,15 @@ subroutine mpp_error_basic( errortype, errormsg )
      if(pe==root_pe)write( out_unit,'(a)' )trim(text)
   case default
      errunit = stderr()
-#ifdef __SX
-     write( errunit, * )trim(text)
-#else
      write( errunit, '(/a/)' )trim(text)
-#endif
      if(pe==root_pe)write( out_unit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
         call FLUSH(out_unit)
-#ifdef sgi_mipspro
-        call TRACE_BACK_STACK_AND_PRINT()
+#ifdef __INTEL_COMPILER
+  ! Get traceback and return quietly for correct abort
+        call TRACEBACKQQ(user_exit_code=-1)
+#elif __GFORTRAN__
+        call BACKTRACE
 #endif
         call MPI_ABORT( MPI_COMM_WORLD, 1, error )
      end if
