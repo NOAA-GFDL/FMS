@@ -256,11 +256,6 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
 
     !Write out the times of each "time step".
     call write_data(fileobj, "time", 1950. + real(i,kind=real32), unlim_dim_level=i)
-
-    !Write out "intermdiate" restart files.
-    tstamp = ""
-    write(tstamp, *) i
-    call write_restart(fileobj, unlim_dim_level=1, timestamp=trim(tstamp))
   enddo
 
   !Write out the restart file.

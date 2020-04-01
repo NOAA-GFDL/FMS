@@ -205,17 +205,6 @@ subroutine mpi_check(err)
   endif
 end subroutine mpi_check
 
-
-subroutine open_check(flag)
-
-  logical, intent(in) :: flag
-
-  if (.not. flag) then
-     call mpp_error(fatal, "Error occured while opening file.")
-  endif
-end subroutine open_check
-
-
 subroutine chksum_match(out_chksum, in_chksum, var_name, debug)
 
   integer(kind=int64), intent(in) :: out_chksum
