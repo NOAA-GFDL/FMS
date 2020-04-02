@@ -39,6 +39,7 @@ real, dimension(MAXSIZE) :: data_src = 0
 real, dimension(MAXSIZE) :: out_linear_dst = 0
 real, dimension(MAXSIZE) :: out_cubic_dst = 0
 real :: diff
+logical :: is_it_double_precision
 
 namelist / test_axis_utils_nml / n_src, n_dst, grid_src, grid_dst, data_src, out_linear_dst, out_cubic_dst
 
@@ -114,12 +115,15 @@ integer           :: unit, ierr, io
   endif
 #endif
 
-  write(*,*) "MAXSIZE"
-  write(*,*) MAXSIZE
-  write(*,*) "n_src"
-  write(*,*) n_src
-  write(*,*) "n_dst"
-  write(*,*) n_dst
+  is_it_double_precision = precision(grid_src(1)) .EQ. precision(1.0) 
+  write(*,*) "**************LOOK HERE*****************"
+  write(*,*) is_it_double_precision
+  !write(*,*) "MAXSIZE"
+  !write(*,*) MAXSIZE
+  !write(*,*) "n_src"
+  !write(*,*) n_src
+  !write(*,*) "n_dst"
+  !write(*,*) n_dst
   if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
   if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')
 
