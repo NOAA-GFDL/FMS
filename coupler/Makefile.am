@@ -22,12 +22,12 @@ libensemble_manager_la_SOURCES = ensemble_manager.F90
 libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90
 
 # Each mod file depends on the .o file.
-coupler_types_mod.mod: coupler_types.$(OBJEXT)
-ensemble_manager_mod.mod: ensemble_manager.$(OBJEXT)
-atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.$(OBJEXT)
+coupler_types_mod.mod: coupler_types.lo
+ensemble_manager_mod.mod: ensemble_manager.lo
+atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.lo
 
 # Some mods are dependant on other mods in this dir.
-atmos_ocean_fluxes.$(OBJEXT): coupler_types_mod.mod
+atmos_ocean_fluxes.lo: coupler_types_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = coupler_types_mod.mod ensemble_manager_mod.mod \

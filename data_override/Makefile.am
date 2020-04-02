@@ -23,7 +23,7 @@ noinst_LTLIBRARIES = libdata_override.la
 libdata_override_la_SOURCES = data_override.F90
 
 # Mod file depends on its o file, is built and then installed.
-data_override_mod.mod: data_override.$(OBJEXT)
+data_override_mod.mod: data_override.lo
 BUILT_SOURCES = data_override_mod.mod
 include_HEADERS = data_override_mod.mod
 
