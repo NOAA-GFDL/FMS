@@ -17,7 +17,7 @@ noinst_LTLIBRARIES = libcolumn_diagnostics.la
 libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90
 
 # Mod file depends on its o file, is built and then installed.
-column_diagnostics_mod.mod: column_diagnostics.$(OBJEXT)
+column_diagnostics_mod.mod: column_diagnostics.lo
 BUILT_SOURCES = column_diagnostics_mod.mod
 include_HEADERS = column_diagnostics_mod.mod
 

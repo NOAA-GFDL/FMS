@@ -16,7 +16,7 @@ libfms_affinity_la_SOURCES = fms_affinity.F90
 libfms_affinity_c_la_SOURCES = affinity.c
 
 # Mod file depends on its .o file, is built and then installed.
-fms_affinity_mod.mod: fms_affinity.$(OBJEXT)
+fms_affinity_mod.mod: fms_affinity.lo
 
 # Mod files are built and then installed as headers
 MODFILES = fms_affinity_mod.mod

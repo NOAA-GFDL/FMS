@@ -21,7 +21,7 @@ noinst_LTLIBRARIES = libamip_interp.la
 libamip_interp_la_SOURCES = amip_interp.F90
 
 # Mod file depends on its o file, is built and then installed.
-amip_interp_mod.mod: amip_interp.$(OBJEXT)
+amip_interp_mod.mod: amip_interp.lo
 BUILT_SOURCES = amip_interp_mod.mod
 include_HEADERS = amip_interp_mod.mod
 
