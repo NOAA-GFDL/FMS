@@ -17,11 +17,11 @@ libsat_vapor_pres_la_SOURCES = sat_vapor_pres.F90
 libsat_vapor_pres_k_la_SOURCES = sat_vapor_pres_k.F90
 
 # Each mod file depends on the .o file.
-sat_vapor_pres_mod.mod: sat_vapor_pres.$(OBJEXT)
-sat_vapor_pres_k_mod.mod: sat_vapor_pres_k.$(OBJEXT)
+sat_vapor_pres_mod.mod: sat_vapor_pres.lo
+sat_vapor_pres_k_mod.mod: sat_vapor_pres_k.lo
 
 # Some mods are dependant on other mods in this dir.
-sat_vapor_pres.$(OBJEXT): sat_vapor_pres_k_mod.mod
+sat_vapor_pres.lo: sat_vapor_pres_k_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = sat_vapor_pres_k_mod.mod sat_vapor_pres_mod.mod

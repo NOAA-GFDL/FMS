@@ -10,9 +10,9 @@ AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/constants
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libhoriz_interp_type.la \
-libhoriz_interp_bicubic.la libhoriz_interp_bilinear.la \
-libhoriz_interp_conserve.la libhoriz_interp_spherical.la \
+noinst_LTLIBRARIES = libhoriz_interp_type.la			\
+libhoriz_interp_bicubic.la libhoriz_interp_bilinear.la		\
+libhoriz_interp_conserve.la libhoriz_interp_spherical.la	\
 libhoriz_interp.la
 
 # Each convenience library depends on its source.
@@ -24,24 +24,25 @@ libhoriz_interp_spherical_la_SOURCES = horiz_interp_spherical.F90
 libhoriz_interp_type_la_SOURCES = horiz_interp_type.F90
 
 # Each mod file depends on the .o file.
-horiz_interp_type_mod.mod: horiz_interp_type.$(OBJEXT)
-horiz_interp_bicubic_mod.mod: horiz_interp_bicubic.$(OBJEXT)
-horiz_interp_bilinear_mod.mod: horiz_interp_bilinear.$(OBJEXT)
-horiz_interp_conserve_mod.mod: horiz_interp_conserve.$(OBJEXT)
-horiz_interp_spherical_mod.mod: horiz_interp_spherical.$(OBJEXT)
-horiz_interp_mod.mod: horiz_interp.$(OBJEXT)
+horiz_interp_type_mod.mod: horiz_interp_type.lo
+horiz_interp_bicubic_mod.mod: horiz_interp_bicubic.lo
+horiz_interp_bilinear_mod.mod: horiz_interp_bilinear.lo
+horiz_interp_conserve_mod.mod: horiz_interp_conserve.lo
+horiz_interp_spherical_mod.mod: horiz_interp_spherical.lo
+horiz_interp_mod.mod: horiz_interp.lo
 
 # Some mods are dependant on other mods in this dir.
-horiz_interp_bicubic.$(OBJEXT): horiz_interp_type_mod.mod
-horiz_interp_bilinear.$(OBJEXT): horiz_interp_type_mod.mod
-horiz_interp_conserve.$(OBJEXT): horiz_interp_type_mod.mod
-horiz_interp_spherical.$(OBJEXT): horiz_interp_type_mod.mod
-horiz_interp.$(OBJEXT): horiz_interp_bicubic_mod.mod horiz_interp_type_mod.mod \
-  horiz_interp_bilinear_mod.mod horiz_interp_conserve_mod.mod horiz_interp_spherical_mod.mod
+horiz_interp_bicubic.lo: horiz_interp_type_mod.mod
+horiz_interp_bilinear.lo: horiz_interp_type_mod.mod
+horiz_interp_conserve.lo: horiz_interp_type_mod.mod
+horiz_interp_spherical.lo: horiz_interp_type_mod.mod
+horiz_interp.lo: horiz_interp_bicubic_mod.mod			\
+horiz_interp_type_mod.mod horiz_interp_bilinear_mod.mod		\
+horiz_interp_conserve_mod.mod horiz_interp_spherical_mod.mod
 
 # Mod files are built and then installed as headers.
-MODFILES = horiz_interp_type_mod.mod horiz_interp_bicubic_mod.mod \
-horiz_interp_bilinear_mod.mod horiz_interp_conserve_mod.mod \
+MODFILES = horiz_interp_type_mod.mod horiz_interp_bicubic_mod.mod	\
+horiz_interp_bilinear_mod.mod horiz_interp_conserve_mod.mod		\
 horiz_interp_spherical_mod.mod horiz_interp_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)

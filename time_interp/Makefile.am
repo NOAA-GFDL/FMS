@@ -14,7 +14,8 @@ AM_CPPFLAGS += -I${top_builddir}/platform
 AM_CPPFLAGS += -I${top_builddir}/horiz_interp
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libtime_interp.la libtime_interp_external.la libtime_interp_external2.la
+noinst_LTLIBRARIES = libtime_interp.la libtime_interp_external.la	\
+libtime_interp_external2.la
 
 # Each convenience library depends on its source.
 libtime_interp_la_SOURCES = time_interp.F90
@@ -22,16 +23,17 @@ libtime_interp_external_la_SOURCES = time_interp_external.F90
 libtime_interp_external2_la_SOURCES = time_interp_external2.F90
 
 # Each mod file depends on the .o file.
-time_interp_mod.mod: time_interp.$(OBJEXT)
-time_interp_external_mod.mod: time_interp_external.$(OBJEXT)
-time_interp_external2_mod.mod: time_interp_external2.$(OBJEXT)
+time_interp_mod.mod: time_interp.lo
+time_interp_external_mod.mod: time_interp_external.lo
+time_interp_external2_mod.mod: time_interp_external2.lo
 
 # Some mods are dependant on other mods in this dir.
-time_interp_external.$(OBJEXT): time_interp_mod.mod
-time_interp_external2.$(OBJEXT): time_interp_mod.mod
+time_interp_external.lo: time_interp_mod.mod
+time_interp_external2.lo: time_interp_mod.mod
 
 # Mod files are built and then installed as headers.
-MODFILES = time_interp_mod.mod time_interp_external_mod.mod time_interp_external2_mod.mod
+MODFILES = time_interp_mod.mod time_interp_external_mod.mod	\
+time_interp_external2_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

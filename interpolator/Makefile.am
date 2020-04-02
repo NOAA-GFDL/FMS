@@ -21,7 +21,7 @@ noinst_LTLIBRARIES = libinterpolator.la
 libinterpolator_la_SOURCES = interpolator.F90
 
 # Mod file depends on its o file, is built and then installed.
-interpolator_mod.mod: interpolator.$(OBJEXT)
+interpolator_mod.mod: interpolator.lo
 BUILT_SOURCES = interpolator_mod.mod
 include_HEADERS = interpolator_mod.mod
 

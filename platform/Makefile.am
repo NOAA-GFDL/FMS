@@ -13,7 +13,7 @@ noinst_LTLIBRARIES = libplatform.la
 libplatform_la_SOURCES = platform.F90
 
 # Mod file depends on its o file, is built and then installed.
-platform_mod.mod: platform.$(OBJEXT)
+platform_mod.mod: platform.lo
 BUILT_SOURCES = platform_mod.mod
 include_HEADERS = platform_mod.mod
 

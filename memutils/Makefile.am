@@ -30,7 +30,7 @@ libmemutils_la_SOURCES = memutils.F90
 noinst_LTLIBRARIES = libmemutils.la
 
 # Mod file depends on its o file, is built and then installed.
-memutils_mod.mod: memutils.$(OBJEXT)
+memutils_mod.mod: memutils.lo
 BUILT_SOURCES = memutils_mod.mod
 include_HEADERS = memutils_mod.mod
 

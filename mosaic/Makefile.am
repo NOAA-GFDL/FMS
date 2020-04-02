@@ -21,18 +21,18 @@ libmosaic_la_SOURCES = mosaic.F90
 libmosaic2_la_SOURCES = mosaic2.F90
 libgrid_la_SOURCES = grid.F90
 libgradient_la_SOURCES = gradient.F90
-libmosaic_c_la_SOURCES = create_xgrid.c gradient_c2l.c interp.c \
-mosaic_util.c read_mosaic.c constant.h create_xgrid.h gradient_c2l.h \
+libmosaic_c_la_SOURCES = create_xgrid.c gradient_c2l.c interp.c		\
+mosaic_util.c read_mosaic.c constant.h create_xgrid.h gradient_c2l.h	\
 interp.h mosaic_util.h read_mosaic.h
 
 # Each mod file depends on the .o file.
-mosaic_mod.mod: mosaic.$(OBJEXT)
-mosaic2_mod.mod: mosaic2.$(OBJEXT)
-grid_mod.mod: grid.$(OBJEXT)
-gradient_mod.mod: gradient.$(OBJEXT)
+mosaic_mod.mod: mosaic.lo
+mosaic2_mod.mod: mosaic2.lo
+grid_mod.mod: grid.lo
+gradient_mod.mod: gradient.lo
 
 # Some mods are dependant on other mods in this dir.
-grid.$(OBJEXT): mosaic_mod.mod
+grid.lo: mosaic_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = mosaic_mod.mod mosaic2_mod.mod grid_mod.mod gradient_mod.mod

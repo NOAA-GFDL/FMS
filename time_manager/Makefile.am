@@ -17,11 +17,11 @@ libtime_manager_la_SOURCES = time_manager.F90
 libget_cal_time_la_SOURCES = get_cal_time.F90
 
 # Each mod file depends on the .o file.
-time_manager_mod.mod: time_manager.$(OBJEXT)
-get_cal_time_mod.mod: get_cal_time.$(OBJEXT)
+time_manager_mod.mod: time_manager.lo
+get_cal_time_mod.mod: get_cal_time.lo
 
 # Some mods are dependant on other mods in this dir.
-get_cal_time.$(OBJEXT): time_manager_mod.mod
+get_cal_time.lo: time_manager_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = time_manager_mod.mod get_cal_time_mod.mod
