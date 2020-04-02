@@ -118,6 +118,7 @@ integer           :: unit, ierr, io
   is_it_double_precision = precision(grid_src(1)) .EQ. precision(1.0) 
   write(*,*) "**************LOOK HERE*****************"
   write(*,*) is_it_double_precision
+  write(*,*) grid_src(1)
   !write(*,*) "MAXSIZE"
   !write(*,*) MAXSIZE
   !write(*,*) "n_src"
