@@ -39,6 +39,8 @@ real, dimension(MAXSIZE) :: data_src = 0
 real, dimension(MAXSIZE) :: out_linear_dst = 0
 real, dimension(MAXSIZE) :: out_cubic_dst = 0
 real :: diff
+real (kind = real32)     :: check32 
+real (kind = real64)     :: check64
 logical :: is_it_double_precision
 
 namelist / test_axis_utils_nml / n_src, n_dst, grid_src, grid_dst, data_src, out_linear_dst, out_cubic_dst
@@ -115,8 +117,12 @@ integer           :: unit, ierr, io
   endif
 #endif
 
-  is_it_double_precision = precision(grid_src(1)) .EQ. precision(1.0) 
+  check64 = grid_src(1)
+  check32 = grid_src(1)
+  is_it_double_precision = check64 .EQ. check32 
   write(*,*) "**************LOOK HERE*****************"
+  write(*,*) check64
+  write(*,*) check32
   write(*,*) is_it_double_precision
   write(*,*) grid_src(1)
   !write(*,*) "MAXSIZE"
