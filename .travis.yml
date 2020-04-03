@@ -7,8 +7,8 @@
 # FMS is not a c-language project, although there are a few c-language
 # sources.  However, this is the best choice.
 language: c
+os: linux
 dist: bionic
-sudo: false
 
 addons:
   apt:
@@ -18,9 +18,10 @@ addons:
     - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev
 
 env:
-  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8' OPENMP=''
-  - CPPFLAGS_ADD='-DOVERLOAD_R4 -DOVERLOAD_R8' FCFLAGS_REAL_KIND='' OPENMP=''
-  - CPPFLAGS_ADD='' FCFLAGS_REAL_KIND='-fdefault-real-8 -fdefault-double-8' OPENMP='-fopenmp'
+  - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
+  - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--disable-openmp'
+  - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--enable-mixed-mode'
+  - FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none' DISTCHECK_CONFIGURE_FLAGS='--disable-setting-flags'
 
 # Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
 before_install:
@@ -35,5 +36,5 @@ before_script:
 
 script:
   - autoreconf -i
-  - ./configure
+  - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
   - make -j distcheck

@@ -37,7 +37,7 @@
 #define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include "mpp_read_2Ddecomp.INC"
+#include "include/mpp_read_2Ddecomp.INC"
 
 #ifdef OVERLOAD_R8
 #undef READ_RECORD_CORE_
@@ -52,7 +52,7 @@
 #define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d_r8
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
-#include "mpp_read_2Ddecomp.INC"
+#include "include/mpp_read_2Ddecomp.INC"
 #endif
 
 #undef MPP_READ_COMPRESSED_1D_
@@ -63,9 +63,9 @@
 #define MPP_READ_COMPRESSED_3D_ mpp_read_compressed_r3d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include "mpp_read_compressed.INC"
+#include "include/mpp_read_compressed.INC"
 
-#include "mpp_read_distributed_ascii.INC"
+#include "include/mpp_read_distributed_ascii.INC"
 
 ! <SUBROUTINE NAME="mpp_read_r4D" INTERFACE="mpp_read">
 !   <IN NAME="unit" TYPE="integer"></IN>

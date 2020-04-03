@@ -27,7 +27,7 @@ program test_affinity
       call mpp_error(FATAL, '=> test_affinity: Error reading input.nml')
     endif
 
-    call fms_set_affinity (component, use_hyper_thread, nthreads)
+    call fms_affinity_set (component, use_hyper_thread, nthreads)
 
 !--- print success or failure message
     if (mpp_pe() == mpp_root_pe()) print *, '*** SUCCESS!'

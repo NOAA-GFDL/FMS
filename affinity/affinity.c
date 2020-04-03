@@ -16,6 +16,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
+
+/**
+ * \file
+ * \author @bensonr
+ *
+ * \section DESCRIPTION
+ *
+ * Routines to set and get thread CPU affinity
+ */
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -30,6 +39,9 @@
 #include <pthread.h>
 #endif
 
+/**
+ * gettid function for systems that do not have this function (e.g. on Mac OS.)
+ */
 #ifndef HAVE_GETTID
 static pid_t gettid(void)
 {
@@ -44,13 +56,13 @@ static pid_t gettid(void)
 }
 #endif
 
-/*
+/**
  * Returns this thread's CPU affinity, if bound to a single core,
  * or else -1.
  */
 int get_cpu_affinity(void)
 {
-#ifndef __APPLE__
+#ifdef HAVE_SCHED_GETAFFINITY
   cpu_set_t coremask;           /* core affinity mask */
 
   CPU_ZERO(&coremask);
@@ -68,16 +80,13 @@ int get_cpu_affinity(void)
   return -1;
 }
 
-int get_cpu_affinity_(void) { return get_cpu_affinity(); }      /* Fortran interface */
-
-
-/*
+/**
  * Returns this groups CPUSET
  * and also the CPUSET size or -1 (in case of a storage error)
  */
 int get_cpuset(int fsz, int *output, int pe, _Bool debug)
 {
-#ifndef __APPLE__
+#ifdef HAVE_SCHED_GETAFFINITY
   cpu_set_t coremask; /* core affinity mask */
 
   CPU_ZERO(&coremask);
@@ -112,15 +121,12 @@ int get_cpuset(int fsz, int *output, int pe, _Bool debug)
 #endif
 }
 
-int get_cpuset_(int *fsz, int *output, int *pe, _Bool *debug) { return get_cpuset(*fsz, output, *pe, *debug); } /* Fortran interface */
-
-
-/*
+/**
  * Set CPU affinity to one core.
  */
 int set_cpu_affinity(int cpu)
 {
-#ifndef __APPLE__
+#ifdef HAVE_SCHED_GETAFFINITY
   cpu_set_t coremask; /* core affinity mask */
 
   CPU_ZERO(&coremask);
@@ -131,5 +137,3 @@ int set_cpu_affinity(int cpu)
 #endif
   return 0;
 }
-
-int set_cpu_affinity_(int *cpu) { return set_cpu_affinity(*cpu); } /* Fortran interface */

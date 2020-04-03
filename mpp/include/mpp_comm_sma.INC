@@ -464,7 +464,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST8
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET8
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 
 #ifdef OVERLOAD_C8
 #undef MPP_TRANSMIT_
@@ -523,7 +523,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST8
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET128
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 #endif
 
 #ifdef OVERLOAD_R4
@@ -583,7 +583,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST4
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET4
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 #endif
 
 #ifdef OVERLOAD_C4
@@ -643,7 +643,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST4
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET64
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -703,7 +703,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST8
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET8
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 #endif
 
 #undef MPP_TRANSMIT_
@@ -762,7 +762,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST4
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET4
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 
 #ifndef no_8byte_integers
 #undef MPP_TRANSMIT_
@@ -821,7 +821,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST8
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET8
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 #endif
 
 #undef MPP_TRANSMIT_
@@ -880,7 +880,7 @@ end subroutine mpp_malloc
 #define SHMEM_BROADCAST_ SHMEM_BROADCAST4
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET4
-#include "mpp_transmit_sma.INC"
+#include "include/mpp_transmit_sma.INC"
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -898,7 +898,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL8_MAX_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 
 #ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
@@ -911,7 +911,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL4_MAX_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -925,7 +925,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_INT8_MAX_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 #endif
 
 #undef MPP_REDUCE_0D_
@@ -938,7 +938,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_INT4_MAX_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_real8_0d
@@ -950,7 +950,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL8_MIN_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 
 #ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
@@ -963,7 +963,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL4_MIN_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -977,7 +977,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_INT8_MIN_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 #endif
 
 #undef MPP_REDUCE_0D_
@@ -990,7 +990,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_INT4_MIN_TO_ALL
-#include "mpp_reduce_sma.INC"
+#include "include/mpp_reduce_sma.INC"
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real8
@@ -1010,7 +1010,7 @@ end subroutine mpp_malloc
 #define SHMEM_SUM_ SHMEM_REAL8_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_sma.INC"
+#include "include/mpp_sum_sma.INC"
 
 #ifdef OVERLOAD_C8
 #undef MPP_SUM_
@@ -1031,7 +1031,7 @@ end subroutine mpp_malloc
 #define SHMEM_SUM_ SHMEM_COMP8_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
-#include "mpp_sum_sma.INC"
+#include "include/mpp_sum_sma.INC"
 #endif
 
 #ifdef OVERLOAD_R4
@@ -1053,7 +1053,7 @@ end subroutine mpp_malloc
 #define SHMEM_SUM_ SHMEM_REAL4_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include "mpp_sum_sma.INC"
+#include "include/mpp_sum_sma.INC"
 #endif
 
 #ifdef OVERLOAD_C4
@@ -1075,7 +1075,7 @@ end subroutine mpp_malloc
 #define SHMEM_SUM_ SHMEM_COMP4_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_sma.INC"
+#include "include/mpp_sum_sma.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -1097,7 +1097,7 @@ end subroutine mpp_malloc
 #define SHMEM_SUM_ SHMEM_INT8_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_sma.INC"
+#include "include/mpp_sum_sma.INC"
 #endif
 
 #undef MPP_SUM_
@@ -1118,7 +1118,7 @@ end subroutine mpp_malloc
 #define SHMEM_SUM_ SHMEM_INT4_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include "mpp_sum_sma.INC"
+#include "include/mpp_sum_sma.INC"
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1136,7 +1136,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_alltoall_sma.INC"
+#include "include/mpp_alltoall_sma.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1148,7 +1148,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_alltoall_sma.INC"
+#include "include/mpp_alltoall_sma.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1160,7 +1160,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
-#include "mpp_alltoall_sma.INC"
+#include "include/mpp_alltoall_sma.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1172,7 +1172,7 @@ end subroutine mpp_malloc
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
-#include "mpp_alltoall_sma.INC"
+#include "include/mpp_alltoall_sma.INC"
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1183,32 +1183,32 @@ end subroutine mpp_malloc
 #define MPP_TYPE_CREATE_ mpp_type_create_int4
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_type_sma.INC"
+#include "include/mpp_type_sma.INC"
 
 #define MPP_TYPE_CREATE_ mpp_type_create_int8
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_type_sma.INC"
+#include "include/mpp_type_sma.INC"
 
 #define MPP_TYPE_CREATE_ mpp_type_create_real4
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPI_TYPE_ MPI_REAL4
-#include "mpp_type_sma.INC"
+#include "include/mpp_type_sma.INC"
 
 #define MPP_TYPE_CREATE_ mpp_type_create_real8
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPI_TYPE_ MPI_REAL8
-#include "mpp_type_sma.INC"
+#include "include/mpp_type_sma.INC"
 
 #define MPP_TYPE_CREATE_ mpp_type_create_logical4
 #define MPP_TYPE_ logical(INT_KIND)
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_type_sma.INC"
+#include "include/mpp_type_sma.INC"
 
 #define MPP_TYPE_CREATE_ mpp_type_create_logical8
 #define MPP_TYPE_ logical(LONG_KIND)
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_type_sma.INC"
+#include "include/mpp_type_sma.INC"
 
 ! Clear preprocessor flags
 #undef MPI_TYPE_

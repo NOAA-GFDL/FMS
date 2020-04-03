@@ -47,7 +47,6 @@ SRCS_F90 = \
          ../diag_manager/diag_axis.F90                                      \
          ../diag_manager/diag_data.F90                                      \
          ../diag_manager/diag_grid.F90                                      \
-         ../diag_manager/diag_manifest.F90                                  \
          ../diag_manager/diag_manager.F90                                   \
          ../diag_manager/diag_output.F90                                    \
          ../diag_manager/diag_table.F90                                     \
@@ -61,8 +60,6 @@ SRCS_F90 = \
          ../drifters/quicksort.F90                                          \
          ../exchange/stock_constants.F90                                    \
          ../exchange/xgrid.F90                                              \
-         ../fft/fft.F90                                                     \
-         ../fft/fft99.F90                                                   \
          ../field_manager/field_manager.F90                                 \
          ../field_manager/fm_util.F90                                       \
          ../fms/fms.F90                                                     \
@@ -94,7 +91,6 @@ SRCS_F90 = \
          ../random_numbers/random_numbers.F90                               \
          ../sat_vapor_pres/sat_vapor_pres.F90                               \
          ../sat_vapor_pres/sat_vapor_pres_k.F90                             \
-         ../station_data/station_data.F90                                   \
          ../time_interp/time_interp.F90                                     \
          ../time_interp/time_interp_external.F90                            \
          ../time_manager/get_cal_time.F90                                   \
@@ -106,12 +102,12 @@ SRCS_F90 = \
 
 SRCS_c   = \
          ../affinity/affinity.c                                             \
-         ../memutils/memuse.c                                               \
          ../mosaic/create_xgrid.c                                           \
          ../mosaic/gradient_c2l.c                                           \
          ../mosaic/interp.c                                                 \
          ../mosaic/mosaic_util.c                                            \
          ../mosaic/read_mosaic.c                                            \
+         ../mpp/mpp_memuse.c                                                \
          ../mpp/nsclock.c                                                   \
          ../mpp/threadloc.c
 

@@ -74,6 +74,7 @@ public :: save_domain_restart
 public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
+public :: is_dimension_registered
 
 
 interface compute_global_checksum
@@ -268,6 +269,34 @@ function is_variable_domain_decomposed(fileobj, variable_name, broadcast, &
 end function is_variable_domain_decomposed
 
 
+!> @brief Determine whether a domain-decomposed dimension has been registered to the file object
+!! @return Flag telling if the dimension is registered to the file object
+function is_dimension_registered(fileobj, dimension_name) &
+  result(is_registered)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: dimension_name !< Dimension name.
+
+  ! local
+  logical :: is_registered
+
+  integer :: dpos
+  integer :: ndims
+  character(len=nf90_max_name), dimension(:), allocatable :: dim_names
+
+  dpos = 0
+  is_registered = .false.
+  dpos = get_domain_decomposed_index(dimension_name, fileobj%xdims, fileobj%nx)
+  if (dpos .ne. variable_not_found) then
+    is_registered = .true.
+  else
+    dpos = get_domain_decomposed_index(dimension_name, fileobj%ydims, fileobj%ny)
+    if (dpos .ne. variable_not_found) is_registered = .true.
+  endif
+
+end function is_dimension_registered
+
+
 !> @brief Open a domain netcdf file.
 !! @return Flag telling if the open completed successfully.
 function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
@@ -342,8 +371,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
                                  is_restart)
-		!If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
-		if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
+      !If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
+      if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
     endif
   endif
   if (.not. success) then
@@ -416,7 +445,7 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   else
     call error("unrecognized xory flag value.")
   endif
-  if (fileobj%is_readonly) then
+  if (fileobj%is_readonly .or. (fileobj%mode_is_append .and. dimension_exists(fileobj, dim_name))) then
     call get_dimension_size(fileobj, dim_name, dim_size, broadcast=.true.)
     if (dim_size .lt. domain_size) then
       call error("dimension "//trim(dim_name)//" is smaller than the size of" &
@@ -686,22 +715,22 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
                               position=xpos)
   ! If the xpos is east and the ending x index is NOT equal to max allowed, set extra_x_point to true
   if (present(extra_x_point)) then
-	 if ((xpos .eq. east) .and. (iec .ne. xmax)) then
-		extra_x_point = .true.
-	else
-		extra_x_point = .false.
-	endif
+    if ((xpos .eq. east) .and. (iec .ne. xmax)) then
+      extra_x_point = .true.
+    else
+      extra_x_point = .false.
+    endif
   endif
 
   call mpp_get_compute_domain(io_domain, ybegin=jsc, yend=jec, ysize=yc_size, &
                               position=ypos)
   ! If the ypost is north and the ending y index is NOT equal to max allowed, set extra_y_point to true
   if (present(extra_y_point)) then
-	 if ((ypos .eq. north) .and. (jec .ne. ymax)) then
-		extra_y_point = .true.
-	 else
-		extra_y_point = .false.
-	 endif
+    if ((ypos .eq. north) .and. (jec .ne. ymax)) then
+      extra_y_point = .true.
+    else
+      extra_y_point = .false.
+    endif
   endif
 
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
@@ -715,15 +744,17 @@ end subroutine domain_offsets
 
 !> @brief Get starting/ending global indices of the I/O domain for a domain decomposed
 !!        file.
-subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
+subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: dimname !< Name of dimension variable.
   integer, intent(out) :: is !< Staring index of I/O global domain.
   integer, intent(out) :: ie !< Ending index of I/O global domain.
+  integer, dimension(:), allocatable, intent(out), optional :: indices !< Global domain indices
 
   type(domain2d), pointer :: io_domain
   integer :: dpos
+  integer :: i
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(dimname, fileobj%xdims, fileobj%nx)
@@ -731,7 +762,7 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
     dpos = fileobj%xdims(dpos)%pos
     call mpp_get_global_domain(io_domain, xbegin=is, xend=ie, position=dpos)
   else
-    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%nx)
+    dpos = get_domain_decomposed_index(dimname, fileobj%ydims, fileobj%ny)
     if (dpos .ne. variable_not_found) then
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_global_domain(io_domain, ybegin=is, yend=ie, position=dpos)
@@ -739,6 +770,20 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie)
       call error("input dimension is not associated with the domain.")
     endif
   endif
+
+! Allocate indices to the difference between the ending and starting indices and
+! fill indices with the data
+  if (present(indices)) then
+    if(allocated(indices)) then
+      call error("get_global_io_domain_indices: the variable indices should not be allocated.")
+    endif
+    allocate(indices(ie-is+1))
+    do i = is, ie
+      indices(i-is+1) = i
+    enddo
+  endif
+
+
 end subroutine get_global_io_domain_indices
 
 
@@ -749,3 +794,4 @@ include "include/compute_global_checksum.inc"
 
 
 end module fms_netcdf_domain_io_mod
+

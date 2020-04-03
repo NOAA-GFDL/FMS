@@ -19,6 +19,7 @@
 
 MODULE diag_util_mod
 #include "../include/fms_platform.h"
+
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>

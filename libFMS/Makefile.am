@@ -9,7 +9,7 @@ lib_LTLIBRARIES = libFMS.la
 # These linker flags specify libtool version info.
 # See http://www.gnu.org/software/libtool/manual/libtool.html#Libtool-versioning
 # for information regarding incrementing `-version-info`.
-libFMS_la_LDFLAGS = -version-info 2:0:0
+libFMS_la_LDFLAGS = -version-info 3:0:0
 
 # Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = ${top_builddir}/platform/libplatform.la
@@ -25,10 +25,8 @@ libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_pset.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_efp.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_c.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_memutils.la
+libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_memuse_c.la
 libFMS_la_LIBADD += ${top_builddir}/memutils/libmemutils.la
-if APPLE
-libFMS_la_LIBADD += ${top_builddir}/memutils/libmemuse_c.la
-endif
 libFMS_la_LIBADD += ${top_builddir}/fms/libfms_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms/libfms.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms2_io.la
@@ -36,7 +34,6 @@ libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_io_utils.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libnetcdf_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_netcdf_domain_io.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libfms_netcdf_unstructured_domain_io.la
-libFMS_la_LIBADD += ${top_builddir}/fms2_io/liblegacy.la
 libFMS_la_LIBADD += ${top_builddir}/fms2_io/libblackboxio.la
 libFMS_la_LIBADD += ${top_builddir}/affinity/libfms_affinity.la
 libFMS_la_LIBADD += ${top_builddir}/affinity/libfms_affinity_c.la
@@ -73,7 +70,6 @@ libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_axis.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_grid.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_output.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_util.la
-libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_manifest.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_table.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_manager.la
 libFMS_la_LIBADD += ${top_builddir}/diag_integral/libdiag_integral.la
@@ -86,13 +82,15 @@ libFMS_la_LIBADD += ${top_builddir}/field_manager/libfm_util.la
 libFMS_la_LIBADD += ${top_builddir}/monin_obukhov/libmonin_obukhov.la
 libFMS_la_LIBADD += ${top_builddir}/monin_obukhov/libmonin_obukhov_kernel.la
 libFMS_la_LIBADD += ${top_builddir}/interpolator/libinterpolator.la
-libFMS_la_LIBADD += ${top_builddir}/fft/libfft99.la
-libFMS_la_LIBADD += ${top_builddir}/fft/libfft.la
 libFMS_la_LIBADD += ${top_builddir}/amip_interp/libamip_interp.la
 libFMS_la_LIBADD += ${top_builddir}/exchange/libstock_constants.la
 libFMS_la_LIBADD += ${top_builddir}/exchange/libxgrid.la
 libFMS_la_LIBADD += ${top_builddir}/topography/libtopography.la
 libFMS_la_LIBADD += ${top_builddir}/tracer_manager/libtracer_manager.la
+libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres_k.la
+libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres.la
+libFMS_la_LIBADD += ${top_builddir}/random_numbers/libMersenneTwister.la
+libFMS_la_LIBADD += ${top_builddir}/random_numbers/librandom_numbers.la
 
 # At least one source file must be included to please Automake.
 libFMS_la_SOURCES = ${top_builddir}/include/file_version.FH

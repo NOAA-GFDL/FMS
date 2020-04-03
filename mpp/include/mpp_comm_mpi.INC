@@ -502,7 +502,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 
 #ifdef OVERLOAD_C8
 #undef MPP_TRANSMIT_
@@ -559,7 +559,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 16
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 #endif
 
 #undef MPP_TRANSMIT_
@@ -616,7 +616,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 
 #ifdef OVERLOAD_C4
 #undef MPP_TRANSMIT_
@@ -673,7 +673,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -731,7 +731,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 #endif
 
 #undef MPP_TRANSMIT_
@@ -788,7 +788,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 
 #ifndef no_8byte_integers
 #undef MPP_TRANSMIT_
@@ -845,7 +845,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 #endif
 
 #undef MPP_TRANSMIT_
@@ -902,7 +902,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_transmit_mpi.INC"
+#include "include/mpp_transmit_mpi.INC"
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -921,7 +921,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 
 #ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
@@ -936,7 +936,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -952,7 +952,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 #endif
 
 #undef MPP_REDUCE_0D_
@@ -967,7 +967,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_real8_0d
@@ -981,7 +981,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 
 #ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
@@ -996,7 +996,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -1012,7 +1012,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 #endif
 
 #undef MPP_REDUCE_0D_
@@ -1027,7 +1027,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include "mpp_reduce_mpi.INC"
+#include "include/mpp_reduce_mpi.INC"
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real8
@@ -1047,7 +1047,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_mpi.INC"
+#include "include/mpp_sum_mpi.INC"
 
 #ifdef OVERLOAD_C8
 #undef MPP_SUM_
@@ -1068,7 +1068,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
-#include "mpp_sum_mpi.INC"
+#include "include/mpp_sum_mpi.INC"
 #endif
 
 #ifdef OVERLOAD_R4
@@ -1090,7 +1090,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include "mpp_sum_mpi.INC"
+#include "include/mpp_sum_mpi.INC"
 #endif
 
 #ifdef OVERLOAD_C4
@@ -1112,7 +1112,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_mpi.INC"
+#include "include/mpp_sum_mpi.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -1134,7 +1134,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_mpi.INC"
+#include "include/mpp_sum_mpi.INC"
 #endif
 
 #undef MPP_SUM_
@@ -1155,7 +1155,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include "mpp_sum_mpi.INC"
+#include "include/mpp_sum_mpi.INC"
 !--------------------------------
 #undef MPP_SUM_AD_
 #define MPP_SUM_AD_ mpp_sum_real8_ad
@@ -1175,7 +1175,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_mpi_ad.INC"
+#include "include/mpp_sum_mpi_ad.INC"
 
 #ifdef OVERLOAD_C8
 #undef MPP_SUM_AD_
@@ -1196,7 +1196,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
-#include "mpp_sum_mpi_ad.INC"
+#include "include/mpp_sum_mpi_ad.INC"
 #endif
 
 #ifdef OVERLOAD_R4
@@ -1218,7 +1218,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_REAL4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include "mpp_sum_mpi_ad.INC"
+#include "include/mpp_sum_mpi_ad.INC"
 #endif
 
 #ifdef OVERLOAD_C4
@@ -1240,7 +1240,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_mpi_ad.INC"
+#include "include/mpp_sum_mpi_ad.INC"
 #endif
 
 #ifndef no_8byte_integers
@@ -1262,7 +1262,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include "mpp_sum_mpi_ad.INC"
+#include "include/mpp_sum_mpi_ad.INC"
 #endif
 
 #undef MPP_SUM_AD_
@@ -1283,7 +1283,7 @@ end subroutine mpp_gsm_free
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include "mpp_sum_mpi_ad.INC"
+#include "include/mpp_sum_mpi_ad.INC"
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1303,7 +1303,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1317,7 +1317,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1331,7 +1331,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1345,7 +1345,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1359,7 +1359,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_COMPLEX8
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1373,7 +1373,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #define MPP_TYPE_BYTELEN_ 16
 #define MPI_TYPE_ MPI_COMPLEX16
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1387,7 +1387,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ logical(INT_KIND)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1401,7 +1401,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_ logical(LONG_KIND)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_alltoall_mpi.INC"
+#include "include/mpp_alltoall_mpi.INC"
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1415,7 +1415,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_int4
 #define MPP_TYPE_ integer(INT_KIND)
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1423,7 +1423,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_int8
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1431,7 +1431,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_real4
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPI_TYPE_ MPI_REAL4
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1439,7 +1439,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_real8
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPI_TYPE_ MPI_REAL8
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1447,7 +1447,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_cmplx4
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #define MPI_TYPE_ MPI_COMPLEX8
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1455,7 +1455,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_cmplx8
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #define MPI_TYPE_ MPI_COMPLEX16
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1463,7 +1463,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_logical4
 #define MPP_TYPE_ logical(INT_KIND)
 #define MPI_TYPE_ MPI_INTEGER4
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1471,7 +1471,7 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_logical8
 #define MPP_TYPE_ logical(LONG_KIND)
 #define MPI_TYPE_ MPI_INTEGER8
-#include "mpp_type_mpi.INC"
+#include "include/mpp_type_mpi.INC"
 
 ! Clear preprocessor flags
 #undef MPI_TYPE_

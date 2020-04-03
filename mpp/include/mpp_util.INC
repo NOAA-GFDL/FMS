@@ -21,11 +21,11 @@
 !***********************************************************************
 
 #ifdef use_libSMA
-#include "mpp_util_sma.INC"
+#include "include/mpp_util_sma.INC"
 #elif defined(use_libMPI)
-#include "mpp_util_mpi.INC"
+#include "include/mpp_util_mpi.INC"
 #else
-#include "mpp_util_nocomm.INC"
+#include "include/mpp_util_nocomm.INC"
 #endif
 
   !#####################################################################
@@ -250,7 +250,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_ia
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_a_a.INC"
+#include "include/mpp_error_a_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -258,7 +258,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_ra
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include "mpp_error_a_a.INC"
+#include "include/mpp_error_a_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -266,7 +266,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_ia
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_a_a.INC"
+#include "include/mpp_error_a_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -274,7 +274,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_ra
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include "mpp_error_a_a.INC"
+#include "include/mpp_error_a_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -282,7 +282,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_is
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_a_s.INC"
+#include "include/mpp_error_a_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -290,7 +290,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_rs
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include "mpp_error_a_s.INC"
+#include "include/mpp_error_a_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -298,7 +298,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_is
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_a_s.INC"
+#include "include/mpp_error_a_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -306,7 +306,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_rs
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include "mpp_error_a_s.INC"
+#include "include/mpp_error_a_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -314,7 +314,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_ia
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_s_a.INC"
+#include "include/mpp_error_s_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -322,7 +322,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_ra
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include "mpp_error_s_a.INC"
+#include "include/mpp_error_s_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -330,7 +330,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_ia
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_s_a.INC"
+#include "include/mpp_error_s_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -338,7 +338,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_ra
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include "mpp_error_s_a.INC"
+#include "include/mpp_error_s_a.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -346,7 +346,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_is
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_s_s.INC"
+#include "include/mpp_error_s_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -354,7 +354,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_rs
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include "mpp_error_s_s.INC"
+#include "include/mpp_error_s_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -362,7 +362,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_is
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include "mpp_error_s_s.INC"
+#include "include/mpp_error_s_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -370,7 +370,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_rs
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include "mpp_error_s_s.INC"
+#include "include/mpp_error_s_s.INC"
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_

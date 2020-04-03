@@ -42,12 +42,13 @@ module axis_utils2_mod
   !
   !</DESCRIPTION>
   !
-  use, intrinsic :: iso_fortran_env, only: real32, real64
+  use, intrinsic :: iso_fortran_env
   use mpp_mod,    only: mpp_error, FATAL, stdout
-  use fms_mod,    only: lowercase, string_array_index, fms_error_handler
+  use fms_mod,    only: lowercase, uppercase, string_array_index, fms_error_handler
   use fms2_io_mod, only: FmsNetcdfDomainFile_t, variable_att_exists, FmsNetcdfFile_t, &
                          get_variable_num_dimensions, get_variable_attribute,  &
-                         get_variable_size, read_data
+                         get_variable_size, read_data, variable_exists
+
   implicit none
 
   public get_axis_cart, get_axis_modulo, lon_in_range, &
@@ -73,7 +74,7 @@ contains
 
   subroutine get_axis_cart(fileobj, axisname, cart)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
-    character(len=*),     intent(out) :: axisname
+    character(len=*), intent(in) :: axisname
     character(len=1), intent(out) :: cart
 
     character(len=1) :: axis_cart
@@ -84,7 +85,7 @@ contains
     character(len=8) , dimension(4) :: z_units
     character(len=3) , dimension(6) :: t_units
     character(len=32) :: name
-    integer :: i,j
+    integer :: i
 
     lon_names = (/'lon','x  '/)
     lat_names = (/'lat','y  '/)
@@ -95,15 +96,19 @@ contains
     z_units = (/'cm ','m  ','pa ','hpa'/)
     t_units = (/'sec', 'min','hou','day','mon','yea'/)
 
-
-    if(variable_att_exists(fileobj, axisname, "cartesian_axis")) then
-       call get_variable_attribute(fileobj, axisname, "cartesian_axis", axis_cart)
-       if ( lowercase(axis_cart) == 'x' ) cart = 'X'
-       if ( lowercase(axis_cart) == 'y' ) cart = 'Y'
-       if ( lowercase(axis_cart) == 'z' ) cart = 'Z'
-       if ( lowercase(axis_cart) == 't' ) cart = 'T'
-    else
-       cart = 'N'
+    cart = "N"
+    if (variable_exists(fileobj, axisname)) then
+      if (variable_att_exists(fileobj, axisname, "cartesian_axis")) then
+        call get_variable_attribute(fileobj, axisname, "cartesian_axis", cart)
+      elseif (variable_att_exists(fileobj, axisname, "axis")) then
+        call get_variable_attribute(fileobj, axisname, "axis", cart)
+      endif
+      axis_cart = uppercase(cart)
+      if (axis_cart .eq. 'X' .or. axis_cart .eq. 'Y' .or. axis_cart .eq. 'Z' &
+          .or. axis_cart .eq. 'T') then
+        cart = axis_cart
+        return
+      endif
     endif
 
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
@@ -137,9 +142,6 @@ contains
           if (name(1:3) == trim(t_units(i))) cart = 'T'
        enddo
     end if
-
-    return
-
   end subroutine get_axis_cart
 
   subroutine axis_edges(fileobj, name, edge_data)
@@ -249,65 +251,65 @@ end subroutine axis_edges
 
   function get_axis_modulo(fileobj, axisname)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
-    character(len=*),     intent(out) :: axisname
+    character(len=*), intent(in) :: axisname
     logical :: get_axis_modulo
 
     get_axis_modulo = variable_att_exists(fileobj, axisname, "modulo")
-
-    return
   end function get_axis_modulo
 
   function get_axis_modulo_times(fileobj, axisname, tbeg, tend)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
-    character(len=*),      intent(in) :: axisname
-    character(len=*),     intent(out) :: tbeg, tend
+    character(len=*), intent(in) :: axisname
+    character(len=*), intent(out) :: tbeg, tend
     logical :: get_axis_modulo_times
     logical :: found_tbeg, found_tend
-
 
     found_tbeg = variable_att_exists(fileobj, axisname, "modulo_beg")
     found_tend = variable_att_exists(fileobj, axisname, "modulo_end")
 
-    if(found_tbeg .and. .not.found_tend) then
+    if (found_tbeg .and. .not. found_tend) then
       call mpp_error(FATAL,'error in get: Found modulo_beg but not modulo_end')
     endif
-    if(.not.found_tbeg .and. found_tend) then
+    if (.not. found_tbeg .and. found_tend) then
       call mpp_error(FATAL,'error in get: Found modulo_end but not modulo_beg')
     endif
 
-    if(found_tbeg) then
-       call get_variable_attribute(fileobj, axisname, "modulo_beg", tbeg)
-       call get_variable_attribute(fileobj, axisname, "modulo_end", tend)
+    if (found_tbeg) then
+      call get_variable_attribute(fileobj, axisname, "modulo_beg", tbeg)
+      call get_variable_attribute(fileobj, axisname, "modulo_end", tend)
+    else
+      tbeg = ""
+      tend = ""
     endif
-
     get_axis_modulo_times = found_tbeg
-
   end function get_axis_modulo_times
 
   function lon_in_range(lon, l_strt)
-    real :: lon, l_strt, lon_in_range, l_end
+    real, intent(in) :: lon, l_strt
+    real :: lon_in_range
+    real :: l_end
 
     lon_in_range = lon
     l_end = l_strt+360.
 
     if (abs(lon_in_range - l_strt) < 1.e-4) then
-       lon_in_range = l_strt
-       return
+      lon_in_range = l_strt
+      return
     endif
 
     if (abs(lon_in_range - l_end) < 1.e-4) then
-       lon_in_range = l_strt
-       return
+      lon_in_range = l_strt
+      return
     endif
 
     do
-       if (lon_in_range < l_strt) then
-          lon_in_range = lon_in_range +  f360;
-       else if (lon_in_range  >  l_end) then
-          lon_in_range  = lon_in_range - f360;
-       else
-          exit
-       end if
+      if (lon_in_range < l_strt) then
+        lon_in_range = lon_in_range +  f360
+      else if (lon_in_range  >  l_end) then
+        lon_in_range  = lon_in_range - f360
+      else
+        exit
+      end if
     end do
 
   end function lon_in_range
@@ -874,3 +876,7 @@ end program test
 
 
 #endif /* test_axis_utils */
+
+
+
+
