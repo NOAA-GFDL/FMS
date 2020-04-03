@@ -29,10 +29,12 @@ integer :: mystat
 
 READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
 
-if (mystat < 0) then
- fms2_ncblksz = ncblksz
-else
- call error("fms2_io_init :: There was an error reading the namelist")
+print *, ' mystat is ', mystat
+ 
+if (mystat == 0) then 
+  fms2_ncblksz = ncblksz
+elseif (mystat /= -1) then 
+  call error("fms2_io_init :: There was an error reading the namelist")
 endif
 
 end subroutine fms2_io_init
