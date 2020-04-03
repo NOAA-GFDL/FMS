@@ -117,14 +117,7 @@ integer           :: unit, ierr, io
   endif
 #endif
 
-  check64 = grid_src(1)
-  check32 = grid_src(1)
-  is_it_double_precision = check64 .EQ. check32 
-  write(*,*) "**************LOOK HERE*****************"
-  write(*,*) check64
-  write(*,*) check32
-  write(*,*) is_it_double_precision
-  write(*,*) grid_src(1)
+
   !write(*,*) "MAXSIZE"
   !write(*,*) MAXSIZE
   !write(*,*) "n_src"
@@ -142,6 +135,15 @@ integer           :: unit, ierr, io
   write(unit,*)' the source grid is ', grid_src(1:n_src)
   write(unit,*)' the destination grid is ', grid_dst(1:n_dst)
   write(unit,*)' the source data is ', data_src(1:n_src)
+ 
+  check64 = grid_src(1)
+  check32 = grid_src(1)
+  is_it_double_precision = check64 .EQ. check32 
+  write(*,*) "**************LOOK HERE*****************"
+  write(*,*) check64
+  write(*,*) check32
+  write(*,*) is_it_double_precision
+  write(*,*) grid_src(1)
 
   !--- testing linear interpolation
   write(*,*) "linear"
