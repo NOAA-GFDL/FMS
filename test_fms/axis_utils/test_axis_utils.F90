@@ -39,8 +39,8 @@ real, dimension(MAXSIZE) :: data_src = 0
 real, dimension(MAXSIZE) :: out_linear_dst = 0
 real, dimension(MAXSIZE) :: out_cubic_dst = 0
 real :: diff
-real(kind=real32) :: check32 
-real(kind=real64) :: check64
+REAL*4:: check32 
+REAL*8 :: check64
 logical :: is_it_double_precision
 
 namelist / test_axis_utils_nml / n_src, n_dst, grid_src, grid_dst, data_src, out_linear_dst, out_cubic_dst
