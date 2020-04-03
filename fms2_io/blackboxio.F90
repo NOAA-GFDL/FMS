@@ -6,6 +6,7 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use mpp_mod, only: mpp_pe
+use fms2_io_namelist_mod, only: fms2_ncblksz
 use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
 implicit none
 private
@@ -114,7 +115,7 @@ function create_diskless_netcdf_file(fileobj, pelist, path) &
   fileobj%is_diskless = .true.
   cmode = ior(nf90_noclobber, nf90_classic_model)
   cmode = ior(cmode, nf90_diskless)
-  err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid)
+  err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid, chunksize=fms2_ncblksz)
   success = err .eq. nf90_noerr
   if (.not. success) then
     deallocate(fileobj%pelist)

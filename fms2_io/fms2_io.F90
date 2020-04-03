@@ -7,6 +7,7 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use blackboxio
+use fms2_io_namelist_mod, only:fms2_io_init
 implicit none
 private
 
@@ -62,7 +63,7 @@ public :: is_registered_to_restart
 public :: check_if_open
 public :: set_fileobj_time_name
 public :: is_dimension_registered
-
+public :: fms2_io_init
 
 interface open_file
   module procedure netcdf_file_open_wrap

@@ -7,6 +7,7 @@ use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
+use fms2_io_namelist_mod, only: fms2_ncblksz
 implicit none
 private
 
@@ -463,13 +464,13 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       call string_copy(fileobj%nc_format, nc_format)
     endif
     if (string_compare(mode, "read", .true.)) then
-      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncblksz)
     elseif (string_compare(mode, "append", .true.)) then
-      err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid)
+      err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid, chunksize=fms2_ncblksz)
     elseif (string_compare(mode, "write", .true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncblksz)
     elseif (string_compare(mode,"overwrite",.true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncblksz)
     else
       call error("unrecognized file mode "//trim(mode)//".")
     endif

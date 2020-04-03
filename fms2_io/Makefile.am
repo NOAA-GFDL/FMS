@@ -10,7 +10,7 @@ AM_CPPFLAGS += -I${top_srcdir}/fms2_io/include
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfms2_io.la libfms_io_utils.la libnetcdf_io.la \
                      libfms_netcdf_domain_io.la libfms_netcdf_unstructured_domain_io.la \
-                     libblackboxio.la
+                     libblackboxio.la libfms2_io_namelist.la
 
 # Each convenience library depends on its source.
 libfms2_io_la_SOURCES = fms2_io.F90
@@ -19,6 +19,7 @@ libnetcdf_io_la_SOURCES = netcdf_io.F90
 libfms_netcdf_domain_io_la_SOURCES = fms_netcdf_domain_io.F90
 libfms_netcdf_unstructured_domain_io_la_SOURCES = fms_netcdf_unstructured_domain_io.F90
 libblackboxio_la_SOURCES = blackboxio.F90
+libfms2_io_namelist_la_SOURCES = fms2_io_namelist.F90
 
 # Each mod file depends on the .o file.
 fms2_io_mod.mod: fms2_io.$(OBJEXT)
@@ -27,20 +28,21 @@ netcdf_io_mod.mod: netcdf_io.$(OBJEXT)
 fms_netcdf_domain_io_mod.mod: fms_netcdf_domain_io.$(OBJEXT)
 fms_netcdf_unstructured_domain_io_mod.mod: fms_netcdf_unstructured_domain_io.$(OBJEXT)
 blackboxio.mod: blackboxio.$(OBJEXT)
+fms2_io_namelist.mod: fms2_io_namelist.$(OBJEXT)
 
 # Some mods are dependant on other mods in this dir.
 fms2_io.$(OBJEXT): fms_io_utils_mod.mod netcdf_io_mod.mod fms_netcdf_domain_io_mod.mod \
-                   fms_netcdf_unstructured_domain_io_mod.mod blackboxio.mod
-netcdf_io.$(OBJEXT): fms_io_utils_mod.mod
+                   fms_netcdf_unstructured_domain_io_mod.mod blackboxio.mod fms2_io_namelist.mod
+netcdf_io.$(OBJEXT): fms_io_utils_mod.mod fms2_io_namelist.mod
 fms_netcdf_domain_io.$(OBJEXT): fms_io_utils_mod.mod netcdf_io_mod.mod
 fms_netcdf_unstructured_domain_io.$(OBJEXT): fms_io_utils_mod.mod netcdf_io_mod.mod
 blackboxio.$(OBJEXT): fms_io_utils_mod.mod netcdf_io_mod.mod fms_netcdf_domain_io_mod.mod \
-                      fms_netcdf_unstructured_domain_io_mod.mod
-
+                      fms_netcdf_unstructured_domain_io_mod.mod fms2_io_namelist.mod
+fms2_io_namelist.$(OBJEXT): fms_io_utils_mod.mod
 # Mod files are built and then installed as headers.
 MODFILES = fms2_io_mod.mod fms_io_utils_mod.mod netcdf_io_mod.mod \
            fms_netcdf_domain_io_mod.mod fms_netcdf_unstructured_domain_io_mod.mod \
-           blackboxio.mod
+           blackboxio.mod fms2_io_namelist.mod
 BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
 
