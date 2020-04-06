@@ -100,9 +100,9 @@ type override_type
    integer                          :: dims(4)                 ! dimensions(x,y,z,t) of the field in filename
    integer                          :: comp_domain(4)          ! istart,iend,jstart,jend for compute domain
    integer                          :: numthreads
-   real, _ALLOCATABLE               :: lon_in(:) _NULL
-   real, _ALLOCATABLE               :: lat_in(:) _NULL
-   logical, _ALLOCATABLE            :: need_compute(:) _NULL
+   real, allocatable               :: lon_in(:)
+   real, allocatable               :: lat_in(:)
+   logical, allocatable            :: need_compute(:)
    integer                          :: numwindows
    integer                          :: window_size(2)
    integer                          :: is_src, ie_src, js_src, je_src

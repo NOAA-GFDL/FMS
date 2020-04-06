@@ -1934,7 +1934,7 @@ CONTAINS
           fname = TRIM(filename)
           CALL get_mosaic_tile_file_ug(fname,filename,domainU)
     ENDIF
-    IF ( _ALLOCATED(files(file)%attributes) ) THEN
+    IF ( allocated(files(file)%attributes) ) THEN
        CALL diag_output_init(filename, files(file)%format, global_descriptor,&
             & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
             & fileobj(file),fileobjU(file), fileobjND(file), fnum_for_domain(file),&
@@ -2756,7 +2756,7 @@ CONTAINS
     IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Allocate memory for the attributes
-    IF ( .NOT._ALLOCATED(out_field%attributes) ) THEN
+    IF ( .NOT.allocated(out_field%attributes) ) THEN
        ALLOCATE(out_field%attributes(max_field_attributes), STAT=istat)
        IF ( istat.NE.0 ) THEN
           ! <ERROR STATUS="FATAL">
@@ -2901,7 +2901,7 @@ CONTAINS
     IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Allocate memory for the attributes
-    IF ( .NOT._ALLOCATED(out_file%attributes) ) THEN
+    IF ( .NOT.allocated(out_file%attributes) ) THEN
        ALLOCATE(out_file%attributes(max_field_attributes), STAT=istat)
        IF ( istat.NE.0 ) THEN
           ! <ERROR STATUS="FATAL">

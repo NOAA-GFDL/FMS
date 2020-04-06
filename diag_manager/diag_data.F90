@@ -192,8 +192,8 @@ use fms2_io_mod
      INTEGER             :: len
      CHARACTER(len=128)  :: name
      CHARACTER(len=1280) :: catt
-     REAL, _ALLOCATABLE, DIMENSION(:)    :: fatt _NULL
-     INTEGER, _ALLOCATABLE, DIMENSION(:) :: iatt _NULL
+     REAL, allocatable, DIMENSION(:)    :: fatt
+     INTEGER, allocatable, DIMENSION(:) :: iatt
   end type diag_atttype
   ! </TYPE>
   ! <TYPE NAME="coord_type">
@@ -313,7 +313,7 @@ use fms2_io_mod
      TYPE(time_type) :: start_time !< Time file opened.
      TYPE(time_type) :: close_time !< Time file closed.  File does not allow data after close time
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
-     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
 !----------
 !ug support
@@ -395,7 +395,7 @@ use fms2_io_mod
      LOGICAL :: missing_value_present, range_present
      REAL :: missing_value
      REAL, DIMENSION(2) :: range
-     INTEGER, _ALLOCATABLE, dimension(:) :: output_fields _NULL
+     INTEGER, allocatable, dimension(:) :: output_fields
      INTEGER :: num_output_fields
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
@@ -445,15 +445,15 @@ use fms2_io_mod
   !   <DATA NAME="time_method" TYPE="CHARACTER(len=50)">
   !     Time method field from the input file
   !   </DATA>
-  !   <DATA NAME="buffer" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
+  !   <DATA NAME="buffer" TYPE="REAL, allocatable, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
   !     Coordinates of buffer are (x, y, z, time-of-day)
   !   </DATA>
-  !   <DATA NAME="counter" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
+  !   <DATA NAME="counter" TYPE="REAL, allocatable, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
   !     Coordinates of buffer are (x, y, z, time-of-day)
   !   </DATA>
-  !   <DATA NAME="count_0d" TYPE="REAL, _ALLOCATABLE, DIMENSION(:)">
+  !   <DATA NAME="count_0d" TYPE="REAL, allocatable, DIMENSION(:)">
   !   </DATA>
-  !   <DATA NAME="num_elements" TYPE="REAL, _ALLOCATABLE, DIMENSION(:)">
+  !   <DATA NAME="num_elements" TYPE="REAL, allocatable, DIMENSION(:)">
   !   </DATA>
   !   <DATA NAME="last_output" TYPE="TYPE(time_type)">
   !   </DATA>
@@ -524,16 +524,16 @@ use fms2_io_mod
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
      CHARACTER(len=50) :: time_method ! time method field from the input file
      ! coordinates of the buffer and counter are (x, y, z, time-of-day)
-     REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: buffer _NULL
-     REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: counter _NULL
+     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer
+     REAL, allocatable, DIMENSION(:,:,:,:) :: counter
      ! the following two counters are used in time-averaging for some
      ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
      ! the diurnal interval, because the number of time slices accumulated
      ! in each can be different, depending on time step and the number of
      ! diurnal samples.
-     REAL, _ALLOCATABLE, DIMENSION(:)  :: count_0d
-     INTEGER, _ALLOCATABLE, dimension(:) :: num_elements
+     REAL, allocatable, DIMENSION(:)  :: count_0d
+     INTEGER, allocatable, dimension(:) :: num_elements
 
      TYPE(time_type) :: last_output, next_output, next_next_output
      TYPE(diag_fieldtype) :: f_type
@@ -545,7 +545,7 @@ use fms2_io_mod
      LOGICAL :: reduced_k_range
      INTEGER :: imin, imax, jmin, jmax, kmin, kmax
      TYPE(time_type) :: Time_of_prev_field_data
-     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
 !----------
 !ug support
@@ -620,7 +620,7 @@ use fms2_io_mod
      type(domainUG) :: DomainUG
      CHARACTER(len=128) :: aux, req
      INTEGER :: tile_count
-     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
+     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
      INTEGER :: domain_position !< The position in the doman (NORTH or EAST or CENTER)
   END TYPE diag_axis_type

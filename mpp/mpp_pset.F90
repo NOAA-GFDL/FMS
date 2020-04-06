@@ -78,10 +78,10 @@ module mpp_pset_mod
      integer :: pos !position of current PE within pset
 !stack is allocated by root
 !it is then mapped to mpp_pset_stack by mpp_pset_broadcast_ptr
-     real, _ALLOCATABLE :: stack(:) _NULL
-     integer, _ALLOCATABLE :: pelist(:) _NULL !base PElist
-     integer, _ALLOCATABLE :: root_pelist(:) _NULL !a PElist of all the roots
-     integer, _ALLOCATABLE :: pset(:) _NULL !PSET IDs
+     real, allocatable :: stack(:)
+     integer, allocatable :: pelist(:) !base PElist
+     integer, allocatable :: root_pelist(:) !a PElist of all the roots
+     integer, allocatable :: pset(:) !PSET IDs
      integer(POINTER_KIND) :: p_stack
      integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
      integer :: commID
