@@ -59,14 +59,14 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
 !Control array members of derived types.
 #ifdef NO_F2000
-#define allocatable pointer
-#define =>null()
-#define allocated associated
+#define _ALLOCATABLE pointer
+#define _NULL =>null()
+#define _ALLOCATED associated
 !DEC$ MESSAGE:'Using pointer derived type array members.'
 #else
-#define allocatable allocatable
-#define
-#define allocated allocated
+#define _ALLOCATABLE allocatable
+#define _NULL
+#define _ALLOCATED allocated
 !DEC$ MESSAGE:'Using allocatable derived type array members.'
 #endif
 
