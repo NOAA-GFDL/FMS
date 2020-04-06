@@ -512,7 +512,7 @@ end subroutine init_nonblock_type
       logical :: native         !true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer :: n
-      integer, dimension(11) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -571,12 +571,13 @@ end subroutine init_nonblock_type
       else
          info(11) = 0
       endif
+      info(12) = domain%ntiles
 !broadcast your info across current pelist and unpack if needed
       listpos = 0
       do n = 0,mpp_npes()-1
          msg = info
          if( mpp_pe().EQ.pes(n) .AND. debug )write( errunit,* )'PE ', mpp_pe(), 'broadcasting msg ', msg
-         call mpp_broadcast( msg, 11, pes(n) )
+         call mpp_broadcast( msg, 12, pes(n) )
 !no need to unpack message if native
 !no need to unpack message from non-native PE
          if( .NOT.native .AND. msg(1).NE.NULL_PE )then
@@ -600,6 +601,7 @@ end subroutine init_nonblock_type
                 else
                    domain%symmetry       = .false.
                 endif
+                domain%ntiles = msg(12)
              else
                 domain%x(1)%global%begin = min(domain%x(1)%global%begin, msg(2))
                 domain%x(1)%global%end   = max(domain%x(1)%global%end,   msg(3))
@@ -733,6 +735,239 @@ end subroutine init_nonblock_type
 
     end subroutine mpp_broadcast_domain_2
 
+    subroutine mpp_broadcast_domain_nest_fine( domain, tile_nest )
+!broadcast domain (useful only outside the context of its own pelist)
+      type(domain2D), intent(inout) :: domain
+      integer,        intent(in)    :: tile_nest(:)
+      integer, allocatable :: pes(:)
+      logical :: native         !true if I'm on the pelist of this domain
+      integer :: listsize, listpos, nestsize(size(tile_nest(:)))
+      integer :: n, tile, ind, num_nest
+      integer, dimension(15) :: msg, info         !pe and compute domain of each item in list
+      integer                :: errunit
+
+      errunit = stderr()
+      if( .NOT.module_is_initialized ) &
+                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_FINE: You must first call mpp_domains_init.' )
+
+!get the current pelist
+      allocate( pes(0:mpp_npes()-1) )
+      call mpp_get_current_pelist(pes)
+
+!am I part of this domain?
+      native = ASSOCIATED(domain%list)
+      num_nest = size(tile_nest(:))
+!set local list size
+      nestsize = 0
+      if( native )then
+          tile = domain%tile_id(1)
+          ind = 0
+          do n = 1, num_nest
+             if(tile_nest(n) == tile) then
+                ind = n
+                exit
+             endif
+          enddo
+          if(ind == 0) call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_FINE:native is true, but tile_id is found in tile_nest')
+          nestsize(ind) = size(domain%list(:))
+      end if
+      call mpp_max(nestsize, num_nest)
+      listsize = sum(nestsize)
+
+      if( .NOT.native )then
+!initialize domain%list and set null values in message
+          allocate( domain%list(0:listsize-1) )
+          domain%pe = NULL_PE
+          domain%pos = -1
+          allocate(domain%x(1), domain%y(1), domain%tile_id(1))
+          do n = 0, listsize-1
+             allocate(domain%list(n)%x(1), domain%list(n)%y(1), domain%list(n)%tile_id(1) )
+          end do
+          domain%x%compute%begin =  0
+          domain%x%compute%end   = -1
+          domain%y%compute%begin =  0
+          domain%y%compute%end   = -1
+          domain%x%global %begin =  0
+          domain%x%global %end   = -1
+          domain%y%global %begin =  0
+          domain%y%global %end   = -1
+          domain%tile_id         = -1
+          domain%whalo           = -1
+          domain%ehalo           = -1
+          domain%shalo           = -1
+          domain%nhalo           = -1
+          domain%symmetry        = .false.
+      end if
+!initialize values in info
+      info(1) = domain%pe
+      call mpp_get_compute_domain( domain, info(2), info(3), info(4), info(5) )
+      info(6) = domain%tile_id(1)
+      info(7) = domain%whalo
+      info(8) = domain%ehalo
+      info(9) = domain%shalo
+      info(10)= domain%nhalo
+      if(domain%symmetry) then
+         info(11) = 1
+      else
+         info(11) = 0
+      endif
+      call mpp_get_global_domain( domain, info(12), info(13), info(14), info(15) )
+!broadcast your info across current pelist and unpack if needed
+      listpos = 0
+      do n = 0,mpp_npes()-1
+         msg = info
+         if( mpp_pe().EQ.pes(n) .AND. debug )write( errunit,* )'PE ', mpp_pe(), 'broadcasting msg ', msg
+         call mpp_broadcast( msg, 15, pes(n) )
+!no need to unpack message if native
+!no need to unpack message from non-native PE
+         if( .NOT.native .AND. msg(1).NE.NULL_PE )then
+             domain%list(listpos)%pe = msg(1)
+             if(domain%x(1)%compute%begin == 0) then
+                domain%whalo             = msg(7)
+                domain%ehalo             = msg(8)
+                domain%shalo             = msg(9)
+                domain%nhalo             = msg(10)
+                if(msg(11) == 1) then
+                   domain%symmetry       = .true.
+                else
+                   domain%symmetry       = .false.
+                endif
+             endif
+             domain%list(listpos)%x%compute%begin = msg(2)
+             domain%list(listpos)%x%compute%end   = msg(3)
+             domain%list(listpos)%y%compute%begin = msg(4)
+             domain%list(listpos)%y%compute%end   = msg(5)
+             domain%list(listpos)%tile_id(1)      = msg(6)
+             domain%list(listpos)%x%global%begin = msg(12)
+             domain%list(listpos)%x%global%end   = msg(13)
+             domain%list(listpos)%y%global%begin = msg(14)
+             domain%list(listpos)%y%global%end   = msg(15)
+             listpos = listpos + 1
+             if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
+         end if
+      end do
+
+    end subroutine mpp_broadcast_domain_nest_fine
+
+    subroutine mpp_broadcast_domain_nest_coarse( domain, tile_coarse )
+!broadcast domain (useful only outside the context of its own pelist)
+      type(domain2D), intent(inout) :: domain
+      integer,        intent(in)    :: tile_coarse
+      integer, allocatable :: pes(:)
+      logical :: native         !true if I'm on the pelist of this domain
+      integer :: listsize, listpos
+      integer, allocatable :: tile_pesize(:)
+      integer :: n, tile, maxtile
+      integer, dimension(17) :: msg, info         !pe and compute domain of each item in list
+      integer                :: errunit
+
+      errunit = stderr()
+      if( .NOT.module_is_initialized ) &
+                 call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_COARSE: You must first call mpp_domains_init.' )
+
+!get the current pelist
+      allocate( pes(0:mpp_npes()-1) )
+      call mpp_get_current_pelist(pes)
+
+      maxtile = tile_coarse
+      call mpp_max(maxtile)
+      allocate(tile_pesize(maxtile))
+      tile_pesize = 0
+!am I part of this domain?
+      native = ASSOCIATED(domain%list)
+!set local list size
+      if( native )then
+!          tile = domain%tile_id(1)
+!          if(tile .NE. tile_coarse) then
+!             print*, "tile,tile_coarse=", tile, tile_coarse, mpp_pe()
+!             call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_COARSE: tile .NE. tile_coarse')
+!          endif
+          tile_pesize(tile_coarse) = size(domain%list(:))
+      end if
+      call mpp_max(tile_pesize, maxtile)
+      listsize = tile_pesize(tile_coarse)
+
+      if( .NOT.native )then
+!initialize domain%list and set null values in message
+          allocate( domain%list(0:listsize-1) )
+          domain%pe = NULL_PE
+          domain%pos = -1
+          allocate(domain%x(1), domain%y(1), domain%tile_id(1))
+          do n = 0, listsize-1
+             allocate(domain%list(n)%x(1), domain%list(n)%y(1), domain%list(n)%tile_id(1) )
+          end do
+          domain%x%compute%begin =  0
+          domain%x%compute%end   = -1
+          domain%y%compute%begin =  0
+          domain%y%compute%end   = -1
+          domain%x%global %begin =  0
+          domain%x%global %end   = -1
+          domain%y%global %begin =  0
+          domain%y%global %end   = -1
+          domain%tile_id         = -1
+          domain%whalo           = -1
+          domain%ehalo           = -1
+          domain%shalo           = -1
+          domain%nhalo           = -1
+          domain%symmetry        = .false.
+          domain%ntiles          = 0
+      end if
+!initialize values in info
+      info(1) = domain%pe
+      call mpp_get_compute_domain( domain, info(2), info(3), info(4), info(5) )
+      info(6) = domain%tile_id(1)
+      info(7) = domain%whalo
+      info(8) = domain%ehalo
+      info(9) = domain%shalo
+      info(10)= domain%nhalo
+      if(domain%symmetry) then
+         info(11) = 1
+      else
+         info(11) = 0
+      endif
+      call mpp_get_global_domain( domain, info(12), info(13), info(14), info(15) )
+      info(16) = tile_coarse
+      info(17) = domain%ntiles
+!broadcast your info across current pelist and unpack if needed
+      listpos = 0
+      do n = 0,mpp_npes()-1
+         msg = info
+         call mpp_broadcast( msg, 17, pes(n) )
+!no need to unpack message if native
+!no need to unpack message from non-native PE
+         if( .NOT.native .AND. msg(1).NE.NULL_PE .AND. tile_coarse==msg(16) )then
+             domain%list(listpos)%pe = msg(1)
+             if(domain%x(1)%compute%begin == 0) then
+                domain%x(1)%global%begin = msg(12)
+                domain%x(1)%global%end   = msg(13)
+                domain%y(1)%global%begin = msg(14)
+                domain%y(1)%global%end   = msg(15)
+                domain%whalo             = msg(7)
+                domain%ehalo             = msg(8)
+                domain%shalo             = msg(9)
+                domain%nhalo             = msg(10)
+                domain%ntiles            = msg(17)
+                if(msg(11) == 1) then
+                   domain%symmetry       = .true.
+                else
+                   domain%symmetry       = .false.
+                endif
+             endif
+             domain%list(listpos)%x%compute%begin = msg(2)
+             domain%list(listpos)%x%compute%end   = msg(3)
+             domain%list(listpos)%y%compute%begin = msg(4)
+             domain%list(listpos)%y%compute%end   = msg(5)
+             domain%list(listpos)%tile_id(1)      = msg(6)
+             domain%list(listpos)%x%global%begin = msg(12)
+             domain%list(listpos)%x%global%end   = msg(13)
+             domain%list(listpos)%y%global%begin = msg(14)
+             domain%list(listpos)%y%global%end   = msg(15)
+             listpos = listpos + 1
+             if( debug )write( errunit,* )'PE ', mpp_pe(), 'received domain from PE ', msg(1), 'is,ie,js,je=', msg(2:5)
+         end if
+      end do
+
+    end subroutine mpp_broadcast_domain_nest_coarse
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1293,17 +1528,28 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_NEST_FINE_3D_ mpp_update_nest_fine_r8_3D
 #undef MPP_UPDATE_NEST_FINE_4D_
 #define MPP_UPDATE_NEST_FINE_4D_ mpp_update_nest_fine_r8_4D
+#undef MPP_UPDATE_NEST_FINE_2D_V_
+#define MPP_UPDATE_NEST_FINE_2D_V_ mpp_update_nest_fine_r8_2Dv
+#undef MPP_UPDATE_NEST_FINE_3D_V_
+#define MPP_UPDATE_NEST_FINE_3D_V_ mpp_update_nest_fine_r8_3Dv
+#undef MPP_UPDATE_NEST_FINE_4D_V_
+#define MPP_UPDATE_NEST_FINE_4D_V_ mpp_update_nest_fine_r8_4Dv
 #undef MPP_UPDATE_NEST_COARSE_2D_
 #define MPP_UPDATE_NEST_COARSE_2D_ mpp_update_nest_coarse_r8_2D
 #undef MPP_UPDATE_NEST_COARSE_3D_
 #define MPP_UPDATE_NEST_COARSE_3D_ mpp_update_nest_coarse_r8_3D
 #undef MPP_UPDATE_NEST_COARSE_4D_
 #define MPP_UPDATE_NEST_COARSE_4D_ mpp_update_nest_coarse_r8_4D
+#undef MPP_UPDATE_NEST_COARSE_2D_V_
+#define MPP_UPDATE_NEST_COARSE_2D_V_ mpp_update_nest_coarse_r8_2Dv
+#undef MPP_UPDATE_NEST_COARSE_3D_V_
+#define MPP_UPDATE_NEST_COARSE_3D_V_ mpp_update_nest_coarse_r8_3Dv
+#undef MPP_UPDATE_NEST_COARSE_4D_V_
+#define MPP_UPDATE_NEST_COARSE_4D_V_ mpp_update_nest_coarse_r8_4Dv
 #include <mpp_update_nest_domains.h>
 
 #ifdef OVERLOAD_C8
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1323,7 +1569,6 @@ end subroutine init_nonblock_type
 
 #ifndef no_8byte_integers
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1352,18 +1597,29 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_NEST_FINE_3D_ mpp_update_nest_fine_r4_3D
 #undef MPP_UPDATE_NEST_FINE_4D_
 #define MPP_UPDATE_NEST_FINE_4D_ mpp_update_nest_fine_r4_4D
+#undef MPP_UPDATE_NEST_FINE_2D_V_
+#define MPP_UPDATE_NEST_FINE_2D_V_ mpp_update_nest_fine_r4_2Dv
+#undef MPP_UPDATE_NEST_FINE_3D_V_
+#define MPP_UPDATE_NEST_FINE_3D_V_ mpp_update_nest_fine_r4_3Dv
+#undef MPP_UPDATE_NEST_FINE_4D_V_
+#define MPP_UPDATE_NEST_FINE_4D_V_ mpp_update_nest_fine_r4_4Dv
 #undef MPP_UPDATE_NEST_COARSE_2D_
 #define MPP_UPDATE_NEST_COARSE_2D_ mpp_update_nest_coarse_r4_2D
 #undef MPP_UPDATE_NEST_COARSE_3D_
 #define MPP_UPDATE_NEST_COARSE_3D_ mpp_update_nest_coarse_r4_3D
 #undef MPP_UPDATE_NEST_COARSE_4D_
 #define MPP_UPDATE_NEST_COARSE_4D_ mpp_update_nest_coarse_r4_4D
+#undef MPP_UPDATE_NEST_COARSE_2D_V_
+#define MPP_UPDATE_NEST_COARSE_2D_V_ mpp_update_nest_coarse_r4_2Dv
+#undef MPP_UPDATE_NEST_COARSE_3D_V_
+#define MPP_UPDATE_NEST_COARSE_3D_V_ mpp_update_nest_coarse_r4_3Dv
+#undef MPP_UPDATE_NEST_COARSE_4D_V_
+#define MPP_UPDATE_NEST_COARSE_4D_V_ mpp_update_nest_coarse_r4_4Dv
 #include <mpp_update_nest_domains.h>
 #endif
 
 #ifdef OVERLOAD_C4
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1382,7 +1638,6 @@ end subroutine init_nonblock_type
 #endif
 
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_UPDATE_NEST_FINE_2D_
@@ -1405,13 +1660,16 @@ end subroutine init_nonblock_type
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_r8_3D
+#undef MPP_DO_UPDATE_NEST_FINE_3D_V_
+#define MPP_DO_UPDATE_NEST_FINE_3D_V_ mpp_do_update_nest_fine_r8_3Dv
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
 #define MPP_DO_UPDATE_NEST_COARSE_3D_ mpp_do_update_nest_coarse_r8_3D
+#undef MPP_DO_UPDATE_NEST_COARSE_3D_V_
+#define MPP_DO_UPDATE_NEST_COARSE_3D_V_ mpp_do_update_nest_coarse_r8_3Dv
 #include <mpp_do_update_nest.h>
 
 #ifdef OVERLOAD_C8
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
@@ -1423,7 +1681,6 @@ end subroutine init_nonblock_type
 
 #ifndef no_8byte_integers
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(LONG_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
@@ -1440,14 +1697,17 @@ end subroutine init_nonblock_type
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_r4_3D
+#undef MPP_DO_UPDATE_NEST_FINE_3D_V_
+#define MPP_DO_UPDATE_NEST_FINE_3D_V_ mpp_do_update_nest_fine_r4_3Dv
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
 #define MPP_DO_UPDATE_NEST_COARSE_3D_ mpp_do_update_nest_coarse_r4_3D
+#undef MPP_DO_UPDATE_NEST_COARSE_3D_V_
+#define MPP_DO_UPDATE_NEST_COARSE_3D_V_ mpp_do_update_nest_coarse_r4_3Dv
 #include <mpp_do_update_nest.h>
 #endif
 
 #ifdef OVERLOAD_C4
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
@@ -1458,7 +1718,6 @@ end subroutine init_nonblock_type
 #endif
 
 #undef VECTOR_FIELD_
-#define VECTOR_FIELD_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
@@ -1523,9 +1782,7 @@ end subroutine init_nonblock_type
 #include <mpp_update_domains2D_ad.h>
 #endif
 
-
-!!$
-!!$!*******************************************************
+!*******************************************************
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_

@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !> @brief For variables without a compressed dimension, this routine simply wraps
 !!        netcdf_write data.  If the variable does have a compressed axis, the I/O root
 !!        gathers the data from the rest of the ranks and then writes the combined data to
@@ -9,7 +28,7 @@ subroutine compressed_write_0d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), intent(in) :: cdata !< Compressed data that
                                 !! will be gathered and
-                                !! written to the 
+                                !! written to the
                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -39,7 +58,7 @@ subroutine compressed_write_0d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), intent(in) :: cdata !< Compressed data that
                                 !! will be gathered and
-                                !! written to the 
+                                !! written to the
                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -63,7 +82,7 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:), intent(in) :: cdata !< Compressed data that
                                               !! will be gathered and
-                                              !! written to the 
+                                              !! written to the
                                               !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -169,7 +188,7 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:), intent(in) :: cdata !< Compressed data that
                                                 !! will be gathered and
-                                                !! written to the 
+                                                !! written to the
                                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -274,7 +293,7 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:), intent(in) :: cdata !< Compressed data that
                                                   !! will be gathered and
-                                                  !! written to the 
+                                                  !! written to the
                                                   !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -379,7 +398,7 @@ subroutine compressed_write_4d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                     !! will be gathered and
-                                                    !! written to the 
+                                                    !! written to the
                                                     !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -484,7 +503,7 @@ subroutine compressed_write_5d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                       !! will be gathered and
-                                                      !! written to the 
+                                                      !! written to the
                                                       !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -586,7 +605,7 @@ subroutine compressed_write_1d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:), intent(in) :: cdata !< Compressed data that
                                               !! will be gathered and
-                                              !! written to the 
+                                              !! written to the
                                               !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -613,7 +632,7 @@ subroutine compressed_write_2d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:), intent(in) :: cdata !< Compressed data that
                                                 !! will be gathered and
-                                                !! written to the 
+                                                !! written to the
                                                 !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -639,7 +658,7 @@ subroutine compressed_write_3d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:), intent(in) :: cdata !< Compressed data that
                                                   !! will be gathered and
-                                                  !! written to the 
+                                                  !! written to the
                                                   !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -665,7 +684,7 @@ subroutine compressed_write_4d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                     !! will be gathered and
-                                                    !! written to the 
+                                                    !! written to the
                                                     !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
@@ -691,7 +710,7 @@ subroutine compressed_write_5d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:,:), intent(in) :: cdata !< Compressed data that
                                                       !! will be gathered and
-                                                      !! written to the 
+                                                      !! written to the
                                                       !! netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.

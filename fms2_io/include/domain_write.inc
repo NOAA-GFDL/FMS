@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !> @brief Gather "compute" domain data on the I/O root rank and then have
 !!        the I/O root write out the data that spans the "global" domain.
 !!        This routine may only be used with variables that are "domain
@@ -97,8 +116,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(2) :: c
   integer, dimension(2) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -315,8 +334,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(3) :: c
   integer, dimension(3) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -533,8 +552,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(4) :: c
   integer, dimension(4) :: e
   integer, dimension(:), allocatable :: pe_isc
@@ -751,8 +770,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: jsc
   integer :: yc_size
   logical :: buffer_includes_halos
-  
-  
+
+
   integer, dimension(5) :: c
   integer, dimension(5) :: e
   integer, dimension(:), allocatable :: pe_isc

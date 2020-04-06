@@ -169,9 +169,9 @@ CONTAINS
        else
           fname_no_tile = trim(file_name)
        endif
-    elseif (lowercase(file_name(len_file_name-4:len_file_name-1)) .eq. "tile") then 
+    elseif (lowercase(file_name(len_file_name-4:len_file_name-1)) .eq. "tile") then
        fname_no_tile = file_name(1:len_file_name-6)
-    elseif (len_file_name < 9) then                        
+    elseif (len_file_name < 9) then
        fname_no_tile = trim(file_name)
     elseif (lowercase(file_name(len_file_name-7:len_file_name-4)) .eq. "tile") then
        fname_no_tile = file_name(1:len_file_name-9)
@@ -190,7 +190,7 @@ CONTAINS
 !        trim(fname_no_tile)(len_file_name-3:len_file_name) == ".nc") write (6,*)trim(fname_no_tile)
 !        trim(fname_no_tile)(len(trim(fname_no_tile))-3:len(trim(fname_no_tile))) == ".nc") &
 !        trim(fname_no_tile)(len(trim(fname_no_tile))-3:len(trim(fname_no_tile)))  = "   "
-    
+
 !> Check to make sure that only domain2D or domainUG is used.  If both are not null, then FATAL
     if (domain .NE. NULL_DOMAIN2D .AND. domainU .NE. NULL_DOMAINUG)&
           & CALL error_mesg('diag_output_init', "Domain2D and DomainUG can not be used at the same time in "//&
@@ -380,7 +380,7 @@ integer :: domain_size, axis_length, axis_pos
                                    call register_variable_attribute(fptr, axis_name, "positive", "up")
                               case (-1)
                                    call register_variable_attribute(fptr, axis_name, "positive", "down")
-                         end select 
+                         end select
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
@@ -404,7 +404,7 @@ integer :: domain_size, axis_length, axis_pos
                                 "FmsNetcdfFile_t for a X or Y axis, ", FATAL)
                   end select
              endif
-             
+
           ELSE
                select type (fptr)
                     type is (FmsNetcdfDomainFile_t)
@@ -436,7 +436,7 @@ integer :: domain_size, axis_length, axis_pos
                               call register_variable_attribute(fptr, axis_name, "positive", "up")
                          case (-1)
                               call register_variable_attribute(fptr, axis_name, "positive", "down")
-                    end select 
+                    end select
                     call write_data(fileob, axis_name, axis_data(istart:iend) )
           END IF
        ELSE
@@ -518,7 +518,7 @@ integer :: domain_size, axis_length, axis_pos
                                   call register_variable_attribute(fptr, axis_name, "positive", "up")
                              case (-1)
                                   call register_variable_attribute(fptr, axis_name, "positive", "down")
-                        end select 
+                        end select
                         call write_data(fptr, axis_name, axis_data)
                     endif
                    type is (FmsNetcdfFile_t)
@@ -552,7 +552,7 @@ integer :: domain_size, axis_length, axis_pos
 
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
-                        is_time_axis_registered = .true. 
+                        is_time_axis_registered = .true.
                         if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
@@ -943,7 +943,7 @@ character(len=128),dimension(size(axes)) :: axis_names
                & fill=CMOR_MISSING_VALUE,&
                & pack=ipack, time_method=time_method)
        END IF
-    END IF 
+    END IF
   if (.not. variable_exists(fileob,name)) then
   ! ipack Valid values:
   !        1 = 64bit </LI>
@@ -1144,7 +1144,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     TYPE(diag_fieldtype), INTENT(inout) :: Field
     REAL , INTENT(inout) :: buffer(:,:,:,:)
     logical, intent(in), optional :: static
-    class(FmsNetcdfFile_t), optional, intent(inout),target :: fileob 
+    class(FmsNetcdfFile_t), optional, intent(inout),target :: fileob
     class(FmsNetcdfFile_t), pointer :: fptr => null()
     integer, intent(in), optional  :: file_num
     type(FmsNetcdfUnstructuredDomainFile_t),intent(inout), optional :: fileobjU(:)
@@ -1294,10 +1294,10 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
      endif
 !> Write the time data
      call write_data (fileob, trim(name_time), rtime_value, unlim_dim_level=time_index)
-!> Cleanup     
+!> Cleanup
      if (allocated(name_time)) deallocate(name_time)
      if (associated(fptr)) nullify(fptr)
-  end subroutine diag_write_time 
+  end subroutine diag_write_time
   ! </SUBROUTINE>
 
   ! <FUNCTION NAME="get_axis_index">
