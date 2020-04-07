@@ -11,7 +11,7 @@ AM_FCFLAGS = $(AM_CPPFLAGS)
 
 noinst_LTLIBRARIES = libmonin_obukhov.la libmonin_obukhov_kernel.la
 
-libmonin_obukhov_la_SOURCES = monin_obukhov.f90
+libmonin_obukhov_la_SOURCES = monin_obukhov.F90
 libmonin_obukhov_kernel_la_SOURCES = monin_obukhov_kernel.F90
 
 # Note that the name of the mod is different from the name of the F90
