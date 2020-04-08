@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_axis_mod
-#include <fms_platform.h>
+use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -65,9 +65,9 @@ MODULE diag_axis_mod
 
 !----------
 !ug support
-  integer(INT_KIND),parameter,public :: DIAG_AXIS_NODOMAIN = 0
-  integer(INT_KIND),parameter,public :: DIAG_AXIS_2DDOMAIN = 1
-  integer(INT_KIND),parameter,public :: DIAG_AXIS_UGDOMAIN = 2
+  integer(I4_KIND),parameter,public :: DIAG_AXIS_NODOMAIN = 0
+  integer(I4_KIND),parameter,public :: DIAG_AXIS_2DDOMAIN = 1
+  integer(I4_KIND),parameter,public :: DIAG_AXIS_UGDOMAIN = 2
 !----------
 
   ! counter of number of axes defined
@@ -934,7 +934,7 @@ CONTAINS
    !Inputs/Outputs
     integer,dimension(:),intent(in)  :: id          !<The array of axis IDs
     character(*),intent(in),optional :: varname     !<The name of the variable
-    integer(INT_KIND)                :: domain_type !<DIAG_AXIS_NODOMAIN = no domain.
+    integer(I4_KIND)                :: domain_type !<DIAG_AXIS_NODOMAIN = no domain.
                                                     !<DIAG_AXIS_2DDOMAIN = structured domain.
                                                     !<DIAG_AXIS_UGDOMAIN = unstructured domain.
 

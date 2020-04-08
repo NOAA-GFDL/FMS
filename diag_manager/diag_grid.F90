@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_grid_mod
-#include <fms_platform.h>
+use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>

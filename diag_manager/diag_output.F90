@@ -18,8 +18,6 @@
 !***********************************************************************
 
 MODULE diag_output_mod
-#include <fms_platform.h>
-
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -28,6 +26,7 @@ MODULE diag_output_mod
   !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
   !   field-meta-data and field data
   ! </OVERVIEW>
+use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
@@ -309,9 +308,9 @@ integer :: domain_size, axis_length, axis_pos
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
     type(domainUG),pointer                     :: io_domain
-    integer(INT_KIND)                          :: io_domain_npes
-    integer(INT_KIND),dimension(:),allocatable :: io_pelist
-    integer(INT_KIND),dimension(:),allocatable :: unstruct_axis_sizes
+    integer(I4_KIND)                          :: io_domain_npes
+    integer(I4_KIND),dimension(:),allocatable :: io_pelist
+    integer(I4_KIND),dimension(:),allocatable :: unstruct_axis_sizes
     real,dimension(:),allocatable              :: unstruct_axis_data
     integer                                    :: id_axis_current
     logical :: is_time_axis_registered

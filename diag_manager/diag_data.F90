@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_data_mod
-#include <fms_platform.h>
+use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -317,8 +317,8 @@ use fms2_io_mod
      INTEGER :: num_attributes
 !----------
 !ug support
-     logical(INT_KIND) :: use_domainUG = .false.
-     logical(INT_KIND) :: use_domain2D = .false.
+     logical(I4_KIND) :: use_domainUG = .false.
+     logical(I4_KIND) :: use_domain2D = .false.
 !----------
 !Check if time axis was already registered
      logical, allocatable :: is_time_axis_registered

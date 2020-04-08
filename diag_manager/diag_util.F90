@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_util_mod
-#include <fms_platform.h>
+use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
