@@ -45,9 +45,9 @@ type block_control_type
   integer :: isc, iec, jsc, jec  !< MPI domain global extents
   integer :: npz                 !< vertical extent
   integer, dimension(:),        allocatable :: ibs  , &  !< block extents for mpp-style
-                                                ibe  , &  !! decompositions
-                                                jbs  , &
-                                                jbe  
+                                               ibe  , &  !! decompositions
+                                               jbs  , &
+                                               jbe  
   type(ix_type), dimension(:),  allocatable :: ix    !< dereference packed index from global index
   !--- packed blocking fields
   integer, dimension(:),        allocatable :: blksz !< number of points in each individual block
