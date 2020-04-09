@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
 
   type(domain2d), intent(in), target :: domain
@@ -237,11 +256,6 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
 
     !Write out the times of each "time step".
     call write_data(fileobj, "time", 1950. + real(i,kind=real32), unlim_dim_level=i)
-
-    !Write out "intermdiate" restart files.
-    tstamp = ""
-    write(tstamp, *) i
-    call write_restart(fileobj, unlim_dim_level=1, timestamp=trim(tstamp))
   enddo
 
   !Write out the restart file.
