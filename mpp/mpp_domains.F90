@@ -493,20 +493,20 @@ module mpp_domains_mod
      type(domain2D), pointer :: domain_out =>NULL()
      type(overlapSpec), pointer :: send(:,:,:,:) => NULL()
      type(overlapSpec), pointer :: recv(:,:,:,:) => NULL()
-     integer, dimension(:,:),       _ALLOCATABLE :: sendis _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendie _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendjs _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendje _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvis _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvie _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvjs _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvje _NULL
-     logical, dimension(:),         _ALLOCATABLE :: S_do_buf _NULL
-     logical, dimension(:),         _ALLOCATABLE :: R_do_buf _NULL
-     integer, dimension(:),         _ALLOCATABLE :: cto_pe  _NULL
-     integer, dimension(:),         _ALLOCATABLE :: cfrom_pe  _NULL
-     integer, dimension(:),         _ALLOCATABLE :: S_msize _NULL
-     integer, dimension(:),         _ALLOCATABLE :: R_msize _NULL
+     integer, dimension(:,:),       allocatable :: sendis
+     integer, dimension(:,:),       allocatable :: sendie
+     integer, dimension(:,:),       allocatable :: sendjs
+     integer, dimension(:,:),       allocatable :: sendje
+     integer, dimension(:,:),       allocatable :: recvis
+     integer, dimension(:,:),       allocatable :: recvie
+     integer, dimension(:,:),       allocatable :: recvjs
+     integer, dimension(:,:),       allocatable :: recvje
+     logical, dimension(:),         allocatable :: S_do_buf
+     logical, dimension(:),         allocatable :: R_do_buf
+     integer, dimension(:),         allocatable :: cto_pe 
+     integer, dimension(:),         allocatable :: cfrom_pe 
+     integer, dimension(:),         allocatable :: S_msize
+     integer, dimension(:),         allocatable :: R_msize
      integer :: Slist_size=0, Rlist_size=0
      integer :: isize=0, jsize=0, ke=0
      integer :: isize_in=0, jsize_in=0
@@ -514,16 +514,16 @@ module mpp_domains_mod
      integer :: isize_max=0, jsize_max=0
      integer :: gf_ioff=0, gf_joff=0
   ! Remote data
-     integer, dimension(:)  , _ALLOCATABLE :: isizeR _NULL
-     integer, dimension(:)  , _ALLOCATABLE :: jsizeR _NULL
-     integer, dimension(:,:), _ALLOCATABLE :: sendisR _NULL
-     integer, dimension(:,:), _ALLOCATABLE :: sendjsR _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addr  _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addrx _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addry _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrl  _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrlx  _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrly  _NULL
+     integer, dimension(:)  , allocatable :: isizeR
+     integer, dimension(:)  , allocatable :: jsizeR
+     integer, dimension(:,:), allocatable :: sendisR
+     integer, dimension(:,:), allocatable :: sendjsR
+     integer(LONG_KIND), dimension(:), allocatable :: rem_addr 
+     integer(LONG_KIND), dimension(:), allocatable :: rem_addrx
+     integer(LONG_KIND), dimension(:), allocatable :: rem_addry
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrl 
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrlx 
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrly 
      integer                             :: position        ! data location. T, E, C, or N.
   end type DomainCommunicator2D
 
