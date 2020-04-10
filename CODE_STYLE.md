@@ -86,6 +86,7 @@
 !> @file
 !! @brief Example code
 !! @author <developer>
+!! @email gfdl.climate.model.info@noaa.gov
 
 module example_mod
   use, intrinsic :: iso_fortran_env, only: INT32, REAL32
