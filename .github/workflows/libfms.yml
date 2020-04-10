@@ -1,0 +1,32 @@
+# This is a basic workflow to help you get started with Actions
+
+name: libfms
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ user/mkl/github_actions ]
+  pull_request:
+    branches: [ user/mkl/github_actions ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  get_netcdf:
+    runs-on: ubuntu-latest
+    steps: 
+      - run: sudo apt autoremove netcdf-bin libnetcdf-dev libnetcdff-dev
+      - run: sudo apt-get install netcdf-bin libnetcdf-dev libnetcdff-dev --fix-missing 
+      - run: nc-config --all
+
+  get_mpich:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get install -y mpich libmpich-dev
+  
+  build:
+    needs: [get_netcdf, get_mpich]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo `nc-config --all`
