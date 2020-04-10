@@ -33,6 +33,7 @@ before_script:
   - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
   - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
   - export LDFLAGS='-L/usr/lib'
+  - export VERBOSE=1
 
 script:
   - autoreconf -i
