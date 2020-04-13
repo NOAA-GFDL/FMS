@@ -47,7 +47,7 @@ netcdf_io_mod.mod: netcdf_io.lo
 fms_netcdf_domain_io_mod.mod: fms_netcdf_domain_io.lo
 fms_netcdf_unstructured_domain_io_mod.mod: fms_netcdf_unstructured_domain_io.lo
 blackboxio.mod: blackboxio.lo
-2_io_namelist_mod.mod: fms2_io_namelist.lo
+fms2_io_namelist_mod.mod: fms2_io_namelist.lo
 
 # Some mods are dependant on other mods in this dir.
 fms2_io.lo: fms_io_utils_mod.mod netcdf_io_mod.mod fms_netcdf_domain_io_mod.mod \
