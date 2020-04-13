@@ -124,6 +124,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer, dimension(:), allocatable :: pe_icsize
   integer, dimension(:), allocatable :: pe_jsc
   integer, dimension(:), allocatable :: pe_jcsize
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
   integer :: i
   integer(kind=int32), dimension(:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:), allocatable :: buf_int64
@@ -154,9 +156,11 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    min_pe_isc = minval(pe_isc)
+    min_pe_jsc = minval(pe_jsc)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+      c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -169,12 +173,13 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -193,12 +198,13 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -217,12 +223,13 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -241,12 +248,13 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
@@ -342,6 +350,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer, dimension(:), allocatable :: pe_icsize
   integer, dimension(:), allocatable :: pe_jsc
   integer, dimension(:), allocatable :: pe_jcsize
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
   integer :: i
   integer(kind=int32), dimension(:,:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:,:), allocatable :: buf_int64
@@ -372,9 +382,11 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    min_pe_isc = minval(pe_isc)
+    min_pe_jsc = minval(pe_jsc)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+      c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -387,12 +399,13 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -411,12 +424,13 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -435,12 +449,13 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -459,12 +474,13 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
@@ -560,6 +576,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer, dimension(:), allocatable :: pe_icsize
   integer, dimension(:), allocatable :: pe_jsc
   integer, dimension(:), allocatable :: pe_jcsize
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
   integer :: i
   integer(kind=int32), dimension(:,:,:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:,:,:), allocatable :: buf_int64
@@ -590,9 +608,11 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    min_pe_isc = minval(pe_isc)
+    min_pe_jsc = minval(pe_jsc)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+      c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -605,12 +625,13 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -629,12 +650,13 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -653,12 +675,13 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -677,12 +700,13 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
@@ -778,6 +802,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer, dimension(:), allocatable :: pe_icsize
   integer, dimension(:), allocatable :: pe_jsc
   integer, dimension(:), allocatable :: pe_jcsize
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
   integer :: i
   integer(kind=int32), dimension(:,:,:,:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:,:,:,:), allocatable :: buf_int64
@@ -808,9 +834,11 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    min_pe_isc = minval(pe_isc)
+    min_pe_jsc = minval(pe_jsc)
     do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i) - pe_isc(1) + 1
-      c(ydim_index) = pe_jsc(i) - pe_jsc(1) + 1
+      c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+      c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
       select type(vdata)
@@ -823,12 +851,13 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
@@ -847,12 +876,13 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_int64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_int64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
@@ -871,12 +901,13 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real32, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real32, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
@@ -895,12 +926,13 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            endif
-            call get_array_section(buf_real64, vdata, c, e)
-            if (buffer_includes_halos) then
+            else
               c(xdim_index) = 1
               c(ydim_index) = 1
             endif
+            call get_array_section(buf_real64, vdata, c, e)
+            c(xdim_index) = pe_isc(i) - min_pe_isc + 1
+            c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
           else
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
