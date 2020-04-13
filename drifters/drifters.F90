@@ -141,30 +141,30 @@ module drifters_mod
      real    :: dt             ! total dt, over a complete step
      real    :: time
      ! fields
-     real, _ALLOCATABLE :: fields(:,:) _NULL
+     real, allocatable :: fields(:,:)
      ! velocity field axes
-     real, _ALLOCATABLE :: xu(:) _NULL
-     real, _ALLOCATABLE :: yu(:) _NULL
-     real, _ALLOCATABLE :: zu(:) _NULL
-     real, _ALLOCATABLE :: xv(:) _NULL
-     real, _ALLOCATABLE :: yv(:) _NULL
-     real, _ALLOCATABLE :: zv(:) _NULL
-     real, _ALLOCATABLE :: xw(:) _NULL
-     real, _ALLOCATABLE :: yw(:) _NULL
-     real, _ALLOCATABLE :: zw(:) _NULL
+     real, allocatable :: xu(:)
+     real, allocatable :: yu(:)
+     real, allocatable :: zu(:)
+     real, allocatable :: xv(:)
+     real, allocatable :: yv(:)
+     real, allocatable :: zv(:)
+     real, allocatable :: xw(:)
+     real, allocatable :: yw(:)
+     real, allocatable :: zw(:)
      ! Runge Kutta coefficients holding intermediate results (positions)
-     real, _ALLOCATABLE :: temp_pos(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k1(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k2(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k3(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k4(:,:) _NULL
+     real, allocatable :: temp_pos(:,:)
+     real, allocatable :: rk4_k1(:,:)
+     real, allocatable :: rk4_k2(:,:)
+     real, allocatable :: rk4_k3(:,:)
+     real, allocatable :: rk4_k4(:,:)
      ! store filenames for convenience
      character(len=MAX_STR_LEN) :: input_file, output_file
      ! Runge Kutta stuff
      integer :: rk4_step
      logical :: rk4_completed
      integer :: nx, ny
-     logical, _ALLOCATABLE   :: remove(:) _NULL
+     logical, allocatable   :: remove(:)
   end type drifters_type
 
   interface assignment(=)
@@ -1001,16 +1001,16 @@ contains
 
     ermesg = ''
 
-    if(.not._ALLOCATED(self%xu) .or. .not._ALLOCATED(self%yu)) then
+    if(.not.allocated(self%xu) .or. .not.allocated(self%yu)) then
        ermesg = 'drifters_set_domain_bounds: ERROR "u"-component axes not set'
        return
     endif
     call drifters_comm_set_domain(self%comm, domain, self%xu, self%yu, backoff_x, backoff_y)
-    if(.not._ALLOCATED(self%xv) .or. .not._ALLOCATED(self%yv)) then
+    if(.not.allocated(self%xv) .or. .not.allocated(self%yv)) then
        ermesg = 'drifters_set_domain_bounds: ERROR "v"-component axes not set'
        return
     endif
-    if(_ALLOCATED(self%xw) .and. _ALLOCATED(self%yw)) then
+    if(allocated(self%xw) .and. allocated(self%yw)) then
        call drifters_comm_set_domain(self%comm, domain, self%xv, self%yv, backoff_x, backoff_y)
     endif
 
