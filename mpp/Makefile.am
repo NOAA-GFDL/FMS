@@ -1,3 +1,22 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+
 # This is an automake file for the mpp directory of the MPP
 # package.
 
@@ -29,26 +48,26 @@ libmpp_memutils_la_SOURCES = mpp_memutils.F90
 libmpp_memuse_c_la_SOURCES = mpp_memuse.c
 
 # Each mod file depends on the .o file.
-mpp_parameter_mod.mod: mpp_parameter.$(OBJEXT)
-mpp_data_mod.mod: mpp_data.$(OBJEXT)
-mpp_mod.mod: mpp.$(OBJEXT)
-mpp_pset_mod.mod: mpp_pset.$(OBJEXT)
-mpp_utilities_mod.mod: mpp_utilities.$(OBJEXT)
-mpp_memutils_mod.mod: mpp_memutils.$(OBJEXT)
-mpp_efp_mod.mod: mpp_efp.$(OBJEXT)
-mpp_domains_mod.mod: mpp_domains.$(OBJEXT)
-mpp_io_mod.mod: mpp_io.$(OBJEXT)
+mpp_parameter_mod.mod: mpp_parameter.lo
+mpp_data_mod.mod: mpp_data.lo
+mpp_mod.mod: mpp.lo
+mpp_pset_mod.mod: mpp_pset.lo
+mpp_utilities_mod.mod: mpp_utilities.lo
+mpp_memutils_mod.mod: mpp_memutils.lo
+mpp_efp_mod.mod: mpp_efp.lo
+mpp_domains_mod.mod: mpp_domains.lo
+mpp_io_mod.mod: mpp_io.lo
 
 # Some mods are dependant on other mods in this dir.
-mpp_data.$(OBJEXT): mpp_parameter_mod.mod
-mpp.$(OBJEXT): mpp_data_mod.mod
-mpp_utilities.$(OBJEXT): mpp_mod.mod mpp_efp_mod.mod
-mpp_memutils.$(OBJEXT): mpp_mod.mod
-mpp_pset.$(OBJEXT): mpp_mod.mod
-mpp_efp.$(OBJEXT): mpp_parameter_mod.mod mpp_mod.mod
-mpp_domains.$(OBJEXT): mpp_data_mod.mod mpp_parameter_mod.mod \
-  mpp_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
-mpp_io.$(OBJEXT): mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
+mpp_data.lo: mpp_parameter_mod.mod
+mpp.lo: mpp_data_mod.mod
+mpp_utilities.lo: mpp_mod.mod mpp_efp_mod.mod
+mpp_memutils.lo: mpp_mod.mod
+mpp_pset.lo: mpp_mod.mod
+mpp_efp.lo: mpp_parameter_mod.mod mpp_mod.mod
+mpp_domains.lo: mpp_data_mod.mod mpp_parameter_mod.mod mpp_mod.mod	\
+mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
+mpp_io.lo: mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod \
