@@ -37,8 +37,8 @@ libaxis_utils_la_SOURCES = axis_utils.F90
 libaxis_utils2_la_SOURCES = axis_utils2.F90
 
 # Mod file depends on its o file, is built and then installed.
-axis_utils_mod.mod: axis_utils.$(OBJEXT)
-axis_utils2_mod.mod: axis_utils2.$(OBJEXT)
+axis_utils_mod.mod: axis_utils.lo
+axis_utils2_mod.mod: axis_utils2.lo
 include_HEADERS = axis_utils_mod.mod axis_utils2_mod.mod
 BUILT_SOURCES = axis_utils_mod.mod axis_utils2_mod.mod
 

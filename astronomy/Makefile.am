@@ -36,7 +36,7 @@ noinst_LTLIBRARIES = libastronomy.la
 libastronomy_la_SOURCES = astronomy.F90
 
 # Mod file depends on its o file, is built and then installed.
-astronomy_mod.mod: astronomy.$(OBJEXT)
+astronomy_mod.mod: astronomy.lo
 BUILT_SOURCES = astronomy_mod.mod
 include_HEADERS = astronomy_mod.mod
 

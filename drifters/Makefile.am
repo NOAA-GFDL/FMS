@@ -48,12 +48,12 @@ DRIFTERS_HDRS = drifters_compute_k.h drifters_push.h \
 drifters_set_field.h fms_switches.h
 
 # Each mod file depends on the .o file.
-drifters_core_mod.mod: drifters_core.$(OBJEXT)
-drifters_input_mod.mod: drifters_input.$(OBJEXT)
-drifters_comm_mod.mod: drifters_comm.$(OBJEXT)
-drifters_io_mod.mod: drifters_io.$(OBJEXT)
-cloud_interpolator_mod.mod: cloud_interpolator.$(OBJEXT)
-drifters_mod.mod: drifters.$(OBJEXT)
+drifters_core_mod.mod: drifters_core.lo
+drifters_input_mod.mod: drifters_input.lo
+drifters_comm_mod.mod: drifters_comm.lo
+drifters_io_mod.mod: drifters_io.lo
+cloud_interpolator_mod.mod: cloud_interpolator.lo
+drifters_mod.mod: drifters.lo
 
 # Mod files are built and then installed as headers.
 MODFILES = drifters_core_mod.mod drifters_input_mod.mod \

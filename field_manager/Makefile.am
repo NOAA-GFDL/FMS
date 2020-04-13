@@ -36,11 +36,11 @@ libfield_manager_la_SOURCES = field_manager.F90
 libfm_util_la_SOURCES = fm_util.F90
 
 # Each mod file depends on the .o file.
-field_manager_mod.mod: field_manager.$(OBJEXT)
-fm_util_mod.mod: fm_util.$(OBJEXT)
+field_manager_mod.mod: field_manager.lo
+fm_util_mod.mod: fm_util.lo
 
 # Some mods are dependant on other mods in this dir.
-fm_util.$(OBJEXT): field_manager_mod.mod
+fm_util.lo: field_manager_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = field_manager_mod.mod fm_util_mod.mod

@@ -34,11 +34,11 @@ librandom_numbers_la_SOURCES = random_numbers.F90
 libMersenneTwister_la_SOURCES = MersenneTwister.F90
 
 # Each mod file depends on the .o file.
-random_numbers_mod.mod: random_numbers.$(OBJEXT)
-mersennetwister_mod.mod: MersenneTwister.$(OBJEXT)
+random_numbers_mod.mod: random_numbers.lo
+mersennetwister_mod.mod: MersenneTwister.lo
 
 # Some mods are dependant on other mods in this dir.
-random_numbers.$(OBJEXT): mersennetwister_mod.mod
+random_numbers.lo: mersennetwister_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = mersennetwister_mod.mod random_numbers_mod.mod

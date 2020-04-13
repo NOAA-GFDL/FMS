@@ -48,26 +48,26 @@ libmpp_memutils_la_SOURCES = mpp_memutils.F90
 libmpp_memuse_c_la_SOURCES = mpp_memuse.c
 
 # Each mod file depends on the .o file.
-mpp_parameter_mod.mod: mpp_parameter.$(OBJEXT)
-mpp_data_mod.mod: mpp_data.$(OBJEXT)
-mpp_mod.mod: mpp.$(OBJEXT)
-mpp_pset_mod.mod: mpp_pset.$(OBJEXT)
-mpp_utilities_mod.mod: mpp_utilities.$(OBJEXT)
-mpp_memutils_mod.mod: mpp_memutils.$(OBJEXT)
-mpp_efp_mod.mod: mpp_efp.$(OBJEXT)
-mpp_domains_mod.mod: mpp_domains.$(OBJEXT)
-mpp_io_mod.mod: mpp_io.$(OBJEXT)
+mpp_parameter_mod.mod: mpp_parameter.lo
+mpp_data_mod.mod: mpp_data.lo
+mpp_mod.mod: mpp.lo
+mpp_pset_mod.mod: mpp_pset.lo
+mpp_utilities_mod.mod: mpp_utilities.lo
+mpp_memutils_mod.mod: mpp_memutils.lo
+mpp_efp_mod.mod: mpp_efp.lo
+mpp_domains_mod.mod: mpp_domains.lo
+mpp_io_mod.mod: mpp_io.lo
 
 # Some mods are dependant on other mods in this dir.
-mpp_data.$(OBJEXT): mpp_parameter_mod.mod
-mpp.$(OBJEXT): mpp_data_mod.mod
-mpp_utilities.$(OBJEXT): mpp_mod.mod mpp_efp_mod.mod
-mpp_memutils.$(OBJEXT): mpp_mod.mod
-mpp_pset.$(OBJEXT): mpp_mod.mod
-mpp_efp.$(OBJEXT): mpp_parameter_mod.mod mpp_mod.mod
-mpp_domains.$(OBJEXT): mpp_data_mod.mod mpp_parameter_mod.mod \
-  mpp_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
-mpp_io.$(OBJEXT): mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
+mpp_data.lo: mpp_parameter_mod.mod
+mpp.lo: mpp_data_mod.mod
+mpp_utilities.lo: mpp_mod.mod mpp_efp_mod.mod
+mpp_memutils.lo: mpp_mod.mod
+mpp_pset.lo: mpp_mod.mod
+mpp_efp.lo: mpp_parameter_mod.mod mpp_mod.mod
+mpp_domains.lo: mpp_data_mod.mod mpp_parameter_mod.mod mpp_mod.mod	\
+mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
+mpp_io.lo: mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod \

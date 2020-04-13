@@ -33,7 +33,7 @@ noinst_LTLIBRARIES = libconstants.la
 libconstants_la_SOURCES = constants.F90
 
 # Mod file depends on its o file, is built and then installed.
-constants_mod.mod: constants.$(OBJEXT)
+constants_mod.mod: constants.lo
 BUILT_SOURCES = constants_mod.mod
 include_HEADERS = constants_mod.mod
 

@@ -33,7 +33,7 @@ noinst_LTLIBRARIES = libtridiagonal.la
 libtridiagonal_la_SOURCES = tridiagonal.F90
 
 # Mod file depends on its o file, is built and then installed.
-tridiagonal_mod.mod: tridiagonal.$(OBJEXT)
+tridiagonal_mod.mod: tridiagonal.lo
 BUILT_SOURCES = tridiagonal_mod.mod
 include_HEADERS = tridiagonal_mod.mod
 

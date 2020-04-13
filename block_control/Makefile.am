@@ -33,7 +33,7 @@ noinst_LTLIBRARIES = libblock_control.la
 libblock_control_la_SOURCES = block_control.F90
 
 # Mod file depends on its o file, is built and then installed.
-block_control_mod.mod: block_control.$(OBJEXT)
+block_control_mod.mod: block_control.lo
 BUILT_SOURCES = block_control_mod.mod
 include_HEADERS = block_control_mod.mod
 

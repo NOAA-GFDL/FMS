@@ -38,7 +38,7 @@ noinst_LTLIBRARIES = libdiag_integral.la
 libdiag_integral_la_SOURCES = diag_integral.F90
 
 # Mod file depends on its o file, is built and then installed.
-diag_integral_mod.mod: diag_integral.$(OBJEXT)
+diag_integral_mod.mod: diag_integral.lo
 include_HEADERS = diag_integral_mod.mod
 BUILT_SOURCES = diag_integral_mod.mod
 
