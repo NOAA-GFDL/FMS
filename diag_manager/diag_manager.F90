@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_manager_mod
-#include <fms_platform.h>
+use platform_mod
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
   !   Matt Harrison
   ! </CONTACT>
@@ -3821,8 +3821,8 @@ CONTAINS
 
     CHARACTER(len=*), PARAMETER :: SEP = '|'
 
-    INTEGER, PARAMETER :: FltKind = FLOAT_KIND
-    INTEGER, PARAMETER :: DblKind = DOUBLE_KIND
+    INTEGER, PARAMETER :: FltKind = R4_KIND
+    INTEGER, PARAMETER :: DblKind = R8_KIND
     INTEGER :: diag_subset_output
     INTEGER :: mystat
     INTEGER, ALLOCATABLE, DIMENSION(:) :: pelist
@@ -3856,7 +3856,7 @@ CONTAINS
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init', 'unknown pack_size.  Must be 1, or 2.', err_msg) ) RETURN
     END IF
 
-    ! Get min and max values for real(kind=FLOAT_KIND)
+    ! Get min and max values for real(kind=R4_KIND)
     min_value = HUGE(0.0_FltKind)
     max_value = -min_value
 
