@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !> @briefs Calculates a variable's checksum across all ranks in the current pelist.
 !! @return A hex string containing the checksum.
 function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_decomposed) &
@@ -87,15 +106,19 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
         chksum_val = mpp_chksum(buf_int64)
       endif
       deallocate(buf_int64)
-!   type is (real(kind=real32))
-!     call allocate_array(buf_real32, e)
-!     call get_array_section(buf_real32, variable_data, c, e)
-!     if (get_fill_value(fileobj, variable_name, fill_real32)) then
-!       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
-!     else
-!       chksum_val = mpp_chksum(buf_real32)
-!     endif
-!     deallocate(buf_real32)
+   type is (real(kind=real32))
+#ifdef OVERLOAD_R4
+     call allocate_array(buf_real32, e)
+     call get_array_section(buf_real32, variable_data, c, e)
+     if (get_fill_value(fileobj, variable_name, fill_real32)) then
+       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
+     else
+       chksum_val = mpp_chksum(buf_real32)
+     endif
+     deallocate(buf_real32)
+#else
+     call error("Compute_global_checksum: you are trying to use a real*4 without defining OVERLOAD_R4")
+#endif
     type is (real(kind=real64))
       call allocate_array(buf_real64, e)
       call get_array_section(buf_real64, variable_data, c, e)
@@ -106,7 +129,7 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
       endif
       deallocate(buf_real64)
     class default
-      call error("unsupported type.")
+      call error("Compute_global_checksum: unsupported type.")
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val
@@ -201,15 +224,19 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
         chksum_val = mpp_chksum(buf_int64)
       endif
       deallocate(buf_int64)
-!   type is (real(kind=real32))
-!     call allocate_array(buf_real32, e)
-!     call get_array_section(buf_real32, variable_data, c, e)
-!     if (get_fill_value(fileobj, variable_name, fill_real32)) then
-!       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
-!     else
-!       chksum_val = mpp_chksum(buf_real32)
-!     endif
-!     deallocate(buf_real32)
+   type is (real(kind=real32))
+#ifdef OVERLOAD_R4
+     call allocate_array(buf_real32, e)
+     call get_array_section(buf_real32, variable_data, c, e)
+     if (get_fill_value(fileobj, variable_name, fill_real32)) then
+       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
+     else
+       chksum_val = mpp_chksum(buf_real32)
+     endif
+     deallocate(buf_real32)
+#else
+     call error("Compute_global_checksum: you are trying to use a real*4 without defining OVERLOAD_R4")
+#endif
     type is (real(kind=real64))
       call allocate_array(buf_real64, e)
       call get_array_section(buf_real64, variable_data, c, e)
@@ -220,7 +247,7 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
       endif
       deallocate(buf_real64)
     class default
-      call error("unsupported type.")
+      call error("Compute_global_checksum: unsupported type.")
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val
@@ -316,15 +343,19 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
         chksum_val = mpp_chksum(buf_int64)
       endif
       deallocate(buf_int64)
-!   type is (real(kind=real32))
-!     call allocate_array(buf_real32, e)
-!     call get_array_section(buf_real32, variable_data, c, e)
-!     if (get_fill_value(fileobj, variable_name, fill_real32)) then
-!       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
-!     else
-!       chksum_val = mpp_chksum(buf_real32)
-!     endif
-!     deallocate(buf_real32)
+   type is (real(kind=real32))
+#ifdef OVERLOAD_R4
+     call allocate_array(buf_real32, e)
+     call get_array_section(buf_real32, variable_data, c, e)
+     if (get_fill_value(fileobj, variable_name, fill_real32)) then
+       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
+     else
+       chksum_val = mpp_chksum(buf_real32)
+     endif
+     deallocate(buf_real32)
+#else
+     call error("Compute_global_checksum: you are trying to use a real*4 without defining OVERLOAD_R4")
+#endif
     type is (real(kind=real64))
       call allocate_array(buf_real64, e)
       call get_array_section(buf_real64, variable_data, c, e)
@@ -335,7 +366,7 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
       endif
       deallocate(buf_real64)
     class default
-      call error("unsupported type.")
+      call error("Compute_global_checksum: unsupported type.")
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val

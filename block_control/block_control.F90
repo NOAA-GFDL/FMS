@@ -31,12 +31,12 @@ implicit none
 public block_control_type
 
 type ix_type
-  integer, dimension(:,:), _ALLOCATABLE :: ix _NULL
+  integer, dimension(:,:), allocatable :: ix
 end type ix_type
 
 type pk_type
-  integer, dimension(:), _ALLOCATABLE :: ii _NULL
-  integer, dimension(:), _ALLOCATABLE :: jj _NULL
+  integer, dimension(:), allocatable :: ii
+  integer, dimension(:), allocatable :: jj
 end type pk_type
 
 type block_control_type
@@ -44,18 +44,18 @@ type block_control_type
   integer :: nblks               !< number of blocks cover MPI domain
   integer :: isc, iec, jsc, jec  !< MPI domain global extents
   integer :: npz                 !< vertical extent
-  integer, dimension(:),        _ALLOCATABLE :: ibs   _NULL, &  !< block extents for mpp-style
-                                                ibe   _NULL, &  !! decompositions
-                                                jbs   _NULL, &
-                                                jbe   _NULL
-  type(ix_type), dimension(:),  _ALLOCATABLE :: ix    _NULL !< dereference packed index from global index
+  integer, dimension(:),        allocatable :: ibs  , &  !< block extents for mpp-style
+                                               ibe  , &  !! decompositions
+                                               jbs  , &
+                                               jbe  
+  type(ix_type), dimension(:),  allocatable :: ix    !< dereference packed index from global index
   !--- packed blocking fields
-  integer, dimension(:),        _ALLOCATABLE :: blksz _NULL !< number of points in each individual block
+  integer, dimension(:),        allocatable :: blksz !< number of points in each individual block
                                                             !! blocks are not required to be uniforom in size
-  integer, dimension(:,:),      _ALLOCATABLE :: blkno _NULL !< dereference block number using global indices
-  integer, dimension(:,:),      _ALLOCATABLE :: ixp   _NULL !< dereference packed index from global indices
+  integer, dimension(:,:),      allocatable :: blkno !< dereference block number using global indices
+  integer, dimension(:,:),      allocatable :: ixp   !< dereference packed index from global indices
                                                             !! must be used in conjuction with blkno
-  type(pk_type), dimension(:),  _ALLOCATABLE :: index _NULL !< dereference global indices from
+  type(pk_type), dimension(:),  allocatable :: index !< dereference global indices from
                                                             !! block/ixp combo
 end type block_control_type
 
@@ -150,7 +150,7 @@ contains
     Block%ny_block = ny_block
     Block%nblks = nblks
 
-    if (.not._ALLOCATED(Block%ibs)) &
+    if (.not.allocated(Block%ibs)) &
          allocate (Block%ibs(nblks), &
                    Block%ibe(nblks), &
                    Block%jbs(nblks), &
@@ -258,7 +258,7 @@ contains
     Block%jec   = jec
     Block%npz   = kpts
     Block%nblks = nblks
-    if (.not. _ALLOCATED(Block%blksz)) &
+    if (.not. allocated(Block%blksz)) &
       allocate (Block%blksz(nblks), &
                 Block%index(nblks), &
                 Block%blkno(isc:iec,jsc:jec), &
