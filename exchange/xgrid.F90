@@ -403,13 +403,13 @@ type overlap_type
    integer          :: count
    integer          :: pe
    integer          :: buffer_pos
-   integer, _ALLOCATABLE :: i(:) _NULL
-   integer, _ALLOCATABLE :: j(:) _NULL
-   integer, _ALLOCATABLE :: g(:) _NULL
-   integer, _ALLOCATABLE :: xLoc(:) _NULL
-   integer, _ALLOCATABLE :: tile(:) _NULL
-   real,    _ALLOCATABLE :: di(:) _NULL
-   real,    _ALLOCATABLE :: dj(:) _NULL
+   integer, allocatable :: i(:)
+   integer, allocatable :: j(:)
+   integer, allocatable :: g(:)
+   integer, allocatable :: xLoc(:)
+   integer, allocatable :: tile(:)
+   real,    allocatable :: di(:)
+   real,    allocatable :: dj(:)
 end type overlap_type
 
 type comm_type

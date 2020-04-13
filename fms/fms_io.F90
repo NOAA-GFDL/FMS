@@ -216,7 +216,7 @@ type var_type
    character(len=128)                     :: name = ''
    character(len=128)                     :: longname = ''
    character(len=128)                     :: units = ''
-   real, dimension(:,:,:,:), _ALLOCATABLE :: buffer _NULL
+   real, dimension(:,:,:,:), allocatable :: buffer
    logical                                :: domain_present = .FALSE.
    integer                                :: domain_idx = -1
    logical                                :: is_dimvar = .FALSE.

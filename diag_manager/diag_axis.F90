@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_axis_mod
-#include <fms_platform.h>
+use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -65,9 +65,9 @@ MODULE diag_axis_mod
 
 !----------
 !ug support
-  integer(INT_KIND),parameter,public :: DIAG_AXIS_NODOMAIN = 0
-  integer(INT_KIND),parameter,public :: DIAG_AXIS_2DDOMAIN = 1
-  integer(INT_KIND),parameter,public :: DIAG_AXIS_UGDOMAIN = 2
+  integer(I4_KIND),parameter,public :: DIAG_AXIS_NODOMAIN = 0
+  integer(I4_KIND),parameter,public :: DIAG_AXIS_2DDOMAIN = 1
+  integer(I4_KIND),parameter,public :: DIAG_AXIS_UGDOMAIN = 2
 !----------
 
   ! counter of number of axes defined
@@ -570,7 +570,7 @@ CONTAINS
        num_attributes = Axes(id)%num_attributes
     END IF
     IF ( PRESENT(attributes) ) THEN
-       IF ( _ALLOCATED(Axes(id)%attributes) ) THEN
+       IF ( allocated(Axes(id)%attributes) ) THEN
           IF ( ALLOCATED(attributes) ) THEN
              ! If allocate, make sure attributes is large enough to hold Axis(id)%attributes
              IF ( Axes(id)%num_attributes .GT. SIZE(attributes(:)) ) THEN
@@ -585,10 +585,10 @@ CONTAINS
           END IF
           DO i=1, Axes(id)%num_attributes
              ! Unallocate all att arrays in preparation for new data
-             IF ( _ALLOCATED(attributes(i)%fatt) ) THEN
+             IF ( allocated(attributes(i)%fatt) ) THEN
                 DEALLOCATE(attributes(i)%fatt)
              END IF
-             IF ( _ALLOCATED(attributes(i)%iatt) ) THEN
+             IF ( allocated(attributes(i)%iatt) ) THEN
                 DEALLOCATE(attributes(i)%iatt)
              END IF
 
@@ -598,7 +598,7 @@ CONTAINS
              attributes(i)%name = Axes(id)%attributes(i)%name
              attributes(i)%catt = Axes(id)%attributes(i)%catt
              ! Allocate fatt arrays (if needed), and copy in data
-             IF ( _ALLOCATED(Axes(id)%attributes(i)%fatt) ) THEN
+             IF ( allocated(Axes(id)%attributes(i)%fatt) ) THEN
                 ALLOCATE(attributes(i)%fatt(SIZE(Axes(id)%attributes(i)%fatt(:))), STAT=istat)
                 IF ( istat .NE. 0 ) THEN
                    CALL error_mesg('diag_axis_mod::get_diag_axis', 'Unable to allocate memory for attribute%fatt', FATAL)
@@ -608,7 +608,7 @@ CONTAINS
                 END DO
              END IF
              ! Allocate iatt arrays (if needed), and copy in data
-             IF ( _ALLOCATED(Axes(id)%attributes(i)%iatt) ) THEN
+             IF ( allocated(Axes(id)%attributes(i)%iatt) ) THEN
                 ALLOCATE(attributes(i)%iatt(SIZE(Axes(id)%attributes(i)%iatt(:))), STAT=istat)
                 IF ( istat .NE. 0 ) THEN
                    CALL error_mesg('diag_axis_mod::get_diag_axis', 'Unable to allocate memory for attribute%iatt', FATAL)
@@ -934,7 +934,7 @@ CONTAINS
    !Inputs/Outputs
     integer,dimension(:),intent(in)  :: id          !<The array of axis IDs
     character(*),intent(in),optional :: varname     !<The name of the variable
-    integer(INT_KIND)                :: domain_type !<DIAG_AXIS_NODOMAIN = no domain.
+    integer(I4_KIND)                :: domain_type !<DIAG_AXIS_NODOMAIN = no domain.
                                                     !<DIAG_AXIS_2DDOMAIN = structured domain.
                                                     !<DIAG_AXIS_UGDOMAIN = unstructured domain.
 
@@ -1393,7 +1393,7 @@ CONTAINS
     IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Allocate memory for the attributes
-    IF ( .NOT._ALLOCATED(out_axis%attributes) ) THEN
+    IF ( .NOT.allocated(out_axis%attributes) ) THEN
        ALLOCATE(out_axis%attributes(max_axis_attributes), STAT=istat)
        IF ( istat.NE.0 ) THEN
           ! <ERROR STATUS="FATAL">
@@ -1524,7 +1524,7 @@ CONTAINS
     CALL valid_id_check(id, 'axis_is_compressed')
 
     axis_is_compressed = .FALSE.
-    if (.not._ALLOCATED(Axes(id)%attributes)) return
+    if (.not.allocated(Axes(id)%attributes)) return
     do i = 1, Axes(id)%num_attributes
        if (trim(Axes(id)%attributes(i)%name)=='compress') then
           axis_is_compressed = .TRUE.
@@ -1548,7 +1548,7 @@ CONTAINS
     CALL valid_id_check(id, tag)
 
     associate (axis=>Axes(id))
-    if (.not._ALLOCATED(axis%attributes)) call error_mesg(tag, &
+    if (.not.allocated(axis%attributes)) call error_mesg(tag, &
        'attempt to get compression dimensions from axis "'//trim(axis%name)//'" which is not compressed (does not have any attributes)', FATAL)
 
     iatt = 0
