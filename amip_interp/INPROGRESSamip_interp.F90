@@ -17,65 +17,51 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief Provides observed SST and ice mask data sets that have been interpolated onto your model's grid.
+!! @author Bruce Wyman
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!! Three possible data sets are available:
+!!
+!!     1)  <LINK SRC="http://www-pcmdi.llnl.gov/amip">AMIP 1</LINK>        from Jan 1979 to Jan 1989 (2 deg x 2 deg)<BR/>
+!!     2)  <LINK SRC="amip_interp.rey_oi.txt">Reynolds OI</LINK>   from Nov 1981 to Jan 1999 (1 deg x 1 deg)<BR/>
+!!     3)  <LINK SRC="ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html">Reynolds EOF</LINK>  from Jan 1950 to Dec 1998 (2 deg x 2 deg)<BR/><BR/>
+!!
+!!     All original data are observed monthly means. This module
+!!     interpolates linearly in time between pairs of monthly means.
+!!     Horizontal interpolation is done using the horiz_interp module.
+!!
+!!     When a requested date falls outside the range of dates available
+!!     a namelist option allows for use of the climatological monthly
+!!     mean values which are computed from all of the data in a particular
+!!     data set.
+!! <DATASET NAME="AMIP 1">
+!!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).
+!! <DATASET NAME="Reynolds OI">
+!!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+!!             The analysis uses in situ and satellite SST's plus
+!!             SST's simulated by sea-ice cover.
+!! <DATASET NAME="Reynolds EOF">
+!!   from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!!             NCEP Reynolds Historical Reconstructed Sea Surface Temperature
+!!             The analysis uses both in-situ SSTs and satellite derived SSTs
+!!             from the NOAA Advanced Very High Resolution Radiometer.
+!!             In-situ data is used from 1950 to 1981, while both AVHRR derived
+!!             satellite SSTs and in-situ data are used from 1981 to the
+!!             end of 1998.
+!!
+!! Note: The data set used by this module have been reformatted as 32-bit IEEE.
+!!   The data values are packed into 16-bit integers.
+!!
+!!   The data sets are read from the following files:
+!!
+!!         amip1           INPUT/amip1_sst.data
+!!         reynolds_io     INPUT/reyoi_sst.data
+!!         reynolds_eof    INPUT/reynolds_sst.data
+
 
 module amip_interp_mod
-
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Provides observed SST and ice mask data sets that have been
-!   interpolated onto your model's grid.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-! Three possible data sets are available:
-!
-!     1)  <LINK SRC="http://www-pcmdi.llnl.gov/amip">AMIP 1</LINK>        from Jan 1979 to Jan 1989 (2 deg x 2 deg)<BR/>
-!     2)  <LINK SRC="amip_interp.rey_oi.txt">Reynolds OI</LINK>   from Nov 1981 to Jan 1999 (1 deg x 1 deg)<BR/>
-!     3)  <LINK SRC="ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html">Reynolds EOF</LINK>  from Jan 1950 to Dec 1998 (2 deg x 2 deg)<BR/><BR/>
-!
-!     All original data are observed monthly means. This module
-!     interpolates linearly in time between pairs of monthly means.
-!     Horizontal interpolation is done using the horiz_interp module.
-!
-!     When a requested date falls outside the range of dates available
-!     a namelist option allows for use of the climatological monthly
-!     mean values which are computed from all of the data in a particular
-!     data set.
-! </DESCRIPTION>
-
-! <DATASET NAME="AMIP 1">
-!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).
-! </DATASET>
-! <DATASET NAME="Reynolds OI">
-!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!             The analysis uses in situ and satellite SST's plus
-!             SST's simulated by sea-ice cover.
-! </DATASET>
-! <DATASET NAME="Reynolds EOF">
-!   from Jan 1950 to Dec 1998 (2 deg x 2 deg)
-!             NCEP Reynolds Historical Reconstructed Sea Surface Temperature
-!             The analysis uses both in-situ SSTs and satellite derived SSTs
-!             from the NOAA Advanced Very High Resolution Radiometer.
-!             In-situ data is used from 1950 to 1981, while both AVHRR derived
-!             satellite SSTs and in-situ data are used from 1981 to the
-!             end of 1998.
-!
-! Note: The data set used by this module have been reformatted as 32-bit IEEE.
-!   The data values are packed into 16-bit integers.
-!
-!   The data sets are read from the following files:
-!
-!         amip1           INPUT/amip1_sst.data
-!         reynolds_io     INPUT/reyoi_sst.data
-!         reynolds_eof    INPUT/reynolds_sst.data
-! </DATASET>
-!-----------------------------------------------------------------------
 
 use  time_interp_mod, only: time_interp, fraction_of_year
 
