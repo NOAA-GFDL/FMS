@@ -796,6 +796,7 @@ endif
 !   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative"></IN>
 !   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
 
+ !> @return amip_interp_type Interp
  function amip_interp_new_1d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
@@ -846,6 +847,7 @@ endif
 !   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative "></IN>
 !   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
 
+ !> @return amip_interp_type Interp
  function amip_interp_new_2d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
