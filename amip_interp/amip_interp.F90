@@ -60,7 +60,6 @@
 !!         reynolds_io     INPUT/reyoi_sst.data
 !!         reynolds_eof    INPUT/reynolds_sst.data
 
-
 module amip_interp_mod
 
 use  time_interp_mod, only: time_interp, fraction_of_year
