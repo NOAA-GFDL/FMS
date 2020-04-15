@@ -47,7 +47,7 @@ contains
 subroutine blackboxio_init (chksz)
 integer, intent(in) :: chksz
  fms2_ncchksz = chksz
-end subroutine netcdf_io_init
+end subroutine blackboxio_init
 
 
 !> @brief Create a new file path.
