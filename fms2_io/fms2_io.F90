@@ -26,6 +26,7 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use blackboxio
+use mpp_mod, only: input_nml_file
 implicit none
 private
 
