@@ -81,7 +81,7 @@ public :: is_registered_to_restart
 public :: check_if_open
 public :: set_fileobj_time_name
 public :: is_dimension_registered
-
+public :: fms2_io_init
 
 interface open_file
   module procedure netcdf_file_open_wrap
@@ -209,6 +209,26 @@ interface read_new_restart
   module procedure netcdf_restore_state_wrap
   module procedure restore_domain_state_wrap
 end interface read_new_restart
+
+!< Namelist variables
+integer :: ncchksz = 1*1024*1024 !< User defined chunksize argument in netcdf file creation calls.
+                                 !! Replaces setting the NC_CHKSZ environment variable.
+namelist / fms2_io_nml / &
+                      ncchksz
+
+contains
+
+!> @brief Reads the fms2_io_nml
+subroutine fms2_io_init ()
+
+integer :: mystat
+!> Read the namelist
+READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
+
+!>Send the namelist variables to their respective modules
+  call netcdf_io_init (ncchksz)
+  call blackboxio_init (ncchksz)
+end subroutine fms2_io_init
 
 
 end module fms2_io_mod
