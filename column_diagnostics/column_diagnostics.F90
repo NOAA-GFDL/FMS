@@ -17,6 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief Module to locate and mark desired diagnostic columns
+!! @email gfdl.climate.model.info@noaa.gov
 
                module column_diagnostics_mod
 
@@ -38,7 +41,7 @@ implicit none
 private
 
 !---------------------------------------------------------------------
-!       module to locate and mark desired diagnostic columns
+!      module to locate and mark desired diagnostic columns
 !
 !
 !--------------------------------------------------------------------
@@ -70,18 +73,16 @@ public    column_diagnostics_init,  &
 !--------------------------------------------------------------------
 !----    namelist -----
 
-real          :: crit_xdistance = 4.0
-                 ! model grid points must be within crit_xdistance in
-                 ! longitude of the requested diagnostics point
-                 ! coordinates in order to be flagged as the desired
-                 ! point
-                 ! [ degrees ]
-real          :: crit_ydistance = 4.0
-                 ! model grid points must be within crit_ydistance in
-                 ! latitude of the requested diagnostics point
-                 ! coordinates in order to be flagged as the desired
-                 ! point
-                 ! [ degrees ]
+real          :: crit_xdistance = 4.0 !< model grid points must be within crit_xdistance in
+                                      !! longitude of the requested diagnostics point
+                                      !! coordinates in order to be flagged as the desired
+                                      !! point
+                                      !! [ degrees ]
+real          :: crit_ydistance = 4.0 !< model grid points must be within crit_ydistance in
+                                      !! latitude of the requested diagnostics point
+                                      !! coordinates in order to be flagged as the desired
+                                      !! point
+                                      !! [ degrees ]
 
 namelist / column_diagnostics_nml /              &
                                       crit_xdistance, &
@@ -108,6 +109,7 @@ logical    :: module_is_initialized = .false.
 
 !####################################################################
 
+!> @brief column_diagnostics_init is the constructor for column_diagnostics_mod.
 subroutine column_diagnostics_init
 
 !--------------------------------------------------------------------
@@ -118,7 +120,9 @@ subroutine column_diagnostics_init
 !--------------------------------------------------------------------
 !    local variables:
 !
-      integer    :: unit, ierr, io
+      integer    :: unit !< unit number for nml file
+      integer    :: ierr !< error return flag
+      integer    :: io   !< error return code
 
 !--------------------------------------------------------------------
 !   local variables:
@@ -165,7 +169,9 @@ end subroutine column_diagnostics_init
 
 !####################################################################
 
-
+!> @brief initialize_diagnostic_columns returns the (i, j, lat, lon) coord-
+!!    inates of any diagnostic columns that are located on the current
+!!    processor.
 subroutine initialize_diagnostic_columns     &
                    (module, num_diag_pts_latlon, num_diag_pts_ij,  &
                     global_i , global_j , global_lat_latlon,   &
@@ -180,8 +186,8 @@ subroutine initialize_diagnostic_columns     &
 !----------------------------------------------------------------------
 
 !---------------------------------------------------------------------
-character(len=*),      intent(in)    :: module
-integer,               intent(in)    :: num_diag_pts_latlon,  &
+character(len=*),      intent(in)    :: module                  !< module calling this subroutine
+integer,               intent(in)    :: num_diag_pts_latlon,  & !< number of diagnostic columns specified
                                         num_diag_pts_ij
 integer, dimension(:), intent(in)    :: global_i, global_j
 real   , dimension(:), intent(in)    :: global_lat_latlon,    &
