@@ -17,8 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \file
-!! \brief Contains the \ref block_control_mod module
+!> @file
+!! @brief Contains the \ref block_control_mod module
+!! @email gfdl.climate.model.info@noaa.gov
 
 module block_control_mod
 #include <fms_platform.h>
