@@ -17,13 +17,15 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \author Fei Liu <Fei.Liu@noaa.gov>
-!! \link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ \endlink
-!!
-!! \brief astronomy_mod provides astronomical variables for use
+!> @file
+!! @brief astronomy_mod provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
 !!        for determination of astronomical values needed by the shortwave
 !!        radiation packages.
+!! @author Fei Liu
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!! \link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ \endlink
 !!
 !! Modules Included:
 !!
