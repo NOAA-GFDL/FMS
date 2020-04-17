@@ -37,9 +37,12 @@ public :: version
 
 real :: realnumber !< dummy variable to use in HUGE initializations
 
+!! The small_fac parameter is used to alter the radius of the earth to allow one to
+!! examine non-hydrostatic effects without the need to run full-earth high-resolution
+!! simulations (<13km) that will tax hardware resources.
 #ifdef SMALL_EARTH
 #if defined(DCMIP) || (defined(HIWPP) && defined(SUPER_K))
- real, public, parameter :: small_fac =  1._r8_kind / 120._r8_kind #only needed for supercell test
+ real, public, parameter :: small_fac =  1._r8_kind / 120._r8_kind   ! only needed for supercell test
 #elif defined(HIWPP)
  real, public, parameter :: small_fac = 1._r8_kind / 166.7_r8_kind
 #else
