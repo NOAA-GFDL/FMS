@@ -32,6 +32,7 @@ AM_CPPFLAGS += -I${top_builddir}/time_manager
 AM_CPPFLAGS += -I${top_builddir}/time_interp
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libinterpolator.la
