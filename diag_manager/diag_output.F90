@@ -38,7 +38,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
-       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain
+       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain, mpp_get_data_domain
   USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe, mpp_get_current_pelist
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
@@ -383,9 +383,8 @@ integer :: domain_size, axis_length, axis_pos
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
-                         call register_axis(fptr, axis_name, dimension_length=size(axis_data))
-                         istart = lbound(axis_data,1)
-                         iend = ubound(axis_data,1)
+                         call mpp_get_data_domain(domain, istart, iend, length)
+                         call register_axis(fptr, axis_name, dimension_length=length)
                          call register_field(fptr, axis_name, "double", (/axis_name/) )
                          call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                          call register_variable_attribute(fptr, axis_name, "units", axis_units)
