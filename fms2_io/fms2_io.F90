@@ -26,7 +26,7 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use blackboxio
-use mpp_mod, only: input_nml_file
+use mpp_mod, only: input_nml_file, mpp_error, FATAL
 implicit none
 private
 
@@ -212,8 +212,8 @@ interface read_new_restart
 end interface read_new_restart
 
 !< Namelist variables
-integer :: ncchksz = 1*1024*1024 !< User defined chunksize argument in netcdf file creation calls.
-                                 !! Replaces setting the NC_CHKSZ environment variable.
+integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file 
+                              !! creation calls. Replaces setting the NC_CHKSZ environment variable.
 namelist / fms2_io_nml / &
                       ncchksz
 
@@ -227,6 +227,9 @@ integer :: mystat
 READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
 
 !>Send the namelist variables to their respective modules
+  if (ncchksz .le. 0) then
+        call mpp_error("ncchksz in fms2_io_nml must be a positive number.",FATAL) 
+  endif
   call netcdf_io_init (ncchksz)
   call blackboxio_init (ncchksz)
 end subroutine fms2_io_init

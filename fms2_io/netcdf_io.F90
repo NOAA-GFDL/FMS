@@ -44,7 +44,7 @@ integer, parameter, public :: unlimited = nf90_unlimited !> Wrapper to specify u
 integer, parameter :: dimension_not_found = 0
 integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of compressed
                                                            !! dimensions allowed.
-integer, private :: fms2_ncchksz = 1*1024*1024 !< Chunksize used in nc_open and nc_create
+integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and nc_create
 
 !> @brief Restart variable.
 type :: RestartVariable_t
@@ -486,6 +486,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       endif
       call string_copy(fileobj%nc_format, nc_format)
     endif
+    if (fms2_ncchksz == -1) error("netcdf_file_open:: fms2_ncchksz not set.")
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
