@@ -212,8 +212,7 @@ interface read_new_restart
   module procedure restore_domain_state_wrap
 end interface read_new_restart
 
-logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init
-is run
+logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
 !< Namelist variables
 integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file 
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
