@@ -223,20 +223,22 @@ contains
 
 !> @brief Reads the fms2_io_nml
 subroutine fms2_io_init ()
-
-integer :: mystat
- call mpp_init()
- call mpp_domains_init()
+ integer :: mystat
+ 
+!> Check if the module has already been initialized
+  if (fms2_io_is_initialized) return
+!> Call initialization routines that this module depends on
+  call mpp_init()
+  call mpp_domains_init()
 !> Read the namelist
-READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
-
+  READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
 !>Send the namelist variables to their respective modules
   if (ncchksz .le. 0) then
         call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
   endif
   call netcdf_io_init (ncchksz)
   call blackboxio_init (ncchksz)
-
+!> Mark the fms2_io as initialized 
   fms2_io_is_initialized = .true.
 end subroutine fms2_io_init
 
