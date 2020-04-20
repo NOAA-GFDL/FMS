@@ -386,8 +386,8 @@ integer :: domain_size, axis_length, axis_pos
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
-                         call mpp_get_global_domain(domain, gstart, gend, glength)  !< Get the global indicies
-                         call mpp_get_compute_domain(domain, cstart, cend, clength) !< Get the compute indicies
+                         call mpp_get_global_domain(domain, begin=gstart)  !< Get the global indicies
+                         call mpp_get_compute_domain(domain, begin=cstart, end=cend, size=clength) !< Get the compute indicies
                          iend =  cend - gstart + 1     !< Get the array indicies for the axis data
                          istart = cstart - gstart + 1 
                          call register_axis(fptr, axis_name, dimension_length=clength)
