@@ -228,7 +228,7 @@ READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
 
 !>Send the namelist variables to their respective modules
   if (ncchksz .le. 0) then
-        call mpp_error("ncchksz in fms2_io_nml must be a positive number.",FATAL) 
+        call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
   endif
   call netcdf_io_init (ncchksz)
   call blackboxio_init (ncchksz)
