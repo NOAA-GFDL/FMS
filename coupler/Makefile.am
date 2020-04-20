@@ -30,6 +30,7 @@ AM_CPPFLAGS += -I${top_builddir}/time_manager
 AM_CPPFLAGS += -I${top_builddir}/diag_manager
 AM_CPPFLAGS += -I${top_builddir}/data_override
 AM_CPPFLAGS += -I${top_builddir}/field_manager
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libcoupler_types.la libensemble_manager.la \
