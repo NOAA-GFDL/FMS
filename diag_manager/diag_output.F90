@@ -316,8 +316,8 @@ integer :: domain_size, axis_length, axis_pos
     integer                                    :: id_axis_current
     logical :: is_time_axis_registered
     integer :: istart, iend
-    integer :: gstart, dgnd, cstart, cend !< Start and end of global and compute domains
-    integer :: glength, clength !< Length of global and compute domains
+    integer :: gstart, cstart, cend !< Start and end of global and compute domains
+    integer :: clength !< Length of global and compute domains
     integer :: data_size
     integer, allocatable, dimension(:) :: all_indicies
     ! Make sure err_msg is initialized
