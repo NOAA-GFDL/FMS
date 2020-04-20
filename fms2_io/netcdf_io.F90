@@ -486,7 +486,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       endif
       call string_copy(fileobj%nc_format, nc_format)
     endif
-    if (fms2_ncchksz == -1) error("netcdf_file_open:: fms2_ncchksz not set.")
+    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set.")
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then

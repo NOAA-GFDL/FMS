@@ -140,7 +140,7 @@ function create_diskless_netcdf_file(fileobj, pelist, path) &
   fileobj%is_diskless = .true.
   cmode = ior(nf90_noclobber, nf90_classic_model)
   cmode = ior(cmode, nf90_diskless)
-  if (fms2_ncchksz == -1) error("create_diskless_netcdf_file :: fms2_ncchksz not set.")
+  if (fms2_ncchksz == -1) call error("create_diskless_netcdf_file :: fms2_ncchksz not set.")
   err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid, chunksize=fms2_ncchksz)
   success = err .eq. nf90_noerr
   if (.not. success) then
