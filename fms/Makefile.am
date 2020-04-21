@@ -28,6 +28,7 @@ AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/platform
 AM_CPPFLAGS += -I${top_builddir}/memutils
+AM_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfms_io.la libfms.la
