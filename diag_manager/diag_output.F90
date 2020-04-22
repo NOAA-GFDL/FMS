@@ -18,8 +18,6 @@
 !***********************************************************************
 
 MODULE diag_output_mod
-#include <fms_platform.h>
-
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -28,6 +26,7 @@ MODULE diag_output_mod
   !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
   !   field-meta-data and field data
   ! </OVERVIEW>
+use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
@@ -39,7 +38,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
-       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain
+       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain, &
+       & mpp_get_compute_domain, mpp_get_global_domain
   USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe, mpp_get_current_pelist
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
@@ -309,13 +309,15 @@ integer :: domain_size, axis_length, axis_pos
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
     type(domainUG),pointer                     :: io_domain
-    integer(INT_KIND)                          :: io_domain_npes
-    integer(INT_KIND),dimension(:),allocatable :: io_pelist
-    integer(INT_KIND),dimension(:),allocatable :: unstruct_axis_sizes
+    integer(I4_KIND)                          :: io_domain_npes
+    integer(I4_KIND),dimension(:),allocatable :: io_pelist
+    integer(I4_KIND),dimension(:),allocatable :: unstruct_axis_sizes
     real,dimension(:),allocatable              :: unstruct_axis_data
     integer                                    :: id_axis_current
     logical :: is_time_axis_registered
     integer :: istart, iend
+    integer :: gstart, cstart, cend !< Start and end of global and compute domains
+    integer :: clength !< Length of compute domain
     integer :: data_size
     integer, allocatable, dimension(:) :: all_indicies
     ! Make sure err_msg is initialized
@@ -384,9 +386,11 @@ integer :: domain_size, axis_length, axis_pos
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
-                         call register_axis(fptr, axis_name, dimension_length=size(axis_data))
-                         istart = lbound(axis_data,1)
-                         iend = ubound(axis_data,1)
+                         call mpp_get_global_domain(domain, begin=gstart)  !< Get the global indicies
+                         call mpp_get_compute_domain(domain, begin=cstart, end=cend, size=clength) !< Get the compute indicies
+                         iend =  cend - gstart + 1     !< Get the array indicies for the axis data
+                         istart = cstart - gstart + 1 
+                         call register_axis(fptr, axis_name, dimension_length=clength)
                          call register_field(fptr, axis_name, "double", (/axis_name/) )
                          call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                          call register_variable_attribute(fptr, axis_name, "units", axis_units)
@@ -613,10 +617,10 @@ integer :: domain_size, axis_length, axis_pos
        ! Deallocate attributes
        IF ( ALLOCATED(attributes) ) THEN
           DO j=1, num_attributes
-             IF ( _ALLOCATED(attributes(j)%fatt ) ) THEN
+             IF ( allocated(attributes(j)%fatt ) ) THEN
                 DEALLOCATE(attributes(j)%fatt)
              END IF
-             IF ( _ALLOCATED(attributes(j)%iatt ) ) THEN
+             IF ( allocated(attributes(j)%iatt ) ) THEN
                 DEALLOCATE(attributes(j)%iatt)
              END IF
           END DO
@@ -730,10 +734,10 @@ integer :: domain_size, axis_length, axis_pos
        ! Deallocate attributes
        IF ( ALLOCATED(attributes) ) THEN
           DO j=1, num_attributes
-             IF ( _ALLOCATED(attributes(j)%fatt ) ) THEN
+             IF ( allocated(attributes(j)%fatt ) ) THEN
                 DEALLOCATE(attributes(j)%fatt)
              END IF
-             IF ( _ALLOCATED(attributes(j)%iatt ) ) THEN
+             IF ( allocated(attributes(j)%iatt ) ) THEN
                 DEALLOCATE(attributes(j)%iatt)
              END IF
           END DO
@@ -789,7 +793,7 @@ integer :: domain_size, axis_length, axis_pos
     INTEGER, OPTIONAL, INTENT(in) :: pack
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method, standard_name
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
-    TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
+    TYPE(diag_atttype), DIMENSION(:), allocatable, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
     LOGICAL, OPTIONAL, INTENT(in) :: use_UGdomain
 class(FmsNetcdfFile_t), intent(inout)     :: fileob
@@ -995,7 +999,7 @@ character(len=128),dimension(size(axes)) :: axis_names
     !---- write user defined attributes -----
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
-          IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
+          IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
              CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg, fileob=fileob, varname=name)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
@@ -1003,11 +1007,11 @@ character(len=128),dimension(size(axes)) :: axis_names
              END IF
           ELSE
              ! Catch some bad cases
-             IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
+             IF ( num_attributes .GT. 0 .AND. .NOT.allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes > 0 but attributes is not allocated for attribute '&
                      &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-             ELSE IF ( num_attributes .EQ. 0 .AND. _ALLOCATED(attributes) ) THEN
+             ELSE IF ( num_attributes .EQ. 0 .AND. allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes == 0 but attributes is allocated for attribute '&
                      &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
@@ -1075,7 +1079,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     DO i = 1, num_attributes
        SELECT CASE (attributes(i)%type)
        CASE (NF90_INT)
-          IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
+          IF ( .NOT.allocated(attributes(i)%iatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Integer attribute type indicated, but array not allocated for attribute '&
                   &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
@@ -1084,7 +1088,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           END IF
           if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , attributes(i)%iatt)
        CASE (NF90_FLOAT)
-          IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
+          IF ( .NOT.allocated(attributes(i)%fatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Real attribute type indicated, but array not allocated for attribute '&
                   &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN

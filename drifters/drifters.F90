@@ -141,30 +141,30 @@ module drifters_mod
      real    :: dt             ! total dt, over a complete step
      real    :: time
      ! fields
-     real, _ALLOCATABLE :: fields(:,:) _NULL
+     real, allocatable :: fields(:,:)
      ! velocity field axes
-     real, _ALLOCATABLE :: xu(:) _NULL
-     real, _ALLOCATABLE :: yu(:) _NULL
-     real, _ALLOCATABLE :: zu(:) _NULL
-     real, _ALLOCATABLE :: xv(:) _NULL
-     real, _ALLOCATABLE :: yv(:) _NULL
-     real, _ALLOCATABLE :: zv(:) _NULL
-     real, _ALLOCATABLE :: xw(:) _NULL
-     real, _ALLOCATABLE :: yw(:) _NULL
-     real, _ALLOCATABLE :: zw(:) _NULL
+     real, allocatable :: xu(:)
+     real, allocatable :: yu(:)
+     real, allocatable :: zu(:)
+     real, allocatable :: xv(:)
+     real, allocatable :: yv(:)
+     real, allocatable :: zv(:)
+     real, allocatable :: xw(:)
+     real, allocatable :: yw(:)
+     real, allocatable :: zw(:)
      ! Runge Kutta coefficients holding intermediate results (positions)
-     real, _ALLOCATABLE :: temp_pos(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k1(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k2(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k3(:,:) _NULL
-     real, _ALLOCATABLE :: rk4_k4(:,:) _NULL
+     real, allocatable :: temp_pos(:,:)
+     real, allocatable :: rk4_k1(:,:)
+     real, allocatable :: rk4_k2(:,:)
+     real, allocatable :: rk4_k3(:,:)
+     real, allocatable :: rk4_k4(:,:)
      ! store filenames for convenience
      character(len=MAX_STR_LEN) :: input_file, output_file
      ! Runge Kutta stuff
      integer :: rk4_step
      logical :: rk4_completed
      integer :: nx, ny
-     logical, _ALLOCATABLE   :: remove(:) _NULL
+     logical, allocatable   :: remove(:)
   end type drifters_type
 
   interface assignment(=)
@@ -1001,16 +1001,16 @@ contains
 
     ermesg = ''
 
-    if(.not._ALLOCATED(self%xu) .or. .not._ALLOCATED(self%yu)) then
+    if(.not.allocated(self%xu) .or. .not.allocated(self%yu)) then
        ermesg = 'drifters_set_domain_bounds: ERROR "u"-component axes not set'
        return
     endif
     call drifters_comm_set_domain(self%comm, domain, self%xu, self%yu, backoff_x, backoff_y)
-    if(.not._ALLOCATED(self%xv) .or. .not._ALLOCATED(self%yv)) then
+    if(.not.allocated(self%xv) .or. .not.allocated(self%yv)) then
        ermesg = 'drifters_set_domain_bounds: ERROR "v"-component axes not set'
        return
     endif
-    if(_ALLOCATED(self%xw) .and. _ALLOCATED(self%yw)) then
+    if(allocated(self%xw) .and. allocated(self%yw)) then
        call drifters_comm_set_domain(self%comm, domain, self%xv, self%yv, backoff_x, backoff_y)
     endif
 
@@ -1265,400 +1265,3 @@ contains
   end subroutine drifters_reset_rk4
 
 end module drifters_mod
-
-!##############################################################################
-! Unit test
-! =========
-!
-! Compilation instructions:
-!
-!
-! Example 1: Altix with MPP
-! set FMS="/net2/ap/regression/ia64/25-May-2006/SM2.1U_Control-1990_D1_lm2/"
-! set NETCDF="-lnetcdf"
-! set MPI="-lmpi"
-! set MPP="-I $FMS/exec $FMS//exec/mpp*.o $FMS/exec/threadloc.o"
-! set INC="-I/usr/include -I/usr/local/include -I $FMS/src/shared/include -I./"
-! set F90="ifort -Duse_libMPI -r8 -g -check bounds"
-!
-! Example 2: IRIX with MPP
-! set FMS="/net2/ap/regression/sgi/25-May-2006/SM2.1U_Control-1990_D1_lm2/"
-! set NETCDF="-lnetcdf"
-! set MPI="-lmpi -lexc"
-! set MPP="-I $FMS/exec/ $FMS/exec/mpp*.o $FMS/exec/threadloc.o $FMS/exec/nsclock.o"
-! set INC="-I/usr/include -I/usr/local/include -I $FMS/src/shared/include -I./"
-! set F90="f90 -Duse_libMPI -r8 -g -64 -macro_expand -DEBUG:conform_check=YES:subscript_check=ON:trap_uninitialized=ON:verbose_runtime=ON"
-!
-! Example 3: ia32 without MPP/MPI
-! set MPI=""
-! set MPP=""
-! set NETCDF="-L/net/ap/Linux.i686/pgf95/lib -lnetcdf"
-! set INC="-I/net/ap/Linux.i686/pgf95/include -I /home/ap/HIM/him_global/include -I./"
-! set
-! set F90="/usr/local/nf95/bin/nf95 -g -r8 -C=all -colour"
-! or
-! set F90="pgf95 -g -r8 -Mbounds -Mchkfpstk -Mchkptr -Mstabs"
-! or
-! set F90="lf95 --dbl"
-!
-! All platforms:
-!
-! set SRCS="cloud_interpolator.F90 quicksort.F90 drifters_core.F90 drifters_io.F90 drifters_input.F90 drifters_comm.F90 drifters.F90"
-! $F90 -D_DEBUG -D_TEST_DRIFTERS $INC $MPP $SRCS $NETCDF $MPI
-!
-!
-! Run the test unit:
-! =================
-! rm -f drifters_out_test_3d.nc.*
-! mpirun -np # a.out
-! drifters_combine -f drifters_out_test_3d.nc
-! md5sum drifters_out_test_3d.nc
-! 548603caca8db971f2e833b9ce8b85f0  drifters_out_test_3d.nc
-! md5sum drifters_res.nc
-! 6b697d25ff9ee719b5cedbdc6ccb702a  drifters_res.nc
-!
-! NOTE: checksums on drifters_res.nc may vary according to PE layouts. The
-! differences should only affect the (arbitrary) order in which drifters
-! are saved onto file.
-
-! On IRIX64:
-! set F90="f90 -r8 -g -64 -macro_expand -DEBUG:conform_check=YES:subscript_check=ON:trap_uninitialized=ON:verbose_runtime=ON"
-! $F90 -D_DEBUG -D_TEST_DRIFTERS $INC -I $MPPLIB_DIR $SRCS $MPPLIB_DIR/mpp*.o $MPPLIB_DIR/nsclock.o $MPPLIB_DIR/threadloc.o -L/usr/local/lib -lnetcdf -lmpi -lexc
-!
-! input file: drifters_inp_test_3d.nc
-!!$netcdf drifters_inp_test_3d {
-!!$dimensions:
-!!$   nd = 3 ; // number of dimensions (2 or 3)
-!!$   np = 4 ; // number of particles
-!!$variables:
-!!$   double positions(np, nd) ;
-!!$      positions:names = "x y z" ;
-!!$      positions:units = "- - -" ;
-!!$   int ids(np) ;
-!!$
-!!$// global attributes:
-!!$      :velocity_names = "u v w" ;
-!!$      :field_names = "temp" ;
-!!$      :field_units = "C" ;
-!!$      :time_units = "seconds" ;
-!!$      :title = "example of input data for drifters" ;
-!!$data:
-!!$
-!!$ positions =
-!!$  -0.8, 0., 0.,
-!!$  -0.2, 0., 0.,
-!!$   0.2, 0., 0.,
-!!$   0.8, 0., 0.;
-!!$
-!!$ ids = 1, 2, 3, 4 ; // must range from 1 to np, in any order
-!!$}
-
-
-#ifdef _TEST_DRIFTERS
-
-! number of dimensions (2 or 3)
-#define _DIMS 3
-
-subroutine my_error_handler(mesg)
-#ifndef _SERIAL
-  use mpp_mod, only : FATAL, mpp_error
-#endif
-  implicit none
-  character(len=*), intent(in) :: mesg
-#ifndef _SERIAL
-  call mpp_error(FATAL, mesg)
-#else
-  print *, mesg
-  stop
-#endif
-end subroutine my_error_handler
-
-program test
-
-  ! Example showing how to use drifters_mod.
-
-  use drifters_mod
-#ifndef _SERIAL
-  use mpp_mod
-  use mpp_domains_mod
-#endif
-  implicit none
-
-  ! declare drifters object
-  type(drifters_type) :: drfts  ! drifters' object
-  type(drifters_type) :: drfts2 ! to test copy
-  character(len=128)  :: ermesg
-
-  real    :: t0, dt, t, tend, rho
-  real    :: xmin, xmax, ymin, ymax, zmin, zmax, theta
-  real, parameter :: pi = 3.1415926535897931159980
-  real, allocatable :: x(:), y(:)
-#if _DIMS == 2
-  real, allocatable :: u(:,:), v(:,:), w(:,:), temp(:,:)
-#endif
-#if _DIMS == 3
-  real, allocatable :: z(:), u(:,:,:), v(:,:,:), w(:,:,:), temp(:,:,:)
-#endif
-  integer :: layout(2), nx, ny, nz, halox, haloy, i, j, k, npes, pe, root
-  integer :: isd,  ied,  jsd,  jed, isc,  iec,  jsc,  jec
-  integer :: pe_beg, pe_end
-  integer :: ibnds(1) ! only used in _SERIAL mode
-
-  _TYPE_DOMAIN2D :: domain
-
-#ifndef _SERIAL
-  call mpp_init
-#endif
-  npes   = _MPP_NPES
-  pe     = _MPP_PE
-  root   = _MPP_ROOT
-  pe_beg = npes/2
-  pe_end = npes-1
-
-
-  ! input parameters
-  t0 = 0.0 ! initial time
-  tend = 2.0*pi ! max time
-  dt =  tend/20.0 ! time step
-  ! domain boundaries
-  xmin = -1. ; xmax = 1.
-  ymin = -1. ; ymax = 1.
-  zmin = -1. ; zmax = 1.
-  nx = 41; ny = 41; nz = 21;
-  halox = 2; haloy = 2;
-
-  allocate( x(1-halox:nx+halox), y(1-haloy:ny+haloy))
-  x = xmin + (xmax-xmin)*(/ (real(i-1)/real(nx-1), i = 1-halox, nx+halox) /)
-  y = ymin + (ymax-ymin)*(/ (real(j-1)/real(ny-1), j = 1-haloy, ny+haloy) /)
-
-#if _DIMS == 2
-  allocate( u(1-halox:nx+halox, 1-haloy:ny+haloy), &
-       &    v(1-halox:nx+halox, 1-haloy:ny+haloy), &
-       &    w(1-halox:nx+halox, 1-haloy:ny+haloy), &
-       & temp(1-halox:nx+halox, 1-haloy:ny+haloy))
-#endif
-#if _DIMS == 3
-  allocate( z(nz) )
-  z = zmin + (zmax-zmin)*(/ (real(k-1)/real(nz-1), k = 1, nz) /)
-  allocate( u(1-halox:nx+halox, 1-haloy:ny+haloy, nz), &
-       &    v(1-halox:nx+halox, 1-haloy:ny+haloy, nz), &
-       &    w(1-halox:nx+halox, 1-haloy:ny+haloy, nz), &
-       & temp(1-halox:nx+halox, 1-haloy:ny+haloy, nz))
-#endif
-
-
-#ifndef _SERIAL
-  ! decompose domain
-  call mpp_domains_init ! (MPP_DEBUG)
-!!$  call mpp_domains_set_stack_size(stackmax)
-
-  call mpp_declare_pelist( (/ (i, i=pe_beg, pe_end) /), '_drifters')
-#endif
-
-  ! this sumulates a run on a subset of PEs
-  if(pe >= pe_beg .and. pe <= pe_end) then
-
-#ifndef _SERIAL
-     call mpp_set_current_pelist( (/ (i, i=pe_beg, pe_end) /) )
-
-     call mpp_define_layout( (/1,nx, 1,ny/), pe_end-pe_beg+1, layout )
-     if(pe==root) print *,'LAYOUT: ', layout
-     call mpp_define_domains((/1,nx, 1,ny/), layout, domain, &
-          & xhalo=halox, yhalo=haloy) !,&
-     !& xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN)
-#endif
-
-     ! constructor
-#if _DIMS == 2
-     call drifters_new(drfts, &
-          & input_file ='drifters_inp_test_2d.nc'  , &
-          & output_file='drifters_out_test_2d.nc', &
-          & ermesg=ermesg)
-#endif
-#if _DIMS == 3
-     call drifters_new(drfts, &
-          & input_file ='drifters_inp_test_3d.nc'  , &
-          & output_file='drifters_out_test_3d.nc', &
-          & ermesg=ermesg)
-#endif
-     if(ermesg/='') call my_error_handler(ermesg)
-
-     ! set start/end pe
-     drfts%comm%pe_beg = pe_beg
-     drfts%comm%pe_end = pe_end
-
-     ! set the initial time and dt
-     drfts%time = t0
-     drfts%dt   = dt
-
-#ifndef _SERIAL
-     call mpp_get_data_domain   ( domain, isd,  ied,  jsd,  jed  )
-     call mpp_get_compute_domain( domain, isc,  iec,  jsc,  jec  )
-#else
-     ibnds = lbound(x); isd = ibnds(1)
-     ibnds = ubound(x); ied = ibnds(1)
-     ibnds = lbound(y); jsd = ibnds(1)
-     ibnds = ubound(y); jed = ibnds(1)
-     isc = isd; iec = ied - 1
-     jsc = jsd; jec = jed - 1
-#endif
-
-
-     ! set the PE domain boundaries. Xmin_comp/ymin_comp, xmax_comp/ymax_comp
-     ! refer to the "compute" domain, which should cover densily the domain: ie
-     ! xcmax[pe] = xcmin[pe_east]
-     ! ycmax[pe] = ycmin[pe_north]
-     ! Xmin_data/ymin_data, xmax_data/ymax_data refer to the "data" domain, which
-     ! should be larger than the compute domain and therefore overlap: ie
-     ! xdmax[pe] > xdmin[pe_east]
-     ! ydmax[pe] > ydmin[pe_north]
-     ! Particles in the overlap regions are tracked by several PEs.
-
-     call drifters_set_domain(drfts, &
-          & xmin_comp=x(isc  ), xmax_comp=x(iec+1), &
-          & ymin_comp=y(jsc  ), ymax_comp=y(jec+1), &
-          & xmin_data=x(isd  ), xmax_data=x(ied  ), &
-          & ymin_data=y(jsd  ), ymax_data=y(jed  ), &
-          !!$       & xmin_glob=xmin    , xmax_glob=xmax    , & ! periodicity in x
-!!$       & ymin_glob=ymin    , ymax_glob=ymax    , & ! periodicity in y
-     & ermesg=ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-
-     ! set neighboring PEs [domain2d is of type(domain2d)]
-
-     call drifters_set_pe_neighbors(drfts, domain=domain, ermesg=ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-
-     ! set the velocities axes. Each velocity can have different axes.
-
-     call drifters_set_v_axes(drfts, component='u', &
-          & x=x, y=y, &
-#if _DIMS == 2
-          & z=DRFT_EMPTY_ARRAY, &
-#endif
-#if _DIMS >= 3
-          & z=z, &
-#endif
-          & ermesg=ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-
-     call drifters_set_v_axes(drfts, component='v', &
-          & x=x, y=y, &
-#if _DIMS == 2
-          & z=DRFT_EMPTY_ARRAY, &
-#endif
-#if _DIMS >= 3
-          & z=z, &
-#endif
-          & ermesg=ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-
-#if _DIMS == 3
-     call drifters_set_v_axes(drfts, component='w', &
-          & x=x, y=y, &
-#if _DIMS == 2
-          & z=DRFT_EMPTY_ARRAY, &
-#endif
-#if _DIMS >= 3
-          & z=z, &
-#endif
-          & ermesg=ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-#endif
-
-     ! Distribute the drifters across PEs
-     call drifters_distribute(drfts, ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-
-     t = t0
-
-     do while (t <= tend+epsilon(1.))
-
-        ! Update time
-
-        t = t + dt/2.0
-
-        ! Set velocity and field
-#if _DIMS == 2
-        do j = 1-haloy, ny+haloy
-           do i = 1-halox, nx+halox
-              theta = atan2(y(j), x(i))
-              rho   = sqrt(x(i)**2 + y(j)**2)
-              u(i,j) = - rho * sin(theta)
-              v(i,j) = + rho * cos(theta)
-              temp(i,j) = (x(i)**2 + y(j)**2)
-           enddo
-        enddo
-        ! Push the drifters
-        call drifters_push(drfts, u=u, v=v, ermesg=ermesg)
-        if(ermesg/='') call my_error_handler(ermesg)
-#endif
-#if _DIMS == 3
-        do k = 1, nz
-           do j = 1-haloy, ny+haloy
-              do i = 1-halox, nx+halox
-                 theta = atan2(y(j), x(i))
-                 rho   = sqrt(x(i)**2 + y(j)**2)
-                 u(i,j,k) = - rho * sin(theta)
-                 v(i,j,k) = + rho * cos(theta)
-                 w(i,j,k) = + 0.01 * cos(t)
-                 temp(i,j,k) = (x(i)**2 + y(j)**2) * (1.0 - z(k)**2)
-              enddo
-           enddo
-        enddo
-        ! Push the drifters
-        call drifters_push(drfts, u=u, v=v, w=w, ermesg=ermesg)
-        if(ermesg/='') call my_error_handler(ermesg)
-#endif
-
-
-        ! Check if RK4 integration is complete
-
-        if(drfts%rk4_completed) then
-
-           ! Interpolate fields
-
-           call drifters_set_field(drfts, index_field=1, x=x, y=y, &
-#if _DIMS >= 3
-                & z=z, &
-#endif
-                &    data=temp, ermesg=ermesg)
-           if(ermesg/='') call my_error_handler(ermesg)
-
-           ! Save data
-
-           call drifters_save(drfts, ermesg=ermesg)
-           if(ermesg/='') call my_error_handler(ermesg)
-
-        endif
-
-     enddo
-
-     ! Write restart file
-
-     call drifters_write_restart(drfts, filename='drifters_res.nc', &
-          & ermesg=ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-
-     ! test copy
-     drfts2 = drfts
-
-     ! destroy
-
-     call drifters_del(drfts, ermesg=ermesg)
-     if(ermesg/='') call my_error_handler(ermesg)
-
-     deallocate(x, y)
-     deallocate(u, v, temp)
-#if _DIMS == 3
-     deallocate(z, w)
-#endif
-
-  endif
-
-#ifndef _SERIAL
-  call mpp_exit
-#endif
-
-end program test
-#endif

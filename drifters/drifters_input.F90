@@ -34,13 +34,13 @@ module drifters_input_mod
   type drifters_input_type
      ! Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
      ! when adding members
-     character(len=MAX_STR_LEN), _ALLOCATABLE :: position_names(:) _NULL
-     character(len=MAX_STR_LEN), _ALLOCATABLE :: position_units(:) _NULL
-     character(len=MAX_STR_LEN), _ALLOCATABLE :: field_names(:)    _NULL
-     character(len=MAX_STR_LEN), _ALLOCATABLE :: field_units(:)    _NULL
-     character(len=MAX_STR_LEN), _ALLOCATABLE :: velocity_names(:) _NULL
-     real                      , _ALLOCATABLE :: positions(:,:) _NULL
-     integer                   , _ALLOCATABLE :: ids(:)         _NULL
+     character(len=MAX_STR_LEN), allocatable :: position_names(:)
+     character(len=MAX_STR_LEN), allocatable :: position_units(:)
+     character(len=MAX_STR_LEN), allocatable :: field_names(:)   
+     character(len=MAX_STR_LEN), allocatable :: field_units(:)   
+     character(len=MAX_STR_LEN), allocatable :: velocity_names(:)
+     real                      , allocatable :: positions(:,:)
+     integer                   , allocatable :: ids(:)        
      character(len=MAX_STR_LEN)               :: time_units
      character(len=MAX_STR_LEN)               :: title
      character(len=MAX_STR_LEN)               :: version

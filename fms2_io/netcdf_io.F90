@@ -44,7 +44,7 @@ integer, parameter, public :: unlimited = nf90_unlimited !> Wrapper to specify u
 integer, parameter :: dimension_not_found = 0
 integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of compressed
                                                            !! dimensions allowed.
-
+integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and nc_create
 
 !> @brief Restart variable.
 type :: RestartVariable_t
@@ -111,6 +111,7 @@ type, public :: Valid_t
 endtype Valid_t
 
 
+public :: netcdf_io_init
 public :: netcdf_file_open
 public :: netcdf_file_close
 public :: netcdf_add_dimension
@@ -243,6 +244,11 @@ end interface get_variable_attribute
 
 contains
 
+!> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
+subroutine netcdf_io_init (chksz)
+integer, intent(in) :: chksz
+ fms2_ncchksz = chksz
+end subroutine netcdf_io_init
 
 !> @brief Check for errors returned by netcdf.
 !! @internal
@@ -480,14 +486,15 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       endif
       call string_copy(fileobj%nc_format, nc_format)
     endif
+    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set.")
     if (string_compare(mode, "read", .true.)) then
-      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
-      err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid)
+      err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "write", .true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode,"overwrite",.true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     else
       call error("unrecognized file mode "//trim(mode)//".")
     endif

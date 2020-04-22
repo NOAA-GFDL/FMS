@@ -43,8 +43,8 @@ module drifters_core_mod
      integer :: nd     ! number of dimensions
      integer :: np     ! number of particles (drifters)
      integer :: npdim  ! max number of particles (drifters)
-     integer, _ALLOCATABLE :: ids(:)_NULL  ! particle id number
-     real   , _ALLOCATABLE :: positions(:,:)   _NULL
+     integer, allocatable :: ids(:)_NULL  ! particle id number
+     real   , allocatable :: positions(:,:)  
   end type drifters_core_type
 
   interface assignment(=)
@@ -90,9 +90,9 @@ contains
     self%nd  = 0
     self%np  = 0
     iflag = 0
-    if(_ALLOCATED(self%positions)) deallocate(self%positions, stat=iflag)
+    if(allocated(self%positions)) deallocate(self%positions, stat=iflag)
     if(iflag/=0) ier = ier + 1
-    if(_ALLOCATED(self%ids)) deallocate(self%ids, stat=iflag)
+    if(allocated(self%ids)) deallocate(self%ids, stat=iflag)
     if(iflag/=0) ier = ier + 1
 
     if(ier/=0) ermesg = 'drifters::ERROR in drifters_core_del'
