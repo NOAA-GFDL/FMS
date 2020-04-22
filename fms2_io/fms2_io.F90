@@ -26,6 +26,8 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use blackboxio
+use mpp_mod, only: mpp_init, input_nml_file, mpp_error, FATAL
+use mpp_domains_mod, only: mpp_domains_init
 implicit none
 private
 
@@ -81,7 +83,7 @@ public :: is_registered_to_restart
 public :: check_if_open
 public :: set_fileobj_time_name
 public :: is_dimension_registered
-
+public :: fms2_io_init
 
 interface open_file
   module procedure netcdf_file_open_wrap
@@ -209,6 +211,36 @@ interface read_new_restart
   module procedure netcdf_restore_state_wrap
   module procedure restore_domain_state_wrap
 end interface read_new_restart
+
+logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
+!< Namelist variables
+integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file 
+                              !! creation calls. Replaces setting the NC_CHKSZ environment variable.
+namelist / fms2_io_nml / &
+                      ncchksz
+
+contains
+
+!> @brief Reads the fms2_io_nml
+subroutine fms2_io_init ()
+ integer :: mystat
+ 
+!> Check if the module has already been initialized
+  if (fms2_io_is_initialized) return
+!> Call initialization routines that this module depends on
+  call mpp_init()
+  call mpp_domains_init()
+!> Read the namelist
+  READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
+!>Send the namelist variables to their respective modules
+  if (ncchksz .le. 0) then
+        call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
+  endif
+  call netcdf_io_init (ncchksz)
+  call blackboxio_init (ncchksz)
+!> Mark the fms2_io as initialized 
+  fms2_io_is_initialized = .true.
+end subroutine fms2_io_init
 
 
 end module fms2_io_mod

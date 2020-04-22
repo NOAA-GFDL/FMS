@@ -37,12 +37,27 @@ public :: version
 
 real :: realnumber !< dummy variable to use in HUGE initializations
 
+!! The small_fac parameter is used to alter the radius of the earth to allow one to
+!! examine non-hydrostatic effects without the need to run full-earth high-resolution
+!! simulations (<13km) that will tax hardware resources.
+#ifdef SMALL_EARTH
+#if defined(DCMIP) || (defined(HIWPP) && defined(SUPER_K))
+ real, public, parameter :: small_fac =  1._r8_kind / 120._r8_kind   ! only needed for supercell test
+#elif defined(HIWPP)
+ real, public, parameter :: small_fac = 1._r8_kind / 166.7_r8_kind
+#else
+ real, public, parameter :: small_fac = 1._r8_kind / 10._r8_kind
+#endif
+#else
+ real, public, parameter :: small_fac = 1._r8_kind
+#endif
+
 #ifdef GFS_PHYS
 ! SJL: the following are from fv3_gfsphysics/gfs_physics/physics/physcons.f90
-real,               public, parameter :: RADIUS = 6.3712e+6_r8_kind           !< Radius of the Earth [m]
-real(kind=r8_kind), public, parameter :: PI_8   = 3.1415926535897931_r8_kind  !< Ratio of circle circumference to diameter [N/A]
-real,               public, parameter :: PI     = 3.1415926535897931_r8_kind  !< Ratio of circle circumference to diameter [N/A] (REAL(KIND=8))
-real,               public, parameter :: OMEGA  = 7.2921e-5_r8_kind   !< Rotation rate of the Earth [1/s]
+real,               public, parameter :: RADIUS = 6.3712e+6_r8_kind * small_fac !< Radius of the Earth [m]
+real(kind=r8_kind), public, parameter :: PI_8   = 3.1415926535897931_r8_kind    !< Ratio of circle circumference to diameter [N/A]
+real,               public, parameter :: PI     = 3.1415926535897931_r8_kind    !< Ratio of circle circumference to diameter [N/A]
+real,               public, parameter :: OMEGA  = 7.2921e-5_r8_kind / small_fac !< Rotation rate of the Earth [1/s]
 real,               public, parameter :: GRAV   = 9.80665_r8_kind     !< Acceleration due to gravity [m/s^2]
 real(kind=r8_kind), public, parameter :: GRAV_8 = 9.80665_r8_kind     !< Acceleration due to gravity [m/s^2] (REAL(KIND=8))
 real,               public, parameter :: RDGAS  = 287.05_r8_kind      !< Gas constant for dry air [J/kg/deg]
@@ -55,19 +70,8 @@ real,               public, parameter :: con_csol = 2.1060e+3_r8_kind !< spec he
 real,               public, parameter :: CP_AIR = 1004.6_r8_kind      !< Specific heat capacity of dry air at constant pressure [J/kg/deg]
 real,               public, parameter :: KAPPA  = RDGAS/CP_AIR        !< RDGAS / CP_AIR [dimensionless]
 real,               public, parameter :: TFREEZE = 273.15_r8_kind     !< Freezing temperature of fresh water [K]
-#else
 
-#ifdef SMALL_EARTH
-#if defined(DCMIP) || (defined(HIWPP) && defined(SUPER_K))
- real, private, parameter :: small_fac =  1._r8_kind / 120._r8_kind #only needed for supercell test
-#elif defined(HIWPP)
- real, private, parameter :: small_fac = 1._r8_kind / 166.7_r8_kind
 #else
- real, private, parameter :: small_fac = 1._r8_kind / 10._r8_kind
-#endif
-#else
- real, private, parameter :: small_fac = 1._r8_kind
-#endif
 
 real,         public, parameter :: RADIUS = 6371.0e+3_r8_kind * small_fac   !< Radius of the Earth [m]
 real(kind=8), public, parameter :: PI_8   = 3.14159265358979323846_r8_kind  !< Ratio of circle circumference to diameter [N/A]
