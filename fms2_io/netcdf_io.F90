@@ -45,6 +45,7 @@ integer, parameter :: dimension_not_found = 0
 integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of compressed
                                                            !! dimensions allowed.
 integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and nc_create
+integer, private :: fms2_header_buffer_val = 16384  !< value used in NF__ENDDEF
 
 !> @brief Restart variable.
 type :: RestartVariable_t
@@ -245,9 +246,12 @@ end interface get_variable_attribute
 contains
 
 !> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
-subroutine netcdf_io_init (chksz)
+subroutine netcdf_io_init (chksz, header_buffer_val)
 integer, intent(in) :: chksz
+integer, intent(in) :: header_buffer_val
+
  fms2_ncchksz = chksz
+ fms2_header_buffer_val = header_buffer_val
 end subroutine netcdf_io_init
 
 !> @brief Check for errors returned by netcdf.
@@ -280,7 +284,7 @@ subroutine set_netcdf_mode(ncid, mode)
       return
     endif
   elseif (mode .eq. data_mode) then
-    err = nf90_enddef(ncid)
+    err = nf90_enddef(ncid, h_minfree=fms2_header_buffer_val)
     if (err .eq. nf90_enotindefine .or. err .eq. nf90_eperm) then
       return
     endif

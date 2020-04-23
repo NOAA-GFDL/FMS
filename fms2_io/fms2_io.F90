@@ -216,8 +216,11 @@ logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init 
 !< Namelist variables
 integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file 
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
+
+integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size (in bytes) used in
+                                     !! NF__ENDDEF
 namelist / fms2_io_nml / &
-                      ncchksz
+                      ncchksz, header_buffer_val
 
 contains
 
@@ -236,7 +239,10 @@ subroutine fms2_io_init ()
   if (ncchksz .le. 0) then
         call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
   endif
-  call netcdf_io_init (ncchksz)
+  if (header_buffer_val .le. 0) then
+        call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
+  endif
+  call netcdf_io_init (ncchksz, header_buffer_val)
   call blackboxio_init (ncchksz)
 !> Mark the fms2_io as initialized 
   fms2_io_is_initialized = .true.
