@@ -546,16 +546,14 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
   endif
+
+! Calculate the checksum and write it out
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
-      call domain_write_0d(fileobj, fileobj%restart_vars(i)%varname, &
-                           fileobj%restart_vars(i)%data0d, unlim_dim_level=unlim_dim_level)
+       cycle
     elseif (associated(fileobj%restart_vars(i)%data1d)) then
-      call domain_write_1d(fileobj, fileobj%restart_vars(i)%varname, &
-                           fileobj%restart_vars(i)%data1d, unlim_dim_level=unlim_dim_level)
+       cycle
     elseif (associated(fileobj%restart_vars(i)%data2d)) then
-      call domain_write_2d(fileobj, fileobj%restart_vars(i)%varname, &
-                           fileobj%restart_vars(i)%data2d, unlim_dim_level=unlim_dim_level)
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data2d, is_decomposed)
       if (is_decomposed) then
@@ -563,8 +561,6 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                          "checksum", chksum)
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
-      call domain_write_3d(fileobj, fileobj%restart_vars(i)%varname, &
-                           fileobj%restart_vars(i)%data3d, unlim_dim_level=unlim_dim_level)
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data3d, is_decomposed)
       if (is_decomposed) then
@@ -572,8 +568,6 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                          "checksum", chksum)
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
-      call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
-                           fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data4d, is_decomposed)
       if (is_decomposed) then
@@ -584,6 +578,29 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
       call error("this branch should not be reached.")
     endif
   enddo
+
+! Write out all of the data
+  do i = 1, fileobj%num_restart_vars
+    if (associated(fileobj%restart_vars(i)%data0d)) then
+      call domain_write_0d(fileobj, fileobj%restart_vars(i)%varname, &
+                           fileobj%restart_vars(i)%data0d, unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data1d)) then
+      call domain_write_1d(fileobj, fileobj%restart_vars(i)%varname, &
+                           fileobj%restart_vars(i)%data1d, unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data2d)) then
+      call domain_write_2d(fileobj, fileobj%restart_vars(i)%varname, &
+                           fileobj%restart_vars(i)%data2d, unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data3d)) then
+      call domain_write_3d(fileobj, fileobj%restart_vars(i)%varname, &
+                           fileobj%restart_vars(i)%data3d, unlim_dim_level=unlim_dim_level)
+    elseif (associated(fileobj%restart_vars(i)%data4d)) then
+      call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
+                           fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
+    else
+      call error("this branch should not be reached.")
+    endif
+  enddo
+
 end subroutine save_domain_restart
 
 
