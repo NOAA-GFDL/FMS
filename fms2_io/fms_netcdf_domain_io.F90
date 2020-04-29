@@ -549,9 +549,7 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
 
 ! Calculate the checksum and write it out
   do i = 1, fileobj%num_restart_vars
-    if (associated(fileobj%restart_vars(i)%data0d) .and. associated(fileobj%restart_vars(i)%data1d)) then
-       cycle
-    elseif (associated(fileobj%restart_vars(i)%data2d)) then
+    if (associated(fileobj%restart_vars(i)%data2d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data2d, is_decomposed)
       if (is_decomposed) then
@@ -565,15 +563,13 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                          "checksum", chksum)
       endif
-    elseif (associated(fileobj%restart_vars(i)%data4d)) then
+    else (associated(fileobj%restart_vars(i)%data4d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data4d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                          "checksum", chksum)
       endif
-    else
-      call error("save_domain_restart: this branch should not be reached.")
     endif
   enddo
 
