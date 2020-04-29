@@ -1410,7 +1410,7 @@ end function rarray_to_char
              call mpp_error(FATAL, 'get_ascii_file_num_lines: Error opening file:' //trim(FILENAME)// &
                             '.  (IOSTAT = '//trim(text)//')')
           else
-             num_lines = 1
+             num_lines = 0
              do
                 read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
                 if ( status .lt. 0 ) exit
