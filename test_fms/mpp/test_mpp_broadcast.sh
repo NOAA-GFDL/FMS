@@ -28,4 +28,4 @@
 . ../test_common.sh
 
 touch input.nml
-run_test test_mpp 2
+run_test test_mpp_broadcast 2
