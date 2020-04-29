@@ -549,9 +549,7 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
 
 ! Calculate the checksum and write it out
   do i = 1, fileobj%num_restart_vars
-    if (associated(fileobj%restart_vars(i)%data0d)) then
-       cycle
-    elseif (associated(fileobj%restart_vars(i)%data1d)) then
+    if (associated(fileobj%restart_vars(i)%data0d) .and. associated(fileobj%restart_vars(i)%data1d)) then
        cycle
     elseif (associated(fileobj%restart_vars(i)%data2d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
@@ -575,7 +573,7 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                          "checksum", chksum)
       endif
     else
-      call error("this branch should not be reached.")
+      call error("save_domain_restart: this branch should not be reached.")
     endif
   enddo
 
@@ -597,7 +595,7 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
       call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
     else
-      call error("this branch should not be reached.")
+      call error("save_domain_restart: this branch should not be reached.")
     endif
   enddo
 
