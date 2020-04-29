@@ -75,8 +75,6 @@ subroutine test_broadcast_2D()
      enddo
   enddo
 
-  write(out_unit,*) "==> NOTE from test_broadcast_2D: The test is succesful"
-
 end subroutine test_broadcast_2D
 
 subroutine test_broadcast_char()
@@ -114,8 +112,6 @@ subroutine test_broadcast_char()
   do n = 1, ARRAYSIZE
      if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: after broadcast, textA should equal textB")
   enddo
-
-  write(out_unit,*) "==> NOTE from test_broadcast_char: The test is succesful"
 
 end subroutine test_broadcast_char
 
