@@ -23,6 +23,9 @@ sequential patch number (starting from `01`).
 - DIAG_MANAGER:  “fms_platform.h” is no longer included in any of the diag_manager routines.  Instead, fms_platform_mod is now being use-associated where necessary.  This fixes an issue for debuggers not providing correct line numbers. 
 
 ### Tag Commit Hashes
+- 2020.02-beta1 (bbc6f8d33cfb75a411bbcd3f8423fa74b8b7cdfd)
+- 2020.02-beta2 (6242941a632f6e261234f3a575e59efa1bfb1b36)
+- 2020.02-beta3 (e6fd03b070eb1ba8ffbca740fd69681ee16d6be7)
 
 
 ## [2020.01] - 2020-03-13
