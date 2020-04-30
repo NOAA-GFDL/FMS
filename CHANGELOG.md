@@ -6,6 +6,25 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2020.02] - 2020-05-01
+### Added
+- FMS2_IO:  An fms2_io_nml namelist has been created.  It includes the variable ncchksz. This is the replacement for the environment variable NC_BLKSZ set in model run scripts and used by mpp_io.  The default value is 64 KB.  Any time a file is opened in fms2_io (nf90_open or nf90_create), the optional argument `chunksize=ncchksz` is passed to the NetCDF library.  NetCDF attempts to use this value to control the blocksize utilized for reads and writes of data from the filesystem.
+- FMS2_IO: Adds support to `compute_global_cheksum.inc` for `real32`, assuming the flag `-DOVERLOAD_R4` is used when compiling.
+
+### Changed
+- MPP_DOMAINS - nesting:  The logic supporting nested domains for mosaic grids has been overhauled and extended.  FMS now supports multiple nests and telescoping nests (nest embedded within a nest).  The requirement for a nest to lie wholly within a single tile has been relaxed and a first-level nest may cross tile boundaries, but may not contain a tile corner.  Communications for two-way nesting have also been improved.  The 2019 December Public Release and 2020.02 GFDL Release within the  [GFDL_atmos_cubed_sphere] (https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere) have been updated and are compatible with this release of FMS.
+- FMS2_IO:  The intent of fileobj is changed from (in) to (inout) in netcdf_restore_state_wrap, restore_domain_state, and netcdf_restore_state because the file object type has a pointer that is being reassigned in one of the routines lower in the call stack.
+
+### Deprecated
+- MPP_DOMAINS - nesting:  The initial nesting implementation is no longer supported.  Please see the Changed::MPP_DOMAINS sub-entry under.
+
+### Removed
+- GENERAL:  References to the macro _ALLOCATABLE have been replaced with “allocatable”, _ALLOCATED has been replaced with “allocated”, and _NULL has been removed.  It is now assumed that all compilers support the Fortran 2003 standard.  The macros still exist in fms_platforms.h for compatibility within other components.
+- DIAG_MANAGER:  “fms_platform.h” is no longer included in any of the diag_manager routines.  Instead, fms_platform_mod is now being use-associated where necessary.  This fixes an issue for debuggers not providing correct line numbers. 
+
+### Tag Commit Hashes
+
+
 ## [2020.01] - 2020-03-13
 ### Added
 - Adds the modules `axis_utils2`, `mosaic2`, and `time_interp_external2` that use `fms2_io`
