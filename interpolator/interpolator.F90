@@ -80,8 +80,6 @@
 !! </table>
 module interpolator_mod
 
-#include <fms_platform.h>
-
 use mpp_mod,           only : mpp_error, &
                               FATAL,     &
                               mpp_pe,    &
@@ -101,7 +99,7 @@ use mpp_domains_mod,   only : mpp_domains_init,      &
 use diag_manager_mod,  only : diag_manager_init, get_base_time, &
                               register_diag_field, send_data, &
                               diag_axis_init
-use fms_mod,           only : lowercase, write_version_number, &
+use fms_mod,           only : lowercase,  &
                               fms_init, &
                               mpp_root_pe, stdlog, &
                               check_nml_error
@@ -238,11 +236,6 @@ interface interp_weighted_scalar
    module procedure interp_weighted_scalar_2D
 end interface interp_weighted_scalar
 
-!---------------------------------------------------------------------
-!----------- version number for this module --------------------------
-
-! Include variable "version" to be written to log file.
-#include<file_version.h>
 logical            :: module_is_initialized = .false.
 logical            :: clim_diag_initialized = .false.
 
@@ -480,13 +473,11 @@ logical,          intent(out), optional :: single_year_file
 !  clim_units :: A list of the units for the components listed in data_names.
 !
 
-integer                      :: unit
 character(len=64)            :: src_file
 !++lwh
 real                         :: dlat, dlon
 !--lwh
 type(time_type)              :: base_time
-logical                      :: NAME_PRESENT
 integer                      :: fileday, filemon, fileyr, filehr, filemin,filesec, m,m1
 character(len= 20)           :: fileunits
 character(len=128)           :: var_dimname(6)
@@ -1172,11 +1163,6 @@ if (present (single_year_file)) then
 endif
 
 module_is_initialized = .true.
-
-!---------------------------------------------------------------------
-!    write version number and namelist to logfile.
-!---------------------------------------------------------------------
-call write_version_number("INTERPOLATOR_MOD", version)
 
       if (mpp_pe() == mpp_root_pe() ) &
                           write (stdlog(), nml=interpolator_nml)
@@ -3094,7 +3080,6 @@ real :: hinterp_data(size(interp_data,1),size(interp_data,2),size(clim_type%levs
 real :: p_fact(size(interp_data,1),size(interp_data,2))
 real :: pclim(size(clim_type%halflevs(:)))
 integer :: istart,iend,jstart,jend
-logical :: result
 logical :: found_field=.false.
 integer :: i, j, k, n
 
@@ -3254,19 +3239,13 @@ real, dimension(:,:,:), intent(in)  :: phalf
 real, dimension(:,:,:), intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
-!real :: tweight, tweight1, tweight2, tweight3
-real :: tweight      !< No description
-real :: tweight1     !< The time weight between the climatology years
-real :: tweight2     !< No description
-real :: tweight3     !< The time weight between the months
-integer :: taum, taup, ilon          !< No description
+integer :: ilon          !< No description
 real :: hinterp_data(size(interp_data,1),size(interp_data,2),size(clim_type%levs(:)))     !< No description
 real :: p_fact(size(interp_data,1),size(interp_data,2))          !< No description
 real :: pclim(size(clim_type%halflevs(:)))                         !< No description
 integer :: istart,iend,jstart,jend                                   !< No description
-logical :: result                         !< No description
 logical :: found_field=.false.          !< No description
-integer :: i, j, k, n                    !< No description
+integer :: i, j, k                   !< No description
 
 if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_3D_no_time_axis : You must call interpolator_init before calling interpolator")
@@ -3389,14 +3368,10 @@ character(len=*)      , intent(in)     :: field_name
 real, dimension(:,:),   intent(out)    :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
-real :: tweight, tweight1, tweight2, tweight3
-integer :: taum, taup, ilon
 real :: hinterp_data(size(interp_data,1),size(interp_data,2),size(clim_type%levs(:)))
-real :: p_fact(size(interp_data,1),size(interp_data,2))
 integer :: istart,iend,jstart,jend
-logical :: result
 logical :: found_field=.false.
-integer :: j, k, i, n
+integer :: i
 
 if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_2D_no_time_axis : You must call interpolator_init before calling interpolator")
