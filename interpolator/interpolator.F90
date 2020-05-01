@@ -495,7 +495,6 @@ real, allocatable :: time_in(:)
 real, allocatable, save :: agrid_mod(:,:,:)
 integer :: nx, ny
 integer :: io, ierr
-type(FmsNetcdfFile_t) :: fileobj
 
 if (.not. module_is_initialized) then
   call fms_init
@@ -525,7 +524,6 @@ src_file = 'INPUT/'//trim(file_name)
 if(file_exists(trim(src_file))) then
    if(.not. open_file(clim_type%fileobj, trim(src_file), 'read')) &
         call mpp_error(FATAL, 'Interpolator_init: Error in opening file '//trim(src_file))
-   fileobj = clim_type%fileobj
 else
 !Climatology file doesn't exist, so exit
    call mpp_error(FATAL,'Interpolator_init : Data file '//trim(src_file)//' does not exist')
@@ -533,16 +531,16 @@ endif
 
 !Find the number of variables (nvar) in this file
 clim_type%file_name = trim(file_name)
-nvar = get_num_variables(fileobj)
+nvar = get_num_variables(clim_type%fileobj)
 num_fields = nvar
 if(present(data_names)) then
    num_fields= size(data_names(:))
 else
    allocate(var_names(nvar), var_ndims(nvar))
-   call get_variable_names(fileobj, var_names)
+   call get_variable_names(clim_type%fileobj, var_names)
    !--- loop through all the vars to exclude scalar or 1-D array
    do i=1,nvar
-      var_ndims(i) = get_variable_num_dimensions(fileobj, var_names(i))
+      var_ndims(i) = get_variable_num_dimensions(clim_type%fileobj, var_names(i))
    enddo
    num_fields = count(var_ndims>1)
 endif
@@ -570,28 +568,28 @@ nlevh = 1
         clim_type%vertical_indices = 0  ! initial value
 
 !--- get clim_type%lat
-if(dimension_exists(fileobj, "lat")) then
-   call get_dimension_size(fileobj, "lat", nlat)
+if(dimension_exists(clim_type%fileobj, "lat")) then
+   call get_dimension_size(clim_type%fileobj, "lat", nlat)
 else
    call mpp_error(FATAL,'Interpolator_init : dimension lat does not exist in file '//trim(src_file) )
 endif
 allocate(clim_type%lat(nlat))
-call get_axis_latlon_data(fileobj, 'lat', clim_type%lat)
+call get_axis_latlon_data(clim_type%fileobj, 'lat', clim_type%lat)
 
 !--- get clim_type%lon
-if(dimension_exists(fileobj, "lon")) then
-   call get_dimension_size(fileobj, "lon", nlon)
+if(dimension_exists(clim_type%fileobj, "lon")) then
+   call get_dimension_size(clim_type%fileobj, "lon", nlon)
 else
    call mpp_error(FATAL,'Interpolator_init : dimension lon does not exist in file '//trim(src_file) )
 endif
 allocate(clim_type%lon(nlon))
-call get_axis_latlon_data(fileobj, 'lon', clim_type%lon)
+call get_axis_latlon_data(clim_type%fileobj, 'lon', clim_type%lon)
 
 !--- get clim_type%latb
-if(dimension_exists(fileobj, "latb")) then
-   call get_dimension_size(fileobj, "latb", nlatb)
+if(dimension_exists(clim_type%fileobj, "latb")) then
+   call get_dimension_size(clim_type%fileobj, "latb", nlatb)
    allocate(clim_type%latb(nlatb))
-   call get_axis_latlon_data(fileobj, 'latb', clim_type%latb)
+   call get_axis_latlon_data(clim_type%fileobj, 'latb', clim_type%latb)
 else
    if(nlat == 1) call mpp_error(FATAL,'Interpolator_init : nlat is 1')
    ! In the case where only the grid midpoints of the latitudes are defined we force the
@@ -607,10 +605,10 @@ else
 endif
 
 !--- get clim_type%lonb
-if(dimension_exists(fileobj, "lonb")) then
-   call get_dimension_size(fileobj, "lonb", nlonb)
+if(dimension_exists(clim_type%fileobj, "lonb")) then
+   call get_dimension_size(clim_type%fileobj, "lonb", nlonb)
    allocate(clim_type%lonb(nlonb))
-   call get_axis_latlon_data(fileobj, 'lonb', clim_type%lonb)
+   call get_axis_latlon_data(clim_type%fileobj, 'lonb', clim_type%lonb)
 else
 ! In the case where only the midpoints of the longitudes are defined we force the definition
 ! of the boundaries to be half-way between the midpoints.
@@ -632,14 +630,14 @@ endif
 !--- get clim_type%levs
 clim_type%level_type = 0
 clim_type%vertical_indices = 0
-if(dimension_exists(fileobj, "pfull")) then
-   call get_dimension_size(fileobj, "pfull", nlev)
+if(dimension_exists(clim_type%fileobj, "pfull")) then
+   call get_dimension_size(clim_type%fileobj, "pfull", nlev)
    allocate(clim_type%levs(nlev))
-   call get_axis_level_data(fileobj, 'pfull', clim_type%levs, clim_type%level_type, clim_type%vertical_indices)
-else if(dimension_exists(fileobj, "sigma_full")) then
-   call get_dimension_size(fileobj, "sigma_full", nlev)
+   call get_axis_level_data(clim_type%fileobj, 'pfull', clim_type%levs, clim_type%level_type, clim_type%vertical_indices)
+else if(dimension_exists(clim_type%fileobj, "sigma_full")) then
+   call get_dimension_size(clim_type%fileobj, "sigma_full", nlev)
    allocate(clim_type%levs(nlev))
-   call fms_read_data(fileobj, "sigma_full", clim_type%levs)
+   call fms_read_data(clim_type%fileobj, "sigma_full", clim_type%levs)
    clim_type%level_type = SIGMA
 else
    ! -------------------------------------------------------------------
@@ -652,14 +650,14 @@ else
 endif
 
 !--- get clim_type%halflevs
-if(dimension_exists(fileobj, "phalf")) then
-   call get_dimension_size(fileobj, "phalf", nlevh)
+if(dimension_exists(clim_type%fileobj, "phalf")) then
+   call get_dimension_size(clim_type%fileobj, "phalf", nlevh)
    allocate(clim_type%halflevs(nlevh))
-   call get_axis_level_data(fileobj, 'phalf', clim_type%halflevs, clim_type%level_type, clim_type%vertical_indices)
-else if(dimension_exists(fileobj, "sigma_half")) then
-   call get_dimension_size(fileobj, "sigma_half", nlevh)
+   call get_axis_level_data(clim_type%fileobj, 'phalf', clim_type%halflevs, clim_type%level_type, clim_type%vertical_indices)
+else if(dimension_exists(clim_type%fileobj, "sigma_half")) then
+   call get_dimension_size(clim_type%fileobj, "sigma_half", nlevh)
    allocate(clim_type%halflevs(nlevh))
-   call fms_read_data(fileobj, "sigma_half", clim_type%halflevs)
+   call fms_read_data(clim_type%fileobj, "sigma_half", clim_type%halflevs)
    clim_type%level_type = SIGMA
 else
    allocate( clim_type%halflevs(nlev+1) )
@@ -676,11 +674,11 @@ else
 endif
 
 !get time informaiton
-if(dimension_exists(fileobj, "time")) then
-   call get_dimension_size(fileobj, "time", ntime)
+if(dimension_exists(clim_type%fileobj, "time")) then
+   call get_dimension_size(clim_type%fileobj, "time", ntime)
 
-   call get_variable_units(fileobj, "time", units)
-   call get_time_calendar(fileobj, "time", file_calendar)
+   call get_variable_units(clim_type%fileobj, "time", units)
+   call get_time_calendar(clim_type%fileobj, "time", file_calendar)
    model_calendar = get_calendar_type()
    fileday = 0
    filemon = 0
@@ -784,7 +782,7 @@ if(dimension_exists(fileobj, "time")) then
       time_in = 0.0
       clim_type%time_slice = set_time(0,0) + base_time
       clim_type%clim_times = set_time(0,0) + base_time
-      call fms_read_data(fileobj, "time", time_in)
+      call fms_read_data(clim_type%fileobj, "time", time_in)
       ntime_in = ntime
       ! determine whether the data is a continuous set of monthly values or
       ! a series of annual cycles spread throughout the period of data
@@ -1049,12 +1047,12 @@ if(present(data_names)) then
    endif
 ! Only read the fields named in data_names
    do j=1,size(data_names(:))
-      if(variable_exists(fileobj, data_names(j)) ) then
-         call get_variable_units(fileobj, data_names(j), units)
-         ndim = get_variable_num_dimensions(fileobj, data_names(j))
+      if(variable_exists(clim_type%fileobj, data_names(j)) ) then
+         call get_variable_units(clim_type%fileobj, data_names(j), units)
+         ndim = get_variable_num_dimensions(clim_type%fileobj, data_names(j))
          clim_type%has_level(j) = .false.
          if(ndim > 2) then
-            call get_variable_dimension_names(fileobj, data_names(j), var_dimname(1:ndim))
+            call get_variable_dimension_names(clim_type%fileobj, data_names(j), var_dimname(1:ndim))
             if(trim(var_dimname(3)) == "pfull" .OR. trim(var_dimname(3)) == "sigma_full") clim_type%has_level(j) = .true.
          endif
 
@@ -1098,11 +1096,11 @@ else
       j = j + 1
       clim_type%has_level(j) = .false.
       if(ndim > 2) then
-         call get_variable_dimension_names(fileobj, var_names(i), var_dimname(1:ndim))
+         call get_variable_dimension_names(clim_type%fileobj, var_names(i), var_dimname(1:ndim))
          if(trim(var_dimname(3)) == "pfull" .OR. trim(var_dimname(3)) == "sigma_full") clim_type%has_level(j) = .true.
       endif
 
-      call get_variable_units(fileobj, var_names(i), units)
+      call get_variable_units(clim_type%fileobj, var_names(i), units)
       if (mpp_pe() ==0 ) write(*,*) 'Initializing src field : ',trim(var_names(i))
       clim_type%field_name(j) = trim(var_names(i))
       clim_type%mr(j)         = check_climo_units(units)
@@ -1146,7 +1144,7 @@ if( clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) then
       enddo
    enddo
 
-   call close_file (fileobj)
+   call close_file (clim_type%fileobj)
 endif
 
 if( clim_type%TIME_FLAG .eq. NOTIME ) then
@@ -1155,7 +1153,7 @@ if( clim_type%TIME_FLAG .eq. NOTIME ) then
      call read_data_no_time_axis( clim_type, clim_type%field_name(i), &
                                   clim_type%data(:,:,:,1,i), i )
    enddo
-   call close_file (fileobj)
+   call close_file (clim_type%fileobj)
 endif
 
 if (present (single_year_file)) then
