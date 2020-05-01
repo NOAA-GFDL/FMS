@@ -358,6 +358,10 @@ logical :: read_all_on_init = .false.          !< No description
 integer :: verbose = 0                              !< No description
 logical :: conservative_interp = .true.          !< No description
 logical :: retain_cm3_bug = .true.               !< No description
+integer :: num_files = 0                          !< Current number of files initiliazed
+integer, parameter :: max_num_files = 50                  !< Max number of files than can be initiliazed
+character(len=256) :: filenames(max_num_files)   !< Character array of files that were initiliazed
+type(FmsNetcdfFile_t)    :: fileobjs(max_num_files) !< Array of file objs
 
 namelist /interpolator_nml/    &
                              read_all_on_init, verbose, conservative_interp, retain_cm3_bug
@@ -423,8 +427,26 @@ type(interpolate_type), intent(inout) :: Out
 
 end subroutine interpolate_type_eq
 
+!> \brief check_if_initiliazed checks if a filename was used in another
+!!       interpolator_init call, with another clim_type object
+!! \param [in] <file_name> Climatology filename
+!! \param [in] <file_name> index where filename was found in the list of
+!!       filenames that were already intiliaze
 
+function check_if_initiliazed (file_name) result(j)
+character(len=*), intent(in)            :: file_name
+integer                                 :: j
 
+integer                                 :: i
+j = -1
+do i = 1, num_files
+   if (trim(file_name) == trim(filenames(i))) then
+      j = 1
+      return
+   endif
+end do
+
+end function check_if_initiliazed
 
 !#######################################################################
 !
@@ -495,6 +517,7 @@ real, allocatable :: time_in(:)
 real, allocatable, save :: agrid_mod(:,:,:)
 integer :: nx, ny
 integer :: io, ierr
+integer :: file_found_index
 
 if (.not. module_is_initialized) then
   call fms_init
@@ -520,13 +543,15 @@ num_fields = 0
 ! open source file containing fields to be interpolated
 !--------------------------------------------------------------------
 src_file = 'INPUT/'//trim(file_name)
-
-if(file_exists(trim(src_file))) then
+file_found_index = check_if_initiliazed (src_file)
+if (file_found_index == -1) then
    if(.not. open_file(clim_type%fileobj, trim(src_file), 'read')) &
         call mpp_error(FATAL, 'Interpolator_init: Error in opening file '//trim(src_file))
+   num_files = num_files + 1
+   fileobjs(num_files) = clim_type%fileobj
+   filenames(num_files) = trim(src_file)
 else
-!Climatology file doesn't exist, so exit
-   call mpp_error(FATAL,'Interpolator_init : Data file '//trim(src_file)//' does not exist')
+   clim_type%fileobj = fileobjs(file_found_index)
 endif
 
 !Find the number of variables (nvar) in this file
