@@ -25,7 +25,7 @@ include ../../NEMS/src/conf/configure.nems
 LIBRARY  = libfms.a
 FMS_INSTALL=$(realpath $(PWD)/..)/FMS_INSTALL
 
-FFLAGS   += -I../include -I../mpp/include -I../fms
+FFLAGS   += -I../include -I../mpp/include -I../fms -I../fms2_io/include
 
 SRCS_f   =
 
