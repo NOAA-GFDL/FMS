@@ -251,7 +251,7 @@ real, pointer            :: levs(:) =>NULL()          !< No description
 real, pointer            :: halflevs(:) =>NULL()     !< No description
 type(horiz_interp_type)  :: interph                         !< No description
 type(time_type), pointer :: time_slice(:) =>NULL() !< An array of the times within the climatology.
-type(FmsNetcdfFile_t)    :: fileobj       ! object that stores opened file information
+type(FmsNetcdfFile_t), pointer    :: fileobj       ! object that stores opened file information
 character(len=64)        :: file_name     !< Climatology filename
 integer                  :: TIME_FLAG     !< Linear or seaonal interpolation?
 integer                  :: level_type    !< Pressure or Sigma level
@@ -361,7 +361,7 @@ logical :: retain_cm3_bug = .true.               !< No description
 integer :: num_files = 0                          !< Current number of files initiliazed
 integer, parameter :: max_num_files = 100                  !< Max number of files than can be initiliazed
 character(len=256) :: filenames(max_num_files)   !< Character array of files that were initiliazed
-type(FmsNetcdfFile_t)    :: fileobjs(max_num_files) !< Array of file objs
+type(interpolate_type)    :: init_interpolator_types(max_num_files) !< Array of interpolator types
 
 namelist /interpolator_nml/    &
                              read_all_on_init, verbose, conservative_interp, retain_cm3_bug
@@ -400,6 +400,7 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
+     Out%fileobj => In%fileobj
      if (associated(In%has_level    )) Out%has_level     =>  In%has_level
      if (associated(In%field_name   )) Out%field_name    =>  In%field_name
      if (associated(In%time_init    )) Out%time_init     =>  In%time_init
@@ -427,23 +428,45 @@ type(interpolate_type), intent(inout) :: Out
 
 end subroutine interpolate_type_eq
 
-!> \brief check_if_initiliazed checks if a filename was used in another
-!!       interpolator_init call, with another clim_type object
+!> \brief check_if_initiliazed checks if a filename and a set of variable names
+!!  has already been used in another interpolator_init call
+!! \param [inout] <clim_type> Climatology type
 !! \param [in] <file_name> Climatology filename
-!! \param [in] <file_name> index where filename was found in the list of
-!!       filenames that were already intiliaze
+!! \param [in] <j> j=-1, file has not been opened j=0: file was opened and the variable(s)
+!!  have been read j>0: index where filename was found, but the variable have not been read
 
-function check_if_initiliazed (file_name) result(j)
+function check_if_initiliazed (clim_type, file_name, local_data_names) result(j)
+type(interpolate_type), intent(inout)   :: clim_type
 character(len=*), intent(in)            :: file_name
+character(len=*), pointer, intent(in)   :: local_data_names(:)
 integer                                 :: j
 
-integer                                 :: i
+integer                                 :: i, ii, iii
 j = -1
 do i = 1, num_files
-   if (trim(file_name) == trim(filenames(i))) then
-      j = i
-      return
-   endif
+   if (trim(file_name) == trim(init_interpolator_types(i)%file_name)) then
+       !! File has already been opened
+      if (.not. associated(local_data_names)) then
+        !! All the variables were already read, since data_names was not given
+        call interpolate_type_eq(clim_type,init_interpolator_types(i))
+        j = 0 !! All DONE
+        return
+      else
+        !! Need to check if the variable has already been read/initiliaze
+        do ii = 1, size(local_data_names)
+          do iii = 1, size(init_interpolator_types(i)%field_name)
+             if (trim(local_data_names(ii)) == trim(init_interpolator_types(i)%field_name(iii))) cycle
+          enddo
+          !! If you are still here the variable was not found, so we still need to go through interpolator init again :(
+          j = 1
+          return
+        enddo
+      !! If you are still here, all the variables were found, so you are all done :)
+        call interpolate_type_eq(clim_type,init_interpolator_types(i))
+        j = 0 !! ALL DONE
+        return
+      endif
+    endif
 end do
 
 end function check_if_initiliazed
@@ -473,7 +496,7 @@ subroutine interpolator_init( clim_type, file_name, lonb_mod, latb_mod, &
 type(interpolate_type), intent(inout) :: clim_type
 character(len=*), intent(in)            :: file_name
 real            , intent(in)            :: lonb_mod(:,:), latb_mod(:,:)
-character(len=*), intent(in) , optional :: data_names(:)
+character(len=*), intent(in) , target, optional :: data_names(:)
 !++lwh
 integer         , intent(in)            :: data_out_of_bounds(:)
 integer         , intent(in), optional  :: vert_interp(:)
@@ -518,6 +541,7 @@ real, allocatable, save :: agrid_mod(:,:,:)
 integer :: nx, ny
 integer :: io, ierr
 integer :: file_found_index
+character(len=256), pointer :: local_data_names(:) => NULL()
 
 if (.not. module_is_initialized) then
   call fms_init
@@ -542,16 +566,23 @@ num_fields = 0
 !--------------------------------------------------------------------
 ! open source file containing fields to be interpolated
 !--------------------------------------------------------------------
+
+if (present(data_names)) local_data_names => data_names
+
 src_file = 'INPUT/'//trim(file_name)
-file_found_index = check_if_initiliazed (src_file)
-if (file_found_index == -1) then
-   num_files = num_files + 1
-   filenames(num_files) = trim(src_file)
-   if(.not. open_file(fileobjs(num_files), trim(src_file), 'read')) &
+file_found_index = check_if_initiliazed (clim_type, src_file, local_data_names)
+if (associated(local_data_names)) nullify(local_data_names)
+
+if (file_found_index == 0) then
+    !! The interpolator type has already been set
+    return
+elseif (file_found_index == -1) then
+    !! The file has not been opened
+   if(.not. open_file(clim_type%fileobj, trim(src_file), 'read')) &
         call mpp_error(FATAL, 'Interpolator_init: Error in opening file '//trim(src_file))
-   clim_type%fileobj = fileobjs(num_files)
 else
-   clim_type%fileobj = fileobjs(file_found_index)
+   !! The file has been opened but the variable(s) in data_names has not been read
+   clim_type%fileobj => init_interpolator_types(file_found_index)%fileobj
 endif
 
 !Find the number of variables (nvar) in this file
@@ -1186,6 +1217,9 @@ if (present (single_year_file)) then
 endif
 
 module_is_initialized = .true.
+num_files = num_files + 1
+filenames(num_files) = trim(src_file)
+call interpolate_type_eq(clim_type,init_interpolator_types(num_files))
 
       if (mpp_pe() == mpp_root_pe() ) &
                           write (stdlog(), nml=interpolator_nml)
