@@ -251,7 +251,7 @@ real, pointer            :: levs(:) =>NULL()          !< No description
 real, pointer            :: halflevs(:) =>NULL()     !< No description
 type(horiz_interp_type)  :: interph                         !< No description
 type(time_type), pointer :: time_slice(:) =>NULL() !< An array of the times within the climatology.
-type(FmsNetcdfFile_t), pointer    :: fileobj       ! object that stores opened file information
+type(FmsNetcdfFile_t)    :: fileobj       ! object that stores opened file information
 character(len=64)        :: file_name     !< Climatology filename
 integer                  :: TIME_FLAG     !< Linear or seaonal interpolation?
 integer                  :: level_type    !< Pressure or Sigma level
@@ -400,7 +400,7 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
-     Out%fileobj => In%fileobj
+     Out%fileobj = In%fileobj
      if (associated(In%has_level    )) Out%has_level     =>  In%has_level
      if (associated(In%field_name   )) Out%field_name    =>  In%field_name
      if (associated(In%time_init    )) Out%time_init     =>  In%time_init
@@ -448,7 +448,7 @@ do i = 1, num_files
        !! File has already been opened
       if (.not. associated(local_data_names)) then
         !! All the variables were already read, since data_names was not given
-        call interpolate_type_eq(clim_type,init_interpolator_types(i))
+        clim_type = init_interpolator_types(i)
         j = 0 !! All DONE
         return
       else
@@ -462,7 +462,7 @@ do i = 1, num_files
           return
         enddo
       !! If you are still here, all the variables were found, so you are all done :)
-        call interpolate_type_eq(clim_type,init_interpolator_types(i))
+        clim_type = init_interpolator_types(i)
         j = 0 !! ALL DONE
         return
       endif
@@ -542,6 +542,7 @@ integer :: nx, ny
 integer :: io, ierr
 integer :: file_found_index
 character(len=256), pointer :: local_data_names(:) => NULL()
+type(FmsNetcdfFile_t)    :: fileobj
 
 if (.not. module_is_initialized) then
   call fms_init
@@ -578,11 +579,12 @@ if (file_found_index == 0) then
     return
 elseif (file_found_index == -1) then
     !! The file has not been opened
-   if(.not. open_file(clim_type%fileobj, trim(src_file), 'read')) &
+   if(.not. open_file(fileobj, trim(src_file), 'read')) &
         call mpp_error(FATAL, 'Interpolator_init: Error in opening file '//trim(src_file))
+   clim_type%fileobj = fileobj
 else
    !! The file has been opened but the variable(s) in data_names has not been read
-   clim_type%fileobj => init_interpolator_types(file_found_index)%fileobj
+   clim_type%fileobj = init_interpolator_types(file_found_index)%fileobj
 endif
 
 !Find the number of variables (nvar) in this file
@@ -1219,7 +1221,7 @@ endif
 module_is_initialized = .true.
 num_files = num_files + 1
 filenames(num_files) = trim(src_file)
-call interpolate_type_eq(clim_type,init_interpolator_types(num_files))
+init_interpolator_types(num_files) = clim_type
 
       if (mpp_pe() == mpp_root_pe() ) &
                           write (stdlog(), nml=interpolator_nml)
