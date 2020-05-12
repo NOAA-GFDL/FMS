@@ -109,8 +109,8 @@ use fms2_io_mod,       only : FmsNetcdfFile_t, file_exists, dimension_exists, &
                               get_num_variables, get_dimension_size,   &
                               get_variable_units, get_variable_names,  &
                               get_time_calendar, close_file,           &
-                              get_variable_dimension_names, get_variable_sense
-
+                              get_variable_dimension_names, get_variable_sense, &
+                              check_if_open
 use horiz_interp_mod,  only : horiz_interp_type, &
                               horiz_interp_new,  &
                               horiz_interp_init, &
@@ -1199,7 +1199,6 @@ if( clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) then
       enddo
    enddo
 
-   call close_file (clim_type%fileobj)
 endif
 
 if( clim_type%TIME_FLAG .eq. NOTIME ) then
@@ -1208,7 +1207,6 @@ if( clim_type%TIME_FLAG .eq. NOTIME ) then
      call read_data_no_time_axis( clim_type, clim_type%field_name(i), &
                                   clim_type%data(:,:,:,1,i), i )
    enddo
-   call close_file (clim_type%fileobj)
 endif
 
 if (present (single_year_file)) then
@@ -3478,6 +3476,7 @@ subroutine interpolator_end(clim_type)
 !
 type(interpolate_type), intent(inout) :: clim_type
 integer :: logunit
+integer :: i
 
 logunit=stdlog()
 if ( mpp_pe() == mpp_root_pe() ) then
@@ -3506,14 +3505,13 @@ if (associated (clim_type%pmon_pyear)) then
   deallocate(clim_type%nmon_pyear)
 endif
 
-!! RSH mod
-if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &
-!     read_all_on_init)) .or. clim_type%TIME_FLAG .eq. BILINEAR  ) then
-      read_all_on_init)  ) then
+if (module_is_initialized) then
+   !! if this is the first time calling interpolator_end, close all files
+   do i = 1, num_files
+      if (check_if_open(init_interpolator_types(i)%fileobj)) call close_file(init_interpolator_types(i)%fileobj)
+   enddo
+   module_is_initialized = .false.
 endif
-
-
-module_is_initialized = .false.
 
 end subroutine interpolator_end
 !
