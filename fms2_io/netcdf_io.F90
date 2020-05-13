@@ -531,7 +531,9 @@ subroutine netcdf_file_close(fileobj)
 
   if (fileobj%is_root) then
     err = nf90_close(fileobj%ncid)
-    call check_netcdf_code(err)
+    if (err .ne. nf90_ebadid) then
+       call check_netcdf_code(err)
+    endif
   endif
   if (allocated(fileobj%is_open)) fileobj%is_open = .false.
   fileobj%path = missing_path
