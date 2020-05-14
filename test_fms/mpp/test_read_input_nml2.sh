@@ -24,6 +24,9 @@
 
 # Colin Gladue 04/27/2020
 
+# Set common test settings.
+. ../test_common.sh
+
 touch test_numb_base.nml
 echo "&test_read_input_nml_nml" > test_numb_base.nml
 echo "test_numb = 0" >> test_numb_base.nml
