@@ -31,7 +31,7 @@ echo "/" >> test_numb_base.nml
 
 # Test 1
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
-cp input_base.nml input.nml
+cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 ./test_read_input_nml.sh
 if [ $? = 0 ]; then
   echo "Test 1 has passed"
@@ -42,7 +42,7 @@ fi
 
 # Test 2
 sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
-cp input_base.nml input_alternative.nml
+cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
 ./test_read_input_nml.sh
 if [ $? = 0 ]; then
   echo "Test 2 has passed"
@@ -53,7 +53,7 @@ fi
 
 # Test 3
 sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
-cp input_base.nml input.nml
+cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 ./test_read_input_nml.sh
 if [ $? = 1 ]; then
   echo "Test 3 has passed"
@@ -74,4 +74,4 @@ else
   exit 14
 fi
 
-cp input_base.nml input.nml
+cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
