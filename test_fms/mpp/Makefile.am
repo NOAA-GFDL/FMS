@@ -68,8 +68,7 @@ EXTRA_DIST = input_base.nml \
   test_mpp_pset2.sh	\
   test_mpp2.sh \
   test_mpp_memutils_mod.sh \
-  test_read_input_nml2.sh \
-  test_read_input_nml.sh
+  test_read_input_nml2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml test_numb_base.nml test_numb.nml input_alternative.nml *.out*
