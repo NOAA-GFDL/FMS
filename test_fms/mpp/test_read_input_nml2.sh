@@ -35,7 +35,7 @@ echo "/" >> test_numb_base.nml
 # Test 1
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
-run_test test_read_input_nml 2
+#run_test test_read_input_nml 1
 #if [ $? = 0 ]; then
 #  echo "Test 1 has passed"
 #else
@@ -54,10 +54,10 @@ run_test test_read_input_nml 2
 #  exit 12
 #fi
 
-## Test 3
-#sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
-#cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
-#( (run_test test_read_input_nml 1; echo "ERROR: Test 3 did not hit the error it was expected to"; exit 13) || echo "Test 3 has passed" )
+# Test 3
+sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
+cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
+( (run_test test_read_input_nml 1; echo "ERROR: Test 3 did not hit the error it was expected to"; exit 13) || echo "Test 3 has passed" )
 
 ## Test 4
 #sed "s/test_numb = [0-9]/test_numb = 4/" test_numb_base.nml > test_numb.nml
