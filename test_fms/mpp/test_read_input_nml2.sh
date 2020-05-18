@@ -60,7 +60,7 @@ cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 run_test test_read_input_nml 1 || err=1
 echo $?
 echo $err
-if [ -z "$err" ]; then
+if [ $err = 0 ]; then
   echo "in1"
   err=0
 else
