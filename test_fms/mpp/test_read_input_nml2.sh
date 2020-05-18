@@ -36,7 +36,7 @@ echo "/" >> test_numb_base.nml
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 cat input.nml
-run_test test_read_input_nml 1
+#run_test test_read_input_nml 1
 if [ $? = 0 ]; then
   echo "Test 1 has passed"
 else
@@ -44,8 +44,9 @@ else
   exit 11
 fi
 
+cat logfile.000000.out
 cat input.nml
-#exit 757
+exit 757
 
 ## Test 2
 #sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
