@@ -61,8 +61,10 @@ run_test test_read_input_nml 1 || err=1
 echo $?
 echo $err
 if [ -z "$err" ]; then
+  echo "in1"
   err=0
 else
+  echo "in2"
   err=1
 fi
 if [ $err=0 ]; then
