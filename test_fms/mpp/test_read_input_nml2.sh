@@ -55,18 +55,18 @@ cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 #fi
 
 # Test 3
-sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
-cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
-( (run_test test_read_input_nml 1; echo "ERROR: Test 3 did not hit the error it was expected to"; exit 13) || echo "Test 3 has passed" )
+#sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
+#cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
+#( (run_test test_read_input_nml 1; echo "ERROR: Test 3 did not hit the error it was expected to"; exit 13) || echo "Test 3 has passed" )
 
 ## Test 4
-#sed "s/test_numb = [0-9]/test_numb = 4/" test_numb_base.nml > test_numb.nml
-#rm input.nml
-#touch input.nml # Achieve a blank namelist to be read
-#run_test test_read_input_nml 1
-#if [ $? = 0 ]; then
-#  echo "Test 4 has passed"
-#else
-#  echo "ERROR: Test 4 was unsuccessful."
-#  exit 14
-#fi
+sed "s/test_numb = [0-9]/test_numb = 4/" test_numb_base.nml > test_numb.nml
+rm input.nml
+touch input.nml # Achieve a blank namelist to be read
+run_test test_read_input_nml 1
+if [ $? = 0 ]; then
+  echo "Test 4 has passed"
+else
+  echo "ERROR: Test 4 was unsuccessful."
+  exit 14
+fi
