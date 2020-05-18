@@ -43,6 +43,9 @@ else
   exit 11
 fi
 
+cat input.nml
+exit 757
+
 ## Test 2
 #sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
 #cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
