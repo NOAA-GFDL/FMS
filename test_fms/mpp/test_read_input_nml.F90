@@ -96,7 +96,7 @@ if (test_numb.eq.1) then
   ! location below.
   read(110, '(A)', iostat=ioslog) linelog
   read(111, '(A)', iostat=iosnml) linenml
-  do while (1.eq.2) ! (TRIM(linelog).ne.TRIM(" "//linenml))
+  do while (TRIM(linelog).ne.TRIM(" "//linenml))
     read(110, '(A)', iostat=ioslog) linelog
   end do
   ! Compare contents of logfile and the input nml
