@@ -45,7 +45,7 @@ open(10, file="test_numb.nml", form="formatted", status="old")
 read(10, nml = test_read_input_nml_nml)
 close(10)
 
-if (test_numb.eq.1) then
+if (test_numb == 1) then
   ! Test 1: Tests the subroutine on a valid input nml full of data, 
   ! with no arguments passed to read_input_nml()
   if (test_numb.eq.1) then
