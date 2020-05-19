@@ -86,32 +86,27 @@ if (test_numb.eq.1) then
                                             &read_input_nml correctly.")
       end if
     end if
-    n = n + 1
-    write(*,*) n
-    if (n.eq.500) then
-      exit
-    end if
   end do
   ! Make sure the read pointers for logfile and input nml are in the same
   ! location below.
-  read(110, '(A)', iostat=ioslog) linelog
-  read(111, '(A)', iostat=iosnml) linenml
-  write(*,*) linelog
-  write(*,*) linenml
-  do while (1.eq.2) !(TRIM(linelog).ne.TRIM(" "//linenml))
-    read(110, '(A)', iostat=ioslog) linelog
-  end do
-  ! Compare contents of logfile and the input nml
-  do while (1.eq.2) !(iosnml.eq.0) 
-    if (TRIM(linelog).ne.TRIM(" "//linenml)) then
-      call mpp_error(FATAL, linelog//" -Does not equal- "//&
-                          &linenml//". Namelist not written to logfile &
-                                                          &correctly")
-    end if
-    read(110, '(A)', iostat=ioslog) linelog
-    read(111, '(A)', iostat=iosnml) linenml
-  end do
-  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
+!  read(110, '(A)', iostat=ioslog) linelog
+!  read(111, '(A)', iostat=iosnml) linenml
+!  write(*,*) linelog
+!  write(*,*) linenml
+!  do while (1.eq.2) !(TRIM(linelog).ne.TRIM(" "//linenml))
+!    read(110, '(A)', iostat=ioslog) linelog
+!  end do
+!  ! Compare contents of logfile and the input nml
+!  do while (1.eq.2) !(iosnml.eq.0) 
+!    if (TRIM(linelog).ne.TRIM(" "//linenml)) then
+!      call mpp_error(FATAL, linelog//" -Does not equal- "//&
+!                          &linenml//". Namelist not written to logfile &
+!                                                          &correctly")
+!    end if
+!    read(110, '(A)', iostat=ioslog) linelog
+!    read(111, '(A)', iostat=iosnml) linenml
+!  end do
+!  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
   close(110)
   close(111)
 
@@ -158,22 +153,22 @@ else if (test_numb.eq.2) then
   end do
   ! Make sure the read pointers for logfile and input nml are in the same
   ! location below.
-  read(110, '(A)', iostat=ioslog) linelog
-  read(111, '(A)', iostat=iosnml) linenml
-  do while (TRIM(linelog).ne.TRIM(" "//linenml))
-    read(110, '(A)', iostat=ioslog) linelog
-  end do
-  ! Compare contents of logfile and the input nml
-  do while (iosnml.eq.0) 
-    if (TRIM(linelog).ne.TRIM(" "//linenml)) then
-      call mpp_error(FATAL, linelog//" -Does not equal- "//&
-                          &linenml//". Namelist not written to logfile &
-                                                          &correctly")
-    end if
-    read(110, '(A)', iostat=ioslog) linelog
-    read(111, '(A)', iostat=iosnml) linenml
-  end do
-  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
+!  read(110, '(A)', iostat=ioslog) linelog
+!  read(111, '(A)', iostat=iosnml) linenml
+!  do while (TRIM(linelog).ne.TRIM(" "//linenml))
+!    read(110, '(A)', iostat=ioslog) linelog
+!  end do
+!  ! Compare contents of logfile and the input nml
+!  do while (iosnml.eq.0) 
+!    if (TRIM(linelog).ne.TRIM(" "//linenml)) then
+!      call mpp_error(FATAL, linelog//" -Does not equal- "//&
+!                          &linenml//". Namelist not written to logfile &
+!                                                          &correctly")
+!    end if
+!    read(110, '(A)', iostat=ioslog) linelog
+!    read(111, '(A)', iostat=iosnml) linenml
+!  end do
+!  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
   close(110)
   close(111)
 
