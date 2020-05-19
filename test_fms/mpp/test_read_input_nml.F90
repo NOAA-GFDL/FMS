@@ -108,4 +108,6 @@ else if (test_numb.eq.3) then
                                                           ! extra character "e"
   call mpp_exit() ! Exit mpp
 
+end if
+
 end program test_read_input_nml
