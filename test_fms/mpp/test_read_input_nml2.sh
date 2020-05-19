@@ -45,7 +45,7 @@ if [ $? = 0 ]; then
   echo "000000000000000000"
   cat log.txt
   echo "111111111111111111"
-  comm -12 inp.txt log.txt
+  comm -12 inp.txt inp.txt
   echo "222222222222222222"
   exit 1
   if [ "$inp" = "$shr" ]; then
