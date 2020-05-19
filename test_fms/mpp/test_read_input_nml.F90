@@ -45,79 +45,25 @@ open(10, file="test_numb.nml", form="formatted", status="old")
 read(10, nml = test_read_input_nml_nml)
 close(10)
 
-if (test_numb.eq.1) then
+if (test_numb.eq.1 .or. test_numb.eq.2 .or. test_numb.eq.4) then
   ! Test 1: Tests the subroutine on a valid input nml full of data, 
   ! with no arguments passed to read_input_nml()
-  
-  filename = "input.nml"
-  call mpp_init() ! Initialize mpp
-  call read_input_nml()
-  call mpp_exit()
-  open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
-  open(111, file='input.nml', iostat=iosnml) ! Open of input nml
-  n=1
-  do while (ioslog.eq.0) ! Check for the first two written lines, then stay at this
-                         ! position so we can compare from here on to the namelist
-    read(110, '(A)', iostat=ioslog) line
-    ! Check if we have found the version line
-    if (index(line, "READ_INPUT_NML: "//trim(version)).ne.0) then
-      version_bool = .true.
-    end if
-    ! Check if we have found the filename line
-    if (index(line, "READ_INPUT_NML: "//trim(filename)).ne.0) then
-      filename_bool = .true.
-    end if
-    ! Check if we have found all we are looking for 
-    if (version_bool.and.filename_bool) then
-      write(*,*) "SUCCESS: Found the first 2 written lines, version&
-                       & and filename"
-      exit ! Successful test portion
-    end if     
-    ! If we have reached the end of the file, was anything missed?
-    if (index(line, "Total runtime").ne.0) then
-      if (.not.version_bool) then
-        call mpp_error(FATAL, "Version not written to &
-                                                    &logfile")
-      else if (.not.filename_bool) then
-        call mpp_error(FATAL, "Filename not written to &
-                                                    &logfile")
-      else 
-        call mpp_error(FATAL, "Logfile not written to by &
-                                            &read_input_nml correctly.")
-      end if
-    end if
-  end do
-  ! Make sure the read pointers for logfile and input nml are in the same
-  ! location below.
-  read(110, '(A)', iostat=ioslog) linelog
-  read(111, '(A)', iostat=iosnml) linenml
-  do while (1.eq.2) !(TRIM(linelog).ne.TRIM(" "//linenml))
-    read(110, '(A)', iostat=ioslog) linelog
-  end do
-  ! Compare contents of logfile and the input nml
-  do while (1.eq.2) !(iosnml.eq.0) 
-    if (TRIM(linelog).ne.TRIM(" "//linenml)) then
-      call mpp_error(FATAL, linelog//" -Does not equal- "//&
-                          &linenml//". Namelist not written to logfile &
-                                                          &correctly")
-    end if
-    read(110, '(A)', iostat=ioslog) linelog
-    read(111, '(A)', iostat=iosnml) linenml
-  end do
-  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
-  close(110)
-  close(111)
+  if (test_numb.eq.1 .or. test_numb.eq.4) then
+    filename = "input.nml"
+    call mpp_init() ! Initialize mpp
+    call read_input_nml()
+    call mpp_exit()
+    open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
+    open(111, file='input.nml', iostat=iosnml) ! Open of input nml
+  else
+    filename = "input_alternative.nml"
+    call mpp_init() ! Initialize mpp
+    call read_input_nml("alternative")
+    call mpp_exit()
+    open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
+    open(111, file='input_alternative.nml', iostat=iosnml) ! Open of input nml  
+  end if
 
-else if (test_numb.eq.2) then        
-  ! Test 2: Tests the same valid input nml, but with a pelist_name_in passed as an 
-  ! argument to read_input_nml().  
-  
-  filename = "input_alternative.nml"
-  call mpp_init() ! Initialize mpp
-  call read_input_nml("alternative")
-  call mpp_exit()
-  open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
-  open(111, file='input_alternative.nml', iostat=iosnml) ! Open of input nml
   do while (ioslog.eq.0) ! Check for the first two written lines, then stay at this
                          ! position so we can compare from here on to the namelist
     read(110, '(A)', iostat=ioslog) line
@@ -149,26 +95,6 @@ else if (test_numb.eq.2) then
       end if
     end if
   end do
-  ! Make sure the read pointers for logfile and input nml are in the same
-  ! location below.
-  read(110, '(A)', iostat=ioslog) linelog
-  read(111, '(A)', iostat=iosnml) linenml
-  do while (1.eq.2) !(TRIM(linelog).ne.TRIM(" "//linenml))
-    read(110, '(A)', iostat=ioslog) linelog
-  end do
-  ! Compare contents of logfile and the input nml
-  do while (1.eq.2) !(iosnml.eq.0) 
-    if (TRIM(linelog).ne.TRIM(" "//linenml)) then
-      call mpp_error(FATAL, linelog//" -Does not equal- "//&
-                          &linenml//". Namelist not written to logfile &
-                                                          &correctly")
-    end if
-    read(110, '(A)', iostat=ioslog) linelog
-    read(111, '(A)', iostat=iosnml) linenml
-  end do
-  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
-  close(110)
-  close(111)
 
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
@@ -181,46 +107,5 @@ else if (test_numb.eq.3) then
                                                           ! pelist_name plus an
                                                           ! extra character "e"
   call mpp_exit() ! Exit mpp
-
-else if (test_numb.eq.4) then
-  ! Test 4: Tests an empty input nml. No arguments are passed. 
-  
-  filename = "input.nml"
-  call mpp_init() ! Initialize mpp
-  call read_input_nml()
-  call mpp_exit()
-  open(44, file='logfile.000000.out', iostat=ios) 
-  do while (ios.eq.0) ! Check for the first two written lines
-    read(44, '(A)', iostat=ios) line
-    ! Check if we have found the version line
-    if (index(line, "READ_INPUT_NML: "//trim(version)).ne.0) then
-      version_bool = .true.
-    end if
-    ! Check if we have found the filename line
-    if (index(line, "READ_INPUT_NML: "//trim(filename)).ne.0) then
-      filename_bool = .true.
-    end if
-    ! Check if we have found all we are looking for 
-    if (version_bool.and.filename_bool) then
-      write(*,*) "SUCCESS: Found the first 2 written lines, version&
-                       & and filename"
-      exit ! Successful test
-    end if     
-    ! If we have reached the end of the file, was anything missed?
-    if (index(line, "Total runtime").ne.0) then
-      if (.not.version_bool) then
-        call mpp_error(FATAL, "Version not written to &
-                                                    &logfile")
-      else if (.not.filename_bool) then
-        call mpp_error(FATAL, "Filename not written to &
-                                                    &logfile")
-      else 
-        call mpp_error(FATAL, "Logfile not written to by &
-                                            &read_input_nml correctly.")
-      end if
-    end if
-  end do
-  close(44)
-end if
 
 end program test_read_input_nml
