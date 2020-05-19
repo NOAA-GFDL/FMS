@@ -41,7 +41,12 @@ if [ $? = 0 ]; then
   log=$(awk '{$1=$1};1' logfile.000000.out)
   echo $inp > inp.txt
   echo $log > log.txt
+  cat inp.txt
+  echo "000000000000000000"
+  cat log.txt
+  echo "111111111111111111"
   comm -12 inp.txt log.txt
+  echo "222222222222222222"
   exit 1
   if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
