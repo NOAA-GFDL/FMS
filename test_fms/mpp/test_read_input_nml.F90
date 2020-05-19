@@ -104,7 +104,7 @@ if (test_numb.eq.1) then
     read(110, '(A)', iostat=ioslog) linelog
     read(111, '(A)', iostat=iosnml) linenml
   end do
-  !write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
+  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
   close(110)
   close(111)
 
@@ -166,7 +166,7 @@ else if (test_numb.eq.2) then
     read(110, '(A)', iostat=ioslog) linelog
     read(111, '(A)', iostat=iosnml) linenml
   end do
-  !write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
+  write(*,*) "SUCCESS: Matched all lines from input nml to the logfile"
   close(110)
   close(111)
 
