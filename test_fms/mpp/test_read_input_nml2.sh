@@ -37,9 +37,17 @@ sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
-  echo "Test 1 has passed"
+  inp=$(awk '{$1=$1};1' input.nml)
+  log=$(awk '{$1=$1};1' logfile.000000.out)
+  share=$(comm -12 <( echo "$inp" ) <( echo "$log" ))
+  if [ "$inp" = "$share" ]; then
+    echo "Test 1 has passed"
+  else
+    echo "ERROR: Test 1 was unsuccessful. Log did not contain input.nml"
+    exit 21
+  fi
 else
-  echo "ERROR: Test 1 was unsuccessful."
+  echo "ERROR: Test 1 was unsuccessful. Log did not contain version and/or filename"
   exit 11
 fi
 
