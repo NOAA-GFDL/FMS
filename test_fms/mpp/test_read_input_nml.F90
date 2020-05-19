@@ -55,6 +55,7 @@ if (test_numb.eq.1) then
   call mpp_exit()
   open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
   open(111, file='input.nml', iostat=iosnml) ! Open of input nml
+  n=1
   do while (ioslog.eq.0) ! Check for the first two written lines, then stay at this
                          ! position so we can compare from here on to the namelist
     read(110, '(A)', iostat=ioslog) line
@@ -84,6 +85,11 @@ if (test_numb.eq.1) then
         call mpp_error(FATAL, "Logfile not written to by &
                                             &read_input_nml correctly.")
       end if
+    end if
+    n = n + 1
+    write(*,*) n
+    if (n.eq.500) then
+      exit
     end if
   end do
   ! Make sure the read pointers for logfile and input nml are in the same
