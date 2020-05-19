@@ -39,8 +39,9 @@ run_test test_read_input_nml 1
 if [ $? = 0 ]; then
   inp=$(awk '{$1=$1};1' input.nml)
   log=$(awk '{$1=$1};1' logfile.000000.out)
-  echo $inp
-  comm -12 <( echo $inp ) <( echo $log )
+  echo $inp > inp.txt
+  echo $log > log.txt
+  comm -12 inp.txt log.txt
   exit 1
   if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
