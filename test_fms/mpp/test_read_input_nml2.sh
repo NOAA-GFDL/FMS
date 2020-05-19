@@ -41,8 +41,9 @@ if [ $? = 0 ]; then
   log=$(awk '{$1=$1};1' logfile.000000.out)
   echo $inp
   echo $log
+  shr=$( <( echo $inp) )
+  echo $shr
   exit 1
-  #shr=$(diff <( echo $inp ) <( echo $log ) )
   if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
   else
