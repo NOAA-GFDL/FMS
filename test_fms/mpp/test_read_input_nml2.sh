@@ -41,7 +41,7 @@ if [ $? = 0 ]; then
   log=$(awk '{$1=$1};1' logfile.000000.out)
   echo $inp
   echo $log
-  shr=$( <( echo $inp) )
+  shr=$( comm -12 <( echo $inp ) <( echo $log ) )
   echo $shr
   exit 1
   if [ "$inp" = "$shr" ]; then
