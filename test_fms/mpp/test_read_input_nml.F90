@@ -48,6 +48,10 @@ close(10)
 if (test_numb == 1 .or. test == 2 .or. test == 4) then
   ! Test 1: Tests the subroutine on a valid input nml full of data, 
   ! with no arguments passed to read_input_nml()
+  ! Test 2: Tests the subroutine on a valid input nml full of data, 
+  ! with a string passed to read_input_nml() in order to read a different nml
+  ! Test 4: Tests the subroutine on a valid empty input nml, 
+  ! with no arguments passed to read_input_nml()
   if (test_numb == 1 .or. test_numb == 4) then
     filename = "input.nml"
     call mpp_init() ! Initialize mpp
