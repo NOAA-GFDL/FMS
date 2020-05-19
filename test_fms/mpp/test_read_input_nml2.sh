@@ -39,7 +39,7 @@ run_test test_read_input_nml 1
 if [ $? = 0 ]; then
   inp=$(awk '{$1=$1};1' input.nml)
   log=$(awk '{$1=$1};1' logfile.000000.out)
-  share=$(comm -12 <( echo "$inp" ) <( echo "$log" ))
+  share=$( comm -12 <( echo "$inp" ) <( echo "$log" ) )
   if [ "$inp" = "$share" ]; then
     echo "Test 1 has passed"
   else
