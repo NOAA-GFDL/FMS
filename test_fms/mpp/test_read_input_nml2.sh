@@ -37,10 +37,8 @@ sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
-  inp=$(awk '{$1=$1};1' input.nml)
-  log=$(awk '{$1=$1};1' logfile.000000.out)
-  echo $inp > inp.txt
-  echo $log > log.txt
+  awk '{ sub(/^[ \t]+/, ""); print }' input.nml > inp.txt
+  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.txt
   cat inp.txt
   echo "000000000000000000"
   cat log.txt
