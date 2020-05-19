@@ -35,7 +35,6 @@ echo "/" >> test_numb_base.nml
 # Test 1
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
-cat input.nml
 run_test test_read_input_nml 1
 echo "prelog1"
 cat logfile.000000.out
@@ -46,20 +45,20 @@ else
   exit 11
 fi
 
-## Test 2
-#sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
-#cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
-#run_test test_read_input_nml 1
-#if [ $? = 0 ]; then
-#  echo "Test 2 has passed"
-#else
-#  echo "ERROR: Test 2 was unsuccessful."
-#  exit 12
-#fi
+# Test 2
+sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
+cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
+run_test test_read_input_nml 1
+if [ $? = 0 ]; then
+  echo "Test 2 has passed"
+else
+  echo "ERROR: Test 2 was unsuccessful."
+  exit 12
+fi
 
 # Test 3
 sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
-#cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
+cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 run_test test_read_input_nml 1 || err=1
 if [ "$err" -ne 1 ]; then
   echo "ERROR: Test 3 was unsuccessful."
@@ -80,6 +79,4 @@ else
   exit 14
 fi
 
-cat logfile.000000.out
-cat input.nml
 exit 757
