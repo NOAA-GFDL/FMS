@@ -56,6 +56,7 @@ if (test_numb.eq.1) then
   open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
   open(111, file='input.nml', iostat=iosnml) ! Open of input nml
   n=1
+  exit !!!!
   do while (ioslog.eq.0) ! Check for the first two written lines, then stay at this
                          ! position so we can compare from here on to the namelist
     read(110, '(A)', iostat=ioslog) line
