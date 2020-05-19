@@ -43,18 +43,18 @@ else
   exit 11
 fi
 
-exit 0
-
 # Test 2
 sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
-#run_test test_read_input_nml 1
+run_test test_read_input_nml 1
 if [ $? = 0 ]; then
   echo "Test 2 has passed"
 else
   echo "ERROR: Test 2 was unsuccessful."
   exit 12
 fi
+
+exit 0
 
 # Test 3
 sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
