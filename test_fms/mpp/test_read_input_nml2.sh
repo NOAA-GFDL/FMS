@@ -65,8 +65,6 @@ else
    echo "Test 3 has passed"
 fi
 
-exit 0
-
 ## Test 4
 sed "s/test_numb = [0-9]/test_numb = 4/" test_numb_base.nml > test_numb.nml
 rm input.nml
