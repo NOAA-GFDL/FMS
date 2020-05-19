@@ -41,8 +41,8 @@ if [ $? = 0 ]; then
   log=$(awk '{$1=$1};1' logfile.000000.out)
   echo $inp
   echo $log
-  shr=$(comm -12 <( echo "$inp" ) <( echo "$log" ))
-  if [ "$inp" = "$share" ]; then
+  shr=$(diff <( echo $inp ) <( echo $log ) )
+  if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
   else
     echo "ERROR: Test 1 was unsuccessful. Log did not contain input.nml"
