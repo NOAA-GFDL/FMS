@@ -57,7 +57,7 @@ fi
 
 # Test 3
 sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base.nml > test_numb.nml
-cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
+#cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 run_test test_read_input_nml 1 || err=1
 if [ "$err" -ne 1 ]; then
   echo "ERROR: Test 3 was unsuccessful."
