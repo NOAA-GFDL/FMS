@@ -40,9 +40,7 @@ if [ $? = 0 ]; then
   inp=$(awk '{$1=$1};1' input.nml)
   log=$(awk '{$1=$1};1' logfile.000000.out)
   echo $inp
-  echo $log
-  shr=$( comm -12 <( echo $inp ) <( echo $log ) )
-  echo $shr
+  comm -12 <( echo $inp ) <( echo $log )
   exit 1
   if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
