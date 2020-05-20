@@ -56,7 +56,7 @@ fi
 
 # Test 2
 sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
-cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
+sed "s/1/2/" $top_srcdir/test_fms/mpp/input_base.nml > input_alternative.nml
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
   awk '{ sub(/^[ \t]+/, ""); print }' input.nml > trimmed_input_test2.tst
