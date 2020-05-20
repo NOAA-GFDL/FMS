@@ -68,6 +68,7 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
 
   do while (ioslog.eq.0) ! Check for the first two written lines, then stay at this
                          ! position so we can compare from here on to the namelist
+    write(*,*) "***line***"
     read(110, '(A)', iostat=ioslog) line
     ! Check if we have found the version line
     if (index(line, "READ_INPUT_NML: "//trim(version)).ne.0) then
