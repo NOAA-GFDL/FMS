@@ -44,7 +44,7 @@ if [ $? = 0 ]; then
   shr=$(comm -12 inp1.txt log1.txt)
   echo "$shr"
   echo "between"
-  inp=$(<inp1.txt)
+  inp=$(sort inp1.txt)
   echo "$inp"
   exit 1
   if [ "$inp" = "$shr" ]; then
