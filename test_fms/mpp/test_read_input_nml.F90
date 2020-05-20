@@ -43,7 +43,7 @@ open(10, file="test_numb.nml", form="formatted", status="old")
 read(10, nml = test_read_input_nml_nml)
 close(10)
 
-if (test_numb == 1 .or. test == 2 .or. test == 4) then
+if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   ! Test 1: Tests the subroutine on a valid input nml full of data, 
   ! with no arguments passed to read_input_nml()
   ! Test 2: Tests the subroutine on a valid input nml full of data, 
@@ -79,24 +79,16 @@ if (test_numb == 1 .or. test == 2 .or. test == 4) then
     end if
     ! Check if we have found all we are looking for 
     if (version_bool.and.filename_bool) then
-      write(*,*) "SUCCESS: Found the first 2 written lines, version&
-                       & and filename"
+      write(*,*) "SUCCESS: Found the first 2 written lines, version and filename"
       exit ! Successful test portion
-    end if     
-    ! If we have reached the end of the file, was anything missed?
-    if (index(line, "Total runtime").ne.0) then
-      if (.not.version_bool) then
-        call mpp_error(FATAL, "Version not written to &
-                                                    &logfile")
-      else if (.not.filename_bool) then
-        call mpp_error(FATAL, "Filename not written to &
-                                                    &logfile")
-      else 
-        call mpp_error(FATAL, "Logfile not written to by &
-                                            &read_input_nml correctly.")
-      end if
-    end if
+    end if  
   end do
+  ! If we have reached the end of the file, was anything missed?
+  if (.not.version_bool) then
+    call mpp_error(FATAL, "Version not written to logfile")
+  else if (.not.filename_bool) then
+    call mpp_error(FATAL, "Filename not written to logfile")
+  end if
 
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
