@@ -43,6 +43,7 @@ if [ $? = 0 ]; then
   sort log.txt > log1.txt
   shr=$(comm -12 inp1.txt log1.txt)
   echo "$shr"
+  echo "between"
   inp=$(<inp1.txt)
   echo "$inp"
   exit 1
