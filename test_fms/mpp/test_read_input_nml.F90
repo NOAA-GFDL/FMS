@@ -31,9 +31,7 @@ program test_read_input_nml
 #include<file_version.h>
 
 character(len=200) :: line !< Current line being read
-character(len=200) :: linelog, linenml !< Current log and nml lines being read
 character(len=128) :: filename !< Name of file being read
-integer :: n !< Looping variable
 logical :: version_bool, filename_bool !< Booleans that tell whether or not the
                                        !! lines where version and filename should be 
                                        !! written in logfile have been found
