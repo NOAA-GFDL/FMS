@@ -50,7 +50,7 @@ READ_INPUT_NML: unknown"
     if grep -Fxq "$expected_version_filename1" trimmed_log_test1.tst; then # Checks if the logfile lists the version and filename
       echo "Test 1 has passed"
     else
-      echo "ERROR: Test 1 was unsuccessful. Version of filename not correctly written."
+      echo "ERROR: Test 1 was unsuccessful. Version or filename not correctly written."
       exit 31
     fi
   else
