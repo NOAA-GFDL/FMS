@@ -52,7 +52,7 @@ READ_INPUT_NML: unknown"
     #else
     #  echo "ERROR: Test 1 was unsuccessful. Version or filename not correctly written."
     #  exit 31
-    fi
+    #fi
   else
     echo "ERROR: Test 1 was unsuccessful. Log did not contain input.nml"
     exit 21
