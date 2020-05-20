@@ -37,12 +37,12 @@ sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
-  awk '{ sub(/^[ \t]+/, ""); print }' input.nml > inp.txt
-  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.txt
-  sort inp.txt > inp1.txt
-  sort log.txt > log1.txt
-  inp=$(comm -12 inp1.txt inp1.txt)
-  shr=$(comm -12 inp1.txt log1.txt)
+  awk '{ sub(/^[ \t]+/, ""); print }' input.nml > inp.tst
+  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.tst
+  sort inp.tst > inp1.tst
+  sort log.tst > log1.tst
+  inp=$(comm -12 inp1.tst inp1.tst)
+  shr=$(comm -12 inp1.tst log1.tst)
   if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
   else
@@ -59,12 +59,12 @@ sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
-  awk '{ sub(/^[ \t]+/, ""); print }' input_alternative.nml > inp.txt
-  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.txt
-  sort inp.txt > inp1.txt
-  sort log.txt > log1.txt
-  inp=$(comm -12 inp1.txt inp1.txt)
-  shr=$(comm -12 inp1.txt log1.txt)
+  awk '{ sub(/^[ \t]+/, ""); print }' input_alternative.nml > inp.tst
+  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.tst
+  sort inp.tst > inp1.tst
+  sort log.tst > log1.tst
+  inp=$(comm -12 inp1.tst inp1.tst)
+  shr=$(comm -12 inp1.tst log1.tst)
   if [ "$inp" = "$shr" ]; then
     echo "Test 2 has passed"
   else
