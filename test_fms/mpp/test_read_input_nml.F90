@@ -44,6 +44,8 @@ read(10, nml = test_read_input_nml_nml)
 close(10)
 
 if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
+    write(*,*) "***in1***"
+
   ! Test 1: Tests the subroutine on a valid input nml full of data, 
   ! with no arguments passed to read_input_nml()
   ! Test 2: Tests the subroutine on a valid input nml full of data, 
@@ -51,6 +53,8 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   ! Test 4: Tests the subroutine on a valid empty input nml, 
   ! with no arguments passed to read_input_nml()
   if (test_numb == 1 .or. test_numb == 4) then
+      write(*,*) "***in2***"
+
     filename = "input.nml"
     call mpp_init() ! Initialize mpp
     call read_input_nml()
