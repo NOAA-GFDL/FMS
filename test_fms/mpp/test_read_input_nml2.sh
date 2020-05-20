@@ -36,21 +36,29 @@ echo "/" >> test_numb_base.nml
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 run_test test_read_input_nml 1
-if [ $? = 0 ]; then
+if [ $? = 0 ]; then # Checks if running the subroutine causes an error or not
   awk '{ sub(/^[ \t]+/, ""); print }' input.nml > trimmed_input_test1.tst
   awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > trimmed_log_test1.tst
+  expected_verion_filename1="READ_INPUT_NML: input.nml
+READ_INPUT_NML: unknown"
   sort trimmed_input_test1.tst > sorted_input_test1.tst
   sort trimmed_log_test1.tst > sorted_log_test1.tst
   input_var1=$(comm -12 sorted_input_test1.tst sorted_input_test1.tst) # Done this way to achieve same formatting as next line
+  log_var1=$(comm -12 sorted_log_test1.tst sorted_log_test1.tst) # Done this way to achieve same formatting as next line
   incommon_var1=$(comm -12 sorted_input_test1.tst sorted_log_test1.tst)
-  if [ "$input_var1" = "$incommon_var1" ]; then
-    echo "Test 1 has passed"
+  if [ "$input_var1" = "$incommon_var1" ]; then # Checks if the logfile contains all of the input nml
+    if grep -Fxq "$expected_version_filename1" trimmed_log_test1.tst; then # Checks if the logfile lists the version and filename
+      echo "Test 1 has passed"
+    else
+      echo "ERROR: Test 1 was unsuccessful. Version of filename not correctly written."
+      exit 31
+    fi
   else
     echo "ERROR: Test 1 was unsuccessful. Log did not contain input.nml"
     exit 21
   fi
 else
-  echo "ERROR: Test 1 was unsuccessful. Log did not contain version and/or filename"
+  echo "ERROR: Test 1 was unsuccessful. The read_input_nml subroutine failed to execute"
   exit 11
 fi
 
@@ -59,12 +67,14 @@ sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
 sed "s/1/2/" $top_srcdir/test_fms/mpp/input_base.nml > input_alternative.nml
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
-  awk '{ sub(/^[ \t]+/, ""); print }' input.nml > trimmed_input_test2.tst
+  awk '{ sub(/^[ \t]+/, ""); print }' input_alternative.nml > trimmed_input_test2.tst
   awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > trimmed_log_test2.tst
   sort trimmed_input_test2.tst > sorted_input_test2.tst
   sort trimmed_log_test2.tst > sorted_log_test2.tst
   input_var2=$(comm -12 sorted_input_test2.tst sorted_input_test2.tst) # Done this way to achieve same formatting as next line
+  log_var2=$(comm -12 sorted_log_test2.tst sorted_log_test2.tst) # Done this way to achieve same formatting as next line
   incommon_var2=$(comm -12 sorted_input_test2.tst sorted_log_test2.tst)
+  echo "$log_var2"
   if [ "$input_var2" = "$incommon_var2" ]; then
     echo "Test 2 has passed"
   else
@@ -92,10 +102,12 @@ rm input.nml
 touch input.nml # Achieve a blank namelist to be read
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
+  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > trimmed_log_test4.tst
+  sort trimmed_log_test4.tst > sorted_log_test4.tst
+  log_var4=$(comm -12 sorted_log_test4.tst sorted_log_test4.tst) # Done this way to achieve same formatting as next line
+  echo "$log_var4"
   echo "Test 4 has passed"
 else
   echo "ERROR: Test 4 was unsuccessful."
   exit 14
 fi
-
-exit 0
