@@ -69,6 +69,9 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
     open(111, file='input_alternative.nml', iostat=iosnml) ! Open of input nml  
   end if
+    read(110, '(A)', iostat=ioslog) line
+        write(*,*) "***line***"
+
 
   do while (ioslog.eq.0) ! Check for the first two written lines, then stay at this
                          ! position so we can compare from here on to the namelist
