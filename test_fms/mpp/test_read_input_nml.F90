@@ -30,13 +30,6 @@ program test_read_input_nml
 
 #include<file_version.h>
 
-character(len=200) :: line !< Current line being read
-character(len=128) :: filename !< Name of file being read
-logical :: version_bool, filename_bool !< Booleans that tell whether or not the
-                                       !! lines where version and filename should be 
-                                       !! written in logfile have been found
-                                       !! yet. Default value is false
-
 namelist /test_read_input_nml_nml/ test_numb
 
 open(10, file="test_numb.nml", form="formatted", status="old")
@@ -44,8 +37,6 @@ read(10, nml = test_read_input_nml_nml)
 close(10)
 
 if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
-    write(*,*) "***in1***"
-
   ! Test 1: Tests the subroutine on a valid input nml full of data, 
   ! with no arguments passed to read_input_nml()
   ! Test 2: Tests the subroutine on a valid input nml full of data, 
@@ -53,57 +44,21 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   ! Test 4: Tests the subroutine on a valid empty input nml, 
   ! with no arguments passed to read_input_nml()
   if (test_numb == 1 .or. test_numb == 4) then
-      write(*,*) "***in2***"
-
-    filename = "input.nml"
     call mpp_init() ! Initialize mpp
     call read_input_nml()
     call mpp_exit()
-    open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
-    open(111, file='input.nml', iostat=iosnml) ! Open of input nml
-  else if (test_numb == 2) then 
-    filename = "input_alternative.nml"
+  else if (test_numb == 2) then
     call mpp_init() ! Initialize mpp
     call read_input_nml("alternative")
     call mpp_exit()
-    open(110, file='logfile.000000.out', iostat=ioslog) ! Open logfile
-    open(111, file='input_alternative.nml', iostat=iosnml) ! Open of input nml  
-  end if
-    read(110, '(A)', iostat=ioslog) line
-        write(*,*) "***line***"
-
-
-  do while (ioslog.eq.0) ! Check for the first two written lines, then stay at this
-                         ! position so we can compare from here on to the namelist
-    write(*,*) "***line***"
-    read(110, '(A)', iostat=ioslog) line
-    ! Check if we have found the version line
-    if (index(line, "READ_INPUT_NML: "//trim(version)).ne.0) then
-      version_bool = .true.
-    end if
-    ! Check if we have found the filename line
-    if (index(line, "READ_INPUT_NML: "//trim(filename)).ne.0) then
-      filename_bool = .true.
-    end if
-    ! Check if we have found all we are looking for 
-    if (version_bool.and.filename_bool) then
-      write(*,*) "SUCCESS: Found the first 2 written lines, version and filename"
-      exit ! Successful test portion
-    end if  
-  end do
-  ! If we have reached the end of the file, was anything missed?
-  if (.not.version_bool) then
-    call mpp_error(FATAL, "Version not written to logfile")
-  else if (.not.filename_bool) then
-    call mpp_error(FATAL, "Filename not written to logfile")
   end if
 
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
   ! pelist_name_in would be one who's size is greater than local pelist_name
-  
+
   call mpp_init ! Initialize mpp        
-  call read_input_nml(mpp_get_current_pelist_name()//"e") 
+  call read_input_nml(mpp_get_current_pelist_name()//"e")
                                                           ! Call read_input_nml
                                                           ! with the local
                                                           ! pelist_name plus an
