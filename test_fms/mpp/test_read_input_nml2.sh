@@ -39,14 +39,13 @@ run_test test_read_input_nml 1
 if [ $? = 0 ]; then
   awk '{ sub(/^[ \t]+/, ""); print }' input.nml > inp.txt
   awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.txt
-  sort inp.txt > inp.txt
-  sort log.txt > log.txt
-  cat inp.txt
+  sort inp.txt > inp1.txt
+  sort log.txt > log1.txt
+  cat inp1.txt
   echo "000000000000000000"
-  cat log.txt
+  cat log1.txt
   echo "111111111111111111"
-  comm -12 inp.txt log.txt > shar.txt
-  cat shar.txt
+  comm -12 inp1.txt log1.txt
   echo "222222222222222222"
   exit 1
   if [ "$inp" = "$shr" ]; then
