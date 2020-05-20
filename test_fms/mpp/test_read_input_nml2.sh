@@ -41,12 +41,10 @@ if [ $? = 0 ]; then
   awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.txt
   sort inp.txt > inp1.txt
   sort log.txt > log1.txt
-  cat inp1.txt
-  echo "000000000000000000"
-  cat log1.txt
-  echo "111111111111111111"
-  comm -12 inp1.txt log1.txt
-  echo "222222222222222222"
+  shr=$(comm -12 inp1.txt log1.txt)
+  echo "$shr"
+  inp=$(<inp1.txt)
+  echo "$inp"
   exit 1
   if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
