@@ -59,9 +59,20 @@ sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
 cp $top_srcdir/test_fms/mpp/input_base.nml input_alternative.nml
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
-  echo "Test 2 has passed"
+  awk '{ sub(/^[ \t]+/, ""); print }' input_alternative.nml > inp.txt
+  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.txt
+  sort inp.txt > inp1.txt
+  sort log.txt > log1.txt
+  inp=$(comm -12 inp1.txt inp1.txt)
+  shr=$(comm -12 inp1.txt log1.txt)
+  if [ "$inp" = "$shr" ]; then
+    echo "Test 2 has passed"
+  else
+    echo "ERROR: Test 2 was unsuccessful. Log did not contain input.nml"
+    exit 22
+  fi
 else
-  echo "ERROR: Test 2 was unsuccessful."
+  echo "ERROR: Test 2 was unsuccessful. Log did not contain version and/or filename"
   exit 12
 fi
 
@@ -76,7 +87,7 @@ else
    echo "Test 3 has passed"
 fi
 
-## Test 4
+# Test 4
 sed "s/test_numb = [0-9]/test_numb = 4/" test_numb_base.nml > test_numb.nml
 rm input.nml
 touch input.nml # Achieve a blank namelist to be read
