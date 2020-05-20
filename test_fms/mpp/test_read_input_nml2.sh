@@ -74,9 +74,6 @@ if [ $? = 0 ]; then
   input_var2=$(comm -12 sorted_input_test2.tst sorted_input_test2.tst) # Done this way to achieve same formatting as next line
   log_var2=$(comm -12 sorted_log_test2.tst sorted_log_test2.tst) # Done this way to achieve same formatting as next line
   incommon_var2=$(comm -12 sorted_input_test2.tst sorted_log_test2.tst)
-  echo "$log_var2"
-  echo "BETWEEN"
-  echo "$input_var2"
   if [ "$input_var2" = "$incommon_var2" ]; then
     echo "Test 2 has passed"
   else
