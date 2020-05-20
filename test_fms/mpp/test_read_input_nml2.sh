@@ -41,12 +41,8 @@ if [ $? = 0 ]; then
   awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > log.txt
   sort inp.txt > inp1.txt
   sort log.txt > log1.txt
+  inp=$(comm -12 inp1.txt inp1.txt)
   shr=$(comm -12 inp1.txt log1.txt)
-  echo "$shr"
-  echo "between"
-  inp=$(sort inp1.txt)
-  echo "$inp"
-  exit 1
   if [ "$inp" = "$shr" ]; then
     echo "Test 1 has passed"
   else
