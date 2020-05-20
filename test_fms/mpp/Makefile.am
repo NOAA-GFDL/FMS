@@ -71,4 +71,4 @@ EXTRA_DIST = input_base.nml \
   test_read_input_nml2.sh
 
 # Clean up
-CLEANFILES = input.nml test_numb_base.nml test_numb.nml input_alternative.nml *.out*
+CLEANFILES = input.nml test_numb_base.nml test_numb.nml input_alternative.nml *.out* *.tst*
