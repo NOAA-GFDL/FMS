@@ -44,9 +44,9 @@ if [ $? = 0 ]; then # Checks if running the subroutine causes an error or not
   input_var1=$(comm -12 sorted_input_test1.tst sorted_input_test1.tst) # Done this way to achieve same formatting as next line
   log_var1=$(comm -12 sorted_log_test1.tst sorted_log_test1.tst) # Done this way to achieve same formatting as next line
   incommon_var1=$(comm -12 sorted_input_test1.tst sorted_log_test1.tst)
+  cat logfile.000000.out
   if [ "$input_var1" = "$incommon_var1" ]; then # Checks if the logfile contains all of the input nml
     err=0
-    cat logfile.000000.out
     grep -n "READ_INPUT_NML: input.nml" logfile.000000.out|| err=1
     grep -n "READ_INPUT_NML: unknown" logfile.000000.out|| err=1
     if [ "$err" != 1 ]; then # Checks if the logfile lists the version and filename
@@ -76,6 +76,7 @@ if [ $? = 0 ]; then
   input_var2=$(comm -12 sorted_input_test2.tst sorted_input_test2.tst) # Done this way to achieve same formatting as next line
   log_var2=$(comm -12 sorted_log_test2.tst sorted_log_test2.tst) # Done this way to achieve same formatting as next line
   incommon_var2=$(comm -12 sorted_input_test2.tst sorted_log_test2.tst)
+  cat logfile.000000.out
   if [ "$input_var2" = "$incommon_var2" ]; then
     err=0
     grep -n "READ_INPUT_NML: input_alternative.nml" logfile.000000.out|| err=1
