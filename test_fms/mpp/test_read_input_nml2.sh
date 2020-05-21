@@ -39,20 +39,20 @@ run_test test_read_input_nml 1
 if [ $? = 0 ]; then # Checks if running the subroutine causes an error or not
   awk '{ sub(/^[ \t]+/, ""); print }' input.nml > trimmed_input_test1.tst
   awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > trimmed_log_test1.tst
-  expected_verion_filename1="READ_INPUT_NML: input.nml
-READ_INPUT_NML: unknown"
   sort trimmed_input_test1.tst > sorted_input_test1.tst
   sort trimmed_log_test1.tst > sorted_log_test1.tst
   input_var1=$(comm -12 sorted_input_test1.tst sorted_input_test1.tst) # Done this way to achieve same formatting as next line
   log_var1=$(comm -12 sorted_log_test1.tst sorted_log_test1.tst) # Done this way to achieve same formatting as next line
   incommon_var1=$(comm -12 sorted_input_test1.tst sorted_log_test1.tst)
   if [ "$input_var1" = "$incommon_var1" ]; then # Checks if the logfile contains all of the input nml
-    #if grep -Fxq "$expected_version_filename1" trimmed_log_test1.tst; then # Checks if the logfile lists the version and filename
+    grep -n "READ_INPUT_NML: input.nml" logfile.000000.out|| err=1
+    grep -n "READ_INPUT_NML: unknown" logfile.000000.out|| err=1
+    if [ "$err" != 1 ]; then # Checks if the logfile lists the version and filename
       echo "Test 1 has passed"
-    #else
-    #  echo "ERROR: Test 1 was unsuccessful. Version or filename not correctly written."
-    #  exit 31
-    #fi
+    else
+      echo "ERROR: Test 1 was unsuccessful. Version or filename not correctly written."
+      exit 31
+    fi
   else
     echo "ERROR: Test 1 was unsuccessful. Log did not contain input.nml"
     exit 21
