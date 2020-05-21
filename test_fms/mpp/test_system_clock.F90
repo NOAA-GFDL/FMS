@@ -18,25 +18,50 @@
 !***********************************************************************
 !> @author Lauren Chilutti
 !> @description This test program is for testing the system_clock
-!! routine.  The test initializes mpp, then calls the function 
-!! SYSTEM_CLOCK.  SYSTEM_CLOCK returns COUNT, COUNT_RATE, and/or 
-!! COUNT_MAX (all optional). 
+!! routine.  The test initializes mpp, then calls the function
+!! SYSTEM_CLOCK twice.  SYSTEM_CLOCK returns COUNT, COUNT_RATE, and/or
+!! COUNT_MAX (all optional).  This test returns errors if COUNT,
+!! COUNT_RATE, and/or COUNT_MAX are undefined, if the COUNT is
+!! greater than COUNT_MAX, that the second call returns the
+!! same value for COUNT_MAX and COUNT_RATE as the first call, and that
+!! the second call returns a COUNT value greater than that of the
+!! first call.
+module include_files_mod
+#include "../../include/fms_platform.h"
+  logical :: first_call_system_clock_mpi=.TRUE.
+contains
+#include "../../mpp/include/system_clock.h"
+end module include_files_mod
+
 program test_system_clock
-#include <system_clock.h>
+  use include_files_mod
   use mpp_mod, only : mpp_init, mpp_exit, stderr, stdout, mpp_error, FATAL
-  use mpp_mod, only : input_nml_file
   implicit none
 
-  integer :: count, count_rate, count_max, mpicount, mpicount_rate, mpicount_max
-
-  call SYSTEM_CLOCK(count, count_rate, count_max)
-  if (count < count_max) then
-    call mpp_error(FATAL, "SYSTEM_CLOCK returns a count that is greater than count_max"
+  integer(LONG_KIND) :: count1, count_rate1, count_max1, count2, count_rate2, count_max2
+!> Initialize mpp
+  call mpp_init() 
+!> Call system_clock and ensure output is not undefined
+  call system_clock(count1, count_rate1, count_max1)
+  write(*,*) count1, count_rate1, count_max1
+  call system_clock(count2, count_rate2, count_max2)
+  write(*,*) count2, count_rate2, count_max2
+!> Check that the count is less than the count_max
+  if (count1 .gt. count_max1) then
+    call mpp_error(FATAL, "SYSTEM_CLOCK returns a count that is greater than count_max")
   endif
-  write(*,*) count, count_rate, count_max
-
-  call mpp_init()  
-  call SYSTEM_CLOCK(mpicount, mpicount_rate,mpicount_max)
-  write(*,*) mpicount, mpicount_rate, mpicount_max
+  if (count2 > count_max2) then
+    call mpp_error(FATAL, "SYSTEM_CLOCK returns a count that is greater than count_max")
+  endif
+!> Check that the second call to system_clock function returns the same COUNT_MAX and COUNT_RATE, but a larger COUNT
+  if (count1 .gt. count2) then
+    call mpp_error(FATAL, "count2 is less than count1")
+  endif
+  if (count_rate1 .ne. count_rate2) then
+    call mpp_error(FATAL, "count rates are not equal")
+  endif
+  if (count_max1 .ne. count_max2) then
+    call mpp_error(FATAL, "count maxes are not equal")
+  endif
   call mpp_exit()
 end program test_system_clock
