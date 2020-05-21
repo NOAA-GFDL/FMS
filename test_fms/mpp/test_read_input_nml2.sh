@@ -47,8 +47,8 @@ if [ $? = 0 ]; then # Checks if running the subroutine causes an error or not
   cat logfile.000000.out
   if [ "$input_var1" = "$incommon_var1" ]; then # Checks if the logfile contains all of the input nml
     err=0
-    grep -n "READ_INPUT_NML: input.nml" logfile.000000.out|| err=1
-    grep -n "READ_INPUT_NML: unknown" logfile.000000.out|| err=1
+    grep -n "READ_INPUT_NML: input.nml" logfile.000000.out || err=1
+    grep -n "READ_INPUT_NML: unknown" logfile.000000.out || err=1
     if [ "$err" != 1 ]; then # Checks if the logfile lists the version and filename
       echo "Test 1 has passed"
     else
