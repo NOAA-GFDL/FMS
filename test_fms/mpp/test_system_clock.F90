@@ -16,8 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @author Lauren Chilutti
-!> @description This test program is for testing the system_clock
+!> @file
+!! @author Lauren Chilutti
+!! @brief Test program for the system_clock routine.
+!! @email gfdl.climate.model.info@noaa.gov
+!! @description This test program is for testing the system_clock
 !! routine.  The test initializes mpp, then calls the function
 !! SYSTEM_CLOCK twice.  SYSTEM_CLOCK returns COUNT, COUNT_RATE, and/or
 !! COUNT_MAX (all optional).  This test returns errors if COUNT,
