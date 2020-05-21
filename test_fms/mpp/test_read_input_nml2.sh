@@ -75,13 +75,20 @@ if [ $? = 0 ]; then
   log_var2=$(comm -12 sorted_log_test2.tst sorted_log_test2.tst) # Done this way to achieve same formatting as next line
   incommon_var2=$(comm -12 sorted_input_test2.tst sorted_log_test2.tst)
   if [ "$input_var2" = "$incommon_var2" ]; then
-    echo "Test 2 has passed"
+    grep -n "READ_INPUT_NML: input_alternative.nml" logfile.000000.out|| err=1
+    grep -n "READ_INPUT_NML: unknown" logfile.000000.out|| err=1
+    if [ "$err" != 1 ]; then # Checks if the logfile lists the version and filename
+      echo "Test 2 has passed"
+    else
+      echo "ERROR: Test 2 was unsuccessful. Version or filename not correctly written."
+      exit 32
+    fi
   else
-    echo "ERROR: Test 2 was unsuccessful. Log did not contain input.nml"
+    echo "ERROR: Test 2 was unsuccessful. Log did not contain input_alternative.nml"
     exit 22
   fi
 else
-  echo "ERROR: Test 2 was unsuccessful. Log did not contain version and/or filename"
+  echo "ERROR: Test 2 was unsuccessful. The read_input_nml subroutine failed to execute"
   exit 12
 fi
 
@@ -101,12 +108,15 @@ rm input.nml
 touch input.nml # Achieve a blank namelist to be read
 run_test test_read_input_nml 1
 if [ $? = 0 ]; then
-  awk '{ sub(/^[ \t]+/, ""); print }' logfile.000000.out > trimmed_log_test4.tst
-  sort trimmed_log_test4.tst > sorted_log_test4.tst
-  log_var4=$(comm -12 sorted_log_test4.tst sorted_log_test4.tst) # Done this way to achieve same formatting as next line
-  echo "$log_var4"
-  echo "Test 4 has passed"
+  grep -n "READ_INPUT_NML: input.nml" logfile.000000.out|| err=1
+  grep -n "READ_INPUT_NML: unknown" logfile.000000.out|| err=1
+  if [ "$err" != 1 ]; then # Checks if the logfile lists the version and filename
+    echo "Test 4 has passed"
+  else
+    echo "ERROR: Test 4 was unsuccessful. Version or filename not correctly written."
+    exit 32
+  fi
 else
-  echo "ERROR: Test 4 was unsuccessful."
+  echo "ERROR: Test 4 was unsuccessful. Subroutine failed to execute"
   exit 14
 fi
