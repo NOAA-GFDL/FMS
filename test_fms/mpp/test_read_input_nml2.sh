@@ -46,6 +46,7 @@ if [ $? = 0 ]; then # Checks if running the subroutine causes an error or not
   incommon_var1=$(comm -12 sorted_input_test1.tst sorted_log_test1.tst)
   if [ "$input_var1" = "$incommon_var1" ]; then # Checks if the logfile contains all of the input nml
     err=0
+    cat logfile.000000.out
     grep -n "READ_INPUT_NML: input.nml" logfile.000000.out|| err=1
     grep -n "READ_INPUT_NML: unknown" logfile.000000.out|| err=1
     if [ "$err" != 1 ]; then # Checks if the logfile lists the version and filename
