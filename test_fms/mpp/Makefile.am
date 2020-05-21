@@ -71,4 +71,4 @@ EXTRA_DIST = input_base.nml \
   test_system_clock.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = include_files_mod.mod input.nml *.out* 
