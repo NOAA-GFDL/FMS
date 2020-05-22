@@ -27,9 +27,12 @@ program test_read_input_nml
   use mpp_mod, only : mpp_init, mpp_exit
   use mpp_mod, only : mpp_error, FATAL, NOTE
   use mpp_mod, only : read_input_nml, mpp_get_current_pelist_name
-
+  use mpp_mod, only : input_nml_file, INPUT_STR_LENGTH, get_ascii_file_num_lines
 #include<file_version.h>
 
+character(len=200) :: line !< Storage location of lines read from the input nml
+character(len=128) :: filename !< Name of input nml file to be read
+integer :: stat !< IOSTAT output integer
 namelist /test_read_input_nml_nml/ test_numb
 
 open(10, file="test_numb.nml", form="formatted", status="old")
@@ -44,19 +47,28 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   ! Test 4: Tests the subroutine on a valid empty input nml, 
   ! with no arguments passed to read_input_nml()
   if (test_numb == 1 .or. test_numb == 4) then
+    filename = "input.nml"
     call mpp_init() ! Initialize mpp
     call read_input_nml()
-    call mpp_exit()
   else if (test_numb == 2) then
+    filename = "input_alternative.nml"
     call mpp_init() ! Initialize mpp
     call read_input_nml("alternative")
-    call mpp_exit()
   end if
+  open(1, file=filename, iostat=stat) ! Open input nml or alternative
+  do n = 1, get_ascii_file_num_lines(filename, INPUT_STR_LENGTH) - 1
+    read(1, '(A)', iostat=stat) line
+    if (input_nml_file(n).ne.line) then
+      call mpp_error(FATAL, "Input nml does not match &
+                                        &the input_nml_file variable")
+    end if
+  end do
+  close(1)
+  call mpp_exit()
 
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
   ! pelist_name_in would be one who's size is greater than local pelist_name
-
   call mpp_init ! Initialize mpp        
   call read_input_nml(mpp_get_current_pelist_name()//"e")
                                                           ! Call read_input_nml
