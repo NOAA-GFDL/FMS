@@ -62,7 +62,7 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     read(1, '(A)', iostat=stat) line
     if (stat.eq.-1) then
       exit
-    end do
+    end if
     if (input_nml_file(n).ne.line) then
       call mpp_error(FATAL, "Input nml does not match &
                                         &the input_nml_file variable")
