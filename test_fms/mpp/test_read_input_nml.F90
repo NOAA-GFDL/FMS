@@ -18,7 +18,7 @@
 !***********************************************************************
 
 !> @file
-!! @brief Tests the read_input_nml subroutine
+!! @brief Tests the read_input_nml subroutine in four difference scenarios
 !! @author Colin Gladue
 !! @email gfdl.climate.model.info@noaa.gov
 
