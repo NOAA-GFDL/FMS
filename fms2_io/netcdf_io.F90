@@ -258,7 +258,7 @@ character (len = 10), intent(in) :: netcdf_default_format
      fms2_nc_format_param = nf90_classic_model
      call string_copy(fms2_nc_format, "classic")
  elseif (string_compare(netcdf_default_format, "netcdf4", .true.)) then
-     fms2_nc_format_param = nf90_hdf5
+     fms2_nc_format_param = nf90_netcdf4
      call string_copy(fms2_nc_format, "netcdf4")
  else
      call error("unrecognized netcdf file format "//trim(netcdf_default_format)//". Check fms2io namelist")
@@ -499,7 +499,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       elseif (string_compare(nc_format, "classic", .true.)) then
         nc_format_param = nf90_classic_model
       elseif (string_compare(nc_format, "netcdf4", .true.)) then
-        nc_format_param = nf90_hdf5
+        nc_format_param = nf90_netcdf4
       else
         call error("unrecognized netcdf file format "//trim(nc_format)//".")
       endif
