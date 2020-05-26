@@ -202,7 +202,7 @@ CONTAINS
      iF ( associated(mpp_get_io_domain(domain)) ) then
        fileob => fileobj
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
-                            domain, nc_format="64bit", is_restart=.false.))
+                            domain, is_restart=.false.))
        fnum_domain = "2d" ! 2d domain
        file_unit = 2
      elSE !< No io domain, so every core is going to write its own file.
@@ -211,7 +211,7 @@ CONTAINS
        write(mype_string,'(I0.4)') mype
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
-                            nc_format="64bit", is_restart=.false.))
+                            is_restart=.false.))
         endif
        fnum_domain = "nd" ! no domain
        if (file_unit < 0) file_unit = 10
@@ -219,7 +219,7 @@ CONTAINS
     ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        fileob => fileobjU
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, trim(fname_no_tile)//".nc", "overwrite", &
-                            domainU, nc_format="64bit", is_restart=.false.))
+                            domainU, is_restart=.false.))
        fnum_domain = "ug" ! unstructured grid
        file_unit=3
     ELSE

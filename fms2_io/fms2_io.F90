@@ -214,17 +214,20 @@ end interface read_new_restart
 
 logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
 !< Namelist variables
-integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file 
+integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
+character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf file format, acceptable values
+                              !! are: "64bit", "classic", "netcdf4". This can be overwritten if you specify
+                              !! "nc_format" in the open_file call
 namelist / fms2_io_nml / &
-                      ncchksz
+                      ncchksz, netcdf_default_format
 
 contains
 
 !> @brief Reads the fms2_io_nml
 subroutine fms2_io_init ()
  integer :: mystat
- 
+
 !> Check if the module has already been initialized
   if (fms2_io_is_initialized) return
 !> Call initialization routines that this module depends on
@@ -236,9 +239,10 @@ subroutine fms2_io_init ()
   if (ncchksz .le. 0) then
         call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
   endif
-  call netcdf_io_init (ncchksz)
+
+  call netcdf_io_init (ncchksz,netcdf_default_format)
   call blackboxio_init (ncchksz)
-!> Mark the fms2_io as initialized 
+!> Mark the fms2_io as initialized
   fms2_io_is_initialized = .true.
 end subroutine fms2_io_init
 
