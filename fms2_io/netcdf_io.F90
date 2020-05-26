@@ -514,9 +514,9 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
     elseif (string_compare(mode, "append", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "write", .true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, fms2_nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
+      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode,"overwrite",.true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, fms2_nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
+      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     else
       call error("unrecognized file mode "//trim(mode)//".")
     endif
