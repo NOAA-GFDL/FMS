@@ -648,7 +648,6 @@ if ( file_found_index /= -1) then
    clim_type%level_type = init_interpolator_types(file_found_index)%level_type
    clim_type%vertical_indices = init_interpolator_types(file_found_index)%vertical_indices
    clim_type%climatological_year = init_interpolator_types(file_found_index)%climatological_year
-   clim_type%interph = init_interpolator_types(file_found_index)%interph
 else
 !--- get clim_type%lat
 if(dimension_exists(clim_type%fileobj, "lat")) then
@@ -986,6 +985,8 @@ else
    call mpp_error(FATAL, 'Interpolator_init: time axis does not exist in file '//trim(src_file))
 endif
 
+endif !if ( file_found_index /= -1)
+
 !Assume that the horizontal interpolation within a file is the same for each variable.
 
  if (conservative_interp) then
@@ -1018,7 +1019,6 @@ endif
                         agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
  endif
 
-endif !if ( file_found_index /= -1)
 !--------------------------------------------------------------------
 !  allocate the variable clim_type%data . This will be the climatology
 !  data horizontally interpolated, so it will be on the model horizontal
@@ -3517,26 +3517,26 @@ if ( mpp_pe() == mpp_root_pe() ) then
    write (logunit,'(/,(a))') 'Exiting interpolator, have a nice day ...'
 end if
 
-if (associated (clim_type%lat     )) deallocate(clim_type%lat)
-if (associated (clim_type%lon     )) deallocate(clim_type%lon)
-if (associated (clim_type%latb    )) deallocate(clim_type%latb)
-if (associated (clim_type%lonb    )) deallocate(clim_type%lonb)
-if (associated (clim_type%levs    )) deallocate(clim_type%levs)
-if (associated (clim_type%halflevs)) deallocate(clim_type%halflevs)
+if (associated (clim_type%lat     )) nullify(clim_type%lat)
+if (associated (clim_type%lon     )) nullify(clim_type%lon)
+if (associated (clim_type%latb    )) nullify(clim_type%latb)
+if (associated (clim_type%lonb    )) nullify(clim_type%lonb)
+if (associated (clim_type%levs    )) nullify(clim_type%levs)
+if (associated (clim_type%halflevs)) nullify(clim_type%halflevs)
 call horiz_interp_del(clim_type%interph)
-if (associated (clim_type%time_slice)) deallocate(clim_type%time_slice)
-if (associated (clim_type%has_level))  deallocate(clim_type%has_level)
-if (associated (clim_type%field_name)) deallocate(clim_type%field_name)
-if (associated (clim_type%time_init )) deallocate(clim_type%time_init)
-if (associated (clim_type%mr        )) deallocate(clim_type%mr)
+if (associated (clim_type%time_slice)) nullify(clim_type%time_slice)
+if (associated (clim_type%has_level))  nullify(clim_type%has_level)
+if (associated (clim_type%field_name)) nullify(clim_type%field_name)
+if (associated (clim_type%time_init )) nullify(clim_type%time_init)
+if (associated (clim_type%mr        )) nullify(clim_type%mr)
 if (associated (clim_type%data)) then
-  deallocate(clim_type%data)
+  nullify(clim_type%data)
 endif
 if (associated (clim_type%pmon_pyear)) then
-  deallocate(clim_type%pmon_pyear)
-  deallocate(clim_type%pmon_nyear)
-  deallocate(clim_type%nmon_nyear)
-  deallocate(clim_type%nmon_pyear)
+  nullify(clim_type%pmon_pyear)
+  nullify(clim_type%pmon_nyear)
+  nullify(clim_type%nmon_nyear)
+  nullify(clim_type%nmon_pyear)
 endif
 
 if (module_is_initialized) then
