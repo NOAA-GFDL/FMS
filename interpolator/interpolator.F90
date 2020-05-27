@@ -627,6 +627,29 @@ nlevh = 1
 !--lwh
         clim_type%vertical_indices = 0  ! initial value
 
+!! If the file has been used before, let's reuse some of the information
+if ( file_found_index /= -1) then
+   if (associated(init_interpolator_types(file_found_index)%lat)) &
+        clim_type%lat      =>  init_interpolator_types(file_found_index)%lat
+   if (associated(init_interpolator_types(file_found_index)%lon)) &
+        clim_type%lon      =>  init_interpolator_types(file_found_index)%lon
+   if (associated(init_interpolator_types(file_found_index)%latb)) &
+        clim_type%latb     =>  init_interpolator_types(file_found_index)%latb
+   if (associated(init_interpolator_types(file_found_index)%lonb)) &
+        clim_type%lonb     =>  init_interpolator_types(file_found_index)%lonb
+   if (associated(init_interpolator_types(file_found_index)%levs)) &
+        clim_type%levs     =>  init_interpolator_types(file_found_index)%levs
+   if (associated(init_interpolator_types(file_found_index)%halflevs)) &
+        clim_type%halflevs =>  init_interpolator_types(file_found_index)%halflevs
+   if (associated(init_interpolator_types(file_found_index)%time_slice)) &
+        clim_type%time_slice =>  init_interpolator_types(file_found_index)%time_slice
+   if (associated(init_interpolator_types(file_found_index)%clim_times)) &
+        clim_type%clim_times =>  init_interpolator_types(file_found_index)%clim_times
+   clim_type%level_type = init_interpolator_types(file_found_index)%level_type
+   clim_type%vertical_indices = init_interpolator_types(file_found_index)%vertical_indices
+   clim_type%climatological_year = init_interpolator_types(file_found_index)%climatological_year
+   clim_type%interph = init_interpolator_types(file_found_index)%interph
+else
 !--- get clim_type%lat
 if(dimension_exists(clim_type%fileobj, "lat")) then
    call get_dimension_size(clim_type%fileobj, "lat", nlat)
@@ -995,6 +1018,7 @@ endif
                         agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
  endif
 
+endif !if ( file_found_index /= -1)
 !--------------------------------------------------------------------
 !  allocate the variable clim_type%data . This will be the climatology
 !  data horizontally interpolated, so it will be on the model horizontal
