@@ -52,6 +52,8 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   if (test_numb == 1 .or. test_numb == 4) then
     filename = "input.nml"
     call mpp_init() ! Initialize mpp
+    pelist_name_size = LEN(mpp_get_current_pelist_name())
+    allocate( character(len=pelist_name_size) :: toobig )
     call read_input_nml()
   else if (test_numb == 2) then
     filename = "input_alternative.nml"
@@ -70,6 +72,7 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     end if
   end do
   close(1)
+  deallocate( toobig )
   call mpp_exit()
 
 else if (test_numb.eq.3) then
