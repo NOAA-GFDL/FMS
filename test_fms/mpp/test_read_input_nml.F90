@@ -32,7 +32,7 @@ program test_read_input_nml
 
 character(len=200) :: line !< Storage location of lines read from the input nml
 character(len=128) :: filename !< Name of input nml file to be read
-character(len=:),allocatable :: toobig !< pelist_name_in that is too large
+character(len=:),allocatable :: toobig(:) !< pelist_name_in that is too large
 integer :: stat !< IOSTAT output integer
 integer :: n !< pelist_name_in size being counted
 integer :: pelist_name_size !< Size of current pelist_name
