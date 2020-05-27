@@ -77,16 +77,13 @@ else if (test_numb.eq.3) then
   ! pelist_name_in would be one who's size is greater than local pelist_name
   call mpp_init ! Initialize mpp        
   pelist_name_size = LEN(mpp_get_current_pelist_name())
-  n = 0
-  do while (n < pelist_name_size + 1)
-    toobig = toobig//"1"
-    n = n + 1
-  end do
+  allocate( toobig(pelist_name_size) )
   call read_input_nml(toobig)
                                                           ! Call read_input_nml
                                                           ! with the local
                                                           ! pelist_name plus an
                                                           ! extra character
+  deallocate( toobig )
   call mpp_exit() ! Exit mpp
 
 end if
