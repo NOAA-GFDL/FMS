@@ -1,0 +1,42 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+
+@PACKAGE_INIT@
+
+set(libFMSVersion "@PACKAGE_VERSION@")
+set_and_check(libFMS_INSTALL_PREFIX "@PACKAGE_CMAKE_INSTALL_PREFIX@")
+set_and_check(libFMS_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(libFMS_LIB_DIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+
+set(libFMS_LIBRARIES FMS:fms)
+
+
+set(libFMS_C_COMPILER "@CC_VERSION@")
+set(libFMS_C_COMPILER_FLAGS "@CFLAGS@")
+set(libFMS_FC_COMPILER @FC_VERSION@")
+set(libFMS_FC_COMPILER_FLAGS "@FCFLAGS@")
+set(LIBFMS_CPP_FLAGS "@CPPFLAGS@")
+set(libFMS_LDFLAGS "@LDFLAGS@")
+set(libFMS_SHARED "@enable_shared@")
+set(libFMS_STATIC "@enabme_static@")
+
+# Features
+set(libFMS_HAS_MPI @HAS_MPI@)
+set(libFMS_HAS_MIXEDMODE @HAS_MIXEDMODE@)
+

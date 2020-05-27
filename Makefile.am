@@ -13,6 +13,10 @@ monin_obukhov interpolator fft amip_interp oda_tools exchange \
 topography tracer_manager station_data sat_vapor_pres random_numbers \
 libFMS test_fms
 
+cmakedir = $(libdir)
+cmake_DATA = libFMSConfig.cmake \
+  libFMSConfigVersion.cmake
+ 
 EXTRA_DIST = README.md
 
 CLEANFILES = *__genmod.mod *__genmod.f90
