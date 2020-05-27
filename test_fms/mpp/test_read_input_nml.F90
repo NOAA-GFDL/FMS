@@ -32,8 +32,10 @@ program test_read_input_nml
 
 character(len=200) :: line !< Storage location of lines read from the input nml
 character(len=128) :: filename !< Name of input nml file to be read
+character(len=:),allocatable :: toobig !< pelist_name_in that is too large
 integer :: stat !< IOSTAT output integer
-integer :: n !< Counts the line number in the file being read
+integer :: n !< Counts the size of the pelist_name_in being built in test 3
+integer :: pelist_name_size !< Size of current pelist_name
 namelist /test_read_input_nml_nml/ test_numb
 
 open(10, file="test_numb.nml", form="formatted", status="old")
@@ -57,7 +59,6 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     call read_input_nml("alternative")
   end if
   open(1, file=filename, iostat=stat) ! Open input nml or alternative
-  n = 1
   do
     read(1, '(A)', iostat=stat) line
     if (stat.eq.-1) then
@@ -67,7 +68,6 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
       call mpp_error(FATAL, "Input nml does not match &
                                         &the input_nml_file variable")
     end if
-    n = n + 1
   end do
   close(1)
   call mpp_exit()
@@ -75,12 +75,18 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
   ! pelist_name_in would be one who's size is greater than local pelist_name
-  call mpp_init ! Initialize mpp        
-  call read_input_nml(mpp_get_current_pelist_name()//"e")
+  call mpp_init ! Initialize mpp
+  pelist_name_size = LEN(mpp_get_current_pelist_name())
+  n = 0
+  do while (n < pelist_name_size + 1)
+    toobig = toobig//"1"
+    n = n + 1
+  end do
+  call read_input_nml(toobig)
                                                           ! Call read_input_nml
                                                           ! with the local
                                                           ! pelist_name plus an
-                                                          ! extra character "e"
+                                                          ! extra character
   call mpp_exit() ! Exit mpp
 
 end if
