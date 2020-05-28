@@ -50,10 +50,14 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   ! with a string passed to read_input_nml() in order to read a different nml
   ! Test 4: Tests the subroutine on a valid empty input nml, 
   ! with no arguments passed to read_input_nml()
-  if (test_numb == 1 .or. test_numb == 4) then
+  if (test_numb == 1) then
     filename = "input.nml"
     call mpp_init() ! Initialize mpp
     call read_input_nml()
+  else if (test_numb == 4) then
+    filename = "input_blank.nml"
+    call mpp_init() ! Initialize mpp
+    call read_input_nml("blank")
   else if (test_numb == 2) then
     filename = "input_alternative.nml"
     call mpp_init() ! Initialize mpp
