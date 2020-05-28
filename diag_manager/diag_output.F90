@@ -212,6 +212,7 @@ CONTAINS
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
                             nc_format="64bit", is_restart=.false.))
+               call register_global_attribute(fileobjND, "NumFilesInSet", 0)
         endif
        fnum_domain = "nd" ! no domain
        if (file_unit < 0) file_unit = 10
@@ -386,7 +387,7 @@ integer :: domain_size, axis_length, axis_pos
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
-                         call mpp_get_global_domain(domain, begin=gstart)  !< Get the global indicies
+                         call mpp_get_global_domain(domain, begin=gstart, end=gend)  !< Get the global indicies
                          call mpp_get_compute_domain(domain, begin=cstart, end=cend, size=clength) !< Get the compute indicies
                          iend =  cend - gstart + 1     !< Get the array indicies for the axis data
                          istart = cstart - gstart + 1 
@@ -401,6 +402,9 @@ integer :: domain_size, axis_length, axis_pos
                               case (-1)
                                    call register_variable_attribute(fptr, axis_name, "positive", "down")
                          end select
+                         call register_variable_attribute(fptr, axis_name, "domain_decomposition", &
+                                        (/gstart, gend, cstart, cend/))
+                                
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                     class default
                          call error_mesg("diag_output_mod::write_axis_meta_data", &
