@@ -33,8 +33,7 @@ program test_read_input_nml
 character(len=200) :: line !< Storage location of lines read from the input nml
 character(len=128) :: filename !< Name of input nml file to be read
 integer :: stat !< IOSTAT output integer
-integer :: n, m !< Looping variables
-integer :: pelist_name_size !< Size of current pelist_name
+integer :: n !< Counts the line number in the file being read
 namelist /test_read_input_nml_nml/ test_numb
 
 open(10, file="test_numb.nml", form="formatted", status="old")
@@ -77,13 +76,11 @@ else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
   ! pelist_name_in would be one who's size is greater than local pelist_name
   call mpp_init ! Initialize mpp        
-  pelist_name_size = LEN(mpp_get_current_pelist_name())
+  call read_input_nml(mpp_get_current_pelist_name()//"e")
                                                           ! Call read_input_nml
                                                           ! with the local
                                                           ! pelist_name plus an
-                                                          ! extra character
+                                                          ! extra character "e"
   call mpp_exit() ! Exit mpp
-
 end if
-
 end program test_read_input_nml
