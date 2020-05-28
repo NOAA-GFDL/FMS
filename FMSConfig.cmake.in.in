@@ -17,6 +17,8 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
+@PACKAGE_INIT@
+
 set(libFMSVersion "@PACKAGE_VERSION@")
 set_and_check(libFMS_INSTALL_PREFIX "@PACKAGE_CMAKE_INSTALL_PREFIX@")
 set_and_check(libFMS_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")

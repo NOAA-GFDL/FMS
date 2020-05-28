@@ -1,5 +1,5 @@
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#b*                   GNU Lesser General Public License
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
@@ -24,12 +24,12 @@ if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
 else()
 
   if("@PACKAGE_VERSION@" MATCHES "^([0-9]+)\\.")
-    set(libFMS_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    set(FMS_VERSION_MAJOR "${CMAKE_MATCH_1}")
   else()
-   set(libFMS_VERSION_MAJOR "@PACKAGE_VERSION")
+   set(FMS_VERSION_MAJOR "@PACKAGE_VERSION")
   endif()
 
-  if(PACKAGE_FIND_VERSION_MAJOR STREQUAL libFMS_VERSION_MAJOR)
+  if(PACKAGE_FIND_VERSION_MAJOR STREQUAL FMS_VERSION_MAJOR)
     set(PACKAGE_VERSION_COMPATIBLE TRUE)
   else()
     set(PACKAGE_VERSION_COMPATIBLE FALSE)
