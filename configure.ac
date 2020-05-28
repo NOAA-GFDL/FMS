@@ -133,7 +133,7 @@ if `echo $FC_NOFLAGS | grep ^/ >/dev/null 2>&1`; then
 else
   FC_VERSION="$FC";
   for x in `echo $PATH | sed -e 's/:/ /g'`; do
-    if test -x $x/$CF_NOFLAGS; then
+    if test -x $x/$FC_NOFLAGS; then
       FC_VERSION="$x/$FC"
       break
     fi
