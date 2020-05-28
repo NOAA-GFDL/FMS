@@ -35,7 +35,8 @@ character(len=128) :: filename !< Name of input nml file to be read
 integer :: stat !< IOSTAT output integer
 integer :: n, m !< Loop counting variable
 integer :: current_pelist_name_len_plus1 !< Current pelist name length plus 1
-character(len=:), allocatable :: toobig 
+character(len=:), allocatable :: toobig !< String passed as argument into read_input_nml that is 
+                                        !!larger than pelis_name and should raise an error
 
 namelist /test_read_input_nml_nml/ test_numb
 
