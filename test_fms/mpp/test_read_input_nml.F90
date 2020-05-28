@@ -34,6 +34,7 @@ character(len=200) :: line !< Storage location of lines read from the input nml
 character(len=128) :: filename !< Name of input nml file to be read
 integer :: stat !< IOSTAT output integer
 integer :: n, m !< Loop counting variable
+integer :: current_pelist_name_len_plus1 !< Current pelist name length plus 1
 character(len=:), allocatable :: toobig 
 
 namelist /test_read_input_nml_nml/ test_numb
@@ -78,6 +79,7 @@ else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
   ! pelist_name_in would be one who's size is greater than local pelist_name
   call mpp_init ! Initialize mpp        
+  current_pelist_name_len_plus1 = LEN(mpp_get_current_pelist_name())
   call read_input_nml(mpp_get_current_pelist_name()//"e")
                                                           ! Call read_input_nml
                                                           ! with the local
