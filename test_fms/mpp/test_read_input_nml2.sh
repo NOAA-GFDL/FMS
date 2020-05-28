@@ -59,8 +59,7 @@ fi
 
 # Test 4
 sed "s/test_numb = [0-9]/test_numb = 4/" test_numb_base.nml > test_numb.nml
-rm input.nml
-touch input.nml # Achieve a blank namelist to be read
+touch input_blank.nml # Achieve a blank namelist to be read
 echo "Running test 4..."
 run_test test_read_input_nml 1
 echo "Test 4 has passed"
