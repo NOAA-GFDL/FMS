@@ -5,7 +5,7 @@ AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2019.01],
+  [2019.01.01],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -102,6 +102,62 @@ AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
 # Define an AM_CONDITIONAL to determine if you are on an Apple/Mac OS X
 AM_CONDITIONAL([APPLE], [test "x$target_vendor" = "xapple"])
 
+
+# Compiler with version information. This consists of the full path
+# name of the compiler and the reported version number.
+AC_SUBST([CC_VERSION])
+# Strip anything that looks like a flag off of $CC
+CC_NOFLAGS=`echo $CC | sed 's/ -.*//'`
+
+if `echo $CC_NOFLAGS | grep ^/ >/dev/null 2>&1`; then
+  CC_VERSION="$CC"
+else
+  CC_VERSION="$CC";
+  for x in `echo $PATH | sed -e 's/:/ /g'`; do
+    if test -x $x/$CC_NOFLAGS; then
+      CC_VERSION="$x/$CC"
+      break
+    fi
+  done
+fi
+if test -n "$cc_version_info"; then
+  CC_VERSION="$CC_VERSION ( $cc_version_info)"
+fi
+
+AC_SUBST([FC_VERSION])
+# Strip anything that looks like a flag off of $FC
+FC_NOFLAGS=`echo $CC | sed 's/ -.*//'`
+
+if `echo $FC_NOFLAGS | grep ^/ >/dev/null 2>&1`; then
+  FC_VERSION="$FC"
+else
+  FC_VERSION="$FC";
+  for x in `echo $PATH | sed -e 's/:/ /g'`; do
+    if test -x $x/$CF_NOFLAGS; then
+      FC_VERSION="$x/$FC"
+      break
+    fi
+  done
+fi
+if test -n "$fc_version_info"; then
+  FC_VERSION="$FC_VERSION ( $fc_version_info )"
+fi
+
+#####
+# Create output variables from various
+# shell variables, for use in generating
+# libnetcdf.settings.
+#####
+AC_SUBST([enable_shared])
+AC_SUBST([enable_static])
+AC_SUBST([CFLAGS])
+AC_SUBST([CPPFLAGS])
+AC_SUBST([LDFLAGS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_LDFLAGS])
+AC_SUBST([NOUNDEFINED])
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
@@ -156,7 +212,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/fft/Makefile
         test_fms/axis_utils/Makefile
         test_fms/mosaic/Makefile
-        libFMSConfig.cmake
-        libFMSConfigVersion.cmake
+        libFMSConfig.cmake.in
+        libFMSConfigVersion.cmake.in
         ])
 AC_OUTPUT()

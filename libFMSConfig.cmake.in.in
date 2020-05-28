@@ -29,14 +29,15 @@ set(libFMS_LIBRARIES FMS:fms)
 
 set(libFMS_C_COMPILER "@CC_VERSION@")
 set(libFMS_C_COMPILER_FLAGS "@CFLAGS@")
-set(libFMS_FC_COMPILER @FC_VERSION@")
+set(libFMS_FC_COMPILER "@FC_VERSION@")
 set(libFMS_FC_COMPILER_FLAGS "@FCFLAGS@")
 set(LIBFMS_CPP_FLAGS "@CPPFLAGS@")
 set(libFMS_LDFLAGS "@LDFLAGS@")
 set(libFMS_SHARED "@enable_shared@")
-set(libFMS_STATIC "@enabme_static@")
+set(libFMS_STATIC "@enable_static@")
 
 # Features
-set(libFMS_HAS_MPI @HAS_MPI@)
-set(libFMS_HAS_MIXEDMODE @HAS_MIXEDMODE@)
+# To be used with a later update.
+set(libFMS_HAS_MPI @with_mpi@)
+set(libFMS_HAS_MIXEDMODE @enable_mixed_mode@)
 
