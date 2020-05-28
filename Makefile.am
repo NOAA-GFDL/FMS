@@ -35,6 +35,8 @@ cmakedir = $(libdir)
 cmake_DATA = FMSConfig.cmake \
   FMSConfigVersion.cmake
  
+clean-local:
+	-rm -f FMSConfig.cmake FMSConfigVersion.cmake
 EXTRA_DIST = README.md _package_init_cmake
 
 CLEANFILES = *__genmod.mod *__genmod.f90
