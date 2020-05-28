@@ -70,7 +70,7 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     end if
   end do
   close(1)
-  deallocate( toobig )
+  !deallocate( toobig )
   call mpp_exit()
 
 else if (test_numb.eq.3) then
