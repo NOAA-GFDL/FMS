@@ -33,7 +33,9 @@ program test_read_input_nml
 character(len=200) :: line !< Storage location of lines read from the input nml
 character(len=128) :: filename !< Name of input nml file to be read
 integer :: stat !< IOSTAT output integer
-integer :: n !< Counts the line number in the file being read
+integer :: n, m !< Loop counting variable
+character(len=:), allocatable :: toobig 
+
 namelist /test_read_input_nml_nml/ test_numb
 
 open(10, file="test_numb.nml", form="formatted", status="old")
