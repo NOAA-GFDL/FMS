@@ -32,7 +32,6 @@ program test_read_input_nml
 
 character(len=200) :: line !< Storage location of lines read from the input nml
 character(len=128) :: filename !< Name of input nml file to be read
-!character(len=200), allocatable :: toobig !< pelist_name_in that is too large
 integer :: stat !< IOSTAT output integer
 integer :: n !< pelist_name_in size being counted
 integer :: pelist_name_size !< Size of current pelist_name
@@ -70,7 +69,6 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     end if
   end do
   close(1)
-  !deallocate( toobig )
   call mpp_exit()
 
 else if (test_numb.eq.3) then
@@ -78,13 +76,10 @@ else if (test_numb.eq.3) then
   ! pelist_name_in would be one who's size is greater than local pelist_name
   call mpp_init ! Initialize mpp        
   pelist_name_size = LEN(mpp_get_current_pelist_name())
-  !allocate( character(len=pelist_name_size) :: toobig )
-  !call read_input_nml(toobig)
                                                           ! Call read_input_nml
                                                           ! with the local
                                                           ! pelist_name plus an
                                                           ! extra character
-  !deallocate( toobig )
   call mpp_exit() ! Exit mpp
 
 end if
