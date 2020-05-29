@@ -35,6 +35,7 @@ MODULE diag_axis_mod
 
   USE mpp_domains_mod, ONLY: domainUG, domain1d, domain2d, mpp_get_compute_domain,&
        & mpp_get_domain_components, null_domain1d, null_domain2d, null_domainUG,&
+       & NORTH, EAST, CENTER, &
        & OPERATOR(.NE.), mpp_get_global_domain, mpp_get_domain_name
   USE fms_mod, ONLY: error_mesg, write_version_number, lowercase, uppercase,&
        & fms_error_handler, FATAL, NOTE
@@ -54,7 +55,8 @@ MODULE diag_axis_mod
        & get_tile_count, get_axes_shift, get_diag_axis_name,&
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
        & get_domainUG, axis_compatible_check, axis_is_compressed, &
-       & get_compressed_axes_ids, get_axis_reqfld
+       & get_compressed_axes_ids, get_axis_reqfld, &
+       & NORTH, EAST, CENTER
 
   ! Module variables
   ! Parameters
@@ -152,8 +154,11 @@ CONTAINS
   !     Required field names.
   !   </IN>
   !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
+  !   <IN NAME="domain_position" TYPE="INTEGER, OPTIONAL">
+  !     NOT USED. This is for use in future releases.
+  !   </IN>
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
-       & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count)
+       & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position)
     CHARACTER(len=*), INTENT(in) :: name
     REAL, DIMENSION(:), INTENT(in) :: DATA
     CHARACTER(len=*), INTENT(in) :: units
@@ -165,6 +170,7 @@ CONTAINS
     TYPE(domainUG), INTENT(in), OPTIONAL :: DomainU
     CHARACTER(len=*), INTENT(in), OPTIONAL :: aux, req
     INTEGER, INTENT(in), OPTIONAL :: tile_count
+    INTEGER, INTENT(in), OPTIONAL :: domain_position
 
     TYPE(domain1d) :: domain_x, domain_y
     INTEGER :: ierr, axlen
