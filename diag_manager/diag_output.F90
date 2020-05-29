@@ -211,7 +211,9 @@ CONTAINS
        write(mype_string,'(I0.4)') mype
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
-                            nc_format="64bit", is_restart=.false.))
+                    nc_format="64bit", is_restart=.false.))
+               !< For regional subaxis add the NumFilesInSet, which is automatically added by fms2_io for other 
+               !< domains for which it has sufficient decomposition info. mppnccombine will work with an entry of zero.
                call register_global_attribute(fileobjND, "NumFilesInSet", 0)
         endif
        fnum_domain = "nd" ! no domain
@@ -402,6 +404,8 @@ integer :: domain_size, axis_length, axis_pos
                               case (-1)
                                    call register_variable_attribute(fptr, axis_name, "positive", "down")
                          end select
+                         !< For regional subaxis add the domain_decomposition, which is automatically added by fms2_io
+                         !< for other domains for which it has sufficient decomposition info..
                          call register_variable_attribute(fptr, axis_name, "domain_decomposition", &
                                         (/gstart, gend, cstart, cend/))
                                 
