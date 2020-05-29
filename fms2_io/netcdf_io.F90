@@ -45,7 +45,7 @@ integer, parameter :: dimension_not_found = 0
 integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of compressed
                                                            !! dimensions allowed.
 integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and nc_create
-integer, private :: fms2_header_buffer_val = 16384  !< value used in NF__ENDDEF
+integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
 !> @brief Restart variable.
 type :: RestartVariable_t
@@ -284,6 +284,7 @@ subroutine set_netcdf_mode(ncid, mode)
       return
     endif
   elseif (mode .eq. data_mode) then
+    if (fms2_header_buffer_val == -1) call error("set_netcdf_mode: fms2_header_buffer_val not set, call fms2_io_init")
     err = nf90_enddef(ncid, h_minfree=fms2_header_buffer_val)
     if (err .eq. nf90_enotindefine .or. err .eq. nf90_eperm) then
       return
