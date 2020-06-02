@@ -109,8 +109,7 @@ use fms2_io_mod,       only : FmsNetcdfFile_t, file_exists, dimension_exists, &
                               get_num_variables, get_dimension_size,   &
                               get_variable_units, get_variable_names,  &
                               get_time_calendar, close_file,           &
-                              get_variable_dimension_names, get_variable_sense, &
-                              check_if_open
+                              get_variable_dimension_names, get_variable_sense
 use horiz_interp_mod,  only : horiz_interp_type, &
                               horiz_interp_new,  &
                               horiz_interp_init, &
@@ -432,14 +431,16 @@ type(interpolate_type), intent(inout) :: Out
 
 end subroutine interpolate_type_eq
 
-!> \brief check_if_initiliazed checks if a filename and a set of variable names
+!> \brief check_if_initialized checks if a filename and a set of variable names
 !!  has already been used in another interpolator_init call
 !! \param [inout] <clim_type> Climatology type
 !! \param [in] <file_name> Climatology filename
-!! \param [in] <j> j=-1, file has not been opened j=0: file was opened and the variable(s)
+!! \param [in] <local_data_names> List of variable names to check if were
+!!  already initialized
+!! \param [out] <j> j=-1, file has not been opened j=0: file was opened and the variable(s)
 !!  have been read j>0: index where filename was found, but the variable have not been read
 
-function check_if_initiliazed (clim_type, file_name, local_data_names) result(j)
+function check_if_initialized (clim_type, file_name, local_data_names) result(j)
 type(interpolate_type), intent(inout)   :: clim_type
 character(len=*), intent(in)            :: file_name
 character(len=*), pointer, intent(in)   :: local_data_names(:)
@@ -473,7 +474,7 @@ do i = 1, num_files
     endif
 end do
 
-end function check_if_initiliazed
+end function check_if_initialized
 
 !#######################################################################
 !
@@ -574,7 +575,7 @@ num_fields = 0
 if (present(data_names)) local_data_names => data_names
 
 src_file = 'INPUT/'//trim(file_name)
-file_found_index = check_if_initiliazed (clim_type, file_name, local_data_names)
+file_found_index = check_if_initialized (clim_type, file_name, local_data_names)
 if (associated(local_data_names)) nullify(local_data_names)
 
 if (file_found_index == 0) then
