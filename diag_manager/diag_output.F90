@@ -212,7 +212,6 @@ CONTAINS
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
                             is_restart=.false.))
-        endif
                !< For regional subaxis add the NumFilesInSet attribute, which is added by fms2_io for (other)
                !< domains with sufficient decomposition info. Note mppnccombine will work with an entry of zero.
                call register_global_attribute(fileobjND, "NumFilesInSet", 0)
