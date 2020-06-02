@@ -214,20 +214,22 @@ end interface read_new_restart
 
 logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
 !< Namelist variables
-integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file 
+integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
-
-integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size (in bytes) used in
+character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf file format, acceptable values
+                              !! are: "64bit", "classic", "netcdf4". This can be overwritten if you specify
+                              !! "nc_format" in the open_file call
+integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size(in bytes) used in
                                      !! NF__ENDDEF
 namelist / fms2_io_nml / &
-                      ncchksz, header_buffer_val
+                      ncchksz, netcdf_default_format, header_buffer_val
 
 contains
 
 !> @brief Reads the fms2_io_nml
 subroutine fms2_io_init ()
  integer :: mystat
- 
+
 !> Check if the module has already been initialized
   if (fms2_io_is_initialized) return
 !> Call initialization routines that this module depends on
@@ -239,12 +241,12 @@ subroutine fms2_io_init ()
   if (ncchksz .le. 0) then
         call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
   endif
+  call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format)
   if (header_buffer_val .le. 0) then
         call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
   endif
-  call netcdf_io_init (ncchksz, header_buffer_val)
   call blackboxio_init (ncchksz)
-!> Mark the fms2_io as initialized 
+!> Mark the fms2_io as initialized
   fms2_io_is_initialized = .true.
 end subroutine fms2_io_init
 
