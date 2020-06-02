@@ -244,6 +244,7 @@ subroutine fms2_io_init ()
   call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format)
   if (header_buffer_val .le. 0) then
         call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
+  endif
   call blackboxio_init (ncchksz)
 !> Mark the fms2_io as initialized
   fms2_io_is_initialized = .true.
