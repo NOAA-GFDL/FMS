@@ -3543,7 +3543,7 @@ endif
 if (module_is_initialized) then
    !! if this is the first time calling interpolator_end, close all files
    do i = 1, num_files
-      if (check_if_open(init_interpolator_types(i)%fileobj)) call close_file(init_interpolator_types(i)%fileobj)
+      call close_file(init_interpolator_types(i)%fileobj)
    enddo
    module_is_initialized = .false.
 endif
