@@ -102,35 +102,37 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: xdim_index
-  integer :: ydim_index
-  type(domain2d), pointer :: io_domain
-  integer :: xpos
-  integer :: ypos
-  integer :: xmax
-  integer :: ymax
-  integer :: isd
-  integer :: isc
-  integer :: xc_size
-  integer :: jsd
-  integer :: jsc
-  integer :: yc_size
-  logical :: buffer_includes_halos
-
-
-  integer, dimension(2) :: c
-  integer, dimension(2) :: e
-  integer, dimension(:), allocatable :: pe_isc
-  integer, dimension(:), allocatable :: pe_icsize
-  integer, dimension(:), allocatable :: pe_jsc
-  integer, dimension(:), allocatable :: pe_jcsize
-  integer :: min_pe_isc
-  integer :: min_pe_jsc
-  integer :: i
   integer(kind=int32), dimension(:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:), allocatable :: buf_real64
+  logical :: buffer_includes_halos
+  integer, dimension(2) :: c
+  integer, dimension(2) :: e
+  integer(kind=int32), dimension(:,:), allocatable :: global_buf_int32
+  integer(kind=int64), dimension(:,:), allocatable :: global_buf_int64
+  real(kind=real32), dimension(:,:), allocatable :: global_buf_real32
+  real(kind=real64), dimension(:,:), allocatable :: global_buf_real64
+  integer :: i
+  type(domain2d), pointer :: io_domain
+  integer :: isc
+  integer :: isd
+  integer :: jsc
+  integer :: jsd
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
+  integer, dimension(:), allocatable :: pe_icsize
+  integer, dimension(:), allocatable :: pe_iec
+  integer, dimension(:), allocatable :: pe_isc
+  integer, dimension(:), allocatable :: pe_jcsize
+  integer, dimension(:), allocatable :: pe_jec
+  integer, dimension(:), allocatable :: pe_jsc
+  integer :: xc_size
+  integer :: xdim_index
+  integer :: xpos
+  integer :: ydim_index
+  integer :: ypos
+  integer :: yc_size
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -149,15 +151,34 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   !I/O root gathers the data and writes it.
   if (fileobj%is_root) then
     allocate(pe_isc(size(fileobj%pelist)))
+    allocate(pe_iec(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
-    allocate(pe_jsc(size(fileobj%pelist)))
-    allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
-    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
-    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xend=pe_iec, xsize=pe_icsize, &
+                                 position=xpos)
     min_pe_isc = minval(pe_isc)
+    allocate(pe_jsc(size(fileobj%pelist)))
+    allocate(pe_jec(size(fileobj%pelist)))
+    allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
+                                 position=ypos)
     min_pe_jsc = minval(pe_jsc)
+
+    !Write the out the data.
+    e(xdim_index) = maxval(pe_iec) - min_pe_isc + 1
+    e(ydim_index) = maxval(pe_jec) - min_pe_jsc + 1
+    select type(vdata)
+      type is (integer(kind=int32))
+        call allocate_array(global_buf_int32, e)
+      type is (integer(kind=int64))
+        call allocate_array(global_buf_int64, e)
+      type is (real(kind=real32))
+        call allocate_array(global_buf_real32, e)
+      type is (real(kind=real64))
+        call allocate_array(global_buf_real64, e)
+      class default
+        call error("unsupported type.")
+    end select
+
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - min_pe_isc + 1
       c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
@@ -184,10 +205,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int32, global_buf_int32, c, e)
           deallocate(buf_int32)
         type is (integer(kind=int64))
           call allocate_array(buf_int64, e)
@@ -209,10 +228,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int64, global_buf_int64, c, e)
           deallocate(buf_int64)
         type is (real(kind=real32))
           call allocate_array(buf_real32, e)
@@ -234,10 +251,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real32, global_buf_real32, c, e)
           deallocate(buf_real32)
         type is (real(kind=real64))
           call allocate_array(buf_real64, e)
@@ -259,19 +274,37 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real64, global_buf_real64, c, e)
           deallocate(buf_real64)
-        class default
-          call error("unsupported type.")
       end select
     enddo
     deallocate(pe_isc)
+    deallocate(pe_iec)
     deallocate(pe_icsize)
     deallocate(pe_jsc)
+    deallocate(pe_jec)
     deallocate(pe_jcsize)
+
+    !Write the out the data.
+    select type(vdata)
+      type is (integer(kind=int32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int32)
+      type is (integer(kind=int64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int64)
+      type is (real(kind=real32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real32)
+      type is (real(kind=real64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real64)
+    end select
   else
     if (buffer_includes_halos) then
       c(xdim_index) = isc - isd + 1
@@ -279,28 +312,34 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
         call get_array_section(buf_int32, vdata, c, e)
         call mpp_send(buf_int32, size(buf_int32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
         call allocate_array(buf_int64, e)
         call get_array_section(buf_int64, vdata, c, e)
         call mpp_send(buf_int64, size(buf_int64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int64)
       type is (real(kind=real32))
         call allocate_array(buf_real32, e)
         call get_array_section(buf_real32, vdata, c, e)
         call mpp_send(buf_real32, size(buf_real32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real32)
       type is (real(kind=real64))
         call allocate_array(buf_real64, e)
         call get_array_section(buf_real64, vdata, c, e)
         call mpp_send(buf_real64, size(buf_real64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select
-    call mpp_sync_self(check=EVENT_SEND)
   endif
 end subroutine domain_write_2d
 
@@ -328,35 +367,37 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: xdim_index
-  integer :: ydim_index
-  type(domain2d), pointer :: io_domain
-  integer :: xpos
-  integer :: ypos
-  integer :: xmax
-  integer :: ymax
-  integer :: isd
-  integer :: isc
-  integer :: xc_size
-  integer :: jsd
-  integer :: jsc
-  integer :: yc_size
-  logical :: buffer_includes_halos
-
-
-  integer, dimension(3) :: c
-  integer, dimension(3) :: e
-  integer, dimension(:), allocatable :: pe_isc
-  integer, dimension(:), allocatable :: pe_icsize
-  integer, dimension(:), allocatable :: pe_jsc
-  integer, dimension(:), allocatable :: pe_jcsize
-  integer :: min_pe_isc
-  integer :: min_pe_jsc
-  integer :: i
   integer(kind=int32), dimension(:,:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:), allocatable :: buf_real64
+  logical :: buffer_includes_halos
+  integer, dimension(3) :: c
+  integer, dimension(3) :: e
+  integer(kind=int32), dimension(:,:,:), allocatable :: global_buf_int32
+  integer(kind=int64), dimension(:,:,:), allocatable :: global_buf_int64
+  real(kind=real32), dimension(:,:,:), allocatable :: global_buf_real32
+  real(kind=real64), dimension(:,:,:), allocatable :: global_buf_real64
+  integer :: i
+  type(domain2d), pointer :: io_domain
+  integer :: isc
+  integer :: isd
+  integer :: jsc
+  integer :: jsd
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
+  integer, dimension(:), allocatable :: pe_icsize
+  integer, dimension(:), allocatable :: pe_iec
+  integer, dimension(:), allocatable :: pe_isc
+  integer, dimension(:), allocatable :: pe_jcsize
+  integer, dimension(:), allocatable :: pe_jec
+  integer, dimension(:), allocatable :: pe_jsc
+  integer :: xc_size
+  integer :: xdim_index
+  integer :: xpos
+  integer :: ydim_index
+  integer :: ypos
+  integer :: yc_size
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -375,15 +416,34 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   !I/O root gathers the data and writes it.
   if (fileobj%is_root) then
     allocate(pe_isc(size(fileobj%pelist)))
+    allocate(pe_iec(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
-    allocate(pe_jsc(size(fileobj%pelist)))
-    allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
-    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
-    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xend=pe_iec, xsize=pe_icsize, &
+                                 position=xpos)
     min_pe_isc = minval(pe_isc)
+    allocate(pe_jsc(size(fileobj%pelist)))
+    allocate(pe_jec(size(fileobj%pelist)))
+    allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
+                                 position=ypos)
     min_pe_jsc = minval(pe_jsc)
+
+    !Write the out the data.
+    e(xdim_index) = maxval(pe_iec) - min_pe_isc + 1
+    e(ydim_index) = maxval(pe_jec) - min_pe_jsc + 1
+    select type(vdata)
+      type is (integer(kind=int32))
+        call allocate_array(global_buf_int32, e)
+      type is (integer(kind=int64))
+        call allocate_array(global_buf_int64, e)
+      type is (real(kind=real32))
+        call allocate_array(global_buf_real32, e)
+      type is (real(kind=real64))
+        call allocate_array(global_buf_real64, e)
+      class default
+        call error("unsupported type.")
+    end select
+
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - min_pe_isc + 1
       c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
@@ -410,10 +470,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int32, global_buf_int32, c, e)
           deallocate(buf_int32)
         type is (integer(kind=int64))
           call allocate_array(buf_int64, e)
@@ -435,10 +493,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int64, global_buf_int64, c, e)
           deallocate(buf_int64)
         type is (real(kind=real32))
           call allocate_array(buf_real32, e)
@@ -460,10 +516,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real32, global_buf_real32, c, e)
           deallocate(buf_real32)
         type is (real(kind=real64))
           call allocate_array(buf_real64, e)
@@ -485,19 +539,37 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real64, global_buf_real64, c, e)
           deallocate(buf_real64)
-        class default
-          call error("unsupported type.")
       end select
     enddo
     deallocate(pe_isc)
+    deallocate(pe_iec)
     deallocate(pe_icsize)
     deallocate(pe_jsc)
+    deallocate(pe_jec)
     deallocate(pe_jcsize)
+
+    !Write the out the data.
+    select type(vdata)
+      type is (integer(kind=int32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int32)
+      type is (integer(kind=int64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int64)
+      type is (real(kind=real32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real32)
+      type is (real(kind=real64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real64)
+    end select
   else
     if (buffer_includes_halos) then
       c(xdim_index) = isc - isd + 1
@@ -505,28 +577,34 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
         call get_array_section(buf_int32, vdata, c, e)
         call mpp_send(buf_int32, size(buf_int32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
         call allocate_array(buf_int64, e)
         call get_array_section(buf_int64, vdata, c, e)
         call mpp_send(buf_int64, size(buf_int64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int64)
       type is (real(kind=real32))
         call allocate_array(buf_real32, e)
         call get_array_section(buf_real32, vdata, c, e)
         call mpp_send(buf_real32, size(buf_real32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real32)
       type is (real(kind=real64))
         call allocate_array(buf_real64, e)
         call get_array_section(buf_real64, vdata, c, e)
         call mpp_send(buf_real64, size(buf_real64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select
-    call mpp_sync_self(check=EVENT_SEND)
   endif
 end subroutine domain_write_3d
 
@@ -554,35 +632,37 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: xdim_index
-  integer :: ydim_index
-  type(domain2d), pointer :: io_domain
-  integer :: xpos
-  integer :: ypos
-  integer :: xmax
-  integer :: ymax
-  integer :: isd
-  integer :: isc
-  integer :: xc_size
-  integer :: jsd
-  integer :: jsc
-  integer :: yc_size
-  logical :: buffer_includes_halos
-
-
-  integer, dimension(4) :: c
-  integer, dimension(4) :: e
-  integer, dimension(:), allocatable :: pe_isc
-  integer, dimension(:), allocatable :: pe_icsize
-  integer, dimension(:), allocatable :: pe_jsc
-  integer, dimension(:), allocatable :: pe_jcsize
-  integer :: min_pe_isc
-  integer :: min_pe_jsc
-  integer :: i
   integer(kind=int32), dimension(:,:,:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:,:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:,:), allocatable :: buf_real64
+  logical :: buffer_includes_halos
+  integer, dimension(4) :: c
+  integer, dimension(4) :: e
+  integer(kind=int32), dimension(:,:,:,:), allocatable :: global_buf_int32
+  integer(kind=int64), dimension(:,:,:,:), allocatable :: global_buf_int64
+  real(kind=real32), dimension(:,:,:,:), allocatable :: global_buf_real32
+  real(kind=real64), dimension(:,:,:,:), allocatable :: global_buf_real64
+  integer :: i
+  type(domain2d), pointer :: io_domain
+  integer :: isc
+  integer :: isd
+  integer :: jsc
+  integer :: jsd
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
+  integer, dimension(:), allocatable :: pe_icsize
+  integer, dimension(:), allocatable :: pe_iec
+  integer, dimension(:), allocatable :: pe_isc
+  integer, dimension(:), allocatable :: pe_jcsize
+  integer, dimension(:), allocatable :: pe_jec
+  integer, dimension(:), allocatable :: pe_jsc
+  integer :: xc_size
+  integer :: xdim_index
+  integer :: xpos
+  integer :: ydim_index
+  integer :: ypos
+  integer :: yc_size
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -601,15 +681,34 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   !I/O root gathers the data and writes it.
   if (fileobj%is_root) then
     allocate(pe_isc(size(fileobj%pelist)))
+    allocate(pe_iec(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
-    allocate(pe_jsc(size(fileobj%pelist)))
-    allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
-    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
-    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xend=pe_iec, xsize=pe_icsize, &
+                                 position=xpos)
     min_pe_isc = minval(pe_isc)
+    allocate(pe_jsc(size(fileobj%pelist)))
+    allocate(pe_jec(size(fileobj%pelist)))
+    allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
+                                 position=ypos)
     min_pe_jsc = minval(pe_jsc)
+
+    !Write the out the data.
+    e(xdim_index) = maxval(pe_iec) - min_pe_isc + 1
+    e(ydim_index) = maxval(pe_jec) - min_pe_jsc + 1
+    select type(vdata)
+      type is (integer(kind=int32))
+        call allocate_array(global_buf_int32, e)
+      type is (integer(kind=int64))
+        call allocate_array(global_buf_int64, e)
+      type is (real(kind=real32))
+        call allocate_array(global_buf_real32, e)
+      type is (real(kind=real64))
+        call allocate_array(global_buf_real64, e)
+      class default
+        call error("unsupported type.")
+    end select
+
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - min_pe_isc + 1
       c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
@@ -636,10 +735,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int32, global_buf_int32, c, e)
           deallocate(buf_int32)
         type is (integer(kind=int64))
           call allocate_array(buf_int64, e)
@@ -661,10 +758,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int64, global_buf_int64, c, e)
           deallocate(buf_int64)
         type is (real(kind=real32))
           call allocate_array(buf_real32, e)
@@ -686,10 +781,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real32, global_buf_real32, c, e)
           deallocate(buf_real32)
         type is (real(kind=real64))
           call allocate_array(buf_real64, e)
@@ -711,19 +804,37 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real64, global_buf_real64, c, e)
           deallocate(buf_real64)
-        class default
-          call error("unsupported type.")
       end select
     enddo
     deallocate(pe_isc)
+    deallocate(pe_iec)
     deallocate(pe_icsize)
     deallocate(pe_jsc)
+    deallocate(pe_jec)
     deallocate(pe_jcsize)
+
+    !Write the out the data.
+    select type(vdata)
+      type is (integer(kind=int32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int32)
+      type is (integer(kind=int64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int64)
+      type is (real(kind=real32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real32)
+      type is (real(kind=real64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real64)
+    end select
   else
     if (buffer_includes_halos) then
       c(xdim_index) = isc - isd + 1
@@ -731,28 +842,34 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
         call get_array_section(buf_int32, vdata, c, e)
         call mpp_send(buf_int32, size(buf_int32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
         call allocate_array(buf_int64, e)
         call get_array_section(buf_int64, vdata, c, e)
         call mpp_send(buf_int64, size(buf_int64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int64)
       type is (real(kind=real32))
         call allocate_array(buf_real32, e)
         call get_array_section(buf_real32, vdata, c, e)
         call mpp_send(buf_real32, size(buf_real32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real32)
       type is (real(kind=real64))
         call allocate_array(buf_real64, e)
         call get_array_section(buf_real64, vdata, c, e)
         call mpp_send(buf_real64, size(buf_real64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select
-    call mpp_sync_self(check=EVENT_SEND)
   endif
 end subroutine domain_write_4d
 
@@ -780,35 +897,37 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: xdim_index
-  integer :: ydim_index
-  type(domain2d), pointer :: io_domain
-  integer :: xpos
-  integer :: ypos
-  integer :: xmax
-  integer :: ymax
-  integer :: isd
-  integer :: isc
-  integer :: xc_size
-  integer :: jsd
-  integer :: jsc
-  integer :: yc_size
-  logical :: buffer_includes_halos
-
-
-  integer, dimension(5) :: c
-  integer, dimension(5) :: e
-  integer, dimension(:), allocatable :: pe_isc
-  integer, dimension(:), allocatable :: pe_icsize
-  integer, dimension(:), allocatable :: pe_jsc
-  integer, dimension(:), allocatable :: pe_jcsize
-  integer :: min_pe_isc
-  integer :: min_pe_jsc
-  integer :: i
   integer(kind=int32), dimension(:,:,:,:,:), allocatable :: buf_int32
   integer(kind=int64), dimension(:,:,:,:,:), allocatable :: buf_int64
   real(kind=real32), dimension(:,:,:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:,:,:), allocatable :: buf_real64
+  logical :: buffer_includes_halos
+  integer, dimension(5) :: c
+  integer, dimension(5) :: e
+  integer(kind=int32), dimension(:,:,:,:,:), allocatable :: global_buf_int32
+  integer(kind=int64), dimension(:,:,:,:,:), allocatable :: global_buf_int64
+  real(kind=real32), dimension(:,:,:,:,:), allocatable :: global_buf_real32
+  real(kind=real64), dimension(:,:,:,:,:), allocatable :: global_buf_real64
+  integer :: i
+  type(domain2d), pointer :: io_domain
+  integer :: isc
+  integer :: isd
+  integer :: jsc
+  integer :: jsd
+  integer :: min_pe_isc
+  integer :: min_pe_jsc
+  integer, dimension(:), allocatable :: pe_icsize
+  integer, dimension(:), allocatable :: pe_iec
+  integer, dimension(:), allocatable :: pe_isc
+  integer, dimension(:), allocatable :: pe_jcsize
+  integer, dimension(:), allocatable :: pe_jec
+  integer, dimension(:), allocatable :: pe_jsc
+  integer :: xc_size
+  integer :: xdim_index
+  integer :: xpos
+  integer :: ydim_index
+  integer :: ypos
+  integer :: yc_size
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -827,15 +946,34 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   !I/O root gathers the data and writes it.
   if (fileobj%is_root) then
     allocate(pe_isc(size(fileobj%pelist)))
+    allocate(pe_iec(size(fileobj%pelist)))
     allocate(pe_icsize(size(fileobj%pelist)))
-    allocate(pe_jsc(size(fileobj%pelist)))
-    allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_global_domain(io_domain, xend=xmax, position=xpos)
-    call mpp_get_global_domain(io_domain, yend=ymax, position=ypos)
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
-    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xend=pe_iec, xsize=pe_icsize, &
+                                 position=xpos)
     min_pe_isc = minval(pe_isc)
+    allocate(pe_jsc(size(fileobj%pelist)))
+    allocate(pe_jec(size(fileobj%pelist)))
+    allocate(pe_jcsize(size(fileobj%pelist)))
+    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
+                                 position=ypos)
     min_pe_jsc = minval(pe_jsc)
+
+    !Write the out the data.
+    e(xdim_index) = maxval(pe_iec) - min_pe_isc + 1
+    e(ydim_index) = maxval(pe_jec) - min_pe_jsc + 1
+    select type(vdata)
+      type is (integer(kind=int32))
+        call allocate_array(global_buf_int32, e)
+      type is (integer(kind=int64))
+        call allocate_array(global_buf_int64, e)
+      type is (real(kind=real32))
+        call allocate_array(global_buf_real32, e)
+      type is (real(kind=real64))
+        call allocate_array(global_buf_real64, e)
+      class default
+        call error("unsupported type.")
+    end select
+
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i) - min_pe_isc + 1
       c(ydim_index) = pe_jsc(i) - min_pe_jsc + 1
@@ -862,10 +1000,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int32, size(buf_int32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int32, global_buf_int32, c, e)
           deallocate(buf_int32)
         type is (integer(kind=int64))
           call allocate_array(buf_int64, e)
@@ -887,10 +1023,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_int64, size(buf_int64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_int64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_int64, global_buf_int64, c, e)
           deallocate(buf_int64)
         type is (real(kind=real32))
           call allocate_array(buf_real32, e)
@@ -912,10 +1046,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real32, size(buf_real32), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real32, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real32, global_buf_real32, c, e)
           deallocate(buf_real32)
         type is (real(kind=real64))
           call allocate_array(buf_real64, e)
@@ -937,19 +1069,37 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
             !Receive data from non-root ranks.
             call mpp_recv(buf_real64, size(buf_real64), fileobj%pelist(i), block=.true.)
           endif
-          !Write the out the data.
-          call netcdf_write_data(fileobj, variable_name, buf_real64, &
-                                 unlim_dim_level=unlim_dim_level, corner=c, &
-                                 edge_lengths=e)
+          !Put local data into the global buffer.
+          call put_array_section(buf_real64, global_buf_real64, c, e)
           deallocate(buf_real64)
-        class default
-          call error("unsupported type.")
       end select
     enddo
     deallocate(pe_isc)
+    deallocate(pe_iec)
     deallocate(pe_icsize)
     deallocate(pe_jsc)
+    deallocate(pe_jec)
     deallocate(pe_jcsize)
+
+    !Write the out the data.
+    select type(vdata)
+      type is (integer(kind=int32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int32)
+      type is (integer(kind=int64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_int64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_int64)
+      type is (real(kind=real32))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real32, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real32)
+      type is (real(kind=real64))
+        call netcdf_write_data(fileobj, variable_name, global_buf_real64, &
+                               unlim_dim_level=unlim_dim_level)
+        deallocate(global_buf_real64)
+    end select
   else
     if (buffer_includes_halos) then
       c(xdim_index) = isc - isd + 1
@@ -957,27 +1107,33 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
     e(xdim_index) = xc_size
     e(ydim_index) = yc_size
-
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(buf_int32, e)
         call get_array_section(buf_int32, vdata, c, e)
         call mpp_send(buf_int32, size(buf_int32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int32)
       type is (integer(kind=int64))
         call allocate_array(buf_int64, e)
         call get_array_section(buf_int64, vdata, c, e)
         call mpp_send(buf_int64, size(buf_int64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_int64)
       type is (real(kind=real32))
         call allocate_array(buf_real32, e)
         call get_array_section(buf_real32, vdata, c, e)
         call mpp_send(buf_real32, size(buf_real32), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real32)
       type is (real(kind=real64))
         call allocate_array(buf_real64, e)
         call get_array_section(buf_real64, vdata, c, e)
         call mpp_send(buf_real64, size(buf_real64), fileobj%io_root)
+        call mpp_sync_self(check=event_send)
+        deallocate(buf_real64)
       class default
         call error("unsupported type.")
     end select
-    call mpp_sync_self(check=EVENT_SEND)
   endif
 end subroutine domain_write_5d
