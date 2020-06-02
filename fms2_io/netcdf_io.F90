@@ -262,7 +262,7 @@ character (len = 10), intent(in) :: netcdf_default_format
      call string_copy(fms2_nc_format, "netcdf4")
  else
      call error("unrecognized netcdf file format "//trim(netcdf_default_format)// &
-       ". The acceptable values are 64bit, classic, netcdf4. Check fms2io namelist")
+     '. The acceptable values are "64bit", "classic", "netcdf4". Check fms2_io_nml: netcdf_default_format')
  endif
 
 end subroutine netcdf_io_init
