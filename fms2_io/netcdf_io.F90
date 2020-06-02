@@ -47,6 +47,8 @@ integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of 
 integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and nc_create
 integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used in nc_create
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
+integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
+
 !> @brief Restart variable.
 type :: RestartVariable_t
   character(len=256) :: varname !< Variable name.
@@ -246,11 +248,13 @@ end interface get_variable_attribute
 contains
 
 !> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
-subroutine netcdf_io_init (chksz, netcdf_default_format)
+subroutine netcdf_io_init (chksz, header_buffer_val, netcdf_default_format)
 integer, intent(in) :: chksz
 character (len = 10), intent(in) :: netcdf_default_format
+integer, intent(in) :: header_buffer_val
 
  fms2_ncchksz = chksz
+ fms2_header_buffer_val = header_buffer_val
  if (string_compare(netcdf_default_format, "64bit", .true.)) then
      fms2_nc_format_param = nf90_64bit_offset
      call string_copy(fms2_nc_format, "64bit")
@@ -297,7 +301,8 @@ subroutine set_netcdf_mode(ncid, mode)
       return
     endif
   elseif (mode .eq. data_mode) then
-    err = nf90_enddef(ncid)
+    if (fms2_header_buffer_val == -1) call error("set_netcdf_mode: fms2_header_buffer_val not set, call fms2_io_init")
+    err = nf90_enddef(ncid, h_minfree=fms2_header_buffer_val)
     if (err .eq. nf90_enotindefine .or. err .eq. nf90_eperm) then
       return
     endif
