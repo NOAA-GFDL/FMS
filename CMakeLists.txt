@@ -195,12 +195,12 @@ write_basic_package_version_file(
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion )
 # Update the ConfigVersion.cmake file with its correspoding .in file
-configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/FMSConfigVersion.cmake.in
+configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/FMSConfigVersion.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/FMSConfigVersion.cmake
     INSTALL_DESTINATION ${INSTALL_CONFIGDIR} )
 
 # Also update the FMSConfig.cmake file with its corresponding .in file
-configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/FMSConfig.cmake.in
+configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/FMSConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/FMSConfig.cmake
     INSTALL_DESTINATION ${INSTALL_CONFIGDIR} )
   
