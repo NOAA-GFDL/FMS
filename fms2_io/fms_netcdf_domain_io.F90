@@ -546,6 +546,34 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
   endif
+
+! Calculate the variable's checksum and write it to the netcdf file
+  do i = 1, fileobj%num_restart_vars
+    if (associated(fileobj%restart_vars(i)%data2d)) then
+      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                       fileobj%restart_vars(i)%data2d, is_decomposed)
+      if (is_decomposed) then
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                         "checksum", chksum)
+      endif
+    elseif (associated(fileobj%restart_vars(i)%data3d)) then
+      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                       fileobj%restart_vars(i)%data3d, is_decomposed)
+      if (is_decomposed) then
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                         "checksum", chksum)
+      endif
+    elseif (associated(fileobj%restart_vars(i)%data4d)) then
+      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                       fileobj%restart_vars(i)%data4d, is_decomposed)
+      if (is_decomposed) then
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                         "checksum", chksum)
+      endif
+    endif
+  enddo
+
+! Write the variable's data to the netcdf file
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
       call domain_write_0d(fileobj, fileobj%restart_vars(i)%varname, &
@@ -556,34 +584,17 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
     elseif (associated(fileobj%restart_vars(i)%data2d)) then
       call domain_write_2d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data2d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data2d, is_decomposed)
-      if (is_decomposed) then
-        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
-      endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       call domain_write_3d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data3d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data3d, is_decomposed)
-      if (is_decomposed) then
-        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
-      endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data4d, is_decomposed)
-      if (is_decomposed) then
-        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
-      endif
     else
-      call error("this branch should not be reached.")
+      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d.  The data sent in has an unsupported dimensionality")
     endif
   enddo
+
 end subroutine save_domain_restart
 
 
