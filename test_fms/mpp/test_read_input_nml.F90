@@ -86,7 +86,7 @@ else if (test_numb.eq.3) then
   call mpp_init ! Initialize mpp        
   current_pelist_name_len_plus1 = LEN(mpp_get_current_pelist_name())
   allocate(character(len=current_pelist_name_len_plus1) :: toobig)
-  call read_input_nml(toobig)
+  call read_input_nml(pelist_name_in=toobig)
                                                           ! Call read_input_nml
                                                           ! with the local
                                                           ! pelist_name plus an
