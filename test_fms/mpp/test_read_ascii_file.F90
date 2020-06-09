@@ -57,7 +57,7 @@ program test_read_ascii_file
       allocate(test_array(num_lines))
       allocate(cur_pelist(0:mpp_npes()-1))
       call mpp_get_current_pelist(cur_pelist)
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array, cur_pelist)
+      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array, PELIST=cur_pelist)
     else if (test_numb == 8) then
       filename = "empty.nml"
       num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
