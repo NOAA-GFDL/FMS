@@ -84,4 +84,7 @@ program test_io_simple
      if (err .ne. 0) stop 90
   endif
 
+  call mpi_barrier(mpi_comm_world, err)
+  call mpi_check(err)
+  call cleanup(test_params)
 end program test_io_simple
