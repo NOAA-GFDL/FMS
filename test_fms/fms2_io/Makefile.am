@@ -38,8 +38,7 @@ test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90 create_atmosphere_domain.in
                        land_unstructured_restart_file_test.inc
 test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 \
                              atmosphere_restart_file_test.inc
-test_io_simple_SOURCES = test_io_simple.F90 argparse.F90 setup.F90	\
-atmosphere_restart_file_test.inc
+test_io_simple_SOURCES = test_io_simple.F90 argparse.F90 setup.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh
 
