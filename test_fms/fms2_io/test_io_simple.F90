@@ -17,6 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+! This is a very simple test of FMS IO.
+
+! Ed Hartnett, 6/10/20
+
 program test_io_simple
   use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64, error_unit, output_unit
   use mpi
@@ -25,7 +29,8 @@ program test_io_simple
   use mpp_domains_mod
   use mpp_mod
   use setup
-
+  use netcdf
+  
   type(Params) :: test_params
   type(domain2d) :: domain
   integer :: err
@@ -35,7 +40,8 @@ program test_io_simple
   integer :: ncchksz = 64*1024 
   character (len = 10) :: netcdf_default_format = "64bit"
   integer :: header_buffer_val = 16384
-  
+  integer ncid
+
   ! Initialize.
   call init(test_params, ntiles)
   call create_cubed_sphere_domain(test_params, domain, (/1, 1/))
@@ -43,10 +49,10 @@ program test_io_simple
   call mpi_check(err)
 
   if (test_params%debug) then
-    if (mpp_pe() .eq. 0) then
-      write(error_unit,'(/a)') &
-        "Running atmosphere (6-tile domain decomposed) restart file test ... "
-    endif
+     if (mpp_pe() .eq. 0) then
+        write(error_unit,'(/a)') &
+             "Running atmosphere (6-tile domain decomposed) restart file test ... "
+     endif
   endif
   call mpi_barrier(mpi_comm_world, err)
   call mpi_check(err)
@@ -54,7 +60,7 @@ program test_io_simple
   !Get the sizes of the I/O compute and data domains.
   io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
-    call mpp_error(fatal, "I/O domain is not associated.")
+     call mpp_error(fatal, "I/O domain is not associated.")
   endif
   call mpp_get_compute_domain(io_domain, xbegin=isc, xend=iec, xsize=nx, ybegin=jsc, yend=jec, ysize=ny)
   call mpp_get_data_domain(io_domain, xbegin=isd, xsize=nxd, ybegin=jsd, ysize=nyd)
@@ -62,12 +68,20 @@ program test_io_simple
   call mpp_get_compute_domain(io_domain, ybegin=jsc_north, yend=jec_north, ysize=ny_north, position=north)
 
   call netcdf_io_init(ncchksz, header_buffer_val, netcdf_default_format)
-  
+
   ! Open a restart file and initialize the file object.
   call open_check(open_file(fileobj, "test_io_simple.nc", "overwrite", &
-                             domain, nc_format="64bit", is_restart=.true.))
+       domain, nc_format="64bit", is_restart=.false.))
 
-  ! ! Close the file.
+  ! Close the file.
   call close_file(fileobj)
+
+  ! Check for expected netcdf file.
+  if (mpp_pe() .eq. 0) then
+     err = nf90_open('test_io_simple.tile1.nc', nf90_nowrite, ncid)
+     if (err .ne. 0) stop 1
+     err = nf90_close(ncid)
+     if (err .ne. 0) stop 90
+  endif
 
 end program test_io_simple
