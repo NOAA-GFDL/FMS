@@ -30,17 +30,36 @@ program test_io_simple
   use mpp_mod
   use setup
   use netcdf
+  implicit none
   
   type(Params) :: test_params
   type(domain2d) :: domain
   integer :: err
   type(domain2d), pointer :: io_domain
+  integer :: isc
+  integer :: iec
+  integer :: nx
+  integer :: jsc
+  integer :: jec
+  integer :: ny
+  integer :: isd
+  integer :: nxd
+  integer :: jsd
+  integer :: nyd
+  integer :: nx_east
+  integer :: isc_east
+  integer :: iec_east
+  integer :: ny_north
+  integer :: jsc_north
+  integer :: jec_north
   type(FmsNetcdfDomainFile_t) :: fileobj
   integer, parameter :: ntiles = 6
   integer :: ncchksz = 64*1024 
   character (len = 10) :: netcdf_default_format = "64bit"
   integer :: header_buffer_val = 16384
   integer :: ncid
+  character (len = 80) :: testfile
+  integer :: numfilesatt
 
   ! Initialize.
   call init(test_params, ntiles)
@@ -80,8 +99,9 @@ program test_io_simple
   if (mpp_pe() .eq. 0) then
      err = nf90_open('test_io_simple.tile1.nc', nf90_nowrite, ncid)
      if (err .ne. 0) stop 2
-     err = nf90_get_att(ncid, NF_GLOBAL, 'NumFilesInSet', numfilesatt)
+     err = nf90_get_att(ncid, NF90_GLOBAL, 'NumFilesInSet', numfilesatt)
      if (err .ne. 0) stop 10
+     if (numfilesatt .ne. 1) stop 11
      err = nf90_close(ncid)
      if (err .ne. 0) stop 90
   endif
