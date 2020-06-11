@@ -23,17 +23,17 @@ program test_mpp_npes
 !! of PEs that are being used to run the program.  MPP_NPES is then called
 !! and the value is compared to NUM_PES.  If the numbers are the same, then
 !! the test is successful.
- use mpp_mod, only : mpp_init, mpp_exit, mpp_npes, &
-                     mpp_error, FATAL
- use mpp_mod, only : input_nml_file
+ use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
+                     mpp_error, FATAL, mpp_initialize_module_for_testing
   implicit none
  integer :: npes !< The total number of PEs returned from mpp_npes
  character (len=20) :: string_npes !< npes converted to a string
  integer :: test_npes !< The number of PEs used to run the program
  character(len=:),allocatable :: env_pes !< test_npes as a string
  integer :: len_env_var !< The length of env_pes
-!> Initialize mpp
- call mpp_init()
+ integer :: ierr !< MPI error return
+!> Initialize MPI
+  call mpp_initialize_module_for_testing()
 !> Find the number of PEs that were used to run the program
  CALL GET_ENVIRONMENT_VARIABLE("NUM_PES",length=len_env_var) !> Get the length
  allocate(character(len=len_env_var) :: env_pes) !> Allocate the string
@@ -47,6 +47,6 @@ program test_mpp_npes
      call mpp_error(FATAL, "The number of PEs used to run the program is "&
      //env_pes//" but mpp_npes returned "//trim(string_npes) )
  endif
-!> Finalize mpp
- call mpp_exit()
+!> Finalize MPI
+ call MPI_FINALIZE (ierr)
 end program test_mpp_npes
