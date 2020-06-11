@@ -169,6 +169,7 @@ module mpp_mod
   use mpi
 #endif
 
+  use iso_fortran_env,   only : INPUT_UNIT, OUTPUT_UNIT, ERROR_UNIT
   use mpp_parameter_mod, only : MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE
   use mpp_parameter_mod, only : NOTE, WARNING, FATAL, MPP_CLOCK_DETAILED,MPP_CLOCK_SYNC
   use mpp_parameter_mod, only : CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER
@@ -1323,10 +1324,11 @@ private
   character(len=32)    :: etcfile='/dev/null'
 #endif
 
+!! REMOVE?
 #ifdef SGICRAY
   integer :: in_unit=100, out_unit=101, err_unit=102 !see intro_io(3F): to see why these values are used rather than 5,6,0
 #else
-  integer :: in_unit=5, out_unit=6, err_unit=0
+  integer :: in_unit=INPUT_UNIT, out_unit=OUTPUT_UNIT, err_unit=ERROR_UNIT
 #endif
 
   integer :: stdout_unit
