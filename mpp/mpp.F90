@@ -1324,13 +1324,8 @@ private
   character(len=32)    :: etcfile='/dev/null'
 #endif
 
-!! REMOVE?
-#ifdef SGICRAY
-  integer :: in_unit=100, out_unit=101, err_unit=102 !see intro_io(3F): to see why these values are used rather than 5,6,0
-#else
+!> Use the intrinsics in iso_fortran_env
   integer :: in_unit=INPUT_UNIT, out_unit=OUTPUT_UNIT, err_unit=ERROR_UNIT
-#endif
-
   integer :: stdout_unit
 
   !--- variables used in mpp_util.h
