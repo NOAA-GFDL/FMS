@@ -23,23 +23,33 @@
 !! less than 0, then an error is thrown. 
 program test_mpp_p5
  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
-                     mpp_error, FATAL
+                     mpp_error, FATAL, mpp_initialize_module_for_testing
  use mpp_mod, only : input_nml_file
   implicit none
+ integer :: ierr
  integer :: total_pes !< The total number of PEs returned from mpp_npes
- integer :: my_pe !< The unique PE identifier
-!> Initialize mpp
- call mpp_init()
+ integer :: my_mpp_pe !< The unique PE identifier
+
+
+!> Initialize MPI to do what mpp_init would do
+!  call MPI_INIT(error)
+!  mpp_comm_private = MPI_COMM_WORLD
+
+!  call MPI_COMM_RANK( mpp_comm_private, pe,   error )
+!  call MPI_COMM_SIZE( mpp_comm_private, npes, error )
+
+  call mpp_initialize_module_for_testing()
+
 !> Get the total number of PEs
  total_pes = mpp_npes()
 !> Get the PE number
- my_pe = mpp_pe()
+ my_mpp_pe = mpp_pe()
 !> Check that the PE number is between 0 and npes-1
- if (my_pe < 0) then 
+ if (my_mpp_pe < 0) then 
      call mpp_error(FATAL, "The PE number is less than 0")
- elseif (my_pe > total_pes-1) then
+ elseif (my_mpp_pe > total_pes-1) then
      call mpp_error(FATAL, "The PE number is greater than npes-1")
  endif
 !> Finalize mpp
- call mpp_exit()
+ call MPI_FINALIZE (ierr)
 end program test_mpp_p5  
