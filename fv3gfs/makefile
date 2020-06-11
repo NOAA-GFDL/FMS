@@ -25,7 +25,7 @@ include ../../NEMS/src/conf/configure.nems
 LIBRARY  = libfms.a
 FMS_INSTALL=$(realpath $(PWD)/..)/FMS_INSTALL
 
-FFLAGS   += -I../include -I../mpp/include -I../fms
+FFLAGS   += -I../include -I../mpp/include -I../fms -I../fms2_io/include
 
 SRCS_f   =
 
@@ -36,6 +36,7 @@ SRCS_F90 = \
          ../amip_interp/amip_interp.F90                                     \
          ../astronomy/astronomy.F90                                         \
          ../axis_utils/axis_utils.F90                                       \
+         ../axis_utils/axis_utils2.F90                                      \
          ../block_control/block_control.F90                                 \
          ../column_diagnostics/column_diagnostics.F90                       \
          ../constants/constants.F90                                         \
@@ -64,6 +65,12 @@ SRCS_F90 = \
          ../field_manager/fm_util.F90                                       \
          ../fms/fms.F90                                                     \
          ../fms/fms_io.F90                                                  \
+         ../fms2_io/blackboxio.F90                                          \
+         ../fms2_io/fms2_io.F90                                             \
+         ../fms2_io/fms_io_utils.F90                                        \
+         ../fms2_io/fms_netcdf_domain_io.F90                                \
+         ../fms2_io/fms_netcdf_unstructured_domain_io.F90                   \
+         ../fms2_io/netcdf_io.F90                                           \
          ../horiz_interp/horiz_interp.F90                                   \
          ../horiz_interp/horiz_interp_bicubic.F90                           \
          ../horiz_interp/horiz_interp_bilinear.F90                          \
@@ -77,6 +84,7 @@ SRCS_F90 = \
          ../mosaic/gradient.F90                                             \
          ../mosaic/grid.F90                                                 \
          ../mosaic/mosaic.F90                                               \
+         ../mosaic/mosaic2.F90                                              \
          ../mpp/mpp.F90                                                     \
          ../mpp/mpp_data.F90                                                \
          ../mpp/mpp_domains.F90                                             \
@@ -93,6 +101,7 @@ SRCS_F90 = \
          ../sat_vapor_pres/sat_vapor_pres_k.F90                             \
          ../time_interp/time_interp.F90                                     \
          ../time_interp/time_interp_external.F90                            \
+         ../time_interp/time_interp_external2.F90                           \
          ../time_manager/get_cal_time.F90                                   \
          ../time_manager/time_manager.F90                                   \
          ../topography/gaussian_topog.F90                                   \
