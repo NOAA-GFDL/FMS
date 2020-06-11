@@ -23,15 +23,11 @@
 !! @email gfdl.climate.model.info@noaa.gov
 
 program test_stdin
-  use mpp_mod, only : mpp_init, mpp_exit
   use mpp_mod, only : mpp_error, FATAL
   use mpp_mod, only : stdin
   use iso_fortran_env, only : INPUT_UNIT
 
   integer :: in_unit !< Stores the returned standard input unit number
-  character(len=128) :: err_msg !< Stores an arbitrary error message
-  logical :: open5 !< Indicates whether unit 5 is open
-  logical :: open100 !< Indicates whether unit 100 is open
 
   in_unit = stdin()
 
