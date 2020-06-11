@@ -43,6 +43,10 @@ program test_io_simple
   character (len = 100) :: testfile
   integer :: ncid
   integer :: numfilesatt
+  character(len=120), dimension(3) :: format
+  format(1) = '64bit'
+  format(2) = 'classic'
+  format(3) = 'netcdf4'
 
   ! Initialize.
   call init(test_params, ntiles)
@@ -83,7 +87,7 @@ program test_io_simple
      do i = 1, 6
         write(testfile,'(a,i1,a)') 'test_io_simple.tile', i, '.nc'
         err = nf90_open(testfile, nf90_nowrite, ncid)
-        if (err .ne. 0) stop 1
+        if (err .ne. 0) stop 7
         err = nf90_get_att(ncid, NF_GLOBAL, 'NumFilesInSet', numfilesatt)
         if (err .ne. 0) stop 10
         if (numfilesatt .ne. 1) stop 11
