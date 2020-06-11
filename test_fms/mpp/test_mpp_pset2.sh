@@ -32,4 +32,10 @@
 ##rm -f diag_test_${tnum}* > /dev/null 2>&1
 ##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
 
-run_test test_mpp_pset 2 skip
+echo "Test 1: Testing how to distribute allocatable arrays"
+sed "s/<test_num>/1/" input_base.nml > input.nml
+run_test test_mpp_pset 2
+
+echo "Test 2: Testing how you create shared auto arrays"
+sed "s/<test_num>/2/" input_base.nml > input.nml
+run_test test_mpp_pset 2
