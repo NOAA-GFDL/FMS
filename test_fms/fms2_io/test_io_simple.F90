@@ -40,7 +40,6 @@ program test_io_simple
   integer :: ncchksz = 64*1024 
   character (len = 10) :: netcdf_default_format = "64bit"
   integer :: header_buffer_val = 16384
-  character (len = 100) :: testfile
   integer :: ncid
   integer :: numfilesatt
   character(len=120), dimension(3) :: format
@@ -84,16 +83,13 @@ program test_io_simple
 
   ! Check for expected netcdf file.
   if (mpp_pe() .eq. 0) then
-     do i = 1, 6
-        write(testfile,'(a,i1,a)') 'test_io_simple.tile', i, '.nc'
-        err = nf90_open(testfile, nf90_nowrite, ncid)
-        if (err .ne. 0) stop 7
-        err = nf90_get_att(ncid, NF_GLOBAL, 'NumFilesInSet', numfilesatt)
-        if (err .ne. 0) stop 10
-        if (numfilesatt .ne. 1) stop 11
-        err = nf90_close(ncid)
-        if (err .ne. 0) stop 90
-     end do
+     err = nf90_open('test_io_simple.tile1.nc', nf90_nowrite, ncid)
+     if (err .ne. 0) stop 7
+     err = nf90_get_att(ncid, NF_GLOBAL, 'NumFilesInSet', numfilesatt)
+     if (err .ne. 0) stop 10
+     if (numfilesatt .ne. 1) stop 11
+     err = nf90_close(ncid)
+     if (err .ne. 0) stop 90
   endif
 
   call mpi_barrier(mpi_comm_world, err)
