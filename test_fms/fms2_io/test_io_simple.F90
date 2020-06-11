@@ -60,6 +60,11 @@ program test_io_simple
   integer :: ncid
   character (len = 80) :: testfile
   integer :: numfilesatt
+  character(len=120), dimension(3) :: my_format
+  integer :: i
+  my_format(1) = '64bit'
+  my_format(2) = 'classic'
+  my_format(3) = 'netcdf4'
 
   ! Initialize.
   call init(test_params, ntiles)
@@ -88,25 +93,35 @@ program test_io_simple
 
   call netcdf_io_init(ncchksz, header_buffer_val, netcdf_default_format)
 
-  ! Open a restart file and initialize the file object.
-  call open_check(open_file(fileobj, "test_io_simple.nc", "overwrite", &
-       domain, nc_format="64bit", is_restart=.false.))
+  do i = 1, 3
+     write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.nc'
+     print *, testfile
+     
+     ! Open a restart file and initialize the file object.
+     call open_check(open_file(fileobj, testfile, "overwrite", &
+          domain, nc_format=my_format(1), is_restart=.false.))
+     
+     ! Close the file.
+     call close_file(fileobj)
+     
+     call mpi_barrier(mpi_comm_world, err)
+     call mpi_check(err)
 
-  ! Close the file.
-  call close_file(fileobj)
-
-  ! Check for expected netcdf file.
-  if (mpp_pe() .eq. 0) then
-     err = nf90_open('test_io_simple.tile1.nc', nf90_nowrite, ncid)
-     if (err .ne. 0) stop 2
-     err = nf90_get_att(ncid, NF90_GLOBAL, 'NumFilesInSet', numfilesatt)
-     if (err .ne. 0) stop 10
-     if (numfilesatt .ne. 1) stop 11
-     err = nf90_close(ncid)
-     if (err .ne. 0) stop 90
-  endif
-
-  call mpi_barrier(mpi_comm_world, err)
-  call mpi_check(err)
+     ! Check for expected netcdf file.
+     if (mpp_pe() .eq. 0) then
+        write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.tile1.nc'
+        print *, testfile
+        err = nf90_open(testfile, nf90_nowrite, ncid)
+        if (err .ne. 0) stop 2
+        err = nf90_get_att(ncid, NF90_GLOBAL, 'NumFilesInSet', numfilesatt)
+        if (err .ne. 0) stop 10
+        if (numfilesatt .ne. 1) stop 11
+        err = nf90_close(ncid)
+        if (err .ne. 0) stop 90
+     endif
+     
+     call mpi_barrier(mpi_comm_world, err)
+     call mpi_check(err)
+  end do
   call cleanup(test_params)
 end program test_io_simple
