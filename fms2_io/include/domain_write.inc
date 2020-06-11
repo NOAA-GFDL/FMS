@@ -169,12 +169,16 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
+        global_buf_int32 = 0
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
+        global_buf_int64 = 0
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
+        global_buf_real32 = 0.
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
+        global_buf_real64 = 0.
       class default
         call error("unsupported type.")
     end select
@@ -434,12 +438,16 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
+        global_buf_int32 = 0
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
+        global_buf_int64 = 0
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
+        global_buf_real32 = 0.
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
+        global_buf_real64 = 0.
       class default
         call error("unsupported type.")
     end select
@@ -699,12 +707,16 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
+        global_buf_int32 = 0
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
+        global_buf_int64 = 0
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
+        global_buf_real32 = 0.
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
+        global_buf_real64 = 0.
       class default
         call error("unsupported type.")
     end select
@@ -964,12 +976,16 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
+        global_buf_int32 = 0
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
+        global_buf_int64 = 0
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
+        global_buf_real32 = 0.
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
+        global_buf_real64 = 0.
       class default
         call error("unsupported type.")
     end select
