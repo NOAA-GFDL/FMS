@@ -34,7 +34,7 @@ program test_stderr
   write(*,*) "stderr() should get and return the value of err_unit."
   write(*,*) "This value should match ERROR_UNIT from iso_fortran_env."
 
-  if (ERROR_UNIT.eq.in_unit) then
+  if (ERROR_UNIT.eq.err_unit) then
     write(*,*) "PASS: stderr() returned the correct value of err_unit."
   else
     write(*,*) "Integer returned by stderr():"
