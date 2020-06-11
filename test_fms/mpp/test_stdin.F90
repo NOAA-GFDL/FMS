@@ -26,49 +26,26 @@ program test_stdin
   use mpp_mod, only : mpp_init, mpp_exit
   use mpp_mod, only : mpp_error, FATAL
   use mpp_mod, only : stdin
+  use iso_fortran_env, only : INPUT_UNIT
 
   integer :: in_unit !< Stores the returned standard input unit number
   character(len=128) :: err_msg !< Stores an arbitrary error message
   logical :: open5 !< Indicates whether unit 5 is open
   logical :: open100 !< Indicates whether unit 100 is open
 
-  call mpp_init()
-
-  inquire(unit=5, opened=open5)
-  inquire(unit=100, opened=open100)
-
   in_unit = stdin()
 
-  write(*,*) "in_unit is set to either 5 or 100."
-  write(*,*) "MPP sets the status of this unit to open."
   write(*,*) "stdin() should get and return the value of in_unit."
+  write(*,*) "This value should match INPUT_UNIT from iso_fortran_env."
 
-  if (open5) then
-    if (in_unit.eq.5) then
-      write(*,*) "PASS: Standard fortran unit for input is open at 5,"
-      write(*,*) "stdin() correctly reflects that."
-    else
-      err_msg = "ERROR: The unit 5 is open, but 5 is not returned by stdin()."
-      call mpp_error(FATAL, err_msg)
-    end if
+  if (INPUT_UNIT.eq.in_unit) then
+    write(*,*) "PASS: stdin() returned the correct value of in_unit."
+  else
+    write(*,*) "Integer returned by stdin():"
+    write(*,*) in_unit
+    write(*,*) "Integer expected:"
+    write(*,*) INPUT_UNIT
+    call mpp_error(FATAL, "ERROR: stdin() did not return the expected value")
   end if
-
-  if (open100) then
-    if (in_unit.eq.100) then
-      write(*,*) "PASS: Standard fortran unit for input is open at 100,"
-      write(*,*) "stdin() correctly reflects that."
-    else
-      err_msg = "ERROR: The unit 100 is open, but 100 is not returned by stdin()."
-      call mpp_error(FATAL, err_msg)
-    end if
-  end if
-
-  if (.not.(open5.or.open100)) then
-    err_msg = "ERROR: Neither unit 5 nor 100 is open, &
-               &expected one of these to be open."
-    call mpp_error(FATAL, err_msg)
-  end if
-
-  call mpp_exit()
 
 end program test_stdin

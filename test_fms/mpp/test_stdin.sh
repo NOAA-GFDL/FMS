@@ -27,6 +27,6 @@
 # Set common test settings.
 . ../test_common.sh
 
-echo "Running STDIN test..."
+echo "Running STDIN test..."; echo
 run_test test_stdin 1
 echo; echo "STDIN test has passed"
