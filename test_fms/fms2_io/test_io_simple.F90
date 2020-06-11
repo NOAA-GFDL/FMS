@@ -41,11 +41,6 @@ program test_io_simple
   character (len = 10) :: netcdf_default_format = "64bit"
   integer :: header_buffer_val = 16384
   integer :: ncid
-  integer :: numfilesatt
-  character(len=120), dimension(3) :: format
-  format(1) = '64bit'
-  format(2) = 'classic'
-  format(3) = 'netcdf4'
 
   ! Initialize.
   call init(test_params, ntiles)
@@ -84,10 +79,7 @@ program test_io_simple
   ! Check for expected netcdf file.
   if (mpp_pe() .eq. 0) then
      err = nf90_open('test_io_simple.tile1.nc', nf90_nowrite, ncid)
-     if (err .ne. 0) stop 7
-     err = nf90_get_att(ncid, NF_GLOBAL, 'NumFilesInSet', numfilesatt)
-     if (err .ne. 0) stop 10
-     if (numfilesatt .ne. 1) stop 11
+     if (err .ne. 0) stop 1
      err = nf90_close(ncid)
      if (err .ne. 0) stop 90
   endif
