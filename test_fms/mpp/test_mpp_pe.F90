@@ -24,7 +24,6 @@
 program test_mpp_p5
  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
                      mpp_error, FATAL, mpp_initialize_module_for_testing
- use mpp_mod, only : input_nml_file
   implicit none
  integer :: ierr
  integer :: total_pes !< The total number of PEs returned from mpp_npes
@@ -32,11 +31,6 @@ program test_mpp_p5
 
 
 !> Initialize MPI to do what mpp_init would do
-!  call MPI_INIT(error)
-!  mpp_comm_private = MPI_COMM_WORLD
-
-!  call MPI_COMM_RANK( mpp_comm_private, pe,   error )
-!  call MPI_COMM_SIZE( mpp_comm_private, npes, error )
 
   call mpp_initialize_module_for_testing()
 
