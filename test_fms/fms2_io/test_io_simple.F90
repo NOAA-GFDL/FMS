@@ -17,9 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! This is a very simple test of FMS IO.
+! \brief This is a very simple test of FMS IO.
 
-! Ed Hartnett, 6/10/20
+! \author Ed Hartnett, 6/10/20
 
 program test_io_simple
   use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64, error_unit, output_unit
