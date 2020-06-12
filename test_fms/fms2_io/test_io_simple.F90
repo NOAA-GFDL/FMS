@@ -32,36 +32,37 @@ program test_io_simple
   use netcdf
   implicit none
   
-  type(Params) :: test_params
-  type(domain2d) :: domain
-  integer :: err
-  type(domain2d), pointer :: io_domain
-  integer :: isc
-  integer :: iec
-  integer :: nx
-  integer :: jsc
-  integer :: jec
-  integer :: ny
-  integer :: isd
-  integer :: nxd
-  integer :: jsd
-  integer :: nyd
-  integer :: nx_east
-  integer :: isc_east
-  integer :: iec_east
-  integer :: ny_north
-  integer :: jsc_north
-  integer :: jec_north
-  type(FmsNetcdfDomainFile_t) :: fileobj
-  integer, parameter :: ntiles = 6
-  integer :: ncchksz = 64*1024 
-  character (len = 10) :: netcdf_default_format = "64bit"
-  integer :: header_buffer_val = 16384
-  integer :: ncid
-  character (len = 80) :: testfile
-  integer :: numfilesatt
-  character(len=120), dimension(3) :: my_format
-  integer :: i
+  type(Params) :: test_params  !> Some test parameters.
+  type(domain2d) :: domain     !> Not sure what a domain is.
+  type(domain2d), pointer :: io_domain   !> Not sure what a domain is.
+  integer :: isc !> Needed for domain.
+  integer :: iec !> Needed for domain.
+  integer :: nx  !> Needed for domain.
+  integer :: jsc !> Needed for domain.
+  integer :: jec !> Needed for domain.
+  integer :: ny  !> Needed for domain.
+  integer :: isd !> Needed for domain.
+  integer :: nxd !> Needed for domain.
+  integer :: jsd !> Needed for domain.
+  integer :: nyd !> Needed for domain.
+  integer :: nx_east   !> Needed for domain.
+  integer :: isc_east  !> Needed for domain.
+  integer :: iec_east  !> Needed for domain.
+  integer :: ny_north  !> Needed for domain.
+  integer :: jsc_north !> Needed for domain.
+  integer :: jec_north !> Needed for domain.
+  type(FmsNetcdfDomainFile_t) :: fileobj !> FMS file object.
+  integer, parameter :: ntiles = 6       !> Number of tiles.
+  integer :: ncchksz = 64*1024           !> Required for IO initialization.
+  character (len = 10) :: netcdf_default_format = "64bit" !> NetCDF format.
+  integer :: header_buffer_val = 16384   !> Required for IO initialization.
+  integer :: ncid                        !> File ID for checking file.
+  character (len = 80) :: testfile       !> Base name for file created in test.
+  integer :: numfilesatt                 !> Value for global att in test file.
+  character(len=120), dimension(3) :: my_format !> Array of formats to try.
+  integer :: i    !> Index for do loop.
+  integer :: err  !> Return code.
+
   my_format(1) = '64bit'
   my_format(2) = 'classic'
   my_format(3) = 'netcdf4'
@@ -73,7 +74,7 @@ program test_io_simple
   call mpi_check(err)
 
   if (test_params%debug) then
-     if (mpp_pe() .eq. 0) then
+     if (mpp_pe() .eq. mpp_root_pe()) then
         write(error_unit,'(/a)') &
              "Running atmosphere (6-tile domain decomposed) restart file test ... "
      endif
@@ -97,7 +98,7 @@ program test_io_simple
      write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.nc'
      print *, testfile
      
-     ! Open a restart file and initialize the file object.
+     ! Open a netCDF file and initialize the file object.
      call open_check(open_file(fileobj, testfile, "overwrite", &
           domain, nc_format=my_format(1), is_restart=.false.))
      
@@ -108,20 +109,21 @@ program test_io_simple
      call mpi_check(err)
 
      ! Check for expected netcdf file.
-     if (mpp_pe() .eq. 0) then
+     if (mpp_pe() .eq. mpp_root_pe()) then
         write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.tile1.nc'
         print *, testfile
         err = nf90_open(testfile, nf90_nowrite, ncid)
-        if (err .ne. 0) stop 2
+        if (err .ne. NF90_NOERR) stop 2
         err = nf90_get_att(ncid, NF90_GLOBAL, 'NumFilesInSet', numfilesatt)
-        if (err .ne. 0) stop 10
+        if (err .ne. NF90_NOERR) stop 10
         if (numfilesatt .ne. 1) stop 11
         err = nf90_close(ncid)
-        if (err .ne. 0) stop 90
+        if (err .ne. NF90_NOERR) stop 90
      endif
      
      call mpi_barrier(mpi_comm_world, err)
      call mpi_check(err)
   end do
+
   call cleanup(test_params)
 end program test_io_simple
