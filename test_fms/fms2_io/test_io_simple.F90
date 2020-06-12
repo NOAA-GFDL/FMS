@@ -49,7 +49,7 @@ program test_io_simple
   call mpi_check(err)
 
   if (test_params%debug) then
-     if (mpp_pe() .eq. 0) then
+     if (mpp_pe() .eq. mpp_root_pe()) then
         write(error_unit,'(/a)') &
              "Running atmosphere (6-tile domain decomposed) restart file test ... "
      endif
@@ -77,7 +77,7 @@ program test_io_simple
   call close_file(fileobj)
 
   ! Check for expected netcdf file.
-  if (mpp_pe() .eq. 0) then
+  if (mpp_pe() .eq. mpp_root_pe()) then
      err = nf90_open('test_io_simple.tile1.nc', nf90_nowrite, ncid)
      if (err .ne. 0) stop 1
      err = nf90_close(ncid)
