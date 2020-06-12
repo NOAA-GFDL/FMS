@@ -31,16 +31,16 @@ program test_io_simple
   use setup
   use netcdf
   
-  type(Params) :: test_params
-  type(domain2d) :: domain
-  integer :: err
-  type(domain2d), pointer :: io_domain
-  type(FmsNetcdfDomainFile_t) :: fileobj
-  integer, parameter :: ntiles = 6
-  integer :: ncchksz = 64*1024 
-  character (len = 10) :: netcdf_default_format = "64bit"
-  integer :: header_buffer_val = 16384
-  integer :: ncid
+  type(Params) :: test_params  !> Some test parameters.
+  type(domain2d) :: domain     !> Not sure what a domain is.
+  type(domain2d), pointer :: io_domain   !> Not sure what a domain is.
+  type(FmsNetcdfDomainFile_t) :: fileobj !> FMS file object.
+  integer, parameter :: ntiles = 6       !> Number of tiles.
+  integer :: ncchksz = 64*1024           !> Required for IO initialization.
+  character (len = 10) :: netcdf_default_format = "64bit" !> NetCDF format.
+  integer :: header_buffer_val = 16384   !> Required for IO initialization.
+  integer :: ncid !> File ID for checking file.
+  integer :: err  !> Return code.
 
   ! Initialize.
   call init(test_params, ntiles)
