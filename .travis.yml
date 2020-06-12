@@ -57,8 +57,5 @@ before_script:
 script:
   - autoreconf -i
   - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
-  - make -j 
-  - cd test_fms/fms2_io
-  - make test_io_simple
-  - bash -x ./test_io_simple.sh
+  - make -j distcheck
   
