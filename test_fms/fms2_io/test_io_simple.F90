@@ -69,7 +69,7 @@ program test_io_simple
 
   call netcdf_io_init(ncchksz, header_buffer_val, netcdf_default_format)
 
-  ! Open a restart file and initialize the file object.
+  ! Open a netCDF file and initialize the file object.
   call open_check(open_file(fileobj, "test_io_simple.nc", "overwrite", &
        domain, nc_format="64bit", is_restart=.false.))
 
