@@ -60,7 +60,14 @@ program test_io_simple
   character (len = 80) :: testfile       !> Base name for file created in test.
   integer :: numfilesatt                 !> Value for global att in test file.
   real (kind=real64) :: att1             !> Value for global att in test file.
-  character(len=120), dimension(3) :: my_format !> Array of formats to try.
+  character(len = 120), dimension(3) :: my_format !> Array of formats to try.
+  character(len = 6), dimension(4) :: names !> Dim name.
+  character(len = 6) :: dimname !> Dim name we will read in.
+  integer:: dimlen              !> Dim len we will read in.
+  character (len = 6) :: varname !> Name of var we will read in.
+  integer :: xtype, ndims !> More var info we will read in.
+  integer, dimension(1) :: dimids !> More var info we will read in.
+  integer :: nAtts !> More var info we will read in.
   integer :: i    !> Index for do loop.
   integer :: err  !> Return code.
 
@@ -92,14 +99,21 @@ program test_io_simple
 
   do i = 1, 3
      write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.nc'
-     print *, testfile
      
      ! Open a netCDF file and initialize the file object.
      call open_check(open_file(fileobj, testfile, "overwrite", &
           domain, nc_format=my_format(1), is_restart=.false.))
-     
+
+     ! Add a global attribute.
      call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
-     
+
+     ! Add a dimension.
+     call register_axis(fileobj, "lon", "x")
+
+     ! Add a coordinate variable for the dimension.
+     names(1) = "lon"
+     call register_field(fileobj, "lon", "double", names(1:1))
+          
      ! Close the file.
      call close_file(fileobj)
      
@@ -119,6 +133,20 @@ program test_io_simple
         err = nf90_get_att(ncid, NF90_GLOBAL, 'globalatt1', att1)
         if (err .ne. NF90_NOERR) stop 10
         if (att1 .ne. 7) stop 11
+
+        ! Check the dimension.
+        err = nf90_inquire_dimension(ncid, 1, dimname, dimlen)
+        if (err .ne. NF90_NOERR) stop 20
+        if (dimname .ne. "lon") stop 21
+        if (dimlen .ne. 96) stop 22
+
+        ! Check the coordinate variable.
+        err = nf90_inquire_variable(ncid, 1, varname, xtype, ndims, dimids, nAtts)
+        if (err .ne. NF90_NOERR) stop 30
+        if (varname .ne. "lon") stop 31
+        if (xtype .ne. NF90_DOUBLE) stop 32
+        if (ndims .ne. 1 .or. dimids(1) .ne. 1) stop 33
+        if (nAtts .ne. 1) stop 34
 
         ! Close the file.
         err = nf90_close(ncid)
