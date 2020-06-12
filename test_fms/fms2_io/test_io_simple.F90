@@ -17,9 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! This is a very simple test of FMS IO.
+! \brief This is a very simple test of FMS IO.
 
-! Ed Hartnett, 6/10/20
+! \author Ed Hartnett, 6/10/20
 
 program test_io_simple
   use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64, error_unit, output_unit
@@ -59,6 +59,7 @@ program test_io_simple
   integer :: ncid                        !> File ID for checking file.
   character (len = 80) :: testfile       !> Base name for file created in test.
   integer :: numfilesatt                 !> Value for global att in test file.
+  real (kind=real64) :: att1             !> Value for global att in test file.
   character(len=120), dimension(3) :: my_format !> Array of formats to try.
   integer :: i    !> Index for do loop.
   integer :: err  !> Return code.
@@ -70,8 +71,6 @@ program test_io_simple
   ! Initialize.
   call init(test_params, ntiles)
   call create_cubed_sphere_domain(test_params, domain, (/1, 1/))
-  call mpi_barrier(mpi_comm_world, err)
-  call mpi_check(err)
 
   if (mpp_pe() .eq. mpp_root_pe()) then
      write(error_unit,'(/a)') "Running simple IO test ... "
@@ -110,12 +109,18 @@ program test_io_simple
      ! Check for expected netcdf file.
      if (mpp_pe() .eq. mpp_root_pe()) then
         write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.tile1.nc'
-        print *, testfile
         err = nf90_open(testfile, nf90_nowrite, ncid)
         if (err .ne. NF90_NOERR) stop 2
+
+        ! Check the atts and their values.
         err = nf90_get_att(ncid, NF90_GLOBAL, 'NumFilesInSet', numfilesatt)
         if (err .ne. NF90_NOERR) stop 10
         if (numfilesatt .ne. 1) stop 11
+        err = nf90_get_att(ncid, NF90_GLOBAL, 'globalatt1', att1)
+        if (err .ne. NF90_NOERR) stop 10
+        if (att1 .ne. 7) stop 11
+
+        ! Close the file.
         err = nf90_close(ncid)
         if (err .ne. NF90_NOERR) stop 90
      endif
