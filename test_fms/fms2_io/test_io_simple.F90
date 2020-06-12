@@ -79,9 +79,9 @@ program test_io_simple
   ! Check for expected netcdf file.
   if (mpp_pe() .eq. mpp_root_pe()) then
      err = nf90_open('test_io_simple.tile1.nc', nf90_nowrite, ncid)
-     if (err .ne. 0) stop 1
+     if (err .ne. NF90_NOERR) stop 1
      err = nf90_close(ncid)
-     if (err .ne. 0) stop 90
+     if (err .ne. NF90_NOERR) stop 90
   endif
 
   call mpi_barrier(mpi_comm_world, err)
