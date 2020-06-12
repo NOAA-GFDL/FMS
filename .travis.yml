@@ -58,3 +58,4 @@ script:
   - autoreconf -i
   - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
   - make -j distcheck
+  
