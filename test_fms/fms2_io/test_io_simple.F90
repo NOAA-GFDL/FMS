@@ -73,16 +73,13 @@ program test_io_simple
   call mpi_barrier(mpi_comm_world, err)
   call mpi_check(err)
 
-  if (test_params%debug) then
-     if (mpp_pe() .eq. mpp_root_pe()) then
-        write(error_unit,'(/a)') &
-             "Running atmosphere (6-tile domain decomposed) restart file test ... "
-     endif
+  if (mpp_pe() .eq. mpp_root_pe()) then
+     write(error_unit,'(/a)') "Running simple IO test ... "
   endif
   call mpi_barrier(mpi_comm_world, err)
   call mpi_check(err)
 
-  !Get the sizes of the I/O compute and data domains.
+  ! Get the sizes of the I/O compute and data domains.
   io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
      call mpp_error(fatal, "I/O domain is not associated.")
@@ -101,6 +98,8 @@ program test_io_simple
      ! Open a netCDF file and initialize the file object.
      call open_check(open_file(fileobj, testfile, "overwrite", &
           domain, nc_format=my_format(1), is_restart=.false.))
+     
+     call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
      
      ! Close the file.
      call close_file(fileobj)
