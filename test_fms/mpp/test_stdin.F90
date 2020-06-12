@@ -23,25 +23,25 @@
 !! @email gfdl.climate.model.info@noaa.gov
 
 program test_stdin
-  use mpp_mod, only : mpp_error, FATAL
   use mpp_mod, only : stdin
-  use iso_fortran_env, only : INPUT_UNIT
+  use iso_fortran_env, only : INPUT_UNIT, OUTPUT_UNIT
 
   integer :: in_unit !< Stores the returned standard input unit number
 
   in_unit = stdin()
 
-  write(*,*) "stdin() should get and return the value of in_unit."
-  write(*,*) "This value should match INPUT_UNIT from iso_fortran_env."
+  write(OUTPUT_UNIT,*) "stdin() should get and return the value of in_unit."
+  write(OUTPUT_UNIT,*) "This value should match INPUT_UNIT from iso_fortran_env."
 
   if (INPUT_UNIT.eq.in_unit) then
-    write(*,*) "PASS: stdin() returned the correct value of in_unit."
+    write(OUTPUT_UNIT,*) "PASS: stdin() returned the correct value of in_unit."
   else
-    write(*,*) "Integer returned by stdin():"
-    write(*,*) in_unit
-    write(*,*) "Integer expected:"
-    write(*,*) INPUT_UNIT
-    call mpp_error(FATAL, "ERROR: stdin() did not return the expected value")
+    write(OUTPUT_UNIT,*) "Integer returned by stdin():"
+    write(OUTPUT_UNIT,*) in_unit
+    write(OUTPUT_UNIT,*) "Integer expected:"
+    write(OUTPUT_UNIT,*) INPUT_UNIT
+    write(OUTPUT_UNIT,*) "ERROR: stdin() did not return the expected value"
+    stop 1
   end if
 
 end program test_stdin
