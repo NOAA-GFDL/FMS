@@ -23,25 +23,25 @@
 !! @email gfdl.climate.model.info@noaa.gov
 
 program test_stderr
-  use mpp_mod, only : mpp_error, FATAL
   use mpp_mod, only : stderr
-  use iso_fortran_env, only : ERROR_UNIT
+  use iso_fortran_env, only : ERROR_UNIT, OUTPUT_UNIT
 
   integer :: err_unit !< Stores the returned standard error unit number
 
   err_unit = stderr()
 
-  write(*,*) "stderr() should get and return the value of err_unit."
-  write(*,*) "This value should match ERROR_UNIT from iso_fortran_env."
+  write(OUTPUT_UNIT,*) "stderr() should get and return the value of err_unit."
+  write(OUTPUT_UNIT,*) "This value should match ERROR_UNIT from iso_fortran_env."
 
   if (ERROR_UNIT.eq.err_unit) then
-    write(*,*) "PASS: stderr() returned the correct value of err_unit."
+    write(OUTPUT_UNIT,*) "PASS: stderr() returned the correct value of err_unit."
   else
-    write(*,*) "Integer returned by stderr():"
-    write(*,*) err_unit
-    write(*,*) "Integer expected:"
-    write(*,*) ERROR_UNIT
-    call mpp_error(FATAL, "ERROR: stderr() did not return the expected value")
+    write(OUTPUT_UNIT,*) "Integer returned by stderr():"
+    write(OUTPUT_UNIT,*) err_unit
+    write(OUTPUT_UNIT,*) "Integer expected:"
+    write(OUTPUT_UNIT,*) ERROR_UNIT
+    write(OUTPUT_UNIT,*) "ERROR: stderr() did not return the expected value"
+    stop 1
   end if
 
 end program test_stderr
