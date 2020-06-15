@@ -5,22 +5,33 @@
 # There are many compiler options possible for FFLAGS, and these below are examples of a minimum compiling set.
 
 # For the GNU compilers on linux with the bash shell:
+
 export FC=mpifort
+
 export CC=mpicc
+
 export FFLAGS="-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check `nf-config --fflags ` "
+
 export CPPFLAGS="`nc-config --cflags `"
 
 
 #For Intel Compilers on Linux with the bash shell:
+
 export FTN=mpiifort
+
 export CC=mpiicc
+
 export FFLAGS="-fno-alias -auto -safe-cray-ptr -ftz -assume byterecl -i4 -r8 -sox -traceback  `nf-config --fflags ` "
+
 export CPPFLAGS="`nc-config --cflags `"
 
-#For the Cray CCE Compilers with the bash shell
+#For the Cray CCE Compilers with the bash shell:
 export FTN=ftn
+
 export CC=cc
+
 export FFLAGS="-s real64 -s integer32 -h byteswapio -h nosecond_underscore -e m -h keepfiles -e0 -ez -N1023 `nf-config --fflags ` "
+
 export CPPFLAGS="`nc-config --cflags `"
 
 ##############################
