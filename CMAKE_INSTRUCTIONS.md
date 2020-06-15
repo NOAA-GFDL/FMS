@@ -14,8 +14,7 @@ export FFLAGS="-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ff
 
 export CPPFLAGS="`nc-config --cflags `"
 
-
-#For Intel Compilers on Linux with the bash shell:
+# For Intel Compilers on Linux with the bash shell:
 
 export FTN=mpiifort
 
@@ -25,7 +24,8 @@ export FFLAGS="-fno-alias -auto -safe-cray-ptr -ftz -assume byterecl -i4 -r8 -so
 
 export CPPFLAGS="`nc-config --cflags `"
 
-#For the Cray CCE Compilers with the bash shell:
+# For the Cray CCE Compilers with the bash shell:
+
 export FTN=ftn
 
 export CC=cc
