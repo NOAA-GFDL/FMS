@@ -2,8 +2,7 @@
 ##############################
 # 1 Environment Variables
 # Set the environment variables FC, CC, FFLAGS, and CPPFLAGS.
-# There are many compiler options possible for FFLAGS, and these below are
-# examples of a minimum compiling set.
+# There are many compiler options possible for FFLAGS, and these below are examples of a minimum compiling set.
 
 # For the GNU compilers on linux with the bash shell:
 export FC=mpifort
@@ -35,16 +34,14 @@ Notes: The above commands create the files FMSConfig.cmake.in and FMSConfigVersi
 command "make" and "make install" are not run.
 ##########################################
 # 3 Have cmake build and install FMS.
-# (Below, fms_install_path is the full install directory path name
-# you select):
+# (Below, fms_install_path is the full install directory path name  you select):
 
 $ cd FMS
 $ mkdir build && cd build
 $ cmake -DCMAKE_INSTALL_PREFIX:PATH=fms_install_path ..
 $ cmake --build . --target install --config Release
 
-# When the above command finishes, the fms_install_path will have an include
-# and a lib directory. The lib directory will have these files:
+# When the above command finishes, the fms_install_path will have an include and a lib directory. The lib directory will have these files:
 #     libFMS.a
 #     /cmake/FMS/FMSTargets.cmake
 #     /cmake/FMS/FMSTargets-noconfig.cmake
