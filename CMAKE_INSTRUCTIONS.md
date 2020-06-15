@@ -16,7 +16,7 @@ export CPPFLAGS="`nc-config --cflags `"
 
 # For Intel Compilers on Linux with the bash shell:
 
-export FTN=mpiifort
+export FC=mpiifort
 
 export CC=mpiicc
 

@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 3.7..3.15 FATAL_ERROR)
 project(libFMS
   VERSION 2020.02
   DESCRIPTION  "GFDL FMS Library"
-#  HOMEPAGE_URL https://www.gfdl.noaa.gov/fms
+  HOMEPAGE_URL https://www.gfdl.noaa.gov/fms
   LANGUAGES C Fortran)
 
 add_definitions(-Duse_libMPI)
