@@ -44,6 +44,7 @@ program test_io_pio
 
   ! Initialize.
   call init(test_params, ntiles)
+  call mpp_init_pio(0, 6, 1)
   call create_cubed_sphere_domain(test_params, domain, (/1, 1/))
   call mpi_barrier(mpi_comm_world, err)
   call mpi_check(err)

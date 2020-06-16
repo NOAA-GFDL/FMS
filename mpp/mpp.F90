@@ -230,7 +230,7 @@ private
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
   public :: mpp_sum_ad
-  public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
+  public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit, mpp_init_pio
   public :: mpp_gather, mpp_scatter, mpp_alltoall
   public :: mpp_type, mpp_byte, mpp_type_create, mpp_type_free
 #ifdef use_MPI_GSM
