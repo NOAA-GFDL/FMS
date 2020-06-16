@@ -317,7 +317,7 @@ end function is_dimension_registered
 
 !> @brief Open a domain netcdf file.
 !! @return Flag telling if the open completed successfully.
-function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
+function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, add_res_to_filename) &
   result(success)
 
   type(FmsNetcdfDomainFile_t),intent(inout) :: fileobj !< File object.
@@ -335,6 +335,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: add_res_to_filename !< Flag telling if ".res" should
+                                              !! be added to the filename
   logical :: success
 
   integer, dimension(2) :: io_layout
@@ -376,19 +378,19 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
 
   !Open the distibuted files.
   success = netcdf_file_open(fileobj, distributed_filepath, mode, nc_format, pelist, &
-                             is_restart)
+                             is_restart, add_res_to_filename)
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
     if (success) then
       if (.not. string_compare(distributed_filepath, combined_filepath)) then
         success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
-                                    is_restart)
+                                    is_restart, add_res_to_filename)
         if (success2) then
           call error("you have both combined and distributed files.")
         endif
       endif
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
-                                 is_restart)
+                                 is_restart, add_res_to_filename)
       !If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
       if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
     endif

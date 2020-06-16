@@ -425,7 +425,7 @@ end function get_variable_type
 
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, add_res_to_filename) &
   result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -449,12 +449,15 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: add_res_to_filename !< Flag telling if ".res" should
+                                              !! be added to the filename
   logical :: success
 
   integer :: nc_format_param
   integer :: err
   character(len=256) :: buf
   logical :: is_res
+  logical :: add_res
 
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
@@ -467,7 +470,11 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   if (present(is_restart)) then
     is_res = is_restart
   endif
-  if (is_res) then
+  if (present(add_res_to_filename)) then
+    add_res = add_res_to_filename
+  endif
+
+  if (is_res .and. add_res) then
     call restart_filepath_mangle(buf, trim(path))
   else
     call string_copy(buf, trim(path))
