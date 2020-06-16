@@ -108,6 +108,7 @@ fi
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
+# If the user enabled PIO, then we must find the PIO C library and header file.
 if test $enable_pio = yes; then
   AC_CHECK_HEADERS([pnetcdf.h], [], [AC_MSG_ERROR([Can't find the pnetcdf C header file.  Set CPPFLAGS/CFLAGS])])
   AC_SEARCH_LIBS([ncmpi_inq_unlimdim], [pnetcdf], [], [AC_MSG_ERROR([Can't find the pnetcdf C library.  Set CC/LDFLAGS/LIBS])])
@@ -143,6 +144,7 @@ GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 
+# If the user wants to use PIO, then find the PIO fortran library and mod file.
 if test $enable_pio = yes; then
   GX_FC_CHECK_MOD([pio], [], [], [AC_MSG_ERROR([Can't find the PIO Fortran module.  Set CPPFLAGS/FCFLAGS])])
   GX_FORTRAN_SEARCH_LIBS([PIO_set_log_level], [piof], [use pio], [iret = PIO_set_log_level(0)], [],

@@ -215,6 +215,17 @@
   return
 end subroutine mpp_init
 
+#ifdef USE_PIO
+!> Initialize mpp to use PIO. This should be called after mpp_init().
+!> @author Ed Hartnett 6/16/20
+subroutine mpp_init_pio(piomode, numcomp, numio)
+  integer, intent(in) :: piomode
+  integer, intent(in) :: numcomp
+  integer, intent(in) :: numio
+
+end subroutine mpp_init_pio
+#endif
+
 !#######################################################################
   !to be called at the end of a run
 subroutine mpp_exit()
