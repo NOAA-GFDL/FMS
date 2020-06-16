@@ -1,8 +1,7 @@
 # Instructions for building FMS with cmake
 ##############################
 # 1 Environment Variables
-# Set the environment variables FC, CC, FFLAGS, CFLAGS and CPPFLAGS.
-# There are many compiler options possible for FFLAGS, and these below are some working examples:
+# Set the environment variables FC, CC, FFLAGS and CPPFLAGS. CFLAGS may also be needed. For FFLAGS are many compiler options possible, and these below are some working examples:
 
 # For GNU compilers on linux with the bash shell:
 
