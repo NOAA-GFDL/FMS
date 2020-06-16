@@ -186,17 +186,22 @@ subroutine initialize_diagnostic_columns     &
 !----------------------------------------------------------------------
 
 !---------------------------------------------------------------------
-character(len=*),      intent(in)    :: module                  !< module calling this subroutine
-integer,               intent(in)    :: num_diag_pts_latlon,  & !< number of diagnostic columns specified
-                                        num_diag_pts_ij
-integer, dimension(:), intent(in)    :: global_i, global_j
-real   , dimension(:), intent(in)    :: global_lat_latlon,    &
-                                        global_lon_latlon
+character(len=*),      intent(in)    :: module                !< module calling this subroutine
+integer,               intent(in)    :: num_diag_pts_latlon   !< number of diagnostic columns specified
+                                                              !! by lat-lon  coordinates
+integer,               intent(in)    :: num_diag_pts_ij       !< number of diagnostic columns specified
+                                                              !! by global (i,j) coordinates
+integer, dimension(:), intent(in)    :: global_i              !< specified global i coordinates
+integer, dimension(:), intent(in)    :: global_j              !< specified global j coordinates
+real   , dimension(:), intent(in)    :: global_lat_latlon     !< specified global lat coordinates
+real   , dimension(:), intent(in)    :: global_lon_latlon     !< specified global lon coordinates
 real,    dimension(:,:), intent(in)  :: lonb_in, latb_in
-logical, dimension(:,:), intent(out) :: do_column_diagnostics
-integer, dimension(:), intent(inout) :: diag_i, diag_j
-real   , dimension(:), intent(out)   :: diag_lat, diag_lon
-integer, dimension(:), intent(out)   :: diag_units
+logical, dimension(:,:), intent(out) :: do_column_diagnostics !< is a diagnostic column in this jrow ?
+integer, dimension(:), intent(inout) :: diag_i                !< processor i indices of diagnstic columns
+integer, dimension(:), intent(inout) :: diag_j                !< processor j indices of diagnstic columns
+real   , dimension(:), intent(out)   :: diag_lat              !< latitudes of diagnostic columns [ degrees ]
+real   , dimension(:), intent(out)   :: diag_lon              !< longitudes of diagnostic columns [ degrees ]
+integer, dimension(:), intent(out)   :: diag_units            !< unit number for each diagnostic column
 !---------------------------------------------------------------------
 
 !---------------------------------------------------------------------
@@ -228,7 +233,8 @@ integer, dimension(:), intent(out)   :: diag_units
 !--------------------------------------------------------------------
 !    local variables:
 
-      real, dimension(size(diag_i,1))     :: global_lat, global_lon
+      real, dimension(size(diag_i,1))     :: global_lat !< latitudes for all diagnostic columns [ degrees ]
+      real, dimension(size(diag_i,1))     :: global_lon !< longitudes for all diagnostic columns [ degrees ]
       real, dimension(size(latb_in,1)-1, size(latb_in,2)-1) ::  &
                                   distance, distance_x, distance_y, &
                                    distance_x2, distance2
@@ -237,12 +243,14 @@ integer, dimension(:), intent(out)   :: diag_units
       real       :: dellat, dellon
       real       :: latb_max, latb_min, lonb_max, lonb_min
 
-      integer            ::  num_diag_pts
-      integer            ::  i, j, nn
+      integer            ::  num_diag_pts !< total number of diagnostic columns
+      integer            ::  i            !< do loop indices
+      integer            ::  j            !< do loop indices
+      integer            ::  nn           !< do loop indices
       real               ::  ref_lat
       real               ::  current_distance
-      character(len=8)   ::  char
-      character(len=32)  ::  filename
+      character(len=8)   ::  char         !< character string for diaganostic column index
+      character(len=32)  ::  filename     !< filename for output file for diagnostic column
       logical            ::  allow_ij_input
       logical            ::  open_file
       integer            ::  io
@@ -438,7 +446,9 @@ end subroutine initialize_diagnostic_columns
 
 
 !####################################################################
-
+!> @brief column_diagnostics_header writes out information concerning
+!!    time and location of following data into the column_diagnostics
+!!    output file.
 subroutine column_diagnostics_header     &
                               (module, diag_unit, Time, nn, diag_lon, &
                                diag_lat, diag_i, diag_j)
@@ -450,12 +460,14 @@ subroutine column_diagnostics_header     &
 !--------------------------------------------------------------------
 
 !--------------------------------------------------------------------
-character(len=*),      intent(in)  :: module
-type(time_type),       intent(in)  :: Time
-integer,               intent(in)  :: diag_unit
-integer,               intent(in)  :: nn
-real,    dimension(:), intent(in)  :: diag_lon, diag_lat
-integer, dimension(:), intent(in)  :: diag_i, diag_j
+character(len=*),      intent(in)  :: module    !< module name calling this subroutine
+type(time_type),       intent(in)  :: Time      !< current model time [ time_type ]
+integer,               intent(in)  :: diag_unit !< unit number for column_diagnostics output
+integer,               intent(in)  :: nn        !< index of diagnostic column currently active
+real,    dimension(:), intent(in)  :: diag_lon  !< longitude of current diagnostic column [ degrees ]
+real,    dimension(:), intent(in)  :: diag_lat  !< latitude of current diagnostic column [ degrees ]
+integer, dimension(:), intent(in)  :: diag_i    !< i coordinate of current diagnostic column
+integer, dimension(:), intent(in)  :: diag_j    !< j coordinate of current diagnostic column
 
 !--------------------------------------------------------------------
 !    intent(in) variables
@@ -474,9 +486,14 @@ integer, dimension(:), intent(in)  :: diag_i, diag_j
 !--------------------------------------------------------------------
 !     local variables:
 
-      integer           :: year, month, day, hour, minute, second
-      character(len=8)  :: mon
-      character(len=64) :: header
+      integer           :: year   !< integers defining the current time
+      integer           :: month  !< integers defining the current time
+      integer           :: day    !< integers defining the current time
+      integer           :: hour   !< integers defining the current time
+      integer           :: minute !< integers defining the current time
+      integer           :: second !< integers defining the current time
+      character(len=8)  :: mon    !< character string for the current month
+      character(len=64) :: header !< title for the output
 
 !--------------------------------------------------------------------
 !     local variables:
@@ -532,7 +549,8 @@ end subroutine column_diagnostics_header
 
 
 !######################################################################
-
+!> @brief close_column_diagnostics_units closes any open column_diagnostics
+!!    files associated with the calling module.
 subroutine close_column_diagnostics_units (diag_units)
 
 !---------------------------------------------------------------------
@@ -541,7 +559,7 @@ subroutine close_column_diagnostics_units (diag_units)
 !----------------------------------------------------------------------
 
 !----------------------------------------------------------------------
-integer, dimension(:), intent(in)  :: diag_units
+integer, dimension(:), intent(in)  :: diag_units !< array of column diagnostic unit numbers
 !----------------------------------------------------------------------
 
 !--------------------------------------------------------------------
@@ -554,7 +572,7 @@ integer, dimension(:), intent(in)  :: diag_units
 !--------------------------------------------------------------------
 !    local variable
 
-      integer   :: nn    ! do loop index
+      integer   :: nn    !< do loop index
       integer   :: io
 !--------------------------------------------------------------------
 !    close the unit associated with each diagnostic column.
