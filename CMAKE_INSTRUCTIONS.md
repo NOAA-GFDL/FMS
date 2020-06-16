@@ -14,8 +14,6 @@ export FFLAGS="-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ff
 
 export CPPFLAGS="`nc-config --cflags `"
 
-export CFLAGS=="`nc-config --cflags `"
-
 # For Intel Compilers on Linux with the bash shell:
 
 export FC=mpiifort
