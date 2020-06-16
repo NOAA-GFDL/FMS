@@ -16,26 +16,32 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @author MiKyung Lee 
+!> @description This program tests the function mpp_root_pe().
+!! The value of root_pe is set to 0 upon declaration. 
+!! Thus, the test passes if the return value of mpp_root_pe is 0 and fails if otherwise.
+
 
 program test_mpp_root_pe
 
   
   use mpp_mod, only:  mpp_init, FATAL, mpp_error, mpp_root_pe
   
-  implicit none
-  
+  implicit none  
   integer :: my_root_pe, test_root_pe, ierr
 
 
-  call mpp_init( test_level=0 )
-  
-  
-  !: check default root_pe=0
+  !> call mpp_init at the lowest level 
+  call mpp_init( test_level=0 )  
+
+  !> assign my_root_pe=root_pe=0
   my_root_pe = 0
+  !> call mpp_root_pe()
   test_root_pe = mpp_root_pe()
+  !> call mpp_error if mpp_root_pe did not return value eq to my_root_pe 
   if( test_root_pe .ne. my_root_pe ) call mpp_error(FATAL, "mpp_root_pe does not equal root_pe")
   
-  
+  !> end
   call MPI_FINALIZE(ierr)
 
   

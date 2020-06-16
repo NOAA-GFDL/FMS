@@ -28,6 +28,6 @@
 . ../test_common.sh
 
 
-# Run the test for one processor
-run_test test_mpp_root_pe 12
+# Run the test 
+run_test test_mpp_root_pe 1
 
