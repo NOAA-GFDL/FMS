@@ -143,6 +143,12 @@ GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 
+if test $enable_pio = yes; then
+  GX_FC_CHECK_MOD([pio], [], [], [AC_MSG_ERROR([Can't find the PIO Fortran module.  Set CPPFLAGS/FCFLAGS])])
+  GX_FORTRAN_SEARCH_LIBS([PIO_set_log_level], [piof], [use pio], [iret = PIO_set_log_level(0)], [],
+    [AC_MSG_ERROR([Can't find the PIO Fortran library.  Set LDFLAGS/LIBS])])
+fi
+
 # Check if Fortran compiler has the Class, Character array assign bug
 GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
 
