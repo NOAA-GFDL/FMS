@@ -17,6 +17,29 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief Given a gridname, fieldname and model time this routine will get data in a file whose
+!!   path is described in a user-provided data_table, do spatial and temporal interpolation if
+!!   necessary to convert data to model's grid and time.
+!! @author Z. Liang, M.J. Harrison, M. Winton
+!!
+!! Given a gridname, fieldname and model time this routine will get data in a file whose
+!! path is described in a user-provided data_table, do spatial and temporal interpolation if
+!! necessary to convert data to model's grid and time.
+!!
+!! Before using data_override a data_table must be created with the following entries:
+!! gridname, fieldname_code, fieldname_file, file_name, ongrid, factor.
+!!
+!! More explainations about data_table entries can be found in the source code (defining data_type)
+!!
+!! If user wants to override fieldname_code with a const, set fieldname_file in data_table = ""
+!! and factor = const
+!!
+!! If user wants to override fieldname_code with data from a file, set fieldname_file = name in
+!! the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
+!!
+!! A field can be overriden globally (by default) or users can specify one or two regions in which
+!! data_override will take place, field values outside the region will not be affected.
 module data_override_mod
 !
 ! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
@@ -82,11 +105,11 @@ private
 
 type data_type
    character(len=3)   :: gridname
-   character(len=128) :: fieldname_code !fieldname used in user's code (model)
-   character(len=128) :: fieldname_file ! fieldname used in the netcdf data file
-   character(len=512) :: file_name   ! name of netCDF data file
-   character(len=128) :: interpol_method   ! interpolation method (default "bilinear")
-   real               :: factor ! For unit conversion, default=1, see OVERVIEW above
+   character(len=128) :: fieldname_code !< fieldname used in user's code (model)
+   character(len=128) :: fieldname_file !< fieldname used in the netcdf data file
+   character(len=512) :: file_name   !< name of netCDF data file
+   character(len=128) :: interpol_method   !< interpolation method (default "bilinear")
+   real               :: factor !< For unit conversion, default=1, see OVERVIEW above
    real               :: lon_start, lon_end, lat_start, lat_end
    integer            :: region_type
 end type data_type
@@ -95,10 +118,10 @@ end type data_type
 type override_type
    character(len=3)                 :: gridname
    character(len=128)               :: fieldname
-   integer                          :: t_index                 !index for time interp
-   type(horiz_interp_type), pointer :: horz_interp(:) =>NULL() ! index for horizontal spatial interp
-   integer                          :: dims(4)                 ! dimensions(x,y,z,t) of the field in filename
-   integer                          :: comp_domain(4)          ! istart,iend,jstart,jend for compute domain
+   integer                          :: t_index                 !< index for time interp
+   type(horiz_interp_type), pointer :: horz_interp(:) =>NULL() !< index for horizontal spatial interp
+   integer                          :: dims(4)                 !< dimensions(x,y,z,t) of the field in filename
+   integer                          :: comp_domain(4)          !< istart,iend,jstart,jend for compute domain
    integer                          :: numthreads
    real, allocatable                :: lon_in(:)
    real, allocatable                :: lat_in(:)
@@ -109,7 +132,7 @@ type override_type
 end type override_type
 
  integer, parameter :: max_table=100, max_array=100
- integer            :: table_size ! actual size of data table
+ integer            :: table_size !< actual size of data table
  integer, parameter :: ANNUAL=1, MONTHLY=2, DAILY=3, HOURLY=4, UNDEF=-1
  real, parameter    :: tpi=2*PI
  real               :: deg_to_radian, radian_to_deg
@@ -126,10 +149,10 @@ real                                      :: min_glo_lon_ocn, max_glo_lon_ocn
 real                                      :: min_glo_lon_atm, max_glo_lon_atm
 real                                      :: min_glo_lon_lnd, max_glo_lon_lnd
 real                                      :: min_glo_lon_ice, max_glo_lon_ice
-integer:: num_fields = 0 ! number of fields in override_array already processed
-type(data_type), dimension(max_table)           :: data_table ! user-provided data table
+integer:: num_fields = 0 !< number of fields in override_array already processed
+type(data_type), dimension(max_table)           :: data_table !< user-provided data table
 type(data_type)                                 :: default_table
-type(override_type), dimension(max_array), save :: override_array ! to store processed fields
+type(override_type), dimension(max_array), save :: override_array !< to store processed fields
 type(override_type), save                       :: default_array
 logical                                         :: atm_on, ocn_on, lnd_on, ice_on
 logical                                         :: lndUG_on
@@ -163,6 +186,21 @@ contains
 !   <TEMPLATE>
 ! call data_override_init
 !   </TEMPLATE>
+
+!> @brief Assign default values for default_table, get domain of component models,
+!! get global grids of component models.
+!! Users should call data_override_init before calling data_override
+!!
+!! This subroutine should be called in coupler_init after
+!! (ocean/atmos/land/ice)_model_init have been called.
+!!
+!! data_override_init can be called more than once, in one call the user can pass
+!! up to 4 domains of component models, at least one domain must be present in
+!! any call
+!!
+!! Data_table is initialized here with default values. Users should provide "real" values
+!! that will override the default values. Real values can be given using data_table, each
+!! line of data_table contains one data_entry. Items of data_entry are comma separated.
 subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
   type (domain2d), intent(in), optional :: Atm_domain_in
   type (domain2d), intent(in), optional :: Ocean_domain_in, Ice_domain_in
@@ -460,6 +498,10 @@ end subroutine data_override_init
 !   <TEMPLATE>
 ! call data_override_unset_domain
 !   </TEMPLATE>
+
+!> @brief Unset domains that had previously been set for use by data_override.
+!!
+!! This subroutine deallocates any data override domains that have been set.
 subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
                                       unset_Ice, unset_Land, must_be_set)
   logical, intent(in), optional :: unset_Atm, unset_Ocean, unset_Ice, unset_Land
@@ -537,11 +579,13 @@ endif
 
 end subroutine check_grid_sizes
 !===============================================================================================
+
+!> @brief Given a gridname, this routine returns the working domain associated with this gridname
 subroutine get_domain(gridname, domain, comp_domain)
 ! Given a gridname, this routine returns the working domain associated with this gridname
   character(len=3), intent(in) :: gridname
   type(domain2D), intent(inout) :: domain
-  integer, intent(out), optional :: comp_domain(4) ! istart,iend,jstart,jend for compute domain
+  integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
 
   domain = NULL_DOMAIN2D
   select case (gridname)
@@ -561,11 +605,12 @@ subroutine get_domain(gridname, domain, comp_domain)
      call mpp_get_compute_domain(domain,comp_domain(1),comp_domain(2),comp_domain(3),comp_domain(4))
 end subroutine get_domain
 
+!> @brief Given a gridname, this routine returns the working domain associated with this gridname
 subroutine get_domainUG(gridname, UGdomain, comp_domain)
 ! Given a gridname, this routine returns the working domain associated with this gridname
   character(len=3), intent(in) :: gridname
   type(domainUG), intent(inout) :: UGdomain
-  integer, intent(out), optional :: comp_domain(4) ! istart,iend,jstart,jend for compute domain
+  integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
   type(domain2D), pointer :: SGdomain => NULL()
 
   UGdomain = NULL_DOMAINUG
@@ -586,12 +631,14 @@ end subroutine get_domainUG
 !   <DESCRIPTION>
 ! This routine performs data override for 2D fields; for usage, see data_override_3d.
 !   </DESCRIPTION>
+
+!> @brief This routine performs data override for 2D fields; for usage, see data_override_3d.
 subroutine data_override_2d(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
-  character(len=3), intent(in) :: gridname ! model grid ID
-  character(len=*), intent(in) :: fieldname ! field to override
-  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
-  type(time_type), intent(in) :: time !  model time
-  real, dimension(:,:), intent(inout) :: data_2D !data returned by this call
+  character(len=3), intent(in) :: gridname !< model grid ID
+  character(len=*), intent(in) :: fieldname !< field to override
+  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  type(time_type), intent(in) :: time !<  model time
+  real, dimension(:,:), intent(inout) :: data_2D !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
 !  real, dimension(size(data_2D,1),size(data_2D,2),1) :: data_3D
   real, dimension(:,:,:), allocatable ::  data_3D
@@ -645,34 +692,37 @@ end subroutine data_override_2d
 !   </OUT>
 !   <IN NAME="data_index" TYPE="integer">
 !   </IN>
+
+!> @brief This routine performs data override for 3D fields
 subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
-  character(len=3),             intent(in) :: gridname ! model grid ID
-  character(len=*),             intent(in) :: fieldname_code ! field name as used in the model
-  logical,           optional, intent(out) :: override ! true if the field has been overriden succesfully
-  type(time_type),              intent(in) :: time !(target) model time
+  character(len=3),             intent(in) :: gridname !< model grid ID
+  character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
+  logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
+  type(time_type),              intent(in) :: time !< (target) model time
   integer,           optional,  intent(in) :: data_index
-  real, dimension(:,:,:),    intent(inout) :: data !data returned by this call
+  real, dimension(:,:,:),    intent(inout) :: data !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
-  character(len=512) :: filename, filename2 !file containing source data
-  character(len=128) :: fieldname ! fieldname used in the data file
+  character(len=512) :: filename !< file containing source data
+  character(len=512) :: filename2 !< file containing source data
+  character(len=128) :: fieldname !< fieldname used in the data file
   integer            :: i,j
   integer            :: dims(4)
-  integer            :: index1 ! field index in data_table
-  integer            :: id_time !index for time interp in override array
+  integer            :: index1 !< field index in data_table
+  integer            :: id_time !< index for time interp in override array
   integer            :: axis_sizes(4)
   character(len=32)  :: axis_names(4)
-  real, dimension(:,:), pointer :: lon_local =>NULL(), &
-                                   lat_local =>NULL() !of output (target) grid cells
+  real, dimension(:,:), pointer :: lon_local =>NULL() !< of output (target) grid cells
+  real, dimension(:,:), pointer :: lat_local =>NULL() !< of output (target) grid cells
   real, dimension(:), allocatable :: lon_tmp, lat_tmp
 
-  logical :: data_file_is_2D = .false.  !data in netCDF file is 2D
+  logical :: data_file_is_2D = .false.  !< data in netCDF file is 2D
   logical :: ongrid, use_comp_domain
   type(domain2D) :: domain
-  integer :: curr_position ! position of the field currently processed in override_array
+  integer :: curr_position !< position of the field currently processed in override_array
   real :: factor
-  integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
+  integer, dimension(4) :: comp_domain = 0  !< istart,iend,jstart,jend for compute domain
   integer :: nxd, nyd, nxc, nyc, nwindows
   integer :: nwindows_x, ipos, jpos, window_size(2)
   integer :: istart, iend, jstart, jend
@@ -1081,19 +1131,21 @@ end subroutine data_override_3d
 !   </OUT>
 !   <IN NAME="data_index" TYPE="integer">
 !   </IN>
+
+!> @brief This routine performs data override for scalar fields
 subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_index)
-  character(len=3), intent(in) :: gridname ! model grid ID
-  character(len=*), intent(in) :: fieldname_code ! field name as used in the model
-  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
-  type(time_type), intent(in) :: time !(target) model time
-  real,             intent(out) :: data !data returned by this call
+  character(len=3), intent(in) :: gridname !< model grid ID
+  character(len=*), intent(in) :: fieldname_code !< field name as used in the model
+  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  type(time_type), intent(in) :: time !< (target) model time
+  real,             intent(out) :: data !< data returned by this call
   integer, intent(in), optional :: data_index
 
-  character(len=512) :: filename !file containing source data
-  character(len=128) :: fieldname ! fieldname used in the data file
-  integer :: index1 ! field index in data_table
-  integer :: id_time !index for time interp in override array
-  integer :: curr_position ! position of the field currently processed in override_array
+  character(len=512) :: filename !< file containing source data
+  character(len=128) :: fieldname !< fieldname used in the data file
+  integer :: index1 !< field index in data_table
+  integer :: id_time !< index for time interp in override array
+  integer :: curr_position !< position of the field currently processed in override_array
   integer :: i
   real :: factor
 
@@ -1168,17 +1220,17 @@ end subroutine data_override_0d
 ! </SUBROUTINE>
 
 subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
-  character(len=3),   intent(in) :: gridname ! model grid ID
-  character(len=*),   intent(in) :: fieldname ! field to override
-  real, dimension(:), intent(inout) :: data !data returned by this call
-  type(time_type),    intent(in) :: time !  model time
-  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
+  character(len=3),   intent(in) :: gridname !< model grid ID
+  character(len=*),   intent(in) :: fieldname !< field to override
+  real, dimension(:), intent(inout) :: data !< data returned by this call
+  type(time_type),    intent(in) :: time !<  model time
+  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   !local vars
   real, dimension(:,:), allocatable ::  data_SG
   type(domainUG) :: UG_domain
   integer       :: index1
   integer       :: i
-  integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
+  integer, dimension(4) :: comp_domain = 0  !< istart,iend,jstart,jend for compute domain
 
   !1  Look  for the data file in data_table
   if(PRESENT(override)) override = .false.
@@ -1203,18 +1255,18 @@ subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
 end subroutine data_override_UG_1d
 
 subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
-  character(len=3),     intent(in) :: gridname ! model grid ID
-  character(len=*),     intent(in) :: fieldname ! field to override
-  real, dimension(:,:), intent(inout) :: data !data returned by this call
-  type(time_type),      intent(in) :: time !  model time
-  logical, intent(out), optional :: override ! true if the field has been overriden succesfully
+  character(len=3),     intent(in) :: gridname !< model grid ID
+  character(len=*),     intent(in) :: fieldname !< field to override
+  real, dimension(:,:), intent(inout) :: data !< data returned by this call
+  type(time_type),      intent(in) :: time !<  model time
+  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   !local vars
   real, dimension(:,:,:), allocatable ::  data_SG
   real, dimension(:,:),   allocatable ::  data_UG
   type(domainUG) :: UG_domain
   integer       :: index1
   integer       :: i, nlevel, nlevel_max
-  integer, dimension(4) :: comp_domain = 0  ! istart,iend,jstart,jend for compute domain
+  integer, dimension(4) :: comp_domain = 0  !< istart,iend,jstart,jend for compute domain
 
 !1  Look  for the data file in data_table
   if(PRESENT(override)) override = .false.
@@ -1246,7 +1298,7 @@ end subroutine data_override_UG_2d
 
 !===============================================================================================
 
-! Get lon and lat of three model (target) grids from grid_spec.nc
+!> @brief Get lon and lat of three model (target) grids from grid_spec.nc
 subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   character(len=*),            intent(in) :: grid_file
   character(len=*),            intent(in) :: mod_name
@@ -1256,9 +1308,12 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   real,                       intent(out) :: min_lon, max_lon
 
   integer                                      :: i, j, siz(4)
-  integer                                      :: nlon, nlat         ! size of global lon and lat
-  real,          dimension(:,:,:), allocatable :: lon_vert, lat_vert !of OCN grid vertices
-  real,          dimension(:),     allocatable :: glon, glat         ! lon and lat of 1-D grid of atm/lnd
+  integer                                      :: nlon         !< size of global lon
+  integer                                      :: nlat         !< size of global lat
+  real,          dimension(:,:,:), allocatable :: lon_vert !< of OCN grid vertices
+  real,          dimension(:,:,:), allocatable :: lat_vert !< of OCN grid vertices
+  real,          dimension(:),     allocatable :: glon         !< lon of 1-D grid of atm/lnd
+  real,          dimension(:),     allocatable :: glat         !< lat of 1-D grid of atm/lnd
   logical                                      :: is_new_grid
   integer                                      :: is, ie, js, je
   integer                                      :: isd, ied, jsd, jed
@@ -1376,8 +1431,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
 
 end subroutine get_grid_version_1
 
-! Get global lon and lat of three model (target) grids from mosaic.nc
-! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
+!> @brief Get global lon and lat of three model (target) grids from mosaic.nc
+!!   z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   type(FmsNetcdfFile_t),       intent(in) :: fileobj
   character(len=*),            intent(in) :: mod_name
@@ -1387,8 +1442,10 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   real,                       intent(out) :: min_lon, max_lon
 
   integer            :: i, j, siz(2)
-  integer            :: nlon, nlat             ! size of global grid
-  integer            :: nlon_super, nlat_super ! size of global supergrid.
+  integer            :: nlon             !< size of global grid
+  integer            :: nlat             !< size of global grid
+  integer            :: nlon_super !< size of global supergrid.
+  integer            :: nlat_super !< size of global supergrid.
   integer            :: isd, ied, jsd, jed
   integer            :: isg, ieg, jsg, jeg
   integer            :: isc2, iec2, jsc2, jec2
