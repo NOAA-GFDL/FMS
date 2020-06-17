@@ -18,7 +18,8 @@
 !***********************************************************************
 
 !> @file
-!! @brief Contains the \ref diag_integral_mod module
+!! @brief This module computes and outputs global and / or hemispheric physics
+!!        integrals.
 !! @author Fei Liu
 !! @email gfdl.climate.model.info@noaa.gov
                      module diag_integral_mod
