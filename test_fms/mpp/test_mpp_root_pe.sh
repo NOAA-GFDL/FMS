@@ -28,5 +28,12 @@
 . ../test_common.sh
 
 
-# Run the test
+# Run the test with one processor
 run_test test_mpp_root_pe 1
+
+# Run the test with all processors
+if [ $(command -v nproc) ] ; then
+  nProc=$(nproc)
+  nProc=$( echo $nProc/2 | bc )
+  run_test test_mpp_npes ${nproc}
+fi

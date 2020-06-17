@@ -16,8 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @author MiKyung Lee
-!> @description This program tests the function mpp_root_pe().
+!> @file
+!! @brief unit test for the mpp_root_pe() function
+!! @author MiKyung Lee
+!! @email gfdl.climate.model.info@noaa.gov
+!! @description This program tests the function mpp_root_pe().
 !! The value of root_pe is set to 0 upon declaration.
 !! Thus, the test passes if the return value of mpp_root_pe is 0 and fails if otherwise.
 
