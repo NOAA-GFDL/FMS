@@ -38,7 +38,7 @@ check_PROGRAMS = test_mpp \
   test_mpp_print_memuse_stats_file \
   test_mpp_memutils_begin_2x \
   test_mpp_memutils_end_before_begin \
-  test_mpp_root_pe 
+  test_mpp_root_pe
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
