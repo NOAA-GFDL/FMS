@@ -33,7 +33,7 @@ run_test test_mpp_root_pe 1
 
 # Run the test with all processors
 if [ $(command -v nproc) ] ; then
-  nProc=$(nproc)
-  nProc=$( echo $nProc/2 | bc )
-  run_test test_mpp_npes ${nproc}
+  nProc=$(( `nproc`/2 ))
+  [ ${nProc} -lt 2 ] && nProc=$(( ${nProc}+1 ))
+  run_test test_mpp_root_pe ${nProc}
 fi
