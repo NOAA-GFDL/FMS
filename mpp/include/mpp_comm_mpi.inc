@@ -229,13 +229,12 @@ subroutine mpp_init_pio(piomode, numcomp, numiotasks)
 
   my_rank = mpp_pe()
 
-  ierr = nf90_enddef(0)
-  
   ! Define an IOSystem.
-  ! ierr = nf_def_iosystem(my_rank, MPI_COMM_WORLD, numiotasks, numAggregator, &
-  !      stride, 1, iosysid, base)
-  ! if (ierr .ne. 0) call mpp_error(FATAL, 'MPP_INIT_PIO: unable to define iosystem.')
+  ierr = nf_def_iosystem(my_rank, MPI_COMM_WORLD, numiotasks, numAggregator, &
+       stride, 1, iosysid, base)
+  if (ierr .ne. 0) call mpp_error(FATAL, 'MPP_INIT_PIO: unable to define iosystem.')
 
+  
 end subroutine mpp_init_pio
 #endif
 

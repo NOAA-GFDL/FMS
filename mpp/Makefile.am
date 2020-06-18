@@ -25,16 +25,22 @@
 # Descend into include directory.
 SUBDIRS = include
 
-INCFILES = group_update_pack.inc mpp_comm_mpi.inc mpp_data_mpi.inc	\
-mpp_define_nest_domains.inc mpp_domains_misc.inc mpp_io_connect.inc	\
-mpp_io_unstructured_read.inc mpp_io_write.inc mpp_sum.inc		\
-mpp_util.inc mpp_util_sma.inc group_update_unpack.inc			\
-mpp_comm_nocomm.inc mpp_data_nocomm.inc mpp_domains_comm.inc		\
-mpp_domains_reduce.inc mpp_io_misc.inc mpp_io_unstructured_write.inc	\
-mpp_read_distributed_ascii.inc mpp_transmit.inc mpp_util_mpi.inc	\
-mpp_comm.inc mpp_comm_sma.inc mpp_data_sma.inc mpp_domains_define.inc	\
-mpp_domains_util.inc mpp_io_read.inc mpp_io_util.inc mpp_sum_ad.inc	\
-mpp_unstruct_domain.inc mpp_util_nocomm.inc
+INCFILES = include/group_update_pack.inc include/mpp_comm_mpi.inc	\
+include/mpp_data_mpi.inc include/mpp_define_nest_domains.inc		\
+include/mpp_domains_misc.inc include/mpp_io_connect.inc			\
+include/mpp_io_unstructured_read.inc include/mpp_io_write.inc		\
+include/mpp_sum.inc include/mpp_util.inc include/mpp_util_sma.inc	\
+include/group_update_unpack.inc include/mpp_comm_nocomm.inc		\
+include/mpp_data_nocomm.inc include/mpp_domains_comm.inc		\
+include/mpp_domains_reduce.inc include/mpp_io_misc.inc			\
+include/mpp_io_unstructured_write.inc					\
+include/mpp_read_distributed_ascii.inc include/mpp_transmit.inc		\
+include/mpp_util_mpi.inc include/mpp_comm.inc				\
+include/mpp_comm_sma.inc include/mpp_data_sma.inc			\
+include/mpp_domains_define.inc include/mpp_domains_util.inc		\
+include/mpp_io_read.inc include/mpp_io_util.inc				\
+include/mpp_sum_ad.inc include/mpp_unstruct_domain.inc			\
+include/mpp_util_nocomm.inc
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
@@ -47,17 +53,25 @@ libmpp_domains.la libmpp_io.la libmpp_c.la libmpp_memuse_c.la
 
 # Each convenience library depends on its source.
 libmpp_parameter_la_SOURCES = mpp_parameter.F90
-libmpp_la_SOURCES = mpp.F90 $(INCFILES)
-libmpp_data_la_SOURCES = mpp_data.F90 $(INCFILES)
-#libmpp_la_DEPENDENCIES = include/mpp_comm.inc include/mpp_comm_mpi.inc
-libmpp_utilities_la_SOURCES = mpp_utilities.F90 $(INCFILES)
-libmpp_domains_la_SOURCES = mpp_domains.F90 $(INCFILES)
-libmpp_io_la_SOURCES = mpp_io.F90 $(INCFILES)
-libmpp_pset_la_SOURCES = mpp_pset.F90 $(INCFILES)
-libmpp_efp_la_SOURCES = mpp_efp.F90 $(INCFILES)
-libmpp_c_la_SOURCES = nsclock.c threadloc.c $(INCFILES)
-libmpp_memutils_la_SOURCES = mpp_memutils.F90 $(INCFILES)
-libmpp_memuse_c_la_SOURCES = mpp_memuse.c $(INCFILES)
+libmpp_parameter_la_DEPENDENCIES = $(INCFILES)
+libmpp_la_SOURCES = mpp.F90
+libmpp_la_DEPENDENCIES = $(INCFILES)
+libmpp_data_la_SOURCES = mpp_data.F90 
+libmpp_data_la_DEPENDENCIES = $(INCFILES)
+libmpp_utilities_la_SOURCES = mpp_utilities.F90
+libmpp_utilities_la_DEPENDENCIES = $(INCFILES)
+libmpp_domains_la_SOURCES = mpp_domains.F90
+libmpp_domains_la_DEPENDENCIES = $(INCFILES)
+libmpp_io_la_SOURCES = mpp_io.F90
+libmpp_io_la_DEPENDENCIES = $(INCFILES)
+libmpp_pset_la_SOURCES = mpp_pset.F90
+libmpp_pset_la_DEPENDENCIES = $(INCFILES)
+libmpp_efp_la_SOURCES = mpp_efp.F90
+libmpp_efp_la_DEPENDENCIES = $(INCFILES)
+libmpp_c_la_SOURCES = nsclock.c threadloc.c
+libmpp_memutils_la_SOURCES = mpp_memutils.F90
+libmpp_memutils_la_DEPENDENCIES = $(INCFILES)
+libmpp_memuse_c_la_SOURCES = mpp_memuse.c
 
 # Each mod file depends on the .o file.
 mpp_parameter_mod.mod: mpp_parameter.lo
