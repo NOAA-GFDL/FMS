@@ -22,7 +22,12 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ed Hartnett 11/29/19
+# MiKyung Lee 06/18/2020, based on Ed Hartnett 11/29/19
+
+
+# set number of processors to test
+nproc=4
+
 
 # Set common test settings.
 . ../test_common.sh
@@ -31,9 +36,6 @@
 # Run the test with one processor
 run_test test_mpp_root_pe 1
 
-# Run the test with all processors
-if [ $(command -v nproc) ] ; then
-  nProc=$(( `nproc`/2 ))
-  [ ${nProc} -lt 2 ] && nProc=$(( ${nProc}+1 ))
-  run_test test_mpp_root_pe ${nProc}
-fi
+# Run the test with nproc number of processors
+run_test test_mpp_root_pe ${nproc}
+
