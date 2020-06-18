@@ -759,9 +759,11 @@ end subroutine sum_field_3d
 !!
 subroutine sum_field_wght_3d (name, data, wt, is, js)
 
-character(len=*),  intent(in) :: name
-real,              intent(in) :: data(:,:,:), wt(:,:,:)
-integer, optional, intent(in) :: is, js
+character(len=*),  intent(in) :: name !< Name of the field to be integrated
+real,              intent(in) :: data(:,:,:) !< field of integrands to be summed over
+real,              intent(in) :: wt(:,:,:) !< the weight function to be evaluated at summation
+integer, optional, intent(in) :: is !< starting i indices over which summation is to occur
+integer, optional, intent(in) :: js !< starting j indices over which summation is to occur
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -771,7 +773,15 @@ integer, optional, intent(in) :: is, js
 !                       processor-global coordinates
 !-------------------------------------------------------------------------------
       real, dimension (size(data,1),size(data,2)) :: data2
-      integer :: field, i1, j1, i2, j2
+      integer :: field !< index of desired integral
+      integer :: i1 !< location indices of current data in
+                                       !! processor-global coordinates
+      integer :: j1 !< location indices of current data in
+                                       !! processor-global coordinates
+      integer :: i2 !< location indices of current data in
+                                       !! processor-global coordinates
+      integer :: j2 !< location indices of current data in
+                                       !! processor-global coordinates
 
 !-------------------------------------------------------------------------------
 !    be sure module has been initialized.
@@ -845,9 +855,16 @@ end subroutine sum_field_wght_3d
 !!
 subroutine sum_field_2d_hemi (name, data, is, ie, js, je)
 
-character(len=*),  intent(in) :: name
-real,              intent(in) :: data(:,:)
-integer,           intent(in) :: is, js, ie, je
+character(len=*),  intent(in) :: name !< Name of the field to be integrated
+real,              intent(in) :: data(:,:) !< field of integrands to be summed over
+integer,           intent(in) :: is !< starting/ending i,j indices over which summation
+                                                !! is to occur
+integer,           intent(in) :: js !< starting/ending i,j indices over which summation
+                                                !! is to occur
+integer,           intent(in) :: ie !< starting/ending i,j indices over which summation
+                                                !! is to occur
+integer,           intent(in) :: je !< starting/ending i,j indices over which summation
+                                                !! is to occur
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -855,7 +872,15 @@ integer,           intent(in) :: is, js, ie, je
 !     i1, j1, i2, j2  ! location indices of current data in
 !                       processor-global coordinates
 !-------------------------------------------------------------------------------
-   integer :: field, i1, j1, i2, j2
+   integer :: field !< index of desired integral
+   integer :: i1 !< location indices of current data in
+                             !! processor-global coordinates
+   integer :: j1 !< location indices of current data in
+                             !! processor-global coordinates
+   integer :: i2 !< location indices of current data in
+                             !! processor-global coordinates
+   integer :: j2 !< location indices of current data in
+                             !! processor-global coordinates
 
 !-------------------------------------------------------------------------------
 !    be sure module has been initialized.
@@ -1045,16 +1070,16 @@ end subroutine diag_integral_end
 !!
 function set_axis_time (atime, units) result (Time)
 
-real,             intent(in) :: atime
-character(len=*), intent(in) :: units
-type(time_type)  :: Time
+real,             intent(in) :: atime !< integral time stamp at the current time
+character(len=*), intent(in) :: units !< input units, not used
+type(time_type)  :: Time 
 
 !-------------------------------------------------------------------------------
 ! local variables:
 !-------------------------------------------------------------------------------
-      integer          :: sec     ! seconds corresponding to the input
-                                  ! variable atime
-      integer          :: day = 0 ! day component of time_type variable
+      integer          :: sec     !< seconds corresponding to the input
+                                  !! variable atime
+      integer          :: day = 0 !< day component of time_type variable
 
 !-------------------------------------------------------------------------------
 !    convert the input time to seconds, regardless of input units.
@@ -1105,8 +1130,8 @@ end function set_axis_time
 !!
 function get_field_index (name) result (index)
 
-character(len=*),  intent(in) :: name
-integer                       :: index
+character(len=*),  intent(in) :: name !< Name associated with an integral
+integer                       :: index 
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1160,7 +1185,7 @@ end function get_field_index
 !!
 subroutine write_field_averages (Time)
 
-type (time_type), intent(in) :: Time
+type (time_type), intent(in) :: Time !< integral time stamp at the current time
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1280,7 +1305,10 @@ end subroutine write_field_averages
 !!
 subroutine format_text_init (nst_in, nend_in)
 
-integer, intent(in), optional :: nst_in, nend_in
+integer, intent(in), optional :: nst_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
+integer, intent(in), optional :: nend_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1368,7 +1396,10 @@ end subroutine format_text_init
 !!
 subroutine format_data_init (nst_in, nend_in)
 
-integer, intent(in), optional :: nst_in, nend_in
+integer, intent(in), optional :: nst_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
+integer, intent(in), optional :: nend_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1442,10 +1473,11 @@ end subroutine format_data_init
 !! \param [in] <units> input units of time_type
 !! \param [out] <atime>
 !!
+!! @return real atime
 function get_axis_time (Time, units) result (atime)
 
-type(time_type),  intent(in) :: Time
-character(len=*), intent(in) :: units
+type(time_type),  intent(in) :: Time !< integral time stamp
+character(len=*), intent(in) :: units !< input units of time_type
 real                         :: atime
 
 !-------------------------------------------------------------------------------
@@ -1490,9 +1522,10 @@ end function get_axis_time
 !! \param [in] <Time> current time
 !! \param [out] <answer>
 !!
+!! @return logical answer
 function diag_integral_alarm (Time) result (answer)
 
-type (time_type), intent(in) :: Time
+type (time_type), intent(in) :: Time !< current time
 logical                      :: answer
 
       answer = .false.
@@ -1525,9 +1558,11 @@ end function diag_integral_alarm
 !! \param [in] <data> integral field data arrays
 !! \param [in] <wt> integral field weighting functions
 !! \param [out] <data2>
+!! @return real array data2
 function vert_diag_integral (data, wt) result (data2)
 
-real, dimension (:,:,:),         intent(in) :: data, wt
+real, dimension (:,:,:),         intent(in) :: data !< integral field data arrays
+real, dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
 real, dimension (size(data,1),size(data,2)) :: data2
 
 !-------------------------------------------------------------------------------
@@ -1546,7 +1581,8 @@ real, dimension (size(data,1),size(data,2)) :: data2
 
 end function vert_diag_integral
 
-!> \brief Adds .ens_## to the diag_integral.out file name
+!> @brief Adds .ens_## to the diag_integral.out file name
+!! @return character array updated_file_name
 function ensemble_file_name(fname) result(updated_file_name)
      character (len=mxch), intent(inout) :: fname
      character (len=mxch) :: updated_file_name
