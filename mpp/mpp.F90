@@ -161,6 +161,11 @@ module mpp_mod
 
 #include <fms_platform.h>
 
+#ifdef USE_PIO
+  use netcdf
+  use pio
+#endif
+
 #if defined(use_libSMA) && defined(sgi_mipspro)
   use shmem_interface
 #endif
