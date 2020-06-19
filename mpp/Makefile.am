@@ -25,6 +25,7 @@
 # Descend into include directory.
 SUBDIRS = include
 
+# These are the .inc files in the include directory.
 INCFILES = include/group_update_pack.inc include/mpp_comm_mpi.inc	\
 include/mpp_data_mpi.inc include/mpp_define_nest_domains.inc		\
 include/mpp_domains_misc.inc include/mpp_io_connect.inc			\
@@ -75,8 +76,9 @@ mpp_efp_mod.mod: mpp_efp.lo
 mpp_domains_mod.mod: mpp_domains.lo
 mpp_io_mod.mod: mpp_io.lo
 
-# Some mods are dependant on other mods in this dir.
-mpp_data.lo: mpp_parameter_mod.mod
+# Some mods are dependant on other mods in this dir. All mods depend
+# on the include files.
+mpp_data.lo: mpp_parameter_mod.mod $(INCFILES)
 mpp.lo: mpp_parameter_mod.mod mpp_data_mod.mod $(INCFILES)
 mpp_utilities.lo: mpp_mod.mod mpp_efp_mod.mod $(INCFILES)
 mpp_memutils.lo: mpp_mod.mod $(INCFILES)
