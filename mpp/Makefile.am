@@ -53,30 +53,21 @@ libmpp_domains.la libmpp_io.la libmpp_c.la libmpp_memuse_c.la
 
 # Each convenience library depends on its source.
 libmpp_parameter_la_SOURCES = mpp_parameter.F90
-libmpp_parameter_la_DEPENDENCIES = $(INCFILES)
 libmpp_la_SOURCES = mpp.F90
-libmpp_la_DEPENDENCIES = $(INCFILES)
 libmpp_data_la_SOURCES = mpp_data.F90 
-libmpp_data_la_DEPENDENCIES = $(INCFILES)
 libmpp_utilities_la_SOURCES = mpp_utilities.F90
-libmpp_utilities_la_DEPENDENCIES = $(INCFILES)
 libmpp_domains_la_SOURCES = mpp_domains.F90
-libmpp_domains_la_DEPENDENCIES = $(INCFILES)
 libmpp_io_la_SOURCES = mpp_io.F90
-libmpp_io_la_DEPENDENCIES = $(INCFILES)
 libmpp_pset_la_SOURCES = mpp_pset.F90
-libmpp_pset_la_DEPENDENCIES = $(INCFILES)
 libmpp_efp_la_SOURCES = mpp_efp.F90
-libmpp_efp_la_DEPENDENCIES = $(INCFILES)
 libmpp_c_la_SOURCES = nsclock.c threadloc.c
 libmpp_memutils_la_SOURCES = mpp_memutils.F90
-libmpp_memutils_la_DEPENDENCIES = $(INCFILES)
 libmpp_memuse_c_la_SOURCES = mpp_memuse.c
 
 # Each mod file depends on the .o file.
 mpp_parameter_mod.mod: mpp_parameter.lo
 mpp_data_mod.mod: mpp_data.lo
-mpp_mod.mod: mpp.lo
+mpp_mod.mod: mpp.lo mpp_parameter.lo mpp_data.lo
 mpp_pset_mod.mod: mpp_pset.lo
 mpp_utilities_mod.mod: mpp_utilities.lo
 mpp_memutils_mod.mod: mpp_memutils.lo
@@ -86,14 +77,14 @@ mpp_io_mod.mod: mpp_io.lo
 
 # Some mods are dependant on other mods in this dir.
 mpp_data.lo: mpp_parameter_mod.mod
-mpp.lo: mpp_data_mod.mod
-mpp_utilities.lo: mpp_mod.mod mpp_efp_mod.mod
-mpp_memutils.lo: mpp_mod.mod
-mpp_pset.lo: mpp_mod.mod
-mpp_efp.lo: mpp_parameter_mod.mod mpp_mod.mod
+mpp.lo: mpp_parameter_mod.mod mpp_data_mod.mod $(INCFILES)
+mpp_utilities.lo: mpp_mod.mod mpp_efp_mod.mod $(INCFILES)
+mpp_memutils.lo: mpp_mod.mod $(INCFILES)
+mpp_pset.lo: mpp_mod.mod $(INCFILES)
+mpp_efp.lo: mpp_parameter_mod.mod mpp_mod.mod $(INCFILES)
 mpp_domains.lo: mpp_data_mod.mod mpp_parameter_mod.mod mpp_mod.mod	\
-mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
-mpp_io.lo: mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
+mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod $(INCFILES)
+mpp_io.lo: mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod $(INCFILES)
 
 # Mod files are built and then installed as headers.
 MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod \

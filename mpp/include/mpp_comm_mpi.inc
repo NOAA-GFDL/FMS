@@ -234,7 +234,6 @@ subroutine mpp_init_pio(piomode, numcomp, numiotasks)
        stride, 1, iosysid, base)
   if (ierr .ne. 0) call mpp_error(FATAL, 'MPP_INIT_PIO: unable to define iosystem.')
 
-  
 end subroutine mpp_init_pio
 #endif
 
