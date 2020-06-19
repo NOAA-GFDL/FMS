@@ -32,12 +32,18 @@ echo "Running stdout unit test with 1 proc..."; echo
 run_test test_stdout 1
 echo; echo "stdout test passed with 1 proc."; echo
 
-
 # If more than one processor available:
 echo "Running stdout unit test with multiple procs..."; echo
-if [ $(command -v nproc) ]
-  then
-    nProc=$(nproc)
+if [ $(command -v nproc) ]; then
+  nProc=$(nproc)
+  err=0
+  run_test test_stdout ${nProc} || err=1
+  if [ $err -eq 1 ]; then
+    echo; echo "Failed with all possible procs"
+    echo "Retrying with half as many,"
+    echo "In case we were on a machine that used virtual cores:"
+    nProc=$((nProc/2))
     run_test test_stdout ${nProc}
+  fi
 fi
 echo; echo "stdout test passed with multiple procs."
