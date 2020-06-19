@@ -17,6 +17,32 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief Type descriptions and global variables for the diag_manager modules.
+!! @author Seth Underwood
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!!   Notation:
+!!   <DL>
+!!     <DT>input field</DT>
+!!     <DD>The data structure describing the field as
+!!       registered by the model code.</DD>
+!!
+!!     <DT>output field</DT>
+!!     <DD>The data structure describing the actual
+!!       diagnostic output with requested frequency and
+!!       other options.</DD>
+!!   </DL>
+!!
+!!   Input fields, output fields, and output files are gathered in arrays called
+!!   "input_fields", "output_fields", and "files", respectively. Indices in these
+!!   arrays are used as pointers to create associations between various data
+!!   structures.
+!!
+!!   Each input field associated with one or several output fields via array of
+!!   indices output_fields; each output field points to the single "parent" input
+!!   field with the input_field index, and to the output file with the output_file
+!!   index
 MODULE diag_data_mod
 use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -105,10 +131,12 @@ use fms2_io_mod
   INTEGER, PARAMETER :: DIAG_SECONDS = 1, DIAG_MINUTES = 2, DIAG_HOURS = 3
   INTEGER, PARAMETER :: DIAG_DAYS = 4, DIAG_MONTHS = 5, DIAG_YEARS = 6
   INTEGER, PARAMETER :: MAX_SUBAXES = 10
-  INTEGER, PARAMETER :: GLO_REG_VAL = -999
-  INTEGER, PARAMETER :: GLO_REG_VAL_ALT = -1
+  INTEGER, PARAMETER :: GLO_REG_VAL = -999 !< Value used in the region specification of the diag_table
+                                           !! to indicate to use the full axis instead of a sub-axis
+  INTEGER, PARAMETER :: GLO_REG_VAL_ALT = -1 !< Alternate value used in the region specification of the
+                                             !! diag_table to indicate to use the full axis instead of a sub-axis
   REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
-  INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1
+  INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1 !< Return value for a diag_field that isn't found in the diag_table
 
   ! <TYPE NAME="diag_grid">
   !   <DESCRIPTION>
@@ -129,10 +157,13 @@ use fms2_io_mod
   !   <DATA NAME="subaxes" TYPE="INTEGER, DIMENSION(3)">
   !     ID returned from diag_subaxes_init of 3 subaces.
   !   </DATA>
+  !> @brief Contains the coordinates of the local domain to output.
   TYPE diag_grid
-     REAL, DIMENSION(3) :: start, END ! start and end coordinates (lat,lon,depth) of local domain to output
-     INTEGER, DIMENSION(3) :: l_start_indx, l_end_indx ! start and end indices at each LOCAL PE
-     INTEGER, DIMENSION(3) :: subaxes ! id returned from diag_subaxes_init of 3 subaxes
+     REAL, DIMENSION(3) :: start !< start coordinates (lat,lon,depth) of local domain to output
+     REAL, DIMENSION(3) :: END !< end coordinates (lat,lon,depth) of local domain to output
+     INTEGER, DIMENSION(3) :: l_start_indx !< start indices at each LOCAL PE
+     INTEGER, DIMENSION(3) :: l_end_indx !< end indices at each LOCAL PE
+     INTEGER, DIMENSION(3) :: subaxes !< id returned from diag_subaxes_init of 3 subaxes
   END TYPE diag_grid
   ! </TYPE>
 
@@ -154,6 +185,7 @@ use fms2_io_mod
   !   </DATA>
   !   <DATA NAME="tile_count" TYPE="INTEGER">
   !   </DATA>
+  !> @brief Diagnostic field type
   TYPE diag_fieldtype
      TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
@@ -187,13 +219,15 @@ use fms2_io_mod
   !   <DATA NAME="iatt">
   !     INTEGER array to hold value of INTEGER attributes.
   !   </DATA>
+  !> @brief Attribute type for diagnostic fields
   type :: diag_atttype
-     INTEGER             :: type
-     INTEGER             :: len
-     CHARACTER(len=128)  :: name
-     CHARACTER(len=1280) :: catt
-     REAL, allocatable, DIMENSION(:)    :: fatt
-     INTEGER, allocatable, DIMENSION(:) :: iatt
+     INTEGER             :: type !< Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
+     INTEGER             :: len !< Number of values in attribute, or if a character string then
+                                !! length of the string.
+     CHARACTER(len=128)  :: name !< Name of the attribute
+     CHARACTER(len=1280) :: catt !< Character string to hold character value of attribute
+     REAL, allocatable, DIMENSION(:)    :: fatt !< REAL array to hold value of REAL attributes
+     INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
   end type diag_atttype
   ! </TYPE>
   ! <TYPE NAME="coord_type">
@@ -212,6 +246,7 @@ use fms2_io_mod
   !   </DATA>
   !   <DATA NAME="zend" TYPE="REAL">
   !   </DATA>
+  !> @brief Define the region for field output
   TYPE coord_type
      REAL :: xbegin
      REAL :: xend
@@ -290,6 +325,7 @@ use fms2_io_mod
   !   <DATA NAME="num_attributes" TYPE="INTEGER" >
   !     Number of defined attibutes
   !   </DATA>
+  !> @brief Type to define the diagnostic files that will be written as defined by the diagnostic table.
   TYPE file_type
      CHARACTER(len=128) :: name !< Name of the output file.
      CHARACTER(len=128) :: long_name
@@ -313,8 +349,8 @@ use fms2_io_mod
      TYPE(time_type) :: start_time !< Time file opened.
      TYPE(time_type) :: close_time !< Time file closed.  File does not allow data after close time
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
-     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
-     INTEGER :: num_attributes
+     TYPE(diag_atttype), allocatable, dimension(:) :: attributes !< Array to hold user definable attributes
+     INTEGER :: num_attributes !< Number of defined attibutes
 !----------
 !ug support
      logical(I4_KIND) :: use_domainUG = .false.
