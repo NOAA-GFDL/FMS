@@ -422,6 +422,7 @@ use fms2_io_mod
   !     field.  Once .TRUE. the warning message is suppressed on all subsequent
   !     send_data calls.
   !   </DATA>
+  !> @brief Type to hold the input field description
   TYPE input_field_type
      CHARACTER(len=128) :: module_name, field_name, long_name, units
      CHARACTER(len=256) :: standard_name
@@ -436,11 +437,15 @@ use fms2_io_mod
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
      INTEGER :: numthreads
-     INTEGER :: active_omp_level
+     INTEGER :: active_omp_level !< The current level of OpenMP nesting
      INTEGER :: tile_count
      TYPE(coord_type) :: local_coord
      TYPE(time_type)  :: time
-     LOGICAL :: issued_mask_ignore_warning
+     LOGICAL :: issued_mask_ignore_warning !< Indicates if the mask_ignore_warning
+                                           !! has been issued for this input
+                                           !! field.  Once .TRUE. the warning message 
+                                           !! is suppressed on all subsequent
+                                           !! send_data calls.
   END TYPE input_field_type
   ! </TYPE>
 
@@ -545,37 +550,48 @@ use fms2_io_mod
   !   <DATA NAME="num_attributes" TYPE="INTEGER" >
   !     Number of defined attibutes
   !   </DATA>
+  !> @brief Type to hold the output field description.
   TYPE output_field_type
-     INTEGER :: input_field ! index of the corresponding input field in the table
-     INTEGER :: output_file ! index of the output file in the table
+     INTEGER :: input_field !< index of the corresponding input field in the table
+     INTEGER :: output_file !< index of the output file in the table
      CHARACTER(len=128) :: output_name
-     LOGICAL :: time_average ! true if the output field is averaged over time interval
-     LOGICAL :: time_rms ! true if the output field is the rms.  If true, then time_average is also
+     LOGICAL :: time_average !< true if the output field is averaged over time interval
+     LOGICAL :: time_rms !< true if the output field is the rms.  If true, then time_average is also
      LOGICAL :: static
-     LOGICAL :: time_max ! true if the output field is maximum over time interval
-     LOGICAL :: time_min ! true if the output field is minimum over time interval
-     LOGICAL :: time_sum ! true if the output field is summed over time interval
-     LOGICAL :: time_ops ! true if any of time_min, time_max, time_rms or time_average is true
+     LOGICAL :: time_max !< true if the output field is maximum over time interval
+     LOGICAL :: time_min !< true if the output field is minimum over time interval
+     LOGICAL :: time_sum !< true if the output field is summed over time interval
+     LOGICAL :: time_ops !< true if any of time_min, time_max, time_rms or time_average is true
      INTEGER  :: pack
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
-     CHARACTER(len=50) :: time_method ! time method field from the input file
+     CHARACTER(len=50) :: time_method !< time method field from the input file
      ! coordinates of the buffer and counter are (x, y, z, time-of-day)
-     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer
-     REAL, allocatable, DIMENSION(:,:,:,:) :: counter
+     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer !< coordinates of the buffer and counter are (x, y, z, time-of-day)
+     REAL, allocatable, DIMENSION(:,:,:,:) :: counter !< coordinates of the buffer and counter are (x, y, z, time-of-day)
      ! the following two counters are used in time-averaging for some
      ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
      ! the diurnal interval, because the number of time slices accumulated
      ! in each can be different, depending on time step and the number of
      ! diurnal samples.
-     REAL, allocatable, DIMENSION(:)  :: count_0d
-     INTEGER, allocatable, dimension(:) :: num_elements
+     REAL, allocatable, DIMENSION(:)  :: count_0d !< the following two counters are used in time-averaging for some
+     !! combination of the field options. Their size is the length of the
+     !! diurnal axis; the counters must be tracked separately for each of
+     !! the diurnal interval, because the number of time slices accumulated
+     !! in each can be different, depending on time step and the number of
+     !! diurnal samples.
+     INTEGER, allocatable, dimension(:) :: num_elements !< the following two counters are used in time-averaging for some
+     !! combination of the field options. Their size is the length of the
+     !! diurnal axis; the counters must be tracked separately for each of
+     !! the diurnal interval, because the number of time slices accumulated
+     !! in each can be different, depending on time step and the number of
+     !! diurnal samples.
 
      TYPE(time_type) :: last_output, next_output, next_next_output
      TYPE(diag_fieldtype) :: f_type
      INTEGER, DIMENSION(4) :: axes
      INTEGER :: num_axes, total_elements, region_elements
-     INTEGER :: n_diurnal_samples ! number of diurnal sample intervals, 1 or more
+     INTEGER :: n_diurnal_samples !< number of diurnal sample intervals, 1 or more
      TYPE(diag_grid) :: output_grid
      LOGICAL :: local_output, need_compute, phys_window, written_once
      LOGICAL :: reduced_k_range
@@ -641,6 +657,7 @@ use fms2_io_mod
   !   <DATA NAME="pos" TYPE="INTEGER" >
   !     The position in the doman (NORTH or EAST or CENTER)
   !   </DATA>
+  !> @brief Type to hold the diagnostic axis description.
   TYPE diag_axis_type
      CHARACTER(len=128) :: name
      CHARACTER(len=256) :: units, long_name
@@ -656,8 +673,8 @@ use fms2_io_mod
      type(domainUG) :: DomainUG
      CHARACTER(len=128) :: aux, req
      INTEGER :: tile_count
-     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
-     INTEGER :: num_attributes
+     TYPE(diag_atttype), allocatable, dimension(:) :: attributes !< Array to hold user definable attributes
+     INTEGER :: num_attributes !< Number of defined attibutes
      INTEGER :: domain_position !< The position in the doman (NORTH or EAST or CENTER)
   END TYPE diag_axis_type
   ! </TYPE>
