@@ -977,6 +977,8 @@ CONTAINS
   !   <IN NAME="id" TYPE="INTEGER">Axis ID</IN>
 !----------
 !ug support
+  !> @brief Checks if the axes are compatible
+  !! @return integer domain_type
   function axis_compatible_check(id,varname) result(domain_type)
 
    !Inputs/Outputs
@@ -1072,9 +1074,11 @@ CONTAINS
   !   </IN>
   !   <OUT NAME="ishift" TYPE="INTEGER">X shift value.</OUT>
   !   <OUT NAME="jshift" TYPE="INTEGER">Y shift value.</OUT>
+  !> @brief Return the value of the shift for the axis IDs given.
   SUBROUTINE get_axes_shift(ids, ishift, jshift)
     INTEGER, DIMENSION(:), INTENT(in) :: ids
-    INTEGER, INTENT(out) :: ishift, jshift
+    INTEGER, INTENT(out) :: ishift !< X shift value.
+    INTEGER, INTENT(out) :: jshift !< Y shift value.
 
     INTEGER :: i, id
 
@@ -1106,10 +1110,12 @@ CONTAINS
   !     Returns index into axis table corresponding to a given axis name.
   !   </DESCRIPTION>
   !   <IN NAME="axis_name" TYPE="CHARACTER(len=*)">Axis name.</IN>
-  !   <IN NAME="set_name" TYPE="CHARACTER(len=*), OPTIONAL">Set name.</IN>
+  !   <IN NAME="set_name" TYPE="CHARACTER(len=*), OPTIONAL">Set name.</IN>!>
+  !> @brief Returns index into axis table corresponding to a given axis name.
+  !! @return Returns index into axis table corresponding to a given axis name.
   INTEGER FUNCTION get_axis_num(axis_name, set_name)
-    CHARACTER(len=*), INTENT(in) :: axis_name
-    CHARACTER(len=*), INTENT(in), OPTIONAL :: set_name
+    CHARACTER(len=*), INTENT(in) :: axis_name !< Axis name
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: set_name !< Set name
 
     INTEGER :: set, n
 
@@ -1141,8 +1147,10 @@ CONTAINS
   !     Returns index in axis set table corresponding to a given axis set name.
   !   </DESCRIPTION>
   !   <IN NAME="set_name" TYPE="CHARACTER(len=*)">Set name.</IN>
+  !> @brief Returns index in axis set table corresponding to a given axis set name
+  !! @return Returns index in axis set table corresponding to a given axis set name
   INTEGER FUNCTION get_axis_set_num (set_name)
-    CHARACTER(len=*), INTENT(in) :: set_name
+    CHARACTER(len=*), INTENT(in) :: set_name !< Set name
 
     INTEGER :: iset
 
@@ -1171,9 +1179,11 @@ CONTAINS
   !   </DESCRIPTION>
   !   <IN NAME="id" TYPE="INTEGER">Axis id to check for validity</IN>
   !   <IN NAME="routine_name" TYPE="CHARACTER(len=*)">Name of the subroutine checking for a valid axis id.</IN>
+  !> @brief Check to see if the given axis id is a valid id.  If the axis id is invalid,
+  !!     call a FATAL error.  If the ID is valid, just return.
   SUBROUTINE valid_id_check(id, routine_name)
-    INTEGER, INTENT(in) :: id
-    CHARACTER(len=*), INTENT(in) :: routine_name
+    INTEGER, INTENT(in) :: id !< Axis is to check for validity
+    CHARACTER(len=*), INTENT(in) :: routine_name !< Name of the subroutine checking for a valid axis id
 
     CHARACTER(len=5) :: emsg
 
@@ -1431,9 +1441,11 @@ CONTAINS
   !   </DESCRIPTION>
   !   <INOUT NAME="out_file" TYPE="TYPE(file_type)">output file to allocate memory for attribute</INOUT>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  !> @brief Allocates memory in out_file for the attributes.  Will <TT>FATAL</TT> if err_msg is not included
+  !!   in the subroutine call.
   SUBROUTINE attribute_init_axis(out_axis, err_msg)
-    TYPE(diag_axis_type), INTENT(inout) :: out_axis
-    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
+    TYPE(diag_axis_type), INTENT(inout) :: out_axis !< output file to allocate memory for attribute
+    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg !< Error message, passed back to calling function
 
     INTEGER :: istat
 
@@ -1475,10 +1487,13 @@ CONTAINS
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)">Name of the attribute</IN>
   !   <IN NAME="prepend_value" TYPE="CHARACTER(len=*)">Value to prepend</IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
+  !> @brief Prepends the attribute value to an already existing attribute.  If the
+  !!    attribute isn't yet defined, then creates a new attribute
   SUBROUTINE prepend_attribute_axis(out_axis, att_name, prepend_value, err_msg)
-    TYPE(diag_axis_type), INTENT(inout) :: out_axis
-    CHARACTER(len=*), INTENT(in) :: att_name, prepend_value
-    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
+    TYPE(diag_axis_type), INTENT(inout) :: out_axis !< diagnostic axis that will get the attribute
+    CHARACTER(len=*), INTENT(in) :: att_name !< Name of the attribute
+    CHARACTER(len=*), INTENT(in) :: prepend_value !< Value to prepend
+    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg !< Error message, passed back to calling routine
 
     INTEGER :: length, i, this_attribute
     CHARACTER(len=512) :: err_msg_local
@@ -1562,8 +1577,9 @@ CONTAINS
   END SUBROUTINE prepend_attribute_axis
   ! </SUBROUTINE>
 
-  ! given an axis, returns TRUE if the axis uses compression-by-gathering: that is, if
-  ! this is an axis for fields on unstructured grid
+  !> @brief given an axis, returns TRUE if the axis uses compression-by-gathering: that is, if
+  !!   this is an axis for fields on unstructured grid
+  !! @return logical whether or not the axis uses compression-by-gathering
   logical function axis_is_compressed(id)
     integer, intent(in) :: id
 
@@ -1582,8 +1598,8 @@ CONTAINS
   end function axis_is_compressed
 
 
-  ! given an index of compressed-by-gathering axis, return an array of axes used in
-  ! compression. It is a fatal error to call it on axis that is not compressed
+  !> @brief given an index of compressed-by-gathering axis, return an array of axes used in
+  !!   compression. It is a fatal error to call it on axis that is not compressed
   subroutine get_compressed_axes_ids(id, r)
     integer, intent(in)  :: id
     integer, intent(out), allocatable :: r(:)
