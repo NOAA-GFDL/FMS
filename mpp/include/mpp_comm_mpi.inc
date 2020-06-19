@@ -215,28 +215,6 @@
   return
 end subroutine mpp_init
 
-#ifdef USE_PIO
-!> Initialize mpp to use PIO. This should be called after mpp_init().
-!> @author Ed Hartnett 6/16/20
-subroutine mpp_init_pio(piomode, numcomp, numiotasks)
-  integer, intent(in) :: piomode
-  integer, intent(in) :: numcomp
-  integer, intent(in) :: numiotasks
-  integer :: my_rank !< Rank of this processing element.
-  integer :: iosysid !< ID for the PIO iosystem.
-  integer :: numAggregator = 0, stride = 1, base = 0 !< Used to define IOSystem.
-  integer :: ierr    !< Return code.
-
-  my_rank = mpp_pe()
-
-  ! Define an IOSystem.
-  ierr = nf_def_iosystem(my_rank, MPI_COMM_WORLD, numiotasks, numAggregator, &
-       stride, 1, iosysid, base)
-  if (ierr .ne. 0) call mpp_error(FATAL, 'MPP_INIT_PIO: unable to define iosystem.')
-
-end subroutine mpp_init_pio
-#endif
-
 !#######################################################################
   !to be called at the end of a run
 subroutine mpp_exit()

@@ -67,18 +67,6 @@ AS_IF([test ${enable_setting_flags:-yes} = yes],
   [enable_setting_flags=yes],
   [enable_setting_flags=no])
 
-# Does the user want to use PIO?
-AC_MSG_CHECKING([whether to use PIO])
-AC_ARG_ENABLE([pio],
-              [AS_HELP_STRING([--enable-pio],
-                              [Use the PIO library.])])
-test "x$enable_pio" = xyes || enable_pio=no
-AC_MSG_RESULT($enable_pio)
-if test "x$enable_pio" = xyes; then
-   AC_DEFINE([USE_PIO], [1], [if true, use PIO library])
-fi
-AM_CONDITIONAL(USE_PIO, [test x$enable_pio = xyes])  
-
 # Find the C compiler.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -108,15 +96,6 @@ fi
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
-# If the user enabled PIO, then we must find the PIO C library and header file.
-if test $enable_pio = yes; then
-  AC_CHECK_HEADERS([pnetcdf.h], [], [AC_MSG_ERROR([Can't find the pnetcdf C header file.  Set CPPFLAGS/CFLAGS])])
-  AC_SEARCH_LIBS([ncmpi_inq_unlimdim], [pnetcdf], [], [AC_MSG_ERROR([Can't find the pnetcdf C library.  Set CC/LDFLAGS/LIBS])])
-
-  AC_CHECK_HEADERS([pio.h], [], [AC_MSG_ERROR([Can't find the PIO C header file.  Set CPPFLAGS/CFLAGS])])
-  AC_SEARCH_LIBS([PIOc_closefile], [pioc], [], [AC_MSG_ERROR([Can't find the PIO C library.  Set CC/LDFLAGS/LIBS])])
-fi
-
 # Check if Linux gettid is avaiable
 AC_CHECK_FUNCS([gettid], [], [])
 
@@ -143,13 +122,6 @@ GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
-
-# If the user wants to use PIO, then find the PIO fortran library and mod file.
-if test $enable_pio = yes; then
-  GX_FC_CHECK_MOD([pio], [], [], [AC_MSG_ERROR([Can't find the PIO Fortran module.  Set CPPFLAGS/FCFLAGS])])
-  GX_FORTRAN_SEARCH_LIBS([PIO_set_log_level], [piof], [use pio], [iret = PIO_set_log_level(0)], [],
-    [AC_MSG_ERROR([Can't find the PIO Fortran library.  Set LDFLAGS/LIBS])])
-fi
 
 # Check if Fortran compiler has the Class, Character array assign bug
 GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
