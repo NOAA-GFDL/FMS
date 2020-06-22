@@ -2556,7 +2556,8 @@ CONTAINS
        num = files(file)%fields(i)
        IF ( output_fields(num)%time_ops .AND. &
             input_fields(output_fields(num)%input_field)%register) THEN
-          IF ( num == field ) THEN
+          ! dif needs to be between start_dif and end_dif to prevent duplicate writes on time_bnds
+          IF ( num == field .AND. dif >= start_dif .AND. dif <= end_dif) THEN
              ! Output the axes if this is first time-averaged field
              time_data(1, 1, 1, 1) = start_dif
              call diag_field_write (files(file)%f_avg_start, time_data(1:1,:,:,:), file_num=file, &
