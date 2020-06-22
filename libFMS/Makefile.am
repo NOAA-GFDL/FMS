@@ -106,7 +106,6 @@ libFMS_la_LIBADD += ${top_builddir}/exchange/libstock_constants.la
 libFMS_la_LIBADD += ${top_builddir}/exchange/libxgrid.la
 libFMS_la_LIBADD += ${top_builddir}/topography/libtopography.la
 libFMS_la_LIBADD += ${top_builddir}/tracer_manager/libtracer_manager.la
-libFMS_la_LIBADD += ${top_builddir}/station_data/libstation_data.la
 libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres_k.la
 libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres.la
 libFMS_la_LIBADD += ${top_builddir}/random_numbers/libMersenneTwister.la
