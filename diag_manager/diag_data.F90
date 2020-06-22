@@ -706,9 +706,9 @@ use fms2_io_mod
   !   Number of output fields in use.
   ! </DATA>
   ! <DATA NAME="null_axis_id" TYPE="INTEGER" />
-  INTEGER :: num_files = 0
-  INTEGER :: num_input_fields = 0
-  INTEGER :: num_output_fields = 0
+  INTEGER :: num_files = 0 !< Number of output files currenly in use by the diag_manager.
+  INTEGER :: num_input_fields = 0 !< Number of input fields in use.
+  INTEGER :: num_output_fields = 0 !< Number of output fields in use.
   INTEGER :: null_axis_id
 
   ! <!-- Namelist variables -->
@@ -785,10 +785,15 @@ use fms2_io_mod
                                       !! model must wait until the flush to disk has
                                       !! completed.
   INTEGER :: max_num_axis_sets = 25
-  LOGICAL :: use_cmor = .FALSE.
-  LOGICAL :: issue_oor_warnings = .TRUE.
-  LOGICAL :: oor_warnings_fatal = .FALSE.
-  LOGICAL :: region_out_use_alt_value = .TRUE.
+  LOGICAL :: use_cmor = .FALSE. !< Indicates if we should overwrite the MISSING_VALUE to use the CMOR missing value.
+  LOGICAL :: issue_oor_warnings = .TRUE. !< Issue warnings if the output field has values outside the given
+                                         !! range for a variable.
+  LOGICAL :: oor_warnings_fatal = .FALSE. !< Cause a fatal error if the output field has a value outside the
+                                          !! given range for a variable.
+  LOGICAL :: region_out_use_alt_value = .TRUE. !< Will determine which value to use when checking a regional 
+                                               !! output if the region is the full axis or a sub-axis.
+                                               !! The values are defined as <TT>GLO_REG_VAL</TT> 
+                                               !! (-999) and <TT>GLO_REG_VAL_ALT</TT> (-1) in <TT>diag_data_mod</TT>.
 
   INTEGER :: max_field_attributes = 4 !< Maximum number of user definable attributes per field. Liptak: Changed from 2 to 4 20170718
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
@@ -801,12 +806,14 @@ use fms2_io_mod
   !   netCDF module, otherwise will be 9.9692099683868690e+36.
   ! </DATA>
 #ifdef use_netCDF
-  REAL :: FILL_VALUE = NF_FILL_REAL  ! from file /usr/local/include/netcdf.inc
+  REAL :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
+                                    !! netCDF module, otherwise will be 9.9692099683868690e+36. 
+                                    ! from file /usr/local/include/netcdf.inc
 #else
   REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
 
-  INTEGER :: pack_size = 1 ! 1 for double and 2 for float
+  INTEGER :: pack_size = 1 !< 1 for double and 2 for float
 
   ! <!-- REAL public variables -->
   ! <DATA NAME="EMPTY" TYPE="REAL" DEFAULT="0.0" />
@@ -828,7 +835,8 @@ use fms2_io_mod
   ! <DATA NAME="base_minute" TYPE="INTEGER" />
   ! <DATA NAME="base_second" TYPE="INTEGER" />
   ! <DATA NAME="global_descriptor" TYPE="CHARACTER(len=256)" />
-  TYPE(time_type) :: diag_init_time
+  TYPE(time_type) :: diag_init_time !< Time diag_manager_init called.  If init_time not included in
+                                    !! diag_manager_init call, then same as base_time
   TYPE(time_type) :: base_time
   INTEGER :: base_year, base_month, base_day, base_hour, base_minute, base_second
   CHARACTER(len = 256):: global_descriptor
@@ -857,7 +865,7 @@ use fms2_io_mod
   ! <DATA NAME="pelist_name" TYPE="CHARACTER(len=32)" />
   TYPE(time_type) :: time_zero
   LOGICAL :: first_send_data_call = .TRUE.
-  LOGICAL :: module_is_initialized = .FALSE.
+  LOGICAL :: module_is_initialized = .FALSE. !< Indicate if diag_manager has been initialized
   INTEGER :: diag_log_unit
   CHARACTER(len=10), DIMENSION(6) :: time_unit_list = (/'seconds   ', 'minutes   ',&
        & 'hours     ', 'days      ', 'months    ', 'years     '/)
@@ -876,6 +884,7 @@ CONTAINS
   !   <DESCRIPTION>
   !     Write the version number of this file to the log file.
   !   </DESCRIPTION>
+  !> @brief Write the version number of this file to the log file.
   SUBROUTINE diag_data_init()
     IF (module_is_initialized) THEN
        RETURN
