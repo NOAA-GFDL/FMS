@@ -17,6 +17,23 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief diag_grid_mod is a set of procedures to work with the
+!!   model's global grid to allow regional output.
+!! @author Seth Underwood
+!! @email gfdl.climate.model.info@noaa.gov
+!! @description TT>diag_grid_mod</TT> contains useful utilities for dealing
+!!   with, mostly, regional output for grids other than the standard
+!!   lat/lon grid.  This module contains three public procedures <TT>
+!!   diag_grid_init</TT>, which is shared globably in the <TT>
+!!   diag_manager_mod</TT>, <TT>diag_grid_end</TT> which will free
+!!   up memory used during the register field calls, and
+!!   <TT>get_local_indexes</TT>.  The <TT>send_global_grid</TT>
+!!   procedure is called by the model that creates the global grid.
+!!   <TT>send_global_grid</TT> needs to be called before any fields
+!!   are registered that will output only regions.  <TT>get_local_indexes</TT>
+!!   is to be called by the <TT>diag_manager_mod</TT> to discover the
+!!   global indexes defining a subregion on the tile.
 MODULE diag_grid_mod
 use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -136,16 +153,27 @@ use platform_mod
   !   <DATA NAME="grid_type" TYPE="CHARACTER(len=128)">
   !     The global grid type.
   !   </DATA>
+  !> @brief Contains the model's global grid data, and other grid information.
   TYPE :: diag_global_grid_type
-     REAL, allocatable, DIMENSION(:,:) :: glo_lat, glo_lon
-     REAL, allocatable, DIMENSION(:,:) :: aglo_lat, aglo_lon
-     INTEGER :: myXbegin, myYbegin
-     INTEGER :: dimI, dimJ
-     INTEGER :: adimI, adimJ
-     INTEGER :: tile_number
-     INTEGER :: ntiles
-     INTEGER :: peStart, peEnd
-     CHARACTER(len=128) :: grid_type
+     REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
+     REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
+     REAL, allocatable, DIMENSION(:,:) :: aglo_lat !< The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
+                                                   !! jsc=1:jec+1 to be passed in.
+     REAL, allocatable, DIMENSION(:,:) :: aglo_lon !< The longitude values on the global a-grid.  Here we expec isc-1:iec+j and
+                                                   !! jsc-1:jec+1 to be passed in.
+     INTEGER :: myXbegin !< The starting index of the compute domain on the current PE.
+     INTEGER :: myYbegin !< The starting index of the compute domain on the current PE.
+     INTEGER :: dimI !< The dimension of the global grid in the 'i' / longitudal direction.
+     INTEGER :: dimJ !< The dimension of the global grid in the 'j' / latitudal direction.
+     INTEGER :: adimI !< The dimension of the global a-grid in the 'i' / longitudal direction.  Again,
+                      !! the expected dimension for diag_grid_mod is isc-1:iec+1.
+     INTEGER :: adimJ !< The dimension of the global a-grid in the 'j' / latitudal direction.  Again,
+                      !! the expected dimension for diag_grid_mod is jsc-1:jec+1.
+     INTEGER :: tile_number !< The tile the <TT>glo_lat</TT> and <TT>glo_lon</TT> define.
+     INTEGER :: ntiles !< The number of tiles.
+     INTEGER :: peStart !< The starting PE number for the current tile.
+     INTEGER :: peEnd !< The ending PE number for the current tile.
+     CHARACTER(len=128) :: grid_type !< The global grid type.
   END TYPE diag_global_grid_type
   ! </TYPE>
   ! </PRIVATE>
@@ -165,8 +193,12 @@ use platform_mod
   !   <DATA NAME="z" TYPE="REAL">
   !     The z value of the (x,y,z) coordinates.
   !   </DATA>
+  !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
+  !!   location.
   TYPE :: point
-     REAL :: x,y,z
+     REAL :: x !< The x value of the (x,y,z) coordinates.
+     REAL :: y !< The y value of the (x,y,z) coordinates.
+     REAL :: z !< The z value of the (x,y,z) coordinates.
   END TYPE point
   ! </TYPE>
   ! </PRIVATE>
@@ -176,14 +208,14 @@ use platform_mod
   !   Variable to hold the global grid data
   ! </DATA>
   ! </PRIVATE>
-  TYPE(diag_global_grid_type) :: diag_global_grid
+  TYPE(diag_global_grid_type) :: diag_global_grid !< Variable to hold the global grid data
 
   ! <PRIVATE>
   ! <DATA NAME="diag_grid_initialized" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   Indicates if the diag_grid_mod has been initialized.
   ! </DATA>
   ! </PRIVATE>
-  LOGICAL :: diag_grid_initialized = .FALSE.
+  LOGICAL :: diag_grid_initialized = .FALSE. !< Indicates if the diag_grid_mod has been initialized.
 
   PRIVATE
   PUBLIC :: diag_grid_init, diag_grid_end, get_local_indexes,  &
@@ -225,10 +257,22 @@ CONTAINS
   !   <IN NAME="aglo_lon" TYPE="REAL, DIMENSION(:,:)">
   !     The longitude information for the a-grid tile.
   !   </IN>
+  !> @brief Send the global grid to the <TT>diag_manager_mod</TT> for
+  !!   regional output.
+  !! @description In order for the diag_manager to do regional output for grids
+  !!     other than the standard lat/lon grid, the <TT>
+  !!     diag_manager_mod</TT> needs to know the the latitude and
+  !!     longitude values for the entire global grid.  This procedure
+  !!     is the mechanism the models will use to share their grid with
+  !!     the diagnostic manager.
+  !!     This procedure needs to be called after the grid is created,
+  !!     and before the first call to register the fields.
   SUBROUTINE diag_grid_init(domain, glo_lat, glo_lon, aglo_lat, aglo_lon)
-    TYPE(domain2d), INTENT(in) :: domain
-    REAL, INTENT(in), DIMENSION(:,:) :: glo_lat, glo_lon
-    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lat, aglo_lon
+    TYPE(domain2d), INTENT(in) :: domain !< The domain to which the grid data corresponds.
+    REAL, INTENT(in), DIMENSION(:,:) :: glo_lat !< The latitude information for the grid tile.
+    REAL, INTENT(in), DIMENSION(:,:) :: glo_lon !< The longitude information for the grid tile.
+    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lat !< The latitude information for the a-grid tile.
+    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lon !< The longitude information for the a-grid tile.
 
     INTEGER, DIMENSION(1) :: tile
     INTEGER :: ntiles
@@ -396,6 +440,12 @@ CONTAINS
   !     calls are complete (before the first <TT>send_data</TT> call
   !     this procedure can be called to free up memory.
   !   </DESCRIPTION>
+  !> @brief Unallocate the diag_global_grid variable.
+  !! @description The <TT>diag_global_grid</TT> variable is only needed during
+  !!     the register field calls, and then only if there are fields
+  !!     requestion regional output.  Once all the register fields
+  !!     calls are complete (before the first <TT>send_data</TT> call
+  !!     this procedure can be called to free up memory.
   SUBROUTINE diag_grid_end()
 
     IF ( diag_grid_initialized ) THEN
@@ -474,12 +524,20 @@ CONTAINS
   !   <OUT NAME="jend" TYPE="INTEGER">
   !     The local end index on the local PE in the 'j' direction.
   !   </OUT>
+  !> @brief Find the local start and local end indexes on the local PE
+  !!   for regional output.
+  !! @description Given a defined region, find the local indexes on the local
+  !!   PE surrounding the region.
   SUBROUTINE get_local_indexes(latStart, latEnd, lonStart, lonEnd,&
        & istart, iend, jstart, jend)
-    REAL, INTENT(in) :: latStart, lonStart !< lat/lon start angles
-    REAL, INTENT(in) :: latEnd, lonEnd !< lat/lon end angles
-    INTEGER, INTENT(out) :: istart, jstart !< i/j start indexes
-    INTEGER, INTENT(out) :: iend, jend !< i/j end indexes
+    REAL, INTENT(in) :: latStart !< lat start angles
+    REAL, INTENT(in) :: lonStart !< lon start angles
+    REAL, INTENT(in) :: latEnd !< lat end angles
+    REAL, INTENT(in) :: lonEnd !< lon end angles
+    INTEGER, INTENT(out) :: istart !< i start indexes
+    INTEGER, INTENT(out) :: jstart !< j start indexes
+    INTEGER, INTENT(out) :: iend !< i end indexes
+    INTEGER, INTENT(out) :: jend !< j end indexes
 
     REAL, ALLOCATABLE, DIMENSION(:,:) :: delta_lat, delta_lon, grid_lon
 
