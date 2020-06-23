@@ -802,9 +802,14 @@ CONTAINS
   !   <OUT NAME="jindex" TYPE="INTEGER">
   !     The local index on the local PE in the 'j' direction.
   !   </OUT>
+  !> @brief Find the indices of the nearest grid point of the a-grid to the
+  !!   specified (lon,lat) location on the local PE. if desired point not
+  !!   within domain of local PE, return (0,0) as the indices.
   SUBROUTINE get_local_indexes2(lat, lon, iindex, jindex)
-    REAL, INTENT(in) :: lat, lon !< lat/lon location
-    INTEGER, INTENT(out) :: iindex, jindex !< i/j indexes
+    REAL, INTENT(in) :: lat !< lat location
+    REAL, INTENT(in) :: lon !< lon location
+    INTEGER, INTENT(out) :: iindex !< i indexes
+    INTEGER, INTENT(out) :: jindex !< j indexes
 
     INTEGER  :: indexes(2)
 
@@ -856,8 +861,14 @@ CONTAINS
   !     Scalar or array (depending on the size of angle) of angles in
   !     degrees.
   !   </OUT>
+  !> @brief Convert an angle in radian to degrees.
+  !! @description Given a scalar, or an array of angles in radians this
+  !!   function will return a scalar or array (of the same
+  !!   dimension) of angles in degrees.
+  !! @return Scalar or array (depending on the size of angle) of angles in
+  !!   degrees.
   PURE ELEMENTAL REAL FUNCTION rad2deg(angle)
-    REAL, INTENT(in) :: angle
+    REAL, INTENT(in) :: angle !< Scalar or array of angles in radians.
 
     rad2deg = RAD_TO_DEG * angle
   END FUNCTION rad2deg
@@ -880,8 +891,14 @@ CONTAINS
   !   <IN NAME="angle" TYPE="REAL">
   !     Scalar or array of angles in degrees.
   !   </IN>
+  !> @brief Convert an angle in degrees to radians.
+  !! @description Given a scalar, or an array of angles in degrees this
+  !!   function will return a scalar or array (of the same
+  !!   dimension) of angles in radians.
+  !! @return Scalar or array (depending on the size of angle) of angles in
+  !!   radians.
   PURE ELEMENTAL REAL FUNCTION deg2rad(angle)
-    REAL, INTENT(in) :: angle
+    REAL, INTENT(in) :: angle !< Scalar or array of angles in degrees.
 
     deg2rad = DEG_TO_RAD * angle
   END FUNCTION deg2rad
@@ -911,13 +928,24 @@ CONTAINS
   !     The (i, j) location of the closest grid to the given (lat,
   !     lon) location.
   !   </OUT>
+  !> @brief Return the closest index (i,j) to the given (lat,lon) point.
+  !! @description This function searches a pole a-grid tile looking for the grid point
+  !!   closest to the give (lat, lon) location, and returns the i
+  !!   and j indexes of the point.
+  !! @return The (i, j) location of the closest grid to the given (lat,
+  !!   lon) location.
   PURE FUNCTION find_pole_index_agrid(lat, lon)
-    INTEGER, DIMENSION(2) :: find_pole_index_agrid
-    REAL, INTENT(in) :: lat, lon
+    INTEGER, DIMENSION(2) :: find_pole_index_agrid !< The (i, j) location of the closest grid to the given (lat,
+                                                   !! lon) location.
+    REAL, INTENT(in) :: lat !< Latitude location
+    REAL, INTENT(in) :: lon !< Longitude location
 
-    INTEGER :: indxI, indxJ !< Indexes to be returned.
-    INTEGER :: dimI, dimJ !< Size of the grid dimensions
-    INTEGER :: i,j !< Count indexes
+    INTEGER :: indxI !< Indexes to be returned.
+    INTEGER :: indxJ !< Indexes to be returned.
+    INTEGER :: dimI !< Size of the grid dimensions
+    INTEGER :: dimJ !< Size of the grid dimensions
+    INTEGER :: i !< Count indexes
+    INTEGER :: j !< Count indexes
     INTEGER :: nearestCorner !< index of the nearest corner.
     INTEGER, DIMENSION(4,2) :: ijArray !< indexes of the cornerPts and pntDistances arrays
     REAL :: llat, llon
@@ -1088,9 +1116,17 @@ CONTAINS
   !     The (i, j) location of the closest grid to the given (lat,
   !     lon) location.
   !   </OUT>
+  !> @brief Return the closest index (i,j) to the given (lat,lon) point.
+  !! @description This function searches a equator grid tile looking for the grid point
+  !!   closest to the give (lat, lon) location, and returns the i
+  !!   and j indexes of the point.
+  !! @return The (i, j) location of the closest grid to the given (lat,
+  !!   lon) location.
   PURE FUNCTION find_equator_index_agrid(lat, lon)
-    INTEGER, DIMENSION(2) :: find_equator_index_agrid
-    REAL, INTENT(in) :: lat, lon
+    INTEGER, DIMENSION(2) :: find_equator_index_agrid !< The (i, j) location of the closest grid to the given (lat,
+                                                      !! lon) location.
+    REAL, INTENT(in) :: lat !< Latitude location
+    REAL, INTENT(in) :: lon !< Longitude location
 
     INTEGER :: indxI, indxJ !< Indexes to be returned.
     INTEGER :: indxI_tmp !< Hold the indxI value if on tile 3 or 4
@@ -1250,11 +1286,27 @@ CONTAINS
   !     same rank / size as <TT>lat</TT>.  This function assumes
   !     <TT>lon</TT> is in the range [0,360].
   !   </IN>
+  !> @brief Return the (x,y,z) position of a given (lat,lon) point.
+  !! @description Given a specific (lat, lon) point on the Earth, return the
+  !!   corresponding (x,y,z) location.  The return of latlon2xyz
+  !!   will be either a scalar or an array of the same size as lat
+  !!   and lon.
+  !! @return The return of latlon2xyz
+  !!   will be either a scalar or an array of the same size as lat
+  !!   and lon.
   PURE ELEMENTAL TYPE(point) FUNCTION latlon2xyz(lat, lon)
-    REAL, INTENT(in) :: lat, lon
+    REAL, INTENT(in) :: lat !< The latitude of the (x,y,z) location to find.  <TT>lat</TT>
+                            !! can be either a scalar or array.  <TT>lat</TT> must be of the
+                            !! same rank / size as <TT>lon</TT>.  This function assumes
+                            !! <TT>lat</TT> is in the range [-90,90].
+    REAL, INTENT(in) :: lon !< The longitude of the (x,y,z) location to find.  <TT>lon</TT>
+                            !! can be either a scalar or array.  <TT>lon</TT> must be of the
+                            !! same rank / size as <TT>lat</TT>.  This function assumes
+                            !! <TT>lon</TT> is in the range [0,360].
 
     ! lat/lon angles in radians
-    REAL :: theta, phi
+    REAL :: theta !< lat angles in radians
+    REAL :: phi   !< lon angles in radians
 
     ! Convert the lat lon values to radians The lat values passed in
     ! are in the range [-90,90], but we need to have a radian range
@@ -1289,6 +1341,14 @@ CONTAINS
   !   </DESCRIPTION>
   !   <IN NAME="pt1" TYPE="TYPE(POINT)" />
   !   <IN NAME="pt2" TYPE="TYPE(POINT)" />
+  !> @brief Find the distance between two points in the Cartesian
+  !!   coordinate space.
+  !! @description <TT>distanceSqrd</TT> will find the distance squared between
+  !!   two points in the xyz coordinate space.  <TT>pt1</TT> and <TT>
+  !!   pt2</TT> can either be both scalars, both arrays of the same
+  !!   size, or one a scalar and one an array.  The return value
+  !!   will be a scalar or array of the same size as the input array.
+  !! @return The return value will be a scalar or array of the same size as the input array.
   PURE ELEMENTAL REAL FUNCTION distanceSqrd(pt1, pt2)
     TYPE(point), INTENT(in) :: pt1, pt2
 
@@ -1314,6 +1374,10 @@ CONTAINS
   !   <IN NAME="lon1" TYPE="REAL">Longitude of the first point</IN>
   !   <IN NAME="lat2" TYPE="REAL">Latitude of the second point</IN>
   !   <IN NAME="lon2" TYPE="REAL">Longitude of the second point</IN>
+  !> @brief Find the distance, along the geodesic, between two points.
+  !> @description <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined 
+  !!   by the (lat,lon) position of each point.
+  !! @return real
   PURE ELEMENTAL REAL FUNCTION gCirDistance(lat1, lon1, lat2, lon2)
     REAL, INTENT(in) :: lat1, lat2, lon1, lon2
 
