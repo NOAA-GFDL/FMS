@@ -17,6 +17,120 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file 
+!! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
+!!   on distributed systems. It is geared toward the writing of data in netCDF
+!!   format.
+!! @author Matt Harrison, Giang Nong, Seth Underwood
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!!   <TT>diag_manager_mod</TT> provides a convenient set of interfaces for
+!!   writing data to disk.  It is built upon the parallel I/O interface of FMS
+!!   code <TT>/shared/mpp/mpp_io.F90</TT>.
+!!
+!!   A single group of calls to the <TT>diag_manager_mod</TT> interfaces
+!!   provides data to disk at any number of sampling and/or averaging intervals
+!!   specified at run-time. Run-time specification of diagnostics are input
+!!   through the diagnostics table.
+!!
+!!   <H4>Usage</H4>
+!!   Use of <TT>diag_manager</TT> includes the following steps:
+!!   <OL>
+!!     <LI> Create diag_table as described in the
+!!          <LINK SRC="diag_table.html">diag_table.F90</LINK>
+!!          documentation.</LI>
+!!     <LI> Call <LINK SRC="#diag_manager_init"><TT>diag_manager_init</TT></LINK> to initialize
+!!          diag_manager_mod.</LI>
+!!     <LI> Call <LINK SRC="#register_diag_field"><TT>register_diag_field</TT></LINK> to register the field to be
+!!          output.
+!!          <B>NOTE:</B> ALL fields in diag_table should be registered <I>BEFORE</I>
+!!          the first send_data call</LI>
+!!     <LI> Call <LINK SRC="#send_data"><TT>send_data</TT></LINK> to send data to output fields </LI>
+!!     <LI> Call <LINK SRC="#diag_manager_end"><TT>diag_manager_end</TT></LINK> to exit diag_manager </LI>
+!!   </OL>
+!!
+!!   <H4>Features</H4>
+!!   Features of <TT>diag_manager_mod</TT>:
+!!   <OL>
+!!     <LI> Ability to output from 0D arrays (scalars) to 3D arrays.</LI>
+!!     <LI> Ability to output time average of fields that have time dependent
+!!          mask.</LI>
+!!     <LI> Give optional warning if <TT>register_diag_field</TT> fails due to
+!!          misspelled module name or field name.</LI>
+!!     <LI> Check if a field is registered twice.</LI>
+!!     <LI> Check for duplicate lines in diag_table. </LI>
+!!     <LI> <LINK SRC="diag_table.html">diag_table</LINK> can contain fields
+!!          that are NOT written to any files. The file name in diag_table of
+!!          these fields is <TT>null</TT>.</LI>
+!!     <LI> By default, a field is output in its global grid.  The user can now
+!!          output a field in a specified region.  See
+!!          <LINK SRC="#send_data"><TT>send_data</TT></LINK> for more details.</LI>
+!!     <LI> To check if the diag table is set up correctly, user should set
+!!          <TT>debug_diag_manager=.true.</TT> in diag_manager namelist, then
+!!          the the content of diag_table is printed in stdout.</LI>
+!!     <LI> New optional format of file information in <LINK SRC="diag_table.html">diag_table</LINK>.It is possible to have just
+!!           one file name and reuse it many times. A time string will be appended to the base file name each time a new file is
+!!          opened. The time string can be any combination from year to second of current model time.
+!!
+!!          Here is an example file line: <BR />
+!!          <PRE>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</PRE>
+!!          <BR />
+!!
+!!          From left to right we have:
+!!          <UL>
+!!            <LI>file name</LI>
+!!            <LI>output frequency</LI>
+!!            <LI>output frequency unit</LI>
+!!            <LI>Format (should always be 1)</LI>
+!!            <LI>time axis unit</LI>
+!!            <LI>time axis name</LI>
+!!            <LI>frequency for creating new file</LI>
+!!            <LI>unit for creating new file</LI>
+!!            <LI>start time of the new file</LI>
+!!            <LI>file duration</LI>
+!!            <LI>file duration unit.</LI>
+!!          </UL>
+!!          The 'file duration', if absent, will be equal to frequency for creating a new file.
+!!
+!!          Thus, the above means: create a new file every 10 days, each file will last 6 hours from creation time, no files will
+!!          be created before time "1 1 7 0 0 0".
+!!
+!!          In this example the string
+!!          <TT>10, "days", "1 1 7 0 0 0", 6, "hours"</TT> is optional.
+!!
+!!          Keywords for the time string suffix is
+!!          <TT>%xyr,%xmo,%xdy,%xhr,%xmi,%xsc</TT> where <TT>x</TT> is a
+!!          mandatory 1 digit number specifying the width of field used in
+!!          writing the string</LI>
+!!     <LI> New time axis for time averaged fields.  Users can use a namelist option to handle the time value written
+!!          to time axis for time averaged fields.
+!!
+!!          If <TT>mix_snapshot_average_fields=.true.</TT> then a time averaged file will have time values corresponding to
+!!          ending time_bound e.g. January monthly average is labeled Feb01. Users can have both snapshot and averaged fields in
+!!          one file.
+!!
+!!          If <TT>mix_snapshot_average_fields=.false.</TT> The time value written to time axis for time averaged fields is the
+!!          middle on the averaging time. For example, January monthly mean will be written at Jan 16 not Feb 01 as
+!!          before. However, to use this new feature users should <B>separate</B> snapshot fields and time averaged fields in
+!!          <B>different</B> files or a fatal error will occur.
+!!
+!!          The namelist <B>default</B> value is <TT>mix_snapshot_average_fields=.false.</TT></LI>
+!!     <LI> Time average, Root Mean Square, Max and Min, and diurnal. In addition to time average users can also get then Root Mean Square, Max or Min value
+!!          during the same interval of time as time average. For this purpose, in the diag table users must replace
+!!          <TT>.true.</TT> or <TT>.false.</TT> by "<TT>rms</TT>, <TT>max</TT>" or "<TT>min</TT>".  <B><I>Note:</I></B> Currently, max
+!!          and min are not available for regional output.
+!!
+!!          A diurnal average or the average of an integer power can also be requested using <TT>diurnal##</TT> or <TT>pow##</TT> where
+!!          <TT>##</TT> are the number of diurnal sections or integer power to average.</LI>
+!!     <LI> <TT>standard_name</TT> is added as optional argument in <LINK SRC="#register_diag_field"><TT>register_diag_field</TT>
+!!          </LINK>.</LI>
+!!     <LI>When namelist variable <TT>debug_diag_manager = .true.</TT> array
+!!         bounds are checked in <LINK SRC="#send_data"><TT>send_data</TT></LINK>.</LI>
+!!     <LI>Coordinate attributes can be written in the output file if the
+!!         argument "<TT>aux</TT>" is given in <LINK SRC="diag_axis.html#diag_axis_init"><TT>diag_axis_init</TT></LINK>. The
+!!         corresponding fields (geolat/geolon) should also be written to the
+!!         same file.</LI>
+!!   </OL>
 MODULE diag_manager_mod
 use platform_mod
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
@@ -354,6 +468,7 @@ use platform_mod
   !   <IN NAME="ke_in" TYPE="INTEGER, OPTIONAL"></IN>
   !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
+  !> @brief Send data over to output fields.
   INTERFACE send_data
      MODULE PROCEDURE send_data_0d
      MODULE PROCEDURE send_data_1d
@@ -405,6 +520,7 @@ use platform_mod
   !    <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
   !    <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
   !    <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !> @brief Register Diagnostic Field.
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
@@ -431,6 +547,7 @@ use platform_mod
   !    <IN NAME="area" TYPE="REAL" DIM="(:,:,:)" />
   !    <IN NAME="time" TYPE="TYPE(time_type)" DIM="(:,:,:)" />
   !    <IN NAME="mask" TYPE="LOGICAL" DIM="(:,:,:)" />
+  !> @brief Send tile-averaged data over to output fields.
   INTERFACE send_tile_averaged_data
      MODULE PROCEDURE send_tile_averaged_data1d
      MODULE PROCEDURE send_tile_averaged_data2d
@@ -457,6 +574,7 @@ use platform_mod
   !   <IN NAME="diag_field_id" TYPE="INTEGER" />
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="att_value" TYPE="REAL|INTEGER|CHARACTER(len=*)" />
+  !> @brief Add a attribute to the output field
   INTERFACE diag_field_add_attribute
      MODULE PROCEDURE diag_field_add_attribute_scalar_r
      MODULE PROCEDURE diag_field_add_attribute_scalar_i
@@ -484,6 +602,7 @@ CONTAINS
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !> @return integer
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
@@ -492,7 +611,7 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
     REAL, OPTIONAL, INTENT(in) :: missing_value
     REAL,  DIMENSION(2), OPTIONAL, INTENT(in) :: RANGE
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
+    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
     CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
@@ -533,6 +652,7 @@ CONTAINS
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell volume field</IN>
   !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !> @return integer
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
@@ -542,11 +662,15 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
     REAL, OPTIONAL, INTENT(in) :: missing_value, RANGE(2)
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field info is not logged
+    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when 
+                                                            !! regridding the field in post-processing.
+                                                            !! Valid options are "conserve_order1", 
+                                                            !! "conserve_order2", and "none".
     INTEGER, OPTIONAL, INTENT(in) :: tile_count
-    INTEGER, OPTIONAL, INTENT(in) :: area, volume
+    INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
+    INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
 
     INTEGER :: field, j, ind, file_num, freq
@@ -747,6 +871,8 @@ CONTAINS
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for the area field associated with this field</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for the volume field associated with this field</IN>
   !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !> @brief Return field index for subsequent call to send_data.
+  !! @return Return (integer) field index for subsequent call to send_data.
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
        & tile_count, area, volume, realm)
@@ -757,9 +883,14 @@ CONTAINS
     REAL, DIMENSION(2), OPTIONAL, INTENT(in) :: range
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant
     LOGICAL, OPTIONAL, INTENT(in) :: DYNAMIC
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log ! if TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
-    INTEGER,          OPTIONAL, INTENT(in) :: tile_count, area, volume
+    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when 
+                                                            !! regridding the field in post-processing.
+                                                            !! Valid options are "conserve_order1",
+                                                            !! "conserve_order2", and "none".
+    INTEGER,          OPTIONAL, INTENT(in) :: tile_count
+    INTEGER,          OPTIONAL, INTENT(in) :: area !< Field ID for the area field associated with this field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume !< Field ID for the volume field associated with this field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm !< String to set as the value to the modeling_realm attribute
 
     REAL :: missing_value_use
@@ -1210,8 +1341,13 @@ CONTAINS
   !  </DESCRIPTION>
   !  <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name that registered the variable</IN>
   !  <IN NAME="field_name" TYPE="CHARACTER(len=*)">Variable name</IN>
+  !> @brief Return the diagnostic field ID of a given variable.
+  !! @return get_diag_field_id will return the (integer) ID returned during the register_diag_field call.
+  !!   If the variable is not in the diag_table, then the value "DIAG_FIELD_NOT_FOUND" will be
+  !!   returned.
   INTEGER FUNCTION get_diag_field_id(module_name, field_name)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
+    CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
+    CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
 
     ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
     ! included in the diag_table
