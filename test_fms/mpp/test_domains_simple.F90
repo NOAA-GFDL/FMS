@@ -32,7 +32,8 @@ program test_domains_simple
   integer :: pe, npes
   integer :: nx=128, ny=128, nz=40
   integer :: layout(2)
-  type(domain2D) :: domain
+  type(domain2D) :: domain_2D
+  type(domain1D) :: domain_1D
   
   call mpp_init()
 
@@ -42,14 +43,25 @@ program test_domains_simple
   !--- initialize mpp domains
   call mpp_domains_init(MPP_DEBUG)
 
-  call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+  ! Define a layout.
+  call mpp_define_layout((/1, nx, 1, ny/), npes, layout)
+
+  ! Check results when run on 4 pes.
   if (npes .eq. 4) then
      if (layout(1) .ne. 2 .or. layout(2) .ne. 2) call mpp_error(FATAL, 'bad layout values')
   endif
-  
-  call mpp_define_domains( (/1,nx,1,ny/), layout, domain )
-  
+
+  ! Define a 1D domain.
+  !call mpp_define_domains((/1, nx/), 4, domain_1D)
+  call mpp_define_domains((/1, nx/), 4, domain_1D, pelist=(/0, 1, 2, 3/))
+
+  ! Define a 2D domain.
+  call mpp_define_domains((/1, nx, 1, ny/), layout, domain_2D)
+
+  ! Clean up domains.
   call mpp_domains_exit()
+
+  ! Finalize MPP.
   call mpp_exit()
 
 end program test_domains_simple
