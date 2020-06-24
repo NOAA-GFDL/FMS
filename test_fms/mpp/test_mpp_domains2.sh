@@ -49,9 +49,9 @@ sed "s/test_halosize_performance = .false./test_halosize_performance = .true./" 
 #If the system is Darwin it will be skipped because it fails
 run_test test_mpp_domains 2 $is_darwin
 
-echo "4: Test Edge Update"
-sed "s/test_edge_update = .false./test_edge_update = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2
+#echo "4: Test Edge Update"
+#sed "s/test_edge_update = .false./test_edge_update = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+#run_test test_mpp_domains 2
 
 #echo "5: Test Nonsym Edge"
 #sed "s/test_nonsym_edge = .false./test_nonsym_edge = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
