@@ -18,7 +18,9 @@
 !***********************************************************************
 
 !> @file
-!> This is a simple test of MPP layouts and a simple domain.
+
+!> This is a simple test of MPP layouts and a simple domain. In
+!> testing it should be run with 4 pes.
 
 !> @author Ed Hartnett 6/22/20
 program test_domains_simple
@@ -28,7 +30,7 @@ program test_domains_simple
   implicit none
 #include "../../include/fms_platform.h"
   integer :: pe, npes
-  integer :: nx=128, ny=128, nz=40, stackmax=4000000
+  integer :: nx=128, ny=128, nz=40
   integer :: layout(2)
   type(domain2D) :: domain
   
@@ -39,7 +41,6 @@ program test_domains_simple
 
   !--- initialize mpp domains
   call mpp_domains_init(MPP_DEBUG)
-  call mpp_domains_set_stack_size(stackmax)
 
   call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
   if (npes .eq. 4) then
