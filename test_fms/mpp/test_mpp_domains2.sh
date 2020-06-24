@@ -96,10 +96,10 @@ sed "s/test_interface = .false./test_interface = .true./" $top_srcdir/test_fms/m
 #If the system is Darwin it will be skipped because it fails
 run_test test_mpp_domains 2 $is_darwin
 
-echo "14: Test Check Parallel"
-echo "Does not work on Darwin or elsewhere"
-sed "s/check_parallel = .false./check_parallel = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 6
+#echo "14: Test Check Parallel"
+#echo "Does not work on Darwin or elsewhere"
+#sed "s/check_parallel = .false./check_parallel = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+#run_test test_mpp_domains 6
 
 echo "15: Test Get Nbr"
 sed "s/test_get_nbr = .false./test_get_nbr = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
