@@ -29,19 +29,19 @@ program test_domains_simple
 
   implicit none
 #include "../../include/fms_platform.h"
-  integer :: pe, npes
-  integer :: nx=40, ny=40, nz=40
-  integer :: layout(2)
-  type(domain2D) :: domain_2D
-  type(domain1D) :: domain_1D
-  integer :: is, ie, js, je
+  integer :: pe, npes     !> This pe and the total number of pes.
+  integer :: nx=40, ny=40 !> Size of our 2D domain. 
+  integer :: layout(2)    !> Layout of our 2D domain.
+  type(domain2D) :: domain_2D !> A 2D domain.
+  type(domain1D) :: domain_1D !> A 1D domain.
+  integer :: is, ie, js, je   !> For checking domains.
   
   call mpp_init()
 
   pe = mpp_pe()
   npes = mpp_npes()
 
-  !--- initialize mpp domains
+  ! Initialize mpp domains.
   call mpp_domains_init(MPP_DEBUG)
 
   ! Define a layout.
@@ -52,9 +52,13 @@ program test_domains_simple
      if (layout(1) .ne. 2 .or. layout(2) .ne. 2) call mpp_error(FATAL, 'bad layout values')
   endif
 
-  ! Define a 1D domain.
+  ! Define a 1D domain - but this doesn't work because the pelist is missing.
   !call mpp_define_domains((/1, nx/), 4, domain_1D)
+
+  ! Define a 1D domain.
   call mpp_define_domains((/1, nx/), 4, domain_1D, pelist=(/0, 1, 2, 3/))
+
+  ! Get the values of the compute domain.
   call mpp_get_compute_domain(domain_1D, is, ie)
   
   ! Check results when run on 4 pes.
@@ -65,8 +69,9 @@ program test_domains_simple
 
   ! Define a 2D domain.
   call mpp_define_domains((/1, nx, 1, ny/), layout, domain_2D)
+
+  ! Get the values of the 2D compute domain.
   call mpp_get_compute_domain(domain_2D, xbegin = is, xend = ie, ybegin = js, yend = je)
-  print *, pe, is, ie, js, je
 
   ! Check results when run on 4 pes.
   if (npes .eq. 4) then
