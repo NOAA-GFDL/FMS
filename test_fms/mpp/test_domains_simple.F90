@@ -19,8 +19,8 @@
 
 !> @file
 
-!> This is a simple test of MPP layouts and a simple domain. In
-!> testing it should be run with 4 pes.
+!> This is a simple test of MPP layouts and a simple 1D and 2D
+!> domain. In testing it should be run with 4 pes.
 
 !> @author Ed Hartnett 6/22/20
 program test_domains_simple
