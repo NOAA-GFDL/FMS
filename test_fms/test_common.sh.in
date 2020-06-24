@@ -59,6 +59,5 @@ run_test()
     fi
 
     # Run test
-    ulimit -s unlimited
     $mpi_launcher $oversubscribe $npes ./${1}
 }
