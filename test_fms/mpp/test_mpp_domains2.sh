@@ -35,32 +35,32 @@ then
     is_travis='skip'
 fi
 
-#echo "1: Test update nest domain"
+echo "1: Test update nest domain"
 
-#sed "s/test_nest = .false./test_nest = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
+sed "s/test_nest = .false./test_nest = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+run_test test_mpp_domains 16
 
 #echo "2:  Test Subset Update"
 #sed "s/test_subset = .false./test_subset = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
+#run_test test_mpp_domains 30
 
 echo "3: Test Halosize Performance"
 sed "s/test_halosize_performance = .false./test_halosize_performance = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 #If the system is Darwin it will be skipped because it fails
 run_test test_mpp_domains 2 $is_darwin
 
-#echo "4: Test Edge Update"
-#sed "s/test_edge_update = .false./test_edge_update = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
+echo "4: Test Edge Update"
+sed "s/test_edge_update = .false./test_edge_update = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+run_test test_mpp_domains 2
 
 #echo "5: Test Nonsym Edge"
 #sed "s/test_nonsym_edge = .false./test_nonsym_edge = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
+#run_test test_mpp_domains 2
 
 echo "6: Test Performance"
 sed "s/test_performance = .false./test_performance = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 #If the system is Darwin or TRAVIS it will be skipped because it fails
-run_test test_mpp_domains 6 $is_darwin $is_travis
+run_test test_mpp_domains 6 $is_darwin
 
 echo "7: Test Global Sum"
 sed "s/test_global_sum = .false./test_global_sum = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
@@ -70,21 +70,21 @@ run_test test_mpp_domains 2 $is_dawin
 echo "8: Test Cubic Grid Redistribute"
 sed "s/test_cubic_grid_redistribute = .false./test_cubic_grid_redistribute = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 #If the system is Darwin or TRAVIS it will be skipped because it fails
-run_test test_mpp_domains 6 $is_darwin $is_travis
+run_test test_mpp_domains 6 $is_darwin
 
 echo "9: Test Boundary"
 sed "s/test_boundary = .false./test_boundary = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 #If the system is Darwin or TRAVIS it will be skipped because it fails
-run_test test_mpp_domains 6 $is_darwin $is_travis
+run_test test_mpp_domains 2 $is_darwin
 
 echo "10: Test Adjoint"
 sed "s/test_adjoint = .false./test_adjoint = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 #If the system is Darwin it will be skipped because it fails
 run_test test_mpp_domains 2 $is_darwin
 
-#echo "11: Test Unstruct"
-#sed "s/test_unstruct = .false./test_unstruct = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
+echo "11: Test Unstruct"
+sed "s/test_unstruct = .false./test_unstruct = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+run_test test_mpp_domains 2
 
 echo "12: Test Group"
 sed "s/test_group = .false./test_group = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
@@ -96,10 +96,10 @@ sed "s/test_interface = .false./test_interface = .true./" $top_srcdir/test_fms/m
 #If the system is Darwin it will be skipped because it fails
 run_test test_mpp_domains 2 $is_darwin
 
-#echo "14: Test Check Parallel"
-#echo "Does not work on Darwin or elsewhere"
-#sed "s/check_parallel = .false./check_parallel = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 6 skip
+echo "14: Test Check Parallel"
+echo "Does not work on Darwin or elsewhere"
+sed "s/check_parallel = .false./check_parallel = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+run_test test_mpp_domains 6
 
 echo "15: Test Get Nbr"
 sed "s/test_get_nbr = .false./test_get_nbr = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml

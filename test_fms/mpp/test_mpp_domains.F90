@@ -54,7 +54,7 @@ program test_mpp_domains
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-  use fms_affinity_mod, only : fms_affinity_set
+  use fms_affinity_mod, only : fms_affinity_set, fms_affinity_init
 
 
   implicit none
@@ -177,6 +177,7 @@ program test_mpp_domains
   end if
   call mpp_domains_set_stack_size(stackmax)
 
+  call fms_affinity_init()
 !$  call omp_set_num_threads(nthreads)
 !$OMP PARALLEL
 !$  call fms_affinity_set("test_mpp_domains", .FALSE., omp_get_num_threads())
