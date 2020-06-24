@@ -100,7 +100,7 @@ int get_cpuset(int fsz, int *output, int pe, _Bool debug)
   if (debug) {
     for (cpu=0;cpu < CPU_SETSIZE;cpu++) {
       if (CPU_ISSET(cpu,&coremask)) {
-        printf("=> get_cpuset - pe %d: %d\n",pe, cpu);
+        fprintf(stderr,"=> get_cpuset - pe %d: %d\n",pe, cpu);
       }
     }
   }
