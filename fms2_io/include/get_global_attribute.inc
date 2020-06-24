@@ -32,8 +32,15 @@ subroutine get_global_attribute_0d(fileobj, &
                                              !! The broadcast will be done
                                              !! by default.
     integer :: err
+    character(len=1024), dimension(1) :: charbuf
+
     if (fileobj%is_root) then
         select type(attribute_value)
+            type is (character(len=*))
+                err = nf90_get_att(fileobj%ncid, &
+                                   nf90_global, &
+                                   trim(attribute_name), &
+                                   charbuf(1))
             type is (integer(kind=int32))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
@@ -65,6 +72,11 @@ subroutine get_global_attribute_0d(fileobj, &
         endif
     endif
     select type(attribute_value)
+        type is (character(len=*))
+            call mpp_broadcast(charbuf, len(charbuf), &
+                               fileobj%io_root, &
+                               pelist=fileobj%pelist)
+            call string_copy(attribute_value, charbuf(1))
         type is (integer(kind=int32))
             call mpp_broadcast(attribute_value, &
 
