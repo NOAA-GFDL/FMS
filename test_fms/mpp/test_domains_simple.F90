@@ -16,6 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+
+!> @file
+!> This is a simple test of MPP layouts and a simple domain.
+
+!> @author Ed Hartnett 6/22/20
 program test_domains_simple
   use mpp_mod
   use mpp_domains_mod
