@@ -17,7 +17,8 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of FMS. It creates the doc Makefile.
+# This is part of FMS. It creates the Makefile for the docs
+# subdirectory.
 
 # Ed Hartnett 6/25/20
 
@@ -29,10 +30,6 @@ all:
 #	[ ! -s doxywarn.log ]
 
 check: all
-
-# Include these subdirs to include the documention files in the
-# distribution.
-#SUBDIRS = source images
 
 CLEANFILES = *.log
 
