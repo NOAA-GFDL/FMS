@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,15 +17,23 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms2_io directory.
+# This is part of FMS. It creates the doc Makefile.
 
-# Authors: Raymond Menzel
-# Jessica Liptak
-#
-# Set common test settings.
-. ../test_common.sh
-# make a dummy file for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
-# run the tests
-run_test test_fms2_io 6 skip
+# Ed Hartnett 6/25/20
+
+# Run doxygen.
+all:
+	doxygen Doxyfile
+	cat doxywarn.log
+# Confirm warning log file is empty.
+#	[ ! -s doxywarn.log ]
+
+check: all
+
+# Include these subdirs to include the documention files in the
+# distribution.
+#SUBDIRS = source images
+
+CLEANFILES = *.log
+
+EXTRA_DIST = Doxyfile.in
