@@ -96,6 +96,18 @@ fi
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
 
+# Require netCDF-4 (with HDF5).
+AC_MSG_CHECKING([if netCDF was built with HDF5])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
+#include <netcdf_meta.h>
+#if !(NC_HAS_NC4)
+      choke me
+#endif]])], [nc_has_nc4=yes], [nc_has_nc4=no])
+AC_MSG_RESULT([$nc_has_nc4])
+if test $nc_has_nc4 = no; then
+  AC_MSG_ERROR([NetCDF must be built with HDF5.])
+fi
+
 # Check if Linux gettid is avaiable
 AC_CHECK_FUNCS([gettid], [], [])
 
