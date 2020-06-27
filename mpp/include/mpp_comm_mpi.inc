@@ -160,6 +160,8 @@
      endif
   endif
 
+  if (t_level == 6) return
+
 ! max_request is set to maximum of npes * REQUEST_MULTIPLY ( default is 20) and MAX_REQUEST_MIN ( default 10000)
   max_request = max(MAX_REQUEST_MIN, mpp_npes()*REQUEST_MULTIPLY)
 
@@ -171,6 +173,8 @@
   request_recv(:) = MPI_REQUEST_NULL
   size_recv(:)    = 0
   type_recv(:)    = 0
+
+  if (t_level == 7) return
 
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.
