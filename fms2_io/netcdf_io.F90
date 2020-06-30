@@ -457,7 +457,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   integer :: err
   character(len=256) :: buf
   logical :: is_res
-  logical :: dont_add_res
+  logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
@@ -465,7 +465,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       return
     endif
   endif
-  !Add ".res" to the file path if necessary.
+  !< Only add ".res" to the file path if is_restart is set to true
+  !! dont_add_res_to_filename is set to false.
   is_res = .false.
   if (present(is_restart)) then
     is_res = is_restart
