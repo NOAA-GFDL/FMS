@@ -32,7 +32,7 @@ subroutine get_global_attribute_0d(fileobj, &
                                              !! The broadcast will be done
                                              !! by default.
     integer :: err
-    character(len=1024), dimension(1) :: charbuf
+    character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
 
     if (fileobj%is_root) then
         select type(attribute_value)

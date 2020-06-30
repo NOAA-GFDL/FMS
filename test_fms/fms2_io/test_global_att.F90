@@ -1,25 +1,44 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 program test_global_att
 
 use   fms2_io_mod
 use   mpp_mod
 use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64
 
-type(FmsNetcdfFile_t) :: fileobj
-real(kind=real64) :: buf_real64
-real(kind=real64), dimension(2) :: buf_real64_1d
-real(kind=real32) :: buf_real32
-real(kind=real32), dimension(2)  :: buf_real32_1d
-integer(kind=int32)   :: buf_int32
-integer(kind=int32), dimension(2)    :: buf_int32_1d
-integer(kind=int64)   :: buf_int64
-integer(kind=int64), dimension(2)    :: buf_int64_1d
+type(FmsNetcdfFile_t) :: fileobj  !< fms2io netcd file obj
+real(kind=real64) :: buf_real64 !< real64 buffer
+real(kind=real64), dimension(2) :: buf_real64_1d !< real64 1D buffer
+real(kind=real32) :: buf_real32 !< real32 buffer
+real(kind=real32), dimension(2)  :: buf_real32_1d !< real32 1D buffer
+integer(kind=int32)   :: buf_int32 !< int32 buffer
+integer(kind=int32), dimension(2)    :: buf_int32_1d !< int32 1D buffer
+integer(kind=int64)   :: buf_int64 !< int64 buffer
+integer(kind=int64), dimension(2)    :: buf_int64_1d !< int64 1D buffer
 
-character(len=20) :: buf_str
+character(len=20) :: buf_str !< character buffer
 
 call fms2_io_init
 call mpp_init
 
-!> Write out the different possible global attributes
+!> Write out the different possible global attributes to a netcdf file
 if (open_file(fileobj, "test_global_att.nc", "overwrite")) then
    call register_global_attribute(fileobj, "buf_real64", real(7., kind=real64))
    call register_global_attribute(fileobj, "buf_real64_1d", (/ real(7., kind=real64), real(9., kind=real64) /))
@@ -40,7 +59,7 @@ else
    call mpp_error(FATAL, "test_global_att: error opening the file for writting")
 endif
 
-!> Read the global attributes back
+!> Read the global attributes from the netcdf file
 if (open_file(fileobj, "test_global_att.nc", "read")) then
    call get_global_attribute(fileobj, "buf_real64", buf_real64)
    call get_global_attribute(fileobj, "buf_real64_1d", buf_real64_1d)
