@@ -17,6 +17,7 @@ integer(kind=int64), dimension(2)    :: buf_int64_1d
 character(len=20) :: buf_str
 
 call fms2_io_init
+call mpp_init
 
 !> Write out the different possible global attributes
 if (open_file(fileobj, "test_global_att.nc", "overwrite")) then
@@ -78,5 +79,7 @@ if (buf_int64_1d(1) /= int(2, kind=int64) .or. buf_int64_1d(2) /= int(4, kind=in
     call mpp_error(FATAL, "test_global_att: error reading buf_int64_1d")
 
 if (trim(buf_str) /= "some text") call mpp_error(FATAL, "test_global_att: error reading buf_str")
+
+call mpp_exit()
 
 end program
