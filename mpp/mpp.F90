@@ -214,6 +214,9 @@ private
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
   public :: MPP_FILL_INT,MPP_FILL_DOUBLE
+  public :: mpp_init_full_init, mpp_init_init_true_only, mpp_init_peset_allocated
+  public :: mpp_init_clocks_init, mpp_init_datatype_list_init, mpp_init_logfile_init
+  public :: mpp_init_read_namelist, mpp_init_etc_unit, mpp_init_requests_allocated
 
   !--- public data from mpp_data_mod ------------------------------
 !  public :: request
@@ -335,7 +338,7 @@ private
   !    exit, i.e:
   !    <PRE>
   !    call mpp_error
-  !    call mpp_error(FATAL)
+  !    call mpp_error()
   !    </PRE>
   !    are equivalent.
   !
@@ -1360,6 +1363,18 @@ private
 #endif
 
   integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.h
+  
+  !--- variables used in mpp_comm_mpi.inc
+  integer, parameter :: mpp_init_full_init = -1
+  integer, parameter :: mpp_init_init_true_only = 0
+  integer, parameter :: mpp_init_peset_allocated = 1
+  integer, parameter :: mpp_init_clocks_init = 2
+  integer, parameter :: mpp_init_datatype_list_init = 3
+  integer, parameter :: mpp_init_logfile_init = 4
+  integer, parameter :: mpp_init_read_namelist = 5
+  integer, parameter :: mpp_init_etc_unit = 6
+  integer, parameter :: mpp_init_requests_allocated = 7
+
 
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)
