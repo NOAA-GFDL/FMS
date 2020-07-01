@@ -1751,7 +1751,7 @@ include "compressed_read.inc"
 
 
 !> @brief Wrapper to distinguish interfaces.
-function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart) &
+function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
   result(success)
 
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -1773,9 +1773,11 @@ function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restar
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
+                                               !! ".res" to the filename
   logical :: success
 
-  success = netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart)
+  success = netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename)
 end function netcdf_file_open_wrap
 
 
