@@ -131,14 +131,16 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=int32) :: fill_int32
-  real(kind=int64) :: fill_int64
-  real(kind=real32) :: fill_real32
-  real(kind=real64) :: fill_real64
-  integer :: xgmax, xgmin
-  integer :: ygmax, ygmin
-  logical :: extra_x_point
-  logical :: extra_y_point
+  real(kind=int32) :: fill_int32 !< Fill value of a int32 variable
+  real(kind=int64) :: fill_int64 !< Fill value of a int64 variable
+  real(kind=real32) :: fill_real32 !< Fill value of a real32 variable
+  real(kind=real64) :: fill_real64 !< Fill value of a real64 variable
+  integer :: xgmax !< Ending x index of the global io domain
+  integer :: xgmin !< Starting x index of the global io domain
+  integer :: ygmax !< Ending y index of the global io domain
+  integer :: ygmin !< Ending y index of the global io domain
+  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
+  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -166,14 +168,22 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
                                  position=ypos)
+
+    !< Determine the size of the global io domain
     call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
     call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+
+    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
     if (extra_y_point) ygmax = ygmax + 1
 
     !Write the out the data.
+    !< Set e to equal the size of the global io domain
     e(xdim_index) = xgmax - xgmin + 1
-    e(ydim_index) = ygmax - xgmin + 1
+    e(ydim_index) = ygmax - ygmin + 1
+
+    !< Allocate a global buffer, get the fill value if it exists in the file, and initialize
+    !! the buffer to the fill value
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
@@ -204,6 +214,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
 
     do i = 1, size(fileobj%pelist)
+      !< Set c relative to the starting global io domain index
       c(xdim_index) = pe_isc(i) - xgmin + 1
       c(ydim_index) = pe_jsc(i) - ygmin + 1
       e(xdim_index) = pe_icsize(i)
@@ -420,14 +431,16 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=int32) :: fill_int32
-  real(kind=int64) :: fill_int64
-  real(kind=real32) :: fill_real32
-  real(kind=real64) :: fill_real64
-  integer :: xgmin, xgmax
-  integer :: ygmin, ygmax
-  logical :: extra_x_point
-  logical :: extra_y_point
+  real(kind=int32) :: fill_int32 !< Fill value of a int32 variable
+  real(kind=int64) :: fill_int64 !< Fill value of a int64 variable
+  real(kind=real32) :: fill_real32 !< Fill value of a real32 variable
+  real(kind=real64) :: fill_real64 !< Fill value of a real64 variable
+  integer :: xgmax !< Ending x index of the global io domain
+  integer :: xgmin !< Starting x index of the global io domain
+  integer :: ygmax !< Ending y index of the global io domain
+  integer :: ygmin !< Ending y index of the global io domain
+  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
+  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -456,14 +469,21 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
                                  position=ypos)
 
+    !< Determine the size of the global io domain
     call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
     call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+
+    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
     if (extra_y_point) ygmax = ygmax + 1
 
     !Write the out the data.
-    e(xdim_index) = maxval(pe_iec) - xgmin + 1
-    e(ydim_index) = maxval(pe_jec) - ygmin + 1
+    !< Set e to equal the size of the global io domain
+    e(xdim_index) = xgmax - xgmin + 1
+    e(ydim_index) = ygmax - ygmin + 1
+
+    !< Allocate a global buffer, get the fill value if it exists in the file, and initialize
+    !! the buffer to the fill value
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
@@ -494,6 +514,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
 
     do i = 1, size(fileobj%pelist)
+      !< Set c relative to the starting global io domain index
       c(xdim_index) = pe_isc(i) - xgmin + 1
       c(ydim_index) = pe_jsc(i) - ygmin + 1
       e(xdim_index) = pe_icsize(i)
@@ -710,14 +731,16 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=int32) :: fill_int32
-  real(kind=int64) :: fill_int64
-  real(kind=real32) :: fill_real32
-  real(kind=real64) :: fill_real64
-  integer :: xgmin, xgmax
-  integer :: ygmin, ygmax
-  logical :: extra_x_point
-  logical :: extra_y_point
+  real(kind=int32) :: fill_int32 !< Fill value of a int32 variable
+  real(kind=int64) :: fill_int64 !< Fill value of a int64 variable
+  real(kind=real32) :: fill_real32 !< Fill value of a real32 variable
+  real(kind=real64) :: fill_real64 !< Fill value of a real64 variable
+  integer :: xgmax !< Ending x index of the global io domain
+  integer :: xgmin !< Starting x index of the global io domain
+  integer :: ygmax !< Ending y index of the global io domain
+  integer :: ygmin !< Ending y index of the global io domain
+  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
+  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -745,15 +768,22 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
                                  position=ypos)
+
+    !< Determine the size of the global io domain
     call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
     call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+
+    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
     if (extra_y_point) ygmax = ygmax + 1
 
     !Write the out the data.
+    !< Set e to equal the size of the global io domain
     e(xdim_index) = xgmax - xgmin + 1
     e(ydim_index) = ygmax - ygmin + 1
 
+    !< Allocate a global buffer, get the fill value if it exists in the file, and initialize
+    !! the buffer to the fill value
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
@@ -784,6 +814,7 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
 
     do i = 1, size(fileobj%pelist)
+      !< Set c relative to the starting global io domain index
       c(xdim_index) = pe_isc(i) - xgmin + 1
       c(ydim_index) = pe_jsc(i) - ygmin + 1
       e(xdim_index) = pe_icsize(i)
@@ -1000,14 +1031,16 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=int32) :: fill_int32
-  real(kind=int64) :: fill_int64
-  real(kind=real32) :: fill_real32
-  real(kind=real64) :: fill_real64
-  integer :: xgmin, xgmax
-  integer :: ygmin, ygmax
-  logical :: extra_x_point
-  logical :: extra_y_point
+  real(kind=int32) :: fill_int32 !< Fill value of a int32 variable
+  real(kind=int64) :: fill_int64 !< Fill value of a int64 variable
+  real(kind=real32) :: fill_real32 !< Fill value of a real32 variable
+  real(kind=real64) :: fill_real64 !< Fill value of a real64 variable
+  integer :: xgmax !< Ending x index of the global io domain
+  integer :: xgmin !< Starting x index of the global io domain
+  integer :: ygmax !< Ending y index of the global io domain
+  integer :: ygmin !< Ending y index of the global io domain
+  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
+  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -1035,14 +1068,22 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, yend=pe_jec, ysize=pe_jcsize, &
                                  position=ypos)
+
+    !< Determine the size of the global io domain
     call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
     call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+
+    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
     if (extra_y_point) ygmax = ygmax + 1
 
     !Write the out the data.
-    e(xdim_index) = maxval(pe_iec) - xgmin + 1
-    e(ydim_index) = maxval(pe_jec) - ygmin + 1
+    !< Set e to equal the size of the global io domain
+    e(xdim_index) = xgmax - xgmin + 1
+    e(ydim_index) = ygmax - ygmin + 1
+
+    !< Allocate a global buffer, get the fill value if it exists in the file, and initialize
+    !! the buffer to the fill value
     select type(vdata)
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
@@ -1073,6 +1114,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
 
     do i = 1, size(fileobj%pelist)
+      !< Set c relative to the starting global io domain index
       c(xdim_index) = pe_isc(i) - xgmin + 1
       c(ydim_index) = pe_jsc(i) - ygmin + 1
       e(xdim_index) = pe_icsize(i)
