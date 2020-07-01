@@ -23,7 +23,7 @@
 !! @email gfdl.climate.model.info@noaa.gov
 
 program test_stdout
-  use mpp_mod, only : mpp_init, mpp_exit, stdlog
+  use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, stdlog
   use mpp_mod, only : stdout, mpp_pe, mpp_root_pe
   use iso_fortran_env, only : OUTPUT_UNIT
 
@@ -32,7 +32,7 @@ program test_stdout
   integer :: pe !< pe value
   integer :: root_pe !< root pe value
 
-  call mpp_init()
+  call mpp_init(test_level=mpp_init_test_peset_allocated)
 
   out_unit = stdout()
   pe = mpp_pe()
@@ -50,7 +50,5 @@ program test_stdout
       write(OUTPUT_UNIT,*) "root_pe.ne.pe case. stdout() should equal stdlog()."
     end if
   end if
-
-  call mpp_exit()
 
 end program test_stdout
