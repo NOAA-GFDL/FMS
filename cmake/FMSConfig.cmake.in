@@ -1,0 +1,35 @@
+@PACKAGE_INIT@
+
+#fms-config.cmake
+#
+# Imported interface targets provided:
+#  * FMS::fms_r4 - real32 library target
+#  * FMS::fms_r8 - real64 library target
+
+# Include targets file.  This will create IMPORTED target fms
+include("${CMAKE_CURRENT_LIST_DIR}/fms-targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/fms-config-version.cmake")
+include(CMakeFindDependencyMacro)
+
+find_dependency(MPI COMPONENTS Fortran)
+
+# ON/OFF implies FMS was compiled with/without OpenMP
+if(@OPENMP@)
+  find_dependency(OpenMP COMPONENTS Fortran)
+endif()
+
+find_dependency(NetCDF COMPONENTS C Fortran)
+
+set(FMSVersion "${PACKAGE_VERSION}")
+set_and_check(FMS_INSTALL_PREFIX "${PACKAGE_PREFIX_DIR}")
+
+# Get the build type and location from library target (try 32bit first)
+if(@32BIT@)
+  get_target_property(FMS_BUILD_TYPES FMS::fms_r4 IMPORTED_CONFIGURATIONS)
+elseif(@64BIT@)
+  get_target_property(FMS_BUILD_TYPES FMS::fms_r8 IMPORTED_CONFIGURATIONS)
+endif()
+
+check_required_components("FMS")
+
+message(STATUS "Found FMS: \"${FMS_INSTALL_PREFIX}\" (Version: \"${FMSVersion}\")")
