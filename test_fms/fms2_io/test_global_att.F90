@@ -52,7 +52,7 @@ if (open_file(fileobj, "test_global_att.nc", "overwrite")) then
    call register_global_attribute(fileobj, "buf_int64", int(2, kind=int64))
    call register_global_attribute(fileobj, "buf_int64_1d", (/ int(2, kind=int64), int(4, kind=int64) /) )
 
-   call register_global_attribute(fileobj, "buf_str", "some text")
+   call register_global_attribute(fileobj, "buf_str", "some text", str_len=len_trim("some text"))
 
    call close_file(fileobj)
 else
