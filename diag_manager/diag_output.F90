@@ -241,7 +241,7 @@ CONTAINS
 
     !---- write global attributes ----
     IF ( file_title(1:1) /= ' ' ) THEN
-       call register_global_attribute(fileob, 'title', TRIM(file_title))
+       call register_global_attribute(fileob, 'title', TRIM(file_title), str_len=len_trim(file_title))
     END IF
 
     IF ( PRESENT(attributes) ) THEN
@@ -254,7 +254,7 @@ CONTAINS
              call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%fatt)
           CASE (NF90_CHAR)
 
-             call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%catt)
+             call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%catt, str_len=len_trim(attributes(i)%catt))
           CASE default
              ! <ERROR STATUS="FATAL">
              !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
@@ -268,9 +268,9 @@ CONTAINS
     !---- write grid type (mosaic or regular)
     CALL get_diag_global_att(gAtt)
 
-    call register_global_attribute(fileob, 'grid_type', TRIM(gAtt%grid_type))
+    call register_global_attribute(fileob, 'grid_type', TRIM(gAtt%grid_type), str_len=len_trim(gAtt%grid_type))
 
-    call register_global_attribute(fileob, 'grid_tile', TRIM(gAtt%tile_name))
+    call register_global_attribute(fileob, 'grid_tile', TRIM(gAtt%tile_name), str_len=len_trim(gAtt%tile_name))
 
   END SUBROUTINE diag_output_init
   ! </SUBROUTINE>
@@ -377,14 +377,14 @@ integer :: domain_size, axis_length, axis_pos
                       if (allocated(fptr%pelist)) then
                          call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
                          call register_field(fptr, axis_name, "float", (/axis_name/) )
-                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                          select case (axis_direction)
                               case (1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                   call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                               case (-1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                   call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                          end select
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
@@ -395,14 +395,14 @@ integer :: domain_size, axis_length, axis_pos
                          istart = cstart - gstart + 1 
                          call register_axis(fptr, axis_name, dimension_length=clength)
                          call register_field(fptr, axis_name, "float", (/axis_name/) )
-                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                         call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                         call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                          select case (axis_direction)
                               case (1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                   call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                               case (-1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                   call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                          end select
                          !< For regional subaxis add the "domain_decomposition" attribute, which is added
                          !< fms2_io for (other) domains with sufficient decomposition info.
@@ -439,14 +439,14 @@ integer :: domain_size, axis_length, axis_pos
                               "The FmsNetcdfDomain file object is not the right type.", FATAL)
                 end select
                     call register_field(fileob, axis_name, "float", (/axis_name/) )
-                    call register_variable_attribute(fileob, axis_name, "long_name", axis_long_name)
-                    call register_variable_attribute(fileob, axis_name, "units", axis_units)
-                    call register_variable_attribute(fileob, axis_name, "axis",trim(axis_cart_name))
+                    call register_variable_attribute(fileob, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                    call register_variable_attribute(fileob, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                    call register_variable_attribute(fileob, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                     select case (axis_direction)
                          case (1)
-                              call register_variable_attribute(fptr, axis_name, "positive", "up")
+                              call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                          case (-1)
-                              call register_variable_attribute(fptr, axis_name, "positive", "down")
+                              call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                     end select
                     call write_data(fileob, axis_name, axis_data(istart:iend) )
           END IF
@@ -489,9 +489,9 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         call write_data(fptr, axis_name, axis_data)
                    class default
                         call error_mesg("diag_output_mod::write_axis_meta_data", &
@@ -507,28 +507,28 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         select case (axis_direction)
                              case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                              case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                         end select
                         call write_data(fptr, axis_name, axis_data)
                    type is (FmsNetcdfDomainFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         select case (axis_direction)
                              case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                              case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                         end select
                         call write_data(fptr, axis_name, axis_data)
                     endif
@@ -536,14 +536,14 @@ integer :: domain_size, axis_length, axis_pos
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         select case (axis_direction)
                              case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                              case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                         end select
                         call write_data(fptr, axis_name, axis_data)
                     endif
@@ -559,26 +559,26 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfDomainFile_t)
                         call register_axis(fptr, trim(axis_name), unlimited )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
 
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         is_time_axis_registered = .true.
                         if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         is_time_axis_registered = .true.
                    type is (FmsNetcdfFile_t)
                         call register_axis(fptr, trim(axis_name), unlimited )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
 
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         is_time_axis_registered = .true.
                         if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
                    class default
@@ -607,12 +607,12 @@ integer :: domain_size, axis_length, axis_pos
 
 
           call register_variable_attribute(fileob, axis_name, "calendar_type", &
-                                    UPPERCASE(TRIM(valid_calendar_types(calendar))) )
+                                    UPPERCASE(TRIM(valid_calendar_types(calendar))), str_len=len_trim(valid_calendar_types(calendar)) )
           call register_variable_attribute(fileob, axis_name, "calendar", &
-                                    lowercase(TRIM(valid_calendar_types(calendar))) )
+                                    lowercase(TRIM(valid_calendar_types(calendar))), str_len=len_trim(valid_calendar_types(calendar)) )
           IF ( time_ops1 ) THEN
 
-             call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds')
+             call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds', str_len=len_trim(TRIM(axis_name)//'_bnds'))
           END IF
           call set_fileobj_time_name(fileob, axis_name)
        ELSE
@@ -653,7 +653,7 @@ integer :: domain_size, axis_length, axis_pos
             & axis_direction, axis_edges, Domain, DomainU, axis_data, num_attributes, attributes)
 
        !  ---- write edges attribute to original axis ----
-       call register_variable_attribute(fileob, axis_name_current, "edges",trim(axis_name))
+       call register_variable_attribute(fileob, axis_name_current, "edges",trim(axis_name), str_len=len_trim(axis_name))
        !  ---- add edges index to axis list ----
        !  ---- assume this is not a time axis ----
        num_axis_in_file = num_axis_in_file + 1
@@ -686,28 +686,28 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         select case (axis_direction)
                              case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                              case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                         end select
                         call write_data(fptr, axis_name, axis_data)
                    type is (FmsNetcdfDomainFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         select case (axis_direction)
                              case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                              case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                         end select
                         call write_data(fptr, axis_name, axis_data)
                     endif
@@ -715,14 +715,14 @@ integer :: domain_size, axis_length, axis_pos
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
                         call register_field(fptr, axis_name, "float", (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
-                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
+                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units, str_len=len_trim(axis_units))
+                        call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name, str_len=len_trim(axis_long_name))
+                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
                         select case (axis_direction)
                              case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
                              case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down")
+                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
                         end select
                         call write_data(fptr, axis_name, axis_data)
                     endif
@@ -990,8 +990,8 @@ character(len=128),dimension(size(axes)) :: axis_names
           CALL error_mesg('diag_output_mod::write_field_meta_data',&
                &"Pack values must be 1 or 2. Contact the developers.", FATAL)
      end select
-     if (trim(units) .ne. "none") call register_variable_attribute(fileob,name,"units",units)
-     call register_variable_attribute(fileob,name,"long_name",long_name)
+     if (trim(units) .ne. "none") call register_variable_attribute(fileob,name,"units",units, str_len=len_trim(units))
+     call register_variable_attribute(fileob,name,"long_name",long_name, str_len=len_trim(long_name))
 !    IF ( Field%miss_present ) THEN
 !         call register_variable_attribute(fileob,name,"_FillValue",Field%miss_pack)
 !         call register_variable_attribute(fileob,name,"missing_value",Field%miss_pack)
@@ -1000,7 +1000,7 @@ character(len=128),dimension(size(axes)) :: axis_names
 !         call register_variable_attribute(fileob,name,"missing_value",CMOR_MISSING_VALUE)
 !    ENDIF
      IF (present(time_method) ) then
-          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method))
+          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), str_len=len_trim('time: '//trim(time_method)))
      ENDIF
   endif
     !---- write user defined attributes -----
@@ -1040,20 +1040,21 @@ character(len=128),dimension(size(axes)) :: axis_names
     IF ( PRESENT(avg_name) ) THEN
        IF ( avg_name(1:1) /= ' ' ) THEN
           call register_variable_attribute(fileob,name,'time_avg_info',&
-             & trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT')
+             & trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
+             & str_len=len_trim(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
        END IF
     END IF
 
     ! write coordinates attribute for CF compliance
     IF ( coord_present ) then
-         call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att))
+         call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att), str_len=len_trim(coord_att))
     ENDIF
     IF ( TRIM(standard_name2) /= 'none' ) then
-         call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2))
+         call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2), str_len=len_trim(standard_name2))
     ENDIF
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
-       call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method))
+       call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method), str_len=len_trim(interp_method))
     END IF
 
     !---- get axis domain ----
@@ -1112,7 +1113,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
              att_len = LEN_TRIM(att_str)
           END IF
           if (present(varname))&
-               call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len))
+               call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len), str_len=att_len)
 
        CASE default
           IF ( fms_error_handler('diag_output_mod::write_attribute_meta', 'Invalid type for attribute '&
