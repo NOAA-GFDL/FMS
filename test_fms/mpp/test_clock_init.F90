@@ -24,25 +24,27 @@
 
 program test_clock_init
 
-  use mpp_mod, only : mpp_init, mpp_exit
+  use mpp_mod, only : mpp_init, mpp_init_test_init_true_only
   use mpp_mod, only : mpp_error, FATAL
   use mpp_mod, only : mpp_clock_id, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 
-  call mpp_init()
+  integer :: ierr
+
+  call mpp_init(test_level=mpp_init_test_init_true_only)
   ! We cannot directly access the clock_init subroutine, 
   ! but we can use the mpp_clock_id function to call clock_init.
   write(*,*) "Testing simple clock"
-  call create_and_check_clock("name1", 2) ! Simple name input clock init
+  call create_and_check_clock("name1", 1) ! Simple name input clock init
   write(*,*) "Testing clock with empty string name"
-  call create_and_check_clock("", 3)      ! Simple clock init with empty name
+  call create_and_check_clock("", 2)      ! Simple clock init with empty name
   ! All possible combinations of specified flags
   write(*,*) "Testing clock with MPP_CLOCK_SYNC flag"
-  call create_and_check_clock("name3", 4, flagsIn=MPP_CLOCK_SYNC )
+  call create_and_check_clock("name3", 3, flagsIn=MPP_CLOCK_SYNC )
   write(*,*) "Testing clock with MPP_CLOCK_DETAILED flag"
-  call create_and_check_clock("name4", 5, flagsIn=MPP_CLOCK_DETAILED)
+  call create_and_check_clock("name4", 4, flagsIn=MPP_CLOCK_DETAILED)
   write(*,*) "Testing clock with both flags"
-  call create_and_check_clock("name5", 6, flagsIn=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED)
-  call mpp_exit()
+  call create_and_check_clock("name5", 5, flagsIn=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED)
+  call MPI_FINALIZE(ierr)
 
   contains
     !> @brief Helper subroutine to test different scenarios when testing mpp's clock_init subroutine
