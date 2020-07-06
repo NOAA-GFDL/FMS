@@ -50,7 +50,7 @@ program test_clock_init
     !> @brief Helper subroutine to test different scenarios when testing mpp's clock_init subroutine
     subroutine create_and_check_clock(nameIn, expected, flagsIn)
       character(len=*), intent(in)  :: nameIn !< Name of clock
-      integer                       :: expected !< Expected clock id
+      integer, intent(in)           :: expected !< Expected clock id
       integer, intent(in), optional :: flagsIn !< Clock creation flags
       integer                       :: dummy !< Dummy variable to aid in calling mpp_clock_id function
       integer                       :: id !< Id of a given clock
