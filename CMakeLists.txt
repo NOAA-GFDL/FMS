@@ -200,6 +200,10 @@ if(ENABLE_QUAD_PRECISION)
   list(APPEND fms_defs ENABLE_QUAD_PRECISION)
 endif()
 
+if(LARGEFILE)
+  list(APPEND fms_defs use_LARGEFILE)
+endif()
+
 # Precision-based compiler definitions
 if(32BIT)
   list(APPEND r4_defs OVERLOAD_R4 OVERLOAD_R8)
