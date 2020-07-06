@@ -19,7 +19,7 @@
 
 # Copyright (c) GFDL, @underwoo
 
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.7...3.15 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
