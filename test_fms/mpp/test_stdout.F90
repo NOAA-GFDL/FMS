@@ -31,6 +31,7 @@ program test_stdout
   integer :: log_unit !< Stores the returned standard log unit number
   integer :: pe !< pe value
   integer :: root_pe !< root pe value
+  integer :: ierr !< Error code
 
   call mpp_init(test_level=mpp_init_test_peset_allocated)
 
@@ -50,5 +51,7 @@ program test_stdout
       write(OUTPUT_UNIT,*) "root_pe.ne.pe case. stdout() should equal stdlog()."
     end if
   end if
+  
+  call MPI_FINALIZE(ierr)
 
 end program test_stdout
