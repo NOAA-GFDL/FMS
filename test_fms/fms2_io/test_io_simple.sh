@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -15,35 +17,18 @@
 #*
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
-#**********************************************************************
+#***********************************************************************
 
-.SUFFIXES:
-.SUFFIXES: .F90 .f90 .F .f .o .c
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
 
-.F90.f90:
-	$(CPP) $(CPPFLAGS) $< > $*.f90
+# Author: Ed Hartnett 6/10/20
+#
+# Set common test settings.
+. ../test_common.sh
 
-.F.f:
-	$(CPP) $(CPPFLAGS) $< > $*.f
+# make an input.nml for mpp_init to read
+printf "EOF\n&dummy\nEOF" | cat > input.nml
 
-.f.o:
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.f90.o:
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.F.o:
-	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.F90.o:
-	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.c.o:
-	$(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) $(OTHER_CFLAGS) -c $< -o $@
-
-depend: $(DEPEND_FILES) makefile
-	@echo "Building dependencies ..."
-	@ls -1 $(DEPEND_FILES) > Srcfiles
-	@echo "." > Filepath
-	@$(MKDEPENDS) -m Filepath Srcfiles > depend
-	@$(RM) -f Filepath Srcfiles
+# run the tests
+run_test test_io_simple 6 
