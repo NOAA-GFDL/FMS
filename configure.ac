@@ -193,6 +193,62 @@ AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 AS_IF([$MPI_LAUNCHER --oversubscribe hostname >/dev/null 2>&1], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
 
+
+# Compiler with version information. This consists of the full path
+# name of the compiler and the reported version number.
+AC_SUBST([CC_VERSION])
+# Strip anything that looks like a flag off of $CC
+CC_NOFLAGS=`echo $CC | sed 's/ -.*//'`
+
+if `echo $CC_NOFLAGS | grep ^/ >/dev/null 2>&1`; then
+  CC_VERSION="$CC"
+else
+  CC_VERSION="$CC";
+  for x in `echo $PATH | sed -e 's/:/ /g'`; do
+    if test -x $x/$CC_NOFLAGS; then
+      CC_VERSION="$x/$CC"
+      break
+    fi
+  done
+fi
+if test -n "$cc_version_info"; then
+  CC_VERSION="$CC_VERSION ( $cc_version_info)"
+fi
+
+AC_SUBST([FC_VERSION])
+# Strip anything that looks like a flag off of $FC
+FC_NOFLAGS=`echo $CC | sed 's/ -.*//'`
+
+if `echo $FC_NOFLAGS | grep ^/ >/dev/null 2>&1`; then
+  FC_VERSION="$FC"
+else
+  FC_VERSION="$FC";
+  for x in `echo $PATH | sed -e 's/:/ /g'`; do
+    if test -x $x/$FC_NOFLAGS; then
+      FC_VERSION="$x/$FC"
+      break
+    fi
+  done
+fi
+if test -n "$fc_version_info"; then
+  FC_VERSION="$FC_VERSION ( $fc_version_info )"
+fi
+
+#####
+# Create output variables from various
+# shell variables, for use in generating
+# libnetcdf.settings.
+#####
+AC_SUBST([enable_shared])
+AC_SUBST([enable_static])
+AC_SUBST([CFLAGS])
+AC_SUBST([CPPFLAGS])
+AC_SUBST([LDFLAGS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_LDFLAGS])
+AC_SUBST([NOUNDEFINED])
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
@@ -249,5 +305,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/mosaic/Makefile
         test_fms/affinity/Makefile
         FMS.pc
+        FMSConfig.cmake.in
+        FMSConfigVersion.cmake.in
         ])
 AC_OUTPUT()
