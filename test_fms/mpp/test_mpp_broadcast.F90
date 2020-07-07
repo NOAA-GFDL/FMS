@@ -19,15 +19,17 @@
 
 program test_mpp_broadcast
 
-  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe
+  use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, mpp_pe, mpp_npes, mpp_root_pe
   use mpp_mod, only : mpp_error, mpp_broadcast, FATAL
 
-  call mpp_init()
+  integer :: ierr !< Used by MPI_FINALIZE
+
+  call mpp_init(test_level=mpp_init_test_peset_allocated)
 
   call test_broadcast_2D()
   call test_broadcast_char()
 
-  call mpp_exit()
+  call MPI_FINALIZE(ierr)
 contains 
 
 subroutine test_broadcast_2D()
