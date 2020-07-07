@@ -24,7 +24,7 @@
 
 program test_read_input_nml
 
-  use mpp_mod, only : mpp_init, mpp_exit
+  use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
   use mpp_mod, only : read_input_nml, mpp_get_current_pelist_name
   use mpp_mod, only : input_nml_file, INPUT_STR_LENGTH, get_ascii_file_num_lines
@@ -35,6 +35,7 @@ character(len=128) :: filename !< Name of input nml file to be read
 integer :: stat !< IOSTAT output integer
 integer :: n, m !< Loop counting variable
 integer :: current_pelist_name_len_plus1 !< Current pelist name length plus 1
+integer :: ierr !< used by MPI_FINALIZE
 character(len=:), allocatable :: toobig !< String passed as argument into read_input_nml that is 
                                         !!larger than pelis_name and should raise an error
 
@@ -43,6 +44,8 @@ namelist /test_read_input_nml_nml/ test_numb
 open(10, file="test_numb.nml", form="formatted", status="old")
 read(10, nml = test_read_input_nml_nml)
 close(10)
+
+call mpp_init(test_level=mpp_init_test_peset_allocated)
 
 if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   ! Test 1: Tests the subroutine on a valid input nml full of data, 
@@ -53,15 +56,12 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   ! with no arguments passed to read_input_nml()
   if (test_numb == 1) then
     filename = "input.nml"
-    call mpp_init() ! Initialize mpp
     call read_input_nml()
   else if (test_numb == 4) then
     filename = "input_blank.nml"
-    call mpp_init() ! Initialize mpp
     call read_input_nml("blank")
   else if (test_numb == 2) then
     filename = "input_alternative.nml"
-    call mpp_init() ! Initialize mpp
     call read_input_nml("alternative")
   end if
   open(1, file=filename, iostat=stat) ! Open input nml or alternative
@@ -78,12 +78,10 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     n = n + 1
   end do
   close(1)
-  call mpp_exit()
 
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
   ! pelist_name_in would be one who's size is greater than local pelist_name
-  call mpp_init ! Initialize mpp        
   current_pelist_name_len_plus1 = LEN(mpp_get_current_pelist_name())
   allocate(character(len=current_pelist_name_len_plus1) :: toobig)
   call read_input_nml(pelist_name_in=toobig)
@@ -92,6 +90,8 @@ else if (test_numb.eq.3) then
                                                           ! pelist_name plus an
                                                           ! extra character "e"
   deallocate(toobig)
-  call mpp_exit() ! Exit mpp
 end if
+
+call MPI_FINALIZE(ierr)
+
 end program test_read_input_nml
