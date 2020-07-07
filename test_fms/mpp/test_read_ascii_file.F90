@@ -24,7 +24,7 @@
 
 program test_read_ascii_file
 
-  use mpp_mod, only : mpp_init, mpp_exit
+  use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
   use mpp_mod, only : read_ascii_file, INPUT_STR_LENGTH, get_ascii_file_num_lines
   use mpp_mod, only : mpp_get_current_pelist, mpp_npes
@@ -36,6 +36,7 @@ program test_read_ascii_file
   integer :: num_lines !< Number of lines in the ascii file
   integer :: stat !< IOSTATUS from the read method
   integer, allocatable :: cur_pelist(:) !< PELIST is read into this variable
+  integer :: ierr !< used by MPI_FINALIZE
 
   namelist /test_read_ascii_file_nml/ test_numb
 
@@ -44,7 +45,7 @@ program test_read_ascii_file
   close(20)
 
   ! Tests not meant to raise errors
-  call mpp_init()
+  call mpp_init(test_level=mpp_init_test_peset_allocated)
   if (test_numb == 1 .or. test_numb == 7 .or. test_numb == 8) then
     if (test_numb == 1) then
       filename = "input.nml"
@@ -108,5 +109,5 @@ program test_read_ascii_file
       call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
     end if
   end if
-  call mpp_exit()
+  call MPI_FINALIZE(ierr)
 end program test_read_ascii_file
