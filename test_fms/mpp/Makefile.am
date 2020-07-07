@@ -38,7 +38,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_print_memuse_stats_file \
   test_mpp_memutils_begin_2x \
   test_mpp_memutils_end_before_begin \
-  test_read_ascii_file
+  test_read_ascii_file \
+  test_domains_simple
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -52,6 +53,7 @@ test_mpp_print_memuse_stats_file_SOURCES=test_mpp_print_memuse_stats_file.F90
 test_mpp_memutils_begin_2x_SOURCES=test_mpp_memutils_begin_2x.F90
 test_mpp_memutils_end_before_begin_SOURCES=test_mpp_memutils_end_before_begin.F90
 test_read_ascii_file_SOURCES=test_read_ascii_file.F90
+test_domains_simple_SOURCES = test_domains_simple.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
