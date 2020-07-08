@@ -38,12 +38,13 @@ end module include_files_mod
 
 program test_system_clock
   use include_files_mod
-  use mpp_mod, only : mpp_init, mpp_exit, stderr, stdout, mpp_error, FATAL
+  use mpp_mod, only : mpp_init, mpp_init_test_init_true_only, stderr, stdout, mpp_error, FATAL
   implicit none
 
   integer(LONG_KIND) :: count1, count_rate1, count_max1, count2, count_rate2, count_max2
+  integer :: ierr
 !> Initialize mpp
-  call mpp_init() 
+  call mpp_init(test_level=mpp_init_test_init_true_only) 
 !> Call system_clock and ensure output is not undefined
   call system_clock(count1, count_rate1, count_max1)
   write(*,*) count1, count_rate1, count_max1
@@ -66,5 +67,5 @@ program test_system_clock
   if (count_max1 .ne. count_max2) then
     call mpp_error(FATAL, "count maxes are not equal")
   endif
-  call mpp_exit()
+  call MPI_FINALIZE(ierr)
 end program test_system_clock
