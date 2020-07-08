@@ -237,7 +237,6 @@ private
   public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
   public :: mpp_gather, mpp_scatter, mpp_alltoall
   public :: mpp_type, mpp_byte, mpp_type_create, mpp_type_free
-  public :: mpp_initialize_module_for_testing
 #ifdef use_MPI_GSM
   public :: mpp_gsm_malloc, mpp_gsm_free
 #endif
