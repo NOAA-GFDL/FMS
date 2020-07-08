@@ -18,7 +18,7 @@
 !***********************************************************************
 
 program test_get_ascii_lines
-  use mpp_mod, only: mpp_init, mpp_exit, get_ascii_file_num_lines, read_ascii_file, INPUT_STR_LENGTH
+  use mpp_mod, only: mpp_init, mpp_init_test_logfile_init, get_ascii_file_num_lines, read_ascii_file, INPUT_STR_LENGTH
   use mpp_mod, only: input_nml_file
   use, intrinsic ::  iso_fortran_env, only: INT8
 
@@ -32,6 +32,7 @@ program test_get_ascii_lines
   integer(KIND=INT8) :: test_number
   integer, dimension(num_tests) :: my_num_lines=(/5,25,0,5,5/)
   integer :: f_num_lines, io_status
+  integer :: ierr
   character(len=10), dimension(num_tests) :: file_name=(/"ascii_5   ",&
                                                          "ascii_25  ",&
                                                          "ascii_0   ",&
@@ -45,12 +46,12 @@ program test_get_ascii_lines
   character(len=INPUT_STR_LENGTH), allocatable :: file_contents(:)
   namelist /test_mpp_get_ascii_lines_nml/ test_number
 
-  call mpp_init()
+  call mpp_init(test_level=mpp_init_test_logfile_init)
   read (input_nml_file, test_mpp_get_ascii_lines_nml, iostat=io_status)
   my_num_lines(test_number) = my_num_lines(test_number)+1 !!!!! Please See Note At End of File
   f_num_lines = get_ascii_file_num_lines(trim(file_name(test_number)), INPUT_STR_LENGTH)
   call assertEquals(f_num_lines, my_num_lines(test_number), trim(test_name(test_number)))
-  call mpp_exit()
+  call MPI_FINALIZE(ierr)
 
 contains
 
