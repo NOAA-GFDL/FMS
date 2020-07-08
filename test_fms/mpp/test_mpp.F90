@@ -67,11 +67,6 @@ program test   !test various aspects of mpp_mod
     call test_gather2DV(npes,pe,root,out_unit)
   if( pe.EQ.root ) print *, '------------------> Finished test_gather <------------------'
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_broadcast <------------------'
-    call test_broadcast_2D()
-    call test_broadcast_char()
-  if( pe.EQ.root ) print *, '------------------> Finished test_broadcast <------------------'
-
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
   if( pe.EQ.root ) print *, '------------------> Calling test_time_transmit <------------------'
     call test_time_transmit()
@@ -119,94 +114,6 @@ program test   !test various aspects of mpp_mod
 contains
 
   !***********************************************
-  !currently only test the mpp_broadcast_char
-
-  subroutine test_broadcast_char()
-     integer, parameter :: ARRAYSIZE = 3
-     integer, parameter :: STRINGSIZE = 256
-     character(len=STRINGSIZE), dimension(ARRAYSIZE) :: textA, textB
-     integer :: n
-
-     textA(1) = "This is line 1 "
-     textA(2) = "Here comes the line 2 "
-     textA(3) = "Finally is line 3 "
-     do n = 1, ARRAYSIZE
-        textB(n) = TextA(n)
-     enddo
-
-     if(mpp_pe() .NE. mpp_root_pe()) then
-        do n =1, ARRAYSIZE
-           textA(n) = ""
-        enddo
-     endif
-
-     !--- comparing textA and textB. textA and textB are supposed to be different on pe other than root_pe
-     if(mpp_pe() == mpp_root_pe()) then
-        do n = 1, ARRAYSIZE
-           if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should equal textB")
-        enddo
-     else
-        do n = 1, ARRAYSIZE
-           if(textA(n) == textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should not equal textB")
-        enddo
-     endif
-     call mpp_broadcast(textA, STRINGSIZE, mpp_root_pe())
-     !--- after broadcast, textA and textB should be the same
-     do n = 1, ARRAYSIZE
-        if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: after broadcast, textA should equal textB")
-     enddo
-
-     write(out_unit,*) "==> NOTE from test_broadcast_char: The test is succesful"
-
-  end subroutine test_broadcast_char
-
-  subroutine test_broadcast_2D()
-  integer, parameter :: ARRAYSIZE = 3
-  integer :: n, m, p
-  real :: r(3,3), k(3,3)
-
-  p=0;
-  do n = 1, ARRAYSIZE
-    do m = 1, ARRAYSIZE
-       p = p + 1
-       k(n, m) = p
-       r(n, m) = k(n, m)
-    enddo
-  enddo
-
-  if(mpp_pe() .NE. mpp_root_pe()) then
-    do n =1, ARRAYSIZE
-       r(:, n) = 0
-    enddo
-  endif
-
-!--- comparing array m and n. m and n are supposed to be different on pe other than root_pe
-  if(mpp_pe() == mpp_root_pe()) then
-    do n = 1, ARRAYSIZE
-       do m = 1, ARRAYSIZE
-          if(r(n, m) .NE. k(n, m)) call mpp_error(FATAL, "test_broadcast: on root_pe, m should equal n")
-       enddo
-    enddo
-  else
-    do n = 1, ARRAYSIZE
-       do m = 1, ARRAYSIZE
-          if(r(n, m) == k(n, m)) call mpp_error(FATAL, "test_broadcast: on root_pe, m should not equal n")
-       enddo
-    enddo
-  endif
-
-  call mpp_broadcast(r, ARRAYSIZE*ARRAYSIZE, mpp_root_pe())
-
-!--- after broadcast, m and n should be the same
-  do n = 1, ARRAYSIZE
-     do m =1, ARRAYSIZE
-        if(r(n, m) .NE. k(n, m)) call mpp_error(FATAL, "test_broadcast: after broadcast, m should equal n")
-     enddo
-  enddo
-
-     write(out_unit,*) "==> NOTE from test_broadcast_2D: The test is succesful"
-
-  end subroutine test_broadcast_2D
 
   subroutine test_gather(npes,pe,root,out_unit)
      integer, intent(in) :: npes,pe,root,out_unit
