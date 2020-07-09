@@ -16,6 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+#ifndef use_mpp_io
 
 MODULE diag_output_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -1389,3 +1390,4 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   ! </SUBROUTINE>
 
 END MODULE diag_output_mod
+#endif

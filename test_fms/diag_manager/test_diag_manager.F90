@@ -207,6 +207,8 @@
 !"UG_unit_test", "lat", "grid_yt", "unstructured_diag_test", "all", .TRUE., "none", 1,
 !--------------------------------------------------------------------------------------------------
 PROGRAM test
+! if -Duse_mpp_io is used, the diag_manager tests will be skipped
+#ifdef use_mpp_io
   ! This program runs only one of many possible tests with each execution.
   ! Each test ends with an intentional fatal error.
   ! diag_manager_mod is not a stateless module, and there are situations
@@ -1681,5 +1683,5 @@ ENDIF !L.ne.1
 
         return
   END SUBROUTINE unstruct_test
-
+#endif
 END PROGRAM test

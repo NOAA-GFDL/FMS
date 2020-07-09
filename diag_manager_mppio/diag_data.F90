@@ -16,10 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifndef use_mpp_io
-
+#ifdef use_mpp_io
 MODULE diag_data_mod
-use platform_mod
+#include <fms_platform.h>
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -60,7 +59,7 @@ use platform_mod
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
-use fms2_io_mod
+
   IMPLICIT NONE
 
   PUBLIC
@@ -193,8 +192,8 @@ use fms2_io_mod
      INTEGER             :: len
      CHARACTER(len=128)  :: name
      CHARACTER(len=1280) :: catt
-     REAL, allocatable, DIMENSION(:)    :: fatt
-     INTEGER, allocatable, DIMENSION(:) :: iatt
+     REAL, _ALLOCATABLE, DIMENSION(:)    :: fatt _NULL
+     INTEGER, _ALLOCATABLE, DIMENSION(:) :: iatt _NULL
   end type diag_atttype
   ! </TYPE>
   ! <TYPE NAME="coord_type">
@@ -314,18 +313,13 @@ use fms2_io_mod
      TYPE(time_type) :: start_time !< Time file opened.
      TYPE(time_type) :: close_time !< Time file closed.  File does not allow data after close time
      TYPE(diag_fieldtype):: f_avg_start, f_avg_end, f_avg_nitems, f_bounds
-     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
 !----------
 !ug support
-     logical(I4_KIND) :: use_domainUG = .false.
-     logical(I4_KIND) :: use_domain2D = .false.
+     logical(INT_KIND) :: use_domainUG = .false.
+     logical(INT_KIND) :: use_domain2D = .false.
 !----------
-!Check if time axis was already registered
-     logical, allocatable :: is_time_axis_registered
-!Support for fms2_io time
-     real :: rtime_current
-     integer :: time_index
   END TYPE file_type
   ! </TYPE>
 
@@ -396,7 +390,7 @@ use fms2_io_mod
      LOGICAL :: missing_value_present, range_present
      REAL :: missing_value
      REAL, DIMENSION(2) :: range
-     INTEGER, allocatable, dimension(:) :: output_fields
+     INTEGER, _ALLOCATABLE, dimension(:) :: output_fields _NULL
      INTEGER :: num_output_fields
      INTEGER, DIMENSION(3) :: size
      LOGICAL :: static, register, mask_variant, local
@@ -446,15 +440,15 @@ use fms2_io_mod
   !   <DATA NAME="time_method" TYPE="CHARACTER(len=50)">
   !     Time method field from the input file
   !   </DATA>
-  !   <DATA NAME="buffer" TYPE="REAL, allocatable, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
+  !   <DATA NAME="buffer" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
   !     Coordinates of buffer are (x, y, z, time-of-day)
   !   </DATA>
-  !   <DATA NAME="counter" TYPE="REAL, allocatable, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
+  !   <DATA NAME="counter" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
   !     Coordinates of buffer are (x, y, z, time-of-day)
   !   </DATA>
-  !   <DATA NAME="count_0d" TYPE="REAL, allocatable, DIMENSION(:)">
+  !   <DATA NAME="count_0d" TYPE="REAL, _ALLOCATABLE, DIMENSION(:)">
   !   </DATA>
-  !   <DATA NAME="num_elements" TYPE="REAL, allocatable, DIMENSION(:)">
+  !   <DATA NAME="num_elements" TYPE="REAL, _ALLOCATABLE, DIMENSION(:)">
   !   </DATA>
   !   <DATA NAME="last_output" TYPE="TYPE(time_type)">
   !   </DATA>
@@ -525,16 +519,16 @@ use fms2_io_mod
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
      CHARACTER(len=50) :: time_method ! time method field from the input file
      ! coordinates of the buffer and counter are (x, y, z, time-of-day)
-     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer
-     REAL, allocatable, DIMENSION(:,:,:,:) :: counter
+     REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: buffer _NULL
+     REAL, _ALLOCATABLE, DIMENSION(:,:,:,:) :: counter _NULL
      ! the following two counters are used in time-averaging for some
      ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
      ! the diurnal interval, because the number of time slices accumulated
      ! in each can be different, depending on time step and the number of
      ! diurnal samples.
-     REAL, allocatable, DIMENSION(:)  :: count_0d
-     INTEGER, allocatable, dimension(:) :: num_elements
+     REAL, _ALLOCATABLE, DIMENSION(:)  :: count_0d
+     INTEGER, _ALLOCATABLE, dimension(:) :: num_elements
 
      TYPE(time_type) :: last_output, next_output, next_next_output
      TYPE(diag_fieldtype) :: f_type
@@ -546,7 +540,7 @@ use fms2_io_mod
      LOGICAL :: reduced_k_range
      INTEGER :: imin, imax, jmin, jmax, kmin, kmax
      TYPE(time_type) :: Time_of_prev_field_data
-     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
 !----------
 !ug support
@@ -603,9 +597,6 @@ use fms2_io_mod
   !   <DATA NAME="num_attributes" TYPE="INTEGER" >
   !     Number of defined attibutes
   !   </DATA>
-  !   <DATA NAME="pos" TYPE="INTEGER" >
-  !     The position in the doman (NORTH or EAST or CENTER)
-  !   </DATA>
   TYPE diag_axis_type
      CHARACTER(len=128) :: name
      CHARACTER(len=256) :: units, long_name
@@ -621,9 +612,8 @@ use fms2_io_mod
      type(domainUG) :: DomainUG
      CHARACTER(len=128) :: aux, req
      INTEGER :: tile_count
-     TYPE(diag_atttype), allocatable, dimension(:) :: attributes
+     TYPE(diag_atttype), _ALLOCATABLE, dimension(:) :: attributes _NULL
      INTEGER :: num_attributes
-     INTEGER :: domain_position !< The position in the doman (NORTH or EAST or CENTER)
   END TYPE diag_axis_type
   ! </TYPE>
 
@@ -742,6 +732,8 @@ use fms2_io_mod
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
+  LOGICAL :: write_manifest_file = .FALSE. !< Indicates if the manifest file should be written.  If writing many
+                                           !! regional files, then the termination time may increase causing job to time out.
 
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
@@ -788,10 +780,6 @@ use fms2_io_mod
   TYPE(file_type), SAVE, ALLOCATABLE :: files(:)
   TYPE(input_field_type), ALLOCATABLE :: input_fields(:)
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
-    type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
-    type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
-    type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
-    character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
 
   ! <!-- Even More Variables -->
   ! <DATA NAME="time_zero" TYPE="TYPE(time_type)" />

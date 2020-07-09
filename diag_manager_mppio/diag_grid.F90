@@ -16,10 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifndef use_mpp_io
-
+#ifdef use_mpp_io
 MODULE diag_grid_mod
-use platform_mod
+#include <fms_platform.h>
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -88,17 +87,17 @@ use platform_mod
   !   <DESCRIPTION>
   !     Contains the model's global grid data, and other grid information.
   !   </DESCRIPTION>
-  !   <DATA NAME="glo_lat" TYPE="REAL, allocatable, DIMENSION(:,:)">
+  !   <DATA NAME="glo_lat" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:)">
   !     The latitude values on the global grid.
   !   </DATA>
-  !   <DATA NAME="glo_lon" TYPE="REAL, allocatable, DIMENSION(:,:)">
+  !   <DATA NAME="glo_lon" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:)">
   !     The longitude values on the global grid.
   !   </DATA>
-  !   <DATA NAME="aglo_lat" TYPE="REAL, allocatable, DIMENSION(:,:)">
+  !   <DATA NAME="aglo_lat" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:)">
   !     The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
   !     jsc=1:jec+1 to be passed in.
   !   </DATA>
-  !   <DATA NAME="aglo_lon" TYPE="REAL, allocatable, DIMENSION(:,:)">
+  !   <DATA NAME="aglo_lon" TYPE="REAL, _ALLOCATABLE, DIMENSION(:,:)">
   !     The longitude values on the global a-grid.  Here we expec isc-1:iec+j and
   !     jsc-1:jec+1 to be passed in.
   !   </DATA>
@@ -138,8 +137,8 @@ use platform_mod
   !     The global grid type.
   !   </DATA>
   TYPE :: diag_global_grid_type
-     REAL, allocatable, DIMENSION(:,:) :: glo_lat, glo_lon
-     REAL, allocatable, DIMENSION(:,:) :: aglo_lat, aglo_lon
+     REAL, _ALLOCATABLE, DIMENSION(:,:) :: glo_lat, glo_lon
+     REAL, _ALLOCATABLE, DIMENSION(:,:) :: aglo_lat, aglo_lon
      INTEGER :: myXbegin, myYbegin
      INTEGER :: dimI, dimJ
      INTEGER :: adimI, adimJ
@@ -314,8 +313,8 @@ CONTAINS
     END IF
 
     ! Allocate the grid arrays
-    IF (   allocated(diag_global_grid%glo_lat) .OR.&
-         & allocated(diag_global_grid%glo_lon) ) THEN
+    IF (   _ALLOCATED(diag_global_grid%glo_lat) .OR.&
+         & _ALLOCATED(diag_global_grid%glo_lon) ) THEN
        IF ( mpp_pe() == mpp_root_pe() ) &
             & CALL error_mesg('diag_grid_mod::diag_grid_init',&
             &'The global grid has already been initialized', WARNING)
@@ -329,8 +328,8 @@ CONTAINS
     END IF
 
     ! Same thing for the a-grid
-    IF (   allocated(diag_global_grid%aglo_lat) .OR.&
-         & allocated(diag_global_grid%aglo_lon) ) THEN
+    IF (   _ALLOCATED(diag_global_grid%aglo_lat) .OR.&
+         & _ALLOCATED(diag_global_grid%aglo_lon) ) THEN
        IF ( mpp_pe() == mpp_root_pe() ) &
             & CALL error_mesg('diag_grid_mod::diag_grid_init',&
             &'The global a-grid has already been initialized', WARNING)
@@ -401,28 +400,28 @@ CONTAINS
 
     IF ( diag_grid_initialized ) THEN
        ! De-allocate grid
-       IF ( allocated(diag_global_grid%glo_lat) ) THEN
+       IF ( _ALLOCATED(diag_global_grid%glo_lat) ) THEN
           DEALLOCATE(diag_global_grid%glo_lat)
        ELSE IF ( mpp_pe() == mpp_root_pe() ) THEN
           CALL error_mesg('diag_grid_mod::diag_grid_end',&
                &'diag_global_grid%glo_lat was not allocated.', WARNING)
        END IF
 
-       IF ( allocated(diag_global_grid%glo_lon) ) THEN
+       IF ( _ALLOCATED(diag_global_grid%glo_lon) ) THEN
           DEALLOCATE(diag_global_grid%glo_lon)
        ELSE IF ( mpp_pe() == mpp_root_pe() ) THEN
           CALL error_mesg('diag_grid_mod::diag_grid_end',&
                &'diag_global_grid%glo_lon was not allocated.', WARNING)
        END IF
        ! De-allocate a-grid
-       IF ( allocated(diag_global_grid%aglo_lat) ) THEN
+       IF ( _ALLOCATED(diag_global_grid%aglo_lat) ) THEN
           DEALLOCATE(diag_global_grid%aglo_lat)
        ELSE IF ( mpp_pe() == mpp_root_pe() ) THEN
           CALL error_mesg('diag_grid_mod::diag_grid_end',&
                &'diag_global_grid%aglo_lat was not allocated.', WARNING)
        END IF
 
-       IF ( allocated(diag_global_grid%aglo_lon) ) THEN
+       IF ( _ALLOCATED(diag_global_grid%aglo_lon) ) THEN
           DEALLOCATE(diag_global_grid%aglo_lon)
        ELSE IF ( mpp_pe() == mpp_root_pe() ) THEN
           CALL error_mesg('diag_grid_mod::diag_grid_end',&
