@@ -88,6 +88,7 @@ call create_cubed_sphere_domain(test_params, domain2, (/1, mpp_npes()/ntiles/))
 call mpi_barrier(mpi_comm_world, err)
 call mpi_check(err)
 call random_seed()
+call fms2_io_init()
 
 if (test_params%debug) then
   if (mpp_pe() .eq. 0) then
