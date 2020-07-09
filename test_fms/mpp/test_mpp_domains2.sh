@@ -36,6 +36,7 @@ then
 fi
 
 echo "1: Test simple functionality"
+touch input.nml
 run_test test_domains_simple 4 
 
 #echo "1: Test update nest domain"

@@ -27,6 +27,7 @@ AM_CPPFLAGS = -I${top_srcdir}/include \
   -I${top_builddir}/fms \
   -I${top_builddir}/axis_utils \
   -I${top_builddir}/diag_manager \
+  -I${top_builddir}/diag_manager_mppio \
   -I${top_builddir}/time_manager \
   -I${top_builddir}/constants \
   -I${top_builddir}/platform

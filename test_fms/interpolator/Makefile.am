@@ -25,6 +25,7 @@
 # Find the fms_mod.mod file.
 AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms	\
 -I${top_builddir}/time_manager -I${top_builddir}/diag_manager	\
+-I${top_builddir}/diag_manager_mppio                            \
 -I${top_builddir}/interpolator -I${top_builddir}/constants	\
 -I${top_builddir}/time_interp -I${top_builddir}/platform
 
