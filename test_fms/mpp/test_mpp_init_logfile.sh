@@ -60,8 +60,6 @@ file2="${fprefix}""2.out"
 file3="${fprefix}""3.out"
 
 #Create two log files, each with some content.
-#echo "test_log_line" > logfile.000000.out
-#echo "test_log_line" > logfile.000002.out
 echo "test_log_line" > ${file0}
 echo "test_log_line" > ${file2}
 #Make sure other possible log files are not in the system.
@@ -77,13 +75,12 @@ run_test test_mpp_init_logfile 4 $skip_test
 
 #Make sure the two "old" ones have been replaced and the
 #two possible new ones are not present.
-#TODO test number
 if [ $(wc -l < ${file0}) -ge 1  ] || [ $(wc -l < ${file2}) -ge 1  ] ||
        [ -f ${file1} ] || [ -f ${file3} ]
 then
-  echo "ERROR: Test ? was unsuccessful."
+  echo "ERROR: Test <number> was unsuccessful."
   exit 1
 else
-    echo "Test ? has passed"
+    echo "Test <number> has passed"
     exit 0
 fi
