@@ -62,7 +62,7 @@
   else
     t_level = -1
   endif
-  if (t_level == 0) return 
+  if (t_level == mpp_init_test_init_true_only) return 
 
   !PEsets: make defaults illegal
   allocate(peset(0:current_peset_max))
