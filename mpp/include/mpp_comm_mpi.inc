@@ -1531,4 +1531,3 @@ subroutine mpp_type_free(dtype)
         call increment_current_clock(EVENT_TYPE_FREE, MPP_TYPE_BYTELEN_)
 
 end subroutine mpp_type_free
-
