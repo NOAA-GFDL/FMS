@@ -50,7 +50,6 @@ module data_override_mod
 ! A field can be overriden globally (by default) or users can specify one or two regions in which
 ! data_override will take place, field values outside the region will not be affected.
 !</OVERVIEW>
-#include <fms_platform.h>
 use platform_mod, only: r8_kind
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NOTE, mpp_min, mpp_max, mpp_chksum
@@ -683,6 +682,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer :: is_src, ie_src, js_src, je_src
   logical :: exists
   type(FmsNetcdfFile_t) :: fileobj
+  integer :: startingi, endingi, startingj, endingj
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -740,6 +740,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 ! Get working domain from model's gridname
      call get_domain(gridname,domain,comp_domain)
      call mpp_get_data_domain(domain, xsize=nxd, ysize=nyd)
+     call mpp_get_compute_domain(domain, xbegin=startingi, xend=endingi, ybegin=startingj, yend=endingj)
      nxc = comp_domain(2)-comp_domain(1) + 1
      nyc = comp_domain(4)-comp_domain(3) + 1
 
@@ -793,7 +794,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
         !--- we always only pass data on compute domain
         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
-                                      use_comp_domain=use_comp_domain, nwindows=nwindows)
+                                      use_comp_domain=.true., nwindows=nwindows)
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
@@ -989,16 +990,26 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
   if(ongrid) then
 !10 do time interp to get data in compute_domain
-     if(data_file_is_2D) then
+    if(data_file_is_2D) then
+        if (use_comp_domain) then
         call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        else
+           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        endif
         data(:,:,1) = data(:,:,1)*factor
         do i = 2, size(data,3)
            data(:,:,i) = data(:,:,1)
         enddo
      else
+        if (use_comp_domain) then
         call time_interp_external(id_time,time,data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        else
+           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
+                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        endif
         data = data*factor
      endif
   else  ! off grid case

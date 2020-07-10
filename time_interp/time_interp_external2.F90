@@ -19,7 +19,6 @@
 
 
 module time_interp_external2_mod
-#include  <fms_platform.h>
 !
 !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
 !
@@ -47,6 +46,7 @@ module time_interp_external2_mod
 ! </DATA>
 !</NAMELIST>
 
+  use platform_mod, only : DOUBLE_KIND => r8_kind
   use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file
@@ -346,6 +346,12 @@ module time_interp_external2_mod
          nx = iecomp-iscomp+1; ny = jecomp-jscomp+1
          call mpp_get_data_domain(domain,isdata,iedata,jsdata,jedata,dxsize,dxsize_max,dysize,dysize_max)
          call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
+         if (use_comp_domain1) then
+              isdata=iscomp
+              iedata=iecomp
+              jsdata=jscomp
+              jedata=jecomp
+         endif
       elseif(use_comp_domain1) then
          call mpp_error(FATAL,"init_external_field:"//&
               " use_comp_domain=true but domain is not present")

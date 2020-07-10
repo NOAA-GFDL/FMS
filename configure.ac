@@ -304,6 +304,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/axis_utils/Makefile
         test_fms/mosaic/Makefile
         test_fms/affinity/Makefile
+        test_fms/emc/Makefile
         FMS.pc
         FMSConfig.cmake.in
         FMSConfigVersion.cmake.in
