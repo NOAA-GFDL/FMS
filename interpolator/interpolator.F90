@@ -362,12 +362,12 @@ integer :: climo_diag_id(max_diag_fields), hinterp_id(max_diag_fields)     !< No
 real ::  missing_value = -1.e10                                                       !< No description
 ! sjs integer :: itaum, itaup
 
-#ifdef NO_QUAD_PRECISION
-! 64-bit precision (kind=8)
- integer, parameter:: f_p = selected_real_kind(15)     !< 64-bit precision (kind=8)
-#else
+#ifdef ENABLE_QUAD_PRECISION
 ! Higher precision (kind=16) for grid geometrical factors:
  integer, parameter:: f_p = selected_real_kind(20)     !< Higher precision (kind=16) for grid geometrical factors
+#else
+! 64-bit precision (kind=8)
+ integer, parameter:: f_p = selected_real_kind(15)     !< 64-bit precision (kind=8)
 #endif
 
 logical :: read_all_on_init = .false.          !< No description
