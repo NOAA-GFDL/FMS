@@ -2,6 +2,10 @@
 test_number = <test_num>
 /
 
+&test_mpp_get_ascii_lines_nml
+test_number = <test_num>
+/
+
 
 &test_mpp_domains_nml
 nx=64
