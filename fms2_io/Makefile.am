@@ -22,6 +22,21 @@
 # Descend into include directory.
 SUBDIRS = include
 
+# These are the include files that contain fortran code.
+INCFILES = include/array_utils_char.inc include/compressed_read.inc	\
+include/compute_global_checksum.inc include/domain_write.inc		\
+include/get_data_type_string.inc include/get_variable_attribute.inc	\
+include/netcdf_read_data.inc						\
+include/register_domain_restart_variable.inc				\
+include/register_unstructured_domain_restart_variable.inc		\
+include/unstructured_domain_read.inc include/array_utils.inc		\
+include/compressed_write.inc include/domain_read.inc			\
+include/get_checksum.inc include/get_global_attribute.inc		\
+include/netcdf_add_restart_variable.inc include/netcdf_write_data.inc	\
+include/register_global_attribute.inc					\
+include/register_variable_attribute.inc					\
+include/unstructured_domain_write.inc
+
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_srcdir}/fms2_io/include
@@ -49,12 +64,12 @@ blackboxio.mod: blackboxio.lo
 
 # Some mods are dependant on other mods in this dir.
 fms2_io.lo: fms_io_utils_mod.mod netcdf_io_mod.mod fms_netcdf_domain_io_mod.mod \
-                   fms_netcdf_unstructured_domain_io_mod.mod blackboxio.mod
-netcdf_io.lo: fms_io_utils_mod.mod
-fms_netcdf_domain_io.lo: fms_io_utils_mod.mod netcdf_io_mod.mod
-fms_netcdf_unstructured_domain_io.lo: fms_io_utils_mod.mod netcdf_io_mod.mod
+fms_netcdf_unstructured_domain_io_mod.mod blackboxio.mod $(INCFILES)
+netcdf_io.lo: fms_io_utils_mod.mod $(INCFILES)
+fms_netcdf_domain_io.lo: fms_io_utils_mod.mod netcdf_io_mod.mod $(INCFILES)
+fms_netcdf_unstructured_domain_io.lo: fms_io_utils_mod.mod netcdf_io_mod.mod $(INCFILES)
 blackboxio.lo: fms_io_utils_mod.mod netcdf_io_mod.mod fms_netcdf_domain_io_mod.mod \
-                      fms_netcdf_unstructured_domain_io_mod.mod
+fms_netcdf_unstructured_domain_io_mod.mod $(INCFILES)
 
 # Mod files are built and then installed as headers.
 MODFILES = fms2_io_mod.mod fms_io_utils_mod.mod netcdf_io_mod.mod	\
