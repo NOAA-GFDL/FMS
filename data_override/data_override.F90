@@ -654,6 +654,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
+
   character(len=512) :: filename, filename2 !file containing source data
   character(len=128) :: fieldname ! fieldname used in the data file
   integer            :: i,j
@@ -683,6 +684,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   logical :: exists
   type(FmsNetcdfFile_t) :: fileobj
   integer :: startingi, endingi, startingj, endingj
+  integer :: nhalox, nhaloy
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -740,7 +742,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 ! Get working domain from model's gridname
      call get_domain(gridname,domain,comp_domain)
      call mpp_get_data_domain(domain, xsize=nxd, ysize=nyd)
-     call mpp_get_compute_domain(domain, xbegin=startingi, xend=endingi, ybegin=startingj, yend=endingj)
      nxc = comp_domain(2)-comp_domain(1) + 1
      nyc = comp_domain(4)-comp_domain(3) + 1
 
@@ -762,6 +763,12 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      nwindows = 1
      if( nxd == size(data,1) .AND. nyd == size(data,2) ) then  !
         use_comp_domain = .false.
+        nhalox = (size(data,1) - nxc)/2
+        nhaloy = (size(data,2) - nyc)/2
+        startingi = lbound(data,1) + nhalox
+        startingj = lbound(data,2) + nhaloy
+        endingi   = ubound(data,1) - nhalox
+        endingj   = ubound(data,2) - nhaloy
      else if ( mod(nxc, size(data,1)) ==0 .AND. mod(nyc, size(data,2)) ==0 ) then
         use_comp_domain = .true.
         nwindows = (nxc/size(data,1))*(nyc/size(data,2))
@@ -794,7 +801,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
         !--- we always only pass data on compute domain
         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
-                                      use_comp_domain=.true., nwindows=nwindows)
+                                      use_comp_domain=use_comp_domain, nwindows=nwindows, ongrid=ongrid)
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
@@ -1007,7 +1014,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         call time_interp_external(id_time,time,data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         else
-           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
+           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif
         data = data*factor
