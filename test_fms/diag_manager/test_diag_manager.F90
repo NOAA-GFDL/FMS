@@ -605,12 +605,17 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
           & err_msg=err_msg)
      CALL diag_field_add_cell_measures(id_dat2h_2, area=id_dat2, volume=id_dat1)
   ELSE IF ( test_number == 19 ) THEN
+#ifndef use_mpp_io
      id_dat2h = register_diag_field('test_mod', 'dat2h', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data', 'K',&
           & volume=id_dat1, area=id_dat1, err_msg=err_msg)
      IF ( err_msg /= '' .OR. id_dat2h <= 0 ) THEN
         CALL error_mesg ('test_diag_manager',&
              & 'Expected error registering dat2h '//err_msg, NOTE)
      END IF
+#else
+        call error_mesg ("test_diag_manager", &
+                "Test 19 skipped when compiling with -Duse_mpp_io", WARNING)
+#endif
   END IF
 
   IF ( test_number == 16 .OR. test_number == 17 .OR. test_number == 18 .OR. test_number == 21 .OR. test_number == 22 ) THEN
