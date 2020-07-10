@@ -56,6 +56,9 @@
   call SHMEM_BARRIER_ALL()
 #endif
 
+  write(*,*) mpp_init_test_requests_allocated !!!!!!!!!!!<!<!<!<!<
+  exit 1
+
   module_is_initialized = .TRUE.
   if (present(test_level)) then
     t_level = test_level
