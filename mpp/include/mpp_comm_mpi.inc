@@ -57,7 +57,7 @@
 #endif
 
   if (mpp_init_test_requests_allocated .eq. 6 .AND. mpp_init_test_clocks_init .eq. 2) then
-    exit 1
+    stop 1
   endif
   
   module_is_initialized = .TRUE.
