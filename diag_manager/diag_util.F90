@@ -3023,4 +3023,8 @@ CONTAINS
   END SUBROUTINE prepend_attribute_file
   ! </SUBROUTINE>
 END MODULE diag_util_mod
+#else
+module diag_util_dummy_mod
+use mpp_mod
+end module diag_util_dummy_mod
 #endif

@@ -1349,4 +1349,8 @@ CONTAINS
   END SUBROUTINE find_nearest_agrid_index
 
 END MODULE diag_grid_mod
+#else
+module diag_grid_dummy_mod
+use mpp_mod
+end module diag_grid_dummy_mod
 #endif
