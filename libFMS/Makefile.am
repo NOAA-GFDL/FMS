@@ -91,6 +91,7 @@ libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_output.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_util.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_table.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_manager.la
+libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_manifest.la
 libFMS_la_LIBADD += ${top_builddir}/diag_integral/libdiag_integral.la
 libFMS_la_LIBADD += ${top_builddir}/data_override/libdata_override.la
 libFMS_la_LIBADD += ${top_builddir}/column_diagnostics/libcolumn_diagnostics.la
