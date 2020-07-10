@@ -822,4 +822,8 @@ CONTAINS
   END SUBROUTINE diag_data_init
   ! </SUBROUTINE>
 END MODULE diag_data_mod
+#else
+module diag_data_dummy_mod
+use mpp_mod
+end module diag_data_dummy_mod
 #endif

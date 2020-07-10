@@ -426,4 +426,8 @@ CONTAINS
     IF (ALLOCATED(data_written)) DEALLOCATE(data_written)
   END FUNCTION get_diagnostic_fields
 END MODULE diag_manifest_mod
+#else
+module diag_manifest_dummy_mod
+use mpp_mod
+end module diag_manifest_dummy_mod
 #endif

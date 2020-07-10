@@ -1014,4 +1014,8 @@ CONTAINS
   ! </SUBROUTINE>
   ! </PRIVATE>
 END MODULE diag_table_mod
+#else
+module diag_table_dummy_mod
+use mpp_mod
+end module diag_table_dummy_mod
 #endif

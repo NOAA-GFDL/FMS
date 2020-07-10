@@ -1586,4 +1586,8 @@ CONTAINS
     end associate ! axis
   end subroutine get_compressed_axes_ids
 END MODULE diag_axis_mod
+#else
+module diag_axis_dummy_mod
+use mpp_mod
+end module diag_axis_dummy_mod
 #endif

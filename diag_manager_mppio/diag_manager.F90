@@ -4337,4 +4337,8 @@ CONTAINS
   END SUBROUTINE diag_field_add_cell_measures
   ! </SUBROUTINE>
 END MODULE diag_manager_mod
+#else
+module diag_manager_dummy_mod
+use mpp_mod
+end module diag_manager_dummy_mod
 #endif

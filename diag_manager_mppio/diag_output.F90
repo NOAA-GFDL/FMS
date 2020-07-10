@@ -951,4 +951,8 @@ CONTAINS
   ! </SUBROUTINE>
 
 END MODULE diag_output_mod
+#else
+module diag_output_dummy_mod
+use mpp_mod
+end module diag_output_dummy_mod
 #endif
