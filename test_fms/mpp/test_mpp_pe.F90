@@ -23,7 +23,7 @@
 !! less than 0, then an error is thrown. 
 program test_mpp_p5
  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
-                     mpp_error, FATAL, mpp_initialize_module_for_testing
+                     mpp_error, FATAL, mpp_init_test_peset_allocated 
   implicit none
  integer :: ierr
  integer :: total_pes !< The total number of PEs returned from mpp_npes
@@ -32,7 +32,7 @@ program test_mpp_p5
 
 !> Initialize MPI to do what mpp_init would do
 
-  call mpp_initialize_module_for_testing()
+  call mpp_init(test_level=mpp_init_test_peset_allocated)
 
 !> Get the total number of PEs
  total_pes = mpp_npes()

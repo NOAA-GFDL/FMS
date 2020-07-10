@@ -1532,39 +1532,3 @@ subroutine mpp_type_free(dtype)
 
 end subroutine mpp_type_free
 
-!> \brief Subroutine to initialize MPI for testing.  This routine will set 
-!! module_is_initialized to true
-subroutine mpp_initialize_module_for_testing ()
-  integer :: i !< For looping
-!> Initialize MPI and set pe and npes
-  call MPI_INIT(error)
-  mpp_comm_private = MPI_COMM_WORLD
-  call MPI_COMM_RANK( mpp_comm_private, pe,   error )
-  call MPI_COMM_SIZE( mpp_comm_private, npes, error )
-#ifdef use_MPI_SMA
-  call SHMEM_BARRIER_ALL()
-  call SHPALLOC( p_pSync, SHMEM_BARRIER_SYNC_SIZE, error, -1 )
-  call SHMEM_BARRIER_ALL()
-#endif
-!> Set the module_is_initialized flag to true so that other routines can be used
-  module_is_initialized = .TRUE.
-!> Setup PE list
-  !PEsets: make defaults illegal
-  allocate(peset(0:current_peset_max))
-  peset(:)%count = -1
-  peset(:)%id = -1
-  peset(:)%group = -1
-  peset(:)%start = -1
-  peset(:)%log2stride = -1
-  peset(:)%name  = " "
-  !0=single-PE, initialized so that count returns 1
-  peset(0)%count = 1
-  allocate( peset(0)%list(1) )
-  peset(0)%list = pe
-  current_peset_num = 0
-  peset(0)%id = mpp_comm_private
-  call MPI_COMM_GROUP( mpp_comm_private, peset(0)%group, error )
-  world_peset_num = get_peset( (/(i,i=0,npes-1)/) )
-  current_peset_num = world_peset_num !initialize current PEset to world
-
-end subroutine mpp_initialize_module_for_testing
