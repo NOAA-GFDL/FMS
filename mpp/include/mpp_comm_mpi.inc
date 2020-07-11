@@ -55,7 +55,7 @@
   call SHPALLOC( p_pSync, SHMEM_BARRIER_SYNC_SIZE, error, -1 )
   call SHMEM_BARRIER_ALL()
 #endif
-  
+
   module_is_initialized = .TRUE.
   if (present(test_level)) then
     t_level = test_level
