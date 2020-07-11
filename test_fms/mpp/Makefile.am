@@ -70,7 +70,7 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_memuse \
   test_mpp_mem_dump \
   test_mpp_memutils_mod.sh \
-  test_read_input_nml2.sh
+  test_read_input_nml2.sh \
   test_mpp_get_ascii_lines2.sh \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
