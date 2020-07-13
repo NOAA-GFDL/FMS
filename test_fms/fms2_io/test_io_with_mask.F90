@@ -23,12 +23,15 @@ program test_io_with_mask
 !! data when the domain contains a mask table. For the points that are
 !! masked out, no data should be writen.
 
-use   mpp_domains_mod
-use   mpp_mod
-use   fms2_io_mod
-use   fms_mod, only: fms_init, fms_end
-use   fms_io_mod, only: parse_mask_table
-use   netcdf
+use   mpp_domains_mod, only: mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain, &
+                             mpp_get_compute_domain,domain2d
+use   mpp_mod,         only: mpp_pe, mpp_root_pe, mpp_error, FATAL
+use   fms2_io_mod,     only: open_file, register_axis, register_variable_attribute, close_file, &
+                             FmsNetcdfDomainFile_t, write_data, register_field
+use   fms_mod,         only: fms_init, fms_end
+use   fms_io_mod,      only: parse_mask_table
+use   netcdf,          only: nf90_open, nf90_get_var, nf90_nowrite, NF90_NOERR, nf90_get_var, &
+                             nf90_close
 use,  intrinsic :: iso_fortran_env, only : real64
 
 implicit none
