@@ -2557,7 +2557,7 @@ CONTAINS
        IF ( output_fields(num)%time_ops .AND. &
             input_fields(output_fields(num)%input_field)%register) THEN
           ! time needs to be between start_dif and end_dif to prevent duplicate writes on time_bnds
-          IF ( num == field )
+          IF ( num == field ) THEN
             IF ( files(file)%rtime_current >= start_dif .AND. files(file)%rtime_current <= end_dif) THEN
              ! Output the axes if this is first time-averaged field
              time_data(1, 1, 1, 1) = start_dif
