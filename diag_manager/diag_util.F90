@@ -2557,7 +2557,8 @@ CONTAINS
        IF ( output_fields(num)%time_ops .AND. &
             input_fields(output_fields(num)%input_field)%register) THEN
           ! time needs to be between start_dif and end_dif to prevent duplicate writes on time_bnds
-          IF ( num == field .AND. files(file)%rtime_current >= start_dif .AND. files(file)%rtime_current <= end_dif) THEN
+          IF ( num == field )
+            IF ( files(file)%rtime_current >= start_dif .AND. files(file)%rtime_current <= end_dif) THEN
              ! Output the axes if this is first time-averaged field
              time_data(1, 1, 1, 1) = start_dif
              call diag_field_write (files(file)%f_avg_start, time_data(1:1,:,:,:), file_num=file, &
@@ -2577,6 +2578,7 @@ CONTAINS
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              EXIT
+            END IF
           END IF
        END IF
     END DO
