@@ -23,13 +23,18 @@
 # This directory stores libtool macros, put there by aclocal.
 ACLOCAL_AMFLAGS = -I m4
 
+# Does the user want to build documentation?
+if BUILD_DOCS
+DOCS = docs
+endif
+
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = include platform constants tridiagonal mpp memutils fms2_io \
 fms affinity mosaic time_manager axis_utils diag_manager drifters \
 horiz_interp time_interp column_diagnostics block_control \
 data_override astronomy field_manager coupler diag_integral \
 monin_obukhov interpolator amip_interp exchange topography \
-tracer_manager sat_vapor_pres random_numbers libFMS test_fms
+tracer_manager sat_vapor_pres random_numbers libFMS test_fms ${DOCS}
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = FMS.pc
