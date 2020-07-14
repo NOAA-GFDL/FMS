@@ -31,7 +31,7 @@ contains
          //" compiling without using the compile option -Duse_mpp_io",fatal)
 
    END SUBROUTINE write_diag_manifest
-end module diag_manifest_mod
+
 #else
 !***********************************************************************
 !*                   GNU Lesser General Public License
@@ -71,7 +71,7 @@ end module diag_manifest_mod
 !!  diag_manager_mod does not allow a tile or ensemble to write out a different
 !!  set of diagnostics.  All tiles, and ensemble members read the same diag_table
 !!  file.
-MODULE diag_manifest_mod
+!MODULE diag_manifest_mod
 
   USE diag_data_mod, ONLY: files,&  ! TYPE(file_type) --- diagnostic files
        & output_fields,& ! TYPE(output_field_type) --- field  in diagnostic file
