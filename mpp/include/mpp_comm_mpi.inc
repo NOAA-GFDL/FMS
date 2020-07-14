@@ -62,7 +62,7 @@
   else
     t_level = -1
   endif
-  if (t_level == 0) return 
+  if (t_level == mpp_init_test_init_true_only) return 
 
   !PEsets: make defaults illegal
   allocate(peset(0:current_peset_max))
@@ -81,13 +81,13 @@
   call MPI_COMM_GROUP( mpp_comm_private, peset(0)%group, error )
   world_peset_num = get_peset( (/(i,i=0,npes-1)/) )
   current_peset_num = world_peset_num !initialize current PEset to world
-  if (t_level == 1) return
+  if (t_level == mpp_init_test_peset_allocated) return
 
   !initialize clocks
   call SYSTEM_CLOCK( count=tick0, count_rate=ticks_per_sec, count_max=max_ticks )
   tick_rate = 1./ticks_per_sec
   clock0 = mpp_clock_id( 'Total runtime', flags=MPP_CLOCK_SYNC )
-  if (t_level == 2) return
+  if (t_level == mpp_init_test_clocks_init) return
 
   ! Create the bytestream (default) mpp_datatype
   mpp_byte%counter = 1
@@ -110,11 +110,11 @@
      debug   = flags.EQ.MPP_DEBUG
      verbose = flags.EQ.MPP_VERBOSE .OR. debug
   end if
-  if (t_level == 3) return
+  if (t_level == mpp_init_test_datatype_list_init) return
 
   call mpp_init_logfile()
   call read_input_nml
-  if (t_level == 4) return
+  if (t_level == mpp_init_test_logfile_init) return
 
   !--- read namelist
 #ifdef INTERNAL_FILE_NML
@@ -135,7 +135,7 @@
   if (io_status > 0) then
      call mpp_error(FATAL,'=>mpp_init: Error reading input.nml')
   endif
-  if (t_level == 5) return
+  if (t_level == mpp_init_test_read_namelist) return
 
   if(sync_all_clocks .AND. mpp_pe()==mpp_root_pe() ) call mpp_error(NOTE, &
      "mpp_mod: mpp_nml variable sync_all_clocks is set to .true., all clocks are synchronized in mpp_clock_begin.")
@@ -160,6 +160,8 @@
      endif
   endif
 
+  if (t_level == mpp_init_test_etc_unit) return
+
 ! max_request is set to maximum of npes * REQUEST_MULTIPLY ( default is 20) and MAX_REQUEST_MIN ( default 10000)
   max_request = max(MAX_REQUEST_MIN, mpp_npes()*REQUEST_MULTIPLY)
 
@@ -171,6 +173,8 @@
   request_recv(:) = MPI_REQUEST_NULL
   size_recv(:)    = 0
   type_recv(:)    = 0
+
+  if (t_level == mpp_init_test_requests_allocated) return
 
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.

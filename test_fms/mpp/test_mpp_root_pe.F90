@@ -35,7 +35,7 @@ program test_mpp_root_pe
 
 
   !> call mpp_init at the lowest level
-  call mpp_init( test_level=0 )
+  call mpp_init( test_level='mpp_init_test_init_true_only' )
 
   !> assign my_root_pe=root_pe=0
   my_root_pe = 0
