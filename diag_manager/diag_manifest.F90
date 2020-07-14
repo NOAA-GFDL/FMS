@@ -16,10 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifndef use_mpp_io
+
 module diag_manifest_mod
 !> \brief This module does not exist in the 2020 releases of diag_manager.
- use mpp_mod, only: mpp_error, fatal
+#ifndef use_mpp_io 
+use mpp_mod, only: mpp_error, fatal
 
    PUBLIC :: write_diag_manifest
 contains
@@ -459,5 +460,5 @@ CONTAINS
     ! Clean up allocated arrays
     IF (ALLOCATED(data_written)) DEALLOCATE(data_written)
   END FUNCTION get_diagnostic_fields
-END MODULE diag_manifest_mod
 #endif
+END MODULE diag_manifest_mod

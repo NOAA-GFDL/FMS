@@ -16,9 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifndef use_mpp_io
 
 MODULE diag_grid_mod
+#ifndef use_mpp_io
 use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -1348,28 +1348,9 @@ CONTAINS
 
   END SUBROUTINE find_nearest_agrid_index
 
-END MODULE diag_grid_mod
+!END MODULE diag_grid_mod
 #else
-!***********************************************************************
-!*                   GNU Lesser General Public License
-!*
-!* This file is part of the GFDL Flexible Modeling System (FMS).
-!*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
-!*
-!* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
-!***********************************************************************
 
-MODULE diag_grid_mod
 #include <fms_platform.h>
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -2699,5 +2680,5 @@ CONTAINS
 
   END SUBROUTINE find_nearest_agrid_index
 
-END MODULE diag_grid_mod
 #endif
+END MODULE diag_grid_mod
