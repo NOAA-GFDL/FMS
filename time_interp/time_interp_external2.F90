@@ -239,9 +239,9 @@ module time_interp_external2_mod
       integer,          intent(out), optional :: ierr
       integer,          intent(in),  optional :: nwindows
       logical, optional                       :: ignore_axis_atts
-      logical, optional                       :: ongrid
+      logical, optional                       :: ongrid !< Optional flag indicating if the data is ongrid
 
-      logical :: ongrid_local
+      logical :: ongrid_local !< Flag indicating if the data is ongrid
 
       integer :: init_external_field
 
@@ -351,7 +351,7 @@ module time_interp_external2_mod
          call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
          ongrid_local = .false.
          if (present(ongrid)) ongrid_local = ongrid
-         !> If this is an ongrid case, for is[e]s[e]data to be equal to the compute domain.
+         !> If this is an ongrid case, set is[e]js[e]data to be equal to the compute domain.
          !! This is what it is used to allocate space for the data!
          if (ongrid_local) then
               isdata=iscomp

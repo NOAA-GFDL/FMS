@@ -683,8 +683,12 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer :: is_src, ie_src, js_src, je_src
   logical :: exists
   type(FmsNetcdfFile_t) :: fileobj
-  integer :: startingi, endingi, startingj, endingj
-  integer :: nhalox, nhaloy
+  integer :: startingi !< Starting x index for the compute domain relative to the input buffer
+  integer :: endingi !< Ending x index for the compute domain relative to the input buffer
+  integer :: startingj !< Starting y index for the compute domain relative to the input buffer
+  integer :: endingj !< Ending y index for the compute domain relative to the input buffer
+  integer :: nhalox !< Number of halos in the x direction
+  integer :: nhaloy !< Number of halos in the y direction
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -763,6 +767,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      nwindows = 1
      if( nxd == size(data,1) .AND. nyd == size(data,2) ) then  !
         use_comp_domain = .false.
+        !< Determine the size of the halox and the part of `data` that is in the compute domain
         nhalox = (size(data,1) - nxc)/2
         nhaloy = (size(data,2) - nyc)/2
         startingi = lbound(data,1) + nhalox
@@ -1002,6 +1007,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         else
+           !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+           !! size
            call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif
@@ -1014,6 +1021,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         call time_interp_external(id_time,time,data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         else
+           !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+           !! size
            call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif
