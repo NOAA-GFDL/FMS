@@ -479,6 +479,93 @@ subroutine mpp_get_compute_domains2D( domain, xbegin, xend, xsize, ybegin, yend,
  return
 end subroutine mpp_get_compute_domains2D
 
+  !#####################################################################
+  subroutine mpp_get_global_domains1D( domain, begin, end, size )
+    type(domain1D),                   intent(in) :: domain
+    integer, intent(out), optional, dimension(:) :: begin, end, size
+
+    if( .NOT.module_is_initialized ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: must first call mpp_domains_init.' )
+    !we use shape instead of size for error checks because size is used as an argument
+    if( PRESENT(begin) )then
+       if( any(shape(begin).NE.shape(domain%list)) ) &
+            call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: begin array size does not match domain.' )
+       begin(:) = domain%list(:)%global%begin
+    end if
+    if( PRESENT(end) )then
+       if( any(shape(end).NE.shape(domain%list)) ) &
+            call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: end array size does not match domain.' )
+            end(:) = domain%list(:)%global%end
+    end if
+    if( PRESENT(size) )then
+       if( any(shape(size).NE.shape(domain%list)) ) &
+           call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: size array size does not match domain.' )
+           size(:) = domain%list(:)%global%size
+    end if
+    return
+  end subroutine mpp_get_global_domains1D
+
+
+!#####################################################################
+subroutine mpp_get_global_domains2D( domain, xbegin, xend, xsize, ybegin, yend, ysize, position )
+ type(domain2D),                   intent(in) :: domain
+ integer, intent(out), optional, dimension(:) :: xbegin, xend, xsize, ybegin, yend, ysize
+ integer, intent(in ), optional               :: position
+
+ integer :: i, ishift, jshift
+
+ call mpp_get_domain_shift( domain, ishift, jshift, position )
+
+
+ if( .NOT.module_is_initialized ) &
+      call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: must first call mpp_domains_init.' )
+
+ if( PRESENT(xbegin) )then
+    if( size(xbegin(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xbegin array size does not match domain.' )
+    do i = 1, size(xbegin(:))
+       xbegin(i) = domain%list(i-1)%x(1)%global%begin
+    end do
+ end if
+ if( PRESENT(xend) )then
+    if( size(xend(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xend array size does not match domain.' )
+    do i = 1, size(xend(:))
+       xend(i) = domain%list(i-1)%x(1)%global%end + ishift
+    end do
+ end if
+ if( PRESENT(xsize) )then
+    if( size(xsize(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: xsize array size does not match domain.' )
+    do i = 1, size(xsize(:))
+       xsize(i) = domain%list(i-1)%x(1)%global%size + ishift
+    end do
+ end if
+ if( PRESENT(ybegin) )then
+    if( size(ybegin(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: ybegin array size does not match domain.' )
+    do i = 1, size(ybegin(:))
+       ybegin(i) = domain%list(i-1)%y(1)%global%begin
+    end do
+ end if
+ if( PRESENT(yend) )then
+    if( size(yend(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: yend array size does not match domain.' )
+    do i = 1, size(yend(:))
+       yend(i) = domain%list(i-1)%y(1)%global%end + jshift
+    end do
+ end if
+ if( PRESENT(ysize) )then
+    if( size(ysize(:)).NE.size(domain%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_GLOBAL_DOMAINS: ysize array size does not match domain.' )
+    do i = 1, size(ysize(:))
+       ysize(i) = domain%list(i-1)%y(1)%global%size + jshift
+    end do
+ end if
+ return
+end subroutine mpp_get_global_domains2D
+
+
 !#####################################################################
 subroutine mpp_get_domain_extents1D(domain, xextent, yextent)
    type(domain2d),            intent(in) :: domain
