@@ -28,14 +28,14 @@
 program test_mpp_root_pe
 
 
-  use mpp_mod, only:  mpp_init, FATAL, mpp_error, mpp_root_pe
+  use mpp_mod, only:  mpp_init, FATAL, mpp_error, mpp_root_pe, mpp_init_test_init_true_only
 
   implicit none
   integer :: my_root_pe, test_root_pe, ierr
 
 
   !> call mpp_init at the lowest level
-  call mpp_init( test_level='mpp_init_test_init_true_only' )
+  call mpp_init( test_level=mpp_init_test_init_true_only )
 
   !> assign my_root_pe=root_pe=0
   my_root_pe = 0
