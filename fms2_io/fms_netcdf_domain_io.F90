@@ -93,7 +93,7 @@ public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
 public :: is_dimension_registered
-
+public :: get_mosaic_tile_grid
 
 interface compute_global_checksum
   module procedure compute_global_checksum_2d
@@ -817,6 +817,28 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
 end subroutine get_global_io_domain_indices
 
+subroutine get_mosaic_tile_grid(grid_file,mosaic_file, domain, tile_count)
+  character(len=*), intent(out)          :: grid_file
+  character(len=*), intent(in)           :: mosaic_file
+  type(domain2D),   intent(in)           :: domain
+  integer,          intent(in), optional :: tile_count
+  integer                                :: tile, ntileMe
+  integer, dimension(:), allocatable     :: tile_id
+  type(FmsNetcdfFile_t)                  :: fileobj
+
+  tile = 1
+  if(present(tile_count)) tile = tile_count
+  ntileMe = mpp_get_current_ntile(domain)
+  allocate(tile_id(ntileMe))
+  tile_id = mpp_get_tile_id(domain)
+
+  if (netcdf_file_open(fileobj, mosaic_file, "read")) then
+      call netcdf_read_data(fileobj, "gridfiles", grid_file, corner=tile_id(tile))
+      grid_file = 'INPUT/'//trim(grid_file)
+      call netcdf_file_close(fileobj)
+  endif
+
+end subroutine get_mosaic_tile_grid
 
 include "register_domain_restart_variable.inc"
 include "domain_read.inc"
