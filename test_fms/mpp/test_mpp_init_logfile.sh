@@ -73,8 +73,8 @@ fi
 #Have mpp re-initialize the two log files created above:
 run_test test_mpp_init_logfile 4 $skip_test
 
-#Make sure the two "old" ones have been replaced and the
-#two possible new ones are not present.
+#Return sucess (0) only if the two "old" files have been replaced and the
+# the two possible new ones are not present. Otherwise retun failure (1).
 if [ $(wc -l < ${file0}) -ge 1  ] || [ $(wc -l < ${file2}) -ge 1  ] ||
        [ -f ${file1} ] || [ -f ${file3} ]
 then

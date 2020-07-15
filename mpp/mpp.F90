@@ -230,9 +230,7 @@ private
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
   public :: get_ascii_file_num_lines
   public :: mpp_record_time_start, mpp_record_time_end
-  !! TODO:
   public :: mpp_init_logfile
-
 
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv

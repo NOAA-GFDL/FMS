@@ -148,22 +148,14 @@
 11  call mpp_error( FATAL, 'STDLOG: unable to open '//trim(etcfile)//'.' )
   end function stdlog
 
-  !#####################################################################
-  ! <FUNCTION NAME="mpp_init_logfile">
-  !  <OVERVIEW>
-  !    Initialize the logfile.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This function re-initializes the log files of the PEs. Re-initialization
-  !    means replacing if it already exists. It does not make new files if they don't
-  !    already exist. Only log files with names of format "<header>.pe_number.out",
-  !    where pe_number is the digit integer represeting the PE number, such as 000000 for the
-  !    root PE, 000001 for the next PE, etch. The <header> is the config file name prefix -
-  !    a module global normally set elsewhere, and frequetly is the integer simulation
-  !    timedate (e.g. 19480101).
-  !  </DESCRIPTION>
-  ! </FUNCTION>
-
+  
+  !> \brief Subroutine mpp_init_logfile re-initializes the log files of the PEs.
+  !! Re-initialization means replacing if it already exists. It does not make new
+  !! files if they don't already exist. It only re-initializes log files with names of
+  !! format "<header>.pe_number.out", where pe_number is the digit integer represeting
+  !! the PE number, such as 000000 for the root PE, 000001 for the next PE,
+  !! etc. The <header> is the config file name prefix - a module global set
+  !! elsewhere, and frequetly is the integer simulation timedate (e.g. 19480101).
   subroutine mpp_init_logfile()
   integer :: p
   logical :: exist
