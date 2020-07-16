@@ -1668,16 +1668,6 @@ end subroutine amip_interp_type_eq
 
 !#######################################################################
 
-end module amip_interp_mod
-! <INFO>
-
-!   <FUTURE>
-!     Add AMIP 2 data set.
-!
-!     Other data sets (or extend current data sets).
-!   </FUTURE>
-
-! </INFO>
 #else
 
 
@@ -3412,3 +3402,12 @@ end subroutine amip_interp_type_eq
 !#######################################################################
 #endif
 end module amip_interp_mod
+! <INFO>
+
+!   <FUTURE>
+!     Add AMIP 2 data set.
+!
+!     Other data sets (or extend current data sets).
+!   </FUTURE>
+
+! </INFO>
