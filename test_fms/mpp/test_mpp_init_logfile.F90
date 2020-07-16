@@ -27,20 +27,18 @@
 
 program test_mpp_init_logfile
 
-  use mpp_mod, only : mpp_init, mpp_init_logfile
+  use mpp_mod, only : mpp_init
   use mpp_mod, only : mpp_init_test_logfile_init
 
   IMPLICIT NONE
 
   integer :: err_no
 
-  !Initialize mpp but have mpp_init() exit right after log files are initalized.
- 
-  call mpp_init( test_level =  mpp_init_test_logfile_init -1 )
+  ! Initialize mpp but have mpp_init() exit right after (or soon after) it is called.
+  ! Note mpp_init may write to te root log file once.
+  call mpp_init( test_level =  mpp_init_test_logfile_init)
 
-  call mpp_init_logfile()
-  
-  !! With the unifinished initialization, mpp_exit() is causing crash. Use MPI_FINALIZE:
+  ! With the unifinished initialization, mpp_exit() may cause a crash. Use MPI_FINALIZE:
   call MPI_FINALIZE(err_no)
 
-  end program test_mpp_init_logfile
+end program test_mpp_init_logfile

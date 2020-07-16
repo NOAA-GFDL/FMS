@@ -58,10 +58,11 @@ file0="${fprefix}""0.out"
 file1="${fprefix}""1.out"
 file2="${fprefix}""2.out"
 file3="${fprefix}""3.out"
+fcontent="test_log_line_88gd!ok5"
 
 #Create two log files, each with some content.
-echo "test_log_line" > ${file0}
-echo "test_log_line" > ${file2}
+echo ${fcontent} > ${file0}
+echo ${fcontent} > ${file2}
 #Make sure other possible log files are not in the system.
 if test -f ${file1}; then
     rm  ${file1}
@@ -73,10 +74,13 @@ fi
 #Have mpp re-initialize the two log files created above:
 run_test test_mpp_init_logfile 4 $skip_test
 
-#Return sucess (0) only if the two "old" files have been replaced and the
+# Return sucess (0) only if the two "old" files have been replaced and the
 # the two possible new ones are not present. Otherwise retun failure (1).
-if [ $(wc -l < ${file0}) -ge 1  ] || [ $(wc -l < ${file2}) -ge 1  ] ||
-       [ -f ${file1} ] || [ -f ${file3} ]
+# Replacement is checked by the absence of the fcontent line.
+if [ $(grep  ${fcontent}  ${file0} | wc -l ) -ge 1 ] ||
+   [ $(grep  ${fcontent}  ${file1} | wc -l ) -ge 1 ] ||       
+   [ -f ${file1} ] ||
+   [ -f ${file3} ]
 then
   echo "ERROR: Test <number> was unsuccessful."
   exit 1
