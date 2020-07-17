@@ -22,7 +22,7 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ed Hartnett 11/29/19
+# Uriel Ramirez 07/15/2020
 
 # Set common test settings.
 . ../test_common.sh
