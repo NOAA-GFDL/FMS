@@ -36,10 +36,10 @@ then
 fi
 
 echo "1: Test simple functionality"
+touch input.nml
 run_test test_domains_simple 4 
 
 #echo "1: Test update nest domain"
-touch input.nml
 #sed "s/test_nest = .false./test_nest = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
 run_test test_mpp_domains 2 skip
 
