@@ -32,11 +32,24 @@ echo "Running stdout unit test with 1 proc..."; echo
 run_test test_stdout 1
 echo; echo "stdout test passed with 1 proc."; echo
 
-# If more than one processor available:
-echo "Running stdout unit test with multiple procs..."; echo
-err=0
-run_test test_stdout 2 || err=1
-if [ $err -eq 1 ]; then
-  echo; echo "Failed with multiple procs"
-  exit 1
-echo; echo "stdout test passed with multiple procs."
+# If on a Linux system that uses the command `nproc`, run the test
+# with multiple processors
+
+if [ $(command -v nproc) ]
+  # Looks like a linux system
+  then
+  # Get the number of available CPUs on the system
+  nProc=$(nproc)
+  if [ ${nProc} -gt 1 ]
+  then
+    # Run the test with multiple processors
+    echo "Running stdout unit test with multiple procs..."; echo
+    err=0
+    run_test test_stdout 2 || err=1
+    if [ $err -eq 1 ]; then
+      echo; echo "Failed with multiple procs"
+      exit 1
+    echo; echo "stdout test passed with multiple procs."
+  fi
+fi
+
