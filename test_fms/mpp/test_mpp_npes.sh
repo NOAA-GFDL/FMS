@@ -40,9 +40,12 @@ if [ $(command -v nproc) ]
  then
     # Get the number of available CPUs on the system
     nProc=$(nproc)
-    export NUM_PES=${nProc}
-    # Run the test with all processors
-    run_test test_mpp_npes ${NUM_PES}
+    if [ $nProc -gt 1 ]
+     then
+       export NUM_PES=2
+       # Run the test with all processors
+       run_test test_mpp_npes ${NUM_PES}
+    fi
 fi
 
 
