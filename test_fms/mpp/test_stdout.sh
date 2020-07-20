@@ -34,6 +34,7 @@ echo; echo "stdout test passed with 1 proc."; echo
 
 # If more than one processor available:
 echo "Running stdout unit test with multiple procs..."; echo
+err=0
 run_test test_stdout 2 || err=1
 if [ $err -eq 1 ]; then
   echo; echo "Failed with multiple procs"
