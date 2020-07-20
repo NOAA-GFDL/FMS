@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
-#**********************************************************************
+#***********************************************************************
 
 # @uramirez, Ed Hartnett, @underwoo
 
@@ -79,7 +79,7 @@ TESTS = test_mpp_domains2.sh \
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
   test_mpp_domains2.sh \
-  test_mpp_pset2.sh	\
+  test_mpp_pset2.sh     \
   test_mpp2.sh \
   test_mpp_memutils_mod.sh \
   test_mpp_get_ascii_lines2.sh \
@@ -94,4 +94,4 @@ EXTRA_DIST = input_base.nml \
   test_mpp_root_pe.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = include_files_mod.mod input.nml *.out* ascii*
