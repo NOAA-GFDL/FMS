@@ -110,7 +110,7 @@ call mpp_get_compute_domain(io_domain, xbegin=isc_east, xend=iec_east, xsize=nx_
 call mpp_get_compute_domain(io_domain, ybegin=jsc_north, yend=jec_north, ysize=ny_north, position=north)
 
 !Open a restart file and initialize the file object.
-call open_check(open_file(fileobj, "atmosphere.nc", "overwrite", &
+call open_check(open_file(fileobj, "atmosphere_io.nc", "overwrite", &
                           domain, nc_format="64bit", is_restart=.true.))
 call open_check(open_virtual_file(fileobjv, domain, "atm.nc"))
 
@@ -378,7 +378,7 @@ if (open_file(fileobj, "atmosphere.foobar.nc", "read", domain, &
 endif
 
 !Re-open the restart file and re-initialize the file object.
-call open_check(open_file(fileobj, "atmosphere.nc", "read", domain2, &
+call open_check(open_file(fileobj, "atmosphere_io.nc", "read", domain2, &
                           nc_format="64bit", is_restart=.true.))
 
 !Get the sizes of the I/O compute and data domains.
