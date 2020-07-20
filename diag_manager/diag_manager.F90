@@ -3945,9 +3945,11 @@ CONTAINS
       ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
     END DO
     ALLOCATE(files(max_files))
+#ifndef use_mpp_io
     ALLOCATE(fileobjU(max_files))
     ALLOCATE(fileobj(max_files))
     ALLOCATE(fileobjND(max_files))
+#endif
     ALLOCATE(fnum_for_domain(max_files))
     ALLOCATE(pelist(mpp_npes()))
     !> Initialize fnum_for_domain with "dn" which stands for done
