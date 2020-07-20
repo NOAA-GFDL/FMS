@@ -49,6 +49,7 @@ if [ $(command -v nproc) ]
     if [ $err -eq 1 ]; then
       echo; echo "Failed with multiple procs"
       exit 1
+    fi
     echo; echo "stdout test passed with multiple procs."
   fi
 fi
