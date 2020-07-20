@@ -35,7 +35,7 @@ then
     is_travis='skip'
 fi
 
-touch input.nml # Required to run the following tests
+touch input.nml # Input.nml is required to run the following tests
 echo "1: Test simple functionality"
 run_test test_domains_simple 4 
 
