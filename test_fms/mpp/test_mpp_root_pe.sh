@@ -25,10 +25,6 @@
 # MiKyung Lee 06/18/2020, based on Ed Hartnett 11/29/19
 
 
-# set number of processors to test
-nproc=4
-
-
 # Set common test settings.
 . ../test_common.sh
 
