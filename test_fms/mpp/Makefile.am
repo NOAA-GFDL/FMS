@@ -39,7 +39,13 @@ check_PROGRAMS = test_mpp \
   test_mpp_memutils_begin_2x \
   test_mpp_memutils_end_before_begin \
   test_stderr \
-  test_domains_simple
+  test_domains_simple \
+  test_mpp_get_ascii_lines \
+  test_system_clock \
+  test_mpp_broadcast \
+  test_clock_init \
+  test_domains_simple \
+  test_mpp_root_pe
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -53,7 +59,12 @@ test_mpp_print_memuse_stats_file_SOURCES=test_mpp_print_memuse_stats_file.F90
 test_mpp_memutils_begin_2x_SOURCES=test_mpp_memutils_begin_2x.F90
 test_mpp_memutils_end_before_begin_SOURCES=test_mpp_memutils_end_before_begin.F90
 test_stderr_SOURCES=test_stderr.F90
+test_mpp_get_ascii_lines_SOURCES=test_mpp_get_ascii_lines.F90
+test_system_clock_SOURCES=test_system_clock.F90
+test_mpp_broadcast_SOURCES=test_mpp_broadcast.F90
+test_clock_init_SOURCES=test_clock_init.F90
 test_domains_simple_SOURCES = test_domains_simple.F90
+test_mpp_root_pe_SOURCES=test_mpp_root_pe.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
@@ -62,7 +73,12 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_memuse \
   test_mpp_mem_dump \
   test_mpp_memutils_mod.sh \
-  test_stderr.sh
+  test_stderr.sh \
+  test_mpp_get_ascii_lines2.sh \
+  test_system_clock.sh \
+  test_mpp_broadcast.sh \
+  test_clock_init.sh \
+  test_mpp_root_pe.sh
 
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
@@ -70,7 +86,17 @@ EXTRA_DIST = input_base.nml \
   test_mpp_pset2.sh     \
   test_mpp2.sh \
   test_mpp_memutils_mod.sh \
-  test_stderr.sh
+  test_stderr.sh \
+  test_mpp_get_ascii_lines2.sh \
+  base_ascii_5 \
+  base_ascii_25 \
+  base_ascii_0 \
+  base_ascii_skip \
+  base_ascii_long \
+  test_system_clock.sh \
+  test_mpp_broadcast.sh \
+  test_clock_init.sh \
+  test_mpp_root_pe.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = include_files_mod.mod input.nml *.out* ascii*
