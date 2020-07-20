@@ -23,7 +23,7 @@ function MPP_CHKSUM_( var, pelist , mask_val)
 !result is LONG_KIND, which will actually be int ifdef no_8byte_integers
   !optional mask_val is masked away in checksum_int.h function via PACK()
   integer(LONG_KIND) :: MPP_CHKSUM_
-  integer(LONG_KIND) :: mold(1)
+  integer(MPP_TRANSFER_KIND_) :: mold(1)
       MPP_TYPE_, intent(in) :: var MPP_RANK_
       integer, intent(in), optional :: pelist(:)
   MPP_TYPE_, intent(in),optional :: mask_val
