@@ -43,6 +43,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_broadcast \
   test_clock_init \
   test_domains_simple \
+  test_mpp_npes \
+  test_mpp_pe \
   test_mpp_root_pe
 
 # These are the sources for the tests.
@@ -61,6 +63,8 @@ test_system_clock_SOURCES=test_system_clock.F90
 test_mpp_broadcast_SOURCES=test_mpp_broadcast.F90
 test_clock_init_SOURCES=test_clock_init.F90
 test_domains_simple_SOURCES = test_domains_simple.F90
+test_mpp_npes_SOURCES = test_mpp_npes.F90
+test_mpp_pe_SOURCES = test_mpp_pe.F90
 test_mpp_root_pe_SOURCES=test_mpp_root_pe.F90
 
 # Run the test programs.
@@ -74,6 +78,8 @@ TESTS = test_mpp_domains2.sh \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
   test_clock_init.sh \
+  test_mpp_npes.sh \
+  test_mpp_pe.sh \
   test_mpp_root_pe.sh
 
 # These files will also be included in the distribution.
@@ -91,6 +97,8 @@ EXTRA_DIST = input_base.nml \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
   test_clock_init.sh \
+  test_mpp_npes.sh \
+  test_mpp_pe.sh \
   test_mpp_root_pe.sh
 
 # Clean up

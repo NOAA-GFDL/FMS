@@ -22,9 +22,11 @@
 !! returns a positive integer value.  If the value returned by MPP_PE is
 !! less than 0, then an error is thrown. 
 program test_mpp_p5
- use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, stderr, stdout, &
-                     mpp_error, FATAL, mpp_init_test_peset_allocated 
-  implicit none
+
+ use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, mpp_pe, mpp_npes, &
+                     stderr, stdout, mpp_error, FATAL
+
+ implicit none
  integer :: ierr
  integer :: total_pes !< The total number of PEs returned from mpp_npes
  integer :: my_mpp_pe !< The unique PE identifier
