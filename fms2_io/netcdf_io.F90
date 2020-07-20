@@ -425,7 +425,7 @@ end function get_variable_type
 
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
   result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -449,12 +449,15 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
+                                              !! ".res" to the filename
   logical :: success
 
   integer :: nc_format_param
   integer :: err
   character(len=256) :: buf
   logical :: is_res
+  logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
@@ -462,12 +465,18 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       return
     endif
   endif
-  !Add ".res" to the file path if necessary.
+  !< Only add ".res" to the file path if is_restart is set to true
+  !! and dont_add_res_to_filename is set to false.
   is_res = .false.
   if (present(is_restart)) then
     is_res = is_restart
   endif
-  if (is_res) then
+  dont_add_res = .false.
+  if (present(dont_add_res_to_filename)) then
+    dont_add_res = dont_add_res_to_filename
+  endif
+
+  if (is_res .and. .not. dont_add_res) then
     call restart_filepath_mangle(buf, trim(path))
   else
     call string_copy(buf, trim(path))
@@ -1742,7 +1751,7 @@ include "compressed_read.inc"
 
 
 !> @brief Wrapper to distinguish interfaces.
-function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart) &
+function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
   result(success)
 
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -1764,9 +1773,11 @@ function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restar
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
+                                               !! ".res" to the filename
   logical :: success
 
-  success = netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart)
+  success = netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename)
 end function netcdf_file_open_wrap
 
 

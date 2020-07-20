@@ -39,8 +39,11 @@ if [ $(command -v nproc) ]
  then
     # Get the number of available CPUs on the system
     nProc=$(nproc)
-    # Run the test with all processors
-    run_test test_mpp_pe ${nProc}
+    if [ ${nProc} -gt 1 ]
+     then
+         # Run the test with all processors
+         run_test test_mpp_pe 2
+    fi
 fi
 
 
