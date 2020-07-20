@@ -36,6 +36,16 @@ nproc=4
 # Run the test with one processor
 run_test test_mpp_root_pe 1
 
-# Run the test with nproc number of processors
-run_test test_mpp_root_pe ${nproc}
-
+# If on a Linux system that uses the command `nproc`,
+# Run the test with multiple processors
+if [ $(command -v nproc) ]
+  # Looks like a linux system
+  then
+  # Get the number of available CPUs on the system
+  nProc=$(nproc)
+  if [ ${nProc} -gt 1 ]
+  then
+    # Run the test with multiple processors
+    run_test test_mpp_root_pe 2
+  fi
+fi
