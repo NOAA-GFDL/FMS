@@ -27,7 +27,7 @@ use   mpp_domains_mod, only: mpp_domains_set_stack_size, mpp_define_domains, mpp
                              mpp_get_compute_domain,domain2d
 use   mpp_mod,         only: mpp_pe, mpp_root_pe, mpp_error, FATAL
 use   fms2_io_mod,     only: open_file, register_axis, register_variable_attribute, close_file, &
-                             FmsNetcdfDomainFile_t, write_data, register_field
+                             FmsNetcdfDomainFile_t, write_data, register_field, read_data
 use   fms_mod,         only: fms_init, fms_end
 use   fms_io_mod,      only: parse_mask_table
 use   netcdf,          only: nf90_open, nf90_get_var, nf90_nowrite, NF90_NOERR, nf90_get_var, &
@@ -133,6 +133,35 @@ if (mpp_pe() .eq. mpp_root_pe()) then
    err = nf90_close(ncid)
    if (err .ne. NF90_NOERR) call mpp_error(FATAL, "test_io_with_mask: error closing the file")
 endif
+
+!< Read the file back using fms2io
+sst_in = 0.
+if (open_file(fileobj, "test_io_with_mask.nc", "read", domain)) then
+   names(1) = "lon"
+   names(2) = "lat"
+   call register_axis(fileobj, "lon", "x")
+   call register_axis(fileobj, "lat", "y")
+
+   !< Register the variable and Write out the data
+   call register_field(fileobj, "sst", "double", names(1:2))
+
+   call read_data(fileobj, "sst", sst_in)
+   call close_file(fileobj)
+
+   print *, "sum: ", sum(sst_in)
+   do i=1,nlon
+       do j=1,nlat
+          if (i > 30 .or. j > 20) then
+             if (sst_in(i,j) .ne. real(7., kind=real64)) then
+                 print *, 'i=', i, ' j=', j, ' sst_in=', sst_in(i,j)
+                 call mpp_error(FATAL, "test_io_with_mask: the unmasked data read in is not correct")
+             endif
+          endif
+       enddo
+   enddo
+
+endif
+
 
 call fms_end
 
