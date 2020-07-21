@@ -349,7 +349,7 @@ AC_CONFIG_FILES([Makefile
         test_fms/mosaic/Makefile
         test_fms/affinity/Makefile
         FMS.pc
-        FMSConfig.cmake.in
-        FMSConfigVersion.cmake.in
+#        FMSConfig.cmake.in
+#        FMSConfigVersion.cmake.in
         ])
 AC_OUTPUT()
