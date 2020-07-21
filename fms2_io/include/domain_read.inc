@@ -129,6 +129,8 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   real(kind=real32), dimension(:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:), allocatable :: buf_real64
   logical :: buffer_includes_halos
+  integer :: xgmin
+  integer :: ygmin
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -151,12 +153,13 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, xbegin=xgmin)
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i)
       c(ydim_index) = pe_jsc(i)
       if (fileobj%adjust_indices) then
-        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
-        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+        c(xdim_index) = c(xdim_index) - xgmin + 1
+        c(ydim_index) = c(ydim_index) - ygmin + 1
       endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
@@ -343,6 +346,8 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   real(kind=real32), dimension(:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:), allocatable :: buf_real64
   logical :: buffer_includes_halos
+  integer :: xgmin
+  integer :: ygmin
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -365,12 +370,13 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, xbegin=xgmin)
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i)
       c(ydim_index) = pe_jsc(i)
       if (fileobj%adjust_indices) then
-        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
-        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+        c(xdim_index) = c(xdim_index) - xgmin + 1
+        c(ydim_index) = c(ydim_index) - ygmin + 1
       endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
@@ -557,6 +563,8 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   real(kind=real32), dimension(:,:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:,:), allocatable :: buf_real64
   logical :: buffer_includes_halos
+  integer :: xgmin
+  integer :: ygmin
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -579,12 +587,13 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, xbegin=xgmin)
     do i = 1, size(fileobj%pelist)
       c(xdim_index) = pe_isc(i)
       c(ydim_index) = pe_jsc(i)
       if (fileobj%adjust_indices) then
-        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
-        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+        c(xdim_index) = c(xdim_index) - xgmin + 1
+        c(ydim_index) = c(ydim_index) - ygmin + 1
       endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)
@@ -771,6 +780,8 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   real(kind=real32), dimension(:,:,:,:,:), allocatable :: buf_real32
   real(kind=real64), dimension(:,:,:,:,:), allocatable :: buf_real64
   logical :: buffer_includes_halos
+  integer :: xgmin
+  integer :: ygmin
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -793,13 +804,14 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     allocate(pe_jcsize(size(fileobj%pelist)))
     call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
     call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, xbegin=xgmin)
     do i = 1, size(fileobj%pelist)
       !Calculate the indices of the domain-decomposed chunk relative to its position in the file.
       c(xdim_index) = pe_isc(i)
       c(ydim_index) = pe_jsc(i)
       if (fileobj%adjust_indices) then
-        c(xdim_index) = c(xdim_index) - pe_isc(1) + 1
-        c(ydim_index) = c(ydim_index) - pe_jsc(1) + 1
+        c(xdim_index) = c(xdim_index) - xgmin + 1
+        c(ydim_index) = c(ydim_index) - ygmin + 1
       endif
       e(xdim_index) = pe_icsize(i)
       e(ydim_index) = pe_jcsize(i)

@@ -44,6 +44,7 @@ real, dimension(:), allocatable       :: x                !< x axis data
 real, dimension(:), allocatable       :: y                !< y axis data
 real(kind=real64), allocatable, dimension(:,:) :: sst     !< Data to be written
 real(kind=real64), allocatable, dimension(:,:) :: sst_in  !< Buffer where data will be read
+real(kind=real64), allocatable, dimension(:,:) :: sst_in2  !< Buffer where data will be read
 logical, allocatable, dimension(:,:)  :: parsed_mask      !< Parsed masked
 character(len=6), dimension(2)        :: names            !< Dimensions names
 type(FmsNetcdfDomainFile_t)           :: fileobj          !< fms2io fileobj for domain decomposed
@@ -73,6 +74,7 @@ call mpp_get_compute_domain(Domain, is, ie, js, je)
 !< Set up the data
 allocate(x(nlon), y(nlat))
 allocate(sst(is:ie,js:je))
+allocate(sst_in2(is:ie,js:je))
 
 do i=1,nlon
   x(i) = i
@@ -135,7 +137,7 @@ if (mpp_pe() .eq. mpp_root_pe()) then
 endif
 
 !< Read the file back using fms2io
-sst_in = 0.
+sst_in2 = 0.
 if (open_file(fileobj, "test_io_with_mask.nc", "read", domain)) then
    names(1) = "lon"
    names(2) = "lat"
@@ -145,18 +147,15 @@ if (open_file(fileobj, "test_io_with_mask.nc", "read", domain)) then
    !< Register the variable and Write out the data
    call register_field(fileobj, "sst", "double", names(1:2))
 
-   call read_data(fileobj, "sst", sst_in)
+   call read_data(fileobj, "sst", sst_in2)
    call close_file(fileobj)
 
-   print *, "sum: ", sum(sst_in)
-   do i=1,nlon
-       do j=1,nlat
-          if (i > 30 .or. j > 20) then
-             if (sst_in(i,j) .ne. real(7., kind=real64)) then
-                 print *, 'i=', i, ' j=', j, ' sst_in=', sst_in(i,j)
+   do i=is,ie
+       do j=js,je
+             if (sst_in2(i,j) .ne. real(7., kind=real64)) then
+                 print *, 'i=', i, ' j=', j, ' sst_in=', sst_in2(i,j)
                  call mpp_error(FATAL, "test_io_with_mask: the unmasked data read in is not correct")
              endif
-          endif
        enddo
    enddo
 
