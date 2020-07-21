@@ -251,7 +251,7 @@ call write_data(fileobj, "var4", double_buffer2d)
 !call register_variable_attribute(fileobjv, "var4", "units", "K")
 !call write_data(fileobjv, "var4", double_buffer2d)
 
-!Add a domain-decomposed restart variable with center position.
+!Add a domain-decompose restart variable with center position.
 names(1) = "lon"
 names(2) = "lat"
 names(3) = "lev"
@@ -340,7 +340,7 @@ do i = 1, nt
   call create_data(var7p)
   call create_data(var8p)
 enddo
-timestamp = "00001"
+timestamp = "00002"
 call write_new_restart(fileobjv, timestamp=timestamp)
 
 !Store checksums for non-domain-decomposed/non-restart variables since they are not
