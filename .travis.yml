@@ -60,13 +60,13 @@ script:
   - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
   - make -j distcheck
 
-env_cmake:
+env:
   - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
 
-before_install_cmake:
+before_install:
   - test -n "$CC" && unset CC
 
-before_cmake:
+before_script:
   - export CC=mpicc
   - export FC=mpif90
   - export NetCDF_ROOT=`nc-config --prefix`
@@ -74,7 +74,7 @@ before_cmake:
   - export CFLAGS="-DMAXFIELDMETHODS_=500"
   - export CPPFLAGS="-DMAXFIELDMETHODS_=500"
 
-cmake:
+script:
   - mkdir -p build_cmake
   - cd build_cmake
   - cmake -DCMAKE_INSTALL_PREFIX=../install_cmake -DOPENMP=OFF -D64BIT=ON -DLARGEFILE=ON ..
