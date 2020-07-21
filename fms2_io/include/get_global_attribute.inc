@@ -41,6 +41,7 @@ subroutine get_global_attribute_0d(fileobj, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    charbuf(1))
+                call string_copy(attribute_value, charbuf(1))
             type is (integer(kind=int32))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
