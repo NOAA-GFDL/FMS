@@ -22,34 +22,26 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Eric Stofferahn 07/15/2020
+# MiKyung Lee 06/18/2020, based on Ed Hartnett 11/29/19
+
 
 # Set common test settings.
 . ../test_common.sh
 
-skip_test="no"
 
-# Copy file for test.
-cp $top_srcdir/test_fms/mpp/base_ascii_5 ascii_5
-cp $top_srcdir/test_fms/mpp/base_ascii_25 ascii_25
-cp $top_srcdir/test_fms/mpp/base_ascii_0 ascii_0
-cp $top_srcdir/test_fms/mpp/base_ascii_skip ascii_skip
-cp $top_srcdir/test_fms/mpp/base_ascii_long ascii_long
+# Run the test with one processor
+run_test test_mpp_root_pe 1
 
-for tst in 1 2 3 4
-do
-sed "s/test_number = <test_num>/test_number = ${tst}/" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-echo "Running test ${tst}..."
-run_test test_mpp_get_ascii_lines 2 $skip_test
-echo "Test ${tst} has passed"
-done
-
-sed "s/test_number = <test_num>/test_number = 5/" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-echo "Running test 5..."
-run_test test_mpp_get_ascii_lines 2 $skip_test || err=1
-if [ "$err" -ne 1 ]; then
-  echo "ERROR: Test 5 was unsuccessful."
-  exit 5
-else
-   echo "Test 5 has passed"
+# If on a Linux system that uses the command `nproc`,
+# Run the test with multiple processors
+if [ $(command -v nproc) ]
+  # Looks like a linux system
+  then
+  # Get the number of available CPUs on the system
+  nProc=$(nproc)
+  if [ ${nProc} -gt 1 ]
+  then
+    # Run the test with multiple processors
+    run_test test_mpp_root_pe 2
+  fi
 fi

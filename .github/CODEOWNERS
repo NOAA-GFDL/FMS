@@ -28,14 +28,14 @@
 *          @wrongkindofdoctor @thomas-robinson @colingladueNOAA
 
 # GNU autotools files
-Makefile.am      @underwoo
-/configure.ac    @underwoo
-/m4/             @underwoo
-*.m4             @underwoo
+Makefile.am      @underwoo @colingladueNOAA
+/configure.ac    @underwoo @colingladueNOAA
+/m4/             @underwoo @colingladueNOAA
+*.m4             @underwoo @colingladueNOAA
 
 # Files specific to GitHub or GitLab
-/.github/        @underwoo
-/.gitlab/        @underwoo
+/.github/        @underwoo @colingladueNOAA
+/.gitlab/        @underwoo @colingladueNOAA
 
 # Testing files
 /.gitlab-ci.yml  @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor @colingladueNOAA
