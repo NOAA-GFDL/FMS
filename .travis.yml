@@ -59,3 +59,24 @@ script:
   - autoreconf -i
   - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
   - make -j distcheck
+
+env_cmake:
+  - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
+
+before_install_cmake:
+  - test -n "$CC" && unset CC
+
+before_cmake:
+  - export CC=mpicc
+  - export FC=mpif90
+  - export NetCDF_ROOT=`nc-config --prefix`
+  - export VERBOSE=1
+  - export CFLAGS="-DMAXFIELDMETHODS_=500"
+  - export CPPFLAGS="-DMAXFIELDMETHODS_=500"
+
+cmake:
+  - mkdir -p build_cmake
+  - cd build_cmake
+  - cmake -DCMAKE_INSTALL_PREFIX=../install_cmake -DOPENMP=OFF -D64BIT=ON -DLARGEFILE=ON ..
+  - make -j 2
+  - make install
