@@ -28,7 +28,7 @@ export NetCDF_ROOT=`nc-config --prefix`
 ```
 cd FMS
 mkdir -p build && cd build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=<prefix> ..
+cmake -DCMAKE_INSTALL_PREFIX=<prefix> ..
 make -j4
 make install
 ```

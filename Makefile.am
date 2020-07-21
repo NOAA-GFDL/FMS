@@ -44,25 +44,25 @@ pkgconfig_DATA = FMS.pc
 # library.
 #
 # A simple edit command
-edit = sed \
-         -e 's|@PACKAGE_VERSION[@]|$(pkgdatadir)|g' \
-         -e 's|@PACKAGE_CMAKE_INSTALL_PREFIX[@]|$(prefix)|g' \
-         -e 's|@PACKAGE_CMAKE_INSTALL_INCLUDEDIR[@]|$(includedir)|g' \
-         -e 's|@PACKAGE_CMAKE_INSTALL_LIBDIR[@]|$(libdir)|g' \
-         -e '/@PACKAGE_INIT[@]/ {' -e 'r $(top_srcdir)/_package_init_cmake' -e  'd' -e '}'
-FMSConfig.cmake FMSConfigVersion.cmake: Makefile
-	rm -f $@ $@.tmp
-	$(edit) $@.in >$@.tmp
-	mv $@.tmp $@
-FMSConfig.cmake: FMSConfig.cmake.in
-FMSConfigVersion.cmake: FMSConfigVersion.cmake.in
+#edit = sed \
+#         -e 's|@PACKAGE_VERSION[@]|$(pkgdatadir)|g' \
+#         -e 's|@PACKAGE_CMAKE_INSTALL_PREFIX[@]|$(prefix)|g' \
+#         -e 's|@PACKAGE_CMAKE_INSTALL_INCLUDEDIR[@]|$(includedir)|g' \
+#         -e 's|@PACKAGE_CMAKE_INSTALL_LIBDIR[@]|$(libdir)|g' \
+#         -e '/@PACKAGE_INIT[@]/ {' -e 'r $(top_srcdir)/_package_init_cmake' -e  'd' -e '}'
+#FMSConfig.cmake FMSConfigVersion.cmake: Makefile
+#	rm -f $@ $@.tmp
+#	$(edit) $@.in >$@.tmp
+#	mv $@.tmp $@
+#FMSConfig.cmake: FMSConfig.cmake.in
+#FMSConfigVersion.cmake: FMSConfigVersion.cmake.in
+#
+#cmakedir = $(libdir)
+#cmake_DATA = FMSConfig.cmake \
+#  FMSConfigVersion.cmake
 
-cmakedir = $(libdir)
-cmake_DATA = FMSConfig.cmake \
-  FMSConfigVersion.cmake
- 
-clean-local:
-	-rm -f FMSConfig.cmake FMSConfigVersion.cmake
-EXTRA_DIST = README.md _package_init_cmake
+#clean-local:
+#	-rm -f FMSConfig.cmake FMSConfigVersion.cmake
+EXTRA_DIST = README.md #_package_init_cmake
 
 CLEANFILES = *__genmod.mod *__genmod.f90
