@@ -50,12 +50,14 @@ before_install:
 before_script:
   - export CC=mpicc
   - export FC=mpif90
-  - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
-  - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
-  - export LDFLAGS='-L/usr/lib'
+  - export NetCDF_ROOT=`nc-config --prefix`
   - export VERBOSE=1
+  - export CFLAGS="-DMAXFIELDMETHODS_=500"
+  - export CPPFLAGS="-DMAXFIELDMETHODS_=500"
 
 script:
-  - autoreconf -i
-  - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
-  - make -j distcheck
+  - mkdir -p build
+  - cd build
+  - cmake -DCMAKE_INSTALL_PREFIX=../install -DOPENMP=OFF -D64BIT=ON -DLARGEFILE=ON ..
+  - make -j 2
+  - make install
