@@ -17,23 +17,31 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-function MPP_CHKSUM_( var, pelist , mask_val)
-!mold is a dummy array to be used by TRANSFER()
-!must be same TYPE as result
-!result is LONG_KIND, which will actually be int ifdef no_8byte_integers
-  !optional mask_val is masked away in checksum_int.h function via PACK()
-  integer(LONG_KIND) :: MPP_CHKSUM_
-  integer(MPP_TRANSFER_KIND_) :: mold(1)
-      MPP_TYPE_, intent(in) :: var MPP_RANK_
-      integer, intent(in), optional :: pelist(:)
-  MPP_TYPE_, intent(in),optional :: mask_val
+!> @file
+!! @brief Unit test for the STDERR function
+!! @author Colin Gladue
+!! @email gfdl.climate.model.info@noaa.gov
 
-  if ( PRESENT(mask_val) ) then
-     MPP_CHKSUM_ = mpp_chksum( TRANSFER(var,mold), pelist, &
-          mask_val= TRANSFER(mask_val,mold(1) ) )
+program test_stderr
+  use mpp_mod, only : stderr
+  use iso_fortran_env, only : ERROR_UNIT, OUTPUT_UNIT
+
+  integer :: err_unit !< Stores the returned standard error unit number
+
+  err_unit = stderr()
+
+  write(OUTPUT_UNIT,*) "stderr() should get and return the value of err_unit."
+  write(OUTPUT_UNIT,*) "This value should match ERROR_UNIT from iso_fortran_env."
+
+  if (ERROR_UNIT.eq.err_unit) then
+    write(OUTPUT_UNIT,*) "PASS: stderr() returned the correct value of err_unit."
   else
-      MPP_CHKSUM_ = mpp_chksum( TRANSFER(var,mold), pelist )
+    write(OUTPUT_UNIT,*) "Integer returned by stderr():"
+    write(OUTPUT_UNIT,*) err_unit
+    write(OUTPUT_UNIT,*) "Integer expected:"
+    write(OUTPUT_UNIT,*) ERROR_UNIT
+    write(OUTPUT_UNIT,*) "ERROR: stderr() did not return the expected value"
+    stop 1
   end if
 
-      return
-    end function MPP_CHKSUM_
+end program test_stderr

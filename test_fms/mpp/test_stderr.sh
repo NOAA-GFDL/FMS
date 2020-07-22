@@ -22,10 +22,11 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Uriel Ramirez 07/15/2020
+# Colin Gladue 06/09/2020
 
 # Set common test settings.
 . ../test_common.sh
 
-touch input.nml
-run_test test_mpp_broadcast 2
+echo "Running STDERR test..."; echo
+run_test test_stderr 1
+echo; echo "STDERR test has passed"
