@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -20,36 +18,16 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/mpp directory.
+# execute tests in the test_fms/fms2_io directory.
 
-# Eric Stofferahn 07/15/2020
-
+# Author: Uriel Ramirez 6/30/20
+#
 # Set common test settings.
 . ../test_common.sh
 
-skip_test="no"
+# make an input.nml for mpp_init to read
+touch input.nml
 
-# Copy file for test.
-cp $top_srcdir/test_fms/mpp/base_ascii_5 ascii_5
-cp $top_srcdir/test_fms/mpp/base_ascii_25 ascii_25
-cp $top_srcdir/test_fms/mpp/base_ascii_0 ascii_0
-cp $top_srcdir/test_fms/mpp/base_ascii_skip ascii_skip
-cp $top_srcdir/test_fms/mpp/base_ascii_long ascii_long
+# run the tests
+run_test test_global_att 1
 
-for tst in 1 2 3 4
-do
-sed "s/test_number = <test_num>/test_number = ${tst}/" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-echo "Running test ${tst}..."
-run_test test_mpp_get_ascii_lines 2 $skip_test
-echo "Test ${tst} has passed"
-done
-
-sed "s/test_number = <test_num>/test_number = 5/" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-echo "Running test 5..."
-run_test test_mpp_get_ascii_lines 2 $skip_test || err=1
-if [ "$err" -ne 1 ]; then
-  echo "ERROR: Test 5 was unsuccessful."
-  exit 5
-else
-   echo "Test 5 has passed"
-fi
