@@ -23,7 +23,7 @@
 !! @email gfdl.climate.model.info@noaa.gov
 program test_mpp_clock_begin_end_id
 
-  use mpp_mod, only : mpp_init
+  use mpp_mod, only : mpp_init, mpp_exit
   use mpp_mod, only : mpp_error, FATAL
   use mpp_mod, only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod, only : mpp_record_time_start, mpp_record_time_end
