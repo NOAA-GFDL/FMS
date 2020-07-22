@@ -115,7 +115,7 @@ echo
 sed -i "s/test_number = [0-9]*/test_number = 10/" clock.nml
 echo "Running test 10..."
 #err=0
-#run_test test_mpp_clock_begin_end_id 1 || err=1
+run_test test_mpp_clock_begin_end_id 1 #|| err=1
 #if [ "$err" -ne 1 ]; then
 #  echo "ERROR: Test 10 was unsuccessful"
 #  exit 10
