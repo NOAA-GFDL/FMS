@@ -817,14 +817,22 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
 end subroutine get_global_io_domain_indices
 
+!> @brief Read a mosaic_file and get the grid filename for the current tile or
+!!        for the tile specified
 subroutine get_mosaic_tile_grid(grid_file,mosaic_file, domain, tile_count)
-  character(len=*), intent(out)          :: grid_file
-  character(len=*), intent(in)           :: mosaic_file
-  type(domain2D),   intent(in)           :: domain
-  integer,          intent(in), optional :: tile_count
-  integer                                :: tile, ntileMe
-  integer, dimension(:), allocatable     :: tile_id
-  type(FmsNetcdfFile_t)                  :: fileobj
+  character(len=*), intent(out)          :: grid_file !< Filename of the grid file for the
+                                                      !! current domain tile or for tile
+                                                      !! specified in tile_count
+  character(len=*), intent(in)           :: mosaic_file !< Filename that will be read
+  type(domain2D),   intent(in)           :: domain !< Input domain
+  integer,          intent(in), optional :: tile_count !< Optional argument indicating
+                                                       !! the tile you want grid file name for
+                                                       !! this is for when a pe is in more than
+                                                       !! tile.
+  integer                                :: tile !< Current domian tile or tile_count
+  integer                                :: ntileMe !< Total number of tiles in the domain
+  integer, dimension(:), allocatable     :: tile_id !< List of tiles in the domain
+  type(FmsNetcdfFile_t)                  :: fileobj !< Fms2io file object
 
   tile = 1
   if(present(tile_count)) tile = tile_count
