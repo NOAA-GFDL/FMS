@@ -170,8 +170,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
@@ -470,8 +470,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
@@ -770,8 +770,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
@@ -1070,8 +1070,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
     if (extra_x_point) xgmax = xgmax + 1
