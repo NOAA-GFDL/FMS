@@ -202,11 +202,11 @@ program test_mpp_clock_begin_end_id
     subroutine test10()
       integer :: clock_id
       integer :: bp
-      bp = 8
+      bp = 6
 
       clock_id = 1
-      call mpp_init(test_level=bp)
-      call MPI_FINALIZE(ierr)
+      call mpp_init()!test_level=bp)
+      call mpp_exit()
       call mpp_clock_begin(clock_id)
 
     end subroutine test10
