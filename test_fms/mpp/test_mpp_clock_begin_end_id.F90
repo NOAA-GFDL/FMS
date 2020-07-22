@@ -202,7 +202,7 @@ program test_mpp_clock_begin_end_id
     subroutine test10()
       integer :: clock_id
       integer :: bp
-      bp = 6
+      bp = 7
 
       clock_id = 1
       call mpp_init(test_level=bp)
