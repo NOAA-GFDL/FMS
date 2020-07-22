@@ -205,7 +205,7 @@ program test_mpp_clock_begin_end_id
       bp = 6
 
       clock_id = 1
-      call mpp_init()!test_level=bp)
+      call mpp_init(test_level=bp)
       call MPI_FINALIZE(ierr)
       call mpp_clock_begin(clock_id)
 
