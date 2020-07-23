@@ -21,7 +21,10 @@ program test_io_with_mask
 
 !> @brief  This programs tests fms2io/include/domain_write ability to write
 !! data when the domain contains a mask table. For the points that are
-!! masked out, no data should be writen.
+!! masked out, no data should be writen. 
+!! It also tests fms2io/include/domain_read ability to read the data when 
+!! the domain contains a mask table. For this case the masked data should
+!! not be read.
 
 use   mpp_domains_mod, only: mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain, &
                              mpp_get_compute_domain,domain2d
@@ -32,6 +35,7 @@ use   fms_mod,         only: fms_init, fms_end
 use   fms_io_mod,      only: parse_mask_table
 use   netcdf,          only: nf90_open, nf90_get_var, nf90_nowrite, NF90_NOERR, nf90_get_var, &
                              nf90_close
+use   mpi,             only: mpi_barrier, mpi_comm_world
 use,  intrinsic :: iso_fortran_env, only : real64
 
 implicit none
@@ -43,8 +47,8 @@ type(domain2d)                        :: Domain           !< Domain with mask ta
 real, dimension(:), allocatable       :: x                !< x axis data
 real, dimension(:), allocatable       :: y                !< y axis data
 real(kind=real64), allocatable, dimension(:,:) :: sst     !< Data to be written
-real(kind=real64), allocatable, dimension(:,:) :: sst_in  !< Buffer where data will be read
-real(kind=real64), allocatable, dimension(:,:) :: sst_in2  !< Buffer where data will be read
+real(kind=real64), allocatable, dimension(:,:) :: sst_in  !< Buffer where data will be read with netcdf
+real(kind=real64), allocatable, dimension(:,:) :: sst_in2 !< Buffer where data will be read with fms2io
 logical, allocatable, dimension(:,:)  :: parsed_mask      !< Parsed masked
 character(len=6), dimension(2)        :: names            !< Dimensions names
 type(FmsNetcdfDomainFile_t)           :: fileobj          !< fms2io fileobj for domain decomposed
@@ -136,6 +140,9 @@ if (mpp_pe() .eq. mpp_root_pe()) then
    if (err .ne. NF90_NOERR) call mpp_error(FATAL, "test_io_with_mask: error closing the file")
 endif
 
+!< Wait for the root pe to catch up!
+call mpi_barrier(mpi_comm_world, err)
+
 !< Read the file back using fms2io
 sst_in2 = 0.
 if (open_file(fileobj, "test_io_with_mask.nc", "read", domain)) then
@@ -144,7 +151,7 @@ if (open_file(fileobj, "test_io_with_mask.nc", "read", domain)) then
    call register_axis(fileobj, "lon", "x")
    call register_axis(fileobj, "lat", "y")
 
-   !< Register the variable and Write out the data
+   !< Register the variable and read out the data
    call register_field(fileobj, "sst", "double", names(1:2))
 
    call read_data(fileobj, "sst", sst_in2)
