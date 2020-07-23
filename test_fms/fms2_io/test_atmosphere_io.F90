@@ -348,10 +348,10 @@ call write_new_restart(fileobjv, timestamp=timestamp)
 !if (fileobj%is_root) then
   var9_chksum = mpp_chksum(var9, pelist=(/mpp_pe()/))
 !endif
-!var5_chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
-!var6_chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
-!var7_chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
-!var8_chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
+var5_chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
+var6_chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
+var7_chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
+var8_chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
 var10_chksum = mpp_chksum(var10, pelist=(/mpp_pe()/))
 !var11_chksum = mpp_chksum(var11(isc-isd+1:isc-isd+1+nx, jsc-jsd+1:jsc-jsd+1+ny, :), pelist=(/mpp_pe()/))
 
@@ -486,22 +486,33 @@ deallocate(dim_sizes)
 call read_restart(fileobj, unlim_dim_level=nt)
 
 
-!chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
-!if (chksum .ne. var5_chksum) then
-!  call mpp_error(fatal, "checksum for var 5 does not match.")
-!endif
-!chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
-!if (chksum .ne. var6_chksum) then
-!  call mpp_error(fatal, "checksum for var 6 does not match.")
-!endif
-!chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
-!if (chksum .ne. var7_chksum) then
-!  call mpp_error(fatal, "checksum for var 7 does not match.")
-!endif
-!chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
-!if (chksum .ne. var8_chksum) then
-!  call mpp_error(fatal, "checksum for var 8 does not match.")
-!endif
+chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
+if (chksum .ne. var5_chksum) then
+  call mpp_error(fatal, "checksum for var 5 does not match.")
+else
+  call mpp_error(warning, "checksum for var 5 does match.")
+endif
+
+chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
+if (chksum .ne. var6_chksum) then
+  call mpp_error(fatal, "checksum for var 6 does not match.")
+else
+  call mpp_error(warning, "checksum for var 6 does match.")
+endif
+
+chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
+if (chksum .ne. var7_chksum) then
+  call mpp_error(fatal, "checksum for var 7 does not match.")
+else
+  call mpp_error(warning, "checksum for var 7 does match.")
+endif
+
+chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
+if (chksum .ne. var8_chksum) then
+  call mpp_error(fatal, "checksum for var 8 does not match.")
+else
+  call mpp_error(warning, "checksum for var 8 does match.")
+endif
 
 
 
