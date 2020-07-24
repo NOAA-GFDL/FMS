@@ -28,7 +28,6 @@ use   mpp_mod
 use   data_override_mod
 use   fms2_io_mod
 use   time_manager_mod, only: set_calendar_type, time_type, set_date, NOLEAP
-use,  intrinsic :: iso_fortran_env, only : real64
 use   mpi,             only: mpi_barrier, mpi_comm_world
 use   netcdf
 
@@ -38,7 +37,7 @@ integer, dimension(2)                 :: layout = (/2,3/) !< Domain layout
 integer                               :: nlon             !< Number of points in x axis
 integer                               :: nlat             !< Number of points in y axis
 type(domain2d)                        :: Domain           !< Domain with mask table
-real(kind=real64), allocatable, dimension(:,:) :: runoff  !< Data to be written
+real, allocatable, dimension(:,:)     :: runoff  !< Data to be written
 integer                               :: is, isc          !< Starting x index
 integer                               :: ie, iec          !< Ending x index
 integer                               :: js, jsc          !< Starting y index
@@ -49,8 +48,8 @@ integer                               :: ncid             !< Netcdf file id
 integer                               :: err              !< Error Code
 integer                               :: dim1d, dim2d, dim3d, dim4d    !< Dimension ids
 integer                               :: varid, varid2, varid3, varid4 !< Variable ids
-real(kind=real64), allocatable, dimension(:,:,:) :: runoff_in          !< Data to be written to file
-real(kind=real64)                     :: expected_result  !< Expected result from data_override
+real, allocatable, dimension(:,:,:)   :: runoff_in        !< Data to be written to file
+real                                  :: expected_result  !< Expected result from data_override
 
 call mpp_init
 call fms2_io_init
@@ -60,7 +59,7 @@ call data_override_init
 if (mpp_pe() .eq. mpp_root_pe()) then
    allocate(runoff_in(1440, 1080, 10))
    do i = 1, 10
-       runoff_in(:,:,i) = real(i, real64)
+       runoff_in(:,:,i) = real(i)
    enddo
 
    err = nf90_create('INPUT/grid_spec.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
@@ -141,7 +140,7 @@ call data_override('OCN','runoff',runoff, Time)
 
 !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
 !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
-expected_result = (real(3, real64)+ real(4, real64))/2
+expected_result = (real(3.)+ real(4.))/2
 
 !! Data is only expected to be overriden for the compute domain -not at the halos.
 call mpp_get_compute_domain(Domain, isc, iec, jsc, jec)
