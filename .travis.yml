@@ -36,25 +36,127 @@ addons:
     packages:
     - pkg-config gfortran netcdf-bin libnetcdf-dev libnetcdff-dev openmpi-bin libopenmpi-dev
 
-env:
-  - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
-  - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--without-openmp'
-  - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--enable-mixed-mode'
-  - FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none' DISTCHECK_CONFIGURE_FLAGS='--disable-setting-flags'
+jobs:
+  include:
+    - name: build_with_autotools
+      env:
+        - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
 
-# Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
-before_install:
-  - test -n "$CC" && unset CC
+      # Travis sets CC to gcc, but we need to ensure it is not set, so we can use mpicc
+      before_install:
+        - test -n "$CC" && unset CC
 
-before_script:
-  - export CC=mpicc
-  - export FC=mpif90
-  - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
-  - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
-  - export LDFLAGS='-L/usr/lib'
-  - export VERBOSE=1
+      before_script:
+        - export CC=mpicc
+        - export FC=mpif90
+        - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
+        - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
+        - export LDFLAGS='-L/usr/lib'
+        - export VERBOSE=1
 
-script:
-  - autoreconf -i
-  - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
-  - make -j distcheck
+      script:
+        - autoreconf -i
+        - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+        - make -j distcheck
+#build_with_autotools_no_openmp
+    - name: build_with_autotools_no_openmp
+      env:
+        - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--without-openmp'
+
+      before_install:
+        - test -n "$CC" && unset CC
+
+      before_script:
+        - export CC=mpicc
+        - export FC=mpif90
+        - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
+        - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
+        - export LDFLAGS='-L/usr/lib'
+        - export VERBOSE=1
+
+      script:
+        - autoreconf -i
+        - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+        - make -j distcheck
+#build_with_autotools_mixed_mode
+    - name: build_with_autotools_mixed_mode
+      env:
+        - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--enable-mixed-mode'
+
+      before_install:
+        - test -n "$CC" && unset CC
+
+      before_script:
+        - export CC=mpicc
+        - export FC=mpif90
+        - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
+        - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
+        - export LDFLAGS='-L/usr/lib'
+        - export VERBOSE=1
+
+      script:
+        - autoreconf -i
+        - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+        - make -j distcheck
+#build_with_autotools_r8
+    - name: build_with_autotools_r8
+      env:
+        - FCFLAGS_ADD='-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none' DISTCHECK_CONFIGURE_FLAGS='--disable-setting-flags'
+
+      before_install:
+        - test -n "$CC" && unset CC
+
+      before_script:
+        - export CC=mpicc
+        - export FC=mpif90
+        - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
+        - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
+        - export LDFLAGS='-L/usr/lib'
+        - export VERBOSE=1
+
+      script:
+        - autoreconf -i
+        - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+        - make -j distcheck
+#build_with_autotools_mpp_io
+    - name: build_with_autotools_mpp_io
+      env:
+        - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--enable-mpp-io'
+
+      before_install:
+        - test -n "$CC" && unset CC
+
+      before_script:
+        - export CC=mpicc
+        - export FC=mpif90
+        - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
+        - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
+        - export LDFLAGS='-L/usr/lib'
+        - export VERBOSE=1
+
+      script:
+        - autoreconf -i
+        - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+        - make -j distcheck
+
+    - name: build_with_cmake
+      env:
+        - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
+
+      before_install:
+        - test -n "$CC" && unset CC
+
+      before_script:
+        - export CC=mpicc
+        - export FC=mpif90
+        - export NetCDF_ROOT=`nc-config --prefix`
+        - export VERBOSE=1
+        - export CFLAGS="-DMAXFIELDMETHODS_=500"
+        - export CPPFLAGS="-DMAXFIELDMETHODS_=500"
+
+      script:
+        - mkdir -p build_cmake
+        - cd build_cmake
+        - cmake -DCMAKE_INSTALL_PREFIX=../install_cmake -DOPENMP=OFF -D64BIT=ON -DLARGEFILE=ON ..
+        - make -j 2
+        - make install

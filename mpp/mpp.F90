@@ -169,6 +169,7 @@ module mpp_mod
   use mpi
 #endif
 
+  use iso_fortran_env,   only : INPUT_UNIT, OUTPUT_UNIT, ERROR_UNIT
   use mpp_parameter_mod, only : MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE
   use mpp_parameter_mod, only : NOTE, WARNING, FATAL, MPP_CLOCK_DETAILED,MPP_CLOCK_SYNC
   use mpp_parameter_mod, only : CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER
@@ -213,6 +214,9 @@ private
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
   public :: MPP_FILL_INT,MPP_FILL_DOUBLE
+  public :: mpp_init_test_full_init, mpp_init_test_init_true_only, mpp_init_test_peset_allocated
+  public :: mpp_init_test_clocks_init, mpp_init_test_datatype_list_init, mpp_init_test_logfile_init
+  public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
 
   !--- public data from mpp_data_mod ------------------------------
 !  public :: request
@@ -334,7 +338,7 @@ private
   !    exit, i.e:
   !    <PRE>
   !    call mpp_error
-  !    call mpp_error(FATAL)
+  !    call mpp_error()
   !    </PRE>
   !    are equivalent.
   !
@@ -1323,12 +1327,8 @@ private
   character(len=32)    :: etcfile='/dev/null'
 #endif
 
-#ifdef SGICRAY
-  integer :: in_unit=100, out_unit=101, err_unit=102 !see intro_io(3F): to see why these values are used rather than 5,6,0
-#else
-  integer :: in_unit=5, out_unit=6, err_unit=0
-#endif
-
+!> Use the intrinsics in iso_fortran_env
+  integer :: in_unit=INPUT_UNIT, out_unit=OUTPUT_UNIT, err_unit=ERROR_UNIT
   integer :: stdout_unit
 
   !--- variables used in mpp_util.h
@@ -1363,6 +1363,18 @@ private
 #endif
 
   integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.h
+  
+  !--- variables used in mpp_comm_mpi.inc
+  integer, parameter :: mpp_init_test_full_init = -1
+  integer, parameter :: mpp_init_test_init_true_only = 0
+  integer, parameter :: mpp_init_test_peset_allocated = 1
+  integer, parameter :: mpp_init_test_clocks_init = 2
+  integer, parameter :: mpp_init_test_datatype_list_init = 3
+  integer, parameter :: mpp_init_test_logfile_init = 4
+  integer, parameter :: mpp_init_test_read_namelist = 5
+  integer, parameter :: mpp_init_test_etc_unit = 6
+  integer, parameter :: mpp_init_test_requests_allocated = 7
+
 
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)

@@ -28,7 +28,8 @@ AM_CPPFLAGS = -I${top_srcdir}/include \
   -I${top_builddir}/axis_utils \
   -I${top_builddir}/diag_manager \
   -I${top_builddir}/time_manager \
-  -I${top_builddir}/constants
+  -I${top_builddir}/constants \
+  -I${top_builddir}/platform
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la

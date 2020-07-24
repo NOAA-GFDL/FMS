@@ -44,7 +44,10 @@ integer, parameter, public :: unlimited = nf90_unlimited !> Wrapper to specify u
 integer, parameter :: dimension_not_found = 0
 integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of compressed
                                                            !! dimensions allowed.
-
+integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and nc_create
+integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used in nc_create
+character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
+integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
 !> @brief Restart variable.
 type :: RestartVariable_t
@@ -111,6 +114,7 @@ type, public :: Valid_t
 endtype Valid_t
 
 
+public :: netcdf_io_init
 public :: netcdf_file_open
 public :: netcdf_file_close
 public :: netcdf_add_dimension
@@ -243,6 +247,29 @@ end interface get_variable_attribute
 
 contains
 
+!> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
+subroutine netcdf_io_init (chksz, header_buffer_val, netcdf_default_format)
+integer, intent(in) :: chksz
+character (len = 10), intent(in) :: netcdf_default_format
+integer, intent(in) :: header_buffer_val
+
+ fms2_ncchksz = chksz
+ fms2_header_buffer_val = header_buffer_val
+ if (string_compare(netcdf_default_format, "64bit", .true.)) then
+     fms2_nc_format_param = nf90_64bit_offset
+     call string_copy(fms2_nc_format, "64bit")
+ elseif (string_compare(netcdf_default_format, "classic", .true.)) then
+     fms2_nc_format_param = nf90_classic_model
+     call string_copy(fms2_nc_format, "classic")
+ elseif (string_compare(netcdf_default_format, "netcdf4", .true.)) then
+     fms2_nc_format_param = nf90_netcdf4
+     call string_copy(fms2_nc_format, "netcdf4")
+ else
+     call error("unrecognized netcdf file format "//trim(netcdf_default_format)// &
+     '. The acceptable values are "64bit", "classic", "netcdf4". Check fms2_io_nml: netcdf_default_format')
+ endif
+
+end subroutine netcdf_io_init
 
 !> @brief Check for errors returned by netcdf.
 !! @internal
@@ -274,7 +301,8 @@ subroutine set_netcdf_mode(ncid, mode)
       return
     endif
   elseif (mode .eq. data_mode) then
-    err = nf90_enddef(ncid)
+    if (fms2_header_buffer_val == -1) call error("set_netcdf_mode: fms2_header_buffer_val not set, call fms2_io_init")
+    err = nf90_enddef(ncid, h_minfree=fms2_header_buffer_val)
     if (err .eq. nf90_enotindefine .or. err .eq. nf90_eperm) then
       return
     endif
@@ -397,7 +425,7 @@ end function get_variable_type
 
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
   result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -410,7 +438,9 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
                                                      !! as.  Allowed values
                                                      !! are: "64bit", "classic",
                                                      !! or "netcdf4". Defaults to
-                                                     !! "64bit".
+                                                     !! "64bit". This overwrites
+                                                     !! the value set in the fms2io
+                                                     !! namelist
   integer, dimension(:), intent(in), optional :: pelist !< List of ranks associated
                                                         !! with this file.  If not
                                                         !! provided, only the current
@@ -419,12 +449,15 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
+                                              !! ".res" to the filename
   logical :: success
 
   integer :: nc_format_param
   integer :: err
   character(len=256) :: buf
   logical :: is_res
+  logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
@@ -432,12 +465,18 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
       return
     endif
   endif
-  !Add ".res" to the file path if necessary.
+  !< Only add ".res" to the file path if is_restart is set to true
+  !! and dont_add_res_to_filename is set to false.
   is_res = .false.
   if (present(is_restart)) then
     is_res = is_restart
   endif
-  if (is_res) then
+  dont_add_res = .false.
+  if (present(dont_add_res_to_filename)) then
+    dont_add_res = dont_add_res_to_filename
+  endif
+
+  if (is_res .and. .not. dont_add_res) then
     call restart_filepath_mangle(buf, trim(path))
   else
     call string_copy(buf, trim(path))
@@ -466,28 +505,33 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart) &
 
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
-    nc_format_param = nf90_64bit_offset
-    call string_copy(fileobj%nc_format, "64bit")
+    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set.")
+    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set.")
+
     if (present(nc_format)) then
       if (string_compare(nc_format, "64bit", .true.)) then
         nc_format_param = nf90_64bit_offset
       elseif (string_compare(nc_format, "classic", .true.)) then
         nc_format_param = nf90_classic_model
       elseif (string_compare(nc_format, "netcdf4", .true.)) then
-        nc_format_param = nf90_hdf5
+        nc_format_param = nf90_netcdf4
       else
         call error("unrecognized netcdf file format "//trim(nc_format)//".")
       endif
       call string_copy(fileobj%nc_format, nc_format)
+    else
+      call string_copy(fileobj%nc_format, trim(fms2_nc_format))
+      nc_format_param = fms2_nc_format_param
     endif
+
     if (string_compare(mode, "read", .true.)) then
-      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
-      err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid)
+      err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "write", .true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode,"overwrite",.true.)) then
-      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid)
+      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     else
       call error("unrecognized file mode "//trim(mode)//".")
     endif
@@ -1707,7 +1751,7 @@ include "compressed_read.inc"
 
 
 !> @brief Wrapper to distinguish interfaces.
-function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart) &
+function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
   result(success)
 
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -1729,9 +1773,11 @@ function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restar
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
+                                               !! ".res" to the filename
   logical :: success
 
-  success = netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart)
+  success = netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename)
 end function netcdf_file_open_wrap
 
 

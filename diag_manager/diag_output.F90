@@ -38,7 +38,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
-       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain
+       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain, &
+       & mpp_get_compute_domain, mpp_get_global_domain
   USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe, mpp_get_current_pelist
   USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
@@ -201,7 +202,7 @@ CONTAINS
      iF ( associated(mpp_get_io_domain(domain)) ) then
        fileob => fileobj
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
-                            domain, nc_format="64bit", is_restart=.false.))
+                            domain, is_restart=.false.))
        fnum_domain = "2d" ! 2d domain
        file_unit = 2
      elSE !< No io domain, so every core is going to write its own file.
@@ -210,15 +211,18 @@ CONTAINS
        write(mype_string,'(I0.4)') mype
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
-                            nc_format="64bit", is_restart=.false.))
-        endif
+                            is_restart=.false.))
+               !< For regional subaxis add the NumFilesInSet attribute, which is added by fms2_io for (other)
+               !< domains with sufficient decomposition info. Note mppnccombine will work with an entry of zero.
+               call register_global_attribute(fileobjND, "NumFilesInSet", 0)
+       endif
        fnum_domain = "nd" ! no domain
        if (file_unit < 0) file_unit = 10
      endiF
     ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        fileob => fileobjU
        if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, trim(fname_no_tile)//".nc", "overwrite", &
-                            domainU, nc_format="64bit", is_restart=.false.))
+                            domainU, is_restart=.false.))
        fnum_domain = "ug" ! unstructured grid
        file_unit=3
     ELSE
@@ -228,7 +232,7 @@ CONTAINS
         call mpp_get_current_pelist(current_pelist)
         if (.not.check_if_open(fileob)) then
                call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc", "overwrite", &
-                            nc_format="64bit", pelist=current_pelist, is_restart=.false.))
+                            pelist=current_pelist, is_restart=.false.))
         endif
        fnum_domain = "nd" ! no domain
        if (file_unit < 0) file_unit = 10
@@ -315,6 +319,8 @@ integer :: domain_size, axis_length, axis_pos
     integer                                    :: id_axis_current
     logical :: is_time_axis_registered
     integer :: istart, iend
+    integer :: gstart, cstart, cend !< Start and end of global and compute domains
+    integer :: clength !< Length of compute domain
     integer :: data_size
     integer, allocatable, dimension(:) :: all_indicies
     ! Make sure err_msg is initialized
@@ -370,7 +376,7 @@ integer :: domain_size, axis_length, axis_pos
                          call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
                       if (allocated(fptr%pelist)) then
                          call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
-                         call register_field(fptr, axis_name, "double", (/axis_name/) )
+                         call register_field(fptr, axis_name, "float", (/axis_name/) )
                          if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                          call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                          call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -383,10 +389,12 @@ integer :: domain_size, axis_length, axis_pos
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                       endif
                     type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
-                         call register_axis(fptr, axis_name, dimension_length=size(axis_data))
-                         istart = lbound(axis_data,1)
-                         iend = ubound(axis_data,1)
-                         call register_field(fptr, axis_name, "double", (/axis_name/) )
+                         call mpp_get_global_domain(domain, begin=gstart, end=gend)  !< Get the global indicies
+                         call mpp_get_compute_domain(domain, begin=cstart, end=cend, size=clength) !< Get the compute indicies
+                         iend =  cend - gstart + 1     !< Get the array indicies for the axis data
+                         istart = cstart - gstart + 1 
+                         call register_axis(fptr, axis_name, dimension_length=clength)
+                         call register_field(fptr, axis_name, "float", (/axis_name/) )
                          call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                          call register_variable_attribute(fptr, axis_name, "units", axis_units)
                          call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -396,6 +404,10 @@ integer :: domain_size, axis_length, axis_pos
                               case (-1)
                                    call register_variable_attribute(fptr, axis_name, "positive", "down")
                          end select
+                         !< For regional subaxis add the "domain_decomposition" attribute, which is added
+                         !< fms2_io for (other) domains with sufficient decomposition info.
+                         call register_variable_attribute(fptr, axis_name, "domain_decomposition", &
+                              (/gstart, gend, cstart, cend/))
                          call write_data(fptr, axis_name, axis_data(istart:iend) )
                     class default
                          call error_mesg("diag_output_mod::write_axis_meta_data", &
@@ -410,7 +422,7 @@ integer :: domain_size, axis_length, axis_pos
                          call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
                       if (allocated(fptr%pelist)) then
                          call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
-                         call register_field(fptr, axis_name, "double", (/axis_name/) )
+                         call register_field(fptr, axis_name, "float", (/axis_name/) )
                       endif
                     type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name )
@@ -420,13 +432,13 @@ integer :: domain_size, axis_length, axis_pos
 !                         call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
                          istart = lbound(axis_data,1)
                          iend = ubound(axis_data,1)
-                         call register_field(fptr, axis_name, "double", (/axis_name/) )
+                         call register_field(fptr, axis_name, "float", (/axis_name/) )
                       endif
                     class default
                          call error_mesg("diag_output_mod::write_axis_meta_data", &
                               "The FmsNetcdfDomain file object is not the right type.", FATAL)
                 end select
-                    call register_field(fileob, axis_name, "double", (/axis_name/) )
+                    call register_field(fileob, axis_name, "float", (/axis_name/) )
                     call register_variable_attribute(fileob, axis_name, "long_name", axis_long_name)
                     call register_variable_attribute(fileob, axis_name, "units", axis_units)
                     call register_variable_attribute(fileob, axis_name, "axis",trim(axis_cart_name))
@@ -476,7 +488,7 @@ integer :: domain_size, axis_length, axis_pos
                   select type (fptr)
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -494,7 +506,7 @@ integer :: domain_size, axis_length, axis_pos
                  select type (fptr)
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -508,7 +520,7 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfDomainFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -523,7 +535,7 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -546,7 +558,7 @@ integer :: domain_size, axis_length, axis_pos
                  select type (fptr)
                    type is (FmsNetcdfDomainFile_t)
                         call register_axis(fptr, trim(axis_name), unlimited )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
 
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
@@ -555,14 +567,14 @@ integer :: domain_size, axis_length, axis_pos
                         if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
                         is_time_axis_registered = .true.
                    type is (FmsNetcdfFile_t)
                         call register_axis(fptr, trim(axis_name), unlimited )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
 
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
@@ -673,7 +685,7 @@ integer :: domain_size, axis_length, axis_pos
                  select type (fptr)
                    type is (FmsNetcdfUnstructuredDomainFile_t)
                         call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -687,7 +699,7 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfDomainFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
@@ -702,7 +714,7 @@ integer :: domain_size, axis_length, axis_pos
                    type is (FmsNetcdfFile_t)
                     if (.not.variable_exists(fptr, axis_name)) then
                         call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, "double", (/axis_name/) )
+                        call register_field(fptr, axis_name, "float", (/axis_name/) )
                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", axis_units)
                         call register_variable_attribute(fptr, axis_name, "long_name", axis_long_name)
                         if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name))
