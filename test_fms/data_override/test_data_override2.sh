@@ -33,7 +33,7 @@ touch input.nml
 printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 run_test test_data_override_ongrid 6
-#rm -rf work_dir
+rm -rf "INPUT"
 
 # Copy to builddir and rename data files for tests.
 #cp $top_srcdir/test_fms/data_override/data_table_base data_table
