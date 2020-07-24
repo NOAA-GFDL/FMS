@@ -79,3 +79,8 @@ To link your application with FMS library:
 ```
 target_link_libraries(appName FMS::fms_r4)
 ```
+
+If your application does not provide a means to locate the NetCDF installation via cmake, this may help:
+```
+-DCMAKE_MODULE_PATH=<FMS_SRC_DIR>/cmake
+```
