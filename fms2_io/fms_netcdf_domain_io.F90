@@ -556,21 +556,21 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                        fileobj%restart_vars(i)%data2d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len_trim(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data3d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len_trim(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data4d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len_trim(chksum))
       endif
     endif
   enddo
