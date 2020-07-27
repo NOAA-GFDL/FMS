@@ -51,7 +51,6 @@ setup.mod: setup.$(OBJEXT)
 setup.$(OBJEXT): argparse.mod
 test_atmosphere_io.$(OBJEXT): setup.mod
 test_io_simple.$(OBJEXT): setup.mod
-
 test_fms2_io.$(OBJEXT): argparse.mod
 
 # Run the test program.
