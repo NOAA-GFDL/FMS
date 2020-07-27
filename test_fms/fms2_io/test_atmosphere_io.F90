@@ -251,7 +251,7 @@ call write_data(fileobj, "var4", double_buffer2d)
 !call register_variable_attribute(fileobjv, "var4", "units", "K")
 !call write_data(fileobjv, "var4", double_buffer2d)
 
-!Add a domain-decompose restart variable with center position.
+!Add a domain-decomposed restart variable with center position.
 names(1) = "lon"
 names(2) = "lat"
 names(3) = "lev"
