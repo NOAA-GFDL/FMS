@@ -17,19 +17,21 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-program test_io_with_mask
+program test_data_override_ongrid
 
-!> @brief  This programs tests fms2io/include/domain_write ability to write
-!! data when the domain contains a mask table. For the points that are
-!! masked out, no data should be writen.
+!> @brief  This programs tests data_override ability to override data for an
+!! on grid case
 
-use   mpp_domains_mod
-use   mpp_mod
-use   data_override_mod
-use   fms2_io_mod
-use   time_manager_mod, only: set_calendar_type, time_type, set_date, NOLEAP
-use   mpi,             only: mpi_barrier, mpi_comm_world
-use   netcdf
+use   mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
+                               mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
+use   mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL
+use   data_override_mod, only: data_override_init, data_override
+use   fms2_io_mod,       only: fms2_io_init
+use   time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
+use   mpi,               only: mpi_barrier, mpi_comm_world
+use   netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
+                               nf90_close, nf90_put_att, nf90_clobber, nf90_64bit_offset, nf90_char, &
+                               nf90_double, nf90_unlimited
 
 implicit none
 
@@ -37,7 +39,7 @@ integer, dimension(2)                 :: layout = (/2,3/) !< Domain layout
 integer                               :: nlon             !< Number of points in x axis
 integer                               :: nlat             !< Number of points in y axis
 type(domain2d)                        :: Domain           !< Domain with mask table
-real, allocatable, dimension(:,:)     :: runoff  !< Data to be written
+real, allocatable, dimension(:,:)     :: runoff           !< Data to be written
 integer                               :: is, isc          !< Starting x index
 integer                               :: ie, iec          !< Ending x index
 integer                               :: js, jsc          !< Starting y index
@@ -53,7 +55,6 @@ real                                  :: expected_result  !< Expected result fro
 
 call mpp_init
 call fms2_io_init
-call data_override_init
 
 !< Create some files needed by data_override!
 if (mpp_pe() .eq. mpp_root_pe()) then
@@ -150,7 +151,7 @@ do i = is, ie
          !< This is the result at the halos it should 999.
          if (runoff(i,j) .ne. 999.) then
             print *, "for i=", i, " and j=", j, " runoff=", runoff(i,j)
-            call mpp_error(FATAL, "test_data_override_ongrid: Result is different from expected answer!")
+            call mpp_error(FATAL, "test_data_override_ongrid: Data was overriden in the halos!!")
          endif
       else
          if (runoff(i,j) .ne. expected_result) then
@@ -165,4 +166,4 @@ deallocate(runoff)
 
 call mpp_exit
 
-end program test_io_with_mask
+end program test_data_override_ongrid
