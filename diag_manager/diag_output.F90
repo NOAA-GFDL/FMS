@@ -17,6 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief diag_output_mod is an integral part of
+!!   diag_manager_mod<. Its function is to write axis-meta-data,
+!!   field-meta-data and field data
+!! @author Seth Underwood
+!! @email gfdl.climate.model.info@noaa.gov
 MODULE diag_output_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -117,16 +123,20 @@ CONTAINS
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
   !   <IN NAME="domainU" TYPE="TYPE(domainUG)" />The unstructure domain </IN>
+  !> @brief Registers the time axis and opens the output file.
   SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
        & all_scalar_or_1d, domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, &
        & attributes)
-    CHARACTER(len=*), INTENT(in)  :: file_name, file_title
-    INTEGER         , INTENT(in)  :: FORMAT
-    INTEGER         , INTENT(out) :: file_unit
+    CHARACTER(len=*), INTENT(in)  :: file_name !< Output file name
+    CHARACTER(len=*), INTENT(in)  :: file_title !< Descriptive title for the file
+    INTEGER         , INTENT(in)  :: FORMAT !< File format (Currently only 'NETCDF' is valid)
+    INTEGER         , INTENT(out) :: file_unit !< File unit number assigned to the output file.  
+                                               !! Needed for subsuquent calls to
+                                               !! diag_output_mod
     LOGICAL         , INTENT(in)  :: all_scalar_or_1d
     TYPE(domain2d)  , INTENT(in)  :: domain
     TYPE(diag_atttype), INTENT(in), DIMENSION(:), OPTIONAL :: attributes
-    TYPE(domainUG), INTENT(in)    :: domainU
+    TYPE(domainUG), INTENT(in)    :: domainU !< The unstructure domain
     type(FmsNetcdfUnstructuredDomainFile_t),intent(inout),target :: fileobjU
     type(FmsNetcdfDomainFile_t),intent(inout),target :: fileobj
     type(FmsNetcdfFile_t),intent(inout),target :: fileobjND
