@@ -342,7 +342,7 @@ logical :: module_is_initialized = .false. !< module is initialized ?
 !!
 subroutine diag_integral_init (Time_init, Time, blon, blat, area_in)
 
-type (time_type),  intent(in), optional :: Time_init <! Initial time to start the integral
+type (time_type),  intent(in), optional :: Time_init !< Initial time to start the integral
 type (time_type),  intent(in), optional :: Time !< current time
 real,dimension(:,:), intent(in), optional :: blon !< array of model latitudes at cell boundaries [radians]
 real,dimension(:,:), intent(in), optional :: blat !< array of model longitudes at cell boundaries [radians]
