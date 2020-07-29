@@ -297,11 +297,13 @@ CONTAINS
   !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
   !     .TRUE. if this file contains any min, max, time_rms, or time_average
   !   </IN>
+  !> @brief Write the axes meta data to file.
   SUBROUTINE write_axis_meta_data(file_unit, axes, fileob, time_ops, time_axis_registered)
-    INTEGER, INTENT(in) :: file_unit, axes(:)
+    INTEGER, INTENT(in) :: file_unit !< File unit number
+    INTEGER, INTENT(in) :: axes(:) !< Array of axis ID's, including the time axis
     class(FmsNetcdfFile_t) , intent(inout),target :: fileob
     class(FmsNetcdfFile_t) ,pointer                        :: fptr
-    LOGICAL, INTENT(in), OPTIONAL :: time_ops
+    LOGICAL, INTENT(in), OPTIONAL :: time_ops !< .TRUE. if this file contains any min, max, time_rms, or time_average
     logical, intent(inout) , optional :: time_axis_registered
     TYPE(domain1d)       :: Domain
 
@@ -801,14 +803,28 @@ integer :: domain_size, axis_length, axis_pos
   !   </IN>
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
+  !> @brief Write the field meta data to file.
+  !! @return diag_fieldtype Field
+  !! @details The meta data for the field is written to the file indicated by file_unit
   FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
        & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
        & use_UGdomain, fileob) result ( Field )
-    INTEGER, INTENT(in) :: file_unit, axes(:)
-    CHARACTER(len=*), INTENT(in) :: name, units, long_name
-    REAL, OPTIONAL, INTENT(in) :: RANGE(2), mval
-    INTEGER, OPTIONAL, INTENT(in) :: pack
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method, standard_name
+    INTEGER, INTENT(in) :: file_unit !< Output file unit number
+    INTEGER, INTENT(in) :: axes(:) !< Array of axis IDs
+    CHARACTER(len=*), INTENT(in) :: name !< Field name
+    CHARACTER(len=*), INTENT(in) :: units !< Field units
+    CHARACTER(len=*), INTENT(in) :: long_name !< Field's long name
+    REAL, OPTIONAL, INTENT(in) :: RANGE(2) !< Valid range (min, max).  If min > max, the range will be ignored
+    REAL, OPTIONAL, INTENT(in) :: mval !< Missing value, must be within valid range
+    INTEGER, OPTIONAL, INTENT(in) :: pack !< Packing flag.  Only valid when range specified.  Valid values:
+                                          !! 1 = 64bit
+                                          !! 2 = 32bit
+                                          !! 4 = 16bit
+                                          !! 8 =  8bit
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name !< Name of variable containing time averaging info
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: time_method !< Name of transformation applied to the time-varying data,
+                                                          !! i.e. "avg", "min", "max"
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard name of field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
     TYPE(diag_atttype), DIMENSION(:), allocatable, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
@@ -1146,8 +1162,12 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !     <TT>diag_field_out</TT> call.
   !   </DESCRIPTION>
   !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
+  !> @brief Writes axis data to file.
+  !! @details Writes axis data to file.  This subroutine is to be called once per file
+  !!     after all <TT>write_meta_data</TT> calls, and before the first
+  !!     <TT>diag_field_out</TT> call.
   SUBROUTINE done_meta_data(file_unit)
-    INTEGER,  INTENT(in)  :: file_unit
+    INTEGER,  INTENT(in)  :: file_unit !< Output file unit number
 
     INTEGER               :: i
 
@@ -1160,7 +1180,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     num_axis_in_file = 0
   END SUBROUTINE done_meta_data
 
-  !> \description Outputs the diagnostic data to a file using fms2_io taking a field object as input
+  !> @brief Outputs the diagnostic data to a file using fms2_io taking a field object as input
   subroutine diag_field_write_field (field, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
     TYPE(diag_fieldtype), INTENT(inout) :: Field
     REAL , INTENT(inout) :: buffer(:,:,:,:)
@@ -1332,6 +1352,8 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !     Return the axis index number.
   !   </DESCRIPTION>
   !   <IN NAME="num" TYPE="INTEGER"></IN>
+  !> @brief Return the axis index number.
+  !! @return Integer index
   FUNCTION get_axis_index(num) RESULT ( index )
     INTEGER, INTENT(in) :: num
 
@@ -1362,6 +1384,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !     Return the global attribute type.
   !   </DESCRIPTION>
   !   <OUT NAME="gAtt" TYPE="TYPE(diag_global_att_type"></OUT>
+  !> @brief Return the global attribute type.
   SUBROUTINE get_diag_global_att(gAtt)
     TYPE(diag_global_att_type), INTENT(out) :: gAtt
 
@@ -1382,6 +1405,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !   <IN NAME="component" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
+  !> @brief Set the global attribute type.
   SUBROUTINE set_diag_global_att(component, gridType, tileName)
     CHARACTER(len=*),INTENT(in) :: component, gridType, tileName
 
