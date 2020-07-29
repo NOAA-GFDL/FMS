@@ -1342,7 +1342,7 @@ CONTAINS
   !  <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name that registered the variable</IN>
   !  <IN NAME="field_name" TYPE="CHARACTER(len=*)">Variable name</IN>
   !> @brief Return the diagnostic field ID of a given variable.
-  !! @return get_diag_field_id will return the (integer) ID returned during the register_diag_field call.
+  !! @return get_diag_field_id will return the ID returned during the register_diag_field call.
   !!   If the variable is not in the diag_table, then the value "DIAG_FIELD_NOT_FOUND" will be
   !!   returned.
   INTEGER FUNCTION get_diag_field_id(module_name, field_name)
@@ -1369,10 +1369,13 @@ CONTAINS
   !   <IN NAME="rel_field" TYPE="TYPE(output_field_type)">Output field that field must correspond to</IN>
   !   <OUT NAME="out_field_id" TYPE="INTEGER">output_field index of related output field</OUT>
   !   <OUT NAME="out_file_id" TYPE="INTEGER">file index of the out_field_id output field</OUT>
+  !> @brief Finds the corresponding related output field and file for a given input field
+  !! @return output_field index of related output field and file index of the out_field_id output field.
   LOGICAL FUNCTION get_related_field(field, rel_field, out_field_id, out_file_id)
-    INTEGER, INTENT(in) :: field
-    TYPE(output_field_type), INTENT(in) :: rel_field
-    INTEGER, INTENT(out) :: out_field_id, out_file_id
+    INTEGER, INTENT(in) :: field !< input field ID to find the corresponding
+    TYPE(output_field_type), INTENT(in) :: rel_field !< Output field that field must correspond to
+    INTEGER, INTENT(out) :: out_field_id !< output_field index of related output field
+    INTEGER, INTENT(out) :: out_file_id !< file index of the out_field_id output field
 
     INTEGER :: i, cm_ind, cm_file_num
     INTEGER :: rel_file
@@ -1442,9 +1445,11 @@ CONTAINS
   !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for area</IN>
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for volume</IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"> </OUT>
+  !> @brief If needed, add cell_measures and associated_file attribute to out field/file
   SUBROUTINE init_field_cell_measures(output_field, area, volume, err_msg)
-    TYPE(output_field_type), INTENT(inout) :: output_field
-    INTEGER, INTENT(in), OPTIONAL :: area, volume
+    TYPE(output_field_type), INTENT(inout) :: output_field !< Output field that needs the cell_measures
+    INTEGER, INTENT(in), OPTIONAL :: area !< Field ID for area
+    INTEGER, INTENT(in), OPTIONAL :: volume !< Field ID for volume
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     INTEGER :: cm_ind, cm_file_num, file_num
