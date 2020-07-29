@@ -1370,7 +1370,7 @@ CONTAINS
   !   <OUT NAME="out_field_id" TYPE="INTEGER">output_field index of related output field</OUT>
   !   <OUT NAME="out_file_id" TYPE="INTEGER">file index of the out_field_id output field</OUT>
   !> @brief Finds the corresponding related output field and file for a given input field
-  !! @return output_field index of related output field and file index of the out_field_id output field.
+  !! @return Logical get_related_field
   LOGICAL FUNCTION get_related_field(field, rel_field, out_field_id, out_file_id)
     INTEGER, INTENT(in) :: field !< input field ID to find the corresponding
     TYPE(output_field_type), INTENT(in) :: rel_field !< Output field that field must correspond to
@@ -1584,6 +1584,7 @@ CONTAINS
   !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
   !   <IN NAME="weight" TYPE="Not Applicable"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
+  !> @return Logical send_data_0d
   LOGICAL FUNCTION send_data_0d(diag_field_id, field, time, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     REAL, INTENT(in) :: field
@@ -1617,6 +1618,7 @@ CONTAINS
   !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
   !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
+  !> @return Logical send_data_1d
   LOGICAL FUNCTION send_data_1d(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     REAL, DIMENSION(:), INTENT(in) :: field
@@ -1680,6 +1682,7 @@ CONTAINS
   !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
   !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
+  !> @return Logical send_data_2d
   LOGICAL FUNCTION send_data_2d(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -1821,6 +1824,7 @@ CONTAINS
   !   <IN NAME="ke_in" TYPE="INTEGER, OPTIONAL"></IN>
   !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
+  !> @return Logical send_data_3d
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -1838,7 +1842,8 @@ CONTAINS
     INTEGER :: ksr, ker
     INTEGER :: i, out_num, file_num, n1, n2, n3, number_of_outputs, ii,f1,f2,f3,f4
     INTEGER :: freq, units, is, js, ks, ie, je, ke, i1, j1,k1, j, k
-    INTEGER, DIMENSION(3) :: l_start, l_end ! local start and end indices on 3 axes for regional output
+    INTEGER, DIMENSION(3) :: l_start !< local start indices on 3 axes for regional output
+    INTEGER, DIMENSION(3) :: l_end !< local end indices on 3 axes for regional output
     INTEGER   :: hi, hj, twohi, twohj  ! halo size in x and y direction
     INTEGER :: sample ! index along the diurnal time axis
     INTEGER :: day,second,tick ! components of the current date
