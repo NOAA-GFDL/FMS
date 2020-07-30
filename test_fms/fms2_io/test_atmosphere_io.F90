@@ -119,12 +119,12 @@ call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
 call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
 call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
 call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
-call register_global_attribute(fileobj, "globalatt5", "some text")
+call register_global_attribute(fileobj, "globalatt5", "some text", str_len=9)
 call register_global_attribute(fileobjv, "globalatt1", real(7., kind=real64))
 call register_global_attribute(fileobjv, "globalatt2", real(4., kind=real32))
 call register_global_attribute(fileobjv, "globalatt3", int(3, kind=int32))
 call register_global_attribute(fileobjv, "globalatt4", int(2, kind=int64))
-call register_global_attribute(fileobjv, "globalatt5", "some text")
+call register_global_attribute(fileobjv, "globalatt5", "some text", str_len=9)
 
 !Add dimensions and corresponding variables to the file.
 !Longitude (domain "x" dimension with center position).
