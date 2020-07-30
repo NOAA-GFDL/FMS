@@ -88,6 +88,7 @@ call create_cubed_sphere_domain(test_params, domain2, (/1, mpp_npes()/ntiles/))
 call mpi_barrier(mpi_comm_world, err)
 call mpi_check(err)
 call random_seed()
+call fms2_io_init()
 
 if (test_params%debug) then
   if (mpp_pe() .eq. 0) then
@@ -109,7 +110,7 @@ call mpp_get_compute_domain(io_domain, xbegin=isc_east, xend=iec_east, xsize=nx_
 call mpp_get_compute_domain(io_domain, ybegin=jsc_north, yend=jec_north, ysize=ny_north, position=north)
 
 !Open a restart file and initialize the file object.
-call open_check(open_file(fileobj, "atmosphere.nc", "overwrite", &
+call open_check(open_file(fileobj, "atmosphere_io.nc", "overwrite", &
                           domain, nc_format="64bit", is_restart=.true.))
 call open_check(open_virtual_file(fileobjv, domain, "atm.nc"))
 
@@ -339,7 +340,7 @@ do i = 1, nt
   call create_data(var7p)
   call create_data(var8p)
 enddo
-timestamp = "00001"
+timestamp = "00002"
 call write_new_restart(fileobjv, timestamp=timestamp)
 
 !Store checksums for non-domain-decomposed/non-restart variables since they are not
@@ -347,10 +348,10 @@ call write_new_restart(fileobjv, timestamp=timestamp)
 !if (fileobj%is_root) then
   var9_chksum = mpp_chksum(var9, pelist=(/mpp_pe()/))
 !endif
-!var5_chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
-!var6_chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
-!var7_chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
-!var8_chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
+var5_chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
+var6_chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
+var7_chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
+var8_chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
 var10_chksum = mpp_chksum(var10, pelist=(/mpp_pe()/))
 !var11_chksum = mpp_chksum(var11(isc-isd+1:isc-isd+1+nx, jsc-jsd+1:jsc-jsd+1+ny, :), pelist=(/mpp_pe()/))
 
@@ -377,7 +378,7 @@ if (open_file(fileobj, "atmosphere.foobar.nc", "read", domain, &
 endif
 
 !Re-open the restart file and re-initialize the file object.
-call open_check(open_file(fileobj, "atmosphere.nc", "read", domain2, &
+call open_check(open_file(fileobj, "atmosphere_io.nc", "read", domain2, &
                           nc_format="64bit", is_restart=.true.))
 
 !Get the sizes of the I/O compute and data domains.
@@ -485,22 +486,33 @@ deallocate(dim_sizes)
 call read_restart(fileobj, unlim_dim_level=nt)
 
 
-!chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
-!if (chksum .ne. var5_chksum) then
-!  call mpp_error(fatal, "checksum for var 5 does not match.")
-!endif
-!chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
-!if (chksum .ne. var6_chksum) then
-!  call mpp_error(fatal, "checksum for var 6 does not match.")
-!endif
-!chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
-!if (chksum .ne. var7_chksum) then
-!  call mpp_error(fatal, "checksum for var 7 does not match.")
-!endif
-!chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
-!if (chksum .ne. var8_chksum) then
-!  call mpp_error(fatal, "checksum for var 8 does not match.")
-!endif
+chksum = mpp_chksum(var5, pelist=(/mpp_pe()/))
+if (chksum .ne. var5_chksum) then
+  call mpp_error(fatal, "checksum for var 5 does not match.")
+else
+  call mpp_error(warning, "checksum for var 5 does match.")
+endif
+
+chksum = mpp_chksum(var6, pelist=(/mpp_pe()/))
+if (chksum .ne. var6_chksum) then
+  call mpp_error(fatal, "checksum for var 6 does not match.")
+else
+  call mpp_error(warning, "checksum for var 6 does match.")
+endif
+
+chksum = mpp_chksum(var7, pelist=(/mpp_pe()/))
+if (chksum .ne. var7_chksum) then
+  call mpp_error(fatal, "checksum for var 7 does not match.")
+else
+  call mpp_error(warning, "checksum for var 7 does match.")
+endif
+
+chksum = mpp_chksum(var8, pelist=(/mpp_pe()/))
+if (chksum .ne. var8_chksum) then
+  call mpp_error(fatal, "checksum for var 8 does not match.")
+else
+  call mpp_error(warning, "checksum for var 8 does match.")
+endif
 
 
 
