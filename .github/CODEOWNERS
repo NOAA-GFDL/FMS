@@ -25,44 +25,5 @@
 # These owners will be the default owners for all the files in the
 # repository.  Unless a later match is found, these owners
 # will be requested for a review when a PR is opened.
-*          @wrongkindofdoctor @thomas-robinson @colingladueNOAA
+*          @wrongkindofdoctor
 
-# GNU autotools files
-Makefile.am      @underwoo @colingladueNOAA
-/configure.ac    @underwoo @colingladueNOAA
-/m4/             @underwoo @colingladueNOAA
-*.m4             @underwoo @colingladueNOAA
-
-# Files specific to GitHub or GitLab
-/.github/        @underwoo @colingladueNOAA
-/.gitlab/        @underwoo @colingladueNOAA
-
-# Testing files
-/.gitlab-ci.yml  @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor @colingladueNOAA
-/.travis.yml     @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor @colingladueNOAA
-/test_fms/       @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor @colingladueNOAA
-
-# Specific component directories
-/affinity/          @bensonr
-/test_fms/affinity/ @bensonr @colingladueNOAA
-
-/block_control/          @bensonr
-/test_fms/block_control/ @bensonr @colingladueNOAA
-
-/data_override/          @GFDL-Eric
-/test_fms/data_override/ @GFDL-Eric @colingladueNOAA
-
-/diag_manager            @thomas-robinson @underwoo @ngs333
-/test_fms/diag_manager/  @thomas-robinson @underwoo @ngs333 @colingladueNOAA
-
-/fv3gfs/          @bensonr
-
-/fms/             @wrongkindofdoctor @thomas-robinson
-/test_fms/fms/    @wrongkindofdoctor @thomas-robinson @colingladueNOAA
-/fms2/            @wrongkindofdoctor @thomas-robinson
-/test_fms/fms2/   @wrongkindofdoctor @thomas-robinson @colingladueNOAA
-
-/libFMS/           @underwoo @colingladueNOAA
-
-/mpp/              @wrongkindofdoctor @thomas-robinson
-/test_fms/mpp/     @wrongkindofdoctor @thomas-robinson @colingladueNOAA
