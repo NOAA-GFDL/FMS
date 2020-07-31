@@ -51,7 +51,6 @@ module data_override_mod
 ! A field can be overriden globally (by default) or users can specify one or two regions in which
 ! data_override will take place, field values outside the region will not be affected.
 !</OVERVIEW>
-#include <fms_platform.h>
 use platform_mod, only: r8_kind
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NOTE, mpp_min, mpp_max, mpp_chksum
@@ -656,6 +655,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
+
   character(len=512) :: filename, filename2 !file containing source data
   character(len=128) :: fieldname ! fieldname used in the data file
   integer            :: i,j
@@ -684,6 +684,12 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer :: is_src, ie_src, js_src, je_src
   logical :: exists
   type(FmsNetcdfFile_t) :: fileobj
+  integer :: startingi !< Starting x index for the compute domain relative to the input buffer
+  integer :: endingi !< Ending x index for the compute domain relative to the input buffer
+  integer :: startingj !< Starting y index for the compute domain relative to the input buffer
+  integer :: endingj !< Ending y index for the compute domain relative to the input buffer
+  integer :: nhalox !< Number of halos in the x direction
+  integer :: nhaloy !< Number of halos in the y direction
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -762,6 +768,13 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      nwindows = 1
      if( nxd == size(data,1) .AND. nyd == size(data,2) ) then  !
         use_comp_domain = .false.
+        !< Determine the size of the halox and the part of `data` that is in the compute domain
+        nhalox = (size(data,1) - nxc)/2
+        nhaloy = (size(data,2) - nyc)/2
+        startingi = lbound(data,1) + nhalox
+        startingj = lbound(data,2) + nhaloy
+        endingi   = ubound(data,1) - nhalox
+        endingj   = ubound(data,2) - nhaloy
      else if ( mod(nxc, size(data,1)) ==0 .AND. mod(nyc, size(data,2)) ==0 ) then
         use_comp_domain = .true.
         nwindows = (nxc/size(data,1))*(nyc/size(data,2))
@@ -794,7 +807,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
         !--- we always only pass data on compute domain
         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
-                                      use_comp_domain=use_comp_domain, nwindows=nwindows)
+                                      use_comp_domain=use_comp_domain, nwindows=nwindows, ongrid=ongrid)
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
@@ -990,16 +1003,30 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
   if(ongrid) then
 !10 do time interp to get data in compute_domain
-     if(data_file_is_2D) then
+    if(data_file_is_2D) then
+        if (use_comp_domain) then
         call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        else
+           !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+           !! size
+           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        endif
         data(:,:,1) = data(:,:,1)*factor
         do i = 2, size(data,3)
            data(:,:,i) = data(:,:,1)
         enddo
      else
+        if (use_comp_domain) then
         call time_interp_external(id_time,time,data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        else
+           !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+           !! size
+           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+        endif
         data = data*factor
      endif
   else  ! off grid case
