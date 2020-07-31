@@ -119,12 +119,12 @@ call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
 call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
 call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
 call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
-call register_global_attribute(fileobj, "globalatt5", "some text")
+call register_global_attribute(fileobj, "globalatt5", "some text", str_len=9)
 call register_global_attribute(fileobjv, "globalatt1", real(7., kind=real64))
 call register_global_attribute(fileobjv, "globalatt2", real(4., kind=real32))
 call register_global_attribute(fileobjv, "globalatt3", int(3, kind=int32))
 call register_global_attribute(fileobjv, "globalatt4", int(2, kind=int64))
-call register_global_attribute(fileobjv, "globalatt5", "some text")
+call register_global_attribute(fileobjv, "globalatt5", "some text", str_len=9)
 
 !Add dimensions and corresponding variables to the file.
 !Longitude (domain "x" dimension with center position).
@@ -133,11 +133,11 @@ call register_axis(fileobj, "lon", "x")
 call register_field(fileobj, "lon", "double", names(1:1))
 call create_data(double_buffer, nx)
 call write_data(fileobj, "lon", double_buffer)
-call register_variable_attribute(fileobj, "lon", "units", "degrees")
+call register_variable_attribute(fileobj, "lon", "units", "degrees", str_len=7)
 call register_axis(fileobjv, "lon", "x")
 call register_field(fileobjv, "lon", "double", names(1:1))
 call write_data(fileobjv, "lon", double_buffer)
-call register_variable_attribute(fileobjv, "lon", "units", "degrees")
+call register_variable_attribute(fileobjv, "lon", "units", "degrees", str_len=7)
 
 !Longitude2 (domain "x" dimension with east position).
 names(1) = "lon2"
@@ -145,11 +145,11 @@ call register_axis(fileobj, "lon2", "x", domain_position=east)
 call register_field(fileobj, "lon2", "double", names(1:1))
 call create_data(double_buffer, nx+1)
 call write_data(fileobj, "lon2", double_buffer)
-call register_variable_attribute(fileobj, "lon2", "units", "radians")
+call register_variable_attribute(fileobj, "lon2", "units", "radians", str_len=7)
 call register_axis(fileobjv, "lon2", "x", domain_position=east)
 call register_field(fileobjv, "lon2", "double", names(1:1))
 call write_data(fileobjv, "lon2", double_buffer)
-call register_variable_attribute(fileobjv, "lon2", "units", "radians")
+call register_variable_attribute(fileobjv, "lon2", "units", "radians", str_len=7)
 
 !Latitude (domain "y" dimension with center position).
 names(1) = "lat"
@@ -157,11 +157,11 @@ call register_axis(fileobj, "lat", "y", domain_position=center)
 call register_field(fileobj, "lat", "double", names(1:1))
 call create_data(double_buffer, ny)
 call write_data(fileobj, "lat", double_buffer)
-call register_variable_attribute(fileobj, "lat", "units", "degrees")
+call register_variable_attribute(fileobj, "lat", "units", "degrees", str_len=7)
 call register_axis(fileobjv, "lat", "y", domain_position=center)
 call register_field(fileobjv, "lat", "double", names(1:1))
 call write_data(fileobjv, "lat", double_buffer)
-call register_variable_attribute(fileobjv, "lat", "units", "degrees")
+call register_variable_attribute(fileobjv, "lat", "units", "degrees", str_len=7)
 
 !Latitude2 (domain "y" dimension wiht north position).
 names(1) = "lat2"
@@ -169,11 +169,11 @@ call register_axis(fileobj, "lat2", "y", domain_position=north)
 call register_field(fileobj, "lat2", "double", names(1:1))
 call create_data(double_buffer, ny+1)
 call write_data(fileobj, "lat2", double_buffer)
-call register_variable_attribute(fileobj, "lat", "units2", "radians")
+call register_variable_attribute(fileobj, "lat", "units2", "radians", str_len=7)
 call register_axis(fileobjv, "lat2", "y", domain_position=north)
 call register_field(fileobjv, "lat2", "double", names(1:1))
 call write_data(fileobjv, "lat2", double_buffer)
-call register_variable_attribute(fileobjv, "lat", "units2", "radians")
+call register_variable_attribute(fileobjv, "lat", "units2", "radians", str_len=7)
 
 !Height.
 names(1) = "lev"
@@ -181,11 +181,11 @@ call register_axis(fileobj, "lev", test_params%nz)
 call register_field(fileobj, "lev", "double", names(1:1))
 call create_data(double_buffer, test_params%nz)
 call write_data(fileobj, "lev", double_buffer)
-call register_variable_attribute(fileobj, "lev", "units", "mb")
+call register_variable_attribute(fileobj, "lev", "units", "mb", str_len=2)
 call register_axis(fileobjv, "lev", test_params%nz)
 call register_field(fileobjv, "lev", "double", names(1:1))
 call write_data(fileobjv, "lev", double_buffer)
-call register_variable_attribute(fileobjv, "lev", "units", "mb")
+call register_variable_attribute(fileobjv, "lev", "units", "mb", str_len=2)
 
 
 !Height2.
@@ -194,20 +194,20 @@ call register_axis(fileobj, "lay", test_params%nz-1)
 call register_field(fileobj, "lay", "double", names(1:1))
 call create_data(double_buffer, test_params%nz-1)
 call write_data(fileobj, "lay", double_buffer)
-call register_variable_attribute(fileobj, "lay", "units", "mb")
+call register_variable_attribute(fileobj, "lay", "units", "mb", str_len=2)
 call register_axis(fileobjv, "lay", test_params%nz-1)
 call register_field(fileobjv, "lay", "double", names(1:1))
 call write_data(fileobjv, "lay", double_buffer)
-call register_variable_attribute(fileobjv, "lay", "units", "mb")
+call register_variable_attribute(fileobjv, "lay", "units", "mb", str_len=2)
 
 !Time.
 names(1) = "time"
 call register_axis(fileobj, "time", unlimited)
 call register_field(fileobj, "time", "float", names(1:1))
-call register_variable_attribute(fileobj, "time", "units", "years")
+call register_variable_attribute(fileobj, "time", "units", "years", str_len=5)
 call register_axis(fileobjv, "time", unlimited)
 call register_field(fileobjv, "time", "float", names(1:1))
-call register_variable_attribute(fileobjv, "time", "units", "years")
+call register_variable_attribute(fileobjv, "time", "units", "years", str_len=5)
 
 !String length.
 call register_axis(fileobj, "strlen", 256)
@@ -245,10 +245,10 @@ names(1) = "lon"
 names(2) = "lat"
 call create_data(double_buffer2d, (/nx, ny/))
 call register_field(fileobj, "var4", "double", names(1:2))
-call register_variable_attribute(fileobj, "var4", "units", "K")
+call register_variable_attribute(fileobj, "var4", "units", "K", str_len=1)
 call write_data(fileobj, "var4", double_buffer2d)
 !call register_field(fileobjv, "var4", "double", names(1:2))
-!call register_variable_attribute(fileobjv, "var4", "units", "K")
+!call register_variable_attribute(fileobjv, "var4", "units", "K", str_len=1)
 !call write_data(fileobjv, "var4", double_buffer2d)
 
 !Add a domain-decomposed restart variable with center position.
@@ -258,10 +258,10 @@ names(3) = "lev"
 names(4) = "time"
 call create_data(var5, (/nx, ny, test_params%nz/))
 call register_restart_field(fileobj, "var5", var5, names(1:4))
-call register_variable_attribute(fileobj, "var5", "units", "K")
+call register_variable_attribute(fileobj, "var5", "units", "K", str_len=1)
 call create_data(var5p, (/nx, ny, test_params%nz/))
 call register_restart_field(fileobjv, "var5", var5p, names(1:4))
-call register_variable_attribute(fileobjv, "var5", "units", "K")
+call register_variable_attribute(fileobjv, "var5", "units", "K", str_len=1)
 
 !Add a domain-decomposed restart variable with east position.
 names(1) = "lon2"
@@ -270,10 +270,10 @@ names(3) = "lev"
 names(4) = "time"
 call create_data(var6, (/nx+1, ny, test_params%nz/))
 call register_restart_field(fileobj, "var6", var6, names(1:4))
-call register_variable_attribute(fileobj, "var6", "units", "K")
+call register_variable_attribute(fileobj, "var6", "units", "K", str_len=1)
 call create_data(var6p, (/nx+1, ny, test_params%nz/))
 call register_restart_field(fileobjv, "var6", var6p, names(1:4))
-call register_variable_attribute(fileobjv, "var6", "units", "K")
+call register_variable_attribute(fileobjv, "var6", "units", "K", str_len=1)
 
 !Add a domain-decomposed restart variable with north position.
 names(1) = "lon"
@@ -282,10 +282,10 @@ names(3) = "lev"
 names(4) = "time"
 call create_data(var7, (/nx, ny+1, test_params%nz/))
 call register_restart_field(fileobj, "var7", var7, names(1:4))
-call register_variable_attribute(fileobj, "var7", "units", "K")
+call register_variable_attribute(fileobj, "var7", "units", "K", str_len=1)
 call create_data(var7p, (/nx, ny+1, test_params%nz/))
 call register_restart_field(fileobjv, "var7", var7p, names(1:4))
-call register_variable_attribute(fileobjv, "var7", "units", "K")
+call register_variable_attribute(fileobjv, "var7", "units", "K", str_len=1)
 
 !Add a domain-decomposed restart variable with corner (east+north) position.
 names(1) = "lon2"
@@ -294,17 +294,17 @@ names(3) = "lev"
 names(4) = "time"
 call create_data(var8, (/nx+1, ny+1, test_params%nz/))
 call register_restart_field(fileobj, "var8", var8, names(1:4))
-call register_variable_attribute(fileobj, "var8", "units", "K")
+call register_variable_attribute(fileobj, "var8", "units", "K", str_len=1)
 call create_data(var8p, (/nx+1, ny+1, test_params%nz/))
 call register_restart_field(fileobjv, "var8", var8p, names(1:4))
-call register_variable_attribute(fileobjv, "var8", "units", "K")
+call register_variable_attribute(fileobjv, "var8", "units", "K", str_len=1)
 
 !Add a non-domain-decomposed variable.
 names(1) = "lay"
 names(2) = "time"
 call create_data(var9, test_params%nz-1)
 call register_field(fileobj, "var9", "double", names(1:2))
-call register_variable_attribute(fileobj, "var9", "units", "K")
+call register_variable_attribute(fileobj, "var9", "units", "K", str_len=1)
 
 !Add a domain decomposed variable.
 names(1) = "lon"
@@ -312,7 +312,7 @@ names(2) = "lat"
 names(3) = "time"
 call create_data(var10, (/nx, ny/))
 call register_field(fileobj, "var10", "int", names(1:3))
-call register_variable_attribute(fileobj, "var10", "units", "K")
+call register_variable_attribute(fileobj, "var10", "units", "K", str_len=1)
 
 !Add a variable whose user-level buffers include space for halos.
 names(1) = "lon"

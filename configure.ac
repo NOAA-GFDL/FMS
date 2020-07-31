@@ -25,7 +25,7 @@ AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2020.02],
+  [2020.02-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -222,7 +222,7 @@ if test $enable_setting_flags = yes; then
 
   # Add mpp io flags
   if test $enable_mpp_io = yes; then
-    CPPFLAGS="-Duse_mpp_io $CPPFLAGS"
+    AC_DEFINE([use_mpp_io], [1], [Set to compile using mpp_io])
   fi
 fi
 
