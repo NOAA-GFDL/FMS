@@ -18,7 +18,7 @@
 !***********************************************************************
 
 MODULE diag_output_mod
-#ifndef use_mpp_io
+
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
   ! </CONTACT>
@@ -27,15 +27,21 @@ MODULE diag_output_mod
   !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
   !   field-meta-data and field data
   ! </OVERVIEW>
+#ifndef use_mpp_io
 use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
-
   USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, &
        & mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
        & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_get_field_name, &
        & fillin_fieldtype
+#else
+#include <fms_platform.h>
+  USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, mpp_open,mpp_write_meta,&
+       & mpp_write, mpp_flush, mpp_close, mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
+       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write
+#endif
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
@@ -58,7 +64,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   use mpp_domains_mod, only: mpp_get_UG_domain_pelist
   use mpp_mod,         only: mpp_gather
   use mpp_mod,         only: uppercase,lowercase
+#ifndef use_mpp_io
   use fms2_io_mod
+#endif
   use axis_utils2_mod,   only: axis_edges
 
 
@@ -66,8 +74,12 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   PRIVATE
   PUBLIC :: diag_output_init, write_axis_meta_data, write_field_meta_data, done_meta_data,&
-       & diag_fieldtype, get_diag_global_att, set_diag_global_att, diag_field_write, diag_write_time
-
+       & diag_fieldtype, get_diag_global_att, set_diag_global_att
+#ifndef use_mpp_io
+  PUBLIC :: diag_field_write, diag_write_time
+#else
+  PUBLIC :: diag_field_out
+#endif
   TYPE(diag_global_att_type), SAVE :: diag_global_att
 
   INTEGER, PARAMETER      :: NETCDF1 = 1
@@ -86,9 +98,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   LOGICAL :: module_is_initialized = .FALSE.
 
+#ifndef use_mpp_io
   ! Include variable "version" to be written to log file.
   character(len=*), parameter :: version = 'unknown'
-
 
   interface diag_field_write
      module procedure diag_field_write_field
@@ -1310,166 +1322,9 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
      if (allocated(name_time)) deallocate(name_time)
      if (associated(fptr)) nullify(fptr)
   end subroutine diag_write_time
-  ! </SUBROUTINE>
 
-  ! <FUNCTION NAME="get_axis_index">
-  !   <OVERVIEW>
-  !     Return the axis index number.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     INTEGER FUNCTION get_axis_index(num)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return the axis index number.
-  !   </DESCRIPTION>
-  !   <IN NAME="num" TYPE="INTEGER"></IN>
-  FUNCTION get_axis_index(num) RESULT ( index )
-    INTEGER, INTENT(in) :: num
-
-    INTEGER :: index
-    INTEGER :: i
-
-    !---- get the array index for this axis type ----
-    !---- set up pointers to axistypes ----
-    !---- write axis meta data for new axes ----
-    index = 0
-    DO i = 1, num_axis_in_file
-       IF ( num == axis_in_file(i) ) THEN
-          index = i
-          EXIT
-       END IF
-    END DO
-  END FUNCTION get_axis_index
-  ! </FUNCTION>
-
-  ! <SUBROUTINE NAME="get_diag_global_att">
-  !   <OVERVIEW>
-  !     Return the global attribute type.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     CALL get_diag_global_att(gAtt)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return the global attribute type.
-  !   </DESCRIPTION>
-  !   <OUT NAME="gAtt" TYPE="TYPE(diag_global_att_type"></OUT>
-  SUBROUTINE get_diag_global_att(gAtt)
-    TYPE(diag_global_att_type), INTENT(out) :: gAtt
-
-    gAtt=diag_global_att
-  END SUBROUTINE get_diag_global_att
-  ! </SUBROUTINE>
-
-  ! <SUBROUTINE NAME="set_diag_global_att">
-  !   <OVERVIEW>
-  !     Set the global attribute type.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     CALL set_diag_global_att(component, gridType, timeName)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Set the global attribute type.
-  !   </DESCRIPTION>
-  !   <IN NAME="component" TYPE="CHARACTER(len=*)"></IN>
-  !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
-  !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
-  SUBROUTINE set_diag_global_att(component, gridType, tileName)
-    CHARACTER(len=*),INTENT(in) :: component, gridType, tileName
-
-    ! The following two lines are set to remove compile time warnings
-    ! about 'only used once'.
-    CHARACTER(len=64) :: component_tmp
-    component_tmp = component
-    ! Don't know how to set these for specific component
-    ! Want to be able to say
-    ! if(output_file has component) then
-    diag_global_att%grid_type = gridType
-    diag_global_att%tile_name = tileName
-    ! endif
-  END SUBROUTINE set_diag_global_att
-  ! </SUBROUTINE>
-
-!END MODULE diag_output_mod
-#else
-!***********************************************************************
-!*                   GNU Lesser General Public License
-!*
-!* This file is part of the GFDL Flexible Modeling System (FMS).
-!*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
-!*
-!* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
-!***********************************************************************
-
-#include <fms_platform.h>
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-
-  ! <OVERVIEW> <TT>diag_output_mod</TT> is an integral part of
-  !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
-  !   field-meta-data and field data
-  ! </OVERVIEW>
-
-  USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, mpp_open,  mpp_write_meta,&
-       & mpp_write, mpp_flush, mpp_close, mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
-       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write
-  USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
-       &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
-       & domainUG, null_domainUG,&
-       & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.)
-  USE mpp_mod, ONLY: mpp_npes, mpp_pe
-  USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
-       & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
-       & get_domainUG
-  USE diag_data_mod, ONLY: diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype
-  USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
-  USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, fms_error_handler, FATAL
-
-#ifdef use_netCDF
-  USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
-#endif
-
-  use mpp_domains_mod, only: mpp_get_UG_io_domain
-  use mpp_domains_mod, only: mpp_get_UG_domain_npes
-  use mpp_domains_mod, only: mpp_get_UG_domain_pelist
-  use mpp_mod,         only: mpp_gather
-  use mpp_mod,         only: uppercase
-
-  IMPLICIT NONE
-
-  PRIVATE
-  PUBLIC :: diag_output_init, write_axis_meta_data, write_field_meta_data, done_meta_data,&
-       & diag_field_out, diag_flush, diag_fieldtype, get_diag_global_att, set_diag_global_att
-
-  TYPE(diag_global_att_type), SAVE :: diag_global_att
-
-  INTEGER, PARAMETER      :: NETCDF1 = 1
-  INTEGER, PARAMETER      :: mxch  = 128
-  INTEGER, PARAMETER      :: mxchl = 256
-  INTEGER                 :: current_file_unit = -1
-  INTEGER, DIMENSION(2,2) :: max_range = RESHAPE((/ -32767, 32767, -127,   127 /),(/2,2/))
-!  DATA max_range / -32767, 32767, -127,   127 /
-  INTEGER, DIMENSION(2)   :: missval = (/ -32768, -128 /)
-
-  INTEGER, PARAMETER      :: max_axis_num = 20
-  INTEGER                 :: num_axis_in_file = 0
-  INTEGER, DIMENSION(max_axis_num) :: axis_in_file
-  LOGICAL, DIMENSION(max_axis_num) :: time_axis_flag, edge_axis_flag
-  TYPE(axistype), DIMENSION(max_axis_num), SAVE :: Axis_types
-
-  LOGICAL :: module_is_initialized = .FALSE.
-
-  ! Include variable "version" to be written to log file.
+#else 
+!for use_mpp_io
 #include<file_version.h>
 
 CONTAINS
@@ -2262,6 +2117,7 @@ CONTAINS
 
     CALL mpp_flush (file_unit)
   END SUBROUTINE diag_flush
+#endif
   ! </SUBROUTINE>
 
 
@@ -2341,5 +2197,4 @@ CONTAINS
     ! endif
   END SUBROUTINE set_diag_global_att
   ! </SUBROUTINE>
-#endif
 END MODULE diag_output_mod
