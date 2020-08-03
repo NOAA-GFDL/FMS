@@ -63,7 +63,13 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_output_init, write_axis_meta_data,&
-       & write_field_meta_data, done_meta_data, diag_field_write, diag_write_time
+       & write_field_meta_data, done_meta_data
+#ifndef use_mpp_io
+  USE diag_output_mod, ONLY: diag_field_write, diag_write_time
+#endif
+#ifdef use_mpp_io
+  USE diag_output_mod, ONLY: diag_field_out
+#endif
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
