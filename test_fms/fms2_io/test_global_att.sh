@@ -17,66 +17,17 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-*~
-*.a
-*.o
-*.mod
-*.s
-*.out
-pathnames*
-/*.zip
-/*.tar.gz
-*.swp
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
 
-Makefile
-# From https://github.com/github/gitignore/blob/master/Autotools.gitignore
-# http://www.gnu.org/software/automake
-Makefile.in
-/ar-lib
-/mdate-sh
-/py-compile
-/test-driver
-/tap-driver.sh
-/ylwrap
-*.log
-*.trs
+# Author: Uriel Ramirez 6/30/20
+#
+# Set common test settings.
+. ../test_common.sh
 
-# http://www.gnu.org/software/autoconf
-autom4te.cache
-/autoscan.log
-/autoscan-*.log
-/aclocal.m4
-/compile
-/config.guess
-/config.h.in
-/config.log
-/config.status
-/config.sub
-/configure
-/configure.scan
-/depcomp
-/install-sh
-/missing
-/stamp-h1
-.deps
+# make an input.nml for mpp_init to read
+touch input.nml
 
-# https://www.gnu.org/software/libtool/
-libtool
-/ltmain.sh
-*.lo
-*.la
-.libs
+# run the tests
+run_test test_global_att 1
 
-# http://www.gnu.org/software/texinfo
-/texinfo.tex
-
-# http://www.gnu.org/software/m4/
-m4/libtool.m4
-m4/ltoptions.m4
-m4/ltsugar.m4
-m4/ltversion.m4
-m4/lt~obsolete.m4
-
-# ignore build and install trees (from cmake)
-build*/
-install*/

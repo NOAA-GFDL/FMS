@@ -19,7 +19,6 @@
 
 
 module time_interp_external2_mod
-#include  <fms_platform.h>
 !
 !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
 !
@@ -47,6 +46,7 @@ module time_interp_external2_mod
 ! </DATA>
 !</NAMELIST>
 
+  use platform_mod, only : DOUBLE_KIND => r8_kind
   use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file
@@ -226,7 +226,7 @@ module time_interp_external2_mod
 
     function init_external_field(file,fieldname,domain,desired_units,&
          verbose,axis_names, axis_sizes,override,correct_leap_year_inconsistency,&
-         permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts )
+         permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts, ongrid )
 
       character(len=*), intent(in)            :: file,fieldname
       logical, intent(in), optional           :: verbose
@@ -239,6 +239,9 @@ module time_interp_external2_mod
       integer,          intent(out), optional :: ierr
       integer,          intent(in),  optional :: nwindows
       logical, optional                       :: ignore_axis_atts
+      logical, optional                       :: ongrid !< Optional flag indicating if the data is ongrid
+
+      logical :: ongrid_local !< Flag indicating if the data is ongrid
 
       integer :: init_external_field
 
@@ -346,6 +349,16 @@ module time_interp_external2_mod
          nx = iecomp-iscomp+1; ny = jecomp-jscomp+1
          call mpp_get_data_domain(domain,isdata,iedata,jsdata,jedata,dxsize,dxsize_max,dysize,dysize_max)
          call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
+         ongrid_local = .false.
+         if (present(ongrid)) ongrid_local = ongrid
+         !> If this is an ongrid case, set is[e]js[e]data to be equal to the compute domain.
+         !! This is what it is used to allocate space for the data!
+         if (ongrid_local) then
+              isdata=iscomp
+              iedata=iecomp
+              jsdata=jscomp
+              jedata=jecomp
+         endif
       elseif(use_comp_domain1) then
          call mpp_error(FATAL,"init_external_field:"//&
               " use_comp_domain=true but domain is not present")
