@@ -14,7 +14,7 @@ The following external libraries are required when building libFMS
 
 We strive to have libFMS built with as many C and Fortran compilers on as many
 Unix/Linux type systems as possible.  However, internally, we only use libFMS
-compiled with the Intel compilers.  Some group have had success using libFMS
+compiled with the Intel compilers.  Some groups have had success using libFMS
 when compiled with the GNU C and Fortran compilers.
 
 ## MPI Support
@@ -22,8 +22,7 @@ when compiled with the GNU C and Fortran compilers.
 The default way to build libMPI is with MPI support.  We have found that using
 the MPI aware compiler, or the MPI compiler wrappers (mpif90, mpicc, etc.), in
 general, offer the best results when building with MPI support.  If you decide
-to not use an MPI aware you should pass the include and library locations to
-the `configure` script through the `CPPFLAGS`, `FCFLAGS` and `LDFLAGS` variables.
+to not use an MPI aware compiler, you should pass the include and library locations to the build system.
 
 libFMS can be built without MPI support (sometimes called "no-comm mode").  To
 build libFMS without MPI support, pass to `configure` the `--disable-mpi` flag.
