@@ -677,8 +677,7 @@ integer :: domain_size, axis_length, axis_pos
           ! decomposition
           CALL mpp_get_global_domain(Domain, begin=gbegin, END=gend, size=gsize)
           CALL mpp_get_layout(Domain, ndivs)
-          IF ( ndivs .EQ. 1 ) THEN
-          ELSE
+          IF ( ndivs .NE. 1 ) THEN
              IF ( ALLOCATED(axis_extent) ) DEALLOCATE(axis_extent)
              ALLOCATE(axis_extent(0:ndivs-1))
              CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
