@@ -1933,14 +1933,6 @@ CONTAINS
         ENDIF
     ENDIF
     IF ( domainU .ne. null_domainUG) then
-!          ntileMe = mpp_get_UG_current_ntile(domainU)
-!          ALLOCATE(tile_id(ntileMe))
-!          tile_id = mpp_get_UG_tile_id(domainU)
-!          fname = TRIM(filename)
-!           ntiles = mpp_get_UG_domain_ntiles(domainU)
-!           my_tile_id = mpp_get_UG_domain_tile_id(domainU)
-!          CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
-!          DEALLOCATE(tile_id)
           fname = TRIM(filename)
           CALL get_mosaic_tile_file_ug(fname,filename,domainU)
     ENDIF
@@ -1964,7 +1956,6 @@ CONTAINS
 #endif
     END IF
     !> update fnum_for_domain with the correct domain
-!     fnum_for_domain(file) = fnum_domain
     files(file)%bytes_written = 0
     ! Does this file contain time_average fields?
     time_ops = .FALSE.
@@ -2640,26 +2631,14 @@ CONTAINS
      files(file)%time_index = files(file)%time_index + 1
      files(file)%rtime_current = dif
      if (fnum_for_domain(file) == "2d") then
-!        if (allocated(fileobj(file)%time_name)) then
           call diag_write_time (fileobj(file), files(file)%rtime_current, files(file)%time_index,   &
                                 time_name=fileobj(file)%time_name)
-!        else
-!          call diag_write_time (fileobj(file), files(file)%rtime_current, files(file)%time_index)
-!        endif
      elseif (fnum_for_domain(file) == "ug") then
-!        if (allocated(fileobj(file)%time_name)) then
           call diag_write_time (fileobjU(file), files(file)%rtime_current, files(file)%time_index,  &
                                 time_name=fileobjU(file)%time_name)
-!        else
-!          call diag_write_time (fileobjU(file), files(file)%rtime_current, files(file)%time_index)
-!        endif
      elseif (fnum_for_domain(file) == "nd") then
-!        if (allocated(fileobj(file)%time_name)) then
           call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index, &
                                 time_name=fileobjND(file)%time_name)
-!        else
-!          call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index)
-!        endif
      else
           call error_mesg("diag_util_mod::diag_data_out","Error opening the file "//files(file)%name,fatal)
      endif
@@ -2853,7 +2832,7 @@ CONTAINS
       ! File is stil open.  This is to protect when the diag_table has no Fields
       ! going to this file, and it was never opened (b/c diag_data_out was not
       ! called)
-      if (fnum_for_domain(file) == "2d" )then!.or. (fnum_for_domain(file) == "nd" .and. mpp_pe() == mpp_root_pe()) ) then
+      if (fnum_for_domain(file) == "2d" )then
           if (check_if_open(fileobj(file))) call close_file (fileobj(file) )
       elseif (fnum_for_domain(file) == "nd") then
           if (check_if_open(fileobjND(file)) ) then
