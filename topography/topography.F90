@@ -54,6 +54,8 @@ use            fms_mod, only: check_nml_error, stdlog,    &
                               mpp_error
 #ifndef use_mpp_io
 use        fms2_io_mod, only: read_data, FmsNetcdfFile_t, file_exists, open_file
+#else 
+use         fms_io_mod, only: read_data, file_exist, open_ieee32_file
 #endif
 use      constants_mod, only: PI
 use            mpp_mod, only: input_nml_file
@@ -1268,6 +1270,7 @@ end interface
  logical :: open_topog_file
  real    :: r_ipts, r_jpts
  integer :: namelen
+ integer :: unit
 
  namelen = len(trim(filename))
   if ( file_exist(filename) .AND. filename(namelen-2:namelen) == '.nc') then
@@ -1282,7 +1285,7 @@ end interface
      if ( file_exist(filename) ) then
         if (mpp_pe() == mpp_root_pe()) call mpp_error ('topography_mod', &
              'Reading native formatted input data file: '//filename, NOTE)
-        unit = open_ieee32_file (trim(filename), 'read')
+        unit = open_ieee32_file(trim(filename), 'read')
         read (unit) ipts, jpts
         open_topog_file = .true.
      else
@@ -1450,7 +1453,7 @@ end interface
  character(len=*), intent(in) :: ifile
  real, intent(out) :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
  integer :: nc
-
+ integer :: unit
    nc = len_trim(ifile)
 
 ! note: ipts,jpts,unit are global
