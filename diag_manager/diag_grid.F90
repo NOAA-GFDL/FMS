@@ -1394,8 +1394,8 @@ CONTAINS
   END FUNCTION gCirDistance
   ! </FUNCTION>
 
-  !Find the i,j indices and distance of the a-grid point nearest to
-  !the inputted lat,lon point.
+  !> @brief Find the i,j indices and distance of the a-grid point nearest to
+  !!   the inputted lat,lon point.
   SUBROUTINE find_nearest_agrid_index(lat, &
                                       lon, &
                                       minI, &
