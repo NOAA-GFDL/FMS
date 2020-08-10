@@ -2778,8 +2778,9 @@ CONTAINS
   !     Write the static data to the file.
   !   </DESCRIPTION>
   !   <IN NAME="file" TYPE="INTEGER">File ID.</IN>
+  !> @brief Output all static fields in this file
   SUBROUTINE write_static(file)
-    INTEGER, INTENT(in) :: file
+    INTEGER, INTENT(in) :: file !< File ID.
 
     INTEGER :: j, i, input_num
 
@@ -2822,8 +2823,9 @@ CONTAINS
   !     <TT>err_msg</TT> indicates no duplicates found.
   !   </DESCRIPTION>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message.  If empty, then no duplicates found.</OUT>
+  !> @brief Checks to see if <TT>output_name</TT> and <TT>output_file</TT> are unique in <TT>output_fields</TT>.
   SUBROUTINE check_duplicate_output_fields(err_msg)
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Error message.  If empty, then no duplicates found.
 
     INTEGER :: i, j, tmp_file
     CHARACTER(len=128) :: tmp_name
@@ -2865,9 +2867,10 @@ CONTAINS
   !   </DESCRIPTION>
   !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field to allocate memory for attribute</INOUT>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  !> @brief Allocates the atttype in out_field
   SUBROUTINE attribute_init_field(out_field, err_msg)
-    TYPE(output_field_type), INTENT(inout) :: out_field
-    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
+    TYPE(output_field_type), INTENT(inout) :: out_field !< output field to allocate memory for attribute
+    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg !< Error message, passed back to calling function
 
     INTEGER :: istat
 
@@ -2910,10 +2913,13 @@ CONTAINS
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)">Name of the attribute</IN>
   !   <IN NAME="prepend_value" TYPE="CHARACTER(len=*)">Value to prepend</IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
+  !> @brief Prepends the attribute value to an already existing attribute.  If the
+  !!     attribute isn't yet defined, then creates a new attribute
   SUBROUTINE prepend_attribute_field(out_field, att_name, prepend_value, err_msg)
-    TYPE(output_field_type), INTENT(inout) :: out_field
-    CHARACTER(len=*), INTENT(in) :: att_name, prepend_value
-    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
+    TYPE(output_field_type), INTENT(inout) :: out_field !< output field that will get the attribute
+    CHARACTER(len=*), INTENT(in) :: att_name !< Name of the attribute
+    CHARACTER(len=*), INTENT(in) :: prepend_value !< Value to prepend
+    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg !< Error message, passed back to calling routine
 
     INTEGER :: length, i, this_attribute
     CHARACTER(len=512) :: err_msg_local
@@ -3010,9 +3016,10 @@ CONTAINS
   !   </DESCRIPTION>
   !   <INOUT NAME="out_file" TYPE="TYPE(file_type)">output file to allocate memory for attribute</INOUT>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  !> @brief Allocates the atttype in out_file
   SUBROUTINE attribute_init_file(out_file, err_msg)
-    TYPE(file_type), INTENT(inout) :: out_file
-    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
+    TYPE(file_type), INTENT(inout) :: out_file !< output file to allocate memory for attribute
+    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg !< Error message, passed back to calling function
 
     INTEGER :: istat
 
@@ -3054,10 +3061,13 @@ CONTAINS
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)">Name of the attribute</IN>
   !   <IN NAME="prepend_value" TYPE="CHARACTER(len=*)">Value to prepend</IN>
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
+  !> @brief Prepends the attribute value to an already existing attribute.  If the
+  !!     attribute isn't yet defined, then creates a new attribute
   SUBROUTINE prepend_attribute_file(out_file, att_name, prepend_value, err_msg)
-    TYPE(file_type), INTENT(inout) :: out_file
-    CHARACTER(len=*), INTENT(in) :: att_name, prepend_value
-    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
+    TYPE(file_type), INTENT(inout) :: out_file !< output file that will get the attribute
+    CHARACTER(len=*), INTENT(in) :: att_name !< Name of the attribute
+    CHARACTER(len=*), INTENT(in) :: prepend_value !< Value to prepend
+    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg !< Error message, passed back to calling routine
 
     INTEGER :: length, i, this_attribute
     CHARACTER(len=512) :: err_msg_local
