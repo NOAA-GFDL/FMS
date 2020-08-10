@@ -69,7 +69,7 @@ use platform_mod
 
   ! Module variables
   ! Parameters
-  ! Include variable "version" to be written to log file.
+  ! Include variable "version" to be written to log file
 #include<file_version.h>
 
 !----------
