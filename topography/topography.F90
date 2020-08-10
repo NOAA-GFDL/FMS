@@ -101,12 +101,12 @@ end interface
                          water_file = 'DATA/navy_pctwater.data'
    namelist /topography_nml/ topog_file, water_file
 ! </NAMELIST>
-#ifndef use_mpp_io
    integer, parameter    :: TOPOG_INDEX = 1
    integer, parameter    :: WATER_INDEX = 2
+#ifndef use_mpp_io
    type(FmsNetcdfFile_t) :: fileobj(2)
-   logical :: file_is_opened(2) = .false.
 #endif
+   logical :: file_is_opened(2) = .false.
 !-----------------------------------------------------------------------
 ! --- resolution of the topography data set ---
 ! <DATASET NAME="">
