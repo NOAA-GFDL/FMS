@@ -42,7 +42,7 @@
 !!   Each input field associated with one or several output fields via array of
 !!   indices output_fields; each output field points to the single "parent" input
 !!   field with the input_field index, and to the output file with the output_file
-!!   index
+!!   index.
 MODULE diag_data_mod
 use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
