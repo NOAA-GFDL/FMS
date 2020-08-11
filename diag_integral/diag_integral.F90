@@ -107,7 +107,11 @@ use fms_mod,          only:  open_file, error_mesg, &
                              mpp_pe, mpp_root_pe,&
                              FATAL, write_version_number, &
                              stdlog
+#ifndef use_mpp_io
 use fms2_io_mod,      only:  file_exists
+#else
+use  fms_io_mod,      only:  file_exists=>file_exist
+#endif
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init
 use ensemble_manager_mod, only : get_ensemble_id, get_ensemble_size
