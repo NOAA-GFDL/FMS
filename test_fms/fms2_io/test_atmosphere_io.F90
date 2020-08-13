@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program test_atmosphere_io
+#ifndef use_mpp_io
 use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64, error_unit, output_unit
 use mpi
 use fms2_io_mod
@@ -599,5 +600,5 @@ endif
 
 
 
-
+#endif
 end program test_atmosphere_io
