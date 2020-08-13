@@ -580,10 +580,16 @@ contains
     real, optional, intent(in) :: ymin_comp !< Min of latitude-like axis on compute domain.
     real, optional, intent(in) :: ymax_comp !< Max of latitude-like axis on compute domain.
     ! data domain boundaries
-    real, optional, intent(in) :: xmin_data, xmax_data, ymin_data, ymax_data
+    real, optional, intent(in) :: xmin_data !< Min of longitude-like axis on data domain.
+    real, optional, intent(in) :: xmax_data !< Max of longitude-like axis on data domain.
+    real, optional, intent(in) :: ymin_data !< Min of latitude-like axis on data domain.
+    real, optional, intent(in) :: ymax_data !< Max of latitude-like axis on data domain.
     ! global boundaries (only specify those if domain is periodic)
-    real, optional, intent(in) :: xmin_glob, xmax_glob, ymin_glob, ymax_glob
-    character(len=*), intent(out) :: ermesg
+    real, optional, intent(in) :: xmin_glob !< Min of longitude-like axis on global domain.
+    real, optional, intent(in) :: xmax_glob !< Max of longitude-like axis on global domain.
+    real, optional, intent(in) :: ymin_glob !< Min of latitude-like axis on global domain.
+    real, optional, intent(in) :: ymax_glob !< Max of latitude-like axis on global domain.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     ermesg = ''
     if(present(xmin_comp)) self%comm%xcmin = xmin_comp
@@ -633,11 +639,13 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Given an MPP based deomposition, set the PE numbers that are adjacent to this
+  !!   processor.
   subroutine drifters_set_pe_neighbors(self, domain, ermesg)
 
-    type(drifters_type) :: self
-    _TYPE_DOMAIN2D      :: domain
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    _TYPE_DOMAIN2D      :: domain !< MPP domain.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     ermesg = ''
 
@@ -723,9 +731,11 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Use this method to append the new trajectory positions and the interpolated
+  !!   probe fields to a netCDF file.
   subroutine drifters_save(self, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque daata structure.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer nf, np
 
@@ -761,9 +771,11 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Use this method after setting the domain boundaries
+  !!   (<TT>drifters_set_domain</TT>) to spread the particles across PE
   subroutine drifters_distribute(self, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque handle.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     real x, y
     integer i, nptot, nd
@@ -842,6 +854,8 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Write restart file. Gather all the particle positions distributed
+  !!   across PE domains on root PE and save the data in netCDF file.
   subroutine drifters_write_restart(self, filename, &
        & x1, y1, geolon1, &
        & x2, y2, geolat2, &
