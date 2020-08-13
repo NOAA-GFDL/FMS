@@ -26,7 +26,9 @@ use   mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get
                                mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
 use   mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL
 use   data_override_mod, only: data_override_init, data_override
+#ifndef use_mpp_io
 use   fms2_io_mod,       only: fms2_io_init
+#endif
 use   time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
 use   mpi,               only: mpi_barrier, mpi_comm_world
 use   netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
@@ -54,7 +56,9 @@ real, allocatable, dimension(:,:,:)   :: runoff_in        !< Data to be written 
 real                                  :: expected_result  !< Expected result from data_override
 
 call mpp_init
+#ifndef use_mpp_io
 call fms2_io_init
+#endif
 
 !< Create some files needed by data_override!
 if (mpp_pe() .eq. mpp_root_pe()) then
