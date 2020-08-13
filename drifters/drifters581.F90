@@ -21,6 +21,42 @@
 #include "fms_switches.h"
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
+!> @file
+!! @brief <TT>Drifters_mod</TT>is a module designed to advect a set of particles, in parallel or
+!!   sequentially, given an prescribed velocity field.
+!! @author Alexander Pletzer
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!! @details Drifters are idealized point particles with positions that evolve in time according
+!! to a prescribed velocity field, starting from some initial conditions. Drifters have
+!! no mass, no energy, no size, and no friction and therefore have no impact on the
+!! dynamics of the underlying system. The only feature that distinguishes a drifter
+!! from another is its trajectory. This makes drifters ideal for tracking pollution
+!! clouds and probing fields (e.g. temperature, salinity) along ocean currents, to name
+!! a few applications.
+!! Drifters can mimic real experiments such as the Argo floats
+!! http://www.metoffice.com/research/ocean/argo/ukfloats.html.
+!!
+!! When run in parallel, on a 2d decomposed domain, <TT>drifters_mod</TT> will handle all the
+!! bookkeeping and communication transparently for the user. This involves adding/removing
+!! drifters as they enter/leave a processor element (PE) domain. Note that the number of drifters
+!! can vary greatly both between PE domains and within a PE domain in the course of a simulation; the drifters'
+!! module will also manage dynamically the memory for the user.
+!!
+!! There are a number of basic assumptions which could make the drifters' module
+!! ill-suited for some tasks. First and foremost, it is assumed that the motion of
+!! drifters is not erratic but follows deterministic trajectories. Furthermore,
+!! drifters should not cross both compute and data domain boundaries within less
+!! than a time step. This limitation is imposed by the Runge-Kutta integration
+!! scheme, which must be able to complete, within a time step, a trajectory
+!! calculation that starts inside the compute domain and ends inside the data domain. Therefore, the drifters,
+!! as they are presently modelled, are unlikely to work for very fast objects.
+!! This constraint also puts a upper limit to the domain decomposition, although
+!! it can often be remedied by increasing the number of ghost nodes.
+!!
+!! Another fundamental assumption is that the (e.g. velocity) fields are structured,
+!! on a per PE domain basis. There is no support for locally nested or unstrucured
+!! meshes. Meshes need not be smooth and continuous across PE domains, however.
 module drifters_mod
 #include <fms_platform.h>
 ! <CONTACT EMAIL="Alexander.Pletzer@noaa.gov">
@@ -131,6 +167,8 @@ module drifters_mod
 #include<file_version.h>
   real :: DRFT_EMPTY_ARRAY(0)
 
+  !> @brief Be sure to update drifters_new, drifters_del and drifters_copy_new
+  !!   when adding members
   type drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
@@ -138,31 +176,37 @@ module drifters_mod
      type(drifters_input_type) :: input
      type(drifters_io_type)    :: io
      type(drifters_comm_type)  :: comm
-     real    :: dt             ! total dt, over a complete step
+     real    :: dt             !< total dt, over a complete step
      real    :: time
      ! fields
      real, allocatable :: fields(:,:)
      ! velocity field axes
-     real, allocatable :: xu(:)
-     real, allocatable :: yu(:)
-     real, allocatable :: zu(:)
-     real, allocatable :: xv(:)
-     real, allocatable :: yv(:)
-     real, allocatable :: zv(:)
-     real, allocatable :: xw(:)
-     real, allocatable :: yw(:)
-     real, allocatable :: zw(:)
+     real, allocatable :: xu(:) !< velocity field axes
+     real, allocatable :: yu(:) !< velocity field axes
+     real, allocatable :: zu(:) !< velocity field axes
+     real, allocatable :: xv(:) !< velocity field axes
+     real, allocatable :: yv(:) !< velocity field axes
+     real, allocatable :: zv(:) !< velocity field axes
+     real, allocatable :: xw(:) !< velocity field axes
+     real, allocatable :: yw(:) !< velocity field axes
+     real, allocatable :: zw(:) !< velocity field axes
      ! Runge Kutta coefficients holding intermediate results (positions)
-     real, allocatable :: temp_pos(:,:)
-     real, allocatable :: rk4_k1(:,:)
-     real, allocatable :: rk4_k2(:,:)
-     real, allocatable :: rk4_k3(:,:)
-     real, allocatable :: rk4_k4(:,:)
+     real, allocatable :: temp_pos(:,:) !< Runge Kutta coefficients holding 
+                                        !! intermediate results (positions)
+     real, allocatable :: rk4_k1(:,:) !< Runge Kutta coefficients holding 
+                                      !! intermediate results (positions)
+     real, allocatable :: rk4_k2(:,:) !< Runge Kutta coefficients holding 
+                                      !! intermediate results (positions)
+     real, allocatable :: rk4_k3(:,:) !< Runge Kutta coefficients holding 
+                                      !! intermediate results (positions)
+     real, allocatable :: rk4_k4(:,:) !< Runge Kutta coefficients holding 
+                                      !! intermediate results (positions)
      ! store filenames for convenience
-     character(len=MAX_STR_LEN) :: input_file, output_file
+     character(len=MAX_STR_LEN) :: input_file !< store filenames for convenience
+     character(len=MAX_STR_LEN) :: output_file !< store filenames for convenience
      ! Runge Kutta stuff
-     integer :: rk4_step
-     logical :: rk4_completed
+     integer :: rk4_step !< Runge Kutta stuff
+     logical :: rk4_completed !< Runge Kutta stuff
      integer :: nx, ny
      logical, allocatable   :: remove(:)
   end type drifters_type
@@ -218,12 +262,16 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Will read positions stored in the netCDF file <TT>input_file</TT>.
+  !!   The trajectories will be saved in files <TT>output_file.PE</TT>,
+  !!   one file per PE domain.
   subroutine drifters_new(self, input_file, output_file, ermesg)
 
-    type(drifters_type) :: self
-    character(len=*), intent(in)  :: input_file
-    character(len=*), intent(in)  :: output_file
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(in)  :: input_file !< NetCDF input file name containing initial positions.
+    character(len=*), intent(in)  :: output_file !< NetCDF output file. Will contain trajectory 
+                                                 !! positions and interpolated fields.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer nd, nf, npdim, i
     character(len=6) :: pe_str
@@ -322,9 +370,10 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+!> @brief Destructor, Call this to reclaim memory.
   subroutine drifters_del(self, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer flag
     ermesg = ''
@@ -378,10 +427,12 @@ contains
 ! </SUBROUTINE>
 !
   !============================================================================
+  !> @brief Copy a drifter state into a new state. Note: this will not open new files; this will
+  !!   copy all members into a new container.
   subroutine drifters_copy_new(new_instance, old_instance)
 
-    type(drifters_type), intent(in)    :: old_instance
-    type(drifters_type), intent(inout) :: new_instance
+    type(drifters_type), intent(in)    :: old_instance !< Old data structure.
+    type(drifters_type), intent(inout) :: new_instance !< New data structure.
 
     character(len=MAX_STR_LEN) :: ermesg
 
@@ -512,14 +563,22 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Set the compute, data, and global domain boundaries.
+  !! @details The data domain extends beyond the compute domain and is shared between
+  !!   two or more PE domains. A particle crossing the compute domain boundary
+  !!   will trigger a communication with one or more neighboring domains. A particle
+  !!   leaving the data domain will be removed from the list of particles.
   subroutine drifters_set_domain(self, &
        & xmin_comp, xmax_comp, ymin_comp, ymax_comp, &
        & xmin_data, xmax_data, ymin_data, ymax_data, &
        & xmin_glob, xmax_glob, ymin_glob, ymax_glob, &
        & ermesg)
-    type(drifters_type) :: self
+    type(drifters_type) :: self !< Opaque data structure.
     ! compute domain boundaries
-    real, optional, intent(in) :: xmin_comp, xmax_comp, ymin_comp, ymax_comp
+    real, optional, intent(in) :: xmin_comp !< Min of longitude-like axis on compute domain.
+    real, optional, intent(in) :: xmax_comp !< Max of longitude-like axis on compute domain.
+    real, optional, intent(in) :: ymin_comp !< Min of latitude-like axis on compute domain.
+    real, optional, intent(in) :: ymax_comp !< Max of latitude-like axis on compute domain.
     ! data domain boundaries
     real, optional, intent(in) :: xmin_data, xmax_data, ymin_data, ymax_data
     ! global boundaries (only specify those if domain is periodic)
