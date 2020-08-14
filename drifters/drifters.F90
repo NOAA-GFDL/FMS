@@ -863,17 +863,22 @@ contains
     ! gather all positions and ids and save the result in
     ! self%input data structure on PE "root", then write restart file
 
-    type(drifters_type) :: self
-    character(len=*), intent(in)  :: filename
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(in)  :: filename !< Restart file name.
 
     ! if these optional arguments are passed, the positions will
     ! mapped to lon/lat degrees and saved in the file.
-    real, intent(in), optional    :: x1(:), y1(:), geolon1(:,:)
-    real, intent(in), optional    :: x2(:), y2(:), geolat2(:,:)
+    real, intent(in), optional    :: x1(:) !< Pseudo-longitude axis supporting longitudes.
+    real, intent(in), optional    :: y1(:) !< Pseudo-latitude axis supporting longitudes.
+    real, intent(in), optional    :: geolon1(:,:) !< Longitude array (x1, y1).
+    real, intent(in), optional    :: x2(:) !< Pseudo-longitude axis supporting latitudes.
+    real, intent(in), optional    :: y2(:) !< Pseudo-latitude axis supporting latitudes.
+    real, intent(in), optional    :: geolat2(:,:) !< Latitudes array (x2, y2)
 
-    integer, intent(in), optional :: root    ! root pe
-    integer, intent(in), optional :: mycomm  ! MPI communicator
-    character(len=*), intent(out) :: ermesg
+
+    integer, intent(in), optional :: root    !< root pe
+    integer, intent(in), optional :: mycomm  !< MPI communicator
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer :: np
     logical :: do_save_lonlat
@@ -964,11 +969,18 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Set velocity field axes.
+  !! @details Velocity axis components may be located on different grids or cell faces. For instance, zonal (u)
+  !!  and meridional (v) velcity components are staggered by half a cell size in Arakawa's C and D grids.
+  !!  This call will set individual axes for each components do as to allow interpolation of the velocity
+  !!  field on arbitrary positions.
   subroutine drifters_set_v_axes(self, component, x, y, z, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(in)  :: component
-    real, intent(in)              :: x(:), y(:), z(:)
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(in)  :: component !< Velocity component: either 'u', 'v', or 'w'.
+    real, intent(in)              :: x(:) !< X-axis.
+    real, intent(in)              :: y(:) !< Y-axis.
+    real, intent(in)              :: z(:) !< Z-axis.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer ier, nx, ny, nz
 
@@ -1065,12 +1077,14 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Set boundaries of "data" and "compute" domains
+  !! @details Each particle will be tracked sol long is it is located in the data domain.
   subroutine drifters_set_domain_bounds(self, domain, backoff_x, backoff_y, ermesg)
-    type(drifters_type) :: self
-    _TYPE_DOMAIN2D      :: domain
-    integer, intent(in) ::  backoff_x ! particles leaves domain when crossing ied-backoff_x
-    integer, intent(in) ::  backoff_y ! particles leaves domain when crossing jed-backoff_y
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    _TYPE_DOMAIN2D      :: domain !< Instance of Domain2D (see mpp_domain)
+    integer, intent(in) ::  backoff_x !< particles leaves domain when crossing ied-backoff_x
+    integer, intent(in) ::  backoff_y !< particles leaves domain when crossing jed-backoff_y
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     ermesg = ''
 
@@ -1142,21 +1156,29 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Interpolates positions onto longitude/latitude grid.
+  !! @details In many cases, the integrated positions will not be longitudes  or latitudes. This call
+  !!  can be ionvoked to recover the longitude/latitude positions from the "logical" positions.
   subroutine drifters_positions2lonlat(self, positions, &
        &                                        x1, y1, geolon1, &
        &                                        x2, y2, geolat2, &
        &                                        lons, lats, &
        &                                        ermesg)
 
-    type(drifters_type) :: self
+    type(drifters_type) :: self !< Opaque data structure.
     ! Input positions
-    real, intent(in)    :: positions(:,:)
+    real, intent(in)    :: positions(:,:) !< Logical positions.
     ! Input mesh
-    real, intent(in)    :: x1(:), y1(:), geolon1(:,:) ! geolon1(x1, y1)
-    real, intent(in)    :: x2(:), y2(:), geolat2(:,:) ! geolat2(x2, y2)
+    real, intent(in)    :: x1(:) !< X-axis of "geolon1" field.
+    real, intent(in)    :: y1(:) !< Y-axis of "geolon1" field.
+    real, intent(in)    :: geolon1(:,:) !< Y-axis of "geolon1" field.
+    real, intent(in)    :: x2(:) !< X-axis of "geolat2" field.
+    real, intent(in)    :: y2(:) !< Y-axis of "geolat2" field.
+    real, intent(in)    :: geolat2(:,:) !< Latitude field as an array of (x2, y2)
     ! Output lon/lat
-    real, intent(out)   :: lons(:), lats(:)
-    character(len=*), intent(out) :: ermesg
+    real, intent(out)   :: lons(:) !< Returned longitudes.
+    real, intent(out)   :: lats(:) !< Returned latitudes.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     real    fvals(2**self%core%nd), ts(self%core%nd)
     integer np, ij(2), ip, ier, n1s(2), n2s(2), i, j, iertot
@@ -1251,11 +1273,12 @@ contains
 !  </OUT>
 ! </SUBROUTINE>
 !
+  !> @brief Print Runge-Kutta check sums. Useful for debugging only.
   subroutine drifters_print_checksums(self, pe, ermesg)
 
-    type(drifters_type) :: self
-    integer, intent(in), optional :: pe
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque handle.
+    integer, intent(in), optional :: pe !< Processor element.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer, parameter :: i8 = selected_int_kind(13)
     integer(i8) :: mold, chksum_pos, chksum_k1, chksum_k2, chksum_k3, chksum_k4
