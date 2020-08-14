@@ -326,9 +326,9 @@ contains
     type(drifters_comm_type)   :: self
     type(drifters_core_type)   :: drfts
     real, intent(inout)           :: new_positions(:,:)
-    integer, intent(in), optional :: comm ! MPI communicator
-    logical, intent(in), optional :: remove(:) ! Set to True for particles that should be removed
-    integer, intent(in), optional :: max_add_remove ! max no of particles to add/remove
+    integer, intent(in), optional :: comm !< MPI communicator
+    logical, intent(in), optional :: remove(:) !< Set to True for particles that should be removed
+    integer, intent(in), optional :: max_add_remove !< max no of particles to add/remove
 
 #ifdef _SERIAL
 ! serial code
@@ -605,8 +605,8 @@ contains
     real, intent(in)           :: lons(:), lats(:)
     logical, intent(in)        :: do_save_lonlat
     character(len=*), intent(in)  :: filename
-    integer, intent(in), optional :: root    ! root pe
-    integer, intent(in), optional :: mycomm  ! MPI communicator
+    integer, intent(in), optional :: root    !< root pe
+    integer, intent(in), optional :: mycomm  !< MPI communicator
 
     character(len=128) :: ermesg
 
