@@ -18,6 +18,8 @@
 !***********************************************************************
 !!#include <fms_platform.h>
 
+!> @file
+!! @email gfdl.climate.model.info@noaa.gov
 module drifters_io_mod
   implicit none
   private
@@ -36,8 +38,8 @@ module drifters_io_mod
 
   type drifters_io_type
      real                 :: time
-     integer              :: it ! time index
-     integer              :: it_id  ! infinite axis index
+     integer              :: it !< time index
+     integer              :: it_id !< infinite axis index
      integer              :: ncid
      integer              :: nc_positions, nc_fields, nc_ids, nc_time, nc_index_time
      logical              :: enddef
@@ -49,8 +51,8 @@ contains
   subroutine drifters_io_new(self, filename, nd, nf, ermesg)
     type(drifters_io_type)        :: self
     character(len=*), intent(in)  :: filename
-    integer, intent(in)           :: nd  ! number of dims
-    integer, intent(in)           :: nf  ! number of fields
+    integer, intent(in)           :: nd  !< number of dims
+    integer, intent(in)           :: nf  !< number of fields
     character(len=*), intent(out) :: ermesg
 
     integer ier, nc_it_id, nc_nd, nc_nf
@@ -235,12 +237,12 @@ contains
   subroutine drifters_io_write(self, time, np, nd, nf, ids, positions, fields, ermesg)
     type(drifters_io_type)        :: self
     real, intent(in)              :: time
-    integer, intent(in)           :: np    ! number of dirfters
-    integer, intent(in)           :: nd    ! number of dimensions
-    integer, intent(in)           :: nf    ! number of fields
-    integer, intent(in)           :: ids(np)          ! of size np
-    real, intent(in)              :: positions(nd,np) ! nd times np
-    real, intent(in)              :: fields(nf,np)    ! nf times np
+    integer, intent(in)           :: np    !< number of dirfters
+    integer, intent(in)           :: nd    !< number of dimensions
+    integer, intent(in)           :: nf    !< number of fields
+    integer, intent(in)           :: ids(np)          !< of size np
+    real, intent(in)              :: positions(nd,np) !< nd times np
+    real, intent(in)              :: fields(nf,np)    !< nf times np
     character(len=*), intent(out) :: ermesg
 
     integer ier, i
