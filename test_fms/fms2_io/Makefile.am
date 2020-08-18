@@ -29,7 +29,8 @@ AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms2_io -I${top_builddir}/
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att
+check_PROGRAMS = test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
+                 test_get_mosaic_tile_grid
 
 # This is the source code for the test.
 test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90 create_atmosphere_domain.inc \
@@ -41,6 +42,7 @@ test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 \
 test_io_simple_SOURCES = test_io_simple.F90 argparse.F90 setup.F90
 test_global_att_SOURCES = test_global_att.F90
 test_io_with_mask_SOURCES=test_io_with_mask.F90
+test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh
 

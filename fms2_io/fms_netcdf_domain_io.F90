@@ -93,7 +93,7 @@ public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
 public :: is_dimension_registered
-
+public :: get_mosaic_tile_grid
 
 interface compute_global_checksum
   module procedure compute_global_checksum_2d
@@ -556,21 +556,21 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                        fileobj%restart_vars(i)%data2d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data3d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data4d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len(chksum))
       endif
     endif
   enddo
@@ -817,6 +817,36 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
 end subroutine get_global_io_domain_indices
 
+!> @brief Read a mosaic_file and get the grid filename for the current tile or
+!!        for the tile specified
+subroutine get_mosaic_tile_grid(grid_file,mosaic_file, domain, tile_count)
+  character(len=*), intent(out)          :: grid_file !< Filename of the grid file for the
+                                                      !! current domain tile or for tile
+                                                      !! specified in tile_count
+  character(len=*), intent(in)           :: mosaic_file !< Filename that will be read
+  type(domain2D),   intent(in)           :: domain !< Input domain
+  integer,          intent(in), optional :: tile_count !< Optional argument indicating
+                                                       !! the tile you want grid file name for
+                                                       !! this is for when a pe is in more than
+                                                       !! tile.
+  integer                                :: tile !< Current domian tile or tile_count
+  integer                                :: ntileMe !< Total number of tiles in the domain
+  integer, dimension(:), allocatable     :: tile_id !< List of tiles in the domain
+  type(FmsNetcdfFile_t)                  :: fileobj !< Fms2io file object
+
+  tile = 1
+  if(present(tile_count)) tile = tile_count
+  ntileMe = mpp_get_current_ntile(domain)
+  allocate(tile_id(ntileMe))
+  tile_id = mpp_get_tile_id(domain)
+
+  if (netcdf_file_open(fileobj, mosaic_file, "read")) then
+      call netcdf_read_data(fileobj, "gridfiles", grid_file, corner=tile_id(tile))
+      grid_file = 'INPUT/'//trim(grid_file)
+      call netcdf_file_close(fileobj)
+  endif
+
+end subroutine get_mosaic_tile_grid
 
 include "register_domain_restart_variable.inc"
 include "domain_read.inc"
