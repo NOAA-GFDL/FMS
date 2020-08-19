@@ -48,7 +48,7 @@ public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
 
-!> @brief A linked list of strings.
+!> @brief A linked list of strings
 type :: char_linked_list
   character(len=128) :: string
   type(char_linked_list), pointer :: head => null()
