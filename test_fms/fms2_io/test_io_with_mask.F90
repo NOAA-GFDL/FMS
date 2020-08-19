@@ -18,7 +18,7 @@
 !***********************************************************************
 
 program test_io_with_mask
-
+#ifndef use_mpp_io
 !> @brief  This programs tests fms2io/include/domain_write ability to write
 !! data when the domain contains a mask table. For the points that are
 !! masked out, no data should be writen. 
@@ -170,5 +170,5 @@ endif
 
 
 call fms_end
-
+#endif
 end program test_io_with_mask

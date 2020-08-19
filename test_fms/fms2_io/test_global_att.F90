@@ -18,7 +18,7 @@
 !***********************************************************************
 
 program test_global_att
-
+#ifndef use_mpp_io
 use   fms2_io_mod
 use   mpp_mod
 use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64
@@ -100,5 +100,5 @@ if (buf_int64_1d(1) /= int(2, kind=int64) .or. buf_int64_1d(2) /= int(4, kind=in
 if (trim(buf_str) /= "some text") call mpp_error(FATAL, "test_global_att: error reading buf_str")
 
 call mpp_exit()
-
+#endif
 end program
