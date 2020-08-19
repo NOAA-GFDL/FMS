@@ -768,13 +768,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      nwindows = 1
      if( nxd == size(data,1) .AND. nyd == size(data,2) ) then  !
         use_comp_domain = .false.
-        !< Determine the size of the halox and the part of `data` that is in the compute domain
-        nhalox = (size(data,1) - nxc)/2
-        nhaloy = (size(data,2) - nyc)/2
-        startingi = lbound(data,1) + nhalox
-        startingj = lbound(data,2) + nhaloy
-        endingi   = ubound(data,1) - nhalox
-        endingj   = ubound(data,2) - nhaloy
      else if ( mod(nxc, size(data,1)) ==0 .AND. mod(nyc, size(data,2)) ==0 ) then
         use_comp_domain = .true.
         nwindows = (nxc/size(data,1))*(nyc/size(data,2))
@@ -918,6 +911,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   else !curr_position >0
      dims = override_array(curr_position)%dims
      comp_domain = override_array(curr_position)%comp_domain
+     nxc = comp_domain(2)-comp_domain(1) + 1
+     nyc = comp_domain(4)-comp_domain(3) + 1
      is_src      = override_array(curr_position)%is_src
      ie_src      = override_array(curr_position)%ie_src
      js_src      = override_array(curr_position)%js_src
@@ -1002,6 +997,16 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
       call mpp_error(FATAL, "data_override: dims(3) .NE. 1 and size(data,3) .NE. dims(3)")
 
   if(ongrid) then
+    if (.not. use_comp_domain) then
+        !< Determine the size of the halox and the part of `data` that is in the compute domain
+        nhalox = (size(data,1) - nxc)/2
+        nhaloy = (size(data,2) - nyc)/2
+        startingi = lbound(data,1) + nhalox
+        startingj = lbound(data,2) + nhaloy
+        endingi   = ubound(data,1) - nhalox
+        endingj   = ubound(data,2) - nhaloy
+    endif
+
 !10 do time interp to get data in compute_domain
     if(data_file_is_2D) then
         if (use_comp_domain) then
@@ -1024,7 +1029,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         else
            !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
            !! size
-           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif
         data = data*factor
