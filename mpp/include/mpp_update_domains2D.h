@@ -51,7 +51,7 @@
 
       integer                 :: update_position, update_whalo, update_ehalo, update_shalo, update_nhalo, ntile
 
-      integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=-9999
+      integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=-9999
       integer          :: tile, max_ntile
       character(len=3) :: text
       logical          :: set_mismatch, is_complete
@@ -248,14 +248,14 @@
       type(DomainCommunicator2D),pointer,save :: d_comm =>NULL()
       logical                       :: do_redist,free_comm
       integer                       :: lsize
-      integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS),save :: l_addrs_in=-9999, l_addrs_out=-9999
+      integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: l_addrs_in=-9999, l_addrs_out=-9999
       integer, save :: isize_in=0,jsize_in=0,ke_in=0,l_size=0
       integer, save :: isize_out=0,jsize_out=0,ke_out=0
       logical       :: set_mismatch
       integer       :: ke
       character(len=2) :: text
       MPP_TYPE_ :: d_type
-      integer(LONG_KIND) :: floc_in, floc_out
+      integer(i8_kind) :: floc_in, floc_out
 
       floc_in = 0
       floc_out = 0
@@ -418,7 +418,7 @@
       integer                                :: grid_offset_type
       logical                                :: exchange_uv
 
-      integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrsx=-9999, f_addrsy=-9999
+      integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrsx=-9999, f_addrsy=-9999
       logical          :: do_update, is_complete
       integer, save    :: isize(2)=0,jsize(2)=0,ke=0,l_size=0, offset_type=0, list=0
       integer, save    :: whalosz, ehalosz, shalosz, nhalosz

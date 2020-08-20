@@ -650,7 +650,7 @@ function mpp_domain_UG_is_tile_root_pe(domain) result(is_root)
 
    !<Inputs/Outputs
     type(domainUG),intent(in) :: domain
-    logical(INT_KIND)         :: is_root
+    logical(l8_kind)         :: is_root
 
     if (domain%pe .eq. domain%tile_root_pe) then
         is_root = .true.
@@ -669,7 +669,7 @@ function mpp_get_io_domain_UG_layout(domain) result(io_layout)
 
    !<Inputs/Outputs
     type(domainUG),intent(in) :: domain
-    integer(INT_KIND)         :: io_layout
+    integer(i4_kind)         :: io_layout
 
     io_layout = domain%io_layout
 
@@ -720,7 +720,7 @@ subroutine mpp_deallocate_domainUG(domain)
     type(domainUG),intent(inout) :: domain
 
    !<Local variables
-    integer(INT_KIND) :: i !<Loop variable.
+    integer(i4_kind) :: i !<Loop variable.
 
     if (associated(domain%list)) then
         deallocate(domain%list)
@@ -801,7 +801,7 @@ end subroutine mpp_deallocate_domainUG
   end function mpp_domainUG_ne
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_r8_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -812,9 +812,8 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r8_3d
 #include <mpp_unstruct_pass_data.h>
 
-#ifdef OVERLOAD_R4
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_r4_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -824,10 +823,9 @@ end subroutine mpp_deallocate_domainUG
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r4_3d
 #include <mpp_unstruct_pass_data.h>
-#endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_i4_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -839,7 +837,7 @@ end subroutine mpp_deallocate_domainUG
 #include <mpp_unstruct_pass_data.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(i4_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_l4_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -859,10 +857,9 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #include <mpp_global_field_ug.h>
 
-#ifndef no_8byte_integers
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i8_2d
 #undef MPP_GLOBAL_FIELD_UG_3D_
@@ -872,11 +869,9 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #include <mpp_global_field_ug.h>
-#endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r4_2d
 #undef MPP_GLOBAL_FIELD_UG_3D_
@@ -886,9 +881,8 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #include <mpp_global_field_ug.h>
-#endif
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i4_2d
@@ -899,5 +893,5 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #include <mpp_global_field_ug.h>

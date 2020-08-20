@@ -23,7 +23,11 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I${top_srcdir}/include
+AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS += -I${top_builddir}/constants
+AM_CPPFLAGS += -I${top_builddir}/fms
+AM_CPPFLAGS += -I${top_builddir}/mpp
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libtime_manager.la libget_cal_time.la

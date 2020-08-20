@@ -21,7 +21,6 @@
 !> @file
 !! @email gfdl.climate.model.info@noaa.gov
 module drifters_comm_mod
-#include <fms_platform.h>
 
 #ifdef _SERIAL
 
@@ -39,6 +38,7 @@ module drifters_comm_mod
   use mpp_domains_mod, only        : mpp_get_compute_domain, mpp_get_data_domain
   use mpp_domains_mod, only        : NORTH, SOUTH, EAST, WEST, CYCLIC_GLOBAL_DOMAIN
   use mpp_domains_mod, only        : NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST
+  use platform_mod
 
 #define _TYPE_DOMAIN2D type(domain2d)
 #define _NULL_PE NULL_PE

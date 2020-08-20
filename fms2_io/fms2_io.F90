@@ -28,6 +28,8 @@ use fms_netcdf_unstructured_domain_io_mod
 use blackboxio
 use mpp_mod, only: mpp_init, input_nml_file, mpp_error, FATAL
 use mpp_domains_mod, only: mpp_domains_init
+use platform_mod
+
 implicit none
 private
 

@@ -188,8 +188,8 @@
 !ug support
       type(domain2d),pointer :: io_domain
       type(domainUG),pointer :: io_domain_ug
-      integer(INT_KIND)      :: io_layout_ug
-      integer(INT_KIND)      :: tile_id_ug
+      integer(i4_kind)      :: io_layout_ug
+      integer(i4_kind)      :: tile_id_ug
 !----------
       integer*8                             :: lenp
       integer                               :: comm

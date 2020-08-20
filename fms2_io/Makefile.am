@@ -38,7 +38,8 @@ include/register_variable_attribute.inc					\
 include/unstructured_domain_write.inc
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/fms2_io/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I${top_srcdir}/fms2_io/include -I${top_builddir}/.mod \
+  -I${top_builddir}/platform
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfms2_io.la libfms_io_utils.la libnetcdf_io.la	\

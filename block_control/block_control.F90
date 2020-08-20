@@ -22,11 +22,10 @@
 !! @email gfdl.climate.model.info@noaa.gov
 
 module block_control_mod
-#include <fms_platform.h>
 
 use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL
 use mpp_domains_mod, only: mpp_compute_extent
-
+use platform_mod
 implicit none
 
 public block_control_type

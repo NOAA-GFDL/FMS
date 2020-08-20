@@ -23,7 +23,9 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I${top_srcdir}/include \
+  -I${top_builddir}/.mod \
+  -I${top_builddir}/platform
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la

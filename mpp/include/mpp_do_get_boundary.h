@@ -20,8 +20,8 @@
 subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, d_type)
   type(domain2D), intent(in)      :: domain
   type(overlapSpec),  intent(in)  :: bound
-  integer(LONG_KIND), intent(in)  :: f_addrs(:,:)
-  integer(LONG_KIND), intent(in)  :: b_addrs(:,:,:)
+  integer(i8_kind), intent(in)  :: f_addrs(:,:)
+  integer(i8_kind), intent(in)  :: b_addrs(:,:,:)
   integer,            intent(in)  :: bsize(:), ke
   MPP_TYPE_, intent(in)           :: d_type  ! creates unique interface
 
@@ -329,8 +329,8 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
                                         bsizex, bsizey, ke, d_type, flags, gridtype)
   type(domain2D),     intent(in)  :: domain
   type(overlapSpec),  intent(in)  :: boundx, boundy
-  integer(LONG_KIND), intent(in)  :: f_addrsx(:,:), f_addrsy(:,:)
-  integer(LONG_KIND), intent(in)  :: b_addrsx(:,:,:), b_addrsy(:,:,:)
+  integer(i8_kind), intent(in)  :: f_addrsx(:,:), f_addrsy(:,:)
+  integer(i8_kind), intent(in)  :: b_addrsx(:,:,:), b_addrsy(:,:,:)
   integer,            intent(in)  :: bsizex(:), bsizey(:), ke
   MPP_TYPE_, intent(in)           :: d_type  ! creates unique interface
   integer, intent(in)             :: flags

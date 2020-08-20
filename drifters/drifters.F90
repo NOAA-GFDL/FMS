@@ -58,7 +58,6 @@
 !! on a per PE domain basis. There is no support for locally nested or unstrucured
 !! meshes. Meshes need not be smooth and continuous across PE domains, however.
 module drifters_mod
-#include <fms_platform.h>
 ! <CONTACT EMAIL="Alexander.Pletzer@noaa.gov">
 !   Alexander Pletzer
 ! </CONTACT>
@@ -153,7 +152,7 @@ module drifters_mod
                                 drifters_comm_set_domain, drifters_comm_gather, drifters_comm_update
 
   use cloud_interpolator_mod, only: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, cld_ntrp_get_cell_values
-
+  use platform_mod
   implicit none
   private
 

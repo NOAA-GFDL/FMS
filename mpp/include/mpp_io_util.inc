@@ -104,7 +104,7 @@
      type(validtype),    intent(out),                 optional :: valid
      real,               intent(out),                 optional :: scale
      real,               intent(out),                 optional :: add
-     integer(LONG_KIND), intent(out),   dimension(:), optional :: checksum
+     integer(i8_kind), intent(out),   dimension(:), optional :: checksum
 
      type(atttype),      intent(inout), dimension(:), optional :: atts
      type(axistype),     intent(inout), dimension(:), optional :: axes
@@ -333,7 +333,7 @@
 !     call mpp_get_times( unit, time_values )
 !   </TEMPLATE>
 !   <IN NAME="unit" TYPE="integer"> </IN>
-!   <INOUT NAME="time_values" TYPE="real(DOUBLE_KIND)" DIM="(:)"> </INOUT>
+!   <INOUT NAME="time_values" TYPE="real(r8_kind)" DIM="(:)"> </INOUT>
 ! </SUBROUTINE>
 
    subroutine mpp_get_times( unit, time_values )

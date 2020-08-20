@@ -23,6 +23,7 @@
 # Ed Hartnett 2/22/19
 
 AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 noinst_LTLIBRARIES = libmonin_obukhov.la libmonin_obukhov_inter.la
 

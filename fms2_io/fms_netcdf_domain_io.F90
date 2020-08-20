@@ -27,6 +27,7 @@ use mpp_mod
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
+use platform_mod
 implicit none
 private
 

@@ -83,7 +83,8 @@
              cur_send_request = cur_send_request + 1
              if( cur_send_request > max_request ) call mpp_error(FATAL, &
                 "MPP_TRANSMIT: cur_send_request is greater than max_request, increase mpp_nml request_multiply")
-             call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, request_send(cur_send_request), error)
+             call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, &
+                             request_send(cur_send_request), error)
           endif
           if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_SEND, put_len*MPP_TYPE_BYTELEN_ )
       else if( to_pe.EQ.ALL_PES )then !this is a broadcast from from_pe

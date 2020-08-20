@@ -23,7 +23,8 @@
 # uramirez, Ed Hartnett
 
 # Find the fms and mpp mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod
+AM_CPPFLAGS = -I${top_builddir}/.mod \
+  -I${top_builddir}/platform
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la

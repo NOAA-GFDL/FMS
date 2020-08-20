@@ -26,6 +26,7 @@ use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
+use platform_mod
 implicit none
 private
 

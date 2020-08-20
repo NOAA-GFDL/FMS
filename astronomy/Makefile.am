@@ -24,6 +24,7 @@
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libastronomy.la
