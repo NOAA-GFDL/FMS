@@ -24,9 +24,12 @@ program test_data_override_ongrid
 
 use   mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
                                mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
-use   mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL
+use   mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL, &
+                               input_nml_file
 use   data_override_mod, only: data_override_init, data_override
+#ifndef use_mpp_io
 use   fms2_io_mod,       only: fms2_io_init
+#endif
 use   time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
 use   mpi,               only: mpi_barrier, mpi_comm_world
 use   netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
@@ -40,21 +43,30 @@ integer                               :: nlon             !< Number of points in
 integer                               :: nlat             !< Number of points in y axis
 type(domain2d)                        :: Domain           !< Domain with mask table
 real, allocatable, dimension(:,:)     :: runoff           !< Data to be written
-integer                               :: is, isc          !< Starting x index
-integer                               :: ie, iec          !< Ending x index
-integer                               :: js, jsc          !< Starting y index
-integer                               :: je, jec          !< Ending y index
+integer                               :: is               !< Starting x index
+integer                               :: ie               !< Ending x index
+integer                               :: js               !< Starting y index
+integer                               :: je               !< Ending y index
 type(time_type)                       :: Time             !< Time
-integer                               :: i, j             !< Helper indices
+integer                               :: i                !< Helper indices
 integer                               :: ncid             !< Netcdf file id
 integer                               :: err              !< Error Code
 integer                               :: dim1d, dim2d, dim3d, dim4d    !< Dimension ids
 integer                               :: varid, varid2, varid3, varid4 !< Variable ids
 real, allocatable, dimension(:,:,:)   :: runoff_in        !< Data to be written to file
 real                                  :: expected_result  !< Expected result from data_override
+integer                               :: nhalox=2, nhaloy=2
+integer                               :: io_status
+
+namelist / test_data_override_ongrid_nml / nhalox, nhaloy
 
 call mpp_init
+#ifndef use_mpp_io
 call fms2_io_init
+#endif
+
+read (input_nml_file, test_data_override_ongrid_nml, iostat=io_status)
+if (io_status > 0) call mpp_error(FATAL,'=>test_data_override_ongrid: Error reading input.nml')
 
 !< Create some files needed by data_override!
 if (mpp_pe() .eq. mpp_root_pe()) then
@@ -111,6 +123,8 @@ if (mpp_pe() .eq. mpp_root_pe()) then
    err = nf90_put_var(ncid, varid2, (/1., 2., 3., 5., 6., 7., 8., 9., 10., 11./))
    err = nf90_close(ncid)
 
+   deallocate(runoff_in)
+
 endif
 
 !< Wait for the root PE to catch up
@@ -119,16 +133,17 @@ call mpi_barrier(mpi_comm_world, err)
 !< This is the actual test code:
 
 call set_calendar_type(NOLEAP)
-Time = set_date(1,1,5,0,0,0)
 
 nlon = 1440
 nlat = 1080
 
 !< Create a domain nlonXnlat with mask
 call mpp_domains_set_stack_size(17280000)
-call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, xhalo=2, yhalo=2, name='test_data_override_emc')
+call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, xhalo=nhalox, yhalo=nhaloy, name='test_data_override_emc')
 call mpp_define_io_domain(Domain, (/1,1/))
 call mpp_get_data_domain(Domain, is, ie, js, je)
+
+print *, nhalox, nhaloy
 
 !< Set up the data
 allocate(runoff(is:ie,js:je))
@@ -137,33 +152,68 @@ runoff = 999.
 
 !< Initiliaze data_override
 call data_override_init(Ocean_domain_in=Domain)
-call data_override('OCN','runoff',runoff, Time)
 
+!< Run it when time=3
+Time = set_date(1,1,4,0,0,0)
+call data_override('OCN','runoff',runoff, Time)
+!< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
+!! equal to the data at time=3, which is 3.
+expected_result = real(3.)
+call compare_data(Domain, runoff, expected_result)
+
+!< Run it when time=4
+runoff = 999.
+Time = set_date(1,1,5,0,0,0)
+call data_override('OCN','runoff',runoff, Time)
 !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
 !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
 expected_result = (real(3.)+ real(4.))/2
+call compare_data(Domain, runoff, expected_result)
 
-!! Data is only expected to be overriden for the compute domain -not at the halos.
-call mpp_get_compute_domain(Domain, isc, iec, jsc, jec)
-do i = is, ie
-   do j = js, je
-      if (i < isc .or. i > iec .or. j < jsc .or. j > jec) then
+deallocate(runoff)
+
+call mpp_exit
+
+contains
+
+subroutine compare_data(Domain, actual_result, expected_result)
+type(domain2d), intent(in)            :: Domain           !< Domain with mask table
+real, intent(in)                      :: expected_result  !< Expected result from data_override
+real, dimension(:,:), intent(in)      :: actual_result    !< Result from data_override
+
+integer                               :: xsizec, ysizec   !< Size of the compute domain
+integer                               :: xsized, ysized   !< Size of the data domain
+integer                               :: nx, ny           !< Size of acual_result
+integer                               :: nhalox, nhaloy   !< Size of the halos
+integer                               :: i, j             !< Helper indices
+
+!< Data is only expected to be overriden for the compute domain -not at the halos.
+call mpp_get_compute_domain(Domain, xsize=xsizec, ysize=ysizec)
+call mpp_get_data_domain(Domain, xsize=xsized, ysize=ysized)
+
+!< Note that actual_result has indices at (1:nx,1:ny) not (is:ie,js:je)
+nhalox= (xsized-xsizec)/2
+nhaloy = (ysized-ysizec)/2
+nx = size(actual_result, 1)
+ny = size(actual_result, 2)
+
+do i = 1, nx
+   do j = 1, ny
+      if (i <= nhalox .or. i > (nx-nhalox) .or. j <= nhaloy .or. j > (ny-nhaloy)) then
          !< This is the result at the halos it should 999.
-         if (runoff(i,j) .ne. 999.) then
-            print *, "for i=", i, " and j=", j, " runoff=", runoff(i,j)
+         if (actual_result(i,j) .ne. 999.) then
+            print *, "for i=", i, " and j=", j, " result=", actual_result(i,j)
             call mpp_error(FATAL, "test_data_override_ongrid: Data was overriden in the halos!!")
          endif
       else
-         if (runoff(i,j) .ne. expected_result) then
-            print *, "for i=", i, " and j=", j, " runoff=", runoff(i,j)
+         if (actual_result(i,j) .ne. expected_result) then
+            print *, "for i=", i, " and j=", j, " result=", actual_result(i,j)
             call mpp_error(FATAL, "test_data_override_ongrid: Result is different from expected answer!")
          endif
       endif
    enddo
 enddo
 
-deallocate(runoff)
-
-call mpp_exit
+end subroutine
 
 end program test_data_override_ongrid

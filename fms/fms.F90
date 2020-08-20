@@ -164,9 +164,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        open_file, open_direct_file, string, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
                        write_version_number
-
 use fms2_io_mod, only: fms2_io_init
-
 use memutils_mod, only: print_memuse_stats, memutils_init
 
 
