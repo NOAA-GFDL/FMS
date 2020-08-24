@@ -54,6 +54,7 @@ echo "Test ${tst} has passed"
 done
 
 echo "write 2"
+cat test_numb_base2.nml
 
 sed "s/test_number = <test_num>/test_number = 5/" $top_srcdir/test_fms/mpp/test_numb_base2.nml > test_numb2.nml
 echo "Running test 5..."
