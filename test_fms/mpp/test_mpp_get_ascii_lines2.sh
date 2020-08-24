@@ -36,6 +36,7 @@ cp $top_srcdir/test_fms/mpp/base_ascii_0 ascii_0
 cp $top_srcdir/test_fms/mpp/base_ascii_skip ascii_skip
 cp $top_srcdir/test_fms/mpp/base_ascii_long ascii_long
 
+# Set up namelist to carry test_number.
 touch test_numb_base2.nml
 echo "&test_mpp_get_ascii_lines_nml" > test_numb_base2.nml
 echo "test_number = 0" >> test_numb_base2.nml
@@ -57,4 +58,4 @@ if [ "$err" -ne 1 ]; then
   exit 5
 else
    echo "Test 5 has passed"
-fi                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+fi
