@@ -84,4 +84,4 @@ end program test_get_ascii_lines
 ! lines contained within the file. This is set up so that there are no attempts
 ! to read nml information from an array of dimension zero, as that results in a
 ! segmentation fault. This workaround may be addressed in future versions of
-! mpp, in which case this test must be adapted.                                                                                                                                                                                                                                                                                                                                                               
+! mpp, in which case this test must be adapted.
