@@ -36,31 +36,20 @@ cp $top_srcdir/test_fms/mpp/base_ascii_0 ascii_0
 cp $top_srcdir/test_fms/mpp/base_ascii_skip ascii_skip
 cp $top_srcdir/test_fms/mpp/base_ascii_long ascii_long
 
-echo "write 0"
-
 touch test_numb_base2.nml
 echo "&test_mpp_get_ascii_lines_nml" > test_numb_base2.nml
-echo "test_number = <test_num>" >> test_numb_base2.nml
+echo "test_number = 0" >> test_numb_base2.nml
 echo "/" >> test_numb_base2.nml
 
-echo "write 1"
-cat test_numb_base2.nml
-
-cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 for tst in 1 2 3 4
 do
-sed "s/test_number = <test_num>/test_number = ${tst}/" test_numb_base2.nml > test_numb2.nml
-echo "write inside***"
-cat test_numb_base2.nml
-echo "Running test ${tst}..."
-run_test test_mpp_get_ascii_lines 2 $skip_test
-echo "Test ${tst} has passed"
+  sed "s/test_number = [0-9]/test_number = ${tst}/" test_numb_base2.nml > test_numb2.nml
+  echo "Running test ${tst}..."
+  run_test test_mpp_get_ascii_lines 2 $skip_test
+  echo "Test ${tst} has passed"
 done
 
-echo "write 2"
-cat test_numb_base2.nml
-
-sed "s/test_number = <test_num>/test_number = 5/" $top_srcdir/test_fms/mpp/test_numb_base2.nml > test_numb2.nml
+sed "s/test_number = [0-9]/test_number = 5/" test_numb_base2.nml > test_numb2.nml
 echo "Running test 5..."
 run_test test_mpp_get_ascii_lines 2 $skip_test || err=1
 if [ "$err" -ne 1 ]; then
@@ -68,4 +57,4 @@ if [ "$err" -ne 1 ]; then
   exit 5
 else
    echo "Test 5 has passed"
-fi
+fi                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
