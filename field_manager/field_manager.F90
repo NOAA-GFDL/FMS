@@ -192,7 +192,11 @@ use    mpp_mod, only : mpp_error,   &
 use mpp_io_mod, only : mpp_io_init
 use    fms_mod, only : lowercase,   &
                        write_version_number
+#ifndef use_mpp_io
 use fms2_io_mod, only: file_exists
+#else
+use  fms_io_mod, only: file_exists=>file_exist
+#endif
 
 implicit none
 private

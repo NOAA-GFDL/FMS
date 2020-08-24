@@ -19,66 +19,72 @@
 
 # Copyright (c) GFDL, @underwoo
 
-cmake_minimum_required(VERSION 3.7..3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.7...3.15 FATAL_ERROR)
 
 # Define the CMake project
-project(libFMS
+project(FMS
   VERSION 2020.02
   DESCRIPTION  "GFDL FMS Library"
-  HOMEPAGE_URL https://www.gfdl.noaa.gov/fms
+  HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
 
-add_definitions(-Duse_libMPI)
-add_definitions(-Duse_netCDF)
+include(GNUInstallDirs)
 
-# Set the build options
-# These can be changed via `cmake -D<var>=[ON|OFF]`, e.g. cmake -DOPENMP=OFF to
-# disable OpenMP
-option(USE_OPENMP "Determine if libFMS should be built with OpenMP support" ON)
+if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE
+      "Release"
+      CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
 
-# Add directory that contains custom CMake Modules for building libFMS
-list(INSERT CMAKE_MODULE_PATH 0 ${libFMS_SOURCE_DIR}/CMakeModules)
+if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang)$")
+  message(
+    WARNING "Compiler not officially supported: ${CMAKE_C_COMPILER_ID}")
+endif()
 
-# Check for the MPI libaray, and compiler wrappers
-find_package(MPI REQUIRED)
+if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel|GNU)$")
+  message(
+    WARNING "Compiler not officially supported: ${CMAKE_Fortran_COMPILER_ID}")
+endif()
+
+# Append directory that contains CMake Modules for building FMS
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+# Build options
+option(OPENMP    "Build FMS with OpenMP support" OFF)
+option(32BIT     "Build 32-bit (r4) FMS library"  ON)
+option(64BIT     "Build 64-bit (r8) FMS library" OFF)
+
+# Options for compiler definitions
+option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
+option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
+option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
+option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
+
+if(32BIT)
+  list(APPEND kinds "r4")
+endif()
+if(64BIT)
+  list(APPEND kinds "r8")
+endif()
+if(NOT kinds)
+  message(STATUS "Single Precision 32BIT: ${32BIT}")
+  message(STATUS "Double Precision 64BIT: ${64BIT}")
+  message(FATAL_ERROR "Either 32BIT or 64BIT should be ON")
+endif()
+
+# Find dependencies
+find_package(MPI REQUIRED COMPONENTS C Fortran)
+find_package(NetCDF REQUIRED COMPONENTS C Fortran)
 
 # Check for the OpenMP library and set the required compile flags
 if (OPENMP)
-  find_package(OpenMP REQUIRED)
-  if (OPENMP_FOUND)
-    list(APPEND CMAKE_C_FLAGS ${OpenMP_C_FLAGS})
-    list(APPEND CMAKE_Fortran_FLAGS ${OpenMP_Fortran_FLAGS})
-  endif (OPENMP_FOUND)
-endif(OPENMP)
+  find_package(OpenMP REQUIRED COMPONENTS C Fortran)
+endif()
 
-include_directories(
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${libFMS_SOURCE_DIR}/include
-  ${libFMS_SOURCE_DIR}/mpp/include
-  ${libFMS_SOURCE_DIR}/fms
-  ${libFMS_SOURCE_DIR}/fms2_io/include
-  ${MPI_C_INCLUDE_PATH}
-  ${MPI_Fortran_INCLUDE_PATH}
-)
-
-message("************************************************************")
-message("Building FMS with")
-message("Fortran Compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
-message("Fortran Flags: ${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
-message("C Compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
-message("C Flags: ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
-message("Build Target: ${BUILD_TARGET}")
-message("OpenMP Enabled: ${OPENMP}")
-message("Using NetCDF C: ${NETCDF_C_VERSION}")
-message("Using NetCDF Fortran: ${NETCDF_Fortran_VERSION}")
-message("MPI: ${MPI_C_FOUND} ${MPI_Fortran_FOUND}")
-message("MPI Compiler: ${MPI_C_COMPILER} ${MPI_Fortran_COMPILER}")
-message("MPI Compiler Flags: ${MPI_C_COMPILE_FLAGS} | ${MPI_F_COMPILE_FLAGS}")
-message("MPI INCLUDES: ${MPI_C_INCLUDE_PATH} | ${MPI_Fortran_INCLUDE_PATH}")
-message("************************************************************")
-
-add_library(FMS
-  affinity/affinity.c
+# Collect FMS Fortran source files
+list(APPEND fms_fortran_src_files
   affinity/fms_affinity.F90
   amip_interp/amip_interp.F90
   astronomy/astronomy.F90
@@ -99,6 +105,13 @@ add_library(FMS
   diag_manager/diag_output.F90
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
+  drifters/cloud_interpolator.F90
+  drifters/drifters.F90
+  drifters/drifters_comm.F90
+  drifters/drifters_core.F90
+  drifters/drifters_input.F90
+  drifters/drifters_io.F90
+  drifters/quicksort.F90
   exchange/stock_constants.F90
   exchange/xgrid.F90
   field_manager/field_manager.F90
@@ -121,15 +134,10 @@ add_library(FMS
   memutils/memutils.F90
   monin_obukhov/monin_obukhov_kernel.F90
   monin_obukhov/monin_obukhov.F90
-  mosaic/create_xgrid.c
-  mosaic/gradient_c2l.c
   mosaic/gradient.F90
   mosaic/grid.F90
-  mosaic/interp.c
-  mosaic/mosaic_util.c
   mosaic/mosaic.F90
   mosaic/mosaic2.F90
-  mosaic/read_mosaic.c
   mpp/mpp.F90
   mpp/mpp_data.F90
   mpp/mpp_domains.F90
@@ -139,8 +147,6 @@ add_library(FMS
   mpp/mpp_parameter.F90
   mpp/mpp_pset.F90
   mpp/mpp_utilities.F90
-  mpp/nsclock.c
-  mpp/threadloc.c
   platform/platform.F90
   random_numbers/MersenneTwister.F90
   random_numbers/random_numbers.F90
@@ -157,65 +163,162 @@ add_library(FMS
   tridiagonal/tridiagonal.F90
 )
 
-# Usage:
-# Clients shoulb be able to use FMS by adding these two lines:
-# 1 find_package(FMS VNo REQUIRED)
-# 2 target_link_libraries(client app name FMS::FMS)
-#     where VNo above is the version number - TBD
+# Collect FMS C source files
+list(APPEND fms_c_src_files
+  affinity/affinity.c
+  mosaic/create_xgrid.c
+  mosaic/gradient_c2l.c
+  mosaic/interp.c
+  mosaic/mosaic_util.c
+  mosaic/read_mosaic.c
+  mpp/mpp_memuse.c
+  mpp/nsclock.c
+  mpp/threadloc.c
+)
 
+# Collect FMS header files
+list(APPEND fms_header_files
+  include/file_version.h
+  include/fms_platform.h
+)
 
-# Recommended namespace alias:
-# (Which may be needed if FMS is to be used inside the build tree.)
-add_library(FMS::FMS  ALIAS FMS)
+# Standard FMS compiler definitions
+list(APPEND fms_defs
+  use_libMPI
+  use_netCDF)
 
-# Install the library (target) and the export targets
-include(GNUInstallDirs)
-set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/FMS)
+# Additional (optional) compiler definitions
+if(GFS_PHYS)
+  list(APPEND fms_defs GFS_PHYS)
+endif()
 
-install(TARGETS FMS
-    EXPORT FMS-export
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} )
+if(INTERNAL_FILE_NML)
+  list(APPEND fms_defs INTERNAL_FILE_NML)
+endif()
 
-#Select an export name, which for now will just be FMS
-#set_target_properties(FMS PROPERTIES EXPORT_NAME FMS)
+if(ENABLE_QUAD_PRECISION)
+  list(APPEND fms_defs ENABLE_QUAD_PRECISION)
+endif()
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(LARGEFILE)
+  list(APPEND fms_defs use_LARGEFILE)
+endif()
 
-#Export the targets to a script file
-install(EXPORT FMS-export
-  FILE FMSTargets.cmake
-  NAMESPACE FMS::
-  DESTINATION ${INSTALL_CONFIGDIR} )
+# Precision-based compiler definitions
+if(32BIT)
+  list(APPEND r4_defs OVERLOAD_R4 OVERLOAD_R8)
+endif()
 
-#Create the FMSConfigVersion.cmake file
+# Add platform specific compiler definitions
+if(APPLE)
+  list(APPEND fms_defs __APPLE__)
+endif()
+
+# Obtain compiler-specific flags
+include(fms_compiler_flags)
+
+foreach(kind ${kinds})
+
+  set(libTgt fms_${kind})
+  set(includeDir "include_${kind}")
+  set(moduleDir "${CMAKE_CURRENT_BINARY_DIR}/${includeDir}")
+
+  # C
+  add_library(${libTgt}_c OBJECT ${fms_c_src_files})
+
+  target_include_directories(${libTgt}_c PRIVATE include)
+  target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
+
+  target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
+                                            MPI::MPI_C)
+
+  if(OpenMP_C_FOUND)
+    target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
+  endif()
+
+  # Fortran
+  add_library(${libTgt}_f OBJECT ${fms_fortran_src_files})
+
+  target_include_directories(${libTgt}_f PRIVATE include
+                                                 fms
+                                                 fms2_io/include
+                                                 mpp/include)
+  target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
+  target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
+
+  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS
+                                               "${${kind}_flags}")
+  set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
+                                               ${moduleDir})
+
+  target_link_libraries(${libTgt}_f PRIVATE NetCDF::NetCDF_Fortran
+                                            MPI::MPI_Fortran)
+
+  if(OpenMP_Fortran_FOUND)
+    target_link_libraries(${libTgt}_f PRIVATE OpenMP::OpenMP_Fortran)
+  endif()
+
+  # FMS (C + Fortran)
+  add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
+                               $<TARGET_OBJECTS:${libTgt}_f>)
+
+  target_include_directories(${libTgt} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>)
+
+  target_include_directories(${libTgt} INTERFACE
+    $<BUILD_INTERFACE:${moduleDir}>
+    $<INSTALL_INTERFACE:${includeDir}>)
+
+  target_compile_definitions(${libTgt} PUBLIC "${fms_defs}")
+  target_compile_definitions(${libTgt} PUBLIC "${${kind}_defs}")
+
+  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_Fortran
+                                         MPI::MPI_Fortran)
+
+  if(OpenMP_Fortran_FOUND)
+    target_link_libraries(${libTgt} PUBLIC OpenMP::OpenMP_Fortran)
+  endif()
+
+  add_library(FMS::${libTgt} ALIAS ${libTgt})
+
+  list(APPEND LIB_TARGETS ${libTgt})
+  install(DIRECTORY ${moduleDir}    DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(FILES ${fms_header_files} DESTINATION ${CMAKE_INSTALL_PREFIX}/${includeDir})
+
+endforeach()
+
+install(
+  TARGETS ${LIB_TARGETS}
+  EXPORT FMSExports
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib)
+
+### Package config
 include(CMakePackageConfigHelpers)
+set(CONFIG_INSTALL_DESTINATION lib/cmake/fms)
+
+export(EXPORT FMSExports
+  NAMESPACE FMS::
+  FILE fms-targets.cmake)
+
+configure_package_config_file(
+  ${CMAKE_SOURCE_DIR}/cmake/FMSConfig.cmake.in ${CMAKE_BINARY_DIR}/fms-config.cmake
+  INSTALL_DESTINATION ${CONFIG_INSTALL_DESTINATION})
+install(FILES ${CMAKE_BINARY_DIR}/fms-config.cmake
+  DESTINATION ${CONFIG_INSTALL_DESTINATION})
+
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/FMSConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion )
-# Update the ConfigVersion.cmake file with its correspoding .in file
-configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/FMSConfigVersion.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/FMSConfigVersion.cmake
-    INSTALL_DESTINATION ${INSTALL_CONFIGDIR} )
+  ${CMAKE_BINARY_DIR}/fms-config-version.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY AnyNewerVersion)
+install(FILES ${CMAKE_BINARY_DIR}/fms-config-version.cmake
+  DESTINATION ${CONFIG_INSTALL_DESTINATION})
 
-# Also update the FMSConfig.cmake file with its corresponding .in file
-configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/FMSConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/FMSConfig.cmake
-    INSTALL_DESTINATION ${INSTALL_CONFIGDIR} )
-  
-# Install the files
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/FMSConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/FMSConfigVersion.cmake
-    DESTINATION ${INSTALL_CONFIGDIR} )
-
-
-# Exporting from the build tree
-export(EXPORT FMS-export
-    FILE ${CMAKE_CURRENT_BINARY_DIR}/FMSTargets.cmake
-    NAMESPACE FMS::)
-
-# Register package in user's package registry
-export(PACKAGE FMS)
-
+install(EXPORT FMSExports
+  NAMESPACE FMS::
+  FILE fms-targets.cmake
+  DESTINATION ${CONFIG_INSTALL_DESTINATION})

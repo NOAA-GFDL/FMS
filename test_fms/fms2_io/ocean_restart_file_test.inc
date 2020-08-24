@@ -79,7 +79,7 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
   call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
   call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
   call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
-  call register_global_attribute(fileobj, "globalatt5", "some text")
+  call register_global_attribute(fileobj, "globalatt5", "some text", str_len=len_trim("some text"))
 
   !Add dimensions and corresponding variables to the file.
   !Longitude (domain "x" dimension).
@@ -90,7 +90,7 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
     lon_data(i) = 33.33 + 1.2*i
   enddo
   call write_data(fileobj, "lon", lon_data)
-  call register_variable_attribute(fileobj, "lon", "units", "degrees")
+  call register_variable_attribute(fileobj, "lon", "units", "degrees", str_len=len_trim("degrees"))
 
   !Latitude (domain "y" dimension).
   call register_axis(fileobj, "lat", "y")
@@ -100,7 +100,7 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
     lat_data(i) = 65. + 0.05*i
   enddo
   call write_data(fileobj, "lat", lat_data)
-  call register_variable_attribute(fileobj, "lat", "units", "degrees")
+  call register_variable_attribute(fileobj, "lat", "units", "degrees", str_len=len_trim("degrees"))
 
   !Height.
   call register_axis(fileobj, "lev", nz)
@@ -110,12 +110,12 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
     lev_data(i) = 0.1 + 20.2*i
   enddo
   call write_data(fileobj, "lev", lev_data)
-  call register_variable_attribute(fileobj, "lev", "units", "mb")
+  call register_variable_attribute(fileobj, "lev", "units", "mb", str_len=len_trim("mb"))
 
   !Add a restart variable.
   call register_restart_field(fileobj, "temperature", temperature_data, &
                               (/"lev ","lon ","lat "/))
-  call register_variable_attribute(fileobj, "temperature", "units", "K")
+  call register_variable_attribute(fileobj, "temperature", "units", "K", str_len=len_trim("K"))
 
   !Initialize some random temperature data.
   do j = 1, ny

@@ -25,44 +25,48 @@
 # These owners will be the default owners for all the files in the
 # repository.  Unless a later match is found, these owners
 # will be requested for a review when a PR is opened.
-*          @wrongkindofdoctor @thomas-robinson @colingladueNOAA
+*          @wrongkindofdoctor @thomas-robinson @bensonr 
 
 # GNU autotools files
-Makefile.am      @underwoo
-/configure.ac    @underwoo
-/m4/             @underwoo
-*.m4             @underwoo
+Makefile.am      @underwoo @uramirez8707
+/configure.ac    @underwoo @uramirez8707
+/m4/             @underwoo @uramirez8707
+*.m4             @underwoo @uramirez8707
+
+# cmake files
+CM*              @mlee03 @ngs333
+cmake            @mlee03 @ngs333
 
 # Files specific to GitHub or GitLab
-/.github/        @underwoo
-/.gitlab/        @underwoo
+/.github/        @underwoo @GFDL-Eric
+/.gitlab/        @underwoo @GFDL-Eric
 
 # Testing files
-/.gitlab-ci.yml  @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor @colingladueNOAA
-/.travis.yml     @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor @colingladueNOAA
-/test_fms/       @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor @colingladueNOAA
+/.gitlab-ci.yml  @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor 
+/.travis.yml     @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor
+/test_fms/       @uramirez8707 @mlee03 @underwoo @bensonr @thomas-robinson @wrongkindofdoctor
 
 # Specific component directories
 /affinity/          @bensonr
-/test_fms/affinity/ @bensonr @colingladueNOAA
+/test_fms/affinity/ @bensonr @thomas-robinson
 
 /block_control/          @bensonr
-/test_fms/block_control/ @bensonr @colingladueNOAA
+/test_fms/block_control/ @bensonr @thomas-robinson
 
 /data_override/          @GFDL-Eric
-/test_fms/data_override/ @GFDL-Eric @colingladueNOAA
+/test_fms/data_override/ @GFDL-Eric @thomas-robinson
 
 /diag_manager            @thomas-robinson @underwoo @ngs333
-/test_fms/diag_manager/  @thomas-robinson @underwoo @ngs333 @colingladueNOAA
+/test_fms/diag_manager/  @thomas-robinson @underwoo @ngs333
 
 /fv3gfs/          @bensonr
 
 /fms/             @wrongkindofdoctor @thomas-robinson
-/test_fms/fms/    @wrongkindofdoctor @thomas-robinson @colingladueNOAA
-/fms2/            @wrongkindofdoctor @thomas-robinson
-/test_fms/fms2/   @wrongkindofdoctor @thomas-robinson @colingladueNOAA
+/test_fms/fms/    @wrongkindofdoctor @thomas-robinson
+/fms2/            @uramirez8707 @GFDL-Eric
+/test_fms/fms2/   @uramirez8707 @GFDL-Eric
 
-/libFMS/           @underwoo @colingladueNOAA
+/libFMS/           @underwoo @thomas-robinson
 
-/mpp/              @wrongkindofdoctor @thomas-robinson
-/test_fms/mpp/     @wrongkindofdoctor @thomas-robinson @colingladueNOAA
+/mpp/              @wrongkindofdoctor @thomas-robinson @bensonr
+/test_fms/mpp/     @wrongkindofdoctor @thomas-robinson @bensonr

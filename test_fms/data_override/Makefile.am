@@ -26,6 +26,7 @@
 AM_CPPFLAGS = -I${top_srcdir}/include \
   -I${top_builddir}/mpp \
   -I${top_builddir}/fms \
+  -I${top_builddir}/fms2_io \
   -I${top_builddir}/affinity \
   -I${top_builddir}/constants \
   -I${top_builddir}/time_manager \
@@ -37,10 +38,11 @@ AM_CPPFLAGS = -I${top_srcdir}/include \
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_data_override
+check_PROGRAMS = test_data_override test_data_override_ongrid
 
 # This is the source code for the test.
 test_data_override_SOURCES = test_data_override.F90
+test_data_override_ongrid_SOURCES = test_data_override_ongrid.F90
 
 # Run the test program.
 TESTS = test_data_override2.sh
