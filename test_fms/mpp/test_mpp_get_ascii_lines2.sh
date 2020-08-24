@@ -46,7 +46,7 @@ echo "/" >> test_numb_base2.nml
 echo "write 1"
 cat test_numb_base2.nml
 
-
+cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 for tst in 1 2 3 4
 do
 sed "s/test_number = <test_num>/test_number = ${tst}/" test_numb_base2.nml > test_numb2.nml
