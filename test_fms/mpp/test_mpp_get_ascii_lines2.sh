@@ -49,7 +49,7 @@ cat test_numb_base2.nml
 
 for tst in 1 2 3 4
 do
-sed "s/test_number = <test_num>/test_number = ${tst}/" $top_srcdir/test_fms/mpp/test_numb_base2.nml > test_numb2.nml
+sed "s/test_number = <test_num>/test_number = ${tst}/" test_numb_base2.nml > test_numb2.nml
 echo "Running test ${tst}..."
 run_test test_mpp_get_ascii_lines 2 $skip_test
 echo "Test ${tst} has passed"
