@@ -44,6 +44,8 @@ echo "test_number = <test_num>" >> test_numb_base2.nml
 echo "/" >> test_numb_base2.nml
 
 echo "write 1"
+cat test_numb_base2.nml
+
 
 for tst in 1 2 3 4
 do
