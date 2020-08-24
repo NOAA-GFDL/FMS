@@ -200,9 +200,6 @@ CONTAINS
          endif
        enddo checkNC
     endif
-!        trim(fname_no_tile)(len_file_name-3:len_file_name) == ".nc") write (6,*)trim(fname_no_tile)
-!        trim(fname_no_tile)(len(trim(fname_no_tile))-3:len(trim(fname_no_tile))) == ".nc") &
-!        trim(fname_no_tile)(len(trim(fname_no_tile))-3:len(trim(fname_no_tile)))  = "   "
 
 !> Check to make sure that only domain2D or domainUG is used.  If both are not null, then FATAL
     if (domain .NE. NULL_DOMAIN2D .AND. domainU .NE. NULL_DOMAINUG)&
@@ -680,8 +677,7 @@ integer :: domain_size, axis_length, axis_pos
           ! decomposition
           CALL mpp_get_global_domain(Domain, begin=gbegin, END=gend, size=gsize)
           CALL mpp_get_layout(Domain, ndivs)
-          IF ( ndivs .EQ. 1 ) THEN
-          ELSE
+          IF ( ndivs .NE. 1 ) THEN
              IF ( ALLOCATED(axis_extent) ) DEALLOCATE(axis_extent)
              ALLOCATE(axis_extent(0:ndivs-1))
              CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
@@ -1004,13 +1000,6 @@ character(len=128),dimension(size(axes)) :: axis_names
      end select
      if (trim(units) .ne. "none") call register_variable_attribute(fileob,name,"units",units, str_len=len_trim(units))
      call register_variable_attribute(fileob,name,"long_name",long_name, str_len=len_trim(long_name))
-!    IF ( Field%miss_present ) THEN
-!         call register_variable_attribute(fileob,name,"_FillValue",Field%miss_pack)
-!         call register_variable_attribute(fileob,name,"missing_value",Field%miss_pack)
-!    ELSE
-!         call register_variable_attribute(fileob,name,"_FillValue",CMOR_MISSING_VALUE)
-!         call register_variable_attribute(fileob,name,"missing_value",CMOR_MISSING_VALUE)
-!    ENDIF
      IF (present(time_method) ) then
           call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), str_len=len_trim('time: '//trim(time_method)))
      ENDIF
@@ -1155,11 +1144,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     INTEGER               :: i
 
     !---- write data for all non-time axes ----
-!    DO i = 1, num_axis_in_file
-!       IF ( time_axis_flag(i) ) CYCLE
-
-!    END DO
-
     num_axis_in_file = 0
   END SUBROUTINE done_meta_data
 
@@ -1275,13 +1259,10 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           end select
           call write_data (fileob,trim(varname),buffer)
      elseif (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fileobjND) .and. present(fnum_for_domain)) then
-!          allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,3),size(buffer,4)))
-!          local_buffer = real(buffer,4)
      !> Figure out which file object to write output to
           if (fnum_for_domain == "2d" ) then
                if (check_if_open(fileobj(file_num))) then
                     call write_data (fileobj (file_num), trim(varname), buffer, unlim_dim_level=time )
-!                    call write_data (fileobj (file_num), trim(varname), local_buffer)
                endif
           elseif (fnum_for_domain == "nd") then
                if (check_if_open(fileobjND (file_num)) ) then
@@ -1289,7 +1270,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
                endif
           elseif (fnum_for_domain == "ug") then
                call write_data (fileobjU(file_num), trim(varname), buffer, unlim_dim_level=time)
-!               call write_data (fileobjU(file_num), trim(varname), local_buffer)
           else
                call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
           endif
@@ -1299,8 +1279,8 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
      else
           call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
      endif
-!     if (allocated(local_buffer)) deallocate(local_buffer)
   end subroutine diag_field_write_varname
+!> \brief Writes the time data to the history file
   subroutine diag_write_time (fileob,rtime_value,time_index,time_name)
      class(FmsNetcdfFile_t), intent(inout),target  :: fileob      !< fms2_io file object
      class(FmsNetcdfFile_t), pointer                        :: fptr => null()
