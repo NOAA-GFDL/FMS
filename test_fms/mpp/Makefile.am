@@ -118,5 +118,5 @@ EXTRA_DIST = input_base.nml \
   test_peset.sh
 
 # Clean up
-CLEANFILES = input.nml test_numb_base.nml test_numb.nml input_alternative.nml input_blank.nml *.out* *.tst* \
-             include_files_mod.mod ascii*
+CLEANFILES = input.nml input_alternative.nml input_blank.nml *.out* *.tst* \
+             include_files_mod.mod ascii* test_numb*
