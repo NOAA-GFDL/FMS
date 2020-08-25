@@ -646,7 +646,7 @@ module mpp_domains_mod
   integer,                                save :: a_sort_len=0        ! len sorted memory list
   integer,                                save :: n_addrs=0           ! num memory addresses used
 
-  integer(LONG_KIND), parameter :: ADDR2_BASE=Z'0000000000010000'
+  integer(LONG_KIND), parameter :: ADDR2_BASE = int(Z'0000000000010000', kind=LONG_KIND)
   integer, parameter :: MAX_ADDRS2=128
   integer(LONG_KIND),dimension(MAX_ADDRS2),save :: addrs2_sorted=-9999  ! list of sorted local addrs
   integer,           dimension(-1:MAX_ADDRS2),save :: addrs2_idx=-9999  ! idx of addr2 assoicated w/ d_comm
@@ -671,10 +671,10 @@ module mpp_domains_mod
   integer,                                         save           :: n_comm=0            ! num communicators used
 
   !     integer(LONG_KIND), parameter :: GT_BASE=2**8
-  integer(LONG_KIND), parameter :: GT_BASE=Z'0000000000000100'  ! Workaround for 64bit int init problem
+  integer(LONG_KIND), parameter :: GT_BASE = int(Z'0000000000000100', kind=LONG_KIND)
 
   !     integer(LONG_KIND), parameter :: KE_BASE=2**48
-  integer(LONG_KIND), parameter :: KE_BASE=Z'0001000000000000'  ! Workaround for 64bit int init problem
+  integer(LONG_KIND), parameter :: KE_BASE = int(Z'0001000000000000', kind=LONG_KIND)
 
   integer(LONG_KIND) :: domain_cnt=0
 

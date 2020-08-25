@@ -93,7 +93,7 @@ public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
 public :: is_dimension_registered
-
+public :: get_mosaic_tile_grid
 
 interface compute_global_checksum
   module procedure compute_global_checksum_2d
@@ -317,7 +317,7 @@ end function is_dimension_registered
 
 !> @brief Open a domain netcdf file.
 !! @return Flag telling if the open completed successfully.
-function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
+function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, dont_add_res_to_filename) &
   result(success)
 
   type(FmsNetcdfDomainFile_t),intent(inout) :: fileobj !< File object.
@@ -335,6 +335,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
+                                              !! ".res" to the filename
   logical :: success
 
   integer, dimension(2) :: io_layout
@@ -376,19 +378,19 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
 
   !Open the distibuted files.
   success = netcdf_file_open(fileobj, distributed_filepath, mode, nc_format, pelist, &
-                             is_restart)
+                             is_restart, dont_add_res_to_filename)
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
     if (success) then
       if (.not. string_compare(distributed_filepath, combined_filepath)) then
         success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
-                                    is_restart)
+                                    is_restart, dont_add_res_to_filename)
         if (success2) then
           call error("you have both combined and distributed files.")
         endif
       endif
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
-                                 is_restart)
+                                 is_restart, dont_add_res_to_filename)
       !If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
       if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
     endif
@@ -554,21 +556,21 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                        fileobj%restart_vars(i)%data2d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data3d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data4d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum, str_len=len(chksum))
       endif
     endif
   enddo
@@ -815,6 +817,36 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
 end subroutine get_global_io_domain_indices
 
+!> @brief Read a mosaic_file and get the grid filename for the current tile or
+!!        for the tile specified
+subroutine get_mosaic_tile_grid(grid_file,mosaic_file, domain, tile_count)
+  character(len=*), intent(out)          :: grid_file !< Filename of the grid file for the
+                                                      !! current domain tile or for tile
+                                                      !! specified in tile_count
+  character(len=*), intent(in)           :: mosaic_file !< Filename that will be read
+  type(domain2D),   intent(in)           :: domain !< Input domain
+  integer,          intent(in), optional :: tile_count !< Optional argument indicating
+                                                       !! the tile you want grid file name for
+                                                       !! this is for when a pe is in more than
+                                                       !! tile.
+  integer                                :: tile !< Current domian tile or tile_count
+  integer                                :: ntileMe !< Total number of tiles in the domain
+  integer, dimension(:), allocatable     :: tile_id !< List of tiles in the domain
+  type(FmsNetcdfFile_t)                  :: fileobj !< Fms2io file object
+
+  tile = 1
+  if(present(tile_count)) tile = tile_count
+  ntileMe = mpp_get_current_ntile(domain)
+  allocate(tile_id(ntileMe))
+  tile_id = mpp_get_tile_id(domain)
+
+  if (netcdf_file_open(fileobj, mosaic_file, "read")) then
+      call netcdf_read_data(fileobj, "gridfiles", grid_file, corner=tile_id(tile))
+      grid_file = 'INPUT/'//trim(grid_file)
+      call netcdf_file_close(fileobj)
+  endif
+
+end subroutine get_mosaic_tile_grid
 
 include "register_domain_restart_variable.inc"
 include "domain_read.inc"

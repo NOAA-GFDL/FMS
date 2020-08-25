@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program main
+#ifndef use_mpp_io
 use, intrinsic :: iso_fortran_env
 use argparse
 use mpi
@@ -234,5 +235,5 @@ subroutine chksum_match(out_chksum, in_chksum, var_name, debug)
   endif
 end subroutine chksum_match
 
-
+#endif
 end program main

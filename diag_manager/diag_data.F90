@@ -59,7 +59,9 @@ use platform_mod
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
+#ifndef use_mpp_io
 use fms2_io_mod
+#endif
   IMPLICIT NONE
 
   PUBLIC
@@ -787,11 +789,12 @@ use fms2_io_mod
   TYPE(file_type), SAVE, ALLOCATABLE :: files(:)
   TYPE(input_field_type), ALLOCATABLE :: input_fields(:)
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
+#ifndef use_mpp_io
     type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
     type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
     type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
     character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
-
+#endif
   ! <!-- Even More Variables -->
   ! <DATA NAME="time_zero" TYPE="TYPE(time_type)" />
   ! <DATA NAME="first_send_data_call" TYPE="LOGICAL" DEFAULT=".TRUE." />
