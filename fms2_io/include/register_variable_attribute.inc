@@ -19,12 +19,13 @@
 
 !> @brief Add an attribute to a variable.
 subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name, &
-                                          attribute_value)
+                                          attribute_value, str_len)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: attribute_name !< Attribute name.
   class(*), intent(in) :: attribute_value !< Attribute value
+  integer, intent(in), optional :: str_len !< Length of the string
 
   integer :: varid
   integer :: err
@@ -40,8 +41,9 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(attribute_value)
       type is (character(len=*))
+        if (.not. present(str_len)) call error("register_variable_attribute_0d: Need to include str length")
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
-                           trim(attribute_value))
+                           trim(attribute_value(1:str_len)))
       type is (integer(kind=int32))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
@@ -121,12 +123,13 @@ end subroutine register_variable_attribute_0d
 
 !> @brief Add an attribute to a variable.
 subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name, &
-                                          attribute_value)
+                                          attribute_value, str_len)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: attribute_name !< Attribute name.
   class(*), dimension(:), intent(in) :: attribute_value !< Attribute value
+  integer, intent(in), optional :: str_len !< Length of the string
 
   integer :: varid
   integer :: err

@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program main
+#ifndef use_mpp_io
 use, intrinsic :: iso_fortran_env
 use argparse
 use mpi
@@ -144,6 +145,7 @@ do i = 1,ntiles
 enddo
 ocn_layout = (/1, npes/)
 
+call fms2_io_init()
 !Run tests.
 if (tests(atmos)) then
   if (mod(npes,ntiles) .ne. 0) then
@@ -233,5 +235,5 @@ subroutine chksum_match(out_chksum, in_chksum, var_name, debug)
   endif
 end subroutine chksum_match
 
-
+#endif
 end program main

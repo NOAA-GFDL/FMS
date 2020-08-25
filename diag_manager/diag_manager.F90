@@ -229,8 +229,10 @@ use platform_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & fileobj, fileobjU, fnum_for_domain, fileobjND
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init
+#ifndef use_mpp_io
+  USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
+#endif
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -3697,6 +3699,12 @@ CONTAINS
     DO file = 1, num_files
        CALL closing_file(file, time)
     END DO
+#ifndef use_mpp_io
+  if (allocated(fileobjU)) deallocate(fileobjU)
+  if (allocated(fileobj)) deallocate(fileobj)
+  if (allocated(fileobjND)) deallocate(fileobjND)
+  if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
+#endif
   END SUBROUTINE diag_manager_end
   ! </SUBROUTINE>
 
@@ -3945,13 +3953,15 @@ CONTAINS
       ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
     END DO
     ALLOCATE(files(max_files))
+#ifndef use_mpp_io
     ALLOCATE(fileobjU(max_files))
     ALLOCATE(fileobj(max_files))
     ALLOCATE(fileobjND(max_files))
     ALLOCATE(fnum_for_domain(max_files))
-    ALLOCATE(pelist(mpp_npes()))
     !> Initialize fnum_for_domain with "dn" which stands for done
      fnum_for_domain(:) = "dn"
+#endif
+    ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
     ! set the diag_init_time if time_init present.  Otherwise, set it to base_time
