@@ -1423,6 +1423,9 @@ end subroutine get_grid_version1
 !
 !
 
+!> @brief read the center point of the grid from version 1 grid file.
+!!   only the grid at the side 1 is needed, so we only read
+!!   atm and land grid
 subroutine get_grid_version2(grid, grid_id, grid_file)
   type(grid_type), intent(inout)          :: grid
   character(len=3), intent(in)            :: grid_id
@@ -1508,7 +1511,7 @@ return
 end subroutine get_grid_version2
 
 !#######################################################################
-! Read the area elements from NetCDF file
+!> @brief Read the area elements from NetCDF file
 subroutine get_area_elements(fileobj, name, data)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
@@ -1544,6 +1547,11 @@ end subroutine get_area_elements
 
 !   <IN NAME="ocean_domain" TYPE="type(Domain2d)"> </IN>
 !   <IN NAME="grid_file" TYPE="character(len=*)" > </IN>
+!> @brief Read Ocean area element data.
+!! @details If available in the NetCDF file, this routine will read the
+!!      AREA_OCN_MODEL field and load the data into global AREA_OCN_MODEL.
+!!      If not available, then the array AREA_OCN_MODEL will be left
+!!      unallocated. Must be called by all PEs.
 subroutine get_ocean_model_area_elements(domain, grid_file)
 
   type(Domain2d), intent(in) :: domain
@@ -1595,6 +1603,8 @@ end subroutine get_ocean_model_area_elements
 !   <IN NAME="atmos_grid" TYPE="type(grid_box_type),optional" > </IN>
 !   <OUT NAME="xmap" TYPE="xmap_type"  > </OUT>
 
+!> @brief Sets up exchange grid connectivity using grid specification file and
+!!      processor domain decomposition.
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_domain)
   type (xmap_type),                        intent(inout) :: xmap
   character(len=3), dimension(:),            intent(in ) :: grid_ids
@@ -2135,7 +2145,8 @@ end subroutine setup_xmap
 ! </SUBROUTINE>
 
 !----------------------------------------------------------------------------
-! currently we are assuming there is only one nest region
+!> @brief currently we are assuming there is only one nest region
+!! @return integer get_nest_contact
 function get_nest_contact(fileobj, tile_nest_out, tile_parent_out, is_nest_out, &
                           ie_nest_out, js_nest_out, je_nest_out, is_parent_out, &
                           ie_parent_out, js_parent_out, je_parent_out)
@@ -3153,6 +3164,7 @@ end subroutine regen
 !   <IN NAME="grid_id" TYPE="character(len=3)" > </IN>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
+!> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_sg(f, grid_id, xmap)
 real, dimension(:,:,:), intent(in   ) :: f
 character(len=3),       intent(in   ) :: grid_id
@@ -3201,6 +3213,7 @@ end subroutine  set_frac_area_sg
 !   <IN NAME="grid_id" TYPE="character(len=3)" > </IN>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
+!> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_ug(f, grid_id, xmap)
 real, dimension(:,:),   intent(in   ) :: f
 character(len=3),       intent(in   ) :: grid_id
@@ -3251,6 +3264,8 @@ end subroutine  set_frac_area_ug
 !   <IN NAME="xmap" TYPE="xmap_type" > </IN>
 !   <OUT NAME="xgrid_count"  TYPE="integer"  > </OUT>
 
+!> @brief Returns current size of exchange grid variables.
+!! @return integer xgrid_count
 integer function xgrid_count(xmap)
 type (xmap_type), intent(inout) :: xmap
 
@@ -3266,7 +3281,6 @@ end function xgrid_count
 !   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
-
 subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   real, dimension(:,:), intent(in   )    :: d
   character(len=3),     intent(in   )    :: grid_id
@@ -3521,10 +3535,11 @@ end subroutine get_side2_from_xgrid
 !     logical associating exchange grid cells with given side 2 grid.
 !   </OUT>
 
+!> @brief Returns logical associating exchange grid cells with given side two grid.
 subroutine some(xmap, some_arr, grid_id)
 type (xmap_type),           intent(in) :: xmap
 character(len=3), optional, intent(in) :: grid_id
-logical, dimension(:), intent(out) :: some_arr
+logical, dimension(:), intent(out) :: some_arr !< logical associating exchange grid cells with given side 2 grid.
 
   integer :: g
 
@@ -4167,10 +4182,10 @@ end subroutine get_1_from_xgrid_repro
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_side1" TYPE="real" DIM="dimension(3)" > </OUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
-! conservation_check - returns three numbers which are the global sum of a
-! variable (1) on its home model grid, (2) after interpolation to the other
-! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!
+!> @brief conservation_check - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_side1
 function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
 real, dimension(:,:),    intent(in   ) :: d
 character(len=3),        intent(in   ) :: grid_id
@@ -4225,6 +4240,10 @@ end function conservation_check_side1
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_side2" TYPE="real" DIM="dimension(3)" > </OUT>
 
+!> @brief conservation_check - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_side2
 function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
 real, dimension(:,:,:), intent(in   )  :: d
 character(len=3),       intent(in   )  :: grid_id
@@ -4287,6 +4306,10 @@ end function conservation_check_side2
 ! variable (1) on its home model grid, (2) after interpolation to the other
 ! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !
+!> @brief conservation_check_ug - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_ug_side1
 function conservation_check_ug_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
 real, dimension(:,:),    intent(in   ) :: d
 character(len=3),        intent(in   ) :: grid_id
@@ -4367,6 +4390,10 @@ end function conservation_check_ug_side1
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_ug_side2" TYPE="real" DIM="dimension(3)" > </OUT>
 
+!> @brief conservation_check_ug - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_ug_side2
 function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
 real, dimension(:,:,:), intent(in   )  :: d
 character(len=3),       intent(in   )  :: grid_id
@@ -4446,7 +4473,7 @@ end function conservation_check_ug_side2
 
 
 !******************************************************************************
-! This routine is used to get the grid area of component model with id.
+!> @brief This routine is used to get the grid area of component model with id.
 subroutine get_xmap_grid_area(id, xmap, area)
   character(len=3),     intent(in   ) :: id
   type (xmap_type),     intent(inout) :: xmap
@@ -4471,10 +4498,10 @@ end subroutine get_xmap_grid_area
 
 !#######################################################################
 
-! This function is used to calculate the gradient along zonal direction.
-! Maybe need to setup a limit for the gradient. The grid is assumeed
-! to be regular lat-lon grid
-
+!> @brief This function is used to calculate the gradient along zonal direction.
+!!   Maybe need to setup a limit for the gradient. The grid is assumeed
+!!   to be regular lat-lon grid
+!! @return real grad_zonal_latlon
 function grad_zonal_latlon(d, lon, lat, is, ie, js, je, isd, jsd)
 
   integer,                    intent(in) :: isd, jsd
@@ -4512,9 +4539,9 @@ end function grad_zonal_latlon
 
 !#######################################################################
 
-! This function is used to calculate the gradient along meridinal direction.
-! Maybe need to setup a limit for the gradient. regular lat-lon grid are assumed
-
+!> @brief This function is used to calculate the gradient along meridinal direction.
+!!   Maybe need to setup a limit for the gradient. regular lat-lon grid are assumed
+!! @return grad_merid_latlon
 function grad_merid_latlon(d, lat, is, ie, js, je, isd, jsd)
   integer,                    intent(in) :: isd, jsd
   real, dimension(isd:,jsd:), intent(in) :: d
@@ -4560,6 +4587,10 @@ subroutine get_index_range(xmap, grid_index, is, ie, js, je, km)
 end subroutine get_index_range
 !#######################################################################
 
+!> @brief this version takes rank 3 data, it can be used to compute the flux on anything but the
+!!   first grid, which typically is on the atmos side.
+!!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+!!   if these are present.
 subroutine stock_move_3d(from, to, grid_index, data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
@@ -4572,12 +4603,13 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   use mpp_domains_mod, only : domain2D, mpp_redistribute, mpp_get_compute_domain
 
   type(stock_type), intent(inout), optional :: from, to
-  integer, intent(in)             :: grid_index        ! grid index
-  real, intent(in)                :: data(:,:,:)  ! data array is 3d
+  integer, intent(in)             :: grid_index        !< grid index
+  real, intent(in)                :: data(:,:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       ! earth radius
+  integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       !< earth radius
   character(len=*), intent(in), optional      :: verbose
   integer, intent(out)            :: ier
 
@@ -4616,7 +4648,9 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
 end subroutine stock_move_3d
 
 !...................................................................
-
+!> @brief this version takes rank 2 data, it can be used to compute the flux on the atmos side
+!!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+!!   if these are present.
 subroutine stock_move_2d(from, to, grid_index, data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
@@ -4629,11 +4663,12 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, optional, intent(in)   :: grid_index
-  real, intent(in)                :: data(:,:)    ! data array is 2d
+  real, intent(in)                :: data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       ! earth radius
+  integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       !< earth radius
   character(len=*), intent(in)    :: verbose
   integer, intent(out)            :: ier
 
@@ -4676,7 +4711,10 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 end subroutine stock_move_2d
 
 !#######################################################################
-
+!> @brief this version takes rank 3 data, it can be used to compute the flux on anything but the
+!!   first grid, which typically is on the atmos side.
+!!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+!!   if these are present.
 subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
@@ -4689,12 +4727,13 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   use mpp_domains_mod, only : domain2D, mpp_redistribute, mpp_get_compute_domain
 
   type(stock_type), intent(inout), optional :: from, to
-  integer, intent(in)             :: grid_index        ! grid index
-  real, intent(in)                :: data(:,:)  ! data array is 3d
+  integer, intent(in)             :: grid_index        !< grid index
+  real, intent(in)                :: data(:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       ! earth radius
+  integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       !< earth radius
   character(len=*), intent(in), optional      :: verbose
   integer, intent(out)            :: ier
   real, dimension(size(data,1),size(data,2)) :: tmp
@@ -4737,16 +4776,17 @@ end subroutine stock_move_ug_3d
 
 
 !#######################################################################
+!> @brief surface/time integral of a 2d array
 subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
 
   ! surface/time integral of a 2d array
 
   use mpp_mod, only : mpp_sum
 
-  real, intent(in)                :: data(:,:)    ! data array is 2d
+  real, intent(in)                :: data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  real, intent(in)                :: radius       ! earth radius
+  real, intent(in)                :: radius       !< earth radius
   real, intent(out)               :: res
   integer, intent(out)            :: ier
 
@@ -4776,14 +4816,14 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
   type(stock_type), intent(in)  :: stck
   type(time_type), intent(in)   :: Time
   character(len=*)              :: comp_name
-  integer, intent(in)           :: index     ! to map stock element (water, heat, ..) to a name
-  real, intent(in)              :: ref_value ! the stock value returned by the component per PE
+  integer, intent(in)           :: index     !< to map stock element (water, heat, ..) to a name
+  real, intent(in)              :: ref_value !< the stock value returned by the component per PE
   real, intent(in)              :: radius
   integer, intent(in), optional :: pelist(:)
 
-  integer, parameter :: initID = -2 ! initial value for diag IDs. Must not be equal to the value
-  ! that register_diag_field returns when it can't register the filed -- otherwise the registration
-  ! is attempted every time this subroutine is called
+  integer, parameter :: initID = -2 !< initial value for diag IDs. Must not be equal to the value
+  !! that register_diag_field returns when it can't register the filed -- otherwise the registration
+  !! is attempted every time this subroutine is called
 
   real :: f_value, c_value, planet_area
   character(len=80) :: formatString
@@ -4867,6 +4907,7 @@ end subroutine stock_print
 
 
 !###############################################################################
+ !> @return logical is_lat_lon
  function is_lat_lon(lon, lat)
     real, dimension(:,:), intent(in) :: lon, lat
     logical                          :: is_lat_lon
@@ -4993,7 +5034,7 @@ end subroutine get_side1_from_xgrid_ug
 !   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
-! Currently only support first order.
+!> @brief Currently only support first order.
 subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
   real, dimension(:),   intent(in   )    :: d
   character(len=3),     intent(in   )    :: grid_id
@@ -5486,6 +5527,7 @@ type (xmap_type),       intent(in   ) :: xmap
 end subroutine get_2_from_xgrid_ug
 
 !######################################################################
+!> @return logical in_box_me
 logical function in_box_me(i, j, grid)
   integer,          intent(in) :: i, j
   type (grid_type), intent(in) :: grid
@@ -5501,6 +5543,7 @@ logical function in_box_me(i, j, grid)
 end function in_box_me
 
 !######################################################################
+!> @return logical in_box_nbr
 logical function in_box_nbr(i, j, grid, p)
   integer,          intent(in) :: i, j, p
   type (grid_type), intent(in) :: grid
