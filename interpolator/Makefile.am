@@ -34,6 +34,8 @@ AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms2_io
 AM_CPPFLAGS += -I${top_builddir}/platform
 
+include_HEADERS = use_mpp_io.inc
+
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libinterpolator.la
 
@@ -42,6 +44,7 @@ libinterpolator_la_SOURCES = interpolator.F90
 
 # Mod file depends on its o file, is built and then installed.
 interpolator_mod.mod: interpolator.lo
+
 BUILT_SOURCES = interpolator_mod.mod
 include_HEADERS = interpolator_mod.mod
 
