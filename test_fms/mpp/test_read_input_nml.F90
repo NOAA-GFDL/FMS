@@ -72,8 +72,8 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
       exit
     end if
     if (input_nml_file(n).ne.line) then
-      call mpp_error(FATAL, "Input nml does not match &
-                                        &the input_nml_file variable")
+      call mpp_error(FATAL, "data resident in ./input.nml does not match&
+                             & that read into input_nml_file by read_input_nml")
     end if
     n = n + 1
   end do
