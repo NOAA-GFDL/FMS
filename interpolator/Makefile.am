@@ -33,6 +33,7 @@ AM_CPPFLAGS += -I${top_builddir}/time_interp
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms2_io
 AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS += -I${top_srcdir}/interpolator
 
 include_HEADERS = use_mpp_io.inc
 
