@@ -811,7 +811,7 @@ if(dimension_exists(fileobj, "time")) then
            & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
            & (model_calendar == NOLEAP .and.   &
            & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
-        call mpp_error (NOTE, 'interpolator_mod: Model and file&
+        call mpp_error (NOTE, 'interpolator[2]_mod: Model and file&
                   & calendars are the same for file ' //   &
                   & trim(file_name) // '; no calendar conversion  &
                   &needed')
@@ -819,7 +819,7 @@ if(dimension_exists(fileobj, "time")) then
                               filemin,filesec)
       else if ( (model_calendar == JULIAN .and.   &
            & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
-        call mpp_error (NOTE, 'interpolator_mod: Using julian &
+        call mpp_error (NOTE, 'interpolator[2]_mod: Using julian &
                           &model calendar and noleap file calendar&
                           & for file ' // trim(file_name) //   &
                           &'; calendar conversion needed')
@@ -827,14 +827,14 @@ if(dimension_exists(fileobj, "time")) then
              & filehr, filemin, filesec)
       else if ( (model_calendar == NOLEAP .and.   &
            & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
-        call mpp_error (NOTE, 'interpolator_mod: Using noleap &
+        call mpp_error (NOTE, 'interpolator[2]_mod: Using noleap &
                           &model calendar and julian file calendar&
                           & for file ' // trim(file_name) //  &
                           &'; calendar conversion needed')
         base_time = set_date_julian (fileyr, filemon, fileday,  &
              & filehr, filemin, filesec)
       else
-        call mpp_error (FATAL , 'interpolator_mod: Model and file&
+        call mpp_error (FATAL , 'interpolator[2]_mod: Model and file&
              & calendars ( ' // trim(file_calendar) // ' ) differ  &
              &for file ' // trim(file_name) // ';  this calendar  &
              &conversion not currently available')
@@ -873,10 +873,10 @@ if(dimension_exists(fileobj, "time")) then
          endif
       end do
       if (clim_type%climatological_year) then
-         call mpp_error (NOTE, 'interpolator_mod :'  // &
+         call mpp_error (NOTE, 'interpolator_mod[2] :'  // &
          trim(file_name) // ' is a year-independent climatology file')
       else
-         call mpp_error (NOTE, 'interpolator_mod :' // &
+         call mpp_error (NOTE, 'interpolator_mod[2] :' // &
            trim(file_name) // ' is a timeseries file')
       endif
 
