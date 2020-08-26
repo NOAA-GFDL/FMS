@@ -382,6 +382,7 @@ end type
  logical ::  no_anom_sst = .true.
  logical :: use_ncep_ice = .false.
  logical :: interp_oi_sst = .false.       ! changed to false for regular runs
+ logical :: use_mpp_io_bug = .false.
 
  namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
                             interp_oi_sst, data_set, date_out_of_range,          &
@@ -390,7 +391,8 @@ end type
                             sst_pert, sst_pert_type, do_sst_pert,                &
                             use_daily,                                           &
                             ! end add by JHC
-                            verbose, i_sst, j_sst, forecast_mode
+                            verbose, i_sst, j_sst, forecast_mode,                &
+                            use_mpp_io_bug
 ! </NAMELIST>
 
 
