@@ -1459,9 +1459,9 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
     type(domainUG),pointer                     :: io_domain
-    integer(INT_KIND)                          :: io_domain_npes
-    integer(INT_KIND),dimension(:),allocatable :: io_pelist
-    integer(INT_KIND),dimension(:),allocatable :: unstruct_axis_sizes
+    integer(I4_KIND)                           :: io_domain_npes
+    integer(I4_KIND),dimension(:),allocatable  :: io_pelist
+    integer(I4_KIND),dimension(:),allocatable  :: unstruct_axis_sizes
     real,dimension(:),allocatable              :: unstruct_axis_data
 
     ! Make sure err_msg is initialized
@@ -1601,10 +1601,10 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
        ! Deallocate attributes
        IF ( ALLOCATED(attributes) ) THEN
           DO j=1, num_attributes
-             IF ( _ALLOCATED(attributes(j)%fatt ) ) THEN
+             IF ( allocated(attributes(j)%fatt ) ) THEN
                 DEALLOCATE(attributes(j)%fatt)
              END IF
-             IF ( _ALLOCATED(attributes(j)%iatt ) ) THEN
+             IF ( allocated(attributes(j)%iatt ) ) THEN
                 DEALLOCATE(attributes(j)%iatt)
              END IF
           END DO
@@ -1677,10 +1677,10 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
        ! Deallocate attributes
        IF ( ALLOCATED(attributes) ) THEN
           DO j=1, num_attributes
-             IF ( _ALLOCATED(attributes(j)%fatt ) ) THEN
+             IF ( allocated(attributes(j)%fatt ) ) THEN
                 DEALLOCATE(attributes(j)%fatt)
              END IF
-             IF ( _ALLOCATED(attributes(j)%iatt ) ) THEN
+             IF ( allocated(attributes(j)%iatt ) ) THEN
                 DEALLOCATE(attributes(j)%iatt)
              END IF
           END DO
@@ -1736,7 +1736,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     INTEGER, OPTIONAL, INTENT(in) :: pack
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method, standard_name
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
-    TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
+    TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
     LOGICAL, OPTIONAL, INTENT(in) :: use_UGdomain
 
@@ -1891,7 +1891,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     !---- write user defined attributes -----
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
-          IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
+          IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
              CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
@@ -1899,11 +1899,11 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
              END IF
           ELSE
              ! Catch some bad cases
-             IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
+             IF ( num_attributes .GT. 0 .AND. .NOT.allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes > 0 but attributes is not allocated for attribute '&
                      &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-             ELSE IF ( num_attributes .EQ. 0 .AND. _ALLOCATED(attributes) ) THEN
+             ELSE IF ( num_attributes .EQ. 0 .AND. allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes == 0 but attributes is allocated for attribute '&
                      &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
@@ -1972,7 +1972,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     DO i = 1, num_attributes
        SELECT CASE (attributes(i)%type)
        CASE (NF90_INT)
-          IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
+          IF ( .NOT.allocated(attributes(i)%iatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Integer attribute type indicated, but array not allocated for attribute '&
                   &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
@@ -1982,7 +1982,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           CALL mpp_write_meta(file_unit, id, TRIM(attributes(i)%name),&
                & ival=attributes(i)%iatt)
        CASE (NF90_FLOAT)
-          IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
+          IF ( .NOT.allocated(attributes(i)%fatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Real attribute type indicated, but array not allocated for attribute '&
                   &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
