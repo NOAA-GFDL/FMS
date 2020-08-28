@@ -743,6 +743,7 @@ use fms2_io_mod
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
+  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
 
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
