@@ -88,7 +88,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_mod, ONLY: mpp_npes
   USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-use fms2_io_mod
+#ifndef use_mpp_io
+  USE fms2_io_mod
+#endif
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
@@ -1823,8 +1825,9 @@ CONTAINS
     TYPE(domainUG) :: domainU
     INTEGER :: is, ie, last, ind
     character(len=2) :: fnum_domain
+#ifndef use_mpp_io
     class(FmsNetcdfFile_t), pointer    :: fileob
-
+#endif
     aux_present = .FALSE.
     match_aux_name = .FALSE.
     req_present = .FALSE.
