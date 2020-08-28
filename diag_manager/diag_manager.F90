@@ -234,9 +234,7 @@ use platform_mod
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init, &
        & use_mpp_io
-#ifndef use_mpp_io
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
-#endif
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
@@ -3536,17 +3534,19 @@ CONTAINS
     IF ( (output_fields(out_num)%time_ops) .AND. (.NOT. mix_snapshot_average_fields) ) THEN
        middle_time = (output_fields(out_num)%last_output+output_fields(out_num)%next_output)/2
        if (output_fields(out_num)%n_diurnal_samples > 1) then
-          CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time)
+          CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, use_mpp_io_arg=use_mpp_io)
        else
-          CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time)
+          CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
+                 & use_mpp_io_arg=use_mpp_io)
        endif
     ELSE
        if (output_fields(out_num)%n_diurnal_samples > 1) then
             CALL diag_data_out(file_num, out_num, &
-                 & diurnal_buffer, output_fields(out_num)%next_output)
+                 & diurnal_buffer, output_fields(out_num)%next_output, use_mpp_io_arg=use_mpp_io)
        else
             CALL diag_data_out(file_num, out_num, &
-                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
+                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output,&
+                 & use_mpp_io_arg=use_mpp_io)
        endif
     END IF
 !output_fields(out_num)%last_output = output_fields(out_num)%next_output
@@ -3610,7 +3610,8 @@ CONTAINS
                & (input_fields(in_num)%active_omp_level.LE.1) ) CYCLE
           file_num = output_fields(out_num)%output_file
           CALL diag_data_out(file_num, out_num, &
-               & output_fields(out_num)%buffer, time)
+               & output_fields(out_num)%buffer, time, &
+               & use_mpp_io_arg=use_mpp_io)
         END DO
       END IF
     END DO
@@ -3703,12 +3704,12 @@ CONTAINS
     DO file = 1, num_files
        CALL closing_file(file, time)
     END DO
-#ifndef use_mpp_io
-  if (allocated(fileobjU)) deallocate(fileobjU)
-  if (allocated(fileobj)) deallocate(fileobj)
-  if (allocated(fileobjND)) deallocate(fileobjND)
+  if (.not.use_mpp_io) then
+    if (allocated(fileobjU)) deallocate(fileobjU)
+    if (allocated(fileobj)) deallocate(fileobj)
+    if (allocated(fileobjND)) deallocate(fileobjND)
   if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
-#endif
+  endif
   END SUBROUTINE diag_manager_end
   ! </SUBROUTINE>
 
@@ -3793,14 +3794,14 @@ CONTAINS
                     diurnal_buffer(:,:,loop1,loop2) = output_fields(i)%buffer(:,:,loop2,loop1)
                enddo
                enddo
-               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE.)
+               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
           else
-          CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)
+          CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
           endif
        END IF
     END DO
     ! Now it's time to output static fields
-    CALL write_static(file)
+    CALL write_static(file, use_mpp_io)
 
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
@@ -3957,14 +3958,19 @@ CONTAINS
       ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
     END DO
     ALLOCATE(files(max_files))
-#ifndef use_mpp_io
-    ALLOCATE(fileobjU(max_files))
-    ALLOCATE(fileobj(max_files))
-    ALLOCATE(fileobjND(max_files))
-    ALLOCATE(fnum_for_domain(max_files))
+    if (.not.use_mpp_io) then
+      ALLOCATE(fileobjU(max_files))
+      ALLOCATE(fileobj(max_files))
+      ALLOCATE(fileobjND(max_files))
+      ALLOCATE(fnum_for_domain(max_files))
     !> Initialize fnum_for_domain with "dn" which stands for done
-     fnum_for_domain(:) = "dn"
-#endif
+      fnum_for_domain(:) = "dn"
+       CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'diag_manager is using fms2_io', NOTE)
+    else
+       CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'diag_manager is using mpp_io', NOTE)
+    endif
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
