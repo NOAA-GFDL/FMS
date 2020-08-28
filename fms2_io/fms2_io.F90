@@ -18,8 +18,8 @@
 !***********************************************************************
 
 !> @file
-
-!> @brief Public API for fms I/O.
+!! @brief Public API for fms I/O.
+!! @email gfdl.climate.model.info@noaa.gov
 module fms2_io_mod
 use fms_io_utils_mod
 use netcdf_io_mod
