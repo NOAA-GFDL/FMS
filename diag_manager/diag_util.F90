@@ -2083,7 +2083,7 @@ CONTAINS
           EXIT
        END IF
     END DO
-    DO j = 1, files(file)%num_fields
+    nfields_loop: DO j = 1, files(file)%num_fields
        field_num = files(file)%fields(j)
        input_field_num = output_fields(field_num)%input_field
        IF (.NOT.input_fields(input_field_num)%register) CYCLE
@@ -2215,49 +2215,7 @@ CONTAINS
 
           END IF
        END IF
-    END DO
-
-    ! If any of the fields in the file are time averaged, need to output the axes
-    ! Use double precision since time axis is double precision
-    IF ( time_ops ) THEN
-       time_axis_id(1) = files(file)%time_axis_id
-       files(file)%f_avg_start = write_field_meta_data(files(file)%file_unit,&
-            & avg_name // '_T1', time_axis_id, time_units,&
-            & "Start time for average period", pack=pack_size , &
-            & fileob=fileob)
-       files(file)%f_avg_end = write_field_meta_data(files(file)%file_unit,&
-            & avg_name // '_T2', time_axis_id, time_units,&
-            & "End time for average period", pack=pack_size , &
-            & fileob=fileob)
-       files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit,&
-            & avg_name // '_DT', time_axis_id,&
-            & TRIM(time_unit_list(files(file)%time_units)),&
-            & "Length of average period", pack=pack_size , &
-            & fileob=fileob)
-    END IF
-
-    IF ( time_ops ) THEN
-       time_axis_id(1) = files(file)%time_axis_id
-       time_bounds_id(1) = files(file)%time_bounds_id
-       CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
-       CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
-       IF ( do_cf_compliance() ) THEN
-          ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
-          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size , &
-               & fileob=fileob)
-       ELSE
-          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & TRIM(time_unit_list(files(file)%time_units)),&
-               & TRIM(time_name)//' axis boundaries', pack=pack_size, &
-               & fileob=fileob)
-       END IF
-    END IF
-   else !< use_mpp_io
+     else !< use_mpp_io
        IF ( input_fields(input_field_num)%missing_value_present ) THEN
           IF ( LEN_TRIM(input_fields(input_field_num)%interp_method) > 0 ) THEN
              output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
@@ -2314,8 +2272,52 @@ CONTAINS
                   & use_UGdomain=files(file)%use_domainUG)
           END IF
        END IF
-    END DO
+     endif !<use_mpp_io
+    END DO nfields_loop
+   if (.not. use_mpp_io) then
+    ! If any of the fields in the file are time averaged, need to output the axes
+    ! Use double precision since time axis is double precision
+    IF ( time_ops ) THEN
+       time_axis_id(1) = files(file)%time_axis_id
+       files(file)%f_avg_start = write_field_meta_data(files(file)%file_unit,&
+            & avg_name // '_T1', time_axis_id, time_units,&
+            & "Start time for average period", pack=pack_size , &
+            & fileob=fileob)
+       files(file)%f_avg_end = write_field_meta_data(files(file)%file_unit,&
+            & avg_name // '_T2', time_axis_id, time_units,&
+            & "End time for average period", pack=pack_size , &
+            & fileob=fileob)
+       files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit,&
+            & avg_name // '_DT', time_axis_id,&
+            & TRIM(time_unit_list(files(file)%time_units)),&
+            & "Length of average period", pack=pack_size , &
+            & fileob=fileob)
+    END IF
 
+    IF ( time_ops ) THEN
+       time_axis_id(1) = files(file)%time_axis_id
+       time_bounds_id(1) = files(file)%time_bounds_id
+       CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
+            & cart_name, dir, edges, Domain, domainU, DATA)
+       CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
+            & cart_name, dir, edges, Domain, domainU, DATA)
+       IF ( do_cf_compliance() ) THEN
+          ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
+          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
+               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
+               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size , &
+               & fileob=fileob)
+       ELSE
+          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
+               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
+               & TRIM(time_unit_list(files(file)%time_units)),&
+               & TRIM(time_name)//' axis boundaries', pack=pack_size, &
+               & fileob=fileob)
+       END IF
+    END IF
+    ! Let lower levels know that all meta data has been sent
+    call done_meta_data(files(file)%file_unit)
+   else !< use_mpp_io
     ! If any of the fields in the file are time averaged, need to output the axes
     ! Use double precision since time axis is double precision
     IF ( time_ops ) THEN
@@ -2351,13 +2353,10 @@ CONTAINS
                & TRIM(time_name)//' axis boundaries', pack=pack_size)
        END IF
     END IF
-   endif !< use_mpp_io
     ! Let lower levels know that all meta data has been sent
-   if (use_mpp_io) then
     CALL done_meta_data_use_mpp_io(files(file)%file_unit)
-   else
-    call done_meta_data(files(file)%file_unit)
-   endif
+   endif !< use_mpp_io
+
     IF( aux_present .AND. .NOT.match_aux_name ) THEN
        ! <ERROR STATUS="WARNING">
        !   one axis has auxiliary but the corresponding field is NOT
@@ -2599,11 +2598,12 @@ CONTAINS
     REAL, DIMENSION(:,:,:,:), INTENT(inout) :: dat
     TYPE(time_type), INTENT(in) :: time
     LOGICAL, OPTIONAL, INTENT(in):: final_call_in, static_write_in
-    logical,optional :: use_mpp_io_arg !< Switch for which IO to use for outputting data
+    logical,optional,intent(in) :: use_mpp_io_arg !< Switch for which IO to use for outputting data
 
     LOGICAL :: final_call, do_write, static_write
     INTEGER :: i, num
     REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
+    LOGICAL :: use_mpp_io
 
     if (present(use_mpp_io_arg)) then
         use_mpp_io = use_mpp_io_arg
@@ -2774,7 +2774,7 @@ CONTAINS
           IF ( time > files(file)%close_time .AND. time < files(file)%next_open ) THEN
              do_write = .FALSE. ! file still open but receives NO MORE data
           ELSE IF ( time > files(file)%next_open ) THEN ! need to close current file and open a new one
-             CALL write_static(file)  ! write all static fields and close this file
+             CALL write_static(file, use_mpp_io)  ! write all static fields and close this file
              CALL opening_file(file, time, use_mpp_io)
              files(file)%start_time = files(file)%next_open
              files(file)%close_time =&
@@ -2814,7 +2814,7 @@ CONTAINS
        IF ( output_fields(i)%local_output .AND. .NOT. output_fields(i)%need_compute) CYCLE
        ! only output static fields here
        IF ( .NOT.output_fields(i)%static ) CYCLE
-       CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE.)
+       CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE., use_mpp_io_arg=use_mpp_io)
     END DO
    if (.not. use_mpp_io) then
 !! New FMS_IO close
