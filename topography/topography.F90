@@ -52,12 +52,13 @@ use            fms_mod, only: check_nml_error, stdlog,    &
                               mpp_pe, mpp_root_pe, write_version_number, &
                               error_mesg, FATAL, NOTE, &
                               mpp_error
-#ifndef use_mpp_io
+
 use        fms2_io_mod, only: read_data, FmsNetcdfFile_t, file_exists, open_file
-#else 
+!  required for mpp_io
 use         fms_io_mod, only: read_data, file_exist, open_ieee32_file
 use            fms_mod, only: close_file
-#endif
+!-----------------------------------------------------------------------
+
 use      constants_mod, only: PI
 use            mpp_mod, only: input_nml_file
 
@@ -69,9 +70,11 @@ public :: topography_init,                 &
           get_ocean_frac, get_ocean_mask,  &
           get_water_frac, get_water_mask,  &
           gaussian_topog_init, get_gaussian_topog
+!! use_mpp_io functions 
+!public :: get_topog_mean_1d_mpp_io
 
 interface get_topog_mean
-  module procedure get_topog_mean_1d, get_topog_mean_2d
+  module procedure get_topog_mean_1d, get_topog_mean_2d, get_topog_mean_1d_mpp_io
 end interface
 interface get_topog_stdev
   module procedure get_topog_stdev_1d, get_topog_stdev_2d
@@ -104,10 +107,10 @@ end interface
 ! </NAMELIST>
    integer, parameter    :: TOPOG_INDEX = 1
    integer, parameter    :: WATER_INDEX = 2
-#ifndef use_mpp_io
+! needed for mpp_io
    type(FmsNetcdfFile_t) :: fileobj(2)
-#endif
    logical :: file_is_opened(2) = .false.
+   logical :: use_mpp_io = .false.
 !-----------------------------------------------------------------------
 ! --- resolution of the topography data set ---
 ! <DATASET NAME="">
@@ -198,14 +201,21 @@ end interface
 !   <ERROR MSG="shape(zmean) is not equal to (/size(blon)-1,size(blat)-1/))" STATUS="FATAL">
 !     Check the input grid size and output field size.
 !   </ERROR>
-#ifndef use_mpp_io
- function get_topog_mean_1d (blon, blat, zmean)
+
+!#ifndef use_mpp_io
+ function get_topog_mean_1d (blon, blat, zmean, use_mpp_io)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
    logical :: get_topog_mean_1d
+   logical,optional :: use_mpp_io
 
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then
+       get_topog_mean_1d = get_topog_mean_1d_mpp_io (blon, blat, zmean)
+       return
+   endif !< use_mpp_io
+  
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(zmean(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
@@ -225,13 +235,19 @@ end interface
 
 !############################################################
 
- function get_topog_mean_2d (blon, blat, zmean)
+ function get_topog_mean_2d (blon, blat, zmean, use_mpp_io)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
    logical :: get_topog_mean_2d
+   logical,optional :: use_mpp_io
 
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then
+       get_topog_mean_2d = get_topog_mean_2d_mpp_io (blon, blat, zmean)
+       return
+   endif !< use_mpp_io
+
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
@@ -284,13 +300,19 @@ end interface
 !     input topography data set was not readable.
 !   </OUT>
 
- function get_topog_stdev_1d (blon, blat, stdev)
+ function get_topog_stdev_1d (blon, blat, stdev, use_mpp_io)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_1d
+   logical,optional :: use_mpp_io
 
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then
+       get_topog_stdev_1d = get_topog_stdev_1d_mpp_io (blon, blat, stdev)
+       return
+   endif !< use_mpp_io
+
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
@@ -310,13 +332,19 @@ end interface
 
 !#######################################################################
 
- function get_topog_stdev_2d (blon, blat, stdev)
+ function get_topog_stdev_2d (blon, blat, stdev, use_mpp_io)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_2d
+   logical,optional :: use_mpp_io
 
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then
+       get_topog_stdev_2d = get_topog_stdev_2d_mpp_io (blon, blat, stdev)
+       return
+   endif !< use_mpp_io
+
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
@@ -366,13 +394,17 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_ocean_frac_1d (blon, blat, ocean_frac)
+ function get_ocean_frac_1d (blon, blat, ocean_frac, use_mpp_io)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
  logical :: get_ocean_frac_1d
-
+ logical,optional :: use_mpp_io
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then
+       get_ocean_frac_1d = get_ocean_frac_1d_mpp_io (blon, blat, ocean_frac)
+       return
+   endif !< use_mpp_io
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
@@ -392,13 +424,17 @@ end interface
 
 !#######################################################################
 
- function get_ocean_frac_2d (blon, blat, ocean_frac)
+ function get_ocean_frac_2d (blon, blat, ocean_frac, use_mpp_io)
 
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
  logical :: get_ocean_frac_2d
-
+ logical,optional :: use_mpp_io
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then
+       get_ocean_frac_2d = get_ocean_frac_2d_mpp_io (blon, blat, ocean_frac)
+       return
+   endif !< use_mpp_io
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
@@ -446,14 +482,21 @@ end interface
 !     was successfully created. A value of FALSE may be returned
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
- function get_ocean_mask_1d (blon, blat, ocean_mask)
+
+ function get_ocean_mask_1d (blon, blat, ocean_mask, use_mpp_io)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
  logical :: get_ocean_mask_1d
+ logical,optional :: use_mpp_io
 
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then 
+       get_ocean_mask_1d = get_ocean_mask_1d_mpp_io (blon, blat, ocean_mask)
+       return
+   endif !< use_mpp_io
+
    if (.not. module_is_initialized) call topography_init()
 
  if ( get_ocean_frac(blon, blat, ocean_frac) ) then
@@ -473,14 +516,20 @@ end interface
 
 !#######################################################################
 
- function get_ocean_mask_2d (blon, blat, ocean_mask)
+ function get_ocean_mask_2d (blon, blat, ocean_mask, use_mpp_io)
 
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
+ logical,optional :: use_mpp_io
  logical :: get_ocean_mask_2d
 
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then 
+       get_ocean_mask_2d = get_ocean_mask_2d_mpp_io (blon, blat, ocean_mask)
+       return
+   endif !< use_mpp_io
+
    if (.not. module_is_initialized) call topography_init()
 
  if ( get_ocean_frac(blon, blat, ocean_frac) ) then
@@ -531,13 +580,18 @@ end interface
 !      Check the input grid size and output field size.
 !   </ERROR>
 
- function get_water_frac_1d (blon, blat, water_frac)
+ function get_water_frac_1d (blon, blat, water_frac, use_mpp_io)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: water_frac
  logical :: get_water_frac_1d
 
+ logical,optional :: use_mpp_io
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then 
+       get_water_frac_1d = get_water_frac_1d_mpp_io (blon, blat, water_frac)
+       return
+   endif !< use_mpp_io
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
@@ -557,13 +611,18 @@ end interface
 
 !#######################################################################
 
- function get_water_frac_2d (blon, blat, water_frac)
+ function get_water_frac_2d (blon, blat, water_frac, use_mpp_io)
 
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: water_frac
  logical :: get_water_frac_2d
 
+ logical,optional :: use_mpp_io
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then 
+       get_water_frac_2d = get_water_frac_2d_mpp_io (blon, blat, water_frac)
+       return
+   endif !< use_mpp_io
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
@@ -612,14 +671,19 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_water_mask_1d (blon, blat, water_mask)
+ function get_water_mask_1d (blon, blat, water_mask, use_mpp_io)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: water_mask
  logical :: get_water_mask_1d
 
+ logical,optional :: use_mpp_io
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then 
+       get_water_mask_1d = get_water_mask_1d_mpp_io (blon, blat, water_mask)
+       return
+   endif !< use_mpp_io
    if (.not. module_is_initialized) call topography_init()
 
  if ( get_water_frac(blon, blat, water_frac) ) then
@@ -647,6 +711,11 @@ end interface
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------
+   if ( use_mpp_io ) then 
+       get_water_mask_2d = get_water_mask_2d_mpp_io (blon, blat, water_mask)
+       return
+   endif !< use_mpp_io
+
    if (.not. module_is_initialized) call topography_init()
 
  if ( get_water_frac(blon, blat, water_frac) ) then
@@ -727,15 +796,21 @@ end interface
 
 !#######################################################################
 
- subroutine interp_topog_1d ( blon, blat, zout, flag )
+ subroutine interp_topog_1d ( blon, blat, zout, flag, use_mpp_io )
  real   , intent(in)  :: blon(:), blat(:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
 
+ logical,optional :: use_mpp_io !< added for mpp io compatability
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
-
+ 
+    if ( use_mpp_io ) then 
+       call interp_topog_1d_mpp_io (blon, blat, zout, flag)
+       return
+    endif !< use_mpp_io
+    
     call input_data ( TOPOG_INDEX, xdat, ydat, zdat )
 
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
@@ -758,16 +833,21 @@ end interface
 
 !#######################################################################
 
- subroutine interp_topog_2d ( blon, blat, zout, flag )
+ subroutine interp_topog_2d ( blon, blat, zout, flag, use_mpp_io)
  real   , intent(in)  :: blon(:,:), blat(:,:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
-
+ logical,optional :: use_mpp_io !< added for mpp io compatability
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
  integer :: js, je
  type (horiz_interp_type) :: Interp
+
+    if ( use_mpp_io ) then 
+       call interp_topog_2d_mpp_io (blon, blat, zout, flag)
+       return
+    endif !< use_mpp_io
 
     call input_data ( TOPOG_INDEX, xdat, ydat, zdat )
     call find_indices ( minval(blat), maxval(blat), ydat, js, je )
@@ -792,13 +872,13 @@ end interface
     call horiz_interp_del ( Interp )
 
  end subroutine interp_topog_2d
-#else
+!#else
 
- function get_topog_mean_1d (blon, blat, zmean)
+ function get_topog_mean_1d_mpp_io (blon, blat, zmean)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
-   logical :: get_topog_mean_1d
+   logical :: get_topog_mean_1d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -807,24 +887,24 @@ end interface
         call error_mesg('get_topog_mean_1d','shape(zmean) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   if ( open_topog_file(topog_file) ) then
-       call interp_topog_1d ( blon, blat, zmean )
-       get_topog_mean_1d = .true.
+   if ( open_topog_file_mpp_io(topog_file) ) then
+       call interp_topog_1d_mpp_io ( blon, blat, zmean )
+       get_topog_mean_1d_mpp_io = .true.
    else
-       get_topog_mean_1d = .false.
+       get_topog_mean_1d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_topog_mean_1d
+ end function get_topog_mean_1d_mpp_io
 
 !############################################################
 
- function get_topog_mean_2d (blon, blat, zmean)
+ function get_topog_mean_2d_mpp_io (blon, blat, zmean)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
-   logical :: get_topog_mean_2d
+   logical :: get_topog_mean_2d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -834,16 +914,16 @@ end interface
         call error_mesg('get_topog_mean_2d','shape(zmean) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if ( open_topog_file(topog_file) ) then
+   if ( open_topog_file_mpp_io(topog_file) ) then
        call interp_topog_2d ( blon, blat, zmean )
-       get_topog_mean_2d = .true.
+       get_topog_mean_2d_mpp_io = .true.
    else
-       get_topog_mean_2d = .false.
+       get_topog_mean_2d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_topog_mean_2d
+ end function get_topog_mean_2d_mpp_io
 
 ! </FUNCTION>
 !#######################################################################
@@ -879,11 +959,11 @@ end interface
 !     input topography data set was not readable.
 !   </OUT>
 
- function get_topog_stdev_1d (blon, blat, stdev)
+ function get_topog_stdev_1d_mpp_io (blon, blat, stdev)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
-   logical :: get_topog_stdev_1d
+   logical :: get_topog_stdev_1d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -892,24 +972,24 @@ end interface
        call error_mesg('get_topog_stdev','shape(stdev) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   if ( open_topog_file(topog_file) ) then
-       call interp_topog_1d ( blon, blat, stdev, flag=COMPUTE_STDEV )
-       get_topog_stdev_1d = .true.
+   if ( open_topog_file_mpp_io(topog_file) ) then
+       call interp_topog_1d_mpp_io ( blon, blat, stdev, flag=COMPUTE_STDEV )
+       get_topog_stdev_1d_mpp_io = .true.
    else
-       get_topog_stdev_1d = .false.
+       get_topog_stdev_1d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_topog_stdev_1d
+ end function get_topog_stdev_1d_mpp_io
 
 !#######################################################################
 
- function get_topog_stdev_2d (blon, blat, stdev)
+ function get_topog_stdev_2d_mpp_io (blon, blat, stdev)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
-   logical :: get_topog_stdev_2d
+   logical :: get_topog_stdev_2d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -919,16 +999,16 @@ end interface
         call error_mesg('get_topog_stdev_2d','shape(stdev) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if ( open_topog_file(topog_file) ) then
+   if ( open_topog_file_mpp_io(topog_file) ) then
        call interp_topog_2d ( blon, blat, stdev, flag=COMPUTE_STDEV )
-       get_topog_stdev_2d = .true.
+       get_topog_stdev_2d_mpp_io = .true.
    else
-       get_topog_stdev_2d = .false.
+       get_topog_stdev_2d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_topog_stdev_2d
+ end function get_topog_stdev_2d_mpp_io
 
 ! </FUNCTION>
 !#######################################################################
@@ -961,11 +1041,11 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_ocean_frac_1d (blon, blat, ocean_frac)
+ function get_ocean_frac_1d_mpp_io (blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
- logical :: get_ocean_frac_1d
+ logical :: get_ocean_frac_1d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -974,24 +1054,24 @@ end interface
         call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   if ( open_topog_file(water_file) ) then
+   if ( open_topog_file_mpp_io(water_file) ) then
        call interp_water_1d ( blon, blat, ocean_frac, do_ocean=.true. )
-       get_ocean_frac_1d = .true.
+       get_ocean_frac_1d_mpp_io = .true.
    else
-       get_ocean_frac_1d = .false.
+       get_ocean_frac_1d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_frac_1d
+ end function get_ocean_frac_1d_mpp_io
 
 !#######################################################################
 
- function get_ocean_frac_2d (blon, blat, ocean_frac)
+ function get_ocean_frac_2d_mpp_io (blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
- logical :: get_ocean_frac_2d
+ logical :: get_ocean_frac_2d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -1001,16 +1081,16 @@ end interface
         call error_mesg('get_ocean_frac_2d','shape(ocean_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if ( open_topog_file(water_file) ) then
+   if ( open_topog_file_mpp_io(water_file) ) then
        call interp_water_2d ( blon, blat, ocean_frac, do_ocean=.true. )
-       get_ocean_frac_2d = .true.
+       get_ocean_frac_2d_mpp_io = .true.
    else
-       get_ocean_frac_2d = .false.
+       get_ocean_frac_2d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_frac_2d
+ end function get_ocean_frac_2d_mpp_io
 
 ! </FUNCTION>
 !#######################################################################
@@ -1042,11 +1122,11 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_ocean_mask_1d (blon, blat, ocean_mask)
+ function get_ocean_mask_1d_mpp_io (blon, blat, ocean_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
- logical :: get_ocean_mask_1d
+ logical :: get_ocean_mask_1d_mpp_io
 
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
@@ -1058,22 +1138,22 @@ end interface
    elsewhere
      ocean_mask = .false.
    end where
-   get_ocean_mask_1d = .true.
+   get_ocean_mask_1d_mpp_io = .true.
  else
-   get_ocean_mask_1d = .false.
+   get_ocean_mask_1d_mpp_io = .false.
  endif
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_mask_1d
+ end function get_ocean_mask_1d_mpp_io
 
 !#######################################################################
 
- function get_ocean_mask_2d (blon, blat, ocean_mask)
+ function get_ocean_mask_2d_mpp_io (blon, blat, ocean_mask)
 
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
- logical :: get_ocean_mask_2d
+ logical :: get_ocean_mask_2d_mpp_io
 
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
@@ -1085,14 +1165,14 @@ end interface
    elsewhere
      ocean_mask = .false.
    end where
-   get_ocean_mask_2d = .true.
+   get_ocean_mask_2d_mpp_io = .true.
  else
-   get_ocean_mask_2d = .false.
+   get_ocean_mask_2d_mpp_io = .false.
  endif
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_mask_2d
+ end function get_ocean_mask_2d_mpp_io
 
 ! </FUNCTION>
 !#######################################################################
@@ -1127,11 +1207,11 @@ end interface
 !      Check the input grid size and output field size.
 !   </ERROR>
 
- function get_water_frac_1d (blon, blat, water_frac)
+ function get_water_frac_1d_mpp_io (blon, blat, water_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: water_frac
- logical :: get_water_frac_1d
+ logical :: get_water_frac_1d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -1140,24 +1220,24 @@ end interface
         call error_mesg('get_water_frac_1d','shape(water_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   if ( open_topog_file(water_file) ) then
+   if ( open_topog_file_mpp_io(water_file) ) then
        call interp_water_1d ( blon, blat, water_frac )
-       get_water_frac_1d = .true.
+       get_water_frac_1d_mpp_io = .true.
    else
-       get_water_frac_1d = .false.
+       get_water_frac_1d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_water_frac_1d
+ end function get_water_frac_1d_mpp_io
 
 !#######################################################################
 
- function get_water_frac_2d (blon, blat, water_frac)
+ function get_water_frac_2d_mpp_io (blon, blat, water_frac)
 
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: water_frac
- logical :: get_water_frac_2d
+ logical :: get_water_frac_2d_mpp_io
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -1167,16 +1247,16 @@ end interface
         call error_mesg('get_water_frac_2d','shape(water_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if ( open_topog_file(water_file) ) then
+   if ( open_topog_file_mpp_io(water_file) ) then
        call interp_water_2d ( blon, blat, water_frac )
-       get_water_frac_2d = .true.
+       get_water_frac_2d_mpp_io = .true.
    else
-       get_water_frac_2d = .false.
+       get_water_frac_2d_mpp_io = .false.
    endif
 
 !-----------------------------------------------------------------------
 
- end function get_water_frac_2d
+ end function get_water_frac_2d_mpp_io
 
 ! </FUNCTION>
 !#######################################################################
@@ -1208,11 +1288,11 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_water_mask_1d (blon, blat, water_mask)
+ function get_water_mask_1d_mpp_io (blon, blat, water_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: water_mask
- logical :: get_water_mask_1d
+ logical :: get_water_mask_1d_mpp_io
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------
@@ -1224,22 +1304,22 @@ end interface
    elsewhere
      water_mask = .false.
    end where
-   get_water_mask_1d = .true.
+   get_water_mask_1d_mpp_io = .true.
  else
-   get_water_mask_1d = .false.
+   get_water_mask_1d_mpp_io = .false.
  endif
 
 !-----------------------------------------------------------------------
 
- end function get_water_mask_1d
+ end function get_water_mask_1d_mpp_io
 
 !#######################################################################
 
- function get_water_mask_2d (blon, blat, water_mask)
+ function get_water_mask_2d_mpp_io (blon, blat, water_mask)
 
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: water_mask
- logical :: get_water_mask_2d
+ logical :: get_water_mask_2d_mpp_io
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------
@@ -1251,14 +1331,14 @@ end interface
    elsewhere
      water_mask = .false.
    end where
-   get_water_mask_2d = .true.
+   get_water_mask_2d_mpp_io = .true.
  else
-   get_water_mask_2d = .false.
+   get_water_mask_2d_mpp_io = .false.
  endif
 
 !-----------------------------------------------------------------------
 
- end function get_water_mask_2d
+ end function get_water_mask_2d_mpp_io
 
 ! </FUNCTION>
 
@@ -1266,9 +1346,9 @@ end interface
 !##################   private interfaces below here   ##################
 !#######################################################################
 
- function open_topog_file ( filename )
+ function open_topog_file_mpp_io ( filename )
  character(len=*), intent(in) :: filename
- logical :: open_topog_file
+ logical :: open_topog_file_mpp_io
  real    :: r_ipts, r_jpts
  integer :: namelen
  integer :: unit
@@ -1281,24 +1361,24 @@ end interface
      call read_data(filename, 'jpts', r_jpts, no_domain=.true.)
      ipts = nint(r_ipts)
      jpts = nint(r_jpts)
-     open_topog_file = .true.
+     open_topog_file_mpp_io = .true.
   else
      if ( file_exist(filename) ) then
         if (mpp_pe() == mpp_root_pe()) call mpp_error ('topography_mod', &
              'Reading native formatted input data file: '//filename, NOTE)
         unit = open_ieee32_file(trim(filename), 'read')
         read (unit) ipts, jpts
-        open_topog_file = .true.
+        open_topog_file_mpp_io = .true.
      else
-        open_topog_file = .false.
+        open_topog_file_mpp_io = .false.
      endif
   endif
 
- end function open_topog_file
+ end function open_topog_file_mpp_io
 
 !#######################################################################
 
- subroutine interp_topog_1d ( blon, blat, zout, flag )
+ subroutine interp_topog_1d_mpp_io ( blon, blat, zout, flag )
  real   , intent(in)  :: blon(:), blat(:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
@@ -1307,7 +1387,7 @@ end interface
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
 
-    call input_data ( topog_file, xdat, ydat, zdat )
+    call input_data_mpp_io ( topog_file, xdat, ydat, zdat )
 
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
@@ -1325,11 +1405,11 @@ end interface
        endif
     endif
 
- end subroutine interp_topog_1d
+ end subroutine interp_topog_1d_mpp_io
 
 !#######################################################################
 
- subroutine interp_topog_2d ( blon, blat, zout, flag )
+ subroutine interp_topog_2d_mpp_io ( blon, blat, zout, flag )
  real   , intent(in)  :: blon(:,:), blat(:,:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
@@ -1340,7 +1420,7 @@ end interface
  integer :: js, je
  type (horiz_interp_type) :: Interp
 
-    call input_data ( topog_file, xdat, ydat, zdat )
+    call input_data_mpp_io ( topog_file, xdat, ydat, zdat )
     call find_indices ( minval(blat), maxval(blat), ydat, js, je )
 
     call horiz_interp_new ( Interp, xdat, ydat(js:je+1), blon, blat )
@@ -1362,9 +1442,9 @@ end interface
 
     call horiz_interp_del ( Interp )
 
- end subroutine interp_topog_2d
+ end subroutine interp_topog_2d_mpp_io
 
-#endif
+!#endif
 !#######################################################################
 
  subroutine find_indices ( ybeg, yend, ydat, js, je )
@@ -1393,12 +1473,16 @@ end interface
  end subroutine find_indices
 
 !#######################################################################
-#ifndef use_mpp_io
+!#ifndef use_mpp_io
  subroutine input_data ( indx, xdat, ydat, zdat )
  integer, intent(in) :: indx
  real, intent(out) :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
  integer :: nc
-
+ !logical,optional :: use_mpp_io
+  !if( use_mpp_io ) then
+  !   call input_data_mpp_io ( indx, xdat, ydat, zdat )
+  !   return 
+  !endif!< use mpp io
   if( file_is_opened(indx) ) then
      call read_data(fileobj(indx), 'xdat', xdat)
      call read_data(fileobj(indx), 'ydat', ydat)
@@ -1409,13 +1493,17 @@ end interface
 
 !#######################################################################
 
- subroutine interp_water_1d ( blon, blat, zout, do_ocean )
+ subroutine interp_water_1d ( blon, blat, zout, do_ocean, use_mpp_io )
  real   , intent(in)  :: blon(:), blat(:)
  real   , intent(out) :: zout(:,:)
  logical, intent(in), optional :: do_ocean
-
+ logical, optional :: use_mpp_io
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
-
+ 
+    if ( use_mpp_io ) then
+        call interp_water_1d_mpp_io ( blon, blat, zout, do_ocean)
+        return
+    endif
     call input_data ( WATER_INDEX, xdat, ydat, zdat )
 
 ! only use designated ocean points
@@ -1430,12 +1518,17 @@ end interface
 
 !#######################################################################
 
- subroutine interp_water_2d ( blon, blat, zout, do_ocean )
+ subroutine interp_water_2d ( blon, blat, zout, do_ocean, use_mpp_io )
  real   , intent(in)  :: blon(:,:), blat(:,:)
  real   , intent(out) :: zout(:,:)
  logical, intent(in), optional :: do_ocean
-
+ logical, optional :: use_mpp_io
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
+
+    if ( use_mpp_io ) then
+        call interp_water_2d_mpp_io ( blon, blat, zout, do_ocean)
+        return
+    endif
 
     call input_data ( WATER_INDEX, xdat, ydat, zdat )
 
@@ -1448,9 +1541,9 @@ end interface
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
  end subroutine interp_water_2d
-#else
+!#else
 
- subroutine input_data ( ifile, xdat, ydat, zdat )
+ subroutine input_data_mpp_io ( ifile, xdat, ydat, zdat )
  character(len=*), intent(in) :: ifile
  real, intent(out) :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
  integer :: nc
@@ -1469,18 +1562,18 @@ end interface
     call close_file (unit)
  endif
 
- end subroutine input_data
+ end subroutine input_data_mpp_io
 
 !#######################################################################
 
- subroutine interp_water_1d ( blon, blat, zout, do_ocean )
+ subroutine interp_water_1d_mpp_io ( blon, blat, zout, do_ocean )
  real   , intent(in)  :: blon(:), blat(:)
  real   , intent(out) :: zout(:,:)
  logical, intent(in), optional :: do_ocean
 
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
 
-    call input_data ( water_file, xdat, ydat, zdat )
+    call input_data_mpp_io ( water_file, xdat, ydat, zdat )
 
 ! only use designated ocean points
     if (present(do_ocean)) then
@@ -1490,18 +1583,18 @@ end interface
 ! interpolate onto output grid
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
- end subroutine interp_water_1d
+ end subroutine interp_water_1d_mpp_io
 
 !#######################################################################
 
- subroutine interp_water_2d ( blon, blat, zout, do_ocean )
+ subroutine interp_water_2d_mpp_io ( blon, blat, zout, do_ocean )
  real   , intent(in)  :: blon(:,:), blat(:,:)
  real   , intent(out) :: zout(:,:)
  logical, intent(in), optional :: do_ocean
 
  real :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
 
-    call input_data ( water_file, xdat, ydat, zdat )
+    call input_data_mpp_io ( water_file, xdat, ydat, zdat )
 
 ! only use designated ocean points
     if (present(do_ocean)) then
@@ -1511,8 +1604,8 @@ end interface
 ! interpolate onto output grid
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
- end subroutine interp_water_2d
-#endif
+ end subroutine interp_water_2d_mpp_io
+!#endif
 !#######################################################################
 
  subroutine determine_ocean_points ( pctwater )
