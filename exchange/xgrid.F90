@@ -562,7 +562,6 @@ subroutine xgrid_init(remap_method)
   if (module_is_initialized) return
   module_is_initialized = .TRUE.
 
-
   read (input_nml_file, xgrid_nml, iostat=io)
   ierr = check_nml_error ( io, 'xgrid_nml' )
 
@@ -573,6 +572,14 @@ subroutine xgrid_init(remap_method)
   out_unit = stdout()
   if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
 
+  if (use_mpp_io) then
+! Tell user which IO they are using 
+        call error_mesg('xgrid_init', "Using mpp_io in xgrid_mod",NOTE)
+        if ( mpp_pe() == mpp_root_pe() ) write (unit,'(a)')"Using mpp_io in xgrid_mod"
+  else
+        call error_mesg('xgrid_init',"Using fms2_io in xgrid_mod",NOTE)
+        if ( mpp_pe() == mpp_root_pe() ) write (unit,'(a)')"Using fms2_io in xgrid_mod"
+  endif
 !--------- check interp_method has suitable value
 !--- when monotonic_exchange is true, interp_method must be second order.
 
