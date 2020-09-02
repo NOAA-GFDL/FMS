@@ -153,19 +153,19 @@ end interface
 !#######################################################################
 
    subroutine topography_init ()
-
+     integer :: unit
      if ( module_is_initialized ) return
 
      call write_version_number("TOPOGRAPHY_MOD", version)
      call read_namelist
      module_is_initialized = .TRUE.
-
+     unit = stdlog()
      if ( use_mpp_io ) then
        call error_mesg('topography_init',"Using mpp_io in topography_mod",NOTE)
-       !if( mpp_pe() == mpp_root_pe()) write(unit, '(a)')"Using mpp_io in topography_mod"
+       if( mpp_pe() == mpp_root_pe()) write(unit, '(a)')"Using mpp_io in topography_mod"
      else
        call error_mesg('topography_init',"Using fms2_io in topography_mod",NOTE)
-       !if( mpp_pe() == mpp_root_pe()) write(unit, '(a)')"Using fms2_io in topography_mod"
+       if( mpp_pe() == mpp_root_pe()) write(unit, '(a)')"Using fms2_io in topography_mod"
      endif
    end subroutine topography_init
 
@@ -807,7 +807,7 @@ end interface
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
- 
+
     call input_data ( TOPOG_INDEX, xdat, ydat, zdat )
 
     call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
@@ -830,10 +830,11 @@ end interface
 
 !#######################################################################
 
- subroutine interp_topog_2d ( blon, blat, zout, flag)
+ subroutine interp_topog_2d ( blon, blat, zout, flag )
  real   , intent(in)  :: blon(:,:), blat(:,:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
+
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
@@ -875,7 +876,7 @@ end interface
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(zmean(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
-        call error_mesg('get_topog_mean_1d','shape(zmean) is not&
+        call error_mesg('get_topog_mean_1d_mpp_io','shape(zmean) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(topog_file) ) then
@@ -902,7 +903,7 @@ end interface
 
    if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(zmean(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
-        call error_mesg('get_topog_mean_2d','shape(zmean) is not&
+        call error_mesg('get_topog_mean_2d_mpp_io','shape(zmean) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(topog_file) ) then
@@ -960,7 +961,7 @@ end interface
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
-       call error_mesg('get_topog_stdev','shape(stdev) is not&
+       call error_mesg('get_topog_stdev_mpp_io','shape(stdev) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(topog_file) ) then
@@ -987,7 +988,7 @@ end interface
 
    if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(stdev(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
-        call error_mesg('get_topog_stdev_2d','shape(stdev) is not&
+        call error_mesg('get_topog_stdev_2d_mpp_io','shape(stdev) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(topog_file) ) then
@@ -1042,7 +1043,7 @@ end interface
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
-        call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
+        call error_mesg('get_ocean_frac_mpp_io','shape(ocean_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(water_file) ) then
@@ -1069,7 +1070,7 @@ end interface
 
    if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(ocean_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
-        call error_mesg('get_ocean_frac_2d','shape(ocean_frac) is not&
+        call error_mesg('get_ocean_frac_2d_mpp_io','shape(ocean_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(water_file) ) then
@@ -1208,7 +1209,7 @@ end interface
    if (.not. module_is_initialized) call topography_init()
 
    if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
-        call error_mesg('get_water_frac_1d','shape(water_frac) is not&
+        call error_mesg('get_water_frac_1d_mpp_io','shape(water_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(water_file) ) then
@@ -1235,7 +1236,7 @@ end interface
 
    if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(water_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
-        call error_mesg('get_water_frac_2d','shape(water_frac) is not&
+        call error_mesg('get_water_frac_2d_mpp_io','shape(water_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
    if ( open_topog_file_mpp_io(water_file) ) then
