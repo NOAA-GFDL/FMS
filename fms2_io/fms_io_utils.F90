@@ -202,11 +202,13 @@ subroutine string_copy(dest, source, check_for_null)
 
   check_null = .false.
   if (present(check_for_null)) check_null = check_for_null
+
+  i = 0
   if (check_null) then
      i = index(source, char(0)) - 1
-  else
-     i = len_trim(source)
   endif
+
+  if (i < 1 ) i = len_trim(source)
 
   if (len_trim(source(1:i)) .gt. len(dest)) then
     call error("The input destination string is not big enough to" &
