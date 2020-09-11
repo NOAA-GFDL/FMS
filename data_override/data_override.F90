@@ -59,8 +59,8 @@ use mpp_mod, only : input_nml_file, get_unit
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=), horiz_interp_del
 ====================
-use time_interp_external2_mod, only:time_interp_external_init, time_interp_external, &
-                                   init_external_field, get_external_field_size, &
+use time_interp_external2_mod, only:time_interp_external_init, time_interp_external => time_interp_external2, &
+                                   init_external_field => init_external_field2, get_external_field_size, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    set_override_region, reset_src_data_region,   &
                                    get_external_fileobj
@@ -454,37 +454,49 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
    if (atm_on .and. .not. allocated(lon_local_atm) ) then
        call mpp_get_compute_domain(atm_domain,is,ie,js,je)
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
-====================
-       call get_grid_version_2(fileobj, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
-====================
-            min_glo_lon_atm, max_glo_lon_atm )
+       if(use_mpp_bug) then
+         call get_grid_version_2(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
+                                 min_glo_lon_atm, max_glo_lon_atm )
+       else
+         call get_grid_version_2(fileobj, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
+                                 min_glo_lon_atm, max_glo_lon_atm )
+       end if
    endif
 
    if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
-====================
-       call get_grid_version_2(fileobj, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
-====================
-            min_glo_lon_ocn, max_glo_lon_ocn )
+       if(use_mpp_bug) then
+         call get_grid_version_2(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
+                                 min_glo_lon_ocn, max_glo_lon_ocn )
+       else
+         call get_grid_version_2(fileobj, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
+                                 min_glo_lon_ocn, max_glo_lon_ocn )
+       end if
    endif
 
    if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
        call mpp_get_compute_domain( lnd_domain,is,ie,js,je)
        allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
-====================
-       call get_grid_version_2(fileobj, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
-====================
-            min_glo_lon_lnd, max_glo_lon_lnd )
+       if(use_mpp_bug) then
+         call get_grid_version_2(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
+                                 min_glo_lon_lnd, max_glo_lon_lnd )
+       else
+         call get_grid_version_2(fileobj, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
+                                 min_glo_lon_lnd, max_glo_lon_lnd )
+       end if
    endif
 
    if (ice_on .and. .not. allocated(lon_local_ice) ) then
        call mpp_get_compute_domain( ice_domain,is,ie,js,je)
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
-====================
-       call get_grid_version_2(fileobj, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
-====================
-            min_glo_lon_ice, max_glo_lon_ice )
+       if(use_mpp_bug) then
+         call get_grid_version_2(grid_file, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
+                                 min_glo_lon_ice, max_glo_lon_ice )
+       else
+         call get_grid_version_2(fileobj, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
+                                 min_glo_lon_ice, max_glo_lon_ice )
+       end if
    endif
  end if
  if(.not. use_mpp_bug .AND. use_get_grid_version .EQ. 2) then
@@ -853,11 +865,15 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
         override_array(curr_position)%t_index = id_time
      else !ongrid=false
-====================
-        id_time = init_external_field(filename,fieldname,domain=domain, axis_names=axis_names,&
-             axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
-             nwindows = nwindows)
-====================
+        if (use_mpp_bug) then
+          id_time = init_external_field(filename,fieldname,domain=domain, axis_centers=axis_centers,&
+              axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
+              nwindows = nwindows)
+        else
+          id_time = init_external_field2(filename,fieldname,domain=domain, axis_names=axis_names,&
+              axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
+              nwindows = nwindows)
+        end if
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 2')
@@ -866,17 +882,23 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         !  get lon and lat of the input (source) grid, assuming that axis%data contains
         !  lat and lon of the input grid (in degrees)
 
-====================
         allocate(override_array(curr_position)%horz_interp(nwindows))
         allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
         allocate(override_array(curr_position)%lat_in(axis_sizes(2)+1))
-        if(get_external_fileobj(filename, fileobj)) then
-           call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in)
-           call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in)
+        if (use_mpp_bug) then
+          call get_axis_bounds(axis_centers(1),axis_bounds(1), axis_centers)
+          call get_axis_bounds(axis_centers(2),axis_bounds(2), axis_centers)
+
+          call mpp_get_axis_data(axis_bounds(1),override_array(curr_position)%lon_in)
+          call mpp_get_axis_data(axis_bounds(2),override_array(curr_position)%lat_in)
         else
-           call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
-        endif
-====================
+          if(get_external_fileobj(filename, fileobj)) then
+             call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in)
+             call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in)
+          else
+             call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
+          end if
+        end if
 ! convert lon_in and lat_in from deg to radian
         override_array(curr_position)%lon_in = override_array(curr_position)%lon_in * deg_to_radian
         override_array(curr_position)%lat_in = override_array(curr_position)%lat_in * deg_to_radian
@@ -933,10 +955,13 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 !       Find the index of lon_start, lon_end, lat_start and lat_end in the input grid (nearest points)
         if( data_table(index1)%region_type .NE. NO_REGION ) then
            allocate( lon_tmp(axis_sizes(1)), lat_tmp(axis_sizes(2)) )
-====================
-           call read_data(fileobj, axis_names(1), lon_tmp)
-           call read_data(fileobj, axis_names(2), lat_tmp)
-====================
+           if (use_mpp_bug) then
+             call mpp_get_axis_data(axis_centers(1), lon_tmp)
+             call mpp_get_axis_data(axis_centers(2), lat_tmp)
+           else
+             call read_data(fileobj, axis_names(1), lon_tmp)
+             call read_data(fileobj, axis_names(2), lat_tmp)
+           end if
            ! limit lon_start, lon_end are inside lon_in
            !       lat_start, lat_end are inside lat_in
            if( data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1))) &
@@ -964,10 +989,10 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   else !curr_position >0
      dims = override_array(curr_position)%dims
      comp_domain = override_array(curr_position)%comp_domain
-====================
-     nxc = comp_domain(2)-comp_domain(1) + 1
-     nyc = comp_domain(4)-comp_domain(3) + 1
-====================
+     if (.not. use_mpp_bug) then
+       nxc = comp_domain(2)-comp_domain(1) + 1
+       nyc = comp_domain(4)-comp_domain(3) + 1
+     end if
      is_src      = override_array(curr_position)%is_src
      ie_src      = override_array(curr_position)%ie_src
      js_src      = override_array(curr_position)%js_src
@@ -1052,47 +1077,55 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
       call mpp_error(FATAL, "data_override: dims(3) .NE. 1 and size(data,3) .NE. dims(3)")
 
   if(ongrid) then
-====================
-    if (.not. use_comp_domain) then
-        !< Determine the size of the halox and the part of `data` that is in the compute domain
-        nhalox = (size(data,1) - nxc)/2
-        nhaloy = (size(data,2) - nyc)/2
-        startingi = lbound(data,1) + nhalox
-        startingj = lbound(data,2) + nhaloy
-        endingi   = ubound(data,1) - nhalox
-        endingj   = ubound(data,2) - nhaloy
-    endif
+    if (.not. use_mpp_bug) then
+      if (.not. use_comp_domain) then
+          !< Determine the size of the halox and the part of `data` that is in the compute domain
+          nhalox = (size(data,1) - nxc)/2
+          nhaloy = (size(data,2) - nyc)/2
+          startingi = lbound(data,1) + nhalox
+          startingj = lbound(data,2) + nhaloy
+          endingi   = ubound(data,1) - nhalox
+          endingj   = ubound(data,2) - nhaloy
+      end if
+    end if
 
-====================
 !10 do time interp to get data in compute_domain
     if(data_file_is_2D) then
-====================
-        if (use_comp_domain) then
+      if (use_mpp_bug) then
         call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+      else
+        if (use_comp_domain) then
+        call time_interp_external2(id_time,time,data(:,:,1),verbose=.false., &
+                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         else
            !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
            !! size
-           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+           call time_interp_external2(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-        endif
-        data(:,:,1) = data(:,:,1)*factor
-        do i = 2, size(data,3)
-           data(:,:,i) = data(:,:,1)
-        enddo
-     else
-        if (use_comp_domain) then
+        end if
+      end if
+      data(:,:,1) = data(:,:,1)*factor
+      do i = 2, size(data,3)
+        data(:,:,i) = data(:,:,1)
+      end do
+    else
+      if (use_mpp_bug) then
         call time_interp_external(id_time,time,data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+      else
+        if (use_comp_domain) then
+        call time_interp_external2(id_time,time,data,verbose=.false., &
+                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         else
            !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
            !! size
-           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
+           call time_interp_external2(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif
-        data = data*factor
-     endif
-====================
+      end if
+      data = data*factor
+    endif
   else  ! off grid case
 ! do time interp to get global data
      if(data_file_is_2D) then
