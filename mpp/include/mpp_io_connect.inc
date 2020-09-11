@@ -29,7 +29,7 @@
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call mpp_open( unit, file, action, form, access, threading, fileset,
-!             iospec, nohdrs, recl, pelist )
+!             nohdrs, recl, pelist )
 !   </TEMPLATE>
 
 !   <OUT NAME="unit" TYPE="integer">
@@ -68,9 +68,6 @@
 !   </IN>
 !   <IN NAME="recl" TYPE="integer">
 !     recl is the record length in bytes.
-!   </IN>
-!   <IN NAME="iospec" TYPE="character(len=*)">
-!     iospec is a system hint for I/O organization, e.g assign(1) on SGI/Cray systems.
 !   </IN>
 !   <IN NAME="nohdrs" TYPE="logical">
 !     nohdrs has no effect when action=MPP_RDONLY|MPP_APPEND or when form=MPP_NETCDF
@@ -111,41 +108,17 @@
 !
 !   For netCDF files, headers are always written even if
 !   <TT>nohdrs=.TRUE.</TT>
-!
-!   The string <TT>iospec</TT> is passed to the OS to
-!   characterize the I/O to be performed on the file opened on
-!   <TT>unit</TT>. This is typically used for I/O optimization. For
-!   example, the FFIO layer on SGI/Cray systems can be used for
-!   controlling synchronicity of reads and writes, buffering of data
-!   between user space and disk for I/O optimization, striping across
-!   multiple disk partitions, automatic data conversion and the like
-!   (<TT>man intro_ffio</TT>). All these actions are controlled through
-!   the <TT>assign</TT> command. For example, to specify asynchronous
-!   caching of data going to a file open on <TT>unit</TT>, one would do:
-!
-!   <PRE>
-!   call mpp_open( unit, ... iospec='-F cachea' )
-!   </PRE>
-!
-!   on an SGI/Cray system, which would pass the supplied
-!   <TT>iospec</TT> to the <TT>assign(3F)</TT> system call.
-!
-!   Currently <TT>iospec </TT>performs no action on non-SGI/Cray
-!   systems. The interface is still provided, however: users are cordially
-!   invited to add the requisite system calls for other systems.
-!   </NOTE>
 ! </SUBROUTINE>
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                            !
 !           OPENING AND CLOSING FILES: mpp_open() and mpp_close()            !
 !                                                                            !
 ! mpp_open( unit, file, action, form, access, threading, &                   !
-!           fileset, iospec, nohdrs, recl, pelist )                          !
+!           fileset, nohdrs, recl, pelist )                          !
 !      integer, intent(out) :: unit                                          !
 !      character(len=*), intent(in) :: file                                  !
 !      integer, intent(in), optional :: action, form, access, threading,     !
 !                                       fileset, recl                        !
-!      character(len=*), intent(in), optional :: iospec                      !
 !      logical, intent(in), optional :: nohdrs                               !
 !      integer, optional, intent(in) :: pelist(:) !default ALL               !
 !                                                                            !
@@ -153,8 +126,6 @@
 !  file is the filename: REQUIRED                                            !
 !    we append .nc to filename if it is a netCDF file                        !
 !    we append .<pppp> to filename if fileset is private (pppp is PE number) !
-!  iospec is a system hint for I/O organization                              !
-!         e.g assign(1) on SGI/Cray systems.                                 !
 !  if nohdrs is .TRUE. headers are not written on non-netCDF writes.         !
 !  nohdrs has no effect when action=MPP_RDONLY|MPP_APPEND                    !
 !                    or when form=MPP_NETCDF                                 !
@@ -179,7 +150,7 @@
 !                                                                            !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine mpp_open( unit, file, action, form, access, threading, &
-                         fileset, iospec, nohdrs, recl,               &
+                         fileset, nohdrs, recl,               &
                          iostat, is_root_pe, domain, &
 !----------
 !ug support
@@ -189,7 +160,6 @@
       character(len=*), intent(in)           :: file
       integer,          intent(in), optional :: action, form, access
       integer,          intent(in), optional :: threading, fileset, recl
-      character(len=*), intent(in), optional :: iospec
       logical,          intent(in), optional :: nohdrs
       integer,         intent(out), optional :: iostat
       logical,          intent(in), optional :: is_root_pe
@@ -485,49 +455,11 @@
               if( form_flag.EQ.MPP_NETCDF .AND. act.EQ.'WRITE' ) &
                    call mpp_error( FATAL, 'MPP_OPEN: netCDF currently does not support single-file multi-threaded output.' )
 
-#ifdef _CRAYT3E
-              call ASSIGN( 'assign -I -F global.privpos f:'//trim(mpp_file(unit)%name), error )
-#endif
           else if( fileset_flag.NE.MPP_MULTI )then
               call mpp_error( FATAL, 'MPP_OPEN: fileset must be one of MPP_MULTI or MPP_SINGLE.' )
           end if
       else if( threading_flag.NE.MPP_SINGLE )then
           call mpp_error( FATAL, 'MPP_OPEN: threading must be one of MPP_SINGLE or MPP_MULTI.' )
-      end if
-
-!apply I/O specs before opening the file
-!note that -P refers to the scope of a fortran unit, which is always thread-private even if file is shared
-#ifdef CRAYPVP
-#ifndef _CRAYX1
-      call ASSIGN( 'assign -I -P thread  f:'//trim(mpp_file(unit)%name), error )
-#endif
-#endif
-#ifdef _CRAYT3E
-      call ASSIGN( 'assign -I -P private f:'//trim(mpp_file(unit)%name), error )
-#endif
-#ifdef _CRAYX1
-      if (file(length-3:length) == '.nml') then
-        call ASSIGN( 'assign -I -f77 f:'//trim(mpp_file(unit)%name), error )
-!       call ASSIGN( 'assign -I -F global f:'//trim(mpp_file(unit)%name), error )
-      endif
-#endif
-      if( PRESENT(iospec) )then
-!iospec provides hints to the system on how to organize I/O
-!on Cray systems this is done through 'assign', see assign(1) and assign(3F)
-!on other systems this will be expanded as needed
-!no error checks here on whether the supplied iospec is valid
-#if defined(SGICRAY) || defined(_CRAYX1)
-          call ASSIGN( 'assign -I '//trim(iospec)//' f:'//trim(mpp_file(unit)%name), error )
-          if( form_flag.EQ.MPP_NETCDF )then
-!for netCDF on SGI/Cray systems we pass it to the environment variable NETCDF_XFFIOSPEC
-!ideally we should parse iospec, pass the argument of -F to NETCDF_FFIOSPEC, and the rest to NETCDF_XFFIOSPEC
-!maybe I'll get around to it someday
-!PXFSETENV is a POSIX-standard routine for setting environment variables from fortran
-              !if we ever use this again....F2003 non-intel flavor of getenv
-              !call get_enviornment_variable( 'NETCDF_XFFIOSPEC', trim(iospec))
-              call PXFSETENV( 'NETCDF_XFFIOSPEC', 0, trim(iospec), 0, 1, error )
-          end if
-#endif
       end if
 
 !open the file as specified above for various formats
@@ -549,8 +481,6 @@
 
 
      if (ncblk /= "") then
-
-
 
         call MPI_INFO_SET(info, "cb_buffer_size", ncblk, ierror)
         call MPI_INFO_SET(info, "ind_rd_buffer_size", ncblk, ierror)
@@ -732,12 +662,6 @@
               for = 'FORMATTED'
           else if( form_flag.EQ.MPP_IEEE32 )then
               for = 'UNFORMATTED'
-!assign -N is currently unsupported on SGI
-#ifdef _CRAY
-#ifndef _CRAYX1
-              call ASSIGN( 'assign -I -N ieee_32 f:'//trim(mpp_file(unit)%name), error )
-#endif
-#endif
           else if( form_flag.EQ.MPP_NATIVE )then
               for = 'UNFORMATTED'
           else
@@ -876,11 +800,6 @@
             close(unit,status=status)
          end if
       endif
-#ifdef SGICRAY
-!this line deleted: since the FILENV is a shared file, this might cause a problem in
-! multi-threaded I/O if one PE does assign -R before another one has opened it.
-!      call ASSIGN( 'assign -R f:'//trim(mpp_file(unit)%name), error )
-#endif
       if ( associated(mpp_file(unit)%Axis) ) then
          do i=1, mpp_file(unit)%ndim
             if ( associated(mpp_file(unit)%Axis(i)%data) ) then

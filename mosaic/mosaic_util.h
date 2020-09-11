@@ -167,11 +167,9 @@ int isInside(struct Node *node);
 
 void set_reproduce_siena_true(void);
 
-#ifndef __AIX
 
 void set_reproduce_siena_true_(void);
 
 int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
 
-#endif
 #endif

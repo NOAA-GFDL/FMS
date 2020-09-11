@@ -30,7 +30,6 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 # Build these test programs.
 check_PROGRAMS = test_mpp \
   test_mpp_domains \
-  test_mpp_pset \
   test_mpp_memuse \
   test_mpp_mem_dump \
   test_mpp_memutils_begin_end \
@@ -55,7 +54,6 @@ check_PROGRAMS = test_mpp \
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
 test_mpp_domains_SOURCES = test_mpp_domains.F90
-test_mpp_pset_SOURCES = test_mpp_pset.F90
 test_mpp_memuse_SOURCES=test_mpp_memuse.F90
 test_mpp_mem_dump_SOURCES=test_mpp_mem_dump.F90
 test_mpp_memutils_begin_end_SOURCES=test_mpp_memutils_begin_end.F90
@@ -79,7 +77,6 @@ test_peset_SOURCES=test_peset.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
-  test_mpp_pset2.sh \
   test_mpp2.sh \
   test_mpp_memuse \
   test_mpp_mem_dump \
@@ -100,7 +97,6 @@ TESTS = test_mpp_domains2.sh \
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
   test_mpp_domains2.sh \
-  test_mpp_pset2.sh     \
   test_mpp2.sh \
   test_mpp_memutils_mod.sh \
   test_read_ascii_file.sh \

@@ -303,7 +303,6 @@ PROGRAM test
     integer(INT_KIND)              :: stackmaxd = 500000                   !<Default size to which the mpp_domains stack will be set.
     logical(INT_KIND)              :: debug = .false.                      !<Flag to print debugging information.
     character(len=64)              :: test_file = "test_unstructured_grid" !<Base filename for the unit tests.
-    character(len=64)              :: iospec = '-F cachea'                 !<Something cray related ???
     integer(INT_KIND)              :: pack_size = 1                        !<(Number of bits in real(DOUBLE_KIND))/(Number of bits in real)
     integer(INT_KIND)              :: npes                                 !<Total number of ranks in the current pelist.
     integer(INT_KIND)              :: io_status                            !<Namelist read error code.
@@ -426,7 +425,7 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
    CALL unstruct_test (nx, ny, nz, npes, ntiles_x, 1, time,io_tile_factor)
 
    ! If the test_number == 12, check for the correct error and skip everything else.
-   CASE ( 12 ) 
+   CASE ( 12 )
      CALL diag_manager_init(err_msg=err_msg)
      IF ( err_msg /= '' ) THEN
         WRITE (out_unit,'(a)') 'test12 successful: err_msg='//TRIM(err_msg)
@@ -993,7 +992,7 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
      END IF
   END IF
   CALL diag_manager_end(Time)
-END SELECT ! End of case handling opened for test 12. 
+END SELECT ! End of case handling opened for test 12.
 
   CALL fms_io_exit
   CALL fms_end

@@ -92,7 +92,6 @@ SRCS_F90 = \
          ../mpp/mpp_io.F90                                                  \
          ../mpp/mpp_memutils.F90                                            \
          ../mpp/mpp_parameter.F90                                           \
-         ../mpp/mpp_pset.F90                                                \
          ../mpp/mpp_utilities.F90                                           \
          ../platform/platform.F90                                           \
          ../random_numbers/MersenneTwister.F90                              \
@@ -116,9 +115,7 @@ SRCS_c   = \
          ../mosaic/interp.c                                                 \
          ../mosaic/mosaic_util.c                                            \
          ../mosaic/read_mosaic.c                                            \
-         ../mpp/mpp_memuse.c                                                \
-         ../mpp/nsclock.c                                                   \
-         ../mpp/threadloc.c
+         ../mpp/mpp_memuse.c
 
 DEPEND_FILES = $(SRCS_f) $(SRCS_f90) $(SRCS_F) $(SRCS_F90)
 

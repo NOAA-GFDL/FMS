@@ -131,7 +131,6 @@ int create_xgrid_great_circle_ug(const int *nlon_in, const int *nlat_in, const i
                                const double *mask_in, int *i_in, int *j_in, int *l_out,
                                double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
 
-#ifndef __AIX
 void get_grid_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
 
 void get_grid_great_circle_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
@@ -154,7 +153,5 @@ int create_xgrid_great_circle_ug_(const int *nlon_in, const int *nlat_in, const 
                                const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
                                const double *mask_in, int *i_in, int *j_in, int *l_out,
                                double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
-
-#endif
 
 #endif

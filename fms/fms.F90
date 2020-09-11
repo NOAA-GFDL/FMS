@@ -234,7 +234,6 @@ integer, public :: clock_flag_default
   logical           :: read_all_pe   = .true.
   character(len=16) :: clock_grain = 'NONE', clock_flags='NONE'
   character(len=8)  :: warning_level = 'warning'
-  character(len=64) :: iospec_ieee32 = '-N ieee_32'
   integer           :: stack_size = 0
   integer           :: domains_stack_size = 0
   logical, public   :: print_memory_usage = .FALSE.
@@ -272,9 +271,6 @@ integer, public :: clock_flag_default
 !     error_mesg/mpp_error. set warning_level = 'fatal' (program crashes for
 !     warning messages) or 'warning' (prints warning message and continues).
 !   </DATA>
-!   <DATA NAME="iospec_ieee32"  TYPE="character"  DEFAULT="'-N ieee_32'">
-!     iospec flag used with the open_ieee32_file interface.
-!   </DATA>
 !   <DATA NAME="stack_size"  TYPE="integer"  DEFAULT="0">
 !     The size in words of the MPP user stack. If stack_size > 0, the following
 !     MPP routine is called: call mpp_set_stack_size (stack_size). If stack_size
@@ -294,9 +290,8 @@ integer, public :: clock_flag_default
 !   </DATA>
 ! </NAMELIST>
 
-  namelist /fms_nml/  read_all_pe, clock_grain, clock_flags,    &
-                      warning_level, iospec_ieee32, &
-                      stack_size, domains_stack_size, &
+  namelist /fms_nml/  read_all_pe, clock_grain, clock_flags,         &
+                      warning_level, stack_size, domains_stack_size, &
                       print_memory_usage
 
 !   ---- private data for check_nml_error ----

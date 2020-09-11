@@ -112,7 +112,7 @@ module mpp_mod
 !   It is therefore important to be conscious of the context of a
 !   subroutine or function call, and the implied synchronization. There
 !   are certain calls here (e.g <TT>mpp_declare_pelist, mpp_init,
-!   mpp_malloc, mpp_set_stack_size</TT>) which must be called by all
+!   mpp_set_stack_size</TT>) which must be called by all
 !   PEs. There are others which must be called by a subset of PEs (here
 !   called a <TT>pelist</TT>) which must be called by all the PEs in the
 !   <TT>pelist</TT> (e.g <TT>mpp_max, mpp_sum, mpp_sync</TT>). Still
@@ -155,17 +155,13 @@ module mpp_mod
 ! </PUBLIC>
 
 ! Define rank(X) for PGI compiler
-#ifdef __PGI
+#if defined( __PGI) || defined (__FLANG)
 #define rank(X) size(shape(X))
 #endif
 
 #include <fms_platform.h>
 
-#if defined(use_libSMA) && defined(sgi_mipspro)
-  use shmem_interface
-#endif
-
-#if defined(use_libMPI) && defined(sgi_mipspro)
+#if defined(use_libMPI)
   use mpi
 #endif
 
@@ -194,15 +190,6 @@ module mpp_mod
 implicit none
 private
 
-#if defined(use_libSMA)
-#include <mpp/shmem.fh>
-#endif
-
-#if defined(use_libMPI) && !defined(sgi_mipspro)
-#include <mpif.h>
-!sgi_mipspro gets this from 'use mpi'
-#endif
-
   !--- public paramters  -----------------------------------------------
   public :: MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, NOTE, WARNING, FATAL
   public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT
@@ -224,7 +211,7 @@ private
   !--- public interface from mpp_util.h ------------------------------
   public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_set_stack_size, mpp_pe
-  public :: mpp_node, mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
+  public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
@@ -234,12 +221,9 @@ private
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
   public :: mpp_sum_ad
-  public :: mpp_broadcast, mpp_malloc, mpp_init, mpp_exit
+  public :: mpp_broadcast, mpp_init, mpp_exit
   public :: mpp_gather, mpp_scatter, mpp_alltoall
   public :: mpp_type, mpp_byte, mpp_type_create, mpp_type_free
-#ifdef use_MPI_GSM
-  public :: mpp_gsm_malloc, mpp_gsm_free
-#endif
 
   !*********************************************************************
   !
@@ -254,7 +238,6 @@ private
      integer           :: count
      integer           :: start, log2stride ! dummy variables when libMPI is defined.
      integer           :: id, group         ! MPI communicator and group id for this PE set.
-                                            ! dummy variables when libSMA is defined.
   end type communicator
 
   type :: event
@@ -426,14 +409,6 @@ private
 !    public interface from mpp_comm.h
 !
 !***********************************************************************
-#ifdef use_libSMA
-  !currently SMA contains no generic shmem_wait for different integer kinds:
-  !I have inserted one here
-  interface shmem_integer_wait
-     module procedure shmem_int4_wait_local
-     module procedure shmem_int8_wait_local
-  end interface
-#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !                                                                             !
@@ -476,50 +451,6 @@ private
   !  <TEMPLATE>
   !   call mpp_exit()
   !  </TEMPLATE>
-  ! </SUBROUTINE>
-
-  !#######################################################################
-  ! <SUBROUTINE NAME="mpp_malloc">
-  !  <OVERVIEW>
-  !    Symmetric memory allocation.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This routine is used on SGI systems when <TT>mpp_mod</TT> is
-  !    invoked in the SHMEM library. It ensures that dynamically allocated
-  !    memory can be used with <TT>shmem_get</TT> and
-  !    <TT>shmem_put</TT>. This is called <I>symmetric
-  !    allocation</I> and is described in the
-  !    <TT>intro_shmem</TT> man page. <TT>ptr</TT> is a <I>Cray
-  !    pointer</I> (see the section on <LINK
-  !    SRC="#PORTABILITY">portability</LINK>).  The operation can be expensive
-  !    (since it requires a global barrier). We therefore attempt to re-use
-  !    existing allocation whenever possible. Therefore <TT>len</TT>
-  !    and <TT>ptr</TT> must have the <TT>SAVE</TT> attribute
-  !    in the calling routine, and retain the information about the last call
-  !    to <TT>mpp_malloc</TT>. Additional memory is symmetrically
-  !    allocated if and only if <TT>newlen</TT> exceeds
-  !    <TT>len</TT>.
-  !
-  !    This is never required on Cray PVP or MPP systems. While the T3E
-  !    manpages do talk about symmetric allocation, <TT>mpp_mod</TT>
-  !    is coded to remove this restriction.
-  !
-  !    It is never required if <TT>mpp_mod</TT> is invoked in MPI.
-  !
-  !   This call implies synchronization across all PEs.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   call mpp_malloc( ptr, newlen, len )
-  !  </TEMPLATE>
-  !  <IN NAME="ptr">
-  !     a cray pointer, points to a dummy argument in this routine.
-  !  </IN>
-  !  <IN NAME="newlen" TYPE="integer">
-  !     the required allocation length for the pointer ptr
-  !  </IN>
-  !  <IN NAME="len" TYPE="integer">
-  !     the current allocation (0 if unallocated).
-  !  </IN>
   ! </SUBROUTINE>
 
   !#####################################################################
@@ -1338,32 +1269,12 @@ private
   integer              :: clock_grain=CLOCK_LOOP-1
 
   !--- variables used in mpp_comm.h
-#ifdef use_libMPI
-#ifdef _CRAYT3E
-  !BWA: mpif.h on t3e currently does not contain MPI_INTEGER8 datatype
-  !(O2k and t90 do)
-  !(t3e: fixed on 3.3 I believe)
-  integer, parameter :: MPI_INTEGER8=MPI_INTEGER
-#endif
-#endif /* use_libMPI */
-#ifdef use_MPI_SMA
-#include <mpp/shmem.fh>
-  integer :: pSync(SHMEM_BARRIER_SYNC_SIZE)
-  pointer( p_pSync, pSync ) !used by SHPALLOC
-#endif
-
   integer            :: clock0    !measures total runtime from mpp_init to mpp_exit
   integer            :: mpp_stack_size=0, mpp_stack_hwm=0
   logical            :: verbose=.FALSE.
-#ifdef _CRAY
-  integer(LONG_KIND) :: word(1)
-#endif
-#if defined(sgi_mipspro) || defined(__ia64)
-  integer(INT_KIND)  :: word(1)
-#endif
 
   integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.h
-  
+
   !--- variables used in mpp_comm_mpi.inc
   integer, parameter :: mpp_init_test_full_init = -1
   integer, parameter :: mpp_init_test_init_true_only = 0
