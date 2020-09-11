@@ -130,9 +130,9 @@
 !write time information if new time
           if( newtime )then
               if( KIND(time).EQ.DOUBLE_KIND )then
-                  error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
+                  error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit:unit)%time_level, time )
               else if( KIND(time).EQ.FLOAT_KIND )then
-                  error = NF_PUT_VAR1_REAL  ( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
+                  error = NF90_PUT_VAR ( mpp_file(unit)%ncid, mpp_file(unit)%id, time)
               end if
           end if
           if( field%pack == 0 )then
@@ -142,7 +142,7 @@
               if( KIND(data).EQ.DOUBLE_KIND )then
                   error = NF_PUT_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, data )
               else if( KIND(data).EQ.FLOAT_KIND )then
-                  error = NF_PUT_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, data )
+                  error = NF90_PUT_VAR  ( mpp_file(unit)%ncid, field%id, data, start=start, count=axsiz )
               end if
           else              !convert to integer using scale and add: no error check on packed data representation
               packed_data = nint((data-field%add)/field%scale)
@@ -164,27 +164,9 @@
               write( unit,* )field%id, subdomain, time_level, time, data
           else                      !MPP_IEEE32 or MPP_NATIVE
               if( mpp_file(unit)%access.EQ.MPP_SEQUENTIAL )then
-#ifdef __sgi
-                  if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
-                      data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
-                      write(unit)field%id, subdomain, time_level, time, data_r4
-                  else
-                      write(unit)field%id, subdomain, time_level, time, data
-                  end if
-#else
                   write(unit)field%id, subdomain, time_level, time, data
-#endif
               else                  !MPP_DIRECT
-#ifdef __sgi
-                  if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
-                      data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
-                      write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data_r4
-                  else
-                      write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
-                  end if
-#else
                   write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
-#endif
                   if( debug )print '(a,i6,a,i6)', 'MPP_WRITE: PE=', pe, ' wrote record ', mpp_file(unit)%record
               end if
           end if
