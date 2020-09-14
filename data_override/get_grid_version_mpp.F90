@@ -1,6 +1,6 @@
 module get_grid_version_mpp_mod
 ! Get lon and lat of three model (target) grids from grid_spec.nc
-subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   character(len=*),            intent(in) :: grid_file
   character(len=*),            intent(in) :: mod_name
   type(domain2d),              intent(in) :: domain
@@ -118,11 +118,11 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   call mpp_max(max_lon)
 
 
-end subroutine get_grid_version_1
+end subroutine get_grid_version_classic_1
 
 ! Get global lon and lat of three model (target) grids from mosaic.nc
 ! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
-subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+subroutine get_grid_version_classic_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   character(len=*),            intent(in) :: mosaic_file
   character(len=*),            intent(in) :: mod_name
   type(domain2d),              intent(in) :: domain
@@ -209,7 +209,7 @@ subroutine get_grid_version_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec,
 
   call mpp_deallocate_domain(domain2)
 
-end subroutine get_grid_version_2
+end subroutine get_grid_version_classic_2
 
 end module get_grid_version_mpp_mod
 
