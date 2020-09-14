@@ -349,9 +349,9 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        override_array(i) = default_array
     enddo
     if(use_mpp_bug) then
-      call time_interp_external_init
-    else
       call time_interp_external_init_classic
+    else
+      call time_interp_external_init
     end if
  end if
 
@@ -562,30 +562,6 @@ end subroutine data_override_unset_domains
 ! </SUBROUTINE>
 !===============================================================================================
 
-
-subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
-character(len=12), intent(in) :: domain_name
-type (domain2d),   intent(in) :: Domain
-integer,           intent(in) :: nlon, nlat
-
-character(len=184) :: error_message
-integer            :: xsize, ysize
-
-call mpp_get_global_domain(Domain, xsize=xsize, ysize=ysize)
-if(nlon .NE. xsize .OR. nlat .NE. ysize) then
-  error_message = 'Error in data_override_init. Size of grid as specified by '// &
-                  '             does not conform to that specified by grid_spec.nc.'// &
-                  '  From             :     by      From grid_spec.nc:     by    '
-  error_message( 59: 70) = domain_name
-  error_message(130:141) = domain_name
-  write(error_message(143:146),'(i4)') xsize
-  write(error_message(150:153),'(i4)') ysize
-  write(error_message(174:177),'(i4)') nlon
-  write(error_message(181:184),'(i4)') nlat
-  call mpp_error(FATAL,error_message)
-endif
-
-end subroutine check_grid_sizes
 !===============================================================================================
 subroutine get_domain(gridname, domain, comp_domain)
 ! Given a gridname, this routine returns the working domain associated with this gridname
@@ -852,7 +828,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         !--- we always only pass data on compute domain
         if (use_mpp_bug) then
           id_time = init_external_field_classic(filename,fieldname,domain=domain,verbose=.false., &
-                                      use_comp_domain=use_comp_domain, nwindows=nwindows, ongrid=ongrid)
+                                      use_comp_domain=use_comp_domain, nwindows=nwindows)
           dims = get_external_field_size_classic(id_time)
         else
           id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &

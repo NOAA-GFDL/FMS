@@ -13,6 +13,30 @@ implicit none
 real, parameter    :: deg_to_radian=PI/180.
 contains
 ! Get lon and lat of three model (target) grids from grid_spec.nc
+
+subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
+character(len=12), intent(in) :: domain_name
+type (domain2d),   intent(in) :: Domain
+integer,           intent(in) :: nlon, nlat
+
+character(len=184) :: error_message
+integer            :: xsize, ysize
+
+call mpp_get_global_domain(Domain, xsize=xsize, ysize=ysize)
+if(nlon .NE. xsize .OR. nlat .NE. ysize) then
+  error_message = 'Error in data_override_init. Size of grid as specified by '// &
+                  '             does not conform to that specified by grid_spec.nc.'// &
+                  '  From             :     by      From grid_spec.nc:     by    '
+  error_message( 59: 70) = domain_name
+  error_message(130:141) = domain_name
+  write(error_message(143:146),'(i4)') xsize
+  write(error_message(150:153),'(i4)') ysize
+  write(error_message(174:177),'(i4)') nlon
+  write(error_message(181:184),'(i4)') nlat
+  call mpp_error(FATAL,error_message)
+endif
+end subroutine check_grid_sizes
+
 subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
   character(len=*),            intent(in) :: grid_file
   character(len=*),            intent(in) :: mod_name
