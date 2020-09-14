@@ -1,4 +1,12 @@
 module get_grid_version_mpp_mod
+use mpp_mod, only : mpp_error,FATAL,WARNING,NOTE, mpp_min, mpp_max
+use fms_io_mod, only: field_size, read_data, get_mosaic_tile_grid
+use fms_mod, only: field_exist
+use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, operator(.NE.),operator(.EQ.)
+use mpp_domains_mod, only : mpp_copy_domain, mpp_get_global_domain
+use mpp_domains_mod, only : mpp_get_data_domain, mpp_set_compute_domain, mpp_set_data_domain
+use mpp_domains_mod, only : mpp_set_global_domain, mpp_deallocate_domain
+
 ! Get lon and lat of three model (target) grids from grid_spec.nc
 subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   character(len=*),            intent(in) :: grid_file
