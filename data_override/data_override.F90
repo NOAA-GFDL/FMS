@@ -24,12 +24,12 @@ use mpp_mod, only : mpp_error, FATAL, WARNING, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file, get_unit
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=)
-use time_interp_external_mod, only:time_interp_external_init=>time_interp_external_init_classic, &
-                                   time_interp_external=>time_interp_external_classic, &
-                                   init_external_field=>init_external_field_classic, &
-                                   get_external_field_size=>get_external_field_size_classic, &
-                                   set_override_region=>set_override_region_classic, &
-                                   reset_src_data_region=>reset_src_data_region_classic
+use time_interp_external_mod, only:time_interp_external_init_classic=>time_interp_external_init, &
+                                   time_interp_external_classic=>time_interp_external, &
+                                   init_external_field_classic=>init_external_field, &
+                                   get_external_field_size_classic=>get_external_field_size, &
+                                   set_override_region_classic=>set_override_region, &
+                                   reset_src_data_region_classic=>reset_src_data_region
 use time_interp_external2_mod, only:time_interp_external_init, time_interp_external, &
                                    init_external_field, get_external_field_size, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
@@ -44,7 +44,7 @@ use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
 use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
 use time_manager_mod, only: time_type
 use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
-                            read_data, fms2_io_init
+                            read_data, fms2_io_init, variable_exists
 use get_grid_version_mpp_mod, only: get_grid_version_classic_1, get_grid_version_classic_2
 use get_grid_version_fms2io_mod, only: get_grid_version_1, get_grid_version_2
 
@@ -126,6 +126,12 @@ public :: data_override_init, data_override, data_override_unset_domains
 public :: data_override_UG
 
 contains
+function count_ne_1(in_1, in_2, in_3)
+  logical, intent(in)  :: in_1, in_2, in_3
+  logical :: count_ne_1
+
+  count_ne_1 = .not.(in_1.NEQV.in_2.NEQV.in_3) .OR. (in_1.AND.in_2.AND.in_3)
+end function count_ne_1
 !===============================================================================================
 ! <SUBROUTINE NAME="data_override_init">
 !   <DESCRIPTION>
@@ -156,7 +162,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 !
 ! </NOTE>
   character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
-  integer               :: is,ie,js,je,count
+  integer               :: is,ie,js,je,use_get_grid_version
   integer               :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status, ierr
   character(len=256)    :: record
   logical               :: file_open
@@ -378,12 +384,12 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
      call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '//trim(grid_file))
    endif
  else
-   if(variable_exist(fileobj, "x_T" ) .OR. variable_exist(fileobj, "geolon_t" ) ) then
+   if(variable_exists(fileobj, "x_T" ) .OR. variable_exists(fileobj, "geolon_t" ) ) then
      use_get_grid_version = 1
      call close_file(fileobj)
-   else if(variable_exist(fileobj, "ocn_mosaic_file" ) .OR. variable_exist(fileobj, "gridfiles" ) ) then
+   else if(variable_exists(fileobj, "ocn_mosaic_file" ) .OR. variable_exists(fileobj, "gridfiles" ) ) then
      use_get_grid_version = 2
-     if(variable_exist(fileobj, "gridfiles" ) ) then
+     if(variable_exists(fileobj, "gridfiles" ) ) then
        if(count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on)) call mpp_error(FATAL, 'data_override_mod: the grid file ' // &
             'is a solo mosaic, one and only one of atm_on, lnd_on or ice_on/ocn_on should be true')
      end if
