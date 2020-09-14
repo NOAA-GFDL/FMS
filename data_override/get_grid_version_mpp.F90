@@ -1,4 +1,5 @@
 module get_grid_version_mpp_mod
+use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,WARNING,NOTE, mpp_min, mpp_max
 use fms_io_mod, only: field_size, read_data, get_mosaic_tile_grid
 use fms_mod, only: field_exist
@@ -7,14 +8,19 @@ use mpp_domains_mod, only : mpp_copy_domain, mpp_get_global_domain
 use mpp_domains_mod, only : mpp_get_data_domain, mpp_set_compute_domain, mpp_set_data_domain
 use mpp_domains_mod, only : mpp_set_global_domain, mpp_deallocate_domain
 
+implicit none
+
+real, parameter    :: deg_to_radian=PI/180.
+contains
 ! Get lon and lat of three model (target) grids from grid_spec.nc
-subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
   character(len=*),            intent(in) :: grid_file
   character(len=*),            intent(in) :: mod_name
   type(domain2d),              intent(in) :: domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon
+  logical,           intent(in), optional :: grid_center_bug
 
   integer                                      :: i, j, siz(4)
   integer                                      :: nlon, nlat         ! size of global lon and lat
@@ -119,7 +125,7 @@ subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc
 
   ! convert from degree to radian
   lon = lon * deg_to_radian
-  lat = lat* deg_to_radian
+  lat = lat * deg_to_radian
   min_lon = minval(lon)
   max_lon = maxval(lon)
   call mpp_min(min_lon)

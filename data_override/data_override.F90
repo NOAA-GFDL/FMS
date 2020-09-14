@@ -83,10 +83,8 @@ type override_type
 end type override_type
 
  integer, parameter :: max_table=100, max_array=100
+ real, parameter    :: deg_to_radian=PI/180.
  integer            :: table_size ! actual size of data table
- integer, parameter :: ANNUAL=1, MONTHLY=2, DAILY=3, HOURLY=4, UNDEF=-1
- real, parameter    :: tpi=2*PI
- real               :: deg_to_radian, radian_to_deg
  logical            :: module_is_initialized = .FALSE.
 
 type(domain2D),save :: ocn_domain,atm_domain,lnd_domain, ice_domain
@@ -197,9 +195,6 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
   if(.not. module_is_initialized) then
     call horiz_interp_init
-    radian_to_deg = 180./PI
-    deg_to_radian = PI/180.
-
     call write_version_number("DATA_OVERRIDE_MOD", version)
 
 !  Initialize user-provided data table
@@ -376,7 +371,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
    else if(field_exist(grid_file, "ocn_mosaic_file" ) .OR. field_exist(grid_file, "gridfiles" ) ) then
      use_get_grid_version = 2
      if(field_exist(grid_file, "gridfiles" ) ) then
-       if count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on) call mpp_error(FATAL, 'data_override_mod: the grid file ' // &
+       if(count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on)) call mpp_error(FATAL, 'data_override_mod: the grid file ' // &
             'is a solo mosaic, one and only one of atm_on, lnd_on or ice_on/ocn_on should be true')
      end if
    else
@@ -389,7 +384,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
    else if(variable_exist(fileobj, "ocn_mosaic_file" ) .OR. variable_exist(fileobj, "gridfiles" ) ) then
      use_get_grid_version = 2
      if(variable_exist(fileobj, "gridfiles" ) ) then
-       if count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on) call mpp_error(FATAL, 'data_override_mod: the grid file ' // &
+       if(count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on)) call mpp_error(FATAL, 'data_override_mod: the grid file ' // &
             'is a solo mosaic, one and only one of atm_on, lnd_on or ice_on/ocn_on should be true')
      end if
    else
@@ -403,10 +398,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
        if(use_mpp_bug) then
          call get_grid_version_classic_1(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
-            min_glo_lon_atm, max_glo_lon_atm )
+            min_glo_lon_atm, max_glo_lon_atm, grid_center_bug )
        else
          call get_grid_version_1(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
-            min_glo_lon_atm, max_glo_lon_atm )
+            min_glo_lon_atm, max_glo_lon_atm, grid_center_bug )
        endif
     endif
     if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
@@ -414,10 +409,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
        if(use_mpp_bug) then
          call get_grid_version_classic_1(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
-            min_glo_lon_ocn, max_glo_lon_ocn )
+            min_glo_lon_ocn, max_glo_lon_ocn, grid_center_bug )
        else
          call get_grid_version_1(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
-            min_glo_lon_ocn, max_glo_lon_ocn )
+            min_glo_lon_ocn, max_glo_lon_ocn, grid_center_bug )
        endif
     endif
 
@@ -426,10 +421,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
        if(use_mpp_bug) then
          call get_grid_version_classic_1(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
-            min_glo_lon_lnd, max_glo_lon_lnd )
+            min_glo_lon_lnd, max_glo_lon_lnd, grid_center_bug )
        else
          call get_grid_version_1(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
-            min_glo_lon_lnd, max_glo_lon_lnd )
+            min_glo_lon_lnd, max_glo_lon_lnd, grid_center_bug )
        endif
     endif
 
@@ -438,10 +433,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
        if(use_mpp_bug) then
          call get_grid_version_classic_1(grid_file, 'ice', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
-            min_glo_lon_ice, max_glo_lon_ice )
+            min_glo_lon_ice, max_glo_lon_ice, grid_center_bug )
        else
          call get_grid_version_1(grid_file, 'ice', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
-            min_glo_lon_ice, max_glo_lon_ice )
+            min_glo_lon_ice, max_glo_lon_ice, grid_center_bug )
        endif
     endif
  else
