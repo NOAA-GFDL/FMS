@@ -3272,7 +3272,7 @@ if(present(err_msg)) err_msg = ''
 if(ncal == NO_CALENDAR) then
   valid_calendar_types = 'NO_CALENDAR             '
 else if(ncal == THIRTY_DAY_MONTHS) then
-  valid_calendar_types = 'THIRTY_DAY_MONTHS       '
+  valid_calendar_types = '360_DAY                 '
 else if(ncal == JULIAN) then
   valid_calendar_types = 'JULIAN                  '
 else if(ncal == GREGORIAN) then
