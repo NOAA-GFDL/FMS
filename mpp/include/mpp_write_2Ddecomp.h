@@ -139,11 +139,7 @@
               packed_data = CEILING(data)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           elseif( field%pack.GT.0 .and. field%pack.LE.2 )then
-              if( KIND(data).EQ.DOUBLE_KIND )then
-                  error = NF_PUT_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, data )
-              else if( KIND(data).EQ.FLOAT_KIND )then
-                  error = NF90_PUT_VAR  ( mpp_file(unit)%ncid, field%id, data, start=start, count=axsiz )
-              end if
+              error = NF90_PUT_VAR      ( mpp_file(unit)%ncid, field%id, data, start=start, count=axsiz )
           else              !convert to integer using scale and add: no error check on packed data representation
               packed_data = nint((data-field%add)/field%scale)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
