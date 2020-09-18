@@ -37,11 +37,14 @@ program test
   USE mpp_mod, ONLY: input_nml_file
 #endif
 
-  implicit none
-
 #ifdef use_netCDF
-#include <netcdf.inc>
+  use netcdf
+  use netcdf_nf_data
+  use netcdf_nf_interfaces
+  use netcdf4_nf_interfaces
 #endif
+
+  implicit none
 
   !--- namelist definition
   integer           :: nx=360, ny=200, nz=50, nt=2

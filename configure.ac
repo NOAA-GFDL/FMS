@@ -148,16 +148,12 @@ AC_LANG_POP(C)
 AC_LANG_PUSH(Fortran)
 if test $with_mpi = yes; then
   # Require MPI
-  GX_FORTRAN_CHECK_HEADERS([mpif.h], [], [AC_MSG_ERROR([Can't find the MPI Fortran header file.  Set FC/CPPFLAGS/FCFLAGS])])
   GX_FC_CHECK_MOD([mpi], [], [], [AC_MSG_ERROR([Can't find the MPI Fortran module.  Set FC/CPPFLAGS/FCFLAGS])])
   AC_CHECK_FUNC([MPI_init], [], [AC_MSG_ERROR([Can't find the MPI Fortran library.  Set FC/LDFLAGS/LIBS])])
 fi
 
 # Require netCDF
-GX_FORTRAN_CHECK_HEADERS([netcdf.inc], [], [AC_MSG_ERROR([Can't find the netCDF Fortran header file.  Set CPPFLAGS/FCFLAGS])])
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
-GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret = nf_create('foo.nc', 1, ncid)], [],
-  [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 
