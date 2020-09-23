@@ -49,7 +49,7 @@ module time_interp_external2_mod
   use platform_mod, only : DOUBLE_KIND => r8_kind
   use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
-  use mpp_mod, only : input_nml_file, mpp_npes, mpp_root_pe, mpp_broadcast
+  use mpp_mod, only : input_nml_file, mpp_npes, mpp_root_pe, mpp_broadcast, mpp_get_current_pelist
   use time_manager_mod, only : time_type, get_date, set_date, operator ( >= ) , operator ( + ) , days_in_month, &
                             operator( - ), operator ( / ) , days_in_year, increment_time, &
                             set_time, get_time, operator( > ), get_calendar_type, NO_CALENDAR
@@ -266,7 +266,7 @@ module time_interp_external2_mod
       logical :: ignore_axatts
       logical :: have_modulo_time
       type(FmsNetcdfFile_t), pointer :: fileobj=>NULL()
-      integer, dimension(:), allocatable :: pes
+      integer, dimension(:), allocatable :: pes  !< List of ranks in the current pelist
       integer :: ii
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
@@ -340,13 +340,13 @@ module time_interp_external2_mod
       have_modulo_time = get_axis_modulo_times(fileobj, timename, timebeg, timeend)
 
       allocate(pes(mpp_npes()))
-      do ii = 1, mpp_npes()
-         pes(ii) = ii -1
-      enddo
-
+      call mpp_get_current_pelist(pes)
       allocate(tstamp(ntime),tstart(ntime),tend(ntime),tavg(ntime))
+
+      !< Only root reads the unlimited dimension and broadcasts it to the other ranks
       if (mpp_root_pe() .eq. mpp_pe()) call read_data(fileobj, timename, tstamp)
       call mpp_broadcast(tstamp, size(tstamp), mpp_root_pe(), pelist=pes)
+      deallocate(pes)
 
       transpose_xy = .false.
       isdata=1; iedata=1; jsdata=1; jedata=1
