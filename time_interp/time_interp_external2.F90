@@ -267,7 +267,6 @@ module time_interp_external2_mod
       logical :: have_modulo_time
       type(FmsNetcdfFile_t), pointer :: fileobj=>NULL()
       integer, dimension(:), allocatable :: pes  !< List of ranks in the current pelist
-      integer :: ii
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
       if(present(ierr)) ierr = SUCCESS
