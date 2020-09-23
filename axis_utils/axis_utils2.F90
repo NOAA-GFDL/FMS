@@ -144,11 +144,12 @@ contains
     end if
   end subroutine get_axis_cart
 
-  subroutine axis_edges(fileobj, name, edge_data)
+  subroutine axis_edges(fileobj, name, edge_data, do_mpp_io_bug_flag)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
   class(*), dimension(:), intent(out) :: edge_data
+  logical, intent(in), optional :: do_mpp_io_bug_flag
 
   integer :: ndims
   character(len=128) :: buffer
@@ -159,6 +160,7 @@ contains
   real(kind=real64), dimension(:,:), allocatable :: r642d
   integer :: i
   integer :: n
+  logical :: do_mpp_io_bug
 
   ndims = get_variable_num_dimensions(fileobj, name)
   allocate(dim_sizes(ndims))
@@ -169,11 +171,24 @@ contains
   endif
   deallocate(dim_sizes)
 
+  do_mpp_io_bug = .false.
+  if (present(do_mpp_io_bug_flag)) do_mpp_io_bug = do_mpp_io_bug_flag
+
   buffer = ""
   if (variable_att_exists(fileobj, name, "edges")) then
-    call get_variable_attribute(fileobj, name, "edges", buffer)
+    call get_variable_attribute(fileobj, name, "edges", buffer, do_mpp_io_bug_flag=do_mpp_io_bug)
+    if (do_mpp_io_bug) then
+        i = 0
+        i = index(buffer, char(0))
+        if (i > 0) buffer = ""
+    endif
   elseif (variable_att_exists(fileobj, name, "bounds")) then
-    call get_variable_attribute(fileobj, name, "bounds", buffer)
+    call get_variable_attribute(fileobj, name, "bounds", buffer, do_mpp_io_bug_flag=do_mpp_io_bug)
+    if (do_mpp_io_bug) then
+        i = 0
+        i = index(buffer, char(0)) 
+        if (i > 0) buffer = ""
+    endif
   endif
   if (trim(buffer) .ne. "") then
     ndims = get_variable_num_dimensions(fileobj, buffer)
