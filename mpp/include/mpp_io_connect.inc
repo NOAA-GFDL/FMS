@@ -29,7 +29,7 @@
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call mpp_open( unit, file, action, form, access, threading, fileset,
-!             nohdrs, recl, pelist )
+!             iospec, nohdrs, recl, pelist )
 !   </TEMPLATE>
 
 !   <OUT NAME="unit" TYPE="integer">
@@ -68,6 +68,9 @@
 !   </IN>
 !   <IN NAME="recl" TYPE="integer">
 !     recl is the record length in bytes.
+!   </IN>
+!   <IN NAME="iospec" TYPE="character(len=*)">
+!     iospec is deprecated, but included for interface uniformity reasons.
 !   </IN>
 !   <IN NAME="nohdrs" TYPE="logical">
 !     nohdrs has no effect when action=MPP_RDONLY|MPP_APPEND or when form=MPP_NETCDF
@@ -114,11 +117,12 @@
 !           OPENING AND CLOSING FILES: mpp_open() and mpp_close()            !
 !                                                                            !
 ! mpp_open( unit, file, action, form, access, threading, &                   !
-!           fileset, nohdrs, recl, pelist )                          !
+!           fileset, iospec, nohdrs, recl, pelist )                          !
 !      integer, intent(out) :: unit                                          !
 !      character(len=*), intent(in) :: file                                  !
 !      integer, intent(in), optional :: action, form, access, threading,     !
 !                                       fileset, recl                        !
+!      character(len=*), intent(in), optional :: iospec                      !
 !      logical, intent(in), optional :: nohdrs                               !
 !      integer, optional, intent(in) :: pelist(:) !default ALL               !
 !                                                                            !
@@ -126,6 +130,7 @@
 !  file is the filename: REQUIRED                                            !
 !    we append .nc to filename if it is a netCDF file                        !
 !    we append .<pppp> to filename if fileset is private (pppp is PE number) !
+!  iospec is a deprecated option                                             !
 !  if nohdrs is .TRUE. headers are not written on non-netCDF writes.         !
 !  nohdrs has no effect when action=MPP_RDONLY|MPP_APPEND                    !
 !                    or when form=MPP_NETCDF                                 !
@@ -150,7 +155,7 @@
 !                                                                            !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine mpp_open( unit, file, action, form, access, threading, &
-                         fileset, nohdrs, recl,               &
+                         fileset, iospec, nohdrs, recl,               &
                          iostat, is_root_pe, domain, &
 !----------
 !ug support
@@ -160,6 +165,7 @@
       character(len=*), intent(in)           :: file
       integer,          intent(in), optional :: action, form, access
       integer,          intent(in), optional :: threading, fileset, recl
+      character(len=*), intent(in), optional :: iospec
       logical,          intent(in), optional :: nohdrs
       integer,         intent(out), optional :: iostat
       logical,          intent(in), optional :: is_root_pe
@@ -232,6 +238,11 @@
       fileset_flag = MPP_MULTI
       if( PRESENT(fileset) )fileset_flag = fileset
       if( threading_flag.EQ.MPP_SINGLE )fileset_flag = MPP_SINGLE
+
+!-- iospec presence warning
+      if( PRESENT(iospec) ) &
+       & call mpp_error( NOTE, 'MPP_OPEN: iospec option has been deprecated and will be removed at some future date')
+
 
       io_domain_exist = .false.
       if( PRESENT(domain) ) then
