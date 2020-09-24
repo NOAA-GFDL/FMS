@@ -72,7 +72,11 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   select type(attribute_value)
     type is (character(len=*))
       call mpp_broadcast(charbuf, len(charbuf), fileobj%io_root, pelist=fileobj%pelist)
-      call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
+      if (do_mpp_io_bug) then
+         call string_copy(attribute_value, charbuf(1), check_for_null=.false.)
+      else
+         call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
+      endif
     type is (integer(kind=int32))
       call mpp_broadcast(attribute_value, fileobj%io_root, pelist=fileobj%pelist)
     type is (integer(kind=int64))
