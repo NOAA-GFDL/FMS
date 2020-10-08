@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0),
 and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is released,
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
-## [2020.03] - 2020-10-?
+
+## [2020.03] - 2020-10-08
 ### Added
 - FMS2_IO: Adds header_buffer_val to the fms2io namelist which sets the netcdf header size in bytes. The default value is 16kb
 - FMS2_IO: Adds netcdf_default_format to the fms2io namelist which allows the user to change the netcdf file type. The default value is 64bit.
@@ -35,7 +36,6 @@ sequential patch number (starting from `01`).
 - 2020.03-beta2 (3dae0dfa405d555ecc09bbd2d60a1be24461f69e)
 - 2020.03-beta3 (521a15135a99d1f2da7d82f238353945f82ce1dd)
 - 2020.03-beta4 (4d38679c1e18e920feb03d69f8a9762eb6a047aa)
-
 
 ## [2020.02] - 2020-05-01
 ### Added
