@@ -32,10 +32,12 @@ sequential patch number (starting from `01`).
 - FMS_IO: Changes the logic in get_tile_string to fix bug where tile numbers 9 and 99 produce an inappropriate error
 
 ### Tag Commit Hashes
+- 2020.03-alpha1 (2dd30b7ca0ac75a4a38b969e4a6d446eb395b4dd)
 - 2020.03-beta1 (f7f1c1c73c1f478a53e84caee6aff2fa840ad086)
 - 2020.03-beta2 (3dae0dfa405d555ecc09bbd2d60a1be24461f69e)
 - 2020.03-beta3 (521a15135a99d1f2da7d82f238353945f82ce1dd)
 - 2020.03-beta4 (4d38679c1e18e920feb03d69f8a9762eb6a047aa)
+
 
 ## [2020.02] - 2020-05-01
 ### Added
