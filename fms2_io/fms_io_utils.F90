@@ -202,18 +202,20 @@ subroutine string_copy(dest, source, check_for_null)
 
   check_null = .false.
   if (present(check_for_null)) check_null = check_for_null
-  if (len_trim(source) .gt. len(dest)) then
+
+  i = 0
+  if (check_null) then
+     i = index(source, char(0)) - 1
+  endif
+
+  if (i < 1 ) i = len_trim(source)
+
+  if (len_trim(source(1:i)) .gt. len(dest)) then
     call error("The input destination string is not big enough to" &
                  //" to hold the input source string.")
   endif
   dest = ""
-  dest = adjustl(trim(source))
-
-  if (check_null) then
-     i = 0
-     i = index(dest, char(0))
-     if (i > 0 ) dest = dest(1:i-1)
-  endif
+  dest = adjustl(trim(source(1:i)))
 
 end subroutine string_copy
 

@@ -30,16 +30,16 @@
 touch input.nml
 
 echo "1: Test begin/end routines of mpp_memutils_mod"
-mpirun -n 1 ./test_mpp_memutils_begin_end
+run_test ./test_mpp_memutils_begin_end 1
 
 echo "2: Test mpp_print_memuse_stats"
-mpirun -n 1 ./test_mpp_print_memuse_stats_stderr
+run_test ./test_mpp_print_memuse_stats_stderr 1
 
 echo "3: Test mpp_print_memuse_stats to file (stdout)"
-mpirun -n 1 ./test_mpp_print_memuse_stats_file
+run_test ./test_mpp_print_memuse_stats_file 1
 
 echo "4: Test failure caught if mpp_memuse_begin called multiple times"
-mpirun -n 1 ./test_mpp_memutils_begin_2x || echo "Ok"
+run_test ./test_mpp_memutils_begin_2x 1 || echo "Ok"
 
 echo "5: Test failure caught if mpp_memuse_end called before mpp_memuse_begin"
-mpirun -n 1 ./test_mpp_memutils_end_before_begin || echo "Ok"
+run_test ./test_mpp_memutils_end_before_begin 1 || echo "Ok"
