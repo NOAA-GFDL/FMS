@@ -38,6 +38,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_print_memuse_stats_file \
   test_mpp_memutils_begin_2x \
   test_mpp_memutils_end_before_begin \
+  test_read_ascii_file \
+  test_read_input_nml \
   test_stdout \
   test_stderr \
   test_mpp_get_ascii_lines \
@@ -61,6 +63,8 @@ test_mpp_print_memuse_stats_stderr_SOURCES=test_mpp_print_memuse_stats_stderr.F9
 test_mpp_print_memuse_stats_file_SOURCES=test_mpp_print_memuse_stats_file.F90
 test_mpp_memutils_begin_2x_SOURCES=test_mpp_memutils_begin_2x.F90
 test_mpp_memutils_end_before_begin_SOURCES=test_mpp_memutils_end_before_begin.F90
+test_read_ascii_file_SOURCES=test_read_ascii_file.F90
+test_read_input_nml_SOURCES=test_read_input_nml.F90
 test_stdout_SOURCES=test_stdout.F90
 test_stderr_SOURCES=test_stderr.F90
 test_mpp_get_ascii_lines_SOURCES=test_mpp_get_ascii_lines.F90
@@ -80,6 +84,8 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_memuse \
   test_mpp_mem_dump \
   test_mpp_memutils_mod.sh \
+  test_read_ascii_file.sh \
+  test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
   test_mpp_get_ascii_lines2.sh \
@@ -97,6 +103,8 @@ EXTRA_DIST = input_base.nml \
   test_mpp_pset2.sh     \
   test_mpp2.sh \
   test_mpp_memutils_mod.sh \
+  test_read_ascii_file.sh \
+  test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
   test_mpp_get_ascii_lines2.sh \
@@ -114,4 +122,5 @@ EXTRA_DIST = input_base.nml \
   test_peset.sh
 
 # Clean up
-CLEANFILES = include_files_mod.mod input.nml *.out* ascii*
+CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
+             include_files_mod.mod ascii* test_numb*
