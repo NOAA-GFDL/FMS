@@ -118,7 +118,7 @@ jobs:
         - autoreconf -i
         - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
         - make -j distcheck
-
+#build_with_cmake
     - name: build_with_cmake
       env:
         - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
