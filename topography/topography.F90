@@ -101,7 +101,7 @@ end interface
 
    character(len=128) :: topog_file = 'DATA/navy_topography.data', &
                          water_file = 'DATA/navy_pctwater.data'
-   namelist /topography_nml/ topog_file, water_file
+   namelist /topography_nml/ topog_file, water_file, use_mpp_io
 ! </NAMELIST>
    integer, parameter    :: TOPOG_INDEX = 1
    integer, parameter    :: WATER_INDEX = 2
