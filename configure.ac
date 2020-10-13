@@ -25,7 +25,7 @@ AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2020.03],
+  [2020.03-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -66,12 +66,6 @@ AC_ARG_ENABLE([setting-flags],
 AS_IF([test ${enable_setting_flags:-yes} = yes],
   [enable_setting_flags=yes],
   [enable_setting_flags=no])
-AC_ARG_ENABLE([mpp-io],
-  [AS_HELP_STRING([--enable-mpp-io],
-    [Compile using mpp-io. Otherwise compiles using fms2_io.])])
-AS_IF([test ${enable_mpp_io:-no} = no],
-  [enable_mpp_io=no],
-  [enable_mpp_io=yes])
 
 # Does the user want to build documentation?
 AC_MSG_CHECKING([whether documentation should be build (requires doxygen)])
@@ -218,11 +212,6 @@ if test $enable_setting_flags = yes; then
   fi
   if test ! -z "$OPENMP_FCFLAGS"; then
     FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
-  fi
-
-  # Add mpp io flags
-  if test $enable_mpp_io = yes; then
-    AC_DEFINE([use_mpp_io], [1], [Set to compile using mpp_io])
   fi
 fi
 
