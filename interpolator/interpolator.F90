@@ -4148,8 +4148,7 @@ real                         :: dlat, dlon
 type(time_type)              :: base_time
 logical                      :: NAME_PRESENT
 real                         :: dtr,tpi
-integer                      :: fileday, filemon, fileyr, filehr,
-filemin,filesec, m,m1
+integer                      :: fileday, filemon, fileyr, filehr, filemin,filesec, m,m1
 character(len= 20)           :: fileunits
 real, dimension(:), allocatable  :: alpha
 integer   :: j, i
@@ -4181,8 +4180,7 @@ if(fms_io_file_exist(trim(src_file))) then
                   form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
 else
 !Climatology file doesn't exist, so exit
-   call mpp_error(FATAL,'Interpolator_init : Data file '//trim(src_file)//' does
-not exist')
+   call mpp_error(FATAL,'Interpolator_init : Data file '//trim(src_file)//' does not exist')
 endif
 
 !Find the number of variables (nvar) in this file
@@ -4230,8 +4228,7 @@ do i = 1, ndim
           clim_type%lat = clim_type%lat*dtr
         case('radian')
         case default
-          call mpp_error(FATAL, "interpolator_init : Units for lat not
-recognised in file "//file_name)
+          call mpp_error(FATAL, "interpolator_init : Units for lat not recognised in file "//file_name)
       end select
     case('lon')
       nlon=len
@@ -4242,8 +4239,7 @@ recognised in file "//file_name)
           clim_type%lon = clim_type%lon*dtr
         case('radian')
         case default
-          call mpp_error(FATAL, "interpolator_init : Units for lon not
-recognised in file "//file_name)
+          call mpp_error(FATAL, "interpolator_init : Units for lon not recognised in file "//file_name)
       end select
     case('latb')
       nlatb=len
@@ -4254,8 +4250,7 @@ recognised in file "//file_name)
           clim_type%latb = clim_type%latb*dtr
         case('radian')
         case default
-          call mpp_error(FATAL, "interpolator_init : Units for latb not
-recognised in file "//file_name)
+          call mpp_error(FATAL, "interpolator_init : Units for latb not recognised in file "//file_name)
       end select
     case('lonb')
       nlonb=len
@@ -4266,8 +4261,7 @@ recognised in file "//file_name)
           clim_type%lonb = clim_type%lonb*dtr
         case('radian')
         case default
-          call mpp_error(FATAL, "interpolator_init : Units for lonb not
-recognised in file "//file_name)
+          call mpp_error(FATAL, "interpolator_init : Units for lonb not recognised in file "//file_name)
       end select
     case('pfull')
       nlev=len
@@ -4275,8 +4269,7 @@ recognised in file "//file_name)
       call mpp_get_axis_data(axes(i),clim_type%levs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or.
-trim(adjustl(lowercase(chomp(units)))) == "hpa") then
+      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
          clim_type%levs = clim_type%levs * 100.
       end if
 ! define the direction of the vertical data axis
@@ -4302,8 +4295,7 @@ trim(adjustl(lowercase(chomp(units)))) == "hpa") then
       call mpp_get_axis_data(axes(i),clim_type%halflevs)
       clim_type%level_type = PRESSURE
   ! Convert to Pa
-      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or.
-trim(adjustl(lowercase(chomp(units)))) == "hpa") then
+      if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
          clim_type%halflevs = clim_type%halflevs * 100.
       end if
 ! define the direction of the vertical data axis
@@ -4347,8 +4339,7 @@ trim(adjustl(lowercase(chomp(units)))) == "hpa") then
           if ( len_trim(fileunits) < 19 ) then
             write(error_mesg, '(A49,A,A49,A)' ) &
               'Interpolator_init : Incorrect time units in file ', &
-              trim(file_name), '. Expecting days since YYYY-MM-DD HH:MM:SS,
-found', &
+              trim(file_name), '. Expecting days since YYYY-MM-DD HH:MM:SS, found', &
               trim(units)
             call mpp_error(FATAL,error_mesg)
           endif
@@ -4363,8 +4354,7 @@ found', &
           if ( len_trim(fileunits) < 19 ) then
             write(error_mesg, '(A49,A,A51,A)' ) &
               'Interpolator_init : Incorrect time units in file ', &
-              trim(file_name), '. Expecting months since YYYY-MM-DD HH:MM:SS,
-found', &
+              trim(file_name), '. Expecting months since YYYY-MM-DD HH:MM:SS, found', &
               trim(units)
             call mpp_error(FATAL,error_mesg)
           endif
@@ -4375,8 +4365,7 @@ found', &
           read(fileunits(15:16), *)  filemin
           read(fileunits(18:19), *)  filesec
         case default
-          call mpp_error(FATAL,'Interpolator_init : Time units not recognised in
-file '//file_name)
+          call mpp_error(FATAL,'Interpolator_init : Time units not recognised in file '//file_name)
       end select
 
        clim_type%climatological_year = (fileyr == 0)
@@ -4464,8 +4453,7 @@ file '//file_name)
 !! the time that is needed in time_slice is the displacement into the
 !! year, not the displacement from a base_time.
             clim_type%time_slice(n) = &
-                set_time(INT( ( time_in(n) - INT(time_in(n)) ) * SECONDS_PER_DAY
-), &
+                set_time(INT( ( time_in(n) - INT(time_in(n)) ) * SECONDS_PER_DAY), &
                                INT(time_in(n)))
           else
 !--------------------------------------------------------------------
@@ -4485,8 +4473,7 @@ file '//file_name)
 !    no calendar conversion needed.
 !---------------------------------------------------------------------
               clim_type%time_slice(n) = &
-                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) *
-SECONDS_PER_DAY ),&
+                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) * SECONDS_PER_DAY ),&
                                  INT(time_in(n)))  &
                   + base_time
 !---------------------------------------------------------------------
@@ -4573,8 +4560,7 @@ deallocate(axes)
 ! the definition
 ! of the boundaries to be half-way between the midpoints.
 if (.not. associated(clim_type%lon) .and. .not. associated(clim_type%lonb)) &
-   call mpp_error(FATAL,'Interpolator_init : There appears to be no longitude
-axis in file '//file_name)
+   call mpp_error(FATAL,'Interpolator_init : There appears to be no longitude axis in file '//file_name)
 if (.not. associated(clim_type%lonb) ) then
   if (size(clim_type%lon(:)) /= 1) then
     allocate(clim_type%lonb(size(clim_type%lon(:))+1))
@@ -4593,8 +4579,7 @@ endif
 !clim_type%lonb=clim_type%lonb*dtr
 ! This assumes the lonb are in degrees in the NetCDF file!
 if (.not. associated(clim_type%lat) .and. .not. associated(clim_type%latb)) &
-   call mpp_error(FATAL,'Interpolator_init : There appears to be no latitude
-axis in file '//file_name)
+   call mpp_error(FATAL,'Interpolator_init : There appears to be no latitude axis in file '//file_name)
 ! In the case where only the grid midpoints of the latitudes are defined we
 ! force the
 ! definition of the boundaries to be half-way between the midpoints.
@@ -4603,12 +4588,10 @@ if (.not. associated(clim_type%latb) ) then
    dlat = (clim_type%lat(2)-clim_type%lat(1)) * 0.5
 !  clim_type%latb(1) = min( 90., max(-90., clim_type%lat(1) - dlat) )
    clim_type%latb(1) = min( PI/2., max(-PI/2., clim_type%lat(1) - dlat) )
-   clim_type%latb(2:nlat) = ( clim_type%lat(1:nlat-1) + clim_type%lat(2:nlat) )
-* 0.5
+   clim_type%latb(2:nlat) = ( clim_type%lat(1:nlat-1) + clim_type%lat(2:nlat) )* 0.5
    dlat = ( clim_type%lat(nlat) - clim_type%lat(nlat-1) ) * 0.5
 !  clim_type%latb(nlat+1) = min( 90., max(-90., clim_type%lat(nlat) + dlat) )
-   clim_type%latb(nlat+1) = min( PI/2., max(-PI/2., clim_type%lat(nlat) + dlat)
-)
+   clim_type%latb(nlat+1) = min( PI/2., max(-PI/2., clim_type%lat(nlat) + dlat))
 endif
 !clim_type%latb=clim_type%latb*dtr
 !Assume that the horizontal interpolation within a file is the same for each
@@ -4636,8 +4619,7 @@ endif
     !!! END DEBUG CODE
     call horiz_interp_new (clim_type%interph, &
                         clim_type%lonb, clim_type%latb, &
-                        agrid_mod(:,:,1), agrid_mod(:,:,2),
-interp_method="bilinear")
+                        agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
  endif
 !--------------------------------------------------------------------
 !  allocate the variable clim_type%data . This will be the climatology
@@ -4659,14 +4641,10 @@ select case(ntime)
 ! ending in 0. 1960,1970 etc.
 !   allocate(clim_type%data(size(lonb_mod(:))-1, size(latb_mod(:))-1, nlev, 2,
 !   num_fields))
-   allocate(clim_type%pmon_pyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev,
-num_fields))
-   allocate(clim_type%pmon_nyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev,
-num_fields))
-   allocate(clim_type%nmon_nyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev,
-num_fields))
-   allocate(clim_type%nmon_pyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev,
-num_fields))
+   allocate(clim_type%pmon_pyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, num_fields))
+   allocate(clim_type%pmon_nyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, num_fields))
+   allocate(clim_type%nmon_nyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, num_fields))
+   allocate(clim_type%nmon_pyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, num_fields))
    clim_type%pmon_pyear = 0.0
    clim_type%pmon_nyear = 0.0
    clim_type%nmon_nyear = 0.0
@@ -4675,8 +4653,7 @@ num_fields))
 else
 ! We have a continuous time-line so treat as for 5-12 timelevels as below.
    if ( .not. read_all_on_init) then
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2,
-num_fields))
+   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
    allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
                ntime, num_fields))
@@ -4692,8 +4669,7 @@ endif
 ! series)
 ! So we only need to read 2 datasets and apply linear temporal interpolation.
    if ( .not. read_all_on_init) then
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2,
-num_fields))
+   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
    allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
                ntime, num_fields))
@@ -4712,8 +4688,7 @@ num_fields))
 ! case (default)
  case(:0)
    clim_type%TIME_FLAG = NOTIME
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 1,
-num_fields))
+   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 1, num_fields))
 end select
 !------------------------------------------------------------------
 !    Allocate space for the single time level of the climatology on its
@@ -4746,16 +4721,12 @@ allocate(varfields(nvar))
 call mpp_get_fields(clim_type%unit, varfields)
 if(present(data_names)) then
 !++lwh
-   if ( size(data_out_of_bounds(:)) /= size(data_names(:)) .and.
-size(data_out_of_bounds(:)) /= 1 ) &
-      call mpp_error(FATAL,'interpolator_init : The size of the
-data_out_of_bounds array must be 1&
+   if ( size(data_out_of_bounds(:)) /= size(data_names(:)) .and. size(data_out_of_bounds(:)) /= 1 ) &
+      call mpp_error(FATAL,'interpolator_init : The size of the data_out_of_bounds array must be 1&
                             & or size(data_names)')
    if (present(vert_interp)) then
-      if( size(vert_interp(:)) /= size(data_names(:)) .and. size(vert_interp(:))
-/= 1 ) &
-      call mpp_error(FATAL,'interpolator_init : The size of the vert_interp
-array must be 1&
+      if( size(vert_interp(:)) /= size(data_names(:)) .and. size(vert_interp(:)) /= 1 ) &
+      call mpp_error(FATAL,'interpolator_init : The size of the vert_interp array must be 1&
                             & or size(data_names)')
    endif
 ! Only read the fields named in data_names
@@ -4763,55 +4734,43 @@ array must be 1&
       NAME_PRESENT = .FALSE.
       do i=1,nvar
          call mpp_get_atts(varfields(i),name=name,ndim=ndim,units=units)
-         if( trim(adjustl(lowercase(name))) ==
-trim(adjustl(lowercase(data_names(j)))) ) then
+         if( trim(adjustl(lowercase(name))) == trim(adjustl(lowercase(data_names(j)))) ) then
             units=chomp(units)
-            if (mpp_pe() == 0 ) write(*,*) 'Initializing src field :
-',trim(name)
+            if (mpp_pe() == 0 ) write(*,*) 'Initializing src field : ',trim(name)
             clim_type%field_name(j) = name
             clim_type%field_type(j) = varfields(i)
             clim_type%mr(j)         = check_climo_units(units)
             NAME_PRESENT = .TRUE.
             if (present(clim_units)) clim_units(j) = units
-            clim_type%out_of_bounds(j) = data_out_of_bounds(
-MIN(j,SIZE(data_out_of_bounds(:))) )
+            clim_type%out_of_bounds(j) = data_out_of_bounds(MIN(j,SIZE(data_out_of_bounds(:))) )
             if( clim_type%out_of_bounds(j) /= CONSTANT .and. &
                 clim_type%out_of_bounds(j) /= ZERO ) &
-               call mpp_error(FATAL,"Interpolator_init: data_out_of_bounds must
-be&
+               call mpp_error(FATAL,"Interpolator_init: data_out_of_bounds must be&
                                     & set to ZERO or CONSTANT")
             if( present(vert_interp) ) then
-               clim_type%vert_interp(j) = vert_interp(
-MIN(j,SIZE(vert_interp(:))) )
+               clim_type%vert_interp(j) = vert_interp(MIN(j,SIZE(vert_interp(:))) )
                if( clim_type%vert_interp(j) /= INTERP_WEIGHTED_P .and. &
                    clim_type%vert_interp(j) /= INTERP_LINEAR_P ) &
                   call mpp_error(FATAL,"Interpolator_init: vert_interp must be&
-                                       & set to INTERP_WEIGHTED_P or
-INTERP_LINEAR_P")
+                                       & set to INTERP_WEIGHTED_P or INTERP_LINEAR_P")
             else
                clim_type%vert_interp(j) = INTERP_WEIGHTED_P
             end if
          endif
       enddo
       if(.not. NAME_PRESENT) &
-         call mpp_error(FATAL,'interpolator_init : Check names of fields being
-passed. ' &
+         call mpp_error(FATAL,'interpolator_init : Check names of fields being passed. ' &
                               //trim(data_names(j))//' does not exist.')
    enddo
 else
 
-   if ( size(data_out_of_bounds(:)) /= nvar .and. size(data_out_of_bounds(:)) /=
-1 ) &
-      call mpp_error(FATAL,'interpolator_init : The size of the out of bounds
-array must be 1&
-                           & or the number of fields in the climatology
-dataset')
+   if ( size(data_out_of_bounds(:)) /= nvar .and. size(data_out_of_bounds(:)) /= 1 ) &
+      call mpp_error(FATAL,'interpolator_init : The size of the out of bounds array must be 1&
+                           & or the number of fields in the climatology dataset')
    if ( present(vert_interp) ) then
       if (size(vert_interp(:)) /= nvar .and. size(vert_interp(:)) /= 1 ) &
-      call mpp_error(FATAL,'interpolator_init : The size of the vert_interp
-array must be 1&
-                           & or the number of fields in the climatology
-dataset')
+      call mpp_error(FATAL,'interpolator_init : The size of the vert_interp array must be 1&
+                           & or the number of fields in the climatology dataset')
    endif
 
 ! Read all the fields within the climatology data file.
@@ -4822,20 +4781,17 @@ dataset')
          clim_type%field_type(i) = varfields(i)
          clim_type%mr(i)         = check_climo_units(units)
          if (present(clim_units)) clim_units(i) = units
-         clim_type%out_of_bounds(i) = data_out_of_bounds(
-MIN(i,SIZE(data_out_of_bounds(:))) )
+         clim_type%out_of_bounds(i) = data_out_of_bounds(MIN(i,SIZE(data_out_of_bounds(:))) )
          if( clim_type%out_of_bounds(i) /= CONSTANT .and. &
              clim_type%out_of_bounds(i) /= ZERO ) &
             call mpp_error(FATAL,"Interpolator_init: data_out_of_bounds must be&
                                  & set to ZERO or CONSTANT")
          if( present(vert_interp) ) then
-            clim_type%vert_interp(i) = vert_interp( MIN(i,SIZE(vert_interp(:)))
-)
+            clim_type%vert_interp(i) = vert_interp( MIN(i,SIZE(vert_interp(:))))
             if( clim_type%vert_interp(i) /= INTERP_WEIGHTED_P .and. &
                 clim_type%vert_interp(i) /= INTERP_LINEAR_P ) &
                call mpp_error(FATAL,"Interpolator_init: vert_interp must be&
-                                    & set to INTERP_WEIGHTED_P or
-INTERP_LINEAR_P")
+                                    & set to INTERP_WEIGHTED_P or INTERP_LINEAR_P")
          else
             clim_type%vert_interp(i) = INTERP_WEIGHTED_P
          end if
@@ -4871,8 +4827,7 @@ endif
 if( clim_type%TIME_FLAG .eq. NOTIME ) then
 ! Read all the data at this point.
    do i=1,num_fields
-     call interp_read_data_mppio_no_time_axis( clim_type, clim_type%field_type(i),
-&
+     call interp_read_data_mppio_no_time_axis( clim_type, clim_type%field_type(i),&
                                   clim_type%data(:,:,:,1,i), i )
    enddo
    call mpp_close (unit)
@@ -4985,8 +4940,7 @@ integer   :: k, km
 ! sjs
 real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
-      allocate(climdata(size(clim_type%lon(:)),size(clim_type%lat(:)),
-size(clim_type%levs(:))))
+      allocate(climdata(size(clim_type%lon(:)),size(clim_type%lat(:)), size(clim_type%levs(:))))
 
       call mpp_read(clim_type%unit,src_field, climdata)
 
