@@ -7754,9 +7754,9 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     integer,          intent(in)           :: tile
     character(len=*), intent(in), optional :: str2_in
 
-    if(tile > 0 .AND. tile < 9) then
+    if(tile > 0 .AND. tile <= 9) then
        write(str_out,'(a,i1)') trim(str_in), tile
-    else if(tile >= 10 .AND. tile < 99) then
+    else if(tile >= 10 .AND. tile <= 99) then
        write(str_out,'(a,i2)') trim(str_in), tile
     else
        call mpp_error(FATAL, "FMS_IO: get_tile_string: tile must be a positive number less than 100")
