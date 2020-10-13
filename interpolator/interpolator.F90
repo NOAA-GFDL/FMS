@@ -392,10 +392,10 @@ logical :: read_all_on_init = .false.          !< No description
 integer :: verbose = 0                              !< No description
 logical :: conservative_interp = .true.          !< No description
 logical :: retain_cm3_bug = .true.               !< No description
-logical :: use_mpp_io_bug = .false.
+logical :: use_mpp_io = .false. !< Set to true to use mpp_io, otherwise fms2io is used
 
 namelist /interpolator_nml/    &
-                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug, use_mpp_io_bug
+                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug, use_mpp_io
 
 contains
 
@@ -539,7 +539,7 @@ module_is_initialized = .true.
 
 endif !> if (module_is_initilized)
 
-if (use_mpp_io_bug) then
+if (use_mpp_io) then
     call mppio_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
                               data_names, data_out_of_bounds,           &
                               vert_interp, clim_units, single_year_file)
@@ -1697,7 +1697,7 @@ character(len=256) :: err_msg
           clim_type%indexm(:) = indexm
           clim_type%indexp(:) = indexp
           clim_type%climatology(:) = climatology
-          if (use_mpp_io_bug) then
+          if (use_mpp_io) then
             do i=1, size(clim_type%field_name(:))
                call interp_read_data_mppio(clim_type,clim_type%field_type(i),  &
                     clim_type%pmon_pyear(:,:,:,i),   &
@@ -1729,13 +1729,13 @@ character(len=256) :: err_msg
                     clim_type%nmon_nyear(:,:,:,i),  &
                     clim_type%indexp(i)+clim_type%climatology(i)*12,i,Time)
              end do
-           endif ! if (use_mpp_io_bug)
+           endif ! if (use_mpp_io)
          endif
 
 
       else ! We are within a climatology data set
 
-        if (use_mpp_io_bug) then
+        if (use_mpp_io) then
           do i=1, size(clim_type%field_name(:))
              if (taum /= clim_type%time_init(i,1) .or. &
                  taup /= clim_type%time_init(i,2) ) then
@@ -1765,7 +1765,7 @@ character(len=256) :: err_msg
               clim_type%time_init(i,2) = taup
              endif
            end do
-        endif !(use_mpp_io_bug)
+        endif !(use_mpp_io)
 !       clim_type%pmon_nyear = 0.0
 !       clim_type%nmon_nyear = 0.0
 
@@ -1799,7 +1799,7 @@ character(len=256) :: err_msg
 !Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
-    if (use_mpp_io_bug) then
+    if (use_mpp_io) then
         do i=1, size(clim_type%field_name(:))
            call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,1,i), taum,i,Time)
                 clim_type%time_init(i,1) = taum
@@ -1817,7 +1817,7 @@ character(len=256) :: err_msg
                clim_type%time_init(i,2) = taup
                clim_type%itaup = 2
        end do
-    endif ! if (use_mpp_io_bug)
+    endif ! if (use_mpp_io)
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.ne.0) then
 ! Can't think of a situation where we would have the next time level but not the previous.
@@ -1828,7 +1828,7 @@ character(len=256) :: err_msg
 !We have the previous time step but not the next time step data
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
-    if (use_mpp_io_bug) then
+    if (use_mpp_io) then
         do i=1, size(clim_type%field_name(:))
            call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
            clim_type%time_init(i,clim_type%itaup)=taup
@@ -1838,7 +1838,7 @@ character(len=256) :: err_msg
            call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
            clim_type%time_init(i,clim_type%itaup)=taup
         end do
-    endif ! if (use_mpp_io_bug)
+    endif ! if (use_mpp_io)
       endif
 
 
@@ -1985,7 +1985,7 @@ end do
    i = 1
 
     if(present(clim_units)) then
-      if (use_mpp_io_bug) then
+      if (use_mpp_io) then
          call mpp_get_atts(clim_type%field_type(i),units=clim_units)
          clim_units = chomp(clim_units)
       else
@@ -2117,7 +2117,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           clim_type%indexm(:) = indexm
           clim_type%indexp(:) = indexp
           clim_type%climatology(:) = climatology
-          if (use_mpp_io_bug) then
+          if (use_mpp_io) then
           do i=1, size(clim_type%field_name(:))
             call interp_read_data_mppio(clim_type,clim_type%field_type(i),  &
              clim_type%pmon_pyear(:,:,:,i),   &
@@ -2149,14 +2149,14 @@ if ( .not. clim_type%separate_time_vary_calc) then
               clim_type%nmon_nyear(:,:,:,i),  &
               clim_type%indexp(i)+clim_type%climatology(i)*12,i,Time)
           end do
-          endif !if (use_mpp_io_bug)
+          endif !if (use_mpp_io)
         endif
 
 
 
       else ! We are within a climatology data set
 
-        if (use_mpp_io_bug) then
+        if (use_mpp_io) then
         do i=1, size(clim_type%field_name(:))
           if (taum /= clim_type%time_init(i,1) .or. &
               taup /= clim_type%time_init(i,2) ) then
@@ -2220,7 +2220,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
-    if (use_mpp_io_bug) then
+    if (use_mpp_io) then
     do i=1, size(clim_type%field_name(:))
     call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
@@ -2238,7 +2238,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
     end do
-    endif !if (use_mpp_io_bug)
+    endif !if (use_mpp_io)
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.ne.0) then
 ! Can't think of a situation where we would have the next time level but not the previous.
@@ -2249,7 +2249,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !We have the previous time step but not the next time step data
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
-    if (use_mpp_io_bug) then
+    if (use_mpp_io) then
     do i=1, size(clim_type%field_name(:))
         call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
@@ -2259,7 +2259,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
      end do
-     endif !if (use_mpp_io_bug)
+     endif !if (use_mpp_io)
       endif
 
 
@@ -2625,7 +2625,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           clim_type%indexm(i) = indexm
           clim_type%indexp(i) = indexp
           clim_type%climatology(i) = climatology
-          if (use_mpp_io_bug) then
+          if (use_mpp_io) then
           call interp_read_data_mppio(clim_type,clim_type%field_type(i),  &
             clim_type%pmon_pyear(:,:,:,i),  &
             clim_type%indexm(i)+(clim_type%climatology(i)-1)*12,i,Time)
@@ -2653,7 +2653,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           call read_data(clim_type,clim_type%field_name(i),  &
             clim_type%nmon_nyear(:,:,:,i),  &
             clim_type%indexp(i)+clim_type%climatology(i)*12,i,Time)
-          endif !if (use_mpp_io_bug)
+          endif !if (use_mpp_io)
         endif
 
 
@@ -2664,7 +2664,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if (taum /= clim_type%time_init(i,1) .or. &
             taup /= clim_type%time_init(i,2) ) then
 
-          if (use_mpp_io_bug) then
+          if (use_mpp_io) then
           call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%pmon_pyear(:,:,:,i), taum,i,Time)
 ! Read the data for the next month in the previous climatology.
           call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%nmon_pyear(:,:,:,i), taup,i,Time)
@@ -2672,7 +2672,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           call read_data(clim_type,clim_type%field_name(i), clim_type%pmon_pyear(:,:,:,i), taum,i,Time)
 ! Read the data for the next month in the previous climatology.
           call read_data(clim_type,clim_type%field_name(i), clim_type%nmon_pyear(:,:,:,i), taup,i,Time)
-          endif !if (use_mpp_io_bug)
+          endif !if (use_mpp_io)
 !RSHbug   clim_type%pmon_nyear = 0.0
 !RSHbug   clim_type%nmon_nyear = 0.0
 
@@ -2713,7 +2713,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
-    if (use_mpp_io_bug) then
+    if (use_mpp_io) then
     call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
@@ -2727,7 +2727,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
     call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
-    endif !if (use_mpp_io_bug)
+    endif !if (use_mpp_io)
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.ne.0) then
 ! Can't think of a situation where we would have the next time level but not the previous.
@@ -2738,11 +2738,11 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !We have the previous time step but not the next time step data
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
-        if (use_mpp_io_bug) then
+        if (use_mpp_io) then
         call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
         else
         call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
-        endif !if (use_mpp_io_bug)
+        endif !if (use_mpp_io)
         clim_type%time_init(i,clim_type%itaup)=taup
       endif
 
@@ -3105,7 +3105,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           clim_type%indexm(i) = indexm
           clim_type%indexp(i) = indexp
           clim_type%climatology(i) = climatology
-          if (use_mpp_io_bug) then
+          if (use_mpp_io) then
           call interp_read_data_mppio(clim_type,clim_type%field_type(i),  &
             clim_type%pmon_pyear(:,:,:,i),  &
             clim_type%indexm(i)+(clim_type%climatology(i)-1)*12,i,Time)
@@ -3133,7 +3133,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           call read_data(clim_type,clim_type%field_name(i),  &
             clim_type%nmon_nyear(:,:,:,i),  &
             clim_type%indexp(i)+clim_type%climatology(i)*12,i,Time)
-           endif !if (use_mpp_io_bug)
+           endif !if (use_mpp_io)
         endif
 
 
@@ -3144,7 +3144,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if (taum /= clim_type%time_init(i,1) .or. &
             taup /= clim_type%time_init(i,2) ) then
 
-          if (use_mpp_io_bug) then
+          if (use_mpp_io) then
           call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%pmon_pyear(:,:,:,i), taum,i,Time)
 ! Read the data for the next month in the previous climatology.
           call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%nmon_pyear(:,:,:,i), taup,i,Time)
@@ -3192,7 +3192,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
       !Set up
       ! field(:,:,:,1) as the previous time slice.
       ! field(:,:,:,2) as the next time slice.
-        if (use_mpp_io_bug) then
+        if (use_mpp_io) then
         call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
@@ -3206,7 +3206,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
-        endif !(use_mpp_io_bug)
+        endif !(use_mpp_io)
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
       if (clim_type%itaum.eq.0 .and. clim_type%itaup.ne.0) then
       ! Can't think of a situation where we would have the next time level but not the previous.
@@ -3217,7 +3217,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
       !We have the previous time step but not the next time step data
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
-        if (use_mpp_io_bug) then
+        if (use_mpp_io) then
         call interp_read_data_mppio(clim_type,clim_type%field_type(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
         else
         call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
@@ -3703,11 +3703,11 @@ if (associated (clim_type%field_type)) deallocate(clim_type%field_type)
 if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &
 !     read_all_on_init)) .or. clim_type%TIME_FLAG .eq. BILINEAR  ) then
       read_all_on_init)  ) then
- if (use_mpp_io_bug) then
+ if (use_mpp_io) then
     call mpp_close(clim_type%unit)
  else
      call close_file(clim_type%fileobj)
- endif !if (use_mpp_io_bug)
+ endif !if (use_mpp_io)
 endif
 
 
