@@ -107,11 +107,8 @@ use fms_mod,          only:  open_file, error_mesg, &
                              mpp_pe, mpp_root_pe,&
                              FATAL, write_version_number, &
                              stdlog
-#ifndef use_mpp_io
 use fms2_io_mod,      only:  file_exists
-#else
-use  fms_io_mod,      only:  file_exists=>file_exist
-#endif
+use fms_io_mod,       only:  file_exist
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init
 use ensemble_manager_mod, only : get_ensemble_id, get_ensemble_size
@@ -220,11 +217,13 @@ integer             ::    &
        fields_per_print_line = 4   ! number of fields to write per line
                                    ! of output
 
+logical             ::    &        ! false is to use fms2_io true is mpp_io
+            use_mpp_io = .false.   ! only affects file_exist(s) calls 
 
 namelist / diag_integral_nml /      &
                                 output_interval, time_units,  &
                                 file_name, print_header, &
-                                fields_per_print_line
+                                fields_per_print_line, use_mpp_io
 
 !-------------------------------------------------------------------------------
 !------- public data ------
@@ -298,10 +297,7 @@ integer :: diag_unit = 0             ! unit number for output file
 logical :: module_is_initialized = .false.
                                      ! module is initialized ?
 
-
-
                            contains
-
 
 
 !###############################################################################
@@ -380,9 +376,16 @@ real,dimension(:,:), intent(in), optional :: blon, blat, area_in
 !-------------------------------------------------------------------------------
 !    read namelist.
 !-------------------------------------------------------------------------------
-      if ( file_exists('input.nml')) then
-        read (input_nml_file, nml=diag_integral_nml, iostat=io)
-        ierr = check_nml_error(io,'diag_integral_nml')
+      if(use_mpp_io) then
+        if ( file_exists('input.nml')) then
+          read (input_nml_file, nml=diag_integral_nml, iostat=io)
+          ierr = check_nml_error(io,'diag_integral_nml')
+        endif
+      else
+        if ( file_exist('input.nml')) then
+          read (input_nml_file, nml=diag_integral_nml, iostat=io)
+          ierr = check_nml_error(io,'diag_integral_nml')
+        endif
       endif
 
 !-------------------------------------------------------------------------------
