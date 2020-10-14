@@ -1527,9 +1527,9 @@ endif
           endif !if (use_mpp_io)
      endif
     if (use_mpp_io) then
-        idat =  nint(dat*100.) ! reconstruct packed data for reproducibity
+        idat =  nint(dat*100.) ! reconstruct packed data for reproducibility
     else
-        idat =  nint(dat) ! reconstruct packed data for reproducibity
+        idat =  nint(dat) ! reconstruct packed data for reproducibility
     endif !(use_mpp_io)
 
    !---- unpacking of data ----
