@@ -193,7 +193,6 @@ use mpp_io_mod, only : mpp_io_init
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
-use  fms_io_mod, only: file_exist
 
 implicit none
 private
@@ -560,9 +559,6 @@ type (field_def), pointer        :: current_list_p     => NULL()
 type (field_def), pointer        :: root_p             => NULL()
 type (field_def), pointer        :: save_root_parent_p => NULL()
 type (field_def), target, save   :: root
-logical                          :: use_mpp_io = .false. ! uses fms2_io if false, mpp_io otherwise
-
-namelist /field_manager_nml/ use_mpp_io
 
 contains
 
@@ -665,36 +661,20 @@ if (.not.PRESENT(table_name)) then
 else
    tbl_name = trim(table_name)
 endif
-! use correct file_exist version based on which io
-if( use_mpp_io) then
-  if (.not. file_exist(trim(tbl_name))) then
+if (.not. file_exists(trim(tbl_name))) then
 !   <ERROR MSG="No field table available, so no fields are being registered." STATUS="NOTE">
 !      The field table does not exist.
 !   </ERROR>
-    if (mpp_pe() == mpp_root_pe()) then
-      if (verb .gt. verb_level_warn) then
-        call mpp_error(NOTE, trim(warn_header)//                       &
-           'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
-      endif
+  if (mpp_pe() == mpp_root_pe()) then
+    if (verb .gt. verb_level_warn) then
+      call mpp_error(NOTE, trim(warn_header)//                       &
+         'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
     endif
-    if(present(nfields)) nfields = 0
-    return
   endif
-else
-  if (.not. file_exists(trim(tbl_name))) then
-!   <ERROR MSG="No field table available, so no fields are being registered." STATUS="NOTE">
-!      The field table does not exist.
-!   </ERROR>
-    if (mpp_pe() == mpp_root_pe()) then
-      if (verb .gt. verb_level_warn) then
-        call mpp_error(NOTE, trim(warn_header)//                       &
-           'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
-      endif
-    endif
-    if(present(nfields)) nfields = 0
-    return
-  endif
+if(present(nfields)) nfields = 0
+  return
 endif
+
 iunit = get_unit()
 open(iunit, file=trim(tbl_name), action='READ', iostat=io_status)
 if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in opening file '//trim(tbl_name))

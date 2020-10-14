@@ -55,12 +55,11 @@ real, allocatable, dimension(:,:,:)   :: runoff_in        !< Data to be written 
 real                                  :: expected_result  !< Expected result from data_override
 integer                               :: nhalox=2, nhaloy=2
 integer                               :: io_status
-logical                               :: use_mpp_io = .false. !< false to use fms2_io, otherwise use mpp_io 
 
-namelist / test_data_override_ongrid_nml / nhalox, nhaloy, use_mpp_io
+namelist / test_data_override_ongrid_nml / nhalox, nhaloy
 
 call mpp_init
-if(.not. use_mpp_io) call fms2_io_init
+call fms2_io_init
 
 read (input_nml_file, test_data_override_ongrid_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>test_data_override_ongrid: Error reading input.nml')
