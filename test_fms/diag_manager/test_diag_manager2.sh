@@ -45,7 +45,7 @@ setup_test_mppio()
     run_test test_diag_manager 1 ${3}
 
 }
-
+rm -f input.nml diag_table
 
 
 setup_test()
