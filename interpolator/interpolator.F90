@@ -4218,7 +4218,7 @@ nlevh = 1
 do i = 1, ndim
   call mpp_get_atts(axes(i), name=name,len=len,units=units,  &
                     calendar=file_calendar, sense=sense)
-  select case(name)
+  select case(trim(name))
     case('lat')
       nlat=len
       allocate(clim_type%lat(nlat))
