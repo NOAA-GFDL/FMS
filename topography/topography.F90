@@ -107,7 +107,7 @@ end interface
    integer, parameter    :: WATER_INDEX = 2
    logical :: file_is_opened(2) = .false.
    type(FmsNetcdfFile_t) :: fileobj(2) !< needed for fms2_io
-   logical :: use_mpp_io = .false. !<needed for mpp_io
+   logical :: use_mpp_io=.false.!>@var Namelist flag to enable usage of mpp_io subroutines if true
 !-----------------------------------------------------------------------
 ! --- resolution of the topography data set ---
 ! <DATASET NAME="">
@@ -153,7 +153,7 @@ end interface
 !#######################################################################
 
    subroutine topography_init ()
-     integer :: std_log
+     integer :: std_log !> @var standard log unit number to output which io is being used
      if ( module_is_initialized ) return
 
      call write_version_number("TOPOGRAPHY_MOD", version)
@@ -211,8 +211,8 @@ end interface
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
    logical :: get_topog_mean_1d
-   logical,optional :: use_mpp_io_arg
-   logical          :: mpp_io_use
+   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -247,8 +247,8 @@ end interface
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
    logical :: get_topog_mean_2d
-   logical,optional :: use_mpp_io_arg
-   logical          :: mpp_io_use
+   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -314,8 +314,8 @@ end interface
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_1d
-   logical,optional :: use_mpp_io_arg
-   logical          :: mpp_io_use
+   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -348,8 +348,8 @@ end interface
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_2d
-   logical,optional :: use_mpp_io_arg
-   logical          :: mpp_io_use
+   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -411,8 +411,8 @@ end interface
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
  logical :: get_ocean_frac_1d
- logical,optional :: use_mpp_io_arg
- logical          :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -447,8 +447,8 @@ end interface
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
  logical :: get_ocean_frac_2d
- logical,optional :: use_mpp_io_arg
- logical          :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -512,8 +512,8 @@ end interface
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
  logical :: get_ocean_mask_1d
- logical,optional :: use_mpp_io_arg
- logical :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -544,11 +544,10 @@ end interface
 
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
- logical,optional :: use_mpp_io_arg
  logical :: get_ocean_mask_2d
-
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
- logical          :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -612,8 +611,8 @@ end interface
  real, intent(out), dimension(:,:) :: water_frac
  logical :: get_water_frac_1d
 
- logical,optional :: use_mpp_io_arg
- logical          :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -647,8 +646,8 @@ end interface
  real, intent(out), dimension(:,:) :: water_frac
  logical :: get_water_frac_2d
 
- logical,optional :: use_mpp_io_arg
- logical          :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -711,9 +710,9 @@ end interface
  logical, intent(out), dimension(:,:) :: water_mask
  logical :: get_water_mask_1d
 
- logical,optional :: use_mpp_io_arg
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
- logical          :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
@@ -757,9 +756,9 @@ end interface
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: water_mask
  logical :: get_water_mask_2d
- logical, optional :: use_mpp_io_arg
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
- logical          :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
