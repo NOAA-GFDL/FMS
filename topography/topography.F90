@@ -867,8 +867,8 @@ end interface
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
- logical, optional :: use_mpp_io_arg
- logical :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 
    if(present(use_mpp_io_arg)) then
      mpp_io_use = use_mpp_io_arg
@@ -912,8 +912,8 @@ end interface
  real :: zout2(size(zout,1),size(zout,2))
  integer :: js, je
  type (horiz_interp_type) :: Interp
- logical, optional :: use_mpp_io_arg
- logical :: mpp_io_use
+ logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
+ logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 
    if(present(use_mpp_io_arg)) then
      mpp_io_use = use_mpp_io_arg
