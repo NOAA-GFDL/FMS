@@ -807,6 +807,12 @@ end interface
  integer :: js, je
  type (horiz_interp_type) :: Interp
 
+    if( use_mpp_io) then 
+      call input_data_mpp_io(topog_file, xdat, ydat, zdat)
+    else
+      call input_data( TOPOG_INDEX, xdat, ydat, zdat)
+    endif 
+
     call find_indices ( minval(blat), maxval(blat), ydat, js, je )
 
     call horiz_interp_new ( Interp, xdat, ydat(js:je+1), blon, blat )
