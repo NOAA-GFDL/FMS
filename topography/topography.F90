@@ -206,35 +206,26 @@ end interface
 !     Check the input grid size and output field size.
 !   </ERROR>
 
- function get_topog_mean_1d (blon, blat, zmean, use_mpp_io_arg)
+ function get_topog_mean_1d (blon, blat, zmean)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
    logical :: get_topog_mean_1d
-   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
-   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(zmean(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_topog_mean_1d','shape(zmean) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   if( mpp_io_use ) then
+   if( use_mpp_io ) then
      get_topog_mean_1d = open_topog_file_mpp_io(topog_file)
-     if ( get_topog_mean_1d ) call interp_topog_1d ( blon, blat, zmean,&
-                        use_mpp_io_arg=.true.)
    else
      get_topog_mean_1d = open_topog_file()
-     if ( get_topog_mean_1d ) call interp_topog_1d ( blon, blat, zmean )
    endif
+
+   if ( get_topog_mean_1d ) call interp_topog_1d ( blon, blat, zmean)
 
 !-----------------------------------------------------------------------
 
@@ -242,35 +233,26 @@ end interface
 
 !############################################################
 
- function get_topog_mean_2d (blon, blat, zmean, use_mpp_io_arg)
+ function get_topog_mean_2d (blon, blat, zmean)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
    logical :: get_topog_mean_2d
-   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
-   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(zmean(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_topog_mean_2d','shape(zmean) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if( mpp_io_use ) then
+   if( use_mpp_io ) then
      get_topog_mean_2d = open_topog_file_mpp_io(topog_file)
-     if ( get_topog_mean_2d ) call interp_topog_2d ( blon, blat, zmean,&
-                        use_mpp_io_arg=.true. )
    else
-     get_topog_mean_2d = open_topog_file_mpp_io(topog_file)
-     if ( get_topog_mean_2d ) call interp_topog_2d ( blon, blat, zmean )
+     get_topog_mean_2d = open_topog_file()
    endif
+
+   if ( get_topog_mean_2d ) call interp_topog_2d ( blon, blat, zmean)
 !-----------------------------------------------------------------------
 
  end function get_topog_mean_2d
@@ -309,33 +291,25 @@ end interface
 !     input topography data set was not readable.
 !   </OUT>
 
- function get_topog_stdev_1d (blon, blat, stdev, use_mpp_io_arg)
+ function get_topog_stdev_1d (blon, blat, stdev) 
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_1d
-   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
-   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
        call error_mesg('get_topog_stdev','shape(stdev) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   if( mpp_io_use ) then
+   if( use_mpp_io ) then
      get_topog_stdev_1d = open_topog_file_mpp_io(topog_file)
    else
      get_topog_stdev_1d = open_topog_file()
    endif
    if ( get_topog_stdev_1d ) call interp_topog_1d ( blon, blat, &
-              stdev, flag=COMPUTE_STDEV, use_mpp_io_arg=mpp_io_use )
+              stdev, flag=COMPUTE_STDEV)
 
 !-----------------------------------------------------------------------
 
@@ -343,34 +317,26 @@ end interface
 
 !#######################################################################
 
- function get_topog_stdev_2d (blon, blat, stdev, use_mpp_io_arg)
+ function get_topog_stdev_2d (blon, blat, stdev)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
    logical :: get_topog_stdev_2d
-   logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
-   logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(stdev(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_topog_stdev_2d','shape(stdev) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if( mpp_io_use ) then
+   if( use_mpp_io ) then
      get_topog_stdev_2d = open_topog_file_mpp_io(topog_file)
    else
      get_topog_stdev_2d = open_topog_file()
    endif
    if ( get_topog_stdev_2d ) call interp_topog_2d ( blon, blat, &
-              stdev, flag=COMPUTE_STDEV, use_mpp_io_arg=mpp_io_use)
+              stdev, flag=COMPUTE_STDEV)
 !-----------------------------------------------------------------------
 
  end function get_topog_stdev_2d
@@ -406,27 +372,19 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_ocean_frac_1d (blon, blat, ocean_frac, use_mpp_io_arg)
+ function get_ocean_frac_1d (blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
  logical :: get_ocean_frac_1d
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
    
-   if( mpp_io_use) then
+   if( use_mpp_io) then
      get_ocean_frac_1d = open_topog_file_mpp_io(water_file)
      if( get_ocean_frac_1d) call interp_water_1d_mpp_io ( blon, blat, &
                  ocean_frac, do_ocean=.true. )
@@ -442,28 +400,20 @@ end interface
 
 !#######################################################################
 
- function get_ocean_frac_2d (blon, blat, ocean_frac, use_mpp_io_arg)
+ function get_ocean_frac_2d (blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
  logical :: get_ocean_frac_2d
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(ocean_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_ocean_frac_2d','shape(ocean_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if( mpp_io_use) then
+   if( use_mpp_io) then
      get_ocean_frac_2d = open_topog_file_mpp_io(water_file)
      if( get_ocean_frac_2d) call interp_water_2d_mpp_io ( blon, blat, &
                  ocean_frac, do_ocean=.true. )
@@ -507,24 +457,16 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_ocean_mask_1d (blon, blat, ocean_mask, use_mpp_io_arg)
+ function get_ocean_mask_1d (blon, blat, ocean_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
  logical :: get_ocean_mask_1d
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
-
-   if ( get_ocean_frac_1d(blon, blat, ocean_frac, use_mpp_io_arg=mpp_io_use) ) then
+   if ( get_ocean_frac_1d(blon, blat, ocean_frac) ) then
      where (ocean_frac > 0.50)
        ocean_mask = .true.
      elsewhere
@@ -540,24 +482,16 @@ end interface
 
 !#######################################################################
 
- function get_ocean_mask_2d (blon, blat, ocean_mask, use_mpp_io_arg)
+ function get_ocean_mask_2d (blon, blat, ocean_mask)
 
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
  logical :: get_ocean_mask_2d
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
-
-   if ( get_ocean_frac_2d(blon, blat, ocean_frac, use_mpp_io_arg=mpp_io_use) ) then
+   if ( get_ocean_frac_2d(blon, blat, ocean_frac) ) then
      where (ocean_frac > 0.50)
        ocean_mask = .true.
      elsewhere
@@ -605,28 +539,20 @@ end interface
 !      Check the input grid size and output field size.
 !   </ERROR>
 
- function get_water_frac_1d (blon, blat, water_frac, use_mpp_io_arg)
+ function get_water_frac_1d (blon, blat, water_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
  real, intent(out), dimension(:,:) :: water_frac
  logical :: get_water_frac_1d
 
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_water_frac_1d','shape(water_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   if(mpp_io_use) then
+   if(use_mpp_io) then
      get_water_frac_1d = open_topog_file_mpp_io(water_file)
      if( get_water_frac_1d ) call interp_water_1d_mpp_io ( blon, blat, water_frac )
    else
@@ -640,29 +566,21 @@ end interface
 
 !#######################################################################
 
- function get_water_frac_2d (blon, blat, water_frac, use_mpp_io_arg)
+ function get_water_frac_2d (blon, blat, water_frac)
 
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: water_frac
  logical :: get_water_frac_2d
 
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
 
    if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
         any(shape(water_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_water_frac_2d','shape(water_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   if(mpp_io_use) then
+   if(use_mpp_io) then
      get_water_frac_2d = open_topog_file_mpp_io(water_file)
      if( get_water_frac_2d ) call interp_water_2d_mpp_io ( blon, blat, water_frac )
    else
@@ -704,25 +622,17 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
- function get_water_mask_1d (blon, blat, water_mask, use_mpp_io_arg)
+ function get_water_mask_1d (blon, blat, water_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
  logical, intent(out), dimension(:,:) :: water_mask
  logical :: get_water_mask_1d
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
-
-   if(mpp_io_use) then
+   if(use_mpp_io) then
      if ( get_water_frac_1d_mpp_io(blon, blat, water_frac) ) then
        where (water_frac > 0.50)
          water_mask = .true.
@@ -751,24 +661,16 @@ end interface
 
 !#######################################################################
 
- function get_water_mask_2d (blon, blat, water_mask, use_mpp_io_arg)
+ function get_water_mask_2d (blon, blat, water_mask)
 
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: water_mask
  logical :: get_water_mask_2d
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
-
-   if(mpp_io_use) then
+   if(use_mpp_io) then
      if ( get_water_frac_2d_mpp_io(blon, blat, water_frac) ) then
        where (water_frac > 0.50)
          water_mask = .true.
@@ -859,7 +761,7 @@ end interface
 
 !#######################################################################
 
- subroutine interp_topog_1d ( blon, blat, zout, flag, use_mpp_io_arg )
+ subroutine interp_topog_1d ( blon, blat, zout, flag)
  real   , intent(in)  :: blon(:), blat(:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
@@ -867,16 +769,8 @@ end interface
  real :: xdat(ipts+1), ydat(jpts+1)
  real :: zdat(ipts,jpts)
  real :: zout2(size(zout,1),size(zout,2))
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
 
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
-   
-   if(mpp_io_use) then
+   if(use_mpp_io) then
      call input_data_mpp_io( topog_file, xdat, ydat, zdat )
    else 
      call input_data( TOPOG_INDEX, xdat, ydat, zdat)
@@ -902,7 +796,7 @@ end interface
 
 !#######################################################################
 
- subroutine interp_topog_2d ( blon, blat, zout, flag, use_mpp_io_arg )
+ subroutine interp_topog_2d ( blon, blat, zout, flag )
  real   , intent(in)  :: blon(:,:), blat(:,:)
  real   , intent(out) :: zout(:,:)
  integer, intent(in), optional :: flag
@@ -912,20 +806,6 @@ end interface
  real :: zout2(size(zout,1),size(zout,2))
  integer :: js, je
  type (horiz_interp_type) :: Interp
- logical,optional :: use_mpp_io_arg!>@arg Enables usage of mpp_io if true and fms2_io if false
- logical          :: mpp_io_use!>@var set by use_mpp_io_arg or use_mpp_io to determine which io is used
-
-   if(present(use_mpp_io_arg)) then
-     mpp_io_use = use_mpp_io_arg
-   else
-     mpp_io_use = use_mpp_io
-   endif
-   
-   if(mpp_io_use) then
-     call input_data_mpp_io ( topog_file, xdat, ydat, zdat )
-   else 
-     call input_data( TOPOG_INDEX, xdat, ydat, zdat)
-   endif
 
     call find_indices ( minval(blat), maxval(blat), ydat, js, je )
 
