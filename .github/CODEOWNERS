@@ -25,7 +25,7 @@
 # These owners will be the default owners for all the files in the
 # repository.  Unless a later match is found, these owners
 # will be requested for a review when a PR is opened.
-*          @wrongkindofdoctor @thomas-robinson @bensonr 
+*          @wrongkindofdoctor @thomas-robinson @bensonr
 
 # GNU autotools files
 Makefile.am      @uramirez8707

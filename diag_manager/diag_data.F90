@@ -59,9 +59,8 @@ use platform_mod
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
-#ifndef use_mpp_io
-use fms2_io_mod
-#endif
+  use fms2_io_mod
+
   IMPLICIT NONE
 
   PUBLIC
@@ -743,6 +742,7 @@ use fms2_io_mod
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
+  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
 
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
@@ -789,12 +789,11 @@ use fms2_io_mod
   TYPE(file_type), SAVE, ALLOCATABLE :: files(:)
   TYPE(input_field_type), ALLOCATABLE :: input_fields(:)
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
-#ifndef use_mpp_io
+!> used if use_mpp_io = .false.
     type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
     type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
     type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
     character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
-#endif
   ! <!-- Even More Variables -->
   ! <DATA NAME="time_zero" TYPE="TYPE(time_type)" />
   ! <DATA NAME="first_send_data_call" TYPE="LOGICAL" DEFAULT=".TRUE." />
