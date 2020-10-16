@@ -96,6 +96,8 @@ list(APPEND fms_fortran_src_files
   coupler/atmos_ocean_fluxes.F90
   coupler/coupler_types.F90
   coupler/ensemble_manager.F90
+  data_override/get_grid_version_fms2io.F90
+  data_override/get_grid_version_mpp.F90
   data_override/data_override.F90
   diag_integral/diag_integral.F90
   diag_manager/diag_axis.F90

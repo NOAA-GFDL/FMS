@@ -60,6 +60,7 @@ use platform_mod
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
   use fms2_io_mod
+
   IMPLICIT NONE
 
   PUBLIC
