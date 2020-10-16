@@ -140,3 +140,4 @@ jobs:
         - cmake -DCMAKE_INSTALL_PREFIX=../install_cmake -DOPENMP=OFF -D64BIT=ON -DLARGEFILE=ON ..
         - make -j 2
         - make install
+
