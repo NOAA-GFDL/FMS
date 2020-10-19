@@ -118,27 +118,7 @@ jobs:
         - autoreconf -i
         - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
         - make -j distcheck
-#build_with_autotools_mpp_io
-    - name: build_with_autotools_mpp_io
-      env:
-        - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS='--enable-mpp-io'
-
-      before_install:
-        - test -n "$CC" && unset CC
-
-      before_script:
-        - export CC=mpicc
-        - export FC=mpif90
-        - export CPPFLAGS="-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500"
-        - export FCFLAGS="-Waliasing -fno-range-check ${FCFLAGS_ADD}"
-        - export LDFLAGS='-L/usr/lib'
-        - export VERBOSE=1
-
-      script:
-        - autoreconf -i
-        - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
-        - make -j distcheck
-
+#build_with_cmake
     - name: build_with_cmake
       env:
         - FCFLAGS_ADD='' DISTCHECK_CONFIGURE_FLAGS=''
@@ -160,3 +140,4 @@ jobs:
         - cmake -DCMAKE_INSTALL_PREFIX=../install_cmake -DOPENMP=OFF -D64BIT=ON -DLARGEFILE=ON ..
         - make -j 2
         - make install
+

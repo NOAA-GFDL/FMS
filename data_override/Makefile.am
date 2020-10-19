@@ -36,14 +36,27 @@ AM_CPPFLAGS += -I${top_builddir}/fms2_io
 AM_CPPFLAGS += -I${top_builddir}/mosaic
 
 # Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libdata_override.la
+noinst_LTLIBRARIES = libdata_override.la libget_grid_version_mpp.la \
+libget_grid_version_fms2io.la
 
 # The convenience library depends on its source.
 libdata_override_la_SOURCES = data_override.F90
+libget_grid_version_mpp_la_SOURCES = get_grid_version_mpp.F90
+libget_grid_version_fms2io_la_SOURCES = get_grid_version_fms2io.F90
 
 # Mod file depends on its o file, is built and then installed.
 data_override_mod.mod: data_override.lo
-BUILT_SOURCES = data_override_mod.mod
-include_HEADERS = data_override_mod.mod
+get_grid_version_mpp_mod.mod: get_grid_version_mpp.lo
+get_grid_version_fms2io_mod.mod: get_grid_version_fms2io.lo
+
+# Some mods are dependent on other mods in this dir.
+data_override.lo: get_grid_version_mpp_mod.mod get_grid_version_fms2io_mod.mod
+
+# Mod files are built and then installed as headers.
+MODFILES = data_override_mod.mod get_grid_version_mpp_mod.mod	\
+get_grid_version_fms2io_mod.mod
+
+include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod

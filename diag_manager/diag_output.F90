@@ -27,21 +27,19 @@ MODULE diag_output_mod
   !   <TT>diag_manager_mod</TT>. Its function is to write axis-meta-data,
   !   field-meta-data and field data
   ! </OVERVIEW>
-#ifndef use_mpp_io
 use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
+!> use_mpp_io = .false.
   USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, &
        & mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
        & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_get_field_name, &
        & fillin_fieldtype
-#else
-#include <fms_platform.h>
-  USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, mpp_open,mpp_write_meta,&
-       & mpp_write, mpp_flush, mpp_close, mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
-       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_io_unstructured_write
-#endif
+!> use_mpp_io = .true.
+  USE mpp_io_mod, ONLY: mpp_open,mpp_write_meta,&
+       & mpp_write, mpp_flush, mpp_close, &
+       & mpp_io_unstructured_write
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
@@ -64,22 +62,19 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   use mpp_domains_mod, only: mpp_get_UG_domain_pelist
   use mpp_mod,         only: mpp_gather
   use mpp_mod,         only: uppercase,lowercase
-#ifndef use_mpp_io
   use fms2_io_mod
-#endif
   use axis_utils2_mod,   only: axis_edges
 
 
   IMPLICIT NONE
 
   PRIVATE
+!> 2020.03 use_mpp_io diag_output_init, write_axis_meta_data, write_field_meta_data, write_attribute_meta are
+!! interfaces for the two different routines supporting each IO
   PUBLIC :: diag_output_init, write_axis_meta_data, write_field_meta_data, done_meta_data,&
        & diag_fieldtype, get_diag_global_att, set_diag_global_att
-#ifndef use_mpp_io
-  PUBLIC :: diag_field_write, diag_write_time
-#else
-  PUBLIC :: diag_field_out
-#endif
+  PUBLIC :: diag_field_write, diag_write_time !< use_mpp_io = .false.
+  PUBLIC :: diag_field_out, done_meta_data_use_mpp_io !< use_mpp_io = .true.
   TYPE(diag_global_att_type), SAVE :: diag_global_att
 
   INTEGER, PARAMETER      :: NETCDF1 = 1
@@ -98,13 +93,33 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   LOGICAL :: module_is_initialized = .FALSE.
 
-#ifndef use_mpp_io
   ! Include variable "version" to be written to log file.
-  character(len=*), parameter :: version = 'unknown'
-
+  character(len=*), parameter :: version = '2020.03'
+!> This interface is exclusive to fms2_io output
   interface diag_field_write
      module procedure diag_field_write_field
      module procedure diag_field_write_varname
+  end interface
+
+!> The following interfaces are used in conjuctions with use_mpp_io
+  interface diag_output_init
+     module procedure diag_output_init_fms2_io
+     module procedure diag_output_init_use_mpp_io
+  end interface
+
+  interface write_axis_meta_data
+     module procedure write_axis_meta_data_fms2_io
+     module procedure write_axis_meta_data_use_mpp_io
+  end interface
+
+  interface write_field_meta_data
+     module procedure write_field_meta_data_fms2_io
+     module procedure write_field_meta_data_use_mpp_io
+  end interface
+
+  interface write_attribute_meta
+     module procedure write_attribute_meta_fms2_io
+     module procedure write_attribute_meta_use_mpp_io
   end interface
 
 CONTAINS
@@ -130,7 +145,7 @@ CONTAINS
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
   !   <IN NAME="domainU" TYPE="TYPE(domainUG)" />The unstructure domain </IN>
-  SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
+  SUBROUTINE diag_output_init_fms2_io (file_name, FORMAT, file_title, file_unit,&
        & all_scalar_or_1d, domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, &
        & attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name, file_title
@@ -282,7 +297,7 @@ CONTAINS
 
     call register_global_attribute(fileob, 'grid_tile', TRIM(gAtt%tile_name), str_len=len_trim(gAtt%tile_name))
 
-  END SUBROUTINE diag_output_init
+  END SUBROUTINE diag_output_init_fms2_io
   ! </SUBROUTINE>
 
   ! <SUBROUTINE NAME="write_axis_meta_data">
@@ -297,7 +312,7 @@ CONTAINS
   !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
   !     .TRUE. if this file contains any min, max, time_rms, or time_average
   !   </IN>
-  SUBROUTINE write_axis_meta_data(file_unit, axes, fileob, time_ops, time_axis_registered)
+  SUBROUTINE write_axis_meta_data_fms2_io(file_unit, axes, fileob, time_ops, time_axis_registered)
     INTEGER, INTENT(in) :: file_unit, axes(:)
     class(FmsNetcdfFile_t) , intent(inout),target :: fileob
     class(FmsNetcdfFile_t) ,pointer                        :: fptr
@@ -601,7 +616,6 @@ integer :: domain_size, axis_length, axis_pos
        ! Write axis attributes
        id_axis = mpp_get_id(Axis_types(num_axis_in_file))
        CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg, varname=axis_name, fileob=fileob)
-!       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
        IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
           CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
        END IF
@@ -759,7 +773,7 @@ integer :: domain_size, axis_length, axis_pos
           DEALLOCATE(attributes)
        END IF
     END DO
-  END SUBROUTINE write_axis_meta_data
+  END SUBROUTINE write_axis_meta_data_fms2_io
   ! </SUBROUTINE>
 
   ! <FUNCTION NAME="write_field_meta_data">
@@ -799,7 +813,7 @@ integer :: domain_size, axis_length, axis_pos
   !   </IN>
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
-  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
+  FUNCTION write_field_meta_data_fms2_io ( file_unit, name, axes, units, long_name, range, pack, mval,&
        & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
        & use_UGdomain, fileob) result ( Field )
     INTEGER, INTENT(in) :: file_unit, axes(:)
@@ -1063,13 +1077,13 @@ character(len=128),dimension(size(axes)) :: axis_names
     Field%tile_count = get_tile_count ( axes )
     Field%DomainU = get_domainUG ( axes(1) )
 
-  END FUNCTION write_field_meta_data
+  END FUNCTION write_field_meta_data_fms2_io
   ! </FUNCTION>
 
   !> \brief Write out attribute meta data to file
   !!
   !! Write out the attribute meta data to file, for field and axes
-  SUBROUTINE write_attribute_meta(file_unit, id, num_attributes, attributes, time_method, err_msg, varname, fileob)
+  SUBROUTINE write_attribute_meta_fms2_io(file_unit, id, num_attributes, attributes, time_method, err_msg, varname, fileob)
     INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: id !< ID of field, file, axis to get attribute meta data
     INTEGER, INTENT(in) :: num_attributes !< Number of attributes to write
@@ -1123,7 +1137,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           END IF
        END SELECT
     END DO
-  END SUBROUTINE write_attribute_meta
+  END SUBROUTINE write_attribute_meta_fms2_io
 
   ! <SUBROUTINE NAME="done_meta_data">
   !   <OVERVIEW>
@@ -1303,11 +1317,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
      if (associated(fptr)) nullify(fptr)
   end subroutine diag_write_time
 
-#else 
-!for use_mpp_io
-#include<file_version.h>
-
-CONTAINS
 
   ! <SUBROUTINE NAME="diag_output_init">
   !   <OVERVIEW>
@@ -1330,7 +1339,7 @@ CONTAINS
   !   <IN NAME="all_scalar_or_1d" TYPE="LOGICAL" />
   !   <IN NAME="domain" TYPE="TYPE(domain2d)" />
   !   <IN NAME="domainU" TYPE="TYPE(domainUG)" />The unstructure domain </IN>
-  SUBROUTINE diag_output_init(file_name, FORMAT, file_title, file_unit,&
+  SUBROUTINE diag_output_init_use_mpp_io(file_name, FORMAT, file_title, file_unit,&
        & all_scalar_or_1d, domain, domainU, attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name, file_title
     INTEGER         , INTENT(in)  :: FORMAT
@@ -1413,7 +1422,7 @@ CONTAINS
     CALL mpp_write_meta(file_unit, 'grid_type', cval=TRIM(gAtt%grid_type))
     CALL mpp_write_meta(file_unit, 'grid_tile', cval=TRIM(gAtt%tile_name))
 
-  END SUBROUTINE diag_output_init
+  END SUBROUTINE diag_output_init_use_mpp_io
   ! </SUBROUTINE>
 
   ! <SUBROUTINE NAME="write_axis_meta_data">
@@ -1428,7 +1437,7 @@ CONTAINS
   !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
   !     .TRUE. if this file contains any min, max, time_rms, or time_average
   !   </IN>
-  SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
+  SUBROUTINE write_axis_meta_data_use_mpp_io(file_unit, axes, time_ops)
     INTEGER, INTENT(in) :: file_unit, axes(:)
     LOGICAL, INTENT(in), OPTIONAL :: time_ops
 
@@ -1450,9 +1459,9 @@ CONTAINS
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
     type(domainUG),pointer                     :: io_domain
-    integer(INT_KIND)                          :: io_domain_npes
-    integer(INT_KIND),dimension(:),allocatable :: io_pelist
-    integer(INT_KIND),dimension(:),allocatable :: unstruct_axis_sizes
+    integer(I4_KIND)                           :: io_domain_npes
+    integer(I4_KIND),dimension(:),allocatable  :: io_pelist
+    integer(I4_KIND),dimension(:),allocatable  :: unstruct_axis_sizes
     real,dimension(:),allocatable              :: unstruct_axis_data
 
     ! Make sure err_msg is initialized
@@ -1592,10 +1601,10 @@ CONTAINS
        ! Deallocate attributes
        IF ( ALLOCATED(attributes) ) THEN
           DO j=1, num_attributes
-             IF ( _ALLOCATED(attributes(j)%fatt ) ) THEN
+             IF ( allocated(attributes(j)%fatt ) ) THEN
                 DEALLOCATE(attributes(j)%fatt)
              END IF
-             IF ( _ALLOCATED(attributes(j)%iatt ) ) THEN
+             IF ( allocated(attributes(j)%iatt ) ) THEN
                 DEALLOCATE(attributes(j)%iatt)
              END IF
           END DO
@@ -1668,17 +1677,17 @@ CONTAINS
        ! Deallocate attributes
        IF ( ALLOCATED(attributes) ) THEN
           DO j=1, num_attributes
-             IF ( _ALLOCATED(attributes(j)%fatt ) ) THEN
+             IF ( allocated(attributes(j)%fatt ) ) THEN
                 DEALLOCATE(attributes(j)%fatt)
              END IF
-             IF ( _ALLOCATED(attributes(j)%iatt ) ) THEN
+             IF ( allocated(attributes(j)%iatt ) ) THEN
                 DEALLOCATE(attributes(j)%iatt)
              END IF
           END DO
           DEALLOCATE(attributes)
        END IF
     END DO
-  END SUBROUTINE write_axis_meta_data
+  END SUBROUTINE write_axis_meta_data_use_mpp_io
   ! </SUBROUTINE>
 
   ! <FUNCTION NAME="write_field_meta_data">
@@ -1718,7 +1727,7 @@ CONTAINS
   !   </IN>
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
-  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
+  FUNCTION write_field_meta_data_use_mpp_io ( file_unit, name, axes, units, long_name, range, pack, mval,&
        & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
        & use_UGdomain) result ( Field )
     INTEGER, INTENT(in) :: file_unit, axes(:)
@@ -1727,7 +1736,7 @@ CONTAINS
     INTEGER, OPTIONAL, INTENT(in) :: pack
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: avg_name, time_method, standard_name
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method
-    TYPE(diag_atttype), DIMENSION(:), _ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
+    TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(in) :: attributes
     INTEGER, OPTIONAL, INTENT(in) :: num_attributes
     LOGICAL, OPTIONAL, INTENT(in) :: use_UGdomain
 
@@ -1882,7 +1891,7 @@ CONTAINS
     !---- write user defined attributes -----
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
-          IF ( num_attributes .GT. 0 .AND. _ALLOCATED(attributes) ) THEN
+          IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
              CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
@@ -1890,11 +1899,11 @@ CONTAINS
              END IF
           ELSE
              ! Catch some bad cases
-             IF ( num_attributes .GT. 0 .AND. .NOT._ALLOCATED(attributes) ) THEN
+             IF ( num_attributes .GT. 0 .AND. .NOT.allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes > 0 but attributes is not allocated for attribute '&
                      &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
-             ELSE IF ( num_attributes .EQ. 0 .AND. _ALLOCATED(attributes) ) THEN
+             ELSE IF ( num_attributes .EQ. 0 .AND. allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes == 0 but attributes is allocated for attribute '&
                      &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
@@ -1940,13 +1949,13 @@ CONTAINS
     Field%tile_count = get_tile_count ( axes )
     Field%DomainU = get_domainUG ( axes(1) )
 
-  END FUNCTION write_field_meta_data
+  END FUNCTION write_field_meta_data_use_mpp_io
   ! </FUNCTION>
 
   !> \brief Write out attribute meta data to file
   !!
   !! Write out the attribute meta data to file, for field and axes
-  SUBROUTINE write_attribute_meta(file_unit, id, num_attributes, attributes, time_method, err_msg)
+  SUBROUTINE write_attribute_meta_use_mpp_io(file_unit, id, num_attributes, attributes, time_method, err_msg)
     INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: id !< ID of field, file, axis to get attribute meta data
     INTEGER, INTENT(in) :: num_attributes !< Number of attributes to write
@@ -1963,7 +1972,7 @@ CONTAINS
     DO i = 1, num_attributes
        SELECT CASE (attributes(i)%type)
        CASE (NF90_INT)
-          IF ( .NOT._ALLOCATED(attributes(i)%iatt) ) THEN
+          IF ( .NOT.allocated(attributes(i)%iatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Integer attribute type indicated, but array not allocated for attribute '&
                   &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
@@ -1973,7 +1982,7 @@ CONTAINS
           CALL mpp_write_meta(file_unit, id, TRIM(attributes(i)%name),&
                & ival=attributes(i)%iatt)
        CASE (NF90_FLOAT)
-          IF ( .NOT._ALLOCATED(attributes(i)%fatt) ) THEN
+          IF ( .NOT.allocated(attributes(i)%fatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Real attribute type indicated, but array not allocated for attribute '&
                   &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
@@ -1999,7 +2008,7 @@ CONTAINS
           END IF
        END SELECT
     END DO
-  END SUBROUTINE write_attribute_meta
+  END SUBROUTINE write_attribute_meta_use_mpp_io
 
   ! <SUBROUTINE NAME="done_meta_data">
   !   <OVERVIEW>
@@ -2014,7 +2023,7 @@ CONTAINS
   !     <TT>diag_field_out</TT> call.
   !   </DESCRIPTION>
   !   <IN NAME="file_unit" TYPE="INTEGER">Output file unit number</IN>
-  SUBROUTINE done_meta_data(file_unit)
+  SUBROUTINE done_meta_data_use_mpp_io(file_unit)
     INTEGER,  INTENT(in)  :: file_unit
 
     INTEGER               :: i
@@ -2026,7 +2035,7 @@ CONTAINS
     END DO
 
     num_axis_in_file = 0
-  END SUBROUTINE done_meta_data
+  END SUBROUTINE done_meta_data_use_mpp_io
   ! </SUBROUTINE>
 
   ! <SUBROUTINE NAME="diag_field_out">
@@ -2097,7 +2106,8 @@ CONTAINS
 
     CALL mpp_flush (file_unit)
   END SUBROUTINE diag_flush
-#endif
+!> End of use_mpp_io = true routines/functions  
+!! everything else is shared by both
   ! </SUBROUTINE>
 
 
