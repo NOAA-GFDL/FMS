@@ -27,6 +27,25 @@
 # Set common test settings.
 . ../test_common.sh
 
+#This setup uses the use_mpp_io=.true. namelist
+setup_test_mppio()
+# Function sets up and runs the test
+# Inputs:
+# {1} Test number
+# {2} Description of test
+# {3} Set to "skip"
+
+{
+    echo ${2}
+    tnum=$( printf "%2.2d" ${1} )
+    rm -f diag_test_${tnum}* > /dev/null 2>&1
+    sed "s/<test_num>/${tnum}/" $top_srcdir/test_fms/diag_manager/input.nml_base_mppio > input.nml
+    ln -f -s $top_srcdir/test_fms/diag_manager/diagTables/diag_table_${tnum} diag_table
+
+    run_test test_diag_manager 1 ${3}
+
+}
+
 setup_test()
 # Function sets up and runs the test
 # Inputs:
@@ -69,3 +88,29 @@ setup_test 20 "Test 20: Get diag_field_id, ID found and not found"
 setup_test 21 "Test 21: Add axis attributes"
 setup_test 22 "Test 22: Get 'nv' axis id"
 setup_test 23 "Test 23: Unstructured grid"
+echo Run with mpp_io
+rm -f input.nml diag_table
+setup_test_mppio 1 "Test 1: Data array is too large in x and y direction"
+setup_test_mppio 2 "Test 2: Data array is too large in x direction"
+setup_test_mppio 3 "Test 3: Data array is too large in y direction"
+setup_test_mppio 4 "Test 4: Data array is too small in x and y direction, checks for 2 time steps"
+setup_test_mppio 5 "Test 5: Data array is too small in x directions, checks for 2 time steps"
+setup_test_mppio 6 "Test 6: Data array is too small in y direction, checks for 2 time steps"
+setup_test_mppio 7 "Test 7: Data array is too large in x and y, with halos, 2 time steps"
+setup_test_mppio 8 "Test 8: Data array is too small in x and y, with halos, 2 time steps"
+setup_test_mppio 9 "Test 9: Data array is too small, 1D, static global data"
+setup_test_mppio 10 "Test 10: Data array is too large, 1D, static global data"
+setup_test_mppio 11 "Test 11: Missing je_in as an input"
+setup_test_mppio 12 "Test 12: Catch duplicate field in diag_table"
+setup_test_mppio 13 "Test 13: Output interval greater than runlength"
+setup_test_mppio 14 "Test 14: Catch invalid date in register_diag_field call"
+setup_test_mppio 15 "Test 15: OpenMP thread test"
+setup_test_mppio 16 "Test 16: Filename appendix added"
+setup_test_mppio 17 "Test 17: Root-mean-square"
+setup_test_mppio 18 "Test 18: Added attributes, and cell_measures"
+setup_test_mppio 19 "Test 19: Area and Volume same field"
+setup_test_mppio 20 "Test 20: Get diag_field_id, ID found and not found"
+setup_test_mppio 21 "Test 21: Add axis attributes"
+setup_test_mppio 22 "Test 22: Get 'nv' axis id"
+setup_test_mppio 23 "Test 23: Unstructured grid"
+
