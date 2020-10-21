@@ -1,3 +1,22 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+
 # This is an automake file for the data_override directory of the FMS
 # package.
 
@@ -17,14 +36,27 @@ AM_CPPFLAGS += -I${top_builddir}/fms2_io
 AM_CPPFLAGS += -I${top_builddir}/mosaic
 
 # Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libdata_override.la
+noinst_LTLIBRARIES = libdata_override.la libget_grid_version_mpp.la \
+libget_grid_version_fms2io.la
 
 # The convenience library depends on its source.
 libdata_override_la_SOURCES = data_override.F90
+libget_grid_version_mpp_la_SOURCES = get_grid_version_mpp.F90
+libget_grid_version_fms2io_la_SOURCES = get_grid_version_fms2io.F90
 
 # Mod file depends on its o file, is built and then installed.
-data_override_mod.mod: data_override.$(OBJEXT)
-BUILT_SOURCES = data_override_mod.mod
-include_HEADERS = data_override_mod.mod
+data_override_mod.mod: data_override.lo
+get_grid_version_mpp_mod.mod: get_grid_version_mpp.lo
+get_grid_version_fms2io_mod.mod: get_grid_version_fms2io.lo
+
+# Some mods are dependent on other mods in this dir.
+data_override.lo: get_grid_version_mpp_mod.mod get_grid_version_fms2io_mod.mod
+
+# Mod files are built and then installed as headers.
+MODFILES = data_override_mod.mod get_grid_version_mpp_mod.mod	\
+get_grid_version_fms2io_mod.mod
+
+include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
 
 CLEANFILES = *.mod

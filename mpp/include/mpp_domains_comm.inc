@@ -663,20 +663,20 @@
       d_comm%l_addrx =-9999
       d_comm%l_addry =-9999
 
-      if( _ALLOCATED(d_comm%sendis) )   DEALLOCATE(d_comm%sendis);    !!d_comm%sendis =>NULL()
-      if( _ALLOCATED(d_comm%sendie) )   DEALLOCATE(d_comm%sendie);    !!d_comm%sendie =>NULL()
-      if( _ALLOCATED(d_comm%sendjs) )   DEALLOCATE(d_comm%sendjs);    !!d_comm%sendjs =>NULL()
-      if( _ALLOCATED(d_comm%sendje) )   DEALLOCATE(d_comm%sendje);    !!d_comm%sendje =>NULL()
-      if( _ALLOCATED(d_comm%S_msize) )  DEALLOCATE(d_comm%S_msize);   !!d_comm%S_msize =>NULL()
-      if( _ALLOCATED(d_comm%S_do_buf) ) DEALLOCATE(d_comm%S_do_buf);  !!d_comm%S_do_buf =>NULL()
-      if( _ALLOCATED(d_comm%cto_pe) )   DEALLOCATE(d_comm%cto_pe);    !!d_comm%cto_pe  =>NULL()
-      if( _ALLOCATED(d_comm%recvis) )   DEALLOCATE(d_comm%recvis);    !!d_comm%recvis =>NULL()
-      if( _ALLOCATED(d_comm%recvie) )   DEALLOCATE(d_comm%recvie);    !!d_comm%recvie =>NULL()
-      if( _ALLOCATED(d_comm%recvjs) )   DEALLOCATE(d_comm%recvjs);    !!d_comm%recvjs =>NULL()
-      if( _ALLOCATED(d_comm%recvje) )   DEALLOCATE(d_comm%recvje);    !!d_comm%recvje =>NULL()
-      if( _ALLOCATED(d_comm%R_msize) )  DEALLOCATE(d_comm%R_msize);   !!d_comm%R_msize =>NULL()
-      if( _ALLOCATED(d_comm%R_do_buf) ) DEALLOCATE(d_comm%R_do_buf);  !!d_comm%R_do_buf =>NULL()
-      if( _ALLOCATED(d_comm%cfrom_pe) ) DEALLOCATE(d_comm%cfrom_pe);  !!d_comm%cfrom_pe  =>NULL()
+      if( allocated(d_comm%sendis) )   DEALLOCATE(d_comm%sendis);    !!d_comm%sendis =>NULL()
+      if( allocated(d_comm%sendie) )   DEALLOCATE(d_comm%sendie);    !!d_comm%sendie =>NULL()
+      if( allocated(d_comm%sendjs) )   DEALLOCATE(d_comm%sendjs);    !!d_comm%sendjs =>NULL()
+      if( allocated(d_comm%sendje) )   DEALLOCATE(d_comm%sendje);    !!d_comm%sendje =>NULL()
+      if( allocated(d_comm%S_msize) )  DEALLOCATE(d_comm%S_msize);   !!d_comm%S_msize =>NULL()
+      if( allocated(d_comm%S_do_buf) ) DEALLOCATE(d_comm%S_do_buf);  !!d_comm%S_do_buf =>NULL()
+      if( allocated(d_comm%cto_pe) )   DEALLOCATE(d_comm%cto_pe);    !!d_comm%cto_pe  =>NULL()
+      if( allocated(d_comm%recvis) )   DEALLOCATE(d_comm%recvis);    !!d_comm%recvis =>NULL()
+      if( allocated(d_comm%recvie) )   DEALLOCATE(d_comm%recvie);    !!d_comm%recvie =>NULL()
+      if( allocated(d_comm%recvjs) )   DEALLOCATE(d_comm%recvjs);    !!d_comm%recvjs =>NULL()
+      if( allocated(d_comm%recvje) )   DEALLOCATE(d_comm%recvje);    !!d_comm%recvje =>NULL()
+      if( allocated(d_comm%R_msize) )  DEALLOCATE(d_comm%R_msize);   !!d_comm%R_msize =>NULL()
+      if( allocated(d_comm%R_do_buf) ) DEALLOCATE(d_comm%R_do_buf);  !!d_comm%R_do_buf =>NULL()
+      if( allocated(d_comm%cfrom_pe) ) DEALLOCATE(d_comm%cfrom_pe);  !!d_comm%cfrom_pe  =>NULL()
       d_comm%Slist_size=0; d_comm%Rlist_size=0
       d_comm%isize=0; d_comm%jsize=0; d_comm%ke=0
       d_comm%isize_in=0; d_comm%jsize_in=0
@@ -684,14 +684,14 @@
       d_comm%isize_max=0; d_comm%jsize_max=0
       d_comm%gf_ioff=0; d_comm%gf_joff=0
     ! Remote data
-      if( _ALLOCATED(d_comm%isizeR) )   DEALLOCATE(d_comm%isizeR);    !!dd_comm%isizeR =>NULL()
-      if( _ALLOCATED(d_comm%jsizeR) )   DEALLOCATE(d_comm%jsizeR);    !!dd_comm%jsizeR =>NULL()
-      if( _ALLOCATED(d_comm%sendisR) )  DEALLOCATE(d_comm%sendisR);   !!dd_comm%sendisR =>NULL()
-      if( _ALLOCATED(d_comm%sendjsR) )  DEALLOCATE(d_comm%sendjsR);   !!dd_comm%sendjsR =>NULL()
-      if( _ALLOCATED(d_comm%rem_addr) ) DEALLOCATE(d_comm%rem_addr);  !!dd_comm%rem_addr  =>NULL()
-      if( _ALLOCATED(d_comm%rem_addrx) )DEALLOCATE(d_comm%rem_addrx); !!dd_comm%rem_addrx =>NULL()
-      if( _ALLOCATED(d_comm%rem_addry) )DEALLOCATE(d_comm%rem_addry); !!dd_comm%rem_addry =>NULL()
-      if( _ALLOCATED(d_comm%rem_addrl) )DEALLOCATE(d_comm%rem_addrl); !!dd_comm%rem_addrl =>NULL()
+      if( allocated(d_comm%isizeR) )   DEALLOCATE(d_comm%isizeR);    !!dd_comm%isizeR =>NULL()
+      if( allocated(d_comm%jsizeR) )   DEALLOCATE(d_comm%jsizeR);    !!dd_comm%jsizeR =>NULL()
+      if( allocated(d_comm%sendisR) )  DEALLOCATE(d_comm%sendisR);   !!dd_comm%sendisR =>NULL()
+      if( allocated(d_comm%sendjsR) )  DEALLOCATE(d_comm%sendjsR);   !!dd_comm%sendjsR =>NULL()
+      if( allocated(d_comm%rem_addr) ) DEALLOCATE(d_comm%rem_addr);  !!dd_comm%rem_addr  =>NULL()
+      if( allocated(d_comm%rem_addrx) )DEALLOCATE(d_comm%rem_addrx); !!dd_comm%rem_addrx =>NULL()
+      if( allocated(d_comm%rem_addry) )DEALLOCATE(d_comm%rem_addry); !!dd_comm%rem_addry =>NULL()
+      if( allocated(d_comm%rem_addrl) )DEALLOCATE(d_comm%rem_addrl); !!dd_comm%rem_addrl =>NULL()
     end subroutine deallocate_comm
 
 

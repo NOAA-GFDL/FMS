@@ -1,3 +1,22 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+
 # This is an automake file for the libFMS directory of the FMS
 # package. This is the final packaging of the library.
 
@@ -9,7 +28,7 @@ lib_LTLIBRARIES = libFMS.la
 # These linker flags specify libtool version info.
 # See http://www.gnu.org/software/libtool/manual/libtool.html#Libtool-versioning
 # for information regarding incrementing `-version-info`.
-libFMS_la_LDFLAGS = -version-info 3:0:0
+libFMS_la_LDFLAGS = -version-info 5:0:0
 
 # Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = ${top_builddir}/platform/libplatform.la
@@ -73,6 +92,8 @@ libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_util.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_table.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_manager.la
 libFMS_la_LIBADD += ${top_builddir}/diag_integral/libdiag_integral.la
+libFMS_la_LIBADD += ${top_builddir}/data_override/libget_grid_version_mpp.la
+libFMS_la_LIBADD += ${top_builddir}/data_override/libget_grid_version_fms2io.la
 libFMS_la_LIBADD += ${top_builddir}/data_override/libdata_override.la
 libFMS_la_LIBADD += ${top_builddir}/column_diagnostics/libcolumn_diagnostics.la
 libFMS_la_LIBADD += ${top_builddir}/block_control/libblock_control.la

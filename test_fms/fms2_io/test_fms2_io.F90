@@ -144,6 +144,7 @@ do i = 1,ntiles
 enddo
 ocn_layout = (/1, npes/)
 
+call fms2_io_init()
 !Run tests.
 if (tests(atmos)) then
   if (mod(npes,ntiles) .ne. 0) then
@@ -232,6 +233,5 @@ subroutine chksum_match(out_chksum, in_chksum, var_name, debug)
                    //" data that was written out.")
   endif
 end subroutine chksum_match
-
 
 end program main

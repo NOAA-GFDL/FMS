@@ -164,7 +164,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        open_file, open_direct_file, string, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
                        write_version_number
-
+use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 
 
@@ -357,6 +357,7 @@ subroutine fms_init (localcomm )
 
  integer, intent(in), optional :: localcomm
  integer :: unit, ierr, io
+ integer :: logunitnum
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
@@ -368,7 +369,15 @@ subroutine fms_init (localcomm )
     endif
     call mpp_domains_init
     call fms_io_init
-
+    call fms2_io_init ()
+    logunitnum = stdlog()
+#ifdef use_mpp_io
+    call mpp_error("fms_init","You are using mpp_io for your FMS modules",NOTE)
+    write (logunitnum,*)"You are using mpp_io for your FMS modules"
+#else
+    call mpp_error("fms_init","You are using fms2_io for your FMS modules",NOTE)
+    write (logunitnum,*)"You are using fms2_io for your FMS modules"
+#endif
 !---- read namelist input ----
 
     call nml_error_init  ! first initialize namelist iostat error codes

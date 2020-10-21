@@ -6,6 +6,61 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2020.03] - 2020-10-08
+### Added
+- FMS2_IO: Adds header_buffer_val to the fms2io namelist which sets the netcdf header size in bytes. The default value is 16kb
+- FMS2_IO: Adds netcdf_default_format to the fms2io namelist which allows the user to change the netcdf file type. The default value is 64bit.
+- FMS2_IO: Adds support to read netcdf string global attributes
+- FMS2_IO: Adds an optional argument to open_file, `dont_add_res_to_filename`, which indicates that the filename should not be modified (default adds .res to restart file name)
+- FMS2_IO: Modifies the `register_variable_attribute` and `register_global_attribute` interfaces by adding str_len as an argument. This is a workaround to get fms2io to work with PGI because they don't support class (*) with len=*.
+- FMS2_IO: Adds unit test that tests `write_data` and `read_data` when using a domain with a mask table 
+- FMS2_IO: Adds fms2io’s version of get_mosaic_tile_grid
+- MPP_IO: Adds `-Duse_mpp_io` compile option for data_override, interpolator, amip_interp, diag_manager, topography, and xgrid to select using mpp_io instead of fms2_io
+- MPP_INIT: Adds unit tests for routines/functions that are called in mpp_init
+- CMAKE: A cmake build system has been added with a CI build using cmake
+### Changed
+- FMS2_IO: Improves performance of previous release by gathering the domain decomposed data into one global buffer and doing one write rather than doing multiple reads
+- DATA_OVERRIDE: Changes line in time_interp_external2 to enable 3D overrides
+
+### Fixed
+- DATA_OVERRIDE[2]: Fixes a crash when doing ongrid data_override calls with a domain with halos
+- DIAG_MANAGER[2]: Fixes an issue where time_bnds were written incorrectly for the last time stamp 
+- DIAG_MANAGER: Regional diagnostics with a mask table now work
+- FMS2_IO: Unit test includes fms2io_init call to improve functionality 
+- MPP: BOZ literals that are used in variable declaration are converted to integers using the int() function.
+- MPP_DOMAINS2: Fixed unit test
+- FMS_IO: Changes the logic in get_tile_string to fix bug where tile numbers 9 and 99 produce an inappropriate error
+
+### Tag Commit Hashes
+- 2020.03-beta4 (4d38679c1e18e920feb03d69f8a9762eb6a047aa)
+- 2020.03-beta3 (521a15135a99d1f2da7d82f238353945f82ce1dd)
+- 2020.03-beta2 (3dae0dfa405d555ecc09bbd2d60a1be24461f69e)
+- 2020.03-beta1 (f7f1c1c73c1f478a53e84caee6aff2fa840ad086)
+- 2020.03-alpha1 (2dd30b7ca0ac75a4a38b969e4a6d446eb395b4dd)
+
+
+## [2020.02] - 2020-05-01
+### Added
+- FMS2_IO:  An fms2_io_nml namelist has been created.  It includes the variable ncchksz. This is the replacement for the environment variable NC_BLKSZ set in model run scripts and used by mpp_io.  The default value is 64 KB.  Any time a file is opened in fms2_io (nf90_open or nf90_create), the optional argument `chunksize=ncchksz` is passed to the NetCDF library.  NetCDF attempts to use this value to control the blocksize utilized for reads and writes of data from the filesystem.
+- FMS2_IO: Adds support to `compute_global_cheksum.inc` for `real32`, assuming the flag `-DOVERLOAD_R4` is used when compiling.
+
+### Changed
+- MPP_DOMAINS - nesting:  The logic supporting nested domains for mosaic grids has been overhauled and extended.  FMS now supports multiple nests and telescoping nests (nest embedded within a nest).  The requirement for a nest to lie wholly within a single tile has been relaxed and a first-level nest may cross tile boundaries, but may not contain a tile corner.  Communications for two-way nesting have also been improved.  The 2019 December Public Release and 2020.02 GFDL Release within the  [GFDL_atmos_cubed_sphere] (https://github.com/NOAA-GFDL/GFDL_atmos_cubed_sphere) have been updated and are compatible with this release of FMS.
+- FMS2_IO:  The intent of fileobj is changed from (in) to (inout) in netcdf_restore_state_wrap, restore_domain_state, and netcdf_restore_state because the file object type has a pointer that is being reassigned in one of the routines lower in the call stack.
+
+### Deprecated
+- MPP_DOMAINS - nesting:  The initial nesting implementation is no longer supported.  Please see the Changed::MPP_DOMAINS sub-entry under.
+
+### Removed
+- GENERAL:  References to the macro _ALLOCATABLE have been replaced with “allocatable”, _ALLOCATED has been replaced with “allocated”, and _NULL has been removed.  It is now assumed that all compilers support the Fortran 2003 standard.  The macros still exist in fms_platforms.h for compatibility within other components.
+- DIAG_MANAGER:  “fms_platform.h” is no longer included in any of the diag_manager routines.  Instead, fms_platform_mod is now being use-associated where necessary.  This fixes an issue for debuggers not providing correct line numbers. 
+
+### Tag Commit Hashes
+- 2020.02-beta1 (bbc6f8d33cfb75a411bbcd3f8423fa74b8b7cdfd)
+- 2020.02-beta2 (6242941a632f6e261234f3a575e59efa1bfb1b36)
+- 2020.02-beta3 (e6fd03b070eb1ba8ffbca740fd69681ee16d6be7)
+
+
 ## [2020.01] - 2020-03-13
 ### Added
 - Adds the modules `axis_utils2`, `mosaic2`, and `time_interp_external2` that use `fms2_io`

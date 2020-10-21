@@ -493,20 +493,20 @@ module mpp_domains_mod
      type(domain2D), pointer :: domain_out =>NULL()
      type(overlapSpec), pointer :: send(:,:,:,:) => NULL()
      type(overlapSpec), pointer :: recv(:,:,:,:) => NULL()
-     integer, dimension(:,:),       _ALLOCATABLE :: sendis _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendie _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendjs _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: sendje _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvis _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvie _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvjs _NULL
-     integer, dimension(:,:),       _ALLOCATABLE :: recvje _NULL
-     logical, dimension(:),         _ALLOCATABLE :: S_do_buf _NULL
-     logical, dimension(:),         _ALLOCATABLE :: R_do_buf _NULL
-     integer, dimension(:),         _ALLOCATABLE :: cto_pe  _NULL
-     integer, dimension(:),         _ALLOCATABLE :: cfrom_pe  _NULL
-     integer, dimension(:),         _ALLOCATABLE :: S_msize _NULL
-     integer, dimension(:),         _ALLOCATABLE :: R_msize _NULL
+     integer, dimension(:,:),       allocatable :: sendis
+     integer, dimension(:,:),       allocatable :: sendie
+     integer, dimension(:,:),       allocatable :: sendjs
+     integer, dimension(:,:),       allocatable :: sendje
+     integer, dimension(:,:),       allocatable :: recvis
+     integer, dimension(:,:),       allocatable :: recvie
+     integer, dimension(:,:),       allocatable :: recvjs
+     integer, dimension(:,:),       allocatable :: recvje
+     logical, dimension(:),         allocatable :: S_do_buf
+     logical, dimension(:),         allocatable :: R_do_buf
+     integer, dimension(:),         allocatable :: cto_pe 
+     integer, dimension(:),         allocatable :: cfrom_pe 
+     integer, dimension(:),         allocatable :: S_msize
+     integer, dimension(:),         allocatable :: R_msize
      integer :: Slist_size=0, Rlist_size=0
      integer :: isize=0, jsize=0, ke=0
      integer :: isize_in=0, jsize_in=0
@@ -514,16 +514,16 @@ module mpp_domains_mod
      integer :: isize_max=0, jsize_max=0
      integer :: gf_ioff=0, gf_joff=0
   ! Remote data
-     integer, dimension(:)  , _ALLOCATABLE :: isizeR _NULL
-     integer, dimension(:)  , _ALLOCATABLE :: jsizeR _NULL
-     integer, dimension(:,:), _ALLOCATABLE :: sendisR _NULL
-     integer, dimension(:,:), _ALLOCATABLE :: sendjsR _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addr  _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addrx _NULL
-     integer(LONG_KIND), dimension(:), _ALLOCATABLE :: rem_addry _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrl  _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrlx  _NULL
-     integer(LONG_KIND), dimension(:,:), _ALLOCATABLE :: rem_addrly  _NULL
+     integer, dimension(:)  , allocatable :: isizeR
+     integer, dimension(:)  , allocatable :: jsizeR
+     integer, dimension(:,:), allocatable :: sendisR
+     integer, dimension(:,:), allocatable :: sendjsR
+     integer(LONG_KIND), dimension(:), allocatable :: rem_addr 
+     integer(LONG_KIND), dimension(:), allocatable :: rem_addrx
+     integer(LONG_KIND), dimension(:), allocatable :: rem_addry
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrl 
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrlx 
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrly 
      integer                             :: position        ! data location. T, E, C, or N.
   end type DomainCommunicator2D
 
@@ -646,7 +646,7 @@ module mpp_domains_mod
   integer,                                save :: a_sort_len=0        ! len sorted memory list
   integer,                                save :: n_addrs=0           ! num memory addresses used
 
-  integer(LONG_KIND), parameter :: ADDR2_BASE=Z'0000000000010000'
+  integer(LONG_KIND), parameter :: ADDR2_BASE = int(Z'0000000000010000', kind=LONG_KIND)
   integer, parameter :: MAX_ADDRS2=128
   integer(LONG_KIND),dimension(MAX_ADDRS2),save :: addrs2_sorted=-9999  ! list of sorted local addrs
   integer,           dimension(-1:MAX_ADDRS2),save :: addrs2_idx=-9999  ! idx of addr2 assoicated w/ d_comm
@@ -671,10 +671,10 @@ module mpp_domains_mod
   integer,                                         save           :: n_comm=0            ! num communicators used
 
   !     integer(LONG_KIND), parameter :: GT_BASE=2**8
-  integer(LONG_KIND), parameter :: GT_BASE=Z'0000000000000100'  ! Workaround for 64bit int init problem
+  integer(LONG_KIND), parameter :: GT_BASE = int(Z'0000000000000100', kind=LONG_KIND)
 
   !     integer(LONG_KIND), parameter :: KE_BASE=2**48
-  integer(LONG_KIND), parameter :: KE_BASE=Z'0001000000000000'  ! Workaround for 64bit int init problem
+  integer(LONG_KIND), parameter :: KE_BASE = int(Z'0001000000000000', kind=LONG_KIND)
 
   integer(LONG_KIND) :: domain_cnt=0
 

@@ -29,7 +29,9 @@ use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real6
 implicit none
 private
 
+integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and nc_create
 
+public :: blackboxio_init
 public :: create_diskless_netcdf_file_wrap
 public :: netcdf_save_restart_wrap2
 public :: netcdf_restore_state_wrap
@@ -41,6 +43,11 @@ public :: unstructured_write_restart_wrap
 
 
 contains
+!> @brief Accepts the namelist fms2_io_nml variables relevant to blackboxio 
+subroutine blackboxio_init (chksz)
+integer, intent(in) :: chksz
+ fms2_ncchksz = chksz
+end subroutine blackboxio_init
 
 
 !> @brief Create a new file path.
@@ -133,7 +140,8 @@ function create_diskless_netcdf_file(fileobj, pelist, path) &
   fileobj%is_diskless = .true.
   cmode = ior(nf90_noclobber, nf90_classic_model)
   cmode = ior(cmode, nf90_diskless)
-  err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid)
+  if (fms2_ncchksz == -1) call error("create_diskless_netcdf_file :: fms2_ncchksz not set.")
+  err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid, chunksize=fms2_ncchksz)
   success = err .eq. nf90_noerr
   if (.not. success) then
     deallocate(fileobj%pelist)
