@@ -144,12 +144,12 @@ contains
     end if
   end subroutine get_axis_cart
 
-  subroutine axis_edges(fileobj, name, edge_data, do_mpp_io_bug_flag)
+  subroutine axis_edges(fileobj, name, edge_data, reproduce_null_char_bug_flag)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
   class(*), dimension(:), intent(out) :: edge_data
-  logical, intent(in), optional :: do_mpp_io_bug_flag
+  logical, intent(in), optional :: reproduce_null_char_bug_flag
 
   integer :: ndims
   character(len=128) :: buffer
@@ -160,7 +160,7 @@ contains
   real(kind=real64), dimension(:,:), allocatable :: r642d
   integer :: i
   integer :: n
-  logical :: do_mpp_io_bug
+  logical :: reproduce_null_char_bug
 
   ndims = get_variable_num_dimensions(fileobj, name)
   allocate(dim_sizes(ndims))
@@ -171,20 +171,26 @@ contains
   endif
   deallocate(dim_sizes)
 
-  do_mpp_io_bug = .false.
-  if (present(do_mpp_io_bug_flag)) do_mpp_io_bug = do_mpp_io_bug_flag
+  reproduce_null_char_bug = .false.
+  if (present(reproduce_null_char_bug_flag)) reproduce_null_char_bug = reproduce_null_char_bug_flag
 
   buffer = ""
   if (variable_att_exists(fileobj, name, "edges")) then
-    call get_variable_attribute(fileobj, name, "edges", buffer, do_mpp_io_bug_flag=do_mpp_io_bug)
-    if (do_mpp_io_bug) then
+    !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character 
+    call get_variable_attribute(fileobj, name, "edges", buffer, reproduce_null_char_bug_flag=reproduce_null_char_bug)
+
+    !! Check for a null character here, if it exists *_bnds will be calculated instead of read in
+    if (reproduce_null_char_bug) then
         i = 0
         i = index(buffer, char(0))
         if (i > 0) buffer = ""
     endif
   elseif (variable_att_exists(fileobj, name, "bounds")) then
-    call get_variable_attribute(fileobj, name, "bounds", buffer, do_mpp_io_bug_flag=do_mpp_io_bug)
-    if (do_mpp_io_bug) then
+    !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character 
+    call get_variable_attribute(fileobj, name, "bounds", buffer, reproduce_null_char_bug_flag=reproduce_null_char_bug)
+
+    !! Check for a null character here, if it exists *_bnds will be calculated instead of read in
+    if (reproduce_null_char_bug) then
         i = 0
         i = index(buffer, char(0)) 
         if (i > 0) buffer = ""
