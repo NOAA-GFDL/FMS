@@ -47,7 +47,7 @@ call mpp_get_current_pelist(pes)
 
 if (mpp_root_pe() .eq. mpp_pe()) then
 !> Create your own file with a variable to test with:
-   err = nf90_create('INPUT/test_file.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
+   err = nf90_create('test_file.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
    err = nf90_def_var(ncid, 'sst', nf90_double,varid)
    err = nf90_put_att(ncid, varid, "_FillValue", real(999,kind=real64))
    err = nf90_put_att(ncid, varid, "missing_value", real(999,kind=real64))
@@ -56,7 +56,7 @@ if (mpp_root_pe() .eq. mpp_pe()) then
 endif
 
 !> Open the file and set up the valid type
-if (open_file(fileobj, "INPUT/test_file.nc", "read", pelist=pes)) then
+if (open_file(fileobj, "test_file.nc", "read", pelist=pes)) then
    valid_type = get_valid(fileobj, "sst")
    call close_file(fileobj)
 else
