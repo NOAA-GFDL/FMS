@@ -4,7 +4,7 @@ use mpp_mod, only : mpp_error,FATAL,NOTE, mpp_min, mpp_max
 use mpp_domains_mod, only : domain2d, operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
 use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file, &
-                            variable_exists, read_data, get_variable_size
+                            variable_exists, read_data, get_variable_size, get_variable_num_dimensions
 use mosaic2_mod,      only : get_mosaic_tile_grid
 
 implicit none
@@ -55,7 +55,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   character(len=3)                             :: xname, yname
   integer                                      :: start(2), nread(2)
   type(FmsNetcdfDomainFile_t)                  :: fileobj
-
+  integer                                      :: ndims  !> Number of dimensions
+  logical                                      :: gc_bug !> local grid_center_bug variable, default is .false.
 
   if(.not. open_file(fileobj, grid_file, 'read', domain )) then
      call mpp_error(FATAL, 'data_override_mod(get_grid_version_1): Error in opening file '//trim(grid_file))
@@ -76,7 +77,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
     endif
 
     if(is_new_grid) then
-      call get_variable_size(fileobj, 'x_T', siz)
+      ndims = get_variable_num_dimensions(fileobj, 'x_T')
+      call get_variable_size(fileobj, 'x_T', siz(1:ndims))
       nlon = siz(1); nlat = siz(2)
       call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
       allocate(lon_vert(isc:iec,jsc:jec,4), lat_vert(isc:iec,jsc:jec,4) )
@@ -88,9 +90,18 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
       lon(:,:) = (lon_vert(:,:,1) + lon_vert(:,:,2) + lon_vert(:,:,3) + lon_vert(:,:,4))*0.25
       lat(:,:) = (lat_vert(:,:,1) + lat_vert(:,:,2) + lat_vert(:,:,3) + lat_vert(:,:,4))*0.25
     else
-      if(grid_center_bug) call mpp_error(NOTE, &
+
+      if (present(grid_center_bug)) then
+          gc_bug = grid_center_bug
+      else
+          gc_bug = .false.
+      endif
+
+      if(gc_bug) call mpp_error(NOTE, &
            'data_override: grid_center_bug is set to true, the grid center location may be incorrect')
-      call get_variable_size(fileobj, 'geolon_vert_t', siz)
+
+      ndims = get_variable_num_dimensions(fileobj, 'geolon_vert_t')
+      call get_variable_size(fileobj, 'geolon_vert_t', siz(1:ndims))
       nlon = siz(1) - 1; nlat = siz(2) - 1;
       call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
 
@@ -103,7 +114,7 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
       call read_data(fileobj, 'geolon_vert_t', lon_vert(:,:,1), corner=start, edge_lengths=nread)
       call read_data(fileobj, 'geolat_vert_t', lat_vert(:,:,1), corner=start, edge_lengths=nread)
 
-      if(grid_center_bug) then
+      if(gc_bug) then
          do j = jsc, jec
             do i = isc, iec
                lon(i,j) = (lon_vert(i,j,1) + lon_vert(i+1,j,1))/2.
@@ -129,11 +140,13 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
      else
         xname = 'xtl'; yname = 'ytl'
      endif
-     call get_variable_size(fileobj, xname, siz)
+     ndims = get_variable_num_dimensions(fileobj, xname)
+     call get_variable_size(fileobj, xname, siz(1:ndims))
      nlon = siz(1); allocate(glon(nlon))
      call read_data(fileobj, xname, glon)
 
-     call get_variable_size(fileobj, yname, siz)
+     ndims = get_variable_num_dimensions(fileobj, xname)
+     call get_variable_size(fileobj, yname, siz(1:ndims))
      nlat = siz(1); allocate(glat(nlat))
      call read_data(fileobj, yname, glat)
      call check_grid_sizes(trim(mod_name)//'_domain  ', domain, nlon, nlat)
