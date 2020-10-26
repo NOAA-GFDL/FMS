@@ -89,8 +89,8 @@ call get_grid_version_1("grid_spec.nc", "atm", Domain, is, ie, js, je, lon, lat,
                         min_lon, max_lon)
 
 !< Error checking:
-if (lon(1,1) .ne. lon_in(1)*deg_to_radian) call mpp_error(FATAL,'test_get_grid: lon is not the expected result')
-if (lat(1,1) .ne. lat_in(1)*deg_to_radian) call mpp_error(FATAL,'test_get_grid: lat is not the expected result')
+if (lon(1,1) .ne. lon_in(1)*deg_to_radian) call mpp_error(FATAL,'test_get_grid_v1: lon is not the expected result')
+if (lat(1,1) .ne. lat_in(1)*deg_to_radian) call mpp_error(FATAL,'test_get_grid_v1: lat is not the expected result')
 
 !< Try again with ocean
 lat = 0.
@@ -126,15 +126,15 @@ call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat,
 
 !< Error checking:
 if (lon(1,1) .ne. sum(lon_vert_in)/4*deg_to_radian ) then
-     call mpp_error(FATAL,'test_get_grid: ocn, new grid, lon is not the expected result')
+     call mpp_error(FATAL,'test_get_grid_v1: ocn, new grid, lon is not the expected result')
 endif
 
 if (lat(1,1) .ne. sum(lat_vert_in)/4*deg_to_radian ) then
-     call mpp_error(FATAL,'test_get_grid: ocn, new grid, lon is not the expected result')
+     call mpp_error(FATAL,'test_get_grid_v1: ocn, new grid, lat is not the expected result')
 endif
 
 deallocate(lat_vert_in, lon_vert_in, lat, lon)
 
 call mpp_exit()
 
-end program test_get_grid
+end program test_get_grid_v1
