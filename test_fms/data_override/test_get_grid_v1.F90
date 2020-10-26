@@ -39,12 +39,12 @@ integer                                          :: is, ie, js, je !< Starting a
                                                                    !! domain indices
 integer                                          :: nlon, nlat !< Number of lat, lon in grid
 real                                             :: min_lon, max_lon !< Maximum lat and lon
-real(kind=real64), dimension(:,:), allocatable   :: lon, lat !< Lat and lon
+real, dimension(:,:), allocatable                :: lon, lat !< Lat and lon
 integer                                          :: ncid, err !< Netcdf integers
 integer                                          :: dimid1, dimid2, dimid3, dimid4 !< Dimensions IDs
 integer                                          :: varid1, varid2, varid3, varid4, varid5 !< Variable IDs
-real(kind=real64)                                :: lat_in(1), lon_in(1) !< Lat and lon to be written to file
-real(kind=real64), dimension(:,:,:), allocatable :: lat_vert_in, lon_vert_in !<Lat and lon vertices
+real                                             :: lat_in(1), lon_in(1) !< Lat and lon to be written to file
+real, dimension(:,:,:), allocatable              :: lat_vert_in, lon_vert_in !<Lat and lon vertices
 
 
 lat_in = real(55.5, kind=real64)
