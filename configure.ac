@@ -320,6 +320,7 @@ AC_CONFIG_FILES([Makefile
 	docs/Makefile
         test_fms/test_common.sh
         test_fms/Makefile
+        test_fms/ufs_crash/Makefile
         test_fms/diag_manager/Makefile
         test_fms/data_override/Makefile
         test_fms/exchange/Makefile
