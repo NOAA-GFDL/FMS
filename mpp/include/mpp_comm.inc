@@ -19,9 +19,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#ifdef use_libSMA
-#include <mpp_comm_sma.inc>
-#elif defined(use_libMPI)
+#if defined(use_libMPI)
 #include <mpp_comm_mpi.inc>
 #else
 #include <mpp_comm_nocomm.inc>
