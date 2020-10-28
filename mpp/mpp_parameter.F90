@@ -73,7 +73,7 @@ module mpp_parameter_mod
   integer, parameter :: MPP_CLOCK_SYNC=1, MPP_CLOCK_DETAILED=2
   integer            :: DEFAULT_TAG = 1
   !--- implimented to centralize _FILL_ values for land_model.F90 into mpp_mod
-  !------- instead of multiple includes of netcdf.inc and manual assignments
+  !------- instead of netcdf definitions, use manual assignments
   integer(INT_KIND) , parameter :: MPP_FILL_INT    = -2147483647            !NF_FILL_INT
   real(DOUBLE_KIND) , parameter :: MPP_FILL_DOUBLE = 9.9692099683868690e+36 !NF_FILL_DOUBLE
   real(FLOAT_KIND)  , parameter :: MPP_FILL_FLOAT  = 9.9692099683868690e+36 !NF_FILL_DOUBLE

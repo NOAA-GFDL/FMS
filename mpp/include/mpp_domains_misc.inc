@@ -48,19 +48,11 @@
     subroutine mpp_domains_init(flags)
       integer, intent(in), optional :: flags
       integer                       :: n
-#ifdef use_libSMA
-      integer                       :: l=0
-#endif
       integer                       :: unit_begin, unit_end, unit_nml, io_status, unit
       logical                       :: opened
-#ifdef use_libSMA
-      integer(POINTER_KIND) :: ptr_info_var(16)
-      pointer( ptr_info, ptr_info_var )
-#endif
 
       if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
-      call mpp_pset_init             !this is a no-op if already initialized
       module_is_initialized = .TRUE.
       pe = mpp_root_pe()
       unit = stdlog()
@@ -113,9 +105,6 @@
       enddo
 
       call mpp_domains_set_stack_size(32768) !default, pretty arbitrary
-#ifdef use_libSMA
-      call mpp_malloc( ptr_info, 16, l )
-#endif
 
 !NULL_DOMAIN is a domaintype that can be used to initialize to undef
       call mpp_define_null_domain(NULL_DOMAIN1d);
