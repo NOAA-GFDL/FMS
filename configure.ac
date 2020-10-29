@@ -277,7 +277,6 @@ AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([NOUNDEFINED])
 
-
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
