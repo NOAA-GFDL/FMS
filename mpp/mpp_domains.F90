@@ -117,7 +117,7 @@ module mpp_domains_mod
 !Balaji (vb@gfdl.gov) 15 March 1999
 #include <fms_platform.h>
 
-#if defined(use_libMPI) && defined(sgi_mipspro)
+#if defined(use_libMPI)
   use mpi
 #endif
 
@@ -142,22 +142,16 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
   use mpp_mod,                only : mpp_max, mpp_min, mpp_sum, mpp_get_current_pelist, mpp_broadcast
   use mpp_mod,                only : mpp_sum_ad
-  use mpp_mod,                only : mpp_sync, mpp_init, mpp_malloc, lowercase
+  use mpp_mod,                only : mpp_sync, mpp_init, lowercase
   use mpp_mod,                only : input_nml_file, mpp_alltoall
   use mpp_mod,                only : mpp_type, mpp_byte
   use mpp_mod,                only : mpp_type_create, mpp_type_free
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
   use mpp_mod,                only : mpp_declare_pelist, mpp_set_current_pelist
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
-  use mpp_pset_mod,           only : mpp_pset_init
   use mpp_efp_mod,            only : mpp_reproducing_sum
   implicit none
   private
-
-#if defined(use_libMPI) && !defined(sgi_mipspro)
-#include <mpif.h>
-!sgi_mipspro gets this from 'use mpi'
-#endif
 
   !--- public paramters imported from mpp_domains_parameter_mod
   public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW, AGRID
@@ -503,8 +497,8 @@ module mpp_domains_mod
      integer, dimension(:,:),       allocatable :: recvje
      logical, dimension(:),         allocatable :: S_do_buf
      logical, dimension(:),         allocatable :: R_do_buf
-     integer, dimension(:),         allocatable :: cto_pe 
-     integer, dimension(:),         allocatable :: cfrom_pe 
+     integer, dimension(:),         allocatable :: cto_pe
+     integer, dimension(:),         allocatable :: cfrom_pe
      integer, dimension(:),         allocatable :: S_msize
      integer, dimension(:),         allocatable :: R_msize
      integer :: Slist_size=0, Rlist_size=0
@@ -518,12 +512,12 @@ module mpp_domains_mod
      integer, dimension(:)  , allocatable :: jsizeR
      integer, dimension(:,:), allocatable :: sendisR
      integer, dimension(:,:), allocatable :: sendjsR
-     integer(LONG_KIND), dimension(:), allocatable :: rem_addr 
+     integer(LONG_KIND), dimension(:), allocatable :: rem_addr
      integer(LONG_KIND), dimension(:), allocatable :: rem_addrx
      integer(LONG_KIND), dimension(:), allocatable :: rem_addry
-     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrl 
-     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrlx 
-     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrly 
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrl
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrlx
+     integer(LONG_KIND), dimension(:,:), allocatable :: rem_addrly
      integer                             :: position        ! data location. T, E, C, or N.
   end type DomainCommunicator2D
 

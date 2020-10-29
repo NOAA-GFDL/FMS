@@ -147,7 +147,6 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_io.F90
   mpp/mpp_memutils.F90
   mpp/mpp_parameter.F90
-  mpp/mpp_pset.F90
   mpp/mpp_utilities.F90
   platform/platform.F90
   random_numbers/MersenneTwister.F90
@@ -174,8 +173,6 @@ list(APPEND fms_c_src_files
   mosaic/mosaic_util.c
   mosaic/read_mosaic.c
   mpp/mpp_memuse.c
-  mpp/nsclock.c
-  mpp/threadloc.c
 )
 
 # Collect FMS header files
