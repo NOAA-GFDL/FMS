@@ -277,6 +277,7 @@ AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([NOUNDEFINED])
 
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
@@ -336,3 +337,14 @@ AC_CONFIG_FILES([Makefile
         FMS.pc
         ])
 AC_OUTPUT()
+
+# Check if netcdf is version 4.7.4 to skip failing fms2_io tests
+AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
+if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
+  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], true )
+  AC_MSG_RESULT([yes]) 
+  AC_MSG_RESULT([Warning: skipping netCDF v4.7.4 incompatible fms2_io tests])
+else
+  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], false )
+  AC_MSG_RESULT([no])
+fi
