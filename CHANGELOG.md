@@ -22,6 +22,9 @@ sequential patch number (starting from `01`).
 - GENERAL:  References to the macro _ALLOCATABLE have been replaced with “allocatable”, _ALLOCATED has been replaced with “allocated”, and _NULL has been removed.  It is now assumed that all compilers support the Fortran 2003 standard.  The macros still exist in fms_platforms.h for compatibility within other components.
 - DIAG_MANAGER:  “fms_platform.h” is no longer included in any of the diag_manager routines.  Instead, fms_platform_mod is now being use-associated where necessary.  This fixes an issue for debuggers not providing correct line numbers. 
 
+### Fixed
+- DIAG_MANAGER[2]: Fixes an issue where time_bnds was written incorrectly for the last time stamp in diagnostic files
+
 ### Tag Commit Hashes
 - 2020.02-beta1 (bbc6f8d33cfb75a411bbcd3f8423fa74b8b7cdfd)
 - 2020.02-beta2 (6242941a632f6e261234f3a575e59efa1bfb1b36)
