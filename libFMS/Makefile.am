@@ -108,7 +108,7 @@ libFMS_la_LIBADD += ${top_builddir}/topography/libtopography.la
 libFMS_la_LIBADD += ${top_builddir}/tracer_manager/libtracer_manager.la
 libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres_k.la
 libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres.la
-libFMS_la_LIBADD += ${top_builddir}/random_numbers/libMersenneTwister.la
+libFMS_la_LIBADD += ${top_builddir}/random_numbers/libmersennetwister.la
 libFMS_la_LIBADD += ${top_builddir}/random_numbers/librandom_numbers.la
 
 # At least one source file must be included to please Automake.

@@ -26,15 +26,15 @@
 AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build these uninstalled convenience library.
-noinst_LTLIBRARIES = libMersenneTwister.la librandom_numbers.la
+noinst_LTLIBRARIES = libmersennetwister.la librandom_numbers.la
 
 # Each convenience library depends on its source.
-librandom_numbers_la_SOURCES = random_numbers.F90 random_numbers_mod.mod
-libMersenneTwister_la_SOURCES = MersenneTwister.F90 mersennetwister_mod.mod
+librandom_numbers_la_SOURCES = random_numbers.F90
+libmersennetwister_la_SOURCES = mersennetwister.F90
 
 # Each mod file depends on the .o file.
 random_numbers_mod.mod: random_numbers.lo
-mersennetwister_mod.mod: MersenneTwister.lo
+mersennetwister_mod.mod: mersennetwister.lo
 
 # Some mods are dependant on other mods in this dir.
 random_numbers.lo: mersennetwister_mod.mod
