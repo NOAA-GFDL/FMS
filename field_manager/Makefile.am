@@ -23,17 +23,14 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfield_manager.la libfm_util.la
 
 # Each convenience library depends on its source.
-libfield_manager_la_SOURCES = field_manager.F90
-libfm_util_la_SOURCES = fm_util.F90
+libfield_manager_la_SOURCES = field_manager.F90 field_manager_mod.mod parse.inc
+libfm_util_la_SOURCES = fm_util.F90 fm_util_mod.mod
 
 # Each mod file depends on the .o file.
 field_manager_mod.mod: field_manager.lo
@@ -47,6 +44,14 @@ MODFILES = field_manager_mod.mod fm_util_mod.mod
 BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
 
-EXTRA_DIST = parse.inc
+#EXTRA_DIST = parse.inc
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

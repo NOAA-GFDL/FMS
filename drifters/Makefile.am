@@ -26,8 +26,8 @@
 .NOTPARALLEL:
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libdrifters_core.la libdrifters_input.la \
@@ -35,12 +35,12 @@ libdrifters_comm.la libdrifters_io.la libcloud_interpolator.la \
 libdrifters.la libquicksort.la
 
 # Each convenience library depends on its source.
-libdrifters_la_SOURCES = drifters.F90
-libdrifters_core_la_SOURCES = drifters_core.F90
-libdrifters_comm_la_SOURCES = drifters_comm.F90
-libdrifters_input_la_SOURCES = drifters_input.F90
-libdrifters_io_la_SOURCES = drifters_io.F90
-libcloud_interpolator_la_SOURCES = cloud_interpolator.F90
+libdrifters_la_SOURCES = drifters.F90 drifters_mod.mod
+libdrifters_core_la_SOURCES = drifters_core.F90 drifters_core_mod.mod
+libdrifters_comm_la_SOURCES = drifters_comm.F90 drifters_comm_mod.mod
+libdrifters_input_la_SOURCES = drifters_input.F90 drifters_input_mod.mod
+libdrifters_io_la_SOURCES = drifters_io.F90 drifters_io_mod.mod
+libcloud_interpolator_la_SOURCES = cloud_interpolator.F90 cloud_interpolator_mod.mod
 libquicksort_la_SOURCES = quicksort.F90
 
 # These headers are in the drifters directory.
@@ -61,5 +61,15 @@ drifters_comm_mod.mod drifters_io_mod.mod cloud_interpolator_mod.mod \
 drifters_mod.mod
 include_HEADERS = $(MODFILES) $(DRIFTERS_HDRS)
 BUILT_SOURCES = $(MODFILES)
-CLEANFILES = *.mod *__genmod.f90
 
+EXTRA_DIST = README.md
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+
+CLEANFILES = *.mod *__genmod.f90

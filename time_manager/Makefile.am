@@ -23,7 +23,8 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
+AM_CPPFLAGS = -I${top_builddir}/.mod
+AM_CPPFLAGS += -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/mpp
@@ -32,8 +33,8 @@ AM_CPPFLAGS += -I${top_builddir}/mpp
 noinst_LTLIBRARIES = libtime_manager.la libget_cal_time.la
 
 # Each convenience library depends on its source.
-libtime_manager_la_SOURCES = time_manager.F90
-libget_cal_time_la_SOURCES = get_cal_time.F90
+libtime_manager_la_SOURCES = time_manager.F90 time_manager_mod.mod
+libget_cal_time_la_SOURCES = get_cal_time.F90 get_cal_time_mod.mod
 
 # Each mod file depends on the .o file.
 time_manager_mod.mod: time_manager.lo
@@ -46,5 +47,13 @@ get_cal_time.lo: time_manager_mod.mod
 MODFILES = time_manager_mod.mod get_cal_time_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

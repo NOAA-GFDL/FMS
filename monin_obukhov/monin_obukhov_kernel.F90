@@ -18,7 +18,7 @@
 !***********************************************************************
 
 
-module monin_obukhov_inter
+module monin_obukhov_kernel
 #include <fms_platform.h>
 implicit none
 private
@@ -725,4 +725,4 @@ end if
 
 end subroutine monin_obukhov_stable_mix
 
-end module monin_obukhov_inter
+end module monin_obukhov_kernel

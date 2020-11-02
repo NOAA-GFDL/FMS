@@ -23,15 +23,14 @@
 # Ed Hartnett 2/28/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/time_manager
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build these uninstalled convenience library.
 noinst_LTLIBRARIES = libMersenneTwister.la librandom_numbers.la
 
 # Each convenience library depends on its source.
-librandom_numbers_la_SOURCES = random_numbers.F90
-libMersenneTwister_la_SOURCES = MersenneTwister.F90
+librandom_numbers_la_SOURCES = random_numbers.F90 random_numbers_mod.mod
+libMersenneTwister_la_SOURCES = MersenneTwister.F90 mersennetwister_mod.mod
 
 # Each mod file depends on the .o file.
 random_numbers_mod.mod: random_numbers.lo
@@ -44,5 +43,13 @@ random_numbers.lo: mersennetwister_mod.mod
 MODFILES = mersennetwister_mod.mod random_numbers_mod.mod
 BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod
