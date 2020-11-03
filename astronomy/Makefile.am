@@ -29,7 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libastronomy.la
 
 # The convenience library depends on its source.
-libastronomy_la_SOURCES = astronomy.F90 astronomy_mod.mod
+libastronomy_la_SOURCES = astronomy.F90
 
 # Mod file depends on its o file, is built and then installed.
 astronomy_mod.mod: astronomy.lo

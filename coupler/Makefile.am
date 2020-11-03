@@ -30,9 +30,9 @@ noinst_LTLIBRARIES = libcoupler_types.la libensemble_manager.la \
 libatmos_ocean_fluxes.la
 
 # Each convenience library depends on its source.
-libcoupler_types_la_SOURCES = coupler_types.F90 coupler_types_mod.mod
-libensemble_manager_la_SOURCES = ensemble_manager.F90 ensemble_manager_mod.mod
-libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90 atmos_ocean_fluxes_mod.mod
+libcoupler_types_la_SOURCES = coupler_types.F90
+libensemble_manager_la_SOURCES = ensemble_manager.F90
+libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90
 
 # Each mod file depends on the .o file.
 coupler_types_mod.mod: coupler_types.lo

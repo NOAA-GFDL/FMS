@@ -29,8 +29,8 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libgaussian_topog.la libtopography.la
 
 # Each convenience library depends on its source.
-libtopography_la_SOURCES = topography.F90 topography_mod.mod
-libgaussian_topog_la_SOURCES = gaussian_topog.F90 gaussian_topog_mod.mod
+libtopography_la_SOURCES = topography.F90
+libgaussian_topog_la_SOURCES = gaussian_topog.F90
 
 # Each mod file depends on the .o file.
 gaussian_topog_mod.mod: gaussian_topog.lo

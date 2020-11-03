@@ -30,7 +30,7 @@ noinst_LTLIBRARIES = libdata_override.la libget_grid_version_mpp.la \
 libget_grid_version_fms2io.la
 
 # The convenience library depends on its source.
-libdata_override_la_SOURCES = data_override.F90 data_override_mod.mod
+libdata_override_la_SOURCES = data_override.F90
 libget_grid_version_mpp_la_SOURCES = get_grid_version_mpp.F90
 libget_grid_version_fms2io_la_SOURCES = get_grid_version_fms2io.F90
 

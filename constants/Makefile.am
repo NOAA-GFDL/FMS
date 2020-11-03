@@ -29,8 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libconstants.la
 
 # The convenience library depends on its source.
-libconstants_la_SOURCES = constants.F90 \
-	constants_mod.mod
+libconstants_la_SOURCES = constants.F90
 
 # Mod file depends on its o file, is built and then installed.
 constants_mod.mod: constants.lo

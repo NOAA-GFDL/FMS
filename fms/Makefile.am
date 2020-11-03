@@ -29,8 +29,8 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libfms_io.la libfms.la
 
 # Each convenience library depends on its source.
-libfms_la_SOURCES = fms.F90 fms_mod.mod
-libfms_io_la_SOURCES = fms_io.F90 fms_io_mod.mod
+libfms_la_SOURCES = fms.F90
+libfms_io_la_SOURCES = fms_io.F90
 
 # These inc files are in the fms directory.
 FMS_INC_FILES = fms_io_unstructured_field_exist.inc			\

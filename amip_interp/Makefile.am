@@ -29,7 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libamip_interp.la
 
 # The convenience library depends on its source.
-libamip_interp_la_SOURCES = amip_interp.F90 amip_interp_mod.mod
+libamip_interp_la_SOURCES = amip_interp.F90
 
 # Mod file depends on its o file, is built and then installed.
 amip_interp_mod.mod: amip_interp.lo

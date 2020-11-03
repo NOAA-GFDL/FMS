@@ -29,8 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libblock_control.la
 
 # The convenience library depends on its source.
-libblock_control_la_SOURCES = block_control.F90 \
-	block_control_mod.mod
+libblock_control_la_SOURCES = block_control.F90
 
 # Mod file depends on its o file, is built and then installed.
 block_control_mod.mod: block_control.lo

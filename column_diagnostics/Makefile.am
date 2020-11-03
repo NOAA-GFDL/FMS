@@ -29,8 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libcolumn_diagnostics.la
 
 # The convenience library depends on its source.
-libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90 \
-	column_diagnostics_mod.mod
+libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90
 
 # Mod file depends on its o file, is built and then installed.
 column_diagnostics_mod.mod: column_diagnostics.lo

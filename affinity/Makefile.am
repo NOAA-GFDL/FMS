@@ -29,7 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libfms_affinity.la libfms_affinity_c.la
 
 # The convenience library depends on its source.
-libfms_affinity_la_SOURCES = fms_affinity.F90 fms_affinity_mod.mod
+libfms_affinity_la_SOURCES = fms_affinity.F90
 libfms_affinity_c_la_SOURCES = affinity.c
 
 # Mod file depends on its .o file, is built and then installed.

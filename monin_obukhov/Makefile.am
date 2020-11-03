@@ -26,8 +26,8 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 noinst_LTLIBRARIES = libmonin_obukhov.la libmonin_obukhov_kernel.la
 
-libmonin_obukhov_la_SOURCES = monin_obukhov.F90 monin_obukhov_mod.mod
-libmonin_obukhov_kernel_la_SOURCES = monin_obukhov_kernel.F90 monin_obukhov_kernel.mod
+libmonin_obukhov_la_SOURCES = monin_obukhov.F90
+libmonin_obukhov_kernel_la_SOURCES = monin_obukhov_kernel.F90
 
 # Note that the name of the mod is different from the name of the F90
 # code for monin_obukhov_kernel.F90. Also note that the mod file for

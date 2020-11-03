@@ -29,8 +29,8 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libstock_constants.la libxgrid.la
 
 # Each convenience library depends on its source.
-libstock_constants_la_SOURCES = stock_constants.F90 stock_constants_mod.mod
-libxgrid_la_SOURCES = xgrid.F90 xgrid_mod.mod
+libstock_constants_la_SOURCES = stock_constants.F90
+libxgrid_la_SOURCES = xgrid.F90
 
 # Each mod file depends on the .o file.
 stock_constants_mod.mod: stock_constants.lo

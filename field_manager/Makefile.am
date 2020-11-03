@@ -29,8 +29,8 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libfield_manager.la libfm_util.la
 
 # Each convenience library depends on its source.
-libfield_manager_la_SOURCES = field_manager.F90 field_manager_mod.mod parse.inc
-libfm_util_la_SOURCES = fm_util.F90 fm_util_mod.mod
+libfield_manager_la_SOURCES = field_manager.F90
+libfm_util_la_SOURCES = fm_util.F90
 
 # Each mod file depends on the .o file.
 field_manager_mod.mod: field_manager.lo
@@ -44,7 +44,7 @@ MODFILES = field_manager_mod.mod fm_util_mod.mod
 BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
 
-#EXTRA_DIST = parse.inc
+EXTRA_DIST = parse.inc
 
 SUFFIXES = .mod _mod.mod
 .F90.mod:

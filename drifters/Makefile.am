@@ -35,12 +35,12 @@ libdrifters_comm.la libdrifters_io.la libcloud_interpolator.la \
 libdrifters.la libquicksort.la
 
 # Each convenience library depends on its source.
-libdrifters_la_SOURCES = drifters.F90 drifters_mod.mod
-libdrifters_core_la_SOURCES = drifters_core.F90 drifters_core_mod.mod
-libdrifters_comm_la_SOURCES = drifters_comm.F90 drifters_comm_mod.mod
-libdrifters_input_la_SOURCES = drifters_input.F90 drifters_input_mod.mod
-libdrifters_io_la_SOURCES = drifters_io.F90 drifters_io_mod.mod
-libcloud_interpolator_la_SOURCES = cloud_interpolator.F90 cloud_interpolator_mod.mod
+libdrifters_la_SOURCES = drifters.F90
+libdrifters_core_la_SOURCES = drifters_core.F90
+libdrifters_comm_la_SOURCES = drifters_comm.F90
+libdrifters_input_la_SOURCES = drifters_input.F90
+libdrifters_io_la_SOURCES = drifters_io.F90
+libcloud_interpolator_la_SOURCES = cloud_interpolator.F90
 libquicksort_la_SOURCES = quicksort.F90
 
 # These headers are in the drifters directory.

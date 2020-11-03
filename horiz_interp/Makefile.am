@@ -32,12 +32,12 @@ libhoriz_interp_conserve.la libhoriz_interp_spherical.la	\
 libhoriz_interp.la
 
 # Each convenience library depends on its source.
-libhoriz_interp_bicubic_la_SOURCES = horiz_interp_bicubic.F90 horiz_interp_bicubic_mod.mod
-libhoriz_interp_bilinear_la_SOURCES = horiz_interp_bilinear.F90 horiz_interp_bilinear_mod.mod
-libhoriz_interp_conserve_la_SOURCES = horiz_interp_conserve.F90 horiz_interp_conserve_mod.mod
-libhoriz_interp_la_SOURCES = horiz_interp.F90 horiz_interp_mod.mod
-libhoriz_interp_spherical_la_SOURCES = horiz_interp_spherical.F90 horiz_interp_spherical_mod.mod
-libhoriz_interp_type_la_SOURCES = horiz_interp_type.F90 horiz_interp_type_mod.mod
+libhoriz_interp_bicubic_la_SOURCES = horiz_interp_bicubic.F90
+libhoriz_interp_bilinear_la_SOURCES = horiz_interp_bilinear.F90
+libhoriz_interp_conserve_la_SOURCES = horiz_interp_conserve.F90
+libhoriz_interp_la_SOURCES = horiz_interp.F90
+libhoriz_interp_spherical_la_SOURCES = horiz_interp_spherical.F90
+libhoriz_interp_type_la_SOURCES = horiz_interp_type.F90
 
 # Each mod file depends on the .o file.
 horiz_interp_type_mod.mod: horiz_interp_type.lo

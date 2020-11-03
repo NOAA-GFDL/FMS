@@ -29,8 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libplatform.la
 
 # The convenience library depends on its source.
-libplatform_la_SOURCES = platform.F90 \
-	platform_mod.mod
+libplatform_la_SOURCES = platform.F90
 
 # Mod file depends on its o file, is built and then installed.
 platform_mod.mod: platform.lo

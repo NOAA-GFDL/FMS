@@ -29,7 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libtridiagonal.la
 
 # The convenience library depends on its source.
-libtridiagonal_la_SOURCES = tridiagonal.F90 tridiagonal_mod.mod
+libtridiagonal_la_SOURCES = tridiagonal.F90
 
 # Mod file depends on its o file, is built and then installed.
 tridiagonal_mod.mod: tridiagonal.lo

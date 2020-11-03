@@ -29,8 +29,8 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libsat_vapor_pres_k.la libsat_vapor_pres.la
 
 # Each convenience library depends on its source.
-libsat_vapor_pres_la_SOURCES = sat_vapor_pres.F90 sat_vapor_pres_mod.mod
-libsat_vapor_pres_k_la_SOURCES = sat_vapor_pres_k.F90 sat_vapor_pres_k_mod.mod
+libsat_vapor_pres_la_SOURCES = sat_vapor_pres.F90
+libsat_vapor_pres_k_la_SOURCES = sat_vapor_pres_k.F90
 
 # Each mod file depends on the .o file.
 sat_vapor_pres_mod.mod: sat_vapor_pres.lo

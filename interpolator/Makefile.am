@@ -29,7 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 noinst_LTLIBRARIES = libinterpolator.la
 
 # The convenience library depends on its source.
-libinterpolator_la_SOURCES = interpolator.F90 interpolator_mod.mod
+libinterpolator_la_SOURCES = interpolator.F90
 
 # Mod file depends on its o file, is built and then installed.
 interpolator_mod.mod: interpolator.lo
