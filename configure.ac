@@ -128,11 +128,6 @@ if test $nc_has_nc4 = no; then
   AC_MSG_ERROR([NetCDF must be built with HDF5.])
 fi
 
-#:MKLMKLMKLMKLMKLMKLMKL
-#AC_MSG_CHECKING([if netCDF version is 4.7.4])
-#netcdf_version=$( nc-config --version | awk '{print $2}' )
-#AS_IF( [test $netcdf_version = 4.6.3], AC_MSG_NOTICE([Ok]), AC_MSG_NOTICE([NO]) )
-
 # Check if Linux gettid is avaiable
 AC_CHECK_FUNCS([gettid], [], [])
 
@@ -319,7 +314,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
-	docs/Makefile
+  docs/Makefile
         test_fms/test_common.sh
         test_fms/Makefile
         test_fms/diag_manager/Makefile
