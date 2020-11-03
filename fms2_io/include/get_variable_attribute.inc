@@ -31,13 +31,16 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
                                              !! "I/O root" ranks.
                                              !! The broadcast will be done
                                              !! by default.
-  logical, intent(in), optional :: reproduce_null_char_bug_flag
+  logical, intent(in), optional :: reproduce_null_char_bug_flag !< Flag indicating to reproduce the mpp_io bug where
+                                                                !! the null characters were not removed after reading
+                                                                !! a string attribute
 
   integer :: varid
   integer :: err
   integer :: j
   character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
-  logical :: reproduce_null_char_bug
+  logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
+                                     !! the null characters were not removed after reading a string attribute
 
   !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character
   reproduce_null_char_bug = .false.

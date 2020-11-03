@@ -149,7 +149,9 @@ contains
   class(FmsNetcdfFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
   class(*), dimension(:), intent(out) :: edge_data
-  logical, intent(in), optional :: reproduce_null_char_bug_flag
+  logical, intent(in), optional :: reproduce_null_char_bug_flag !< Flag indicating to reproduce
+                                     !! the mpp_io bug where the null characters were not removed
+                                     !! after reading a string attribute
 
   integer :: ndims
   character(len=128) :: buffer
@@ -160,7 +162,8 @@ contains
   real(kind=real64), dimension(:,:), allocatable :: r642d
   integer :: i
   integer :: n
-  logical :: reproduce_null_char_bug
+  logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
+                                     !! the null characters were not removed after reading a string attribute
 
   ndims = get_variable_num_dimensions(fileobj, name)
   allocate(dim_sizes(ndims))
