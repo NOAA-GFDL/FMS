@@ -24,7 +24,7 @@ program test_get_is_valid
 use   fms2_io_mod, only: fms2_io_init, open_file, FmsNetcdfFile_t, valid_t, &
                          close_file, is_valid, get_valid
 use   mpp_mod    , only: mpp_init, mpp_exit, mpp_npes, mpp_get_current_pelist, &
-                         mpp_root_pe, mpp_pe, FATAL, mpp_error
+                         mpp_root_pe, mpp_pe, FATAL, mpp_error, mpp_sync
 use   netcdf     , only: nf90_create, nf90_def_var, nf90_put_att, nf90_enddef, &
                          nf90_close, nf90_clobber, nf90_64bit_offset, nf90_double
 
@@ -54,6 +54,9 @@ if (mpp_root_pe() .eq. mpp_pe()) then
    err = nf90_enddef(ncid)
    err = nf90_close(ncid)
 endif
+
+!> Wait for the root pe to catch up
+call mpp_sync()
 
 !> Open the file and set up the valid type
 if (open_file(fileobj, "test_file.nc", "read", pelist=pes)) then
@@ -86,6 +89,7 @@ sst = real(0, kind=real64)
 sst(1,1) = real(999, kind=real64)
 
 !> Check where the data is valid
+!> Set the mask_in to 0 wherever sst is valid
 where(is_valid(sst,valid_type)) mask_in = 0
 
 !> Error checking:
