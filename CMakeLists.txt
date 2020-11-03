@@ -149,7 +149,7 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
   platform/platform.F90
-  random_numbers/MersenneTwister.F90
+  random_numbers/mersennetwister.F90
   random_numbers/random_numbers.F90
   sat_vapor_pres/sat_vapor_pres_k.F90
   sat_vapor_pres/sat_vapor_pres.F90
