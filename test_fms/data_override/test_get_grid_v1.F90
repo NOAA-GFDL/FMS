@@ -24,7 +24,7 @@ program test_get_grid_v1
 use netcdf,          only: nf90_create, nf90_clobber, nf90_64bit_offset, nf90_double, &
                            nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
                            nf90_close
-use mpp_mod,         only: mpp_init, mpp_exit, mpp_root_pe, mpp_pe, mpp_error, FATAL
+use mpp_mod,         only: mpp_init, mpp_exit, mpp_root_pe, mpp_pe, mpp_error, FATAL, mpp_sync
 use mpp_domains_mod, only: mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
                            domain2d
 use fms2_io_mod,     only: fms2_io_init
@@ -34,8 +34,8 @@ use,  intrinsic :: iso_fortran_env, only : real64
 
 implicit none
 
-type(domain2d)                                   :: Domain !< 2D domain 
-integer                                          :: is, ie, js, je !< Starting and ending compute 
+type(domain2d)                                   :: Domain !< 2D domain
+integer                                          :: is, ie, js, je !< Starting and ending compute
                                                                    !! domain indices
 integer                                          :: nlon, nlat !< Number of lat, lon in grid
 real                                             :: min_lon, max_lon !< Maximum lat and lon
@@ -74,6 +74,8 @@ if (mpp_pe() .eq. mpp_root_pe()) then
    err = nf90_put_var(ncid, varid2, lat_in(1))
    err = nf90_close(ncid)
 endif
+
+call mpp_sync()
 
 nlon = 1
 nlat = 1
@@ -121,6 +123,8 @@ if (mpp_pe() .eq. mpp_root_pe()) then
 
    err = nf90_close(ncid)
 endif
+call mpp_sync()
+
 call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat, &
                         min_lon, max_lon)
 
