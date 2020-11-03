@@ -26,4 +26,6 @@
 
 # Set common test settings.
 . ../test_common.sh
+cp $top_srcdir/test_fms/ufs_crash/input.nml input.nml
+cp $top_srcdir/test_fms/ufs_crash/diag_table diag_table
 run_test test_diag_manager_time 1
