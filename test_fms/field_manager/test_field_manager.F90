@@ -38,7 +38,6 @@ use field_manager_mod
 use mpp_mod, only : mpp_exit, mpp_pe, mpp_root_pe, mpp_error, NOTE, FATAL
 
 implicit none
-!#include "mpif.h"
 
 
 integer :: i, j, nfields, num_methods, model

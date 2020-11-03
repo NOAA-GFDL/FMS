@@ -130,22 +130,6 @@ function get_peset(pelist)
   call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted-mpp_root_pe(), peset(i)%group, error )
   call MPI_COMM_CREATE_GROUP(peset(current_peset_num)%id, peset(i)%group, &
                              DEFAULT_TAG, peset(i)%id, error )
-#ifdef use_MPI_SMA
-  n = size(sorted(:))
-  write( text, '(20i6)' )( sorted(l), l=1,min(n,20) )
-  if( n.GT.20 )text = trim(text)//' ...'
-  peset(i)%start = sorted(1)
-  if( size(sorted(:)).GT.1 )then
-     stride = sorted(2)-sorted(1)
-     if( ANY(sorted(2:n)-sorted(1:n-1).NE.stride) ) &
-          call mpp_error( FATAL, 'GET_PESET: pelist must have constant stride. PEs='//trim(text) )
-     peset(i)%log2stride = nint( log(real(stride))/log(2.) )
-     if( 2**peset(i)%log2stride.NE.stride ) &
-          call mpp_error( FATAL, 'GET_PESET: pelist must have power-of-2 stride. PEs='//trim(text) )
-  else
-     peset(i)%log2stride = 0
-  end if
-#endif
   deallocate(sorted)
   get_peset = i
 
@@ -167,15 +151,7 @@ subroutine mpp_sync( pelist, do_self )
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
   if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
-#ifdef use_MPI_SMA
-  if( n.EQ.world_peset_num )then
-     call SHMEM_BARRIER_ALL() !special call is faster
-  else
-     call SHMEM_BARRIER( peset(n)%start, peset(n)%log2stride, peset(n)%count, pSync )
-  end if
-#else
   call MPI_BARRIER( peset(n)%id, error )
-#endif
 
   if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
 

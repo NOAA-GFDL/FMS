@@ -412,12 +412,10 @@ contains
        call mpp_error(FATAL, 'horiz_interp_conserve_mod: nlat_in should be equal to nincreaase or ndecrease')
     endif
 
-    if(wordsz==4) then
-       allocate(lon_out_r8(size(lon_out,1),size(lon_out,2)))
-       allocate(lat_out_r8(size(lat_out,1),size(lat_out,2)))
-       lon_out_r8 = lon_out
-       lat_out_r8 = lat_out
-    endif
+    allocate(lon_out_r8(size(lon_out,1),size(lon_out,2)))
+    allocate(lat_out_r8(size(lat_out,1),size(lat_out,2)))
+    lon_out_r8 = lon_out
+    lat_out_r8 = lat_out
 
     if( .not. great_circle_algorithm ) then
        if(flip_lat) then
@@ -428,30 +426,19 @@ contains
           do j = 1, nlat_in
              mask_src_flip(:,j) = mask_src(:,nlat_in+1-j)
           enddo
-          if(wordsz==4) then
-             allocate(lon_in_r8(size(lon_in)))
-             lon_in_r8 = lon_in
-             nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_flip, &
-                                  lon_out_r8, lat_out_r8, mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area)
-             deallocate(lon_in_r8)
-          else
-             nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in_flip, lon_out, lat_out, &
-                                             mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area)
-          endif
-          deallocate(lat_in_flip, mask_src_flip)
+          allocate(lon_in_r8(size(lon_in)))
+          lon_in_r8 = lon_in
+          nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_flip, &
+                               lon_out_r8, lat_out_r8, mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area)
+          deallocate(lon_in_r8, lat_in_flip, mask_src_flip)
        else
-          if(wordsz==4) then
-             allocate(lon_in_r8(size(lon_in)))
-             allocate(lat_in_r8(size(lat_in)))
-             lon_in_r8 = lon_in
-             lat_in_r8 = lat_in
-             nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
-                                             mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
-             deallocate(lon_in_r8,lat_in_r8)
-          else
-             nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
-                                             mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
-          endif
+          allocate(lon_in_r8(size(lon_in)))
+          allocate(lat_in_r8(size(lat_in)))
+          lon_in_r8 = lon_in
+          lat_in_r8 = lat_in
+          nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
+                                          mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+          deallocate(lon_in_r8,lat_in_r8)
        endif
     else
        allocate(lon_src(nlon_in+1,nlat_in+1), lat_src(nlon_in+1,nlat_in+1))
@@ -467,13 +454,8 @@ contains
           do j = 1, nlat_in
              mask_src_flip(:,j) = mask_src(:,nlat_in+1-j)
           enddo
-          if(wordsz==4) then
-             nxgrid = create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out_r8, lat_out_r8, &
+          nxgrid = create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out_r8, lat_out_r8, &
                                              mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-          else  !wordsz==8
-             nxgrid = create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out, lat_out, &
-                                             mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-          endif
           deallocate(mask_src_flip)
        else
           do j = 1, nlat_in+1
@@ -482,18 +464,13 @@ contains
                 lat_src(i,j) = lat_in(j)
              enddo
           enddo
-          if(wordsz==4) then
-             nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out_r8, lat_out_r8, &
+          nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out_r8, lat_out_r8, &
                                              mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-          else
-             nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out, lat_out, &
-                                             mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-          endif
        endif
        deallocate(lon_src, lat_src, clon, clat)
     endif
 
-    if(wordsz==4) deallocate(lon_out_r8, lat_out_r8)
+    deallocate(lon_out_r8, lat_out_r8)
 
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
@@ -546,10 +523,13 @@ contains
     integer :: create_xgrid_2DX1D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i, j
-    real, dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
     integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
-    real,    allocatable, dimension(:)   :: xgrid_area, clon, clat
-    real,    allocatable, dimension(:,:) :: dst_area, lon_dst, lat_dst
+    real,    allocatable, dimension(:,:) :: dst_area
+    real(DOUBLE_KIND), dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
+    real(DOUBLE_KIND), allocatable, dimension(:)   :: xgrid_area, clon, clat
+    real(DOUBLE_KIND), allocatable, dimension(:)   :: lon_out_r8, lat_out_r8
+    real(DOUBLE_KIND), allocatable, dimension(:,:) :: lon_in_r8, lat_in_r8
+    real(DOUBLE_KIND), allocatable, dimension(:,:) :: lon_dst, lat_dst
     integer :: wordsz
     integer(kind=1) :: one_byte(8)
 
@@ -567,7 +547,7 @@ contains
 
     mask_src = 1.
     if(present(mask_in)) then
-       if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
+       if( (size(mask_in,1) .NE. nlon_in) .OR. (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
        mask_src = mask_in
     end if
@@ -577,9 +557,18 @@ contains
     allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
 
     if( .not. great_circle_algorithm ) then
+       allocate(lon_out_r8(size(lon_out)))
+       allocate(lat_out_r8(size(lat_out)))
+       lon_out_r8 = lon_out
+       lat_out_r8 = lat_out
        nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
-                                       mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+                                          mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+       deallocate(lon_out_r8,lat_out_r8)
     else
+       allocate(lon_in_r8(size(lon_in,1),size(lon_in,2)))
+       allocate(lat_in_r8(size(lat_in,1),size(lat_in,2)))
+       lon_in_r8 = lon_in
+       lat_in_r8 = lat_in
        allocate(lon_dst(nlon_out+1, nlat_out+1), lat_dst(nlon_out+1, nlat_out+1) )
        allocate(clon(maxxgrid), clat(maxxgrid))
        do j = 1, nlat_out+1
@@ -588,9 +577,9 @@ contains
              lat_dst(i,j) = lat_out(j)
           enddo
        enddo
-       nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_dst, lat_dst, &
+       nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_dst, lat_dst, &
                                           mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-       deallocate(lon_dst, lat_dst, clon, clat)
+       deallocate(lon_in_r8, lat_in_r8, lon_dst, lat_dst, clon, clat)
     endif
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
@@ -641,8 +630,8 @@ contains
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i
-    real(DOUBLE_KIND), dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
     integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
+    real(DOUBLE_KIND), dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
     real(DOUBLE_KIND), allocatable, dimension(:)   :: xgrid_area, clon, clat
     real(DOUBLE_KIND), allocatable, dimension(:,:) :: dst_area
     real(DOUBLE_KIND), allocatable, dimension(:,:) :: lon_in_r8, lat_in_r8
@@ -675,38 +664,26 @@ contains
     allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
     allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
 
-    if(wordsz==4) then
-       allocate(lon_in_r8(size(lon_in,1),size(lon_in,2)))
-       allocate(lat_in_r8(size(lat_in,1),size(lat_in,2)))
-       allocate(lon_out_r8(size(lon_out,1),size(lon_out,2)))
-       allocate(lat_out_r8(size(lat_out,1),size(lat_out,2)))
-       lon_in_r8 = lon_in
-       lat_in_r8 = lat_in
-       lon_out_r8 = lon_out
-       lat_out_r8 = lat_out
-    endif
+    allocate(lon_in_r8(size(lon_in,1),size(lon_in,2)))
+    allocate(lat_in_r8(size(lat_in,1),size(lat_in,2)))
+    allocate(lon_out_r8(size(lon_out,1),size(lon_out,2)))
+    allocate(lat_out_r8(size(lat_out,1),size(lat_out,2)))
+    lon_in_r8 = lon_in
+    lat_in_r8 = lat_in
+    lon_out_r8 = lon_out
+    lat_out_r8 = lat_out
 
     if( .not. great_circle_algorithm ) then
-       if(wordsz==4) then
-          nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
+       nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
                                        mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
-       else
-          nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
-                                       mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
-       endif
     else
        allocate(clon(maxxgrid), clat(maxxgrid))
-       if(wordsz==4) then
-          nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
+       nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
                                           mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-       else
-          nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
-                                          mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-       endif
        deallocate(clon, clat)
     endif
 
-    if(wordsz==4) deallocate(lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8)
+    deallocate(lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8)
 
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )

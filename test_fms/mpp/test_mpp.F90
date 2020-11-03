@@ -23,31 +23,19 @@
 program test   !test various aspects of mpp_mod
 #include <fms_platform.h>
 
-#ifdef sgi_mipspro
-  use shmem_interface
-#endif
-
   use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, stdout
-  use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync, mpp_malloc
+  use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
   use mpp_mod, only : mpp_gather, mpp_error, FATAL, mpp_sync_self
   use mpp_io_mod, only: mpp_io_init, mpp_flush
-#ifdef use_MPI_GSM
-  use mpp_mod, only : mpp_gsm_malloc, mpp_gsm_free
-#endif
 
   implicit none
 
   integer, parameter              :: n=1048576
   real, allocatable, dimension(:) :: a, b, c
-#ifdef use_MPI_GSM
-  real                            :: d(n)
-  pointer (locd, d)
-#else
   real, allocatable, dimension(:) :: d
   integer(LONG_KIND) :: locd
-#endif
   integer                         :: tick, tick0, ticks_per_sec, id
   integer                         :: pe, npes, root, i, j, k, l, m, n2, istat
   integer                         :: out_unit
@@ -85,29 +73,20 @@ program test   !test various aspects of mpp_mod
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_chksum <------------------'
 
 !test of pointer sharing
-#ifdef use_MPI_GSM
-      call mpp_gsm_malloc( locd, sizeof(d) )
-#else
   if( pe.EQ.root )then
       allocate( d(n) )
       locd = LOC(d)
   end if
   call mpp_broadcast(locd,root)
-#endif
   if( pe.EQ.root )then
       call random_number(d)
   end if
   call mpp_sync()
 !  call test_shared_pointers(locd,n)
 
-#ifdef use_MPI_GSM
-  call mpp_gsm_free( locd )
-#else
   if( pe.EQ.root )then
       deallocate( d )
   end if
-#endif
-
 
   call mpp_exit()
 

@@ -83,8 +83,6 @@ void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, in
                            double *data, unsigned int level, int ioff, int joff);
 
 
-#ifndef __AIX
-
 void read_mosaic_contact_(const char *mosaic_file, int *tile1, int *tile2, int *istart1, int *iend1,
                           int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2);
 
@@ -117,8 +115,5 @@ void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, 
 void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj );
 
 #endif  /* OVERLOAD_R4 */
-
-#endif  /* AIX */
-
 
 #endif

@@ -750,7 +750,7 @@ use platform_mod
   !   netCDF module, otherwise will be 9.9692099683868690e+36.
   ! </DATA>
 #ifdef use_netCDF
-  REAL :: FILL_VALUE = NF_FILL_REAL  ! from file /usr/local/include/netcdf.inc
+  REAL :: FILL_VALUE = NF_FILL_REAL  ! from netcdf F90 module file
 #else
   REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
