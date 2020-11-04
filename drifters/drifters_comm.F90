@@ -291,6 +291,9 @@ contains
 !===============================================================================
   subroutine drifters_comm_update(self, drfts, new_positions, &
        & comm, remove, max_add_remove)
+#ifndef _SERIAL
+   use mpi
+#endif
 
     type(drifters_comm_type)   :: self
     type(drifters_core_type)   :: drfts
@@ -307,10 +310,6 @@ contains
 
 #else
 ! parallel code
-
-    include 'mpif.h'
-
-
     integer nd, np, nar_est, ip, neigh_pe, irem, pe, npes, ntuples
     integer ntuples_tot, ndata, mycomm
 #ifdef _USE_MPI
@@ -566,6 +565,9 @@ contains
        & filename, &
        & root, mycomm)
 
+#ifndef _SERIAL
+    use mpi
+#endif
     use drifters_input_mod, only : drifters_input_type, drifters_input_save
 
     type(drifters_comm_type)   :: self
@@ -606,7 +608,6 @@ contains
     real    :: x, y
     real, allocatable :: lons0(:), lats0(:), recvbuf(:,:)
     real    :: data(drfts%nd+3, drfts%np)
-    include 'mpif.h'
 
     comm    = MPI_COMM_WORLD
     if(present(mycomm)) comm = mycomm

@@ -44,6 +44,8 @@ SRCS_F90 = \
          ../coupler/coupler_types.F90                                       \
          ../coupler/ensemble_manager.F90                                    \
          ../data_override/data_override.F90                                 \
+         ../data_override/get_grid_version_fms2io.F90                       \
+         ../data_override/get_grid_version_mpp.F90                          \
          ../diag_integral/diag_integral.F90                                 \
          ../diag_manager/diag_axis.F90                                      \
          ../diag_manager/diag_data.F90                                      \
@@ -92,7 +94,6 @@ SRCS_F90 = \
          ../mpp/mpp_io.F90                                                  \
          ../mpp/mpp_memutils.F90                                            \
          ../mpp/mpp_parameter.F90                                           \
-         ../mpp/mpp_pset.F90                                                \
          ../mpp/mpp_utilities.F90                                           \
          ../platform/platform.F90                                           \
          ../random_numbers/MersenneTwister.F90                              \
@@ -116,9 +117,7 @@ SRCS_c   = \
          ../mosaic/interp.c                                                 \
          ../mosaic/mosaic_util.c                                            \
          ../mosaic/read_mosaic.c                                            \
-         ../mpp/mpp_memuse.c                                                \
-         ../mpp/nsclock.c                                                   \
-         ../mpp/threadloc.c
+         ../mpp/mpp_memuse.c
 
 DEPEND_FILES = $(SRCS_f) $(SRCS_f90) $(SRCS_F) $(SRCS_F90)
 

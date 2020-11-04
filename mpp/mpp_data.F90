@@ -19,7 +19,7 @@
 module mpp_data_mod
 #include <fms_platform.h>
 
-#if defined(use_libMPI) && defined(sgi_mipspro)
+#if defined(use_libMPI)
   use mpi
 #endif
 
@@ -31,15 +31,6 @@ module mpp_data_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
   public version
-
-#if defined(use_libSMA) || defined(use_MPI_SMA)
-#include <mpp/shmem.fh>
-#endif
-
-#if defined(use_libMPI) && !defined(sgi_mipspro)
-#include <mpif.h>
-!sgi_mipspro gets this from 'use mpi'
-#endif
 
   !--- public data is used by mpp_mod
   public :: stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
@@ -54,14 +45,10 @@ module mpp_data_mod
   ! The following data included in the .inc file are diffrent for sma or mpi case !
   !-------------------------------------------------------------------------------!
 
-#ifdef use_libSMA
-#include <mpp_data_sma.inc>
-#else
 #ifdef use_libMPI
 #include <mpp_data_mpi.inc>
 #else
 #include <mpp_data_nocomm.inc>
-#endif
 #endif
 
 end module mpp_data_mod

@@ -43,6 +43,7 @@ module axis_utils_mod
   !</DESCRIPTION>
   !
 
+  use netcdf
   use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
                         mpp_get_atts, mpp_get_axis_data, mpp_modify_meta,     &
                         mpp_get_att_name, mpp_get_att_type, mpp_get_att_char, &
@@ -51,8 +52,6 @@ module axis_utils_mod
   use fms_mod,    only: lowercase, string_array_index, fms_error_handler
 
   implicit none
-
-# include <netcdf.inc>
 
   public get_axis_cart, get_axis_bounds, get_axis_modulo, get_axis_fold, lon_in_range, &
          tranlon, frac_index, nearest_index, interp_1d, get_axis_modulo_times
