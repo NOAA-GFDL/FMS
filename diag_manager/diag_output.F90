@@ -579,7 +579,11 @@ integer :: domain_size, axis_length, axis_pos
              endif
 
           ELSE
-                if ( allocated(fptr%pelist) .and. .not. is_time_axis_registered) then
+!> @note Check if the time variable is registered.  It's possible that is_time_axis_registered is set to true if using 
+!! time-templated files because they aren't closed when done writing.  An alternative to this set up would be to put 
+!! variable_exists into the if statement with an .or. so that it gets registered. 
+                is_time_axis_registered = variable_exists(fptr,trim(axis_name),.true.)
+                if (allocated(fptr%pelist) .and. .not. is_time_axis_registered) then
                  select type (fptr)
                    type is (FmsNetcdfDomainFile_t)
                         call register_axis(fptr, trim(axis_name), unlimited )

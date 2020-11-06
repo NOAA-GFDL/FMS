@@ -17,17 +17,33 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is an automake file for the test_fms/diag_manager directory of the FMS
+# package.
+# uramirez, Ed Hartnett
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include \
+  -I${top_builddir}/mpp	\
+  -I${top_builddir}/fms \
+  -I${top_builddir}/axis_utils \
+  -I${top_builddir}/diag_manager \
+  -I${top_builddir}/time_manager \
+  -I${top_builddir}/constants \
+  -I${top_builddir}/platform
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = ufs_crash diag_manager data_override exchange monin_obukhov drifters \
-mosaic interpolator fms fms2_io mpp mpp_io time_interp time_manager \
-horiz_interp field_manager axis_utils affinity
+# Link to the FMS library.
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
-# This input file must be distributed, it is turned into
-# test_common.sh by configure.
-EXTRA_DIST = test_common.sh.in
+# Build this test program.
+check_PROGRAMS = test_diag_manager_time
+
+# This is the source code for the test.
+test_diag_manager_time_SOURCES = test_diag_manager_time.F90
+
+# Run the test.
+TESTS = test_diag_manager2.sh
+
+# Copy over other needed files to the srcdir
+EXTRA_DIST = input.nml diag_table test_diag_manager2.sh
+
+CLEANFILES = *.nc *.out
