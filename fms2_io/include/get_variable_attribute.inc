@@ -19,7 +19,7 @@
 
 !> @brief Get the value of a variable's attribute.
 subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
-                                     attribute_value, broadcast)
+                                     attribute_value, broadcast, reproduce_null_char_bug_flag)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -31,18 +31,31 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
                                              !! "I/O root" ranks.
                                              !! The broadcast will be done
                                              !! by default.
+  logical, intent(in), optional :: reproduce_null_char_bug_flag !< Flag indicating to reproduce the mpp_io bug where
+                                                                !! the null characters were not removed after reading
+                                                                !! a string attribute
 
   integer :: varid
   integer :: err
   integer :: j
   character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
+  logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
+                                     !! the null characters were not removed after reading a string attribute
+
+  !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character
+  reproduce_null_char_bug = .false.
+  if (present(reproduce_null_char_bug_flag)) reproduce_null_char_bug=reproduce_null_char_bug_flag
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(attribute_value)
       type is (character(len=*))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), charbuf(1))
-        call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
+        if (reproduce_null_char_bug) then
+           call string_copy(attribute_value, charbuf(1), check_for_null=.false.)
+        else
+           call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
+        endif
       type is (integer(kind=int32))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       type is (integer(kind=int64))
@@ -64,7 +77,11 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   select type(attribute_value)
     type is (character(len=*))
       call mpp_broadcast(charbuf, len(charbuf), fileobj%io_root, pelist=fileobj%pelist)
-      call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
+      if (reproduce_null_char_bug) then
+         call string_copy(attribute_value, charbuf(1), check_for_null=.false.)
+      else
+         call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
+      endif
     type is (integer(kind=int32))
       call mpp_broadcast(attribute_value, fileobj%io_root, pelist=fileobj%pelist)
     type is (integer(kind=int64))

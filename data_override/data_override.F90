@@ -111,8 +111,12 @@ logical                                         :: lndUG_on
 logical                                         :: debug_data_override
 logical                                         :: grid_center_bug = .false.
 logical                                         :: use_mpp_bug = .false.
+logical                                         :: reproduce_null_char_bug = .false. !> Flag indicating
+                                                   !! to reproduce the mpp_io bug where lat/lon_bnd were
+                                                   !! not read correctly if null characters are present in
+                                                   !! the netcdf file
 
-namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug
+namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug, reproduce_null_char_bug
 
 interface data_override
      module procedure data_override_0d
@@ -871,8 +875,10 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
           call mpp_get_axis_data(axis_bounds(2),override_array(curr_position)%lat_in)
         else
           if(get_external_fileobj(filename, fileobj)) then
-             call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in)
-             call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in)
+             call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in, &
+                reproduce_null_char_bug_flag=reproduce_null_char_bug)
+             call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in, &
+                reproduce_null_char_bug_flag=reproduce_null_char_bug)
           else
              call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
           end if
