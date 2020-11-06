@@ -29,10 +29,11 @@ AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms2_io -I${top_builddir}/
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
+check_PROGRAMS = test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
                  test_get_mosaic_tile_grid
 
 # This is the source code for the test.
+test_get_is_valid_SOURCES = test_get_is_valid.F90
 test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90 create_atmosphere_domain.inc \
                        create_land_domain.inc create_ocean_domain.inc \
                        ocean_restart_file_test.inc land_compressed_restart_file_test.inc \
