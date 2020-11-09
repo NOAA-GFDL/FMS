@@ -20,14 +20,13 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms2_io directory.
+# execute tests in the test_fms/data_override directory.
 
-# Authors: Raymond Menzel
-# Jessica Liptak
-#
+# Ed Hartnett 11/26/19
+
 # Set common test settings.
 . ../test_common.sh
-# make a dummy file for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
-# run the tests
-run_test test_fms2_io 6 $netcdf_version_skip
+cp $top_srcdir/test_fms/ufs_crash/input.nml input.nml
+cp $top_srcdir/test_fms/ufs_crash/diag_table diag_table
+run_test test_diag_manager_time 1
+rm -f input.nml diag_table

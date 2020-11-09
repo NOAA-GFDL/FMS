@@ -19,7 +19,7 @@
 
 program test_monin_obukhov
 
-  use monin_obukhov_kernel, only: monin_obukhov_drag_1d, monin_obukhov_stable_mix, monin_obukhov_diff, monin_obukhov_profile_1d
+  use monin_obukhov_inter, only: monin_obukhov_drag_1d, monin_obukhov_stable_mix, monin_obukhov_diff, monin_obukhov_profile_1d
   use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
 
   implicit none

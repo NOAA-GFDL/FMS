@@ -30,10 +30,13 @@ use time_interp_external_mod, only:time_interp_external_init_classic=>time_inter
                                    get_external_field_size_classic=>get_external_field_size, &
                                    set_override_region_classic=>set_override_region, &
                                    reset_src_data_region_classic=>reset_src_data_region
-use time_interp_external2_mod, only:time_interp_external_init, time_interp_external, &
-                                   init_external_field, get_external_field_size, &
+use time_interp_external2_mod, only:time_interp_external_init_fms2io=>time_interp_external_init, &
+                                   time_interp_external_fms2io=>time_interp_external, &
+                                   init_external_field_fms2io=>init_external_field, &
+                                   get_external_field_size_fms2io=>get_external_field_size, &
+                                   set_override_region_fms2io=>set_override_region, &
+                                   reset_src_data_region_fms2io=>reset_src_data_region, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
-                                   set_override_region, reset_src_data_region,   &
                                    get_external_fileobj
 use fms_mod, only: write_version_number, field_exist, lowercase, check_nml_error
 use fms_io_mod, only: fms_io_init, get_mosaic_tile_file
@@ -108,8 +111,12 @@ logical                                         :: lndUG_on
 logical                                         :: debug_data_override
 logical                                         :: grid_center_bug = .false.
 logical                                         :: use_mpp_bug = .false.
+logical                                         :: reproduce_null_char_bug = .false. !> Flag indicating
+                                                   !! to reproduce the mpp_io bug where lat/lon_bnd were
+                                                   !! not read correctly if null characters are present in
+                                                   !! the netcdf file
 
-namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug
+namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug, reproduce_null_char_bug
 
 interface data_override
      module procedure data_override_0d
@@ -351,7 +358,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     if(use_mpp_bug) then
       call time_interp_external_init_classic
     else
-      call time_interp_external_init
+      call time_interp_external_init_fms2io
     end if
  end if
 
@@ -831,9 +838,9 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                                       use_comp_domain=use_comp_domain, nwindows=nwindows)
           dims = get_external_field_size_classic(id_time)
         else
-          id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
+          id_time = init_external_field_fms2io(filename,fieldname,domain=domain,verbose=.false., &
                                       use_comp_domain=use_comp_domain, nwindows=nwindows, ongrid=ongrid)
-          dims = get_external_field_size(id_time)
+          dims = get_external_field_size_fms2io(id_time)
         end if
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
@@ -845,10 +852,10 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
               nwindows = nwindows)
           dims = get_external_field_size_classic(id_time)
         else
-          id_time = init_external_field(filename,fieldname,domain=domain, axis_names=axis_names,&
+          id_time = init_external_field_fms2io(filename,fieldname,domain=domain, axis_names=axis_names,&
               axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
               nwindows = nwindows)
-          dims = get_external_field_size(id_time)
+          dims = get_external_field_size_fms2io(id_time)
         end if
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 2')
@@ -868,8 +875,10 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
           call mpp_get_axis_data(axis_bounds(2),override_array(curr_position)%lat_in)
         else
           if(get_external_fileobj(filename, fileobj)) then
-             call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in)
-             call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in)
+             call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in, &
+                reproduce_null_char_bug_flag=reproduce_null_char_bug)
+             call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in, &
+                reproduce_null_char_bug_flag=reproduce_null_char_bug)
           else
              call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
           end if
@@ -928,7 +937,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         if (use_mpp_bug) then
           call reset_src_data_region_classic(id_time, is_src, ie_src, js_src, je_src)
         else
-          call reset_src_data_region(id_time, is_src, ie_src, js_src, je_src)
+          call reset_src_data_region_fms2io(id_time, is_src, ie_src, js_src, je_src)
         end if
 
 !       Find the index of lon_start, lon_end, lat_start and lat_end in the input grid (nearest points)
@@ -963,7 +972,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
            if (use_mpp_bug) then
              call set_override_region_classic(id_time, data_table(index1)%region_type, istart, iend, jstart, jend)
            else
-             call set_override_region(id_time, data_table(index1)%region_type, istart, iend, jstart, jend)
+             call set_override_region_fms2io(id_time, data_table(index1)%region_type, istart, iend, jstart, jend)
            end if
            deallocate(lon_tmp, lat_tmp)
         endif
@@ -1079,12 +1088,12 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
       else
         if (use_comp_domain) then
-        call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+        call time_interp_external_fms2io(id_time,time,data(:,:,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         else
            !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
            !! size
-           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+           call time_interp_external_fms2io(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         end if
       end if
@@ -1098,12 +1107,12 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
       else
         if (use_comp_domain) then
-        call time_interp_external(id_time,time,data,verbose=.false., &
+        call time_interp_external_fms2io(id_time,time,data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         else
            !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
            !! size
-           call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
+           call time_interp_external_fms2io(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif
       end if
@@ -1118,7 +1127,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                    horz_interp=override_array(curr_position)%horz_interp(window_id), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            else
-             call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+             call time_interp_external_fms2io(id_time,time,data(:,:,1),verbose=.false., &
                    horz_interp=override_array(curr_position)%horz_interp(window_id), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            end if
@@ -1135,7 +1144,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                    mask_out   =mask_out(:,:,1), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            else
-             call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+             call time_interp_external_fms2io(id_time,time,data(:,:,1),verbose=.false., &
                    horz_interp=override_array(curr_position)%horz_interp(window_id),      &
                    mask_out   =mask_out(:,:,1), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1157,7 +1166,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                 horz_interp=override_array(curr_position)%horz_interp(window_id), &
                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            else
-             call time_interp_external(id_time,time,data,verbose=.false.,      &
+             call time_interp_external_fms2io(id_time,time,data,verbose=.false.,      &
                 horz_interp=override_array(curr_position)%horz_interp(window_id), &
                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            end if
@@ -1171,7 +1180,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                 mask_out   =mask_out, &
                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            else
-             call time_interp_external(id_time,time,data,verbose=.false.,      &
+             call time_interp_external_fms2io(id_time,time,data,verbose=.false.,      &
                 horz_interp=override_array(curr_position)%horz_interp(window_id),    &
                 mask_out   =mask_out, &
                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1285,7 +1294,7 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
      if (use_mpp_bug) then
        id_time = init_external_field_classic(filename,fieldname,verbose=.false.)
      else
-       id_time = init_external_field(filename,fieldname,verbose=.false.)
+       id_time = init_external_field_fms2io(filename,fieldname,verbose=.false.)
      end if
      if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
      override_array(curr_position)%t_index = id_time
@@ -1298,7 +1307,7 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
   if (use_mpp_bug) then
     call time_interp_external_classic(id_time, time, data, verbose=.false.)
   else
-    call time_interp_external(id_time, time, data, verbose=.false.)
+    call time_interp_external_fms2io(id_time, time, data, verbose=.false.)
   end if
   data = data*factor
 !$OMP END SINGLE

@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,15 +17,33 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms2_io directory.
+# This is an automake file for the test_fms/diag_manager directory of the FMS
+# package.
+# uramirez, Ed Hartnett
 
-# Authors: Raymond Menzel
-# Jessica Liptak
-#
-# Set common test settings.
-. ../test_common.sh
-# make a dummy file for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
-# run the tests
-run_test test_fms2_io 6 $netcdf_version_skip
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include \
+  -I${top_builddir}/mpp	\
+  -I${top_builddir}/fms \
+  -I${top_builddir}/axis_utils \
+  -I${top_builddir}/diag_manager \
+  -I${top_builddir}/time_manager \
+  -I${top_builddir}/constants \
+  -I${top_builddir}/platform
+
+# Link to the FMS library.
+LDADD = ${top_builddir}/libFMS/libFMS.la
+
+# Build this test program.
+check_PROGRAMS = test_diag_manager_time
+
+# This is the source code for the test.
+test_diag_manager_time_SOURCES = test_diag_manager_time.F90
+
+# Run the test.
+TESTS = test_diag_manager2.sh
+
+# Copy over other needed files to the srcdir
+EXTRA_DIST = input.nml diag_table test_diag_manager2.sh
+
+CLEANFILES = *.nc *.out

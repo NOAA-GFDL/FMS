@@ -262,6 +262,16 @@ if test -n "$fc_version_info"; then
   FC_VERSION="$FC_VERSION ( $fc_version_info )"
 fi
 
+# Check if netcdf is version 4.7.4 to skip failing fms2_io tests
+AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
+if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
+  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], true )
+  AC_MSG_RESULT([yes]) 
+else
+  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], false )
+  AC_MSG_RESULT([no])
+fi
+
 #####
 # Create output variables from various
 # shell variables, for use in generating
@@ -317,6 +327,7 @@ AC_CONFIG_FILES([Makefile
         docs/Makefile
         test_fms/test_common.sh
         test_fms/Makefile
+        test_fms/ufs_crash/Makefile
         test_fms/diag_manager/Makefile
         test_fms/data_override/Makefile
         test_fms/exchange/Makefile
@@ -337,3 +348,8 @@ AC_CONFIG_FILES([Makefile
         FMS.pc
         ])
 AC_OUTPUT()
+
+## if tests are being skipped, output warning at end of output
+if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
+  AC_MSG_RESULT([Warning: netCDF v4.7.4 is loaded. Incompatible fms2_io tests will be skipped and there may be netCDF issues with model runs.])
+fi

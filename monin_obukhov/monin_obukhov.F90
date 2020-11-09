@@ -38,7 +38,7 @@ use mpp_mod,       only: input_nml_file
 use fms_mod,       only: error_mesg, FATAL, check_nml_error,   &
                          mpp_pe, mpp_root_pe, stdlog, &
                          write_version_number
-use monin_obukhov_kernel, only: monin_obukhov_diff, monin_obukhov_drag_1d, &
+use monin_obukhov_inter, only: monin_obukhov_diff, monin_obukhov_drag_1d, &
                                monin_obukhov_profile_1d, monin_obukhov_stable_mix
 implicit none
 private
