@@ -134,7 +134,7 @@ list(APPEND fms_fortran_src_files
   horiz_interp/horiz_interp.F90
   interpolator/interpolator.F90
   memutils/memutils.F90
-  monin_obukhov/monin_obukhov_kernel.F90
+  monin_obukhov/monin_obukhov_inter.F90
   monin_obukhov/monin_obukhov.F90
   mosaic/gradient.F90
   mosaic/grid.F90
