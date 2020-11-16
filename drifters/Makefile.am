@@ -26,8 +26,8 @@
 .NOTPARALLEL:
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libdrifters_core.la libdrifters_input.la \
@@ -61,5 +61,15 @@ drifters_comm_mod.mod drifters_io_mod.mod cloud_interpolator_mod.mod \
 drifters_mod.mod
 include_HEADERS = $(MODFILES) $(DRIFTERS_HDRS)
 BUILT_SOURCES = $(MODFILES)
-CLEANFILES = *.mod *__genmod.f90
 
+EXTRA_DIST = README.md
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+
+CLEANFILES = *.mod *__genmod.f90

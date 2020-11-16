@@ -287,6 +287,7 @@ AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([NOUNDEFINED])
 
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
         include/Makefile
@@ -323,7 +324,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
-	docs/Makefile
+        docs/Makefile
         test_fms/test_common.sh
         test_fms/Makefile
         test_fms/diag_manager/Makefile

@@ -23,7 +23,7 @@
 # J.Liptak, R.Menzel, U.Ramirez
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms2_io -I${top_builddir}/fms
+AM_CPPFLAGS = -I${top_builddir}/.mod
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
@@ -66,6 +66,6 @@ endif
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
-	            netcdf_version_skip=${skipflag}
+                    netcdf_version_skip=${skipflag}
 
 CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask

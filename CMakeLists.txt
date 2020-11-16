@@ -134,7 +134,7 @@ list(APPEND fms_fortran_src_files
   horiz_interp/horiz_interp.F90
   interpolator/interpolator.F90
   memutils/memutils.F90
-  monin_obukhov/monin_obukhov_kernel.F90
+  monin_obukhov/monin_obukhov_inter.F90
   monin_obukhov/monin_obukhov.F90
   mosaic/gradient.F90
   mosaic/grid.F90
@@ -149,7 +149,7 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
   platform/platform.F90
-  random_numbers/MersenneTwister.F90
+  random_numbers/mersennetwister.F90
   random_numbers/random_numbers.F90
   sat_vapor_pres/sat_vapor_pres_k.F90
   sat_vapor_pres/sat_vapor_pres.F90
