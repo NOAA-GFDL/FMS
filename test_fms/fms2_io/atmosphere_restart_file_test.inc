@@ -51,6 +51,8 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
   character(len=256) :: att
   character(len=256), dimension(:), allocatable :: buffer
   character(len=256), dimension(:), allocatable :: buffer2
+  character(len=256) :: str_buffer
+  character(len=256) :: str_buffer2
   logical :: debug
   integer :: err
   integer :: i
@@ -304,12 +306,12 @@ subroutine atmosphere_restart_file(domain, nz, nt, debug_flag)
       call mpp_error(fatal, "Did not read in strings correctly.")
     endif
   enddo
-  call read_data(fileobj, "strings", buffer2(1), corner=ndims)
-  if (trim(buffer2(1)) .ne. trim(buffer(ndims))) then
+  call read_data(fileobj, "strings", str_buffer, corner=ndims)
+  if (trim(str_buffer) .ne. trim(buffer(ndims))) then
     call mpp_error(fatal, "Scalar from array of strings read failed.")
   endif
-  call read_data(fileobj, "filename", buffer2(ndims))
-  if (trim(buffer2(ndims)) .ne. "file1.nc") then
+  call read_data(fileobj, "filename", str_buffer2)
+  if (trim(str_buffer2) .ne. "file1.nc") then
     call mpp_error(fatal, "Did not read in filename variable correctly.")
   endif
   deallocate(buffer)
