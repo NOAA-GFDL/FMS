@@ -531,7 +531,7 @@ return
      integer, optional, intent(out) :: pelist(:)
 
      if(present(root_pe)) root_pe = domain%tile_root_pe
-     if(present(npes)) root_pe = domain%tile_npes
+     if(present(npes)) npes = domain%tile_npes
 
      if(present(pelist)) then
         if( size(pelist(:)).NE. domain%tile_npes ) &
