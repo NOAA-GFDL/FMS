@@ -556,21 +556,21 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                        fileobj%restart_vars(i)%data2d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum, str_len=len(chksum))
+                                         "checksum", chksum(1:len(chksum)), str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data3d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum, str_len=len(chksum))
+                                         "checksum", chksum(1:len(chksum)), str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data4d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum, str_len=len(chksum))
+                                         "checksum", chksum(1:len(chksum)), str_len=len(chksum))
       endif
     endif
   enddo
@@ -643,7 +643,7 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
       if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
           is_decomposed) then
         call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                    "checksum", chksum_in_file)
+                                    "checksum", chksum_in_file(1:len(chksum_in_file)))
         if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
           call error("checksum attribute does not match data in file.")
         endif
