@@ -1,3 +1,0 @@
-&diag_manager_nml
-use_mpp_io = .false.
-/
