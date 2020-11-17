@@ -23,6 +23,11 @@
 # This directory stores libtool macros, put there by aclocal.
 ACLOCAL_AMFLAGS = -I m4
 
+# Directory to place all .mod files.  Convienient place to look for these
+# files.
+MODDIR := .mod
+$(shell test -d $(MODDIR) || mkdir -p $(MODDIR))
+
 # Does the user want to build documentation?
 if BUILD_DOCS
 DOCS = docs
@@ -66,3 +71,6 @@ pkgconfig_DATA = FMS.pc
 EXTRA_DIST = README.md #_package_init_cmake
 
 CLEANFILES = *__genmod.mod *__genmod.f90
+
+clean-local:
+	-rm -rf .mod

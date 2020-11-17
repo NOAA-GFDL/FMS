@@ -38,8 +38,7 @@ include/register_variable_attribute.inc					\
 include/unstructured_domain_write.inc
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_srcdir}/fms2_io/include
+AM_CPPFLAGS = -I${top_srcdir}/fms2_io/include -I${top_builddir}/.mod
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfms2_io.la libfms_io_utils.la libnetcdf_io.la	\
@@ -79,3 +78,11 @@ BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
 
 CLEANFILES = *.mod
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
