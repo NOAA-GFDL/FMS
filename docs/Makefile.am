@@ -21,10 +21,11 @@
 # subdirectory.
 
 # Ed Hartnett 6/25/20
+# Ryan Mulhall 12/1/20
 
 # Run doxygen.
 all:
-	doxygen Doxyfile
+	doxygen doxyfile
 	cat doxywarn.log
 # Confirm warning log file is empty.
 #	[ ! -s doxywarn.log ]
@@ -33,4 +34,4 @@ check: all
 
 CLEANFILES = *.log
 
-EXTRA_DIST = Doxyfile.in
+EXTRA_DIST = doxyfile
