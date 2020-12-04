@@ -46,7 +46,7 @@ The fms2_io unit tests were modified so they can work with the AOCC compiler
 - FMS2_IO: Adds support to read netcdf string global attributes
 - FMS2_IO: Adds an optional argument to open_file, `dont_add_res_to_filename`, which indicates that the filename should not be modified (default adds .res to restart file name)
 - FMS2_IO: Modifies the `register_variable_attribute` and `register_global_attribute` interfaces by adding str_len as an argument. This is a workaround to get fms2io to work with PGI because they don't support class (*) with len=*.
-- FMS2_IO: Adds unit test that tests `write_data` and `read_data` when using a domain with a mask table 
+- FMS2_IO: Adds unit test that tests `write_data` and `read_data` when using a domain with a mask table
 - FMS2_IO: Adds fms2io’s version of get_mosaic_tile_grid
 - MPP_IO: Adds `-Duse_mpp_io` compile option for data_override, interpolator, amip_interp, diag_manager, topography, and xgrid to select using mpp_io instead of fms2_io
 - MPP_INIT: Adds unit tests for routines/functions that are called in mpp_init
@@ -57,9 +57,9 @@ The fms2_io unit tests were modified so they can work with the AOCC compiler
 
 ### Fixed
 - DATA_OVERRIDE[2]: Fixes a crash when doing ongrid data_override calls with a domain with halos
-- DIAG_MANAGER[2]: Fixes an issue where time_bnds were written incorrectly for the last time stamp 
+- DIAG_MANAGER[2]: Fixes an issue where time_bnds were written incorrectly for the last time stamp
 - DIAG_MANAGER: Regional diagnostics with a mask table now work
-- FMS2_IO: Unit test includes fms2io_init call to improve functionality 
+- FMS2_IO: Unit test includes fms2io_init call to improve functionality
 - MPP: BOZ literals that are used in variable declaration are converted to integers using the int() function.
 - MPP_DOMAINS2: Fixed unit test
 - FMS_IO: Changes the logic in get_tile_string to fix bug where tile numbers 9 and 99 produce an inappropriate error
@@ -86,7 +86,7 @@ The fms2_io unit tests were modified so they can work with the AOCC compiler
 
 ### Removed
 - GENERAL:  References to the macro _ALLOCATABLE have been replaced with “allocatable”, _ALLOCATED has been replaced with “allocated”, and _NULL has been removed.  It is now assumed that all compilers support the Fortran 2003 standard.  The macros still exist in fms_platforms.h for compatibility within other components.
-- DIAG_MANAGER:  “fms_platform.h” is no longer included in any of the diag_manager routines.  Instead, fms_platform_mod is now being use-associated where necessary.  This fixes an issue for debuggers not providing correct line numbers. 
+- DIAG_MANAGER:  “fms_platform.h” is no longer included in any of the diag_manager routines.  Instead, fms_platform_mod is now being use-associated where necessary.  This fixes an issue for debuggers not providing correct line numbers.
 
 ### Tag Commit Hashes
 - 2020.02-beta1 (bbc6f8d33cfb75a411bbcd3f8423fa74b8b7cdfd)
