@@ -25,7 +25,7 @@
 
 # Run doxygen.
 all:
-	doxygen doxyfile
+	doxygen Doxyfile
 	cat doxywarn.log
 # Confirm warning log file is empty.
 #	[ ! -s doxywarn.log ]
@@ -34,4 +34,4 @@ check: all
 
 CLEANFILES = *.log
 
-EXTRA_DIST = doxyfile
+EXTRA_DIST = Doxyfile
