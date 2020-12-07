@@ -23,11 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/time_manager
-AM_CPPFLAGS += -I${top_builddir}/constants
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libcolumn_diagnostics.la
@@ -39,5 +35,13 @@ libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90
 column_diagnostics_mod.mod: column_diagnostics.lo
 BUILT_SOURCES = column_diagnostics_mod.mod
 include_HEADERS = column_diagnostics_mod.mod
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

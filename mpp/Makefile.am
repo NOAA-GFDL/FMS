@@ -42,8 +42,7 @@ include/mpp_io_read.inc include/mpp_io_util.inc				\
 include/mpp_sum_ad.inc include/mpp_unstruct_domain.inc
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_srcdir}/mpp/include
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include -I${top_srcdir}/mpp/include
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la \
@@ -88,5 +87,13 @@ mpp_utilities_mod.mod mpp_memutils_mod.mod			\
 mpp_efp_mod.mod mpp_domains_mod.mod mpp_io_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

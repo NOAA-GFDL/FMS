@@ -20,9 +20,7 @@
 # @uramirez, Ed Hartnett, @underwoo
 
 # Find the needed mod and inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include \
-  -I${top_builddir}/mpp \
-  -I${top_builddir}/affinity
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
@@ -120,3 +118,4 @@ EXTRA_DIST = input_base.nml \
 # Clean up
 CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
              include_files_mod.mod ascii* test_numb*
+

@@ -74,6 +74,8 @@ integer(kind=int64) :: var11_chksum
 integer(kind=int64) :: chksum
 character(len=256), dimension(:), allocatable :: string_buffer
 character(len=256), dimension(:), allocatable :: string_buffer2
+character(len=256) :: string_buffer3
+character(len=256) :: string_buffer4
 integer :: i
 integer :: ndims
 integer, dimension(:), allocatable :: dim_sizes
@@ -407,12 +409,12 @@ do i = 1, ndims
     call mpp_error(fatal, "Did not read in strings correctly.")
   endif
 enddo
-call read_data(fileobj, "var3", string_buffer2(1), corner=ndims)
-if (trim(string_buffer2(1)) .ne. trim(string_buffer(ndims))) then
+call read_data(fileobj, "var3", string_buffer3, corner=ndims)
+if (trim(string_buffer3) .ne. trim(string_buffer(ndims))) then
   call mpp_error(fatal, "Scalar from array of strings read failed.")
 endif
-call read_data(fileobj, "var2", string_buffer2(ndims))
-if (trim(string_buffer2(ndims)) .ne. "file1.nc") then
+call read_data(fileobj, "var2", string_buffer4)
+if (trim(string_buffer4) .ne. "file1.nc") then
   call mpp_error(fatal, "Did not read in filename variable correctly.")
 endif
 deallocate(string_buffer)

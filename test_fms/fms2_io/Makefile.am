@@ -23,16 +23,17 @@
 # J.Liptak, R.Menzel, U.Ramirez
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms2_io -I${top_builddir}/fms
+AM_CPPFLAGS = -I${top_builddir}/.mod
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
+check_PROGRAMS = test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
                  test_get_mosaic_tile_grid
 
 # This is the source code for the test.
+test_get_is_valid_SOURCES = test_get_is_valid.F90
 test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90 create_atmosphere_domain.inc \
                        create_land_domain.inc create_ocean_domain.inc \
                        ocean_restart_file_test.inc land_compressed_restart_file_test.inc \
@@ -56,7 +57,15 @@ test_fms2_io.$(OBJEXT): argparse.mod
 # Run the test program.
 TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
 
+# skips tests that fail if using netCDF 4.7.4
+if SKIP_FMS2_IO_TESTS
+skipflag="skip"
+else
+skipflag=""
+endif
+
 # Set srcdir as evironment variable to be reference in the job script
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
+                    netcdf_version_skip=${skipflag}
 
 CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask

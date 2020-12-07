@@ -88,8 +88,14 @@ setup_test 20 "Test 20: Get diag_field_id, ID found and not found"
 setup_test 21 "Test 21: Add axis attributes"
 setup_test 22 "Test 22: Get 'nv' axis id"
 setup_test 23 "Test 23: Unstructured grid"
-echo Run with mpp_io
+
+echo "Test 24: Modified diag_table"
 rm -f input.nml diag_table
+touch input.nml
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_24 diag_table
+run_test test_diag_manager_time 1
+
+echo Run with mpp_io
 setup_test_mppio 1 "Test 1: Data array is too large in x and y direction"
 setup_test_mppio 2 "Test 2: Data array is too large in x direction"
 setup_test_mppio 3 "Test 3: Data array is too large in y direction"

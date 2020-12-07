@@ -23,8 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libtridiagonal.la
@@ -36,5 +35,13 @@ libtridiagonal_la_SOURCES = tridiagonal.F90
 tridiagonal_mod.mod: tridiagonal.lo
 BUILT_SOURCES = tridiagonal_mod.mod
 include_HEADERS = tridiagonal_mod.mod
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

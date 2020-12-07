@@ -23,10 +23,7 @@
 # Ed Hartnett 2/28/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build these uninstalled convenience library.
 noinst_LTLIBRARIES = libsat_vapor_pres_k.la libsat_vapor_pres.la
@@ -46,5 +43,13 @@ sat_vapor_pres.lo: sat_vapor_pres_k_mod.mod
 MODFILES = sat_vapor_pres_k_mod.mod sat_vapor_pres_mod.mod
 BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

@@ -22,23 +22,17 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include \
-  -I${top_builddir}/mpp	\
-  -I${top_builddir}/fms \
-  -I${top_builddir}/axis_utils \
-  -I${top_builddir}/diag_manager \
-  -I${top_builddir}/time_manager \
-  -I${top_builddir}/constants \
-  -I${top_builddir}/platform
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_diag_manager
+check_PROGRAMS = test_diag_manager test_diag_manager_time
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
+test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 
 # Run the test.
 TESTS = test_diag_manager2.sh

@@ -41,6 +41,9 @@ printf "&test_data_override_ongrid_nml \n nhalox=0 \n nhaloy=0\n/" | cat > input
 run_test test_data_override_ongrid 6
 rm -rf "INPUT"
 
+# Run the get_grid_v1 test:
+run_test test_get_grid_v1 1
+
 # Copy to builddir and rename data files for tests.
 #cp $top_srcdir/test_fms/data_override/data_table_base data_table
 #cp $top_srcdir/test_fms/data_override/diag_table_base diag_table
