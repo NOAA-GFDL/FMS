@@ -829,14 +829,10 @@ integer :: domain_size, axis_length, axis_pos
   !   </IN>
   !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL">Standard name of field</IN>
   !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL" />
-<<<<<<< HEAD
   !> @brief Write the field meta data to file.
   !! @return diag_fieldtype Field
   !! @details The meta data for the field is written to the file indicated by file_unit
-  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
-=======
   FUNCTION write_field_meta_data_fms2_io ( file_unit, name, axes, units, long_name, range, pack, mval,&
->>>>>>> upstream/master
        & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
        & use_UGdomain, fileob) result ( Field )
     INTEGER, INTENT(in) :: file_unit !< Output file unit number
@@ -1367,13 +1363,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !   <DESCRIPTION>
   !     Registers the time axis, and opens the file for output.
   !   </DESCRIPTION>
-<<<<<<< HEAD
-  !   <IN NAME="num" TYPE="INTEGER"></IN>
-  !> @brief Return the axis index number.
-  !! @return Integer index
-  FUNCTION get_axis_index(num) RESULT ( index )
-    INTEGER, INTENT(in) :: num
-=======
   !   <IN NAME="file_name" TYPE="CHARACTER(len=*)">Output file name</IN>
   !   <IN NAME="format" TYPE="INTEGER">File format (Currently only 'NETCDF' is valid)</IN>
   !   <IN NAME="file_title" TYPE="CHARACTER(len=*)">Descriptive title for the file</IN>
@@ -1393,7 +1382,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     TYPE(domain2d)  , INTENT(in)  :: domain
     TYPE(diag_atttype), INTENT(in), DIMENSION(:), OPTIONAL :: attributes
     TYPE(domainUG), INTENT(in)    :: domainU
->>>>>>> upstream/master
 
     INTEGER :: form, threading, fileset, i
     TYPE(diag_global_att_type) :: gAtt
@@ -1405,22 +1393,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
        CALL write_version_number("DIAG_OUTPUT_MOD", version)
     END IF
 
-<<<<<<< HEAD
-  ! <SUBROUTINE NAME="get_diag_global_att">
-  !   <OVERVIEW>
-  !     Return the global attribute type.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     CALL get_diag_global_att(gAtt)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return the global attribute type.
-  !   </DESCRIPTION>
-  !   <OUT NAME="gAtt" TYPE="TYPE(diag_global_att_type"></OUT>
-  !> @brief Return the global attribute type.
-  SUBROUTINE get_diag_global_att(gAtt)
-    TYPE(diag_global_att_type), INTENT(out) :: gAtt
-=======
     !---- set up output file ----
     SELECT CASE (FORMAT)
     CASE (NETCDF1)
@@ -1431,7 +1403,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
        ! <ERROR STATUS="FATAL">invalid format</ERROR>
        CALL error_mesg('diag_output_init', 'invalid format', FATAL)
     END SELECT
->>>>>>> upstream/master
 
     IF(all_scalar_or_1d) THEN
        threading = MPP_SINGLE
@@ -1495,17 +1466,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !   <TEMPLATE>
   !     SUBROUTINE write_axis_meta_data(file_unit, axes, time_ops)
   !   </TEMPLATE>
-<<<<<<< HEAD
-  !   <DESCRIPTION>
-  !     Set the global attribute type.
-  !   </DESCRIPTION>
-  !   <IN NAME="component" TYPE="CHARACTER(len=*)"></IN>
-  !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
-  !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
-  !> @brief Set the global attribute type.
-  SUBROUTINE set_diag_global_att(component, gridType, tileName)
-    CHARACTER(len=*),INTENT(in) :: component, gridType, tileName
-=======
   !   <IN NAME="file_unit" TYPE="INTEGER">File unit number</IN>
   !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Array of axis ID's, including the time axis</IN>
   !   <IN NAME="time_ops" TYPE="LOGICAL, OPTIONAL">
@@ -1514,7 +1474,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   SUBROUTINE write_axis_meta_data_use_mpp_io(file_unit, axes, time_ops)
     INTEGER, INTENT(in) :: file_unit, axes(:)
     LOGICAL, INTENT(in), OPTIONAL :: time_ops
->>>>>>> upstream/master
 
     TYPE(domain1d)       :: Domain
 
@@ -2197,6 +2156,8 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !     Return the axis index number.
   !   </DESCRIPTION>
   !   <IN NAME="num" TYPE="INTEGER"></IN>
+  !> @brief Return the axis index number.
+  !! @return Integer index
   FUNCTION get_axis_index(num) RESULT ( index )
     INTEGER, INTENT(in) :: num
 
@@ -2227,6 +2188,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !     Return the global attribute type.
   !   </DESCRIPTION>
   !   <OUT NAME="gAtt" TYPE="TYPE(diag_global_att_type"></OUT>
+  !> @brief Return the global attribute type.
   SUBROUTINE get_diag_global_att(gAtt)
     TYPE(diag_global_att_type), INTENT(out) :: gAtt
 
@@ -2247,6 +2209,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   !   <IN NAME="component" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="gridType" TYPE="CHARACTER(len=*)"></IN>
   !   <IN NAME="tileName" TYPE="CHARACTER(len=*)"></IN>
+  !> @brief Set the global attribute type.
   SUBROUTINE set_diag_global_att(component, gridType, tileName)
     CHARACTER(len=*),INTENT(in) :: component, gridType, tileName
 
