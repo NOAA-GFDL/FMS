@@ -7,14 +7,14 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 sequential patch number (starting from `01`).
 ## [2020.04] - 2020-12-07
 ### Added
-- DIAG_MANAGER: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- DIAG_MANAGER: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io. The default is .false. and will use fms2_io.
 - DIAG_MANAGER: A check is added before a time axis is registered to check if the time axis is registered as a variable
 - DIAG_MANAGER: A unit test was added to test the optional `new_file_freq` functionality
 - XGRID: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
-- INTERPOLATOR: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
-- AMIP_INTERP: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
-- TOPOGRAPHY: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
-- DATA_OVERRIDE: A namelist flag called `use_mpp_bug` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- INTERPOLATOR: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io. The default is .false. and will use fms2_io.
+- AMIP_INTERP: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io. The default is .false. and will use fms2_io.
+- TOPOGRAPHY: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io. The default is .false. and will use fms2_io.
+- DATA_OVERRIDE: A namelist flag called `use_mpp_bug` if set to .true. will use mpp_io. The default is .false. and will use fms2_io.
 - DATA_OVERRIDE: A namelist flag called `reproduce_null_char_bug_flag` if set to .true. and fms2_io is being used, it will reproduce the mpp_io bug where the axis bounds were calculated instead of read. The default is .false. 
 A unit test was added to test the functionality of `get_grid_version_1`
 - FMS2_IO: A unit test was added to test the functionality of `get_valid` and `is_valid`
@@ -23,8 +23,9 @@ A unit test was added to test the functionality of `get_grid_version_1`
 - Use F90 module files for external libraries (MPI and NetCDF) for improved interface checking, thereby removing the reliance on library header include files.
 ### Removed
 - LIBFMS: The flag -Duse_mpp_io should not be used and will cause a crash
-- LIBFMS: Macros and logic for interfacing to the Flexible FIle I/O library
-- LIBFMS: Macros for SGI MIPSpro compilers, including: mpp_node function, SGI Irix specific high resolution timer, Macros for IBM AIX compilers
+- LIBFMS: Macros and logic for interfacing to the Flexible File I/O library
+- LIBFMS: Macros for SGI MIPSpro compilers, including: mpp_node function and SGI Irix specific high resolution timer
+- LIBFMS: Macros for IBM AIX compilers
 - LIBFMS: Files in mpp supporting the CRAY SHMEM communications library
 - LIBFMS: Files in mpp for the SGI PSET approach for communication via GSM
 ### Fixed
