@@ -23,10 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/field_manager
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libtracer_manager.la
@@ -38,5 +35,13 @@ libtracer_manager_la_SOURCES = tracer_manager.F90
 tracer_manager_mod.mod: tracer_manager.lo
 BUILT_SOURCES = tracer_manager_mod.mod
 include_HEADERS = tracer_manager_mod.mod
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

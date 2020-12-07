@@ -29,5 +29,4 @@
 touch input.nml
 
 # run the tests
-run_test test_global_att 1
-
+run_test test_global_att 1 $netcdf_version_skip

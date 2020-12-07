@@ -1,0 +1,8 @@
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"ocn%4yr%2mo%2dy%2hr",      1,  "days", 1, "days", "time", 1, "days", "2 1 1 0 0 0"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "ocn%4yr%2mo%2dy%2hr",  "all", .true., "none", 2

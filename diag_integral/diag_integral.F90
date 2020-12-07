@@ -218,7 +218,6 @@ integer             ::    &
        fields_per_print_line = 4   !< number of fields to write per line
                                    !! of output
 
-
 namelist / diag_integral_nml /      &
                                 output_interval, time_units,  &
                                 file_name, print_header, &
@@ -388,10 +387,10 @@ real,dimension(:,:), intent(in), optional :: area_in
 !-------------------------------------------------------------------------------
 !    read namelist.
 !-------------------------------------------------------------------------------
-      if ( file_exists('input.nml')) then
+    if ( file_exists('input.nml')) then
         read (input_nml_file, nml=diag_integral_nml, iostat=io)
         ierr = check_nml_error(io,'diag_integral_nml')
-      endif
+    endif
 
 !-------------------------------------------------------------------------------
 !    write version number and namelist to logfile.

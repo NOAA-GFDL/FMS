@@ -28,7 +28,7 @@ lib_LTLIBRARIES = libFMS.la
 # These linker flags specify libtool version info.
 # See http://www.gnu.org/software/libtool/manual/libtool.html#Libtool-versioning
 # for information regarding incrementing `-version-info`.
-libFMS_la_LDFLAGS = -version-info 4:0:0
+libFMS_la_LDFLAGS = -version-info 5:0:0
 
 # Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = ${top_builddir}/platform/libplatform.la
@@ -40,9 +40,7 @@ libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_data.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_utilities.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_domains.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_io.la
-libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_pset.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_efp.la
-libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_c.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_memutils.la
 libFMS_la_LIBADD += ${top_builddir}/mpp/libmpp_memuse_c.la
 libFMS_la_LIBADD += ${top_builddir}/memutils/libmemutils.la
@@ -92,6 +90,8 @@ libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_util.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_table.la
 libFMS_la_LIBADD += ${top_builddir}/diag_manager/libdiag_manager.la
 libFMS_la_LIBADD += ${top_builddir}/diag_integral/libdiag_integral.la
+libFMS_la_LIBADD += ${top_builddir}/data_override/libget_grid_version_mpp.la
+libFMS_la_LIBADD += ${top_builddir}/data_override/libget_grid_version_fms2io.la
 libFMS_la_LIBADD += ${top_builddir}/data_override/libdata_override.la
 libFMS_la_LIBADD += ${top_builddir}/column_diagnostics/libcolumn_diagnostics.la
 libFMS_la_LIBADD += ${top_builddir}/block_control/libblock_control.la
@@ -99,7 +99,7 @@ libFMS_la_LIBADD += ${top_builddir}/astronomy/libastronomy.la
 libFMS_la_LIBADD += ${top_builddir}/field_manager/libfield_manager.la
 libFMS_la_LIBADD += ${top_builddir}/field_manager/libfm_util.la
 libFMS_la_LIBADD += ${top_builddir}/monin_obukhov/libmonin_obukhov.la
-libFMS_la_LIBADD += ${top_builddir}/monin_obukhov/libmonin_obukhov_kernel.la
+libFMS_la_LIBADD += ${top_builddir}/monin_obukhov/libmonin_obukhov_inter.la
 libFMS_la_LIBADD += ${top_builddir}/interpolator/libinterpolator.la
 libFMS_la_LIBADD += ${top_builddir}/amip_interp/libamip_interp.la
 libFMS_la_LIBADD += ${top_builddir}/exchange/libstock_constants.la
@@ -108,7 +108,7 @@ libFMS_la_LIBADD += ${top_builddir}/topography/libtopography.la
 libFMS_la_LIBADD += ${top_builddir}/tracer_manager/libtracer_manager.la
 libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres_k.la
 libFMS_la_LIBADD += ${top_builddir}/sat_vapor_pres/libsat_vapor_pres.la
-libFMS_la_LIBADD += ${top_builddir}/random_numbers/libMersenneTwister.la
+libFMS_la_LIBADD += ${top_builddir}/random_numbers/libmersennetwister.la
 libFMS_la_LIBADD += ${top_builddir}/random_numbers/librandom_numbers.la
 
 # At least one source file must be included to please Automake.

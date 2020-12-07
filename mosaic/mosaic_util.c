@@ -44,12 +44,10 @@ void set_reproduce_siena_true(void)
   reproduce_siena = 1;
 }
 
-#ifndef __AIX
 void set_reproduce_siena_true_(void)
 {
   reproduce_siena = 1;
 }
-#endif
 
 
 void error_handler(const char *msg)
@@ -1374,7 +1372,6 @@ int inside_a_polygon(double *lon1, double *lat1, int *npts, double *lon2, double
 
 }
 
-#ifndef __AIX
 int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2)
 {
 
@@ -1385,4 +1382,3 @@ int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, doubl
   return isinside;
 
 }
-#endif

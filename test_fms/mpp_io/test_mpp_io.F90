@@ -37,17 +37,20 @@ program test
   USE mpp_mod, ONLY: input_nml_file
 #endif
 
-  implicit none
-
 #ifdef use_netCDF
-#include <netcdf.inc>
+  use netcdf
+  use netcdf_nf_data
+  use netcdf_nf_interfaces
+  use netcdf4_nf_interfaces
 #endif
+
+  implicit none
 
   !--- namelist definition
   integer           :: nx=360, ny=200, nz=50, nt=2
   integer           :: halo=2, stackmax=1500000, stackmaxd=2000000
   logical           :: debug=.FALSE.
-  character(len=64) :: file='test', iospec='-F cachea'
+  character(len=64) :: file='test'
   integer           :: layout(2) = (/1,1/)
   integer           :: ntiles_x=1, ntiles_y=1  ! total number of tiles will be ntiles_x*ntiles_y,
                                                ! the grid size for each tile will be (nx/ntiles_x, ny/ntiles_y)
@@ -56,7 +59,7 @@ program test
                                                ! group and write out data from the root pe of each group.
   integer           :: pack_size = 1
 
-  namelist / test_mpp_io_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, iospec, &
+  namelist / test_mpp_io_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, &
                                ntiles_x, ntiles_y, layout, io_layout
 
   integer        :: pe, npes, io_status

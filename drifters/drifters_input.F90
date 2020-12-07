@@ -39,11 +39,11 @@ module drifters_input_mod
      ! when adding members
      character(len=MAX_STR_LEN), allocatable :: position_names(:)
      character(len=MAX_STR_LEN), allocatable :: position_units(:)
-     character(len=MAX_STR_LEN), allocatable :: field_names(:)   
-     character(len=MAX_STR_LEN), allocatable :: field_units(:)   
+     character(len=MAX_STR_LEN), allocatable :: field_names(:)
+     character(len=MAX_STR_LEN), allocatable :: field_units(:)
      character(len=MAX_STR_LEN), allocatable :: velocity_names(:)
      real                      , allocatable :: positions(:,:)
-     integer                   , allocatable :: ids(:)        
+     integer                   , allocatable :: ids(:)
      character(len=MAX_STR_LEN)               :: time_units
      character(len=MAX_STR_LEN)               :: title
      character(len=MAX_STR_LEN)               :: version
@@ -59,6 +59,9 @@ module drifters_input_mod
 !===============================================================================
 
   subroutine drifters_input_new(self, filename, ermesg)
+    use netcdf
+    use netcdf_nf_data
+    use netcdf_nf_interfaces
     type(drifters_input_type)    :: self
     character(len=*), intent(in) :: filename
     character(len=*), intent(out):: ermesg
@@ -66,7 +69,6 @@ module drifters_input_mod
     ! Local
     integer :: ier, ncid, nd, nf, np, ipos, j, id, i, isz
     character(len=MAX_STR_LEN) :: attribute
-    include 'netcdf.inc'
 
     ermesg = ''
 
@@ -130,7 +132,7 @@ module drifters_input_mod
        ier = nf_close(ncid)
        return
     endif
-    ier = NF_GET_VAR_DOUBLE(NCID, id, self%positions)
+    ier = NF90_GET_VAR(NCID, id, self%positions)
 
     attribute = ''
     ier = nf_get_att_text(ncid, NF_GLOBAL, 'version', attribute)
@@ -270,16 +272,19 @@ module drifters_input_mod
   !> @brief save state in netcdf file. can be used as restart file.
   subroutine drifters_input_save(self, filename, geolon, geolat, ermesg)
     ! save state in netcdf file. can be used as restart file.
+    use netcdf
+    use netcdf_nf_data
+    use netcdf_nf_interfaces
     type(drifters_input_type)    :: self
     character(len=*), intent(in ):: filename
     real, intent(in), optional   :: geolon(:), geolat(:)
     character(len=*), intent(out):: ermesg
 
+
     integer ncid, nc_nd, nc_np, ier, nd, np, nf, nc_pos, nc_ids, i, j, n
     integer nc_lon, nc_lat
     character(len=MAX_STR_LEN) :: att
 
-    include 'netcdf.inc'
 
     ermesg = ''
 
@@ -404,21 +409,21 @@ module drifters_input_mod
          & //nf_strerror(ier)
 
     ! data
-    ier = nf_put_var_double(ncid, nc_pos, self%positions)
+    ier = nf90_put_var(ncid, nc_pos, self%positions)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "positions" ' &
          & //nf_strerror(ier)
 
-    ier = nf_put_var_int(ncid, nc_ids, self%ids)
+    ier = nf90_put_var(ncid, nc_ids, self%ids)
     if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "ids" ' &
          & //nf_strerror(ier)
 
     if(present(geolon)) then
-       ier = nf_put_var_double(ncid, nc_lon, geolon)
+       ier = nf90_put_var(ncid, nc_lon, geolon)
        if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "geolon" ' &
             & //nf_strerror(ier)
     endif
     if(present(geolat)) then
-       ier = nf_put_var_double(ncid, nc_lat, geolat)
+       ier = nf90_put_var(ncid, nc_lat, geolat)
        if(ier/=NF_NOERR) ermesg = 'drifters_input_save: ERROR could not write "geolat" ' &
             & //nf_strerror(ier)
     endif

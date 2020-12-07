@@ -560,7 +560,6 @@ type (field_def), pointer        :: root_p             => NULL()
 type (field_def), pointer        :: save_root_parent_p => NULL()
 type (field_def), target, save   :: root
 
-
 contains
 
 ! <SUBROUTINE NAME="field_manager_init">
@@ -662,19 +661,18 @@ if (.not.PRESENT(table_name)) then
 else
    tbl_name = trim(table_name)
 endif
-
 if (.not. file_exists(trim(tbl_name))) then
 !   <ERROR MSG="No field table available, so no fields are being registered." STATUS="NOTE">
 !      The field table does not exist.
 !   </ERROR>
-if (mpp_pe() == mpp_root_pe()) then
-  if (verb .gt. verb_level_warn) then
-    call mpp_error(NOTE, trim(warn_header)//                       &
+  if (mpp_pe() == mpp_root_pe()) then
+    if (verb .gt. verb_level_warn) then
+      call mpp_error(NOTE, trim(warn_header)//                       &
          'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
+    endif
   endif
-endif
 if(present(nfields)) nfields = 0
-return
+  return
 endif
 
 iunit = get_unit()

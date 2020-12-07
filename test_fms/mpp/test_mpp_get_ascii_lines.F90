@@ -46,8 +46,11 @@ program test_get_ascii_lines
   character(len=INPUT_STR_LENGTH), allocatable :: file_contents(:)
   namelist /test_mpp_get_ascii_lines_nml/ test_number
 
+  open(30, file="test_numb2.nml", form="formatted", status="old")
+  read(30, nml = test_mpp_get_ascii_lines_nml)
+  close(30)
+
   call mpp_init(test_level=mpp_init_test_logfile_init)
-  read (input_nml_file, test_mpp_get_ascii_lines_nml, iostat=io_status)
   my_num_lines(test_number) = my_num_lines(test_number)+1 !!!!! Please See Note At End of File
   f_num_lines = get_ascii_file_num_lines(trim(file_name(test_number)), INPUT_STR_LENGTH)
   call assertEquals(f_num_lines, my_num_lines(test_number), trim(test_name(test_number)))

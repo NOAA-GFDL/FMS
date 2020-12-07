@@ -139,8 +139,6 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
-  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
-  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -152,7 +150,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos, extra_x_point=extra_x_point, extra_y_point=extra_y_point)
+                      buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -170,12 +168,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
-
-    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
-    if (extra_x_point) xgmax = xgmax + 1
-    if (extra_y_point) ygmax = ygmax + 1
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !Write the out the data.
     !< Set e to equal the size of the global io domain
@@ -439,8 +433,6 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
-  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
-  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -452,7 +444,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos, extra_x_point=extra_x_point, extra_y_point=extra_y_point)
+                      buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -470,12 +462,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
-
-    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
-    if (extra_x_point) xgmax = xgmax + 1
-    if (extra_y_point) ygmax = ygmax + 1
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !Write the out the data.
     !< Set e to equal the size of the global io domain
@@ -739,8 +727,6 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
-  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
-  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -752,7 +738,7 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos, extra_x_point=extra_x_point, extra_y_point=extra_y_point)
+                      buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -770,12 +756,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
-
-    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
-    if (extra_x_point) xgmax = xgmax + 1
-    if (extra_y_point) ygmax = ygmax + 1
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !Write the out the data.
     !< Set e to equal the size of the global io domain
@@ -1039,8 +1021,6 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
-  logical :: extra_x_point !< if .true. it indicates that the x axis is "EAST"
-  logical :: extra_y_point !< if .true. it indicates that the y axis is "NORTH"
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -1052,7 +1032,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos, extra_x_point=extra_x_point, extra_y_point=extra_y_point)
+                      buffer_includes_halos)
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -1070,12 +1050,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                                  position=ypos)
 
     !< Determine the size of the global io domain
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax)
-
-    !< If the x/y axis is NORTH/EAST add 1 to the size of the global io domain
-    if (extra_x_point) xgmax = xgmax + 1
-    if (extra_y_point) ygmax = ygmax + 1
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, yend=ygmax, position=ypos)
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xend=xgmax, position=xpos)
 
     !Write the out the data.
     !< Set e to equal the size of the global io domain

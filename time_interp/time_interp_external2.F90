@@ -19,7 +19,6 @@
 
 
 module time_interp_external2_mod
-#include  <fms_platform.h>
 !
 !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
 !
@@ -47,9 +46,10 @@ module time_interp_external2_mod
 ! </DATA>
 !</NAMELIST>
 
+  use platform_mod, only : DOUBLE_KIND => r8_kind
   use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
-  use mpp_mod, only : input_nml_file
+  use mpp_mod, only : input_nml_file, mpp_npes, mpp_root_pe, mpp_broadcast, mpp_get_current_pelist
   use time_manager_mod, only : time_type, get_date, set_date, operator ( >= ) , operator ( + ) , days_in_month, &
                             operator( - ), operator ( / ) , days_in_year, increment_time, &
                             set_time, get_time, operator( > ), get_calendar_type, NO_CALENDAR
@@ -226,7 +226,7 @@ module time_interp_external2_mod
 
     function init_external_field(file,fieldname,domain,desired_units,&
          verbose,axis_names, axis_sizes,override,correct_leap_year_inconsistency,&
-         permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts )
+         permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts, ongrid )
 
       character(len=*), intent(in)            :: file,fieldname
       logical, intent(in), optional           :: verbose
@@ -239,6 +239,9 @@ module time_interp_external2_mod
       integer,          intent(out), optional :: ierr
       integer,          intent(in),  optional :: nwindows
       logical, optional                       :: ignore_axis_atts
+      logical, optional                       :: ongrid !< Optional flag indicating if the data is ongrid
+
+      logical :: ongrid_local !< Flag indicating if the data is ongrid
 
       integer :: init_external_field
 
@@ -263,6 +266,7 @@ module time_interp_external2_mod
       logical :: ignore_axatts
       logical :: have_modulo_time
       type(FmsNetcdfFile_t), pointer :: fileobj=>NULL()
+      integer, dimension(:), allocatable :: pes  !< List of ranks in the current pelist
 
       if (.not. module_initialized) call mpp_error(FATAL,'Must call time_interp_external_init first')
       if(present(ierr)) ierr = SUCCESS
@@ -334,8 +338,15 @@ module time_interp_external2_mod
       !--- get timebeg and timeend
       have_modulo_time = get_axis_modulo_times(fileobj, timename, timebeg, timeend)
 
+      allocate(pes(mpp_npes()))
+      call mpp_get_current_pelist(pes)
       allocate(tstamp(ntime),tstart(ntime),tend(ntime),tavg(ntime))
-      call read_data(fileobj, timename, tstamp)
+
+      !< Only root reads the unlimited dimension and broadcasts it to the other ranks
+      if (mpp_root_pe() .eq. mpp_pe()) call read_data(fileobj, timename, tstamp)
+      call mpp_broadcast(tstamp, size(tstamp), mpp_root_pe(), pelist=pes)
+      deallocate(pes)
+
       transpose_xy = .false.
       isdata=1; iedata=1; jsdata=1; jedata=1
       gxsize=1; gysize=1
@@ -346,6 +357,16 @@ module time_interp_external2_mod
          nx = iecomp-iscomp+1; ny = jecomp-jscomp+1
          call mpp_get_data_domain(domain,isdata,iedata,jsdata,jedata,dxsize,dxsize_max,dysize,dysize_max)
          call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
+         ongrid_local = .false.
+         if (present(ongrid)) ongrid_local = ongrid
+         !> If this is an ongrid case, set is[e]js[e]data to be equal to the compute domain.
+         !! This is what it is used to allocate space for the data!
+         if (ongrid_local) then
+              isdata=iscomp
+              iedata=iecomp
+              jsdata=jscomp
+              jedata=jecomp
+         endif
       elseif(use_comp_domain1) then
          call mpp_error(FATAL,"init_external_field:"//&
               " use_comp_domain=true but domain is not present")

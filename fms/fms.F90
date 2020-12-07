@@ -186,9 +186,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        open_file, open_direct_file, string, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
                        write_version_number
-
 use fms2_io_mod, only: fms2_io_init
-
 use memutils_mod, only: print_memuse_stats, memutils_init
 
 
@@ -258,7 +256,6 @@ integer, public :: clock_flag_default
   logical           :: read_all_pe   = .true.
   character(len=16) :: clock_grain = 'NONE', clock_flags='NONE'
   character(len=8)  :: warning_level = 'warning'
-  character(len=64) :: iospec_ieee32 = '-N ieee_32'
   integer           :: stack_size = 0
   integer           :: domains_stack_size = 0
   logical, public   :: print_memory_usage = .FALSE.
@@ -296,9 +293,6 @@ integer, public :: clock_flag_default
 !     error_mesg/mpp_error. set warning_level = 'fatal' (program crashes for
 !     warning messages) or 'warning' (prints warning message and continues).
 !   </DATA>
-!   <DATA NAME="iospec_ieee32"  TYPE="character"  DEFAULT="'-N ieee_32'">
-!     iospec flag used with the open_ieee32_file interface.
-!   </DATA>
 !   <DATA NAME="stack_size"  TYPE="integer"  DEFAULT="0">
 !     The size in words of the MPP user stack. If stack_size > 0, the following
 !     MPP routine is called: call mpp_set_stack_size (stack_size). If stack_size
@@ -318,9 +312,8 @@ integer, public :: clock_flag_default
 !   </DATA>
 ! </NAMELIST>
 
-  namelist /fms_nml/  read_all_pe, clock_grain, clock_flags,    &
-                      warning_level, iospec_ieee32, &
-                      stack_size, domains_stack_size, &
+  namelist /fms_nml/  read_all_pe, clock_grain, clock_flags,         &
+                      warning_level, stack_size, domains_stack_size, &
                       print_memory_usage
 
 !   ---- private data for check_nml_error ----
@@ -389,6 +382,7 @@ subroutine fms_init (localcomm )
 
  integer, intent(in), optional :: localcomm
  integer :: unit, ierr, io
+ integer :: logunitnum
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
@@ -401,6 +395,14 @@ subroutine fms_init (localcomm )
     call mpp_domains_init
     call fms_io_init
     call fms2_io_init ()
+    logunitnum = stdlog()
+#ifdef use_mpp_io
+    call mpp_error("fms_init","You are using mpp_io for your FMS modules",NOTE)
+    write (logunitnum,*)"You are using mpp_io for your FMS modules"
+#else
+    call mpp_error("fms_init","You are using fms2_io for your FMS modules",NOTE)
+    write (logunitnum,*)"You are using fms2_io for your FMS modules"
+#endif
 !---- read namelist input ----
 
     call nml_error_init  ! first initialize namelist iostat error codes
