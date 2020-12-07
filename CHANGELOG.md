@@ -5,7 +5,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0),
 and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is released,
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
-
+## [2020.04] - 2020-12-07
+### Added
+- DIAG_MANAGER: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- DIAG_MANAGER: A check is added before a time axis is registered to check if the time axis is registered as a variable
+- DIAG_MANAGER: A unit test was added to test the optional `new_file_freq` functionality
+- XGRID: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- INTERPOLATOR: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- AMIP_INTERP: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- TOPOGRAPHY: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- DATA_OVERRIDE: A namelist flag called `use_mpp_bug` if set to .true. will use mpp_io.  The default is .false. and will use fms2_io.
+- DATA_OVERRIDE: A namelist flag called `reproduce_null_char_bug_flag` if set to .true. and fms2_io is being used, it will reproduce the mpp_io bug where the axis bounds were calculated instead of read. The default is .false. 
+A unit test was added to test the functionality of `get_grid_version_1`
+- FMS2_IO: A unit test was added to test the functionality of `get_valid` and `is_valid`
+### Changed
+- The autotools build has been changed to copy each subdirectory module (.mod) files to a common .mod directory located at the top of the source directory.  This change simplifies the include path specifications. 
+- Use F90 module files for external libraries (MPI and NetCDF) for improved interface checking, thereby removing the reliance on library header include files.
+### Removed
+- LIBFMS: The flag -Duse_mpp_io should not be used and will cause a crash
+- LIBFMS: Macros and logic for interfacing to the Flexible FIle I/O library
+- LIBFMS: Macros for SGI MIPSpro compilers, including: mpp_node function, SGI Irix specific high resolution timer, Macros for IBM AIX compilers
+- LIBFMS: Files in mpp supporting the CRAY SHMEM communications library
+- LIBFMS: Files in mpp for the SGI PSET approach for communication via GSM
+### Fixed
+- DATA_OVERRIDE: Fixed a bug in `get_grid_version_1` where the variable_size calls were not correct
+- FMS2_IO: Fixed a bug in `get_valid` where the mpp_broadcast calls were done inside `if (root_pe)` blocks
+The fms2_io unit tests were modified so they can work with the AOCC compiler
+- XGRID: Fixed a bug in `load_xgrid` by checking if a dimension exists before calling `get_dimension_size` to avoid `FATAL: NetCDF: Invalid dimension ID or name` crashes
+### Tag Commit Hashes
+- 2020.04-alpha1 (2428bb182133b8062432ee1b15974739753ca470)
+- 2020.04-alpha2 (ad9915d83a2f34610cd748fd85889ba1f0f1fc02)
+- 2020.04-alpha3 (e7e48839ab25cc9405abe5d8418e1b6ee6fb2d69)
+- 2020.04-beta1 (6d3ac620423e7ede412e4bb1b36c338775d95193)
+ 
 ## [2020.03] - 2020-10-08
 ### Added
 - FMS2_IO: Adds header_buffer_val to the fms2io namelist which sets the netcdf header size in bytes. The default value is 16kb
