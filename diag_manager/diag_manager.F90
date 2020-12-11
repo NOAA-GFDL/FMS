@@ -3537,7 +3537,7 @@ CONTAINS
           CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, use_mpp_io_arg=use_mpp_io)
        else
           CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io)
+                 & use_mpp_io_arg=use_mpp_io, filename_time=output_fields(out_num)%last_output)
        endif
     ELSE
        if (output_fields(out_num)%n_diurnal_samples > 1) then
