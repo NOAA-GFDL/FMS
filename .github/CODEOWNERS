@@ -43,7 +43,6 @@ cmake            @mlee03 @ngs333
 
 # Testing files
 /.gitlab-ci.yml  @uramirez8707 @mlee03 @bensonr @thomas-robinson @wrongkindofdoctor @rem1776
-/.travis.yml     @uramirez8707 @mlee03 @bensonr @thomas-robinson @wrongkindofdoctor @rem1776
 /test_fms/       @uramirez8707 @mlee03 @bensonr @thomas-robinson @wrongkindofdoctor @rem1776
 
 # Specific component directories
