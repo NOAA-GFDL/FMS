@@ -2979,7 +2979,7 @@ CONTAINS
       CALL mpp_close(files(file)%file_unit)
       files(file)%file_unit = -1
     END IF
-   endif  !< use_mpp_io     
+   endif  !< use_mpp_io
   END SUBROUTINE write_static
   ! </SUBROUTINE>
 
