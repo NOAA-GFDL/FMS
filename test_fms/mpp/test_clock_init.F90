@@ -31,7 +31,7 @@ program test_clock_init
   integer :: ierr
 
   call mpp_init(test_level=mpp_init_test_init_true_only)
-  ! We cannot directly access the clock_init subroutine, 
+  ! We cannot directly access the clock_init subroutine,
   ! but we can use the mpp_clock_id function to call clock_init.
   write(*,*) "Testing simple clock"
   call create_and_check_clock("name1", 1) ! Simple name input clock init

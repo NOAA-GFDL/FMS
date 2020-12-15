@@ -266,7 +266,7 @@ fi
 AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
 if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
   AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], true )
-  AC_MSG_RESULT([yes]) 
+  AC_MSG_RESULT([yes])
 else
   AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], false )
   AC_MSG_RESULT([no])
