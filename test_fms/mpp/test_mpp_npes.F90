@@ -42,7 +42,7 @@ program test_mpp_npes
 !> Get the total number of PEs
  npes = mpp_npes()
 !> Check that the number of PEs matches the number used to run the program
- if (npes .ne. test_npes) then 
+ if (npes .ne. test_npes) then
      write(string_npes,*) npes
      call mpp_error(FATAL, "The number of PEs used to run the program is "&
      //env_pes//" but mpp_npes returned "//trim(string_npes) )

@@ -1561,7 +1561,7 @@ function get_valid(fileobj, variable_name) &
       scale_factor = 1._real64
     endif
     if (attribute_exists(fileobj%ncid, varid, "add_offset")) then
-      call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset, & 
+      call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset, &
                                   broadcast=.false.)
     else
       add_offset = 0._real64

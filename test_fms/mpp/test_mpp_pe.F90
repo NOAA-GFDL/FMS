@@ -20,7 +20,7 @@
 !> @description This test program is for testing the mpp_pe routine.  The
 !! test initializes mpp, then calls the integer function MPP_PE.  MPP_PE
 !! returns a positive integer value.  If the value returned by MPP_PE is
-!! less than 0, then an error is thrown. 
+!! less than 0, then an error is thrown.
 program test_mpp_p5
 
  use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, mpp_pe, mpp_npes, &
@@ -41,11 +41,11 @@ program test_mpp_p5
 !> Get the PE number
  my_mpp_pe = mpp_pe()
 !> Check that the PE number is between 0 and npes-1
- if (my_mpp_pe < 0) then 
+ if (my_mpp_pe < 0) then
      call mpp_error(FATAL, "The PE number is less than 0")
  elseif (my_mpp_pe > total_pes-1) then
      call mpp_error(FATAL, "The PE number is greater than npes-1")
  endif
 !> Finalize mpp
  call MPI_FINALIZE (ierr)
-end program test_mpp_p5  
+end program test_mpp_p5

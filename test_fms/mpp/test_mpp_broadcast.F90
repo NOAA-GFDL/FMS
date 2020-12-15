@@ -30,7 +30,7 @@ program test_mpp_broadcast
   call test_broadcast_char()
 
   call MPI_FINALIZE(ierr)
-contains 
+contains
 
 subroutine test_broadcast_2D()
   integer, parameter :: ARRAYSIZE = 3
