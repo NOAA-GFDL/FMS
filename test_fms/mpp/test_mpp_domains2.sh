@@ -37,7 +37,7 @@ fi
 
 touch input.nml # Input.nml is required to run the following tests
 echo "1: Test simple functionality"
-run_test test_domains_simple 4 
+run_test test_domains_simple 4
 
 #echo "1: Test update nest domain"
 #sed "s/test_nest = .false./test_nest = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml

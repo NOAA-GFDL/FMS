@@ -25,7 +25,7 @@ AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2020.03-dev],
+  [2020.04],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -266,7 +266,7 @@ fi
 AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
 if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
   AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], true )
-  AC_MSG_RESULT([yes]) 
+  AC_MSG_RESULT([yes])
 else
   AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], false )
   AC_MSG_RESULT([no])

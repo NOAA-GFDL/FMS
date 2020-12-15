@@ -1772,7 +1772,7 @@ CONTAINS
   END SUBROUTINE init_output_field
   ! </SUBROUTINE>
 
-!> \brief Open file for output.  
+!> \brief Open file for output.
   SUBROUTINE opening_file(file, time, use_mpp_io)
     ! WARNING: Assumes that all data structures are fully initialized
     INTEGER, INTENT(in) :: file !< File ID.
@@ -2840,7 +2840,7 @@ CONTAINS
       CALL mpp_close(files(file)%file_unit)
       files(file)%file_unit = -1
     END IF
-   endif  !< use_mpp_io     
+   endif  !< use_mpp_io
   END SUBROUTINE write_static
   ! </SUBROUTINE>
 
