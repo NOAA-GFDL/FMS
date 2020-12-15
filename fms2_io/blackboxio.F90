@@ -43,7 +43,7 @@ public :: unstructured_write_restart_wrap
 
 
 contains
-!> @brief Accepts the namelist fms2_io_nml variables relevant to blackboxio 
+!> @brief Accepts the namelist fms2_io_nml variables relevant to blackboxio
 subroutine blackboxio_init (chksz)
 integer, intent(in) :: chksz
  fms2_ncchksz = chksz

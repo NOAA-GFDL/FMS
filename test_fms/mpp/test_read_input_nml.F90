@@ -36,7 +36,7 @@ integer :: stat !< IOSTAT output integer
 integer :: n, m !< Loop counting variable
 integer :: current_pelist_name_len_plus1 !< Current pelist name length plus 1
 integer :: ierr !< used by MPI_FINALIZE
-character(len=:), allocatable :: toobig !< String passed as argument into read_input_nml that is 
+character(len=:), allocatable :: toobig !< String passed as argument into read_input_nml that is
                                         !!larger than pelis_name and should raise an error
 
 namelist /test_read_input_nml_nml/ test_numb
@@ -48,11 +48,11 @@ close(10)
 call mpp_init(test_level=mpp_init_test_peset_allocated)
 
 if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
-  ! Test 1: Tests the subroutine on a valid input nml full of data, 
+  ! Test 1: Tests the subroutine on a valid input nml full of data,
   ! with no arguments passed to read_input_nml()
-  ! Test 2: Tests the subroutine on a valid input nml full of data, 
+  ! Test 2: Tests the subroutine on a valid input nml full of data,
   ! with a string passed to read_input_nml() in order to read a different nml
-  ! Test 4: Tests the subroutine on a valid empty input nml, 
+  ! Test 4: Tests the subroutine on a valid empty input nml,
   ! with no arguments passed to read_input_nml()
   if (test_numb == 1) then
     filename = "input.nml"
