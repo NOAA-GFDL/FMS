@@ -85,7 +85,7 @@ program test_read_ascii_file
       call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
     else if (test_numb == 3) then
       filename = "doesnotexist.txt"
-      ! Need to pass in an exist file name below to avoid raising error on 
+      ! Need to pass in an exist file name below to avoid raising error on
       ! get_ascii_file_num_lines call in order to get to the error in read_ascii_file
       filename2 = "input.nml"
       num_lines = get_ascii_file_num_lines(filename2, INPUT_STR_LENGTH)

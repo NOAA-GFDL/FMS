@@ -417,7 +417,7 @@ integer :: domain_size, axis_length, axis_pos
                          call mpp_get_global_domain(domain, begin=gstart, end=gend)  !< Get the global indicies
                          call mpp_get_compute_domain(domain, begin=cstart, end=cend, size=clength) !< Get the compute indicies
                          iend =  cend - gstart + 1     !< Get the array indicies for the axis data
-                         istart = cstart - gstart + 1 
+                         istart = cstart - gstart + 1
                          call register_axis(fptr, axis_name, dimension_length=clength)
                          call register_field(fptr, axis_name, "double", (/axis_name/) )
                          call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
@@ -579,9 +579,9 @@ integer :: domain_size, axis_length, axis_pos
              endif
 
           ELSE
-!> @note Check if the time variable is registered.  It's possible that is_time_axis_registered is set to true if using 
-!! time-templated files because they aren't closed when done writing.  An alternative to this set up would be to put 
-!! variable_exists into the if statement with an .or. so that it gets registered. 
+!> @note Check if the time variable is registered.  It's possible that is_time_axis_registered is set to true if using
+!! time-templated files because they aren't closed when done writing.  An alternative to this set up would be to put
+!! variable_exists into the if statement with an .or. so that it gets registered.
                 is_time_axis_registered = variable_exists(fptr,trim(axis_name),.true.)
                 if (allocated(fptr%pelist) .and. .not. is_time_axis_registered) then
                  select type (fptr)
@@ -2110,7 +2110,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
 
     CALL mpp_flush (file_unit)
   END SUBROUTINE diag_flush
-!> End of use_mpp_io = true routines/functions  
+!> End of use_mpp_io = true routines/functions
 !! everything else is shared by both
   ! </SUBROUTINE>
 
