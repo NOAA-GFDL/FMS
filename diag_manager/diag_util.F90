@@ -2785,6 +2785,7 @@ CONTAINS
           ELSE IF ( time > files(file)%next_open ) THEN ! need to close current file and open a new one
              CALL write_static(file, use_mpp_io)  ! write all static fields and close this file
              CALL opening_file(file, time, use_mpp_io, filename_time=filename_time)
+             files(file)%time_index = 0 !< Reset the number of times in the files back to 0
              files(file)%start_time = files(file)%next_open
              files(file)%close_time =&
                   & diag_time_inc(files(file)%start_time,files(file)%duration, files(file)%duration_units)
