@@ -2773,7 +2773,7 @@ CONTAINS
     LOGICAL, INTENT(out) :: do_write !< .TRUE. if file is expecting more data to write, .FALSE. otherwise.
     LOGICAL, INTENT(in) :: use_mpp_io !< true=mpp_io, false=fms2_io
     TYPE(time_type), INTENT(in), optional :: filename_time
- 
+
     IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file
           CALL opening_file(file, time, use_mpp_io, filename_time=filename_time)
