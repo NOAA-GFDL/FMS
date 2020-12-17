@@ -444,7 +444,7 @@ use platform_mod
      TYPE(time_type)  :: time
      LOGICAL :: issued_mask_ignore_warning !< Indicates if the mask_ignore_warning
                                            !! has been issued for this input
-                                           !! field.  Once .TRUE. the warning message 
+                                           !! field.  Once .TRUE. the warning message
                                            !! is suppressed on all subsequent
                                            !! send_data calls.
   END TYPE input_field_type
@@ -791,9 +791,9 @@ use platform_mod
                                          !! range for a variable.
   LOGICAL :: oor_warnings_fatal = .FALSE. !< Cause a fatal error if the output field has a value outside the
                                           !! given range for a variable.
-  LOGICAL :: region_out_use_alt_value = .TRUE. !< Will determine which value to use when checking a regional 
+  LOGICAL :: region_out_use_alt_value = .TRUE. !< Will determine which value to use when checking a regional
                                                !! output if the region is the full axis or a sub-axis.
-                                               !! The values are defined as <TT>GLO_REG_VAL</TT> 
+                                               !! The values are defined as <TT>GLO_REG_VAL</TT>
                                                !! (-999) and <TT>GLO_REG_VAL_ALT</TT> (-1) in <TT>diag_data_mod</TT>.
 
   INTEGER :: max_field_attributes = 4 !< Maximum number of user definable attributes per field. Liptak: Changed from 2 to 4 20170718
@@ -809,7 +809,7 @@ use platform_mod
   ! </DATA>
 #ifdef use_netCDF
   REAL :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
-                                    !! netCDF module, otherwise will be 9.9692099683868690e+36. 
+                                    !! netCDF module, otherwise will be 9.9692099683868690e+36.
                                     ! from file /usr/local/include/netcdf.inc
 #else
   REAL :: FILL_VALUE = 9.9692099683868690e+36

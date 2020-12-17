@@ -244,9 +244,9 @@ namelist / diag_integral_nml /      &
 !-------------------------------------------------------------------------------
 type (time_type) :: Next_alarm_time !< next time at which integrals are to be written
 type (time_type) :: Alarm_interval !< time interval between writing integrals
-type (time_type) :: Zero_time !< time_type variable set to (0,0); used as 
+type (time_type) :: Zero_time !< time_type variable set to (0,0); used as
                               !! flag to indicate integrals are not being output
-type (time_type) :: Time_init_save !< initial time associated with experiment; 
+type (time_type) :: Time_init_save !< initial time associated with experiment;
                                    !! used as a base for defining time
 
 !-------------------------------------------------------------------------------
@@ -584,13 +584,13 @@ integer, optional, intent(in) :: js !< starting j indices over which summation i
 !-------------------------------------------------------------------------------
       integer :: field           !< index of desired integral
       integer :: i1  !< location indices of current data in
-                                 !! processor-global coordinates      
+                                 !! processor-global coordinates
       integer :: j1  !< location indices of current data in
-                                 !! processor-global coordinates      
+                                 !! processor-global coordinates
       integer :: i2  !< location indices of current data in
-                                 !! processor-global coordinates      
+                                 !! processor-global coordinates
       integer :: j2  !< location indices of current data in
-                                 !! processor-global coordinates      
+                                 !! processor-global coordinates
 
 
 !-------------------------------------------------------------------------------
@@ -1071,7 +1071,7 @@ function set_axis_time (atime, units) result (Time)
 
 real,             intent(in) :: atime !< integral time stamp at the current time
 character(len=*), intent(in) :: units !< input units, not used
-type(time_type)  :: Time 
+type(time_type)  :: Time
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1130,7 +1130,7 @@ end function set_axis_time
 function get_field_index (name) result (index)
 
 character(len=*),  intent(in) :: name !< Name associated with an integral
-integer                       :: index 
+integer                       :: index
 
 !-------------------------------------------------------------------------------
 ! local variables:

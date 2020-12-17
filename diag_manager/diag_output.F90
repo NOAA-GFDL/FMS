@@ -158,7 +158,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in)  :: file_name !< Output file name
     CHARACTER(len=*), INTENT(in)  :: file_title !< Descriptive title for the file
     INTEGER         , INTENT(in)  :: FORMAT !< File format (Currently only 'NETCDF' is valid)
-    INTEGER         , INTENT(out) :: file_unit !< File unit number assigned to the output file.  
+    INTEGER         , INTENT(out) :: file_unit !< File unit number assigned to the output file.
                                                !! Needed for subsuquent calls to
                                                !! diag_output_mod
     LOGICAL         , INTENT(in)  :: all_scalar_or_1d

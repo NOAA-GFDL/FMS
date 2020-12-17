@@ -191,15 +191,15 @@ module drifters_mod
      real, allocatable :: yw(:) !< velocity field axes
      real, allocatable :: zw(:) !< velocity field axes
      ! Runge Kutta coefficients holding intermediate results (positions)
-     real, allocatable :: temp_pos(:,:) !< Runge Kutta coefficients holding 
+     real, allocatable :: temp_pos(:,:) !< Runge Kutta coefficients holding
                                         !! intermediate results (positions)
-     real, allocatable :: rk4_k1(:,:) !< Runge Kutta coefficients holding 
+     real, allocatable :: rk4_k1(:,:) !< Runge Kutta coefficients holding
                                       !! intermediate results (positions)
-     real, allocatable :: rk4_k2(:,:) !< Runge Kutta coefficients holding 
+     real, allocatable :: rk4_k2(:,:) !< Runge Kutta coefficients holding
                                       !! intermediate results (positions)
-     real, allocatable :: rk4_k3(:,:) !< Runge Kutta coefficients holding 
+     real, allocatable :: rk4_k3(:,:) !< Runge Kutta coefficients holding
                                       !! intermediate results (positions)
-     real, allocatable :: rk4_k4(:,:) !< Runge Kutta coefficients holding 
+     real, allocatable :: rk4_k4(:,:) !< Runge Kutta coefficients holding
                                       !! intermediate results (positions)
      ! store filenames for convenience
      character(len=MAX_STR_LEN) :: input_file !< store filenames for convenience
@@ -269,7 +269,7 @@ contains
 
     type(drifters_type) :: self !< Opaque data structure.
     character(len=*), intent(in)  :: input_file !< NetCDF input file name containing initial positions.
-    character(len=*), intent(in)  :: output_file !< NetCDF output file. Will contain trajectory 
+    character(len=*), intent(in)  :: output_file !< NetCDF output file. Will contain trajectory
                                                  !! positions and interpolated fields.
     character(len=*), intent(out) :: ermesg !< Error message (if any).
 

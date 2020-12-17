@@ -1375,7 +1375,7 @@ CONTAINS
   !   <IN NAME="lat2" TYPE="REAL">Latitude of the second point</IN>
   !   <IN NAME="lon2" TYPE="REAL">Longitude of the second point</IN>
   !> @brief Find the distance, along the geodesic, between two points.
-  !> @description <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined 
+  !> @description <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined
   !!   by the (lat,lon) position of each point.
   !! @return real
   PURE ELEMENTAL REAL FUNCTION gCirDistance(lat1, lon1, lat2, lon2)

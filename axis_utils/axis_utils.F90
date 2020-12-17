@@ -201,7 +201,7 @@ contains
     return
   end function get_axis_modulo
 
-  !> @return logical get_axis_modulo_times 
+  !> @return logical get_axis_modulo_times
   function get_axis_modulo_times(axis, tbeg, tend)
 
     logical :: get_axis_modulo_times
@@ -471,7 +471,7 @@ contains
                              !! if "value" is outside the domain of "array" then nearest_index = 1
                              !! or "ia" depending on whether array(1) or array(ia) is
                              !! closest to "value"
-    Integer :: i, ii, unit 
+    Integer :: i, ii, unit
     integer :: ia !< dimension of "array"
     real :: value !< arbitrary data...same units as elements in "array"
     real, dimension(:) :: array !< array of data points  (must be monotonically increasing)

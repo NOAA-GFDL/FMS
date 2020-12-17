@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @file 
+!> @file
 !! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
 !!   on distributed systems. It is geared toward the writing of data in netCDF
 !!   format.
@@ -668,9 +668,9 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when 
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
-                                                            !! Valid options are "conserve_order1", 
+                                                            !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".
     INTEGER, OPTIONAL, INTENT(in) :: tile_count
     INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
@@ -888,7 +888,7 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant
     LOGICAL, OPTIONAL, INTENT(in) :: DYNAMIC
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when 
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".

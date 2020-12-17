@@ -569,9 +569,9 @@ CONTAINS
   !!     allocated to the size of the "guess" plus a slight increase.
   SUBROUTINE parse_diag_table(diag_subset, istat, err_msg)
     INTEGER, INTENT(in), OPTIONAL :: diag_subset !< Diagnostic sampling subset.
-    INTEGER, INTENT(out), OPTIONAL, TARGET :: istat !< Status of parsing the <TT>diag_table</TT>.  
+    INTEGER, INTENT(out), OPTIONAL, TARGET :: istat !< Status of parsing the <TT>diag_table</TT>.
                                                     !! A non-zero status indicates a problem parsing the table.
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Error message corresponding to the 
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Error message corresponding to the
                                                        !! <TT>istat</TT> return value.
 
     INTEGER, PARAMETER :: DT_LINE_LENGTH = 256

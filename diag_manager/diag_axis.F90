@@ -851,7 +851,7 @@ CONTAINS
   !> @brief Return the tile count for the axis.
   !! @return tile count for the axis
   INTEGER FUNCTION get_tile_count(ids)
-    INTEGER, DIMENSION(:), INTENT(in) :: ids !< Axis IDs.  
+    INTEGER, DIMENSION(:), INTENT(in) :: ids !< Axis IDs.
                                              !! Possible dimensions: 1 <= <TT>size(ids(:))</TT> <= 4.
 
     INTEGER :: i, id, flag

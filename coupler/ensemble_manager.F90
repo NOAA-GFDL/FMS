@@ -101,7 +101,7 @@ contains
     integer :: get_ensemble_id
     get_ensemble_id = ensemble_id
   end function get_ensemble_id
-  
+
   !> @brief Returns ensemble size integer array
   !! @return Integer array
   function get_ensemble_size()
@@ -117,7 +117,7 @@ contains
 
   end function get_ensemble_size
 
-  
+
   subroutine get_ensemble_pelist(pelist, name)
 
     integer, intent(inout) :: pelist(:,:)

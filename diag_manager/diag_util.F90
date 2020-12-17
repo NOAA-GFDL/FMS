@@ -970,7 +970,7 @@ CONTAINS
   SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
     INTEGER, INTENT(in) :: out_num !< Output field ID number.
     INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
-    TYPE(time_type), INTENT(in) :: Time !< Time to use in check.  The check is only performed if 
+    TYPE(time_type), INTENT(in) :: Time !< Time to use in check.  The check is only performed if
                                         !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
                                         !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
     CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
@@ -1363,7 +1363,7 @@ CONTAINS
     INTEGER, INTENT(in):: output_freq !< Output frequency number value.
     INTEGER, INTENT(in):: output_units !< Output frequency unit.
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Function error message.
-                                                       !! An empty string indicates the next output 
+                                                       !! An empty string indicates the next output
                                                        !! time was found successfully.
 
     CHARACTER(len=128) :: error_message_local
@@ -1572,7 +1572,7 @@ CONTAINS
                                                 !! for valid methods.</IN>
     INTEGER, INTENT(in) :: pack !< Packing method.
     INTEGER, INTENT(in) :: tile_count !< Tile number.
-    TYPE(coord_type), INTENT(in), OPTIONAL :: local_coord !< Region to be written.  
+    TYPE(coord_type), INTENT(in), OPTIONAL :: local_coord !< Region to be written.
                                                           !! If missing, then all data to be written.</IN>
     INTEGER :: out_num, in_num, file_num, file_num_tile1
     INTEGER :: num_fields, i, method_selected, l1

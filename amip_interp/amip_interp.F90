@@ -36,7 +36,7 @@
 !!     a namelist option allows for use of the climatological monthly
 !!     mean values which are computed from all of the data in a particular
 !!     data set.
-!! Dataset Name = AMIP 1 
+!! Dataset Name = AMIP 1
 !!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).
 !! Dataset Name = Reynolds OI
 !!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)
@@ -218,7 +218,7 @@ end interface
 
 !-----------------------------------------------------------------------
 !----- public data type ------
-! DATA NAME="amip_interp_type"  TYPE="type (horiz_interp_type)"  
+! DATA NAME="amip_interp_type"  TYPE="type (horiz_interp_type)"
 !> @brief All variables in this data type are PRIVATE. It contains information needed by the interpolation module (exchange_mod) and buffers data.
 type amip_interp_type
    private
