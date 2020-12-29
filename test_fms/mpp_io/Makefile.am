@@ -41,3 +41,4 @@ TESTS = test_mpp_io2.sh
 EXTRA_DIST = test_mpp_io2.sh input_base.nml
 
 # Clean up
+CLEANFILES = input.nml *.nc* *.out

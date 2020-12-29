@@ -41,3 +41,4 @@ TESTS = test_axis_utils2.sh
 EXTRA_DIST = input_base.nml test_axis_utils2.sh
 
 # Clean up
+CLEANFILES = input.nml *.out*

@@ -42,3 +42,4 @@ TESTS = test_time_interp2.sh
 EXTRA_DIST = input_base.nml test_time_interp2.sh
 
 # Clean up
+CLEANFILES = input.nml *.out*

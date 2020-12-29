@@ -68,3 +68,4 @@ endif
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
                     netcdf_version_skip=${skipflag}
 
+CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask
