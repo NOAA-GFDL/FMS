@@ -1408,6 +1408,74 @@ end function rarray_to_char
 
   end function get_ascii_file_num_lines
 
+  !#######################################################################
+  function get_ascii_file_num_lines_and_length(FILENAME, PELIST)
+    character(len=*), intent(in) :: FILENAME
+    integer, intent(in), optional, dimension(:) :: PELIST
+
+    integer, dimension(2) :: get_ascii_file_num_lines_and_length
+    integer :: num_lines, max_length
+    integer, parameter :: LENGTH=1024
+    character(len=LENGTH) :: str_tmp
+    character(len=5) :: text
+    integer :: status, f_unit, from_pe
+    logical :: file_exist
+
+    if( read_ascii_file_on) then
+       call mpp_error(FATAL,  &
+          "mpp_util.inc: get_ascii_file_num_lines is called again before calling read_ascii_file")
+    endif
+    read_ascii_file_on = .true.
+
+    from_pe = root_pe
+    get_ascii_file_num_lines_and_length = -1
+    num_lines = -1
+    max_length = -1
+    if ( pe == root_pe ) then
+       inquire(FILE=FILENAME, EXIST=file_exist)
+
+       if ( file_exist ) then
+          f_unit = get_unit()
+          open(UNIT=f_unit, FILE=FILENAME, ACTION='READ', STATUS='OLD', IOSTAT=status)
+
+          if ( status .ne. 0 ) then
+             write (UNIT=text, FMT='(I5)') status
+             call mpp_error(FATAL, 'get_ascii_file_num_lines: Error opening file:' //trim(FILENAME)// &
+                            '.  (IOSTAT = '//trim(text)//')')
+          else
+             num_lines = 1
+             do
+                read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
+                if ( status .lt. 0 ) exit
+                if ( status .gt. 0 ) then
+                   write (UNIT=text, FMT='(I5)') num_lines
+                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Error reading line '//trim(text)// &
+                        ' in file '//trim(FILENAME)//'.')
+                end if
+                if ( len_trim(str_tmp) == LENGTH ) then
+                   write(UNIT=text, FMT='(I5)') length
+                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//' is too small.&
+                        & Increase the LENGTH value.')
+                end if
+                if (len_trim(str_tmp) > max_length) max_length = len_trim(str_tmp)
+                num_lines = num_lines + 1
+             end do
+             close(UNIT=f_unit)
+          end if
+       else
+          call mpp_error(FATAL, 'get_ascii_file_num_lines: File '//trim(FILENAME)//' does not exist.')
+       end if
+       max_length = max_length+1
+    end if
+
+    ! Broadcast number of lines
+    call mpp_broadcast(num_lines, from_pe, PELIST=PELIST)
+    call mpp_broadcast(max_length, from_pe, PELIST=PELIST)
+    get_ascii_file_num_lines_and_length(1) = num_lines
+    get_ascii_file_num_lines_and_length(2) = max_length
+
+  end function get_ascii_file_num_lines_and_length
+
   !-----------------------------------------------------------------------
   !
   ! AUTHOR: Rusty Benson <rusty.benson@noaa.gov>,

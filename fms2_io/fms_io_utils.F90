@@ -22,6 +22,7 @@
 !! @email gfdl.climate.model.info@noaa.gov
 module fms_io_utils_mod
 use, intrinsic :: iso_fortran_env, only: error_unit
+use mpp_mod, only : get_ascii_file_num_lines_and_length, read_ascii_file
 #ifdef _OPENMP
 use omp_lib
 #endif
@@ -48,6 +49,7 @@ public :: get_checksum
 public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
+public :: ascii_read
 
 !> @brief A linked list of strings
 type :: char_linked_list
@@ -456,6 +458,14 @@ subroutine open_check(flag, fname)
   endif
 end subroutine open_check
 
+subroutine ascii_read(ascii_filename, ascii_var)
+  character(len=*), intent(in) :: ascii_filename
+  character(len=:), dimension(:), allocatable, intent(out) :: ascii_var
+  integer, dimension(2) :: lines_and_length !lines = 1, length = 2
+  lines_and_length = get_ascii_file_num_lines_and_length(ascii_filename)
+  allocate(character(len=lines_and_length(2))::ascii_var(lines_and_length(1)))
+  call read_ascii_file(ascii_filename, lines_and_length(2), ascii_var)
+end subroutine ascii_read
 
 include "array_utils.inc"
 include "array_utils_char.inc"
