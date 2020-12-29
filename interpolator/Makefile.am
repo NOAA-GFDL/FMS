@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libinterpolator.la
@@ -31,17 +31,7 @@ noinst_LTLIBRARIES = libinterpolator.la
 # The convenience library depends on its source.
 libinterpolator_la_SOURCES = interpolator.F90
 
-# Mod file depends on its o file, is built and then installed.
-interpolator_mod.mod: interpolator.lo
-BUILT_SOURCES = interpolator_mod.mod
-include_HEADERS = interpolator_mod.mod
+BUILT_SOURCES = interpolator_mod.$(FC_MODEXT)
+nodist_include_HEADERS = interpolator_mod.$(FC_MODEXT)
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

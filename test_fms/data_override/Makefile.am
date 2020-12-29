@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_grid_v1 test_data_override test_data_override_ongrid
@@ -44,4 +44,3 @@ EXTRA_DIST = input_base.nml diag_table_base data_table_base	\
 test_data_override2.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table

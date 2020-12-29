@@ -23,33 +23,24 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libstock_constants.la libxgrid.la
+noinst_LTLIBRARIES = libexchange.la
 
 # Each convenience library depends on its source.
-libstock_constants_la_SOURCES = stock_constants.F90
-libxgrid_la_SOURCES = xgrid.F90
-
-# Each mod file depends on the .o file.
-stock_constants_mod.mod: stock_constants.lo
-xgrid_mod.mod: xgrid.lo
+libexchange_la_SOURCES = \
+  stock_constants.F90 \
+  xgrid.F90
 
 # Some mods are dependant on other mods in this dir.
-xgrid.lo: stock_constants_mod.mod
+xgrid_mod.$(FC_MODEXT): stock_constants_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = stock_constants_mod.mod xgrid_mod.mod
-include_HEADERS = $(MODFILES)
+MODFILES = \
+  stock_constants_mod.$(FC_MODEXT) \
+  xgrid_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

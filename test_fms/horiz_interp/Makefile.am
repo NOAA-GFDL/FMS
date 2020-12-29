@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
 check_PROGRAMS = test_horiz_interp test2_horiz_interp
@@ -42,4 +42,3 @@ TESTS = test_horiz_interp2.sh
 EXTRA_DIST = input_base.nml test_horiz_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*

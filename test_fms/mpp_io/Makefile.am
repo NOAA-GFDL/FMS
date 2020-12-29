@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_mpp_io
@@ -41,4 +41,3 @@ TESTS = test_mpp_io2.sh
 EXTRA_DIST = test_mpp_io2.sh input_base.nml
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out

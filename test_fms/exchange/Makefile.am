@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_xgrid
@@ -41,4 +41,3 @@ TESTS = test_xgrid2.sh
 EXTRA_DIST = input_base.nml test_xgrid2.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc *.out

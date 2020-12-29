@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libplatform.la
@@ -31,18 +31,7 @@ noinst_LTLIBRARIES = libplatform.la
 # The convenience library depends on its source.
 libplatform_la_SOURCES = platform.F90
 
-# Mod file depends on its o file, is built and then installed.
-platform_mod.mod: platform.lo
+BUILT_SOURCES = platform_mod.$(FC_MODEXT)
+nodist_include_HEADERS = platform_mod.$(FC_MODEXT)
 
-BUILT_SOURCES = platform_mod.mod
-include_HEADERS = platform_mod.mod
-
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

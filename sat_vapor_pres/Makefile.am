@@ -23,33 +23,24 @@
 # Ed Hartnett 2/28/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build these uninstalled convenience library.
-noinst_LTLIBRARIES = libsat_vapor_pres_k.la libsat_vapor_pres.la
+noinst_LTLIBRARIES = libsat_vapor_pres.la
 
 # Each convenience library depends on its source.
-libsat_vapor_pres_la_SOURCES = sat_vapor_pres.F90
-libsat_vapor_pres_k_la_SOURCES = sat_vapor_pres_k.F90
-
-# Each mod file depends on the .o file.
-sat_vapor_pres_mod.mod: sat_vapor_pres.lo
-sat_vapor_pres_k_mod.mod: sat_vapor_pres_k.lo
+libsat_vapor_pres_la_SOURCES = \
+  sat_vapor_pres.F90 \
+  sat_vapor_pres_k.F90
 
 # Some mods are dependant on other mods in this dir.
-sat_vapor_pres.lo: sat_vapor_pres_k_mod.mod
+sat_vapor_pres_mod.$(FC_MODEXT): sat_vapor_pres_k_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = sat_vapor_pres_k_mod.mod sat_vapor_pres_mod.mod
+MODFILES = \
+  sat_vapor_pres_k_mod.$(FC_MODEXT) \
+  sat_vapor_pres_mod.$(FC_MODEXT)
 BUILT_SOURCES = $(MODFILES)
-include_HEADERS = $(MODFILES)
+nodist_include_HEADERS = $(MODFILES)
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

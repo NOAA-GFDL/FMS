@@ -21,7 +21,7 @@
 # Ed Hartnett 2/21/2019
 # Seth Underwood 10/2/2019
 
-AC_PREREQ([2.59])
+AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
@@ -37,11 +37,10 @@ AC_CANONICAL_BUILD
 # Find out about the target we're building for.
 AC_CANONICAL_TARGET
 
+AC_CONFIG_MACRO_DIR([m4])
+
 AM_INIT_AUTOMAKE([foreign dist-zip subdir-objects])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
-
-# Keep libtool macros in an m4 directory.
-AC_CONFIG_MACRO_DIR([m4])
 
 # Set up libtool.
 LT_PREREQ([2.4])
@@ -95,6 +94,9 @@ AC_PROG_CPP
 
 # Find the Fortran compiler.
 AC_PROG_FC
+AC_FC_MODULE_FLAG
+AC_FC_MODULE_EXTENSION
+AC_FC_MODULE_OUTPUT_FLAG
 
 # Find the install program.
 AC_PROG_INSTALL
@@ -245,7 +247,7 @@ fi
 
 AC_SUBST([FC_VERSION])
 # Strip anything that looks like a flag off of $FC
-FC_NOFLAGS=`echo $CC | sed 's/ -.*//'`
+FC_NOFLAGS=`echo $FC | sed 's/ -.*//'`
 
 if `echo $FC_NOFLAGS | grep ^/ >/dev/null 2>&1`; then
   FC_VERSION="$FC"
@@ -287,65 +289,67 @@ AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([NOUNDEFINED])
 
+# Define the directory where *.mod files will reside.
+# Used in Makefiles.
+AC_SUBST([MODDIR],[\$\(top_builddir\)/.mods])
 
 # These files will be created when the configure script is run.
-AC_CONFIG_FILES([Makefile
-        include/Makefile
-        affinity/Makefile
-        amip_interp/Makefile
-        time_interp/Makefile
-        time_manager/Makefile
-        constants/Makefile
-        platform/Makefile
-        fms/Makefile
-        fms2_io/Makefile
-        fms2_io/include/Makefile
-        mpp/Makefile
-        mpp/include/Makefile
-        tridiagonal/Makefile
-        tracer_manager/Makefile
-        topography/Makefile
-        mosaic/Makefile
-        monin_obukhov/Makefile
-        memutils/Makefile
-        interpolator/Makefile
-        horiz_interp/Makefile
-        field_manager/Makefile
-        exchange/Makefile
-        drifters/Makefile
-        diag_manager/Makefile
-        data_override/Makefile
-        column_diagnostics/Makefile
-        block_control/Makefile
-        axis_utils/Makefile
-        astronomy/Makefile
-        coupler/Makefile
-        diag_integral/Makefile
-        sat_vapor_pres/Makefile
-        random_numbers/Makefile
-        libFMS/Makefile
-        docs/Makefile
-        test_fms/test_common.sh
-        test_fms/Makefile
-        test_fms/diag_manager/Makefile
-        test_fms/data_override/Makefile
-        test_fms/exchange/Makefile
-        test_fms/monin_obukhov/Makefile
-        test_fms/drifters/Makefile
-        test_fms/interpolator/Makefile
-        test_fms/fms2_io/Makefile
-        test_fms/fms/Makefile
-        test_fms/mpp/Makefile
-        test_fms/mpp_io/Makefile
-        test_fms/time_interp/Makefile
-        test_fms/time_manager/Makefile
-        test_fms/horiz_interp/Makefile
-        test_fms/field_manager/Makefile
-        test_fms/axis_utils/Makefile
-        test_fms/mosaic/Makefile
-        test_fms/affinity/Makefile
-        FMS.pc
-        ])
+AC_CONFIG_FILES([
+  Makefile
+  affinity/Makefile
+  amip_interp/Makefile
+  time_interp/Makefile
+  time_manager/Makefile
+  constants/Makefile
+  platform/Makefile
+  fms/Makefile
+  fms2_io/Makefile
+  mpp/Makefile
+  tridiagonal/Makefile
+  tracer_manager/Makefile
+  topography/Makefile
+  mosaic/Makefile
+  monin_obukhov/Makefile
+  memutils/Makefile
+  interpolator/Makefile
+  horiz_interp/Makefile
+  field_manager/Makefile
+  exchange/Makefile
+  drifters/Makefile
+  diag_manager/Makefile
+  data_override/Makefile
+  column_diagnostics/Makefile
+  block_control/Makefile
+  axis_utils/Makefile
+  astronomy/Makefile
+  coupler/Makefile
+  diag_integral/Makefile
+  sat_vapor_pres/Makefile
+  random_numbers/Makefile
+  libFMS/Makefile
+  docs/Makefile
+  test_fms/test_common.sh
+  test_fms/Makefile
+  test_fms/diag_manager/Makefile
+  test_fms/data_override/Makefile
+  test_fms/exchange/Makefile
+  test_fms/monin_obukhov/Makefile
+  test_fms/drifters/Makefile
+  test_fms/interpolator/Makefile
+  test_fms/fms2_io/Makefile
+  test_fms/fms/Makefile
+  test_fms/mpp/Makefile
+  test_fms/mpp_io/Makefile
+  test_fms/time_interp/Makefile
+  test_fms/time_manager/Makefile
+  test_fms/horiz_interp/Makefile
+  test_fms/field_manager/Makefile
+  test_fms/axis_utils/Makefile
+  test_fms/mosaic/Makefile
+  test_fms/affinity/Makefile
+  FMS.pc
+  ])
+
 AC_OUTPUT()
 
 ## if tests are being skipped, output warning at end of output

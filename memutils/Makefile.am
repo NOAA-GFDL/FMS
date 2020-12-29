@@ -22,23 +22,13 @@
 # Copyright 2019-2020, GFDL, Ed Hartnett, Seth Underwood
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # The convenience library depends on its source.
-libmemutils_la_SOURCES = memutils.F90
 noinst_LTLIBRARIES = libmemutils.la
+libmemutils_la_SOURCES = memutils.F90
 
-# Mod file depends on its o file, is built and then installed.
-memutils_mod.mod: memutils.lo
-BUILT_SOURCES = memutils_mod.mod
-include_HEADERS = memutils_mod.mod
+BUILT_SOURCES = memutils_mod.$(FC_MODEXT)
+nodist_include_HEADERS = memutils_mod.$(FC_MODEXT)
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

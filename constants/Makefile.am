@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libconstants.la
@@ -31,17 +31,7 @@ noinst_LTLIBRARIES = libconstants.la
 # The convenience library depends on its source.
 libconstants_la_SOURCES = constants.F90
 
-# Mod file depends on its o file, is built and then installed.
-constants_mod.mod: constants.lo
-BUILT_SOURCES = constants_mod.mod
-include_HEADERS = constants_mod.mod
+BUILT_SOURCES = constants_mod.$(FC_MODEXT)
+nodist_include_HEADERS = constants_mod.$(FC_MODEXT)
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

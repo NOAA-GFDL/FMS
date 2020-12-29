@@ -23,33 +23,23 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libgaussian_topog.la libtopography.la
+noinst_LTLIBRARIES = libtopography.la
 
 # Each convenience library depends on its source.
-libtopography_la_SOURCES = topography.F90
-libgaussian_topog_la_SOURCES = gaussian_topog.F90
+libtopography_la_SOURCES = \
+  topography.F90 \
+  gaussian_topog.F90
 
-# Each mod file depends on the .o file.
-gaussian_topog_mod.mod: gaussian_topog.lo
-topography_mod.mod: topography.lo
-
-# Some mods are dependant on other mods in this dir.
-topography.lo: gaussian_topog_mod.mod
+topography_mod.$(FC_MODEXT): gaussian_topog_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = gaussian_topog_mod.mod topography_mod.mod
-include_HEADERS = $(MODFILES)
+MODFILES = \
+  gaussian_topog_mod.$(FC_MODEXT) \
+  topography_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libdiag_integral.la
@@ -31,17 +31,8 @@ noinst_LTLIBRARIES = libdiag_integral.la
 # The convenience library depends on its source.
 libdiag_integral_la_SOURCES = diag_integral.F90
 
-# Mod file depends on its o file, is built and then installed.
-diag_integral_mod.mod: diag_integral.lo
-include_HEADERS = diag_integral_mod.mod
-BUILT_SOURCES = diag_integral_mod.mod
+nodist_include_HEADERS = diag_integral_mod.$(FC_MODEXT)
+BUILT_SOURCES = diag_integral_mod.$(FC_MODEXT)
 
-CLEANFILES = *.mod
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
+include $(top_srcdir)/mkmods.mk

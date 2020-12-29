@@ -23,35 +23,25 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libfield_manager.la libfm_util.la
+noinst_LTLIBRARIES = libfield_manager.la
 
 # Each convenience library depends on its source.
-libfield_manager_la_SOURCES = field_manager.F90
-libfm_util_la_SOURCES = fm_util.F90
+libfield_manager_la_SOURCES = \
+  field_manager.F90 \
+  fm_util.F90 \
+  parse.inc
 
-# Each mod file depends on the .o file.
-field_manager_mod.mod: field_manager.lo
-fm_util_mod.mod: fm_util.lo
-
-# Some mods are dependant on other mods in this dir.
-fm_util.lo: field_manager_mod.mod
+field_manager_mod.$(FC_MODEXT): parse.inc
+fm_util_mod.$(FC_MODEXT): field_manager_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = field_manager_mod.mod fm_util_mod.mod
+MODFILES = \
+  field_manager_mod.$(FC_MODEXT) \
+  fm_util_mod.$(FC_MODEXT)
 BUILT_SOURCES = $(MODFILES)
-include_HEADERS = $(MODFILES)
+nodist_include_HEADERS = $(MODFILES)
 
-EXTRA_DIST = parse.inc
-
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

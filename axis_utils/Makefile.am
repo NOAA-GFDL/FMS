@@ -23,26 +23,17 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libaxis_utils.la libaxis_utils2.la
+noinst_LTLIBRARIES = libaxis_utils.la
 
-libaxis_utils_la_SOURCES = axis_utils.F90
-libaxis_utils2_la_SOURCES = axis_utils2.F90
+libaxis_utils_la_SOURCES = \
+  axis_utils.F90 \
+  axis_utils2.F90
 
 # Mod file depends on its o file, is built and then installed.
-axis_utils_mod.mod: axis_utils.lo
-axis_utils2_mod.mod: axis_utils2.lo
-include_HEADERS = axis_utils_mod.mod axis_utils2_mod.mod
-BUILT_SOURCES = axis_utils_mod.mod axis_utils2_mod.mod
+nodist_include_HEADERS = axis_utils_mod.$(FC_MODEXT) axis_utils2_mod.$(FC_MODEXT)
+BUILT_SOURCES = axis_utils_mod.$(FC_MODEXT) axis_utils2_mod.$(FC_MODEXT)
 
-CLEANFILES = *.mod
-
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
+include $(top_srcdir)/mkmods.mk

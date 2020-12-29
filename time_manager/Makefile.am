@@ -23,33 +23,23 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libtime_manager.la libget_cal_time.la
+noinst_LTLIBRARIES = libtime_manager.la
 
 # Each convenience library depends on its source.
-libtime_manager_la_SOURCES = time_manager.F90
-libget_cal_time_la_SOURCES = get_cal_time.F90
+libtime_manager_la_SOURCES = \
+  time_manager.F90 \
+  get_cal_time.F90
 
-# Each mod file depends on the .o file.
-time_manager_mod.mod: time_manager.lo
-get_cal_time_mod.mod: get_cal_time.lo
-
-# Some mods are dependant on other mods in this dir.
-get_cal_time.lo: time_manager_mod.mod
+get_cal_time_mod.$(FC_MODEXT): time_manager_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = time_manager_mod.mod get_cal_time_mod.mod
-include_HEADERS = $(MODFILES)
+MODFILES = \
+  time_manager_mod.$(FC_MODEXT) \
+  get_cal_time_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-SUFFIXES = .mod _mod.mod
-.F90.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-.F90_mod.mod:
-	$(PPFCCOMPILE) -c $<
-	@cp ${builddir}/$@ ${top_builddir}/.mod/
-
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk
