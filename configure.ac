@@ -46,6 +46,14 @@ AC_REQUIRE_AUX_FILE([tap-driver.sh])
 LT_PREREQ([2.4])
 LT_INIT()
 
+# If building on a Cray PE system, check if CRAYPE_LINK_TYPE is 'static'.  If it
+# is, then disable building shared libraries.  Note, the user can still override
+# this by using --enable-shared when running the configure script.
+AS_IF([test x${CRAYPE_VERSION:+yes} = "xyes"],[
+  AS_IF([test x${CRAYPE_LINK_TYP} = "xstatic"],
+        [AC_DISABLE_SHARED])])
+
+
 # Process user optons.
 AC_ARG_ENABLE([mixed-mode],
   [AS_HELP_STRING([--enable-mixed-mode],

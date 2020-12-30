@@ -26,7 +26,8 @@
 .NOTPARALLEL:
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 
 # Build these uninstalled convenience libraries.

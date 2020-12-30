@@ -24,9 +24,9 @@
 
 # Include .h and .mod files.
 AM_CPPFLAGS = \
-  -I$(MODDIR) \
   -I$(top_srcdir)/include \
   -I$(top_srcdir)/mpp/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 noinst_LTLIBRARIES = libmpp.la
 

@@ -19,11 +19,9 @@
 
 # This is an automake file for the fms2_io directory of the FMS package.
 
-# Descend into include directory.
-#SUBDIRS = include
-
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/fms2_io/include -I$(MODDIR)
+AM_CPPFLAGS = -I$(top_srcdir)/fms2_io/include -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfms2_io.la

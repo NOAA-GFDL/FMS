@@ -22,7 +22,8 @@
 # Copyright 2019-2020, GFDL, Ed Hartnett, Seth Underwood
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # The convenience library depends on its source.
 noinst_LTLIBRARIES = libmemutils.la
