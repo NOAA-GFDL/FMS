@@ -41,3 +41,4 @@ TESTS = test_field_manager2.sh
 EXTRA_DIST = test_field_manager2.sh input_base.nml field_table_base
 
 # Clean up
+CLEANFILES = input.nml *.out* field_table

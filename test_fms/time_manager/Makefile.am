@@ -41,3 +41,4 @@ TESTS = test_time_manager2.sh
 EXTRA_DIST = test_time_manager2.sh input_base.nml
 
 # Clean up
+CLEANFILES = input.nml *.out*

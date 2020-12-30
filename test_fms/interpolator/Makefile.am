@@ -41,3 +41,4 @@ TESTS = test_interpolator2.sh
 EXTRA_DIST = test_interpolator2.sh input_base.nml diag_table_base
 
 # Clean up
+CLEANFILES = input.nml diag_table
