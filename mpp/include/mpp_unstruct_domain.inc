@@ -698,6 +698,9 @@ subroutine deallocate_unstruct_pass_type(domain)
      call deallocate_unstruct_overlap_type(domain%UG2SG%recv(n))
   enddo
 
+  ! SG2UG%{send,recv} point to the same memory as UG2SG%{send,recv}
+  ! respectively.  Thus, we only need to `deallocate` one, and nullify
+  ! the other set.
   if(associated(domain%UG2SG%send)) then
     deallocate(domain%UG2SG%send)
     nullify(domain%UG2SG%send)
