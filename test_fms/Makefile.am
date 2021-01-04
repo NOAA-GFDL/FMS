@@ -47,4 +47,4 @@ diag_manager
 
 # This input file must be distributed, it is turned into
 # test_common.sh by configure.
-EXTRA_DIST = test_common.sh.in
+EXTRA_DIST = test-lib.sh.in
