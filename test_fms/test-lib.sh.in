@@ -34,7 +34,13 @@ TEST_NUMBER="${TEST_NAME%%-*}"
 TEST_NUMBER="${TEST_NUMBER#t}"
 
 exec 7>&2
-exec 4>/dev/null 3>/dev/null
+# For now, write all output
+#if test -n "$VERBOSE"
+#then
+  exec 4>&2 3>&1
+#else
+#  exec 4>/dev/null 3>/dev/null
+#fi
 
 test_count=0
 test_success=0
@@ -146,6 +152,13 @@ test_known_broken_failure_ () {
   say_color warn "not ok $test_count - $@ # TODO known breakage"
 }
 
+trace_level_=0
+want_trace_ () {
+  test "$trace" = t && {
+    test "$verbose" = t || test "$verbose_log" = t
+  }
+}
+
 # This is a separate function because some tests use
 # "return" to end a test_expect_success block early
 # (and we want to make sure we run any cleanup like
@@ -153,7 +166,7 @@ test_known_broken_failure_ () {
 test_eval_inner_ () {
   # Do not add anything extra (including LF) after '$*'
   eval "
-    want_trace && trace_level_=$(($trace_level_+1)) && set -x
+    want_trace_ && trace_level_=$(($trace_level_+1)) && set -x
     $*"
 }
 
@@ -181,7 +194,7 @@ test_eval_ () {
   test_eval_inner_ "$@" </dev/null >&3 2>&4
   {
     test_eval_ret_=$?
-    if want_trace
+    if want_trace_
     then
       test 1 = $trace_level_ && set +x
       trace_level_=$(($trace_level_-1))
