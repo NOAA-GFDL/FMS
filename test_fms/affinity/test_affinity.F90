@@ -21,6 +21,7 @@ program test_affinity
 
 !--- FMS modules
  use mpp_mod,          only: input_nml_file, mpp_error, mpp_pe, mpp_root_pe, FATAl
+ use fms_mod, only: fms_end
  use fms_affinity_mod
 
 !--- namelist parameters
@@ -51,4 +52,5 @@ program test_affinity
 !--- print success or failure message
     if (mpp_pe() == mpp_root_pe()) print *, '*** SUCCESS!'
 
+    call fms_end()
 end program test_affinity

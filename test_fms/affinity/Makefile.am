@@ -38,7 +38,11 @@ test_affinity_SOURCES = test_affinity.F90
 TESTS = test_affinity2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input_base.nml test_affinity2.sh
+EXTRA_DIST = test_affinity2.sh
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 
 # Clean up
 CLEANFILES = input.nml *.out*
