@@ -221,9 +221,6 @@ if test $enable_setting_flags = yes; then
   fi
 fi
 
-# Define an AM_CONDITIONAL to determine if you are on a CRAY
-AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
-
 # Find which mpi launcher to use
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 
@@ -336,7 +333,7 @@ AC_CONFIG_FILES([
   random_numbers/Makefile
   libFMS/Makefile
   docs/Makefile
-  test_fms/test_common.sh
+  test_fms/test-lib.sh
   test_fms/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
