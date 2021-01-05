@@ -29,8 +29,8 @@ SUBDIRS = \
   axis_utils \
   data_override \
   diag_manager \
-  drifters
-#  exchange \
+  drifters \
+  exchange
 #  field_manager \
 #  fms \
 #  fms2_io \

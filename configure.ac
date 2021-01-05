@@ -340,6 +340,7 @@ AC_CONFIG_FILES([
   test_fms/data_override/Makefile
   test_fms/diag_manager/Makefile
   test_fms/drifters/Makefile
+  test_fms/exchange/Makefile
   FMS.pc
   ])
 

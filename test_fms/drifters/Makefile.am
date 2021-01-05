@@ -50,7 +50,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_drifters2.sh
 
 # Include these files in the distribution.
-EXTRA_DIST = input_base.nml drifters_inp_test_3d.cdl	\
+EXTRA_DIST = drifters_inp_test_3d.cdl	\
 test_drifters2.sh
 
 # Clean up
