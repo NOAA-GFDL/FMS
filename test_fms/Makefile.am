@@ -25,11 +25,11 @@ ACLOCAL_AMFLAGS = -I m4
 
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = \
-affinity \
-axis_utils \
-data_override \
-diag_manager
-#  drifters \
+  affinity \
+  axis_utils \
+  data_override \
+  diag_manager \
+  drifters
 #  exchange \
 #  field_manager \
 #  fms \
