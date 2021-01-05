@@ -85,7 +85,7 @@ setup_test_dir
 
 # Run the test.
 test_expect_success "Test AXIS utils" '
-  mpirun -n 2 test_axis_utils
+  mpirun -n 2 ./test_axis_utils
 '
 
 test_done

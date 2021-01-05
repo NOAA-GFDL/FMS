@@ -30,7 +30,7 @@ cat <<_EOF > input.nml
 _EOF
 
 test_expect_success "FMS affinity places MPI processes correctly" '
-  mpirun -n 6 test_affinity
+  mpirun -n 6 ./test_affinity
 '
 
 test_done
