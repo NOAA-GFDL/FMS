@@ -55,11 +55,11 @@ test_expect_success "Test drifters comm" '
 '
 
 test_expect_success "Test drifters core" '
-  mpirun -n 2 test_drifters_core
+  mpirun -n 2 ./test_drifters_core
 '
 
 test_expect_success "test quicksort" '
-  mpirun -n 2 test_quicksort
+  mpirun -n 2 ./test_quicksort
 '
 
 test_done
