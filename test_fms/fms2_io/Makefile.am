@@ -47,12 +47,14 @@ test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh
 
-argparse.mod: argparse.$(OBJEXT)
-setup.mod: setup.$(OBJEXT)
-setup.$(OBJEXT): argparse.mod
-test_atmosphere_io.$(OBJEXT): setup.mod
-test_io_simple.$(OBJEXT): setup.mod
-test_fms2_io.$(OBJEXT): argparse.mod
+setup.$(FC_MODEXT): argparse.$(FC_MODEXT)
+test_atmosphere_io: setup.$(FC_MODEXT)
+test_fms2_io: argparse.$(FC_MODEXT)
+test_io_simple: setup.$(FC_MODEXT)
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 
 # Run the test program.
 TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
@@ -67,5 +69,9 @@ endif
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
                     netcdf_version_skip=${skipflag}
+TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 
-CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask
+include $(top_srcdir)/mkmods.mk
+
+CLEANFILES += *.nc *.nc.* input.nml *.out the_mask

@@ -25,9 +25,23 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy file for test.
-cp $top_srcdir/test_fms/horiz_interp/input_base.nml input.nml
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+/
 
-run_test test_horiz_interp 2
+&test2_horiz_interp_nml
+/
+_EOF
+
+test_expect_success "Horiz_interp test" '
+  mpirun -n 2 ./test_horiz_interp
+'
+
+test_done

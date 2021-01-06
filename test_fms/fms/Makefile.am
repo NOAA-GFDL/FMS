@@ -35,6 +35,10 @@ check_PROGRAMS = test_fms_io test_unstructured_fms_io
 test_fms_io_SOURCES = test_fms_io.F90
 test_unstructured_fms_io_SOURCES = test_unstructured_fms_io.F90
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # Run the test programs.
 TESTS = test_fms_io2.sh
 

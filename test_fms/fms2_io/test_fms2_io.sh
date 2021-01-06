@@ -26,8 +26,20 @@
 # Jessica Liptak
 #
 # Set common test settings.
-. ../test_common.sh
-# make a dummy file for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+. ../test-lib.sh
+
+test -n $netcdf_version_skip && SKIP_TESTS="$(basename $0 .sh).1"
+
+# make a dummy input.nml file for mpp_init to read
+cat <<_EOF > input.nml
+&dummy
+  empty=true
+/
+_EOF
+
 # run the tests
-run_test test_fms2_io 6 $netcdf_version_skip
+test_expect_success "FMS2 IO Test" '
+  mpirun -n 6 ./test_fms2_io
+'
+
+test_done

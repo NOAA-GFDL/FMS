@@ -25,10 +25,10 @@
 # Author: Uriel Ramirez 07/07/20
 #
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # make an input.nml for mpp_init to read
-touch input.nml
+rm -f input.nml &&  touch input.nml
 
 # make a masktable
 # This mask table masks out 1 rank (1st line), for a layout of 2,3 (2nd line)
@@ -40,7 +40,12 @@ touch input.nml
 # . ----- . ----- .
 # | (3,1) | (3,2) |
 # . ----- . ----- .
-printf "\n1\n2,3\n1,1" | cat > the_mask
+cat <<_EOF > the_mask
+
+1
+2,3
+1,1
+_EOF
 
 # For example, if you have a grid that is 60 by 60 and a layout of 2,3
 # You are going to need 6 ranks:
@@ -54,4 +59,8 @@ printf "\n1\n2,3\n1,1" | cat > the_mask
 # 5 ranks and nothing is going to be done for x: 1-30 y: 1-20
 
 # run the tests
-run_test test_io_with_mask 5
+test_expect_success "Test FMS2 IO using a mask" '
+  mpirun -n 5 ./test_io_with_mask
+'
+
+test_done

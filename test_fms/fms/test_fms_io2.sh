@@ -25,19 +25,28 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# Create the base input.nml file needed for the tests
-cat <<_EOF > input.nml
+setup_test () {
+  rm -rf RESTART && mkdir -p RESTART
+
+  cat <<_EOF > input.nml
 &test_fms_io_nml
   io_layout = 1,1
 /
 _EOF
+}
 
 # Test the structured grid
-rm -rf RESTART && mkdir RESTART
-run_test test_fms_io 6
+setup_test
+test_expect_success "test structured grid" '
+  mpirun -n 6 ./test_fms_io
+'
 
 # Ensure the restart directory is empty
-rm -rf RESTART && mkdir RESTART
-run_test test_unstructured_fms_io 6
+setup_test
+test_expect_success "test unstructured grid" '
+  mpirun -n 6 ./test_unstructured_fms_io
+'
+
+test_done

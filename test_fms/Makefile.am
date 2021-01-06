@@ -30,18 +30,19 @@ SUBDIRS = \
   data_override \
   diag_manager \
   drifters \
-  exchange
-#  field_manager \
-#  fms \
-#  fms2_io \
-#  horiz_interp \
-#  interpolator \
-#  monin_obukhov \
-#  mosaic \
-#  mpp \
-#  mpp_io \
-#  time_interp \
+  exchange \
+  field_manager \
+  fms \
+  fms2_io \
+  horiz_interp
+#  interpolator
+#  monin_obukhov
+#  mosaic
+#  mpp
+#  mpp_io
+#  time_interp
 #  time_manager
+#  fms2_io
 
 
 

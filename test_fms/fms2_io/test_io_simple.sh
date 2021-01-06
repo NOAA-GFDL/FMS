@@ -25,17 +25,23 @@
 # Author: Ed Hartnett 6/10/20
 #
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # make an input.nml for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+rm -f input.nml && touch input.nml
 
 # run the tests
-run_test test_io_simple 6
+test_expect_success "Simple IO test" '
+  mpirun -n 6 ./test_io_simple
+'
+test_expect_success "Test the get_mosaic_tile_grid functionality" '
+  mpirun -n 6 ./test_get_mosaic_tile_grid
+'
+test_expect_success "Test the get_valid is_valid functionality single PE" '
+  mpirun -n 1 ./test_get_is_valid
+'
+test_expect_success "Test the get_valid is_valid functionality multiple PE" '
+  mpirun -n 1 ./test_get_is_valid
+'
 
-echo "Test the get_mosaic_tile_grid functionality"
-run_test test_get_mosaic_tile_grid 6
-
-echo "Test the get_valid is_valid functionality"
-run_test test_get_is_valid 1
-run_test test_get_is_valid 2
+test_done

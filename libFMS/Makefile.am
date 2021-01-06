@@ -60,5 +60,34 @@ libFMS_la_LIBADD += $(top_builddir)/topography/libtopography.la
 libFMS_la_LIBADD += $(top_builddir)/tracer_manager/libtracer_manager.la
 libFMS_la_LIBADD += $(top_builddir)/random_numbers/librandom_numbers.la
 
-# At least one source file must be included to please Automake.
-libFMS_la_SOURCES = $(top_builddir)/include/file_version.h
+# List all the helper libraries as sources to trigger a re-link if any are
+# updated.
+libFMS_la_SOURCES = \
+  $(top_builddir)/platform/libplatform.la \
+  $(top_builddir)/constants/libconstants.la \
+  $(top_builddir)/tridiagonal/libtridiagonal.la \
+  $(top_builddir)/mpp/libmpp.la \
+  $(top_builddir)/memutils/libmemutils.la \
+  $(top_builddir)/fms/libfms.la \
+  $(top_builddir)/fms2_io/libfms2_io.la \
+  $(top_builddir)/affinity/libfms_affinity.la \
+  $(top_builddir)/mosaic/libmosaic.la \
+  $(top_builddir)/coupler/libcoupler.la \
+  $(top_builddir)/drifters/libdrifters.la \
+  $(top_builddir)/axis_utils/libaxis_utils.la \
+  $(top_builddir)/horiz_interp/libhoriz_interp.la \
+  $(top_builddir)/time_manager/libtime_manager.la \
+  $(top_builddir)/time_interp/libtime_interp.la \
+  $(top_builddir)/diag_manager/libdiag_manager.la \
+  $(top_builddir)/data_override/libdata_override.la \
+  $(top_builddir)/column_diagnostics/libcolumn_diagnostics.la \
+  $(top_builddir)/block_control/libblock_control.la \
+  $(top_builddir)/astronomy/libastronomy.la \
+  $(top_builddir)/field_manager/libfield_manager.la \
+  $(top_builddir)/monin_obukhov/libmonin_obukhov.la \
+  $(top_builddir)/interpolator/libinterpolator.la \
+  $(top_builddir)/amip_interp/libamip_interp.la \
+  $(top_builddir)/exchange/libexchange.la \
+  $(top_builddir)/topography/libtopography.la \
+  $(top_builddir)/tracer_manager/libtracer_manager.la \
+  $(top_builddir)/random_numbers/librandom_numbers.la
