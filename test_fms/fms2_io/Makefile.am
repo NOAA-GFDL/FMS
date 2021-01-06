@@ -48,13 +48,9 @@ test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh
 
 setup.$(FC_MODEXT): argparse.$(FC_MODEXT)
-test_atmosphere_io: setup.$(FC_MODEXT)
-test_fms2_io: argparse.$(FC_MODEXT)
-test_io_simple: setup.$(FC_MODEXT)
 
-TEST_EXTENSIONS = .sh
-SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+BUILT_SOURCES = setup.$(FC_MODEXT) argparse.$(FC_MODEXT)
+nodist_include_HEADERS = $(BUILT_SOURCES)
 
 # Run the test program.
 TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
@@ -67,10 +63,11 @@ skipflag=""
 endif
 
 # Set srcdir as evironment variable to be reference in the job script
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
                     netcdf_version_skip=${skipflag}
-TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
 
 include $(top_srcdir)/mkmods.mk
 
