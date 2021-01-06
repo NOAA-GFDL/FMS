@@ -23,10 +23,16 @@
 # Author: Uriel Ramirez 6/30/20
 #
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+test -n $netcdf_version_skip && SKIP_TESTS="$(basename $0 .sh).1"
 
 # make an input.nml for mpp_init to read
 touch input.nml
 
 # run the tests
-run_test test_global_att 1 $netcdf_version_skip
+test_expect_success "Global attribute test" '
+  mpirun -n 1 ./test_global_att
+'
+
+test_done

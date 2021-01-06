@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod files.
-AM_CPPFLAGS = -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_field_manager
@@ -34,11 +34,15 @@ check_PROGRAMS = test_field_manager
 # This is the source code for the test.
 test_field_manager_SOURCES = test_field_manager.F90
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # Run the test program.
 TESTS = test_field_manager2.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = test_field_manager2.sh input_base.nml field_table_base
+EXTRA_DIST = test_field_manager2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out* field_table

@@ -48,7 +48,7 @@ void handle_netcdf_error(const char *msg, int status )
 void get_file_dir(const char *file, char *dir)
 {
   int len;
-  char *strptr = NULL;
+  const char *strptr = NULL;
 
   /* get the diretory */
 
@@ -253,13 +253,13 @@ void get_var_data(const char *file, const char *name, void *data)
   switch (vartype) {
     case NC_DOUBLE:case NC_FLOAT:
 #ifdef OVERLOAD_R4
-      status = nc_get_var_float(ncid, varid, data);
+      status = nc_get_var_float(ncid, varid, (float *)data);
 #else
-      status = nc_get_var_double(ncid, varid, data);
+      status = nc_get_var_double(ncid, varid, (double *)data);
 #endif
       break;
     case NC_INT:
-      status = nc_get_var_int(ncid, varid, data);
+      status = nc_get_var_int(ncid, varid, (int *)data);
       break;
     default:
       sprintf(msg, "get_var_data: field %s in file %s has an invalid type, "
@@ -313,13 +313,13 @@ void get_var_data_region(const char *file, const char *name, const size_t *start
   switch (vartype) {
     case NC_DOUBLE:case NC_FLOAT:
 #ifdef OVERLOAD_R4
-      status = nc_get_vara_float(ncid, varid, start, nread, data);
+      status = nc_get_vara_float(ncid, varid, start, nread, (float *)data);
 #else
-      status = nc_get_vara_double(ncid, varid, start, nread, data);
+      status = nc_get_vara_double(ncid, varid, start, nread, (double *)data);
 #endif
       break;
     case NC_INT:
-      status = nc_get_vara_int(ncid, varid, start, nread, data);
+      status = nc_get_vara_int(ncid, varid, start, nread, (int *)data);
       break;
     default:
       sprintf(msg, "get_var_data_region: field %s in file %s has an invalid type, "

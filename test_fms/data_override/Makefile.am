@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_grid_v1 test_data_override test_data_override_ongrid
@@ -35,6 +35,10 @@ check_PROGRAMS = test_get_grid_v1 test_data_override test_data_override_ongrid
 test_data_override_SOURCES = test_data_override.F90
 test_data_override_ongrid_SOURCES = test_data_override_ongrid.F90
 test_get_grid_v1_SOURCES = test_get_grid_v1.F90
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 
 # Run the test program.
 TESTS = test_data_override2.sh

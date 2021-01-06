@@ -18,43 +18,45 @@
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
-
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/data_override directory.
-
-# Ed Hartnett 11/26/19
-# Uriel Ramirez 07/22/20
+#
+# Copyright (c) 2019-2021 Ed Hartnett, Uriel Ramirez, Seth Underwood
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# Run the ongrid test case with 2 halos in x and y
-touch input.nml
-printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
-[ ! -d "INPUT" ] && mkdir -p "INPUT"
-run_test test_data_override_ongrid 6
-rm -rf "INPUT"
+# Tests to skip
+SKIP_TESTS="$(basename $0 .sh).[1-2]"
 
-# Run the ongrid test case again with no halos
-printf "&test_data_override_ongrid_nml \n nhalox=0 \n nhaloy=0\n/" | cat > input.nml
-[ ! -d "INPUT" ] && mkdir -p "INPUT"
-run_test test_data_override_ongrid 6
-rm -rf "INPUT"
+setup_test_dir () {
+  local halo_size
+  test "$#" = 1 && { halo_size=$1; } ||
+  BUG "required parameter for halo size not present"
+  rm -rf data_table input.nml INPUT
+  cat <<_EOF > data_table
+"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0
+_EOF
+
+cat <<_EOF > input.nml
+&test_data_override_ongrid_nml
+  nhalox=${halo_size}
+  nhaloy=${halo_size}
+/
+_EOF
+}
+
+setup_test_dir 2
+test_expect_success "data_override on grid with 2 halos in x and y" '
+  mpirun -n 6 ./test_data_override_ongrid
+'
+
+setup_test_dir 0
+test_expect_success "data_override on grid with no halos" '
+  mpirun -n 6 ./test_data_override_ongrid
+'
 
 # Run the get_grid_v1 test:
-run_test test_get_grid_v1 1
+test_expect_success "data_override get_grid_v1" '
+  mpirun -n 1 ./test_get_grid_v1
+'
 
-# Copy to builddir and rename data files for tests.
-#cp $top_srcdir/test_fms/data_override/data_table_base data_table
-#cp $top_srcdir/test_fms/data_override/diag_table_base diag_table
-#cp -r $top_srcdir/test_fms/data_override/INPUT $top_builddir/test_fms/data_override/INPUT
-
-# Both tests are skipped in the bats file, so commented out here.
-#tnum=$( printf "%2.2d" 1 )
-#sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-#run_test test_data_override 2 skip
-
-#tnum=$( printf "%2.2d" 2 )
-#sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-#run_test test_data_override 2 skip
-
+test_done

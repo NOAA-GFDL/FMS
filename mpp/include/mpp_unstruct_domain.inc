@@ -687,20 +687,30 @@ subroutine deallocate_unstruct_overlap_type(overlap)
 end subroutine deallocate_unstruct_overlap_type
 
 !------------------------------------------------------------------
-subroutine deallocate_unstruct_pass_type(passobj)
-  type(unstruct_pass_type), intent(inout) :: passobj
+subroutine deallocate_unstruct_pass_type(domain)
+  type(domainUG), intent(inout) :: domain
   integer :: n
 
-  do n = 1, passobj%nsend
-     call deallocate_unstruct_overlap_type(passobj%send(n))
+  do n = 1, domain%UG2SG%nsend
+     call deallocate_unstruct_overlap_type(domain%UG2SG%send(n))
   enddo
-  do n = 1, passobj%nrecv
-     call deallocate_unstruct_overlap_type(passobj%recv(n))
+  do n = 1, domain%UG2SG%nrecv
+     call deallocate_unstruct_overlap_type(domain%UG2SG%recv(n))
   enddo
 
-  if(associated(passobj%send)) deallocate(passobj%send)
-  if(associated(passobj%recv)) deallocate(passobj%recv)
-
+  ! SG2UG%{send,recv} point to the same memory as UG2SG%{send,recv}
+  ! respectively.  Thus, we only need to `deallocate` one, and nullify
+  ! the other set.
+  if(associated(domain%UG2SG%send)) then
+    deallocate(domain%UG2SG%send)
+    nullify(domain%UG2SG%send)
+    nullify(domain%SG2UG%recv)
+  end if
+  if(associated(domain%UG2SG%recv)) then
+    deallocate(domain%UG2SG%recv)
+    nullify(domain%UG2SG%recv)
+    nullify(domain%SG2UG%send)
+  end if
 end subroutine deallocate_unstruct_pass_type
 
 !------------------------------------------------------------------
@@ -726,8 +736,7 @@ subroutine mpp_deallocate_domainUG(domain)
         domain%io_domain => null()
     endif
 
-    call deallocate_unstruct_pass_type(domain%SG2UG)
-    call deallocate_unstruct_pass_type(domain%UG2SG)
+    call deallocate_unstruct_pass_type(domain)
 
     if (associated(domain%grid_index)) then
         deallocate(domain%grid_index)

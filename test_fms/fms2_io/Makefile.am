@@ -23,10 +23,10 @@
 # J.Liptak, R.Menzel, U.Ramirez
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
@@ -47,12 +47,10 @@ test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh
 
-argparse.mod: argparse.$(OBJEXT)
-setup.mod: setup.$(OBJEXT)
-setup.$(OBJEXT): argparse.mod
-test_atmosphere_io.$(OBJEXT): setup.mod
-test_io_simple.$(OBJEXT): setup.mod
-test_fms2_io.$(OBJEXT): argparse.mod
+setup.$(FC_MODEXT): argparse.$(FC_MODEXT)
+
+BUILT_SOURCES = setup.$(FC_MODEXT) argparse.$(FC_MODEXT)
+nodist_include_HEADERS = $(BUILT_SOURCES)
 
 # Run the test program.
 TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
@@ -65,7 +63,12 @@ skipflag=""
 endif
 
 # Set srcdir as evironment variable to be reference in the job script
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
                     netcdf_version_skip=${skipflag}
 
-CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask
+include $(top_srcdir)/mkmods.mk
+
+CLEANFILES += *.nc *.nc.* input.nml *.out the_mask

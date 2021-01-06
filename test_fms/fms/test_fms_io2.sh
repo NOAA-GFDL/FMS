@@ -25,8 +25,28 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# These tests are skipped in bats files.
-run_test test_fms_io 2 skip
-run_test test_unstructured_fms_io 2 skip
+setup_test () {
+  rm -rf RESTART && mkdir -p RESTART
+
+  cat <<_EOF > input.nml
+&test_fms_io_nml
+  io_layout = 1,1
+/
+_EOF
+}
+
+# Test the structured grid
+setup_test
+test_expect_success "test structured grid" '
+  mpirun -n 6 ./test_fms_io
+'
+
+# Ensure the restart directory is empty
+setup_test
+test_expect_success "test unstructured grid" '
+  mpirun -n 6 ./test_unstructured_fms_io
+'
+
+test_done

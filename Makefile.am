@@ -25,8 +25,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 # Directory to place all .mod files.  Convienient place to look for these
 # files.
-MODDIR := .mod
-$(shell test -d $(MODDIR) || mkdir -p $(MODDIR))
+#include $(top_srcdir)/mkmods.mk
 
 # Does the user want to build documentation?
 if BUILD_DOCS
@@ -34,12 +33,41 @@ DOCS = docs
 endif
 
 # Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = include platform constants tridiagonal mpp memutils fms2_io \
-fms affinity mosaic time_manager axis_utils diag_manager drifters \
-horiz_interp time_interp column_diagnostics block_control \
-data_override astronomy field_manager coupler diag_integral \
-monin_obukhov interpolator amip_interp exchange topography \
-tracer_manager sat_vapor_pres random_numbers libFMS test_fms ${DOCS}
+SUBDIRS = \
+  platform \
+  constants \
+  tridiagonal \
+  mpp \
+  memutils \
+  fms2_io \
+  fms affinity \
+  mosaic \
+  time_manager \
+  axis_utils \
+  diag_manager \
+  drifters \
+  horiz_interp \
+  time_interp \
+  column_diagnostics \
+  block_control \
+  data_override \
+  astronomy \
+  field_manager \
+  coupler \
+  diag_integral \
+  monin_obukhov \
+  interpolator \
+  amip_interp \
+  exchange \
+  topography \
+  tracer_manager \
+  sat_vapor_pres \
+  random_numbers \
+  libFMS \
+  test_fms \
+  ${DOCS}
+
+include_HEADERS = include/file_version.h include/fms_platform.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = FMS.pc
@@ -70,7 +98,5 @@ pkgconfig_DATA = FMS.pc
 #	-rm -f FMSConfig.cmake FMSConfigVersion.cmake
 EXTRA_DIST = README.md #_package_init_cmake
 
-CLEANFILES = *__genmod.mod *__genmod.f90
-
 clean-local:
-	-rm -rf .mod
+	-rm -rf .mods
