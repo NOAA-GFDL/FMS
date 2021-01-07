@@ -23,22 +23,14 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/time_manager
-AM_CPPFLAGS += -I${top_builddir}/diag_manager
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/mosaic
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
-AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libstock_constants.la libxgrid.la
 
 # Each convenience library depends on its source.
 libstock_constants_la_SOURCES = stock_constants.F90
-libxgrid_la_SOURCES = xgrid.F90 stock_constants_mod.mod
+libxgrid_la_SOURCES = xgrid.F90
 
 # Each mod file depends on the .o file.
 stock_constants_mod.mod: stock_constants.lo
@@ -51,5 +43,13 @@ xgrid.lo: stock_constants_mod.mod
 MODFILES = stock_constants_mod.mod xgrid_mod.mod
 include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
+
+SUFFIXES = .mod _mod.mod
+.F90.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
+.F90_mod.mod:
+	$(PPFCCOMPILE) -c $<
+	@cp ${builddir}/$@ ${top_builddir}/.mod/
 
 CLEANFILES = *.mod

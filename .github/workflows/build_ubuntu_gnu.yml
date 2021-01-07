@@ -1,0 +1,32 @@
+name: Build libFMS test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distcheck-conf-flags: [--enable-openmp, --disable-openmp, --enable-mixed-mode, --disable-setting-flags]
+        fcflags: ["-I/usr/include", "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"]
+        exclude:
+          - distcheck-conf-flags: --disable-setting-flags
+            fcflags: -I/usr/include
+          - distcheck-conf-flags: --enable-mixed-mode
+            fcflags: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"
+    container:
+      image: underwoo/ubuntu_libfms_gnu
+      env:
+        FCFLAGS: "${{ matrix.fcflags }}"
+        VERBOSE: 1
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Prepare GNU autoconf for build
+      run: autoreconf -if
+    - name: Configure the build
+      run: ./configure ${{ matrix.distcheck-conf-flags }}
+      env:
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.distcheck-conf-flags }}"
+    - name: Build the library
+      run: make -j distcheck

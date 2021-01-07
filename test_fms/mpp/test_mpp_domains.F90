@@ -18,7 +18,7 @@
 !***********************************************************************
 program test_mpp_domains
   use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_set_warn_level
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
@@ -411,7 +411,7 @@ contains
     thrnum = omp_get_thread_num()
     write( outunit,'(a,4i6)' )'pe,thrnum,js,je=', &
          pe, thrnum, js+thrnum*jthr,js+(thrnum+1)*jthr-1
-    write( outunit,'(a,3i6)' )'pe,thrnum,node=', pe, thrnum, mpp_node()
+    write( outunit,'(a,2i6)' )'pe,thrnum=', pe, thrnum
 !!$OMP DO
     do k = 1,nz
 !when omp DO is commented out, user must compute j loop limits

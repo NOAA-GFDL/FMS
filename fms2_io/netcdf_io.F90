@@ -1555,12 +1555,14 @@ function get_valid(fileobj, variable_name) &
     !This routine makes use of netcdf's automatic type conversion to
     !store all range information in double precision.
     if (attribute_exists(fileobj%ncid, varid, "scale_factor")) then
-      call get_variable_attribute(fileobj, variable_name, "scale_factor", scale_factor)
+      call get_variable_attribute(fileobj, variable_name, "scale_factor", scale_factor, &
+                                  broadcast=.false.)
     else
       scale_factor = 1._real64
     endif
     if (attribute_exists(fileobj%ncid, varid, "add_offset")) then
-      call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset)
+      call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset, &
+                                  broadcast=.false.)
     else
       add_offset = 0._real64
     endif
@@ -1570,19 +1572,22 @@ function get_valid(fileobj, variable_name) &
     !or minimum value is defined, valid%has_range is set to .true. (i.e. open ended ranges
     !are valid and should be tested within the is_valid function).
     if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
-      call get_variable_attribute(fileobj, variable_name, "valid_range", buffer)
+      call get_variable_attribute(fileobj, variable_name, "valid_range", buffer, &
+                                  broadcast=.false.)
       valid%max_val = buffer(2)*scale_factor + add_offset
       valid%has_max = .true.
       valid%min_val = buffer(1)*scale_factor + add_offset
       valid%has_min = .true.
     else
       if (attribute_exists(fileobj%ncid, varid, "valid_max")) then
-        call get_variable_attribute(fileobj, variable_name, "valid_max", buffer(1))
+        call get_variable_attribute(fileobj, variable_name, "valid_max", buffer(1), &
+                                  broadcast=.false.)
         valid%max_val = buffer(1)*scale_factor + add_offset
         valid%has_max = .true.
       endif
       if (attribute_exists(fileobj%ncid, varid, "valid_min")) then
-        call get_variable_attribute(fileobj, variable_name, "valid_min", buffer(1))
+        call get_variable_attribute(fileobj, variable_name, "valid_min", buffer(1), &
+                                  broadcast=.false.)
         valid%min_val = buffer(1)*scale_factor + add_offset
         valid%has_min = .true.
       endif
@@ -1592,7 +1597,8 @@ function get_valid(fileobj, variable_name) &
 
     !Get the missing value from the file if it exists.
     if (attribute_exists(fileobj%ncid, varid, "missing_value")) then
-      call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1))
+      call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1), &
+                                  broadcast=.false.)
       valid%missing_val = buffer(1)*scale_factor + add_offset
       valid%has_missing = .true.
     endif
@@ -1606,7 +1612,8 @@ function get_valid(fileobj, variable_name) &
     !values are greater than the fill value). As before, valid%has_range is true
     !if either a maximum or minimum value is set.
     if (attribute_exists(fileobj%ncid, varid, "_FillValue")) then
-      call get_variable_attribute(fileobj, variable_name, "_FillValue", buffer(1))
+      call get_variable_attribute(fileobj, variable_name, "_FillValue", buffer(1), &
+                                  broadcast=.false.)
       valid%fill_val = buffer(1)*scale_factor + add_offset
       valid%has_fill = .true.
       xtype = get_variable_type(fileobj%ncid, varid)

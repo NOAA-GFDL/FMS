@@ -31,7 +31,7 @@ program test_io_simple
   use setup
   use netcdf
   implicit none
-  
+
   type(Params) :: test_params  !> Some test parameters.
   type(domain2d) :: domain     !> Not sure what a domain is.
   type(domain2d), pointer :: io_domain   !> Not sure what a domain is.
@@ -107,7 +107,7 @@ program test_io_simple
 
   do i = 1, 3
      write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.nc'
-     
+
      ! Open a netCDF file and initialize the file object.
      call open_check(open_file(fileobj, testfile, "overwrite", &
           domain, nc_format=my_format(1), is_restart=.false.))
@@ -121,11 +121,11 @@ program test_io_simple
      ! Add a coordinate variable for the dimension.
      names(1) = "lon"
      call register_field(fileobj, "lon", "double", names(1:1))
-     call write_data(fileobj, "lon", double_buffer)     
-          
+     call write_data(fileobj, "lon", double_buffer)
+
      ! Close the file.
      call close_file(fileobj)
-     
+
      call mpi_barrier(mpi_comm_world, err)
      call mpi_check(err)
 
@@ -165,12 +165,12 @@ program test_io_simple
         do j = 1, 96
            if (double_buffer_in(j) .ne. j) stop 39
         end do
-        
+
         ! Close the file.
         err = nf90_close(ncid)
         if (err .ne. NF90_NOERR) stop 90
      endif
-     
+
      call mpi_barrier(mpi_comm_world, err)
      call mpi_check(err)
   end do

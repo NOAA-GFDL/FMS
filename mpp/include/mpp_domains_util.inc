@@ -42,17 +42,12 @@
     character(len=8) :: text
 
     if( n.LE.mpp_domains_stack_size )return
-#ifdef use_libSMA
-    call mpp_malloc( ptr_domains_stack, n, mpp_domains_stack_size )
-    call mpp_malloc( ptr_domains_stack_nonblock, n, mpp_domains_stack_size )
-#else
     if( allocated(mpp_domains_stack) )deallocate(mpp_domains_stack)
     allocate( mpp_domains_stack(n) )
     if( allocated(mpp_domains_stack_nonblock) )deallocate(mpp_domains_stack_nonblock)
     allocate( mpp_domains_stack_nonblock(n) )
 
     mpp_domains_stack_size = n
-#endif
     write( text,'(i8)' )n
     if( mpp_pe().EQ.mpp_root_pe() )call mpp_error( NOTE, 'MPP_DOMAINS_SET_STACK_SIZE: stack size set to '//text//'.' )
 

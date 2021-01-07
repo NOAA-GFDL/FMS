@@ -25,7 +25,7 @@ AC_PREREQ([2.59])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2020.02-dev],
+  [2020.04],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -66,12 +66,6 @@ AC_ARG_ENABLE([setting-flags],
 AS_IF([test ${enable_setting_flags:-yes} = yes],
   [enable_setting_flags=yes],
   [enable_setting_flags=no])
-AC_ARG_ENABLE([mpp-io],
-  [AS_HELP_STRING([--enable-mpp-io],
-    [Compile using mpp-io. Otherwise compiles using fms2_io.])])
-AS_IF([test ${enable_mpp_io:-no} = no],
-  [enable_mpp_io=no],
-  [enable_mpp_io=yes])
 
 # Does the user want to build documentation?
 AC_MSG_CHECKING([whether documentation should be build (requires doxygen)])
@@ -148,16 +142,12 @@ AC_LANG_POP(C)
 AC_LANG_PUSH(Fortran)
 if test $with_mpi = yes; then
   # Require MPI
-  GX_FORTRAN_CHECK_HEADERS([mpif.h], [], [AC_MSG_ERROR([Can't find the MPI Fortran header file.  Set FC/CPPFLAGS/FCFLAGS])])
   GX_FC_CHECK_MOD([mpi], [], [], [AC_MSG_ERROR([Can't find the MPI Fortran module.  Set FC/CPPFLAGS/FCFLAGS])])
   AC_CHECK_FUNC([MPI_init], [], [AC_MSG_ERROR([Can't find the MPI Fortran library.  Set FC/LDFLAGS/LIBS])])
 fi
 
 # Require netCDF
-GX_FORTRAN_CHECK_HEADERS([netcdf.inc], [], [AC_MSG_ERROR([Can't find the netCDF Fortran header file.  Set CPPFLAGS/FCFLAGS])])
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
-GX_FORTRAN_SEARCH_LIBS([nf_create], [netcdff], [@%:@include <netcdf.inc>], [iret = nf_create('foo.nc', 1, ncid)], [],
-  [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 
@@ -219,11 +209,6 @@ if test $enable_setting_flags = yes; then
   if test ! -z "$OPENMP_FCFLAGS"; then
     FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
   fi
-
-  # Add mpp io flags
-  if test $enable_mpp_io = yes; then
-    AC_DEFINE([use_mpp_io], [1], [Set to compile using mpp_io])
-  fi
 fi
 
 # Define an AM_CONDITIONAL to determine if you are on a CRAY
@@ -277,6 +262,16 @@ if test -n "$fc_version_info"; then
   FC_VERSION="$FC_VERSION ( $fc_version_info )"
 fi
 
+# Check if netcdf is version 4.7.4 to skip failing fms2_io tests
+AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
+if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
+  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], true )
+  AC_MSG_RESULT([yes])
+else
+  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], false )
+  AC_MSG_RESULT([no])
+fi
+
 #####
 # Create output variables from various
 # shell variables, for use in generating
@@ -291,6 +286,7 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([NOUNDEFINED])
+
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([Makefile
@@ -328,7 +324,7 @@ AC_CONFIG_FILES([Makefile
         sat_vapor_pres/Makefile
         random_numbers/Makefile
         libFMS/Makefile
-	docs/Makefile
+        docs/Makefile
         test_fms/test_common.sh
         test_fms/Makefile
         test_fms/diag_manager/Makefile
@@ -351,3 +347,8 @@ AC_CONFIG_FILES([Makefile
         FMS.pc
         ])
 AC_OUTPUT()
+
+## if tests are being skipped, output warning at end of output
+if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
+  AC_MSG_RESULT([Warning: netCDF v4.7.4 is loaded. Incompatible fms2_io tests will be skipped and there may be netCDF issues with model runs.])
+fi

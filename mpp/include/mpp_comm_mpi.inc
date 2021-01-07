@@ -50,11 +50,6 @@
   endif
   call MPI_COMM_RANK( mpp_comm_private, pe,   error )
   call MPI_COMM_SIZE( mpp_comm_private, npes, error )
-#ifdef use_MPI_SMA
-  call SHMEM_BARRIER_ALL()
-  call SHPALLOC( p_pSync, SHMEM_BARRIER_SYNC_SIZE, error, -1 )
-  call SHMEM_BARRIER_ALL()
-#endif
 
   module_is_initialized = .TRUE.
   if (present(test_level)) then
@@ -62,7 +57,7 @@
   else
     t_level = -1
   endif
-  if (t_level == 0) return 
+  if (t_level == 0) return
 
   !PEsets: make defaults illegal
   allocate(peset(0:current_peset_max))
@@ -342,68 +337,6 @@ subroutine mpp_exit()
 
   return
 end subroutine mpp_exit
-
-!#######################################################################
-    subroutine mpp_malloc( ptr, newlen, len )
-      integer, intent(in)    :: newlen
-      integer, intent(inout) :: len
-#ifdef use_MPI_SMA
-      real                   :: dummy
-      pointer( ptr, dummy )
-      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_MALLOC: You must first call mpp_init.' )
-!use existing allocation if it is enough
-      if( newlen.LE.len )return
-
-      call SHMEM_BARRIER_ALL()
-!if the pointer is already allocated, deallocate
-!      if( len.NE.0 )call SHPDEALLC( ptr, error_8, -1 ) !BWA: error_8 instead of error, see PV 682618 (fixed in mpt.1.3.0.1)
-      if( len.NE.0 )call SHPDEALLC( ptr, error, -1 )
-!allocate new length: assume that the array is KIND=8
-      call SHPALLOC( ptr, newlen, error, -1 )
-      len = newlen
-      call SHMEM_BARRIER_ALL()
-#else
-      integer(POINTER_KIND), intent(in) :: ptr
-      call mpp_error( FATAL, 'mpp_malloc: requires use_MPI_SMA' )
-#endif
-      return
-    end subroutine mpp_malloc
-
-#ifdef use_MPI_GSM
-!#######################################################################
- !--- routine to perform GSM allocations
- !
-subroutine mpp_gsm_malloc( ptr, len )
-  use mpp_data_mod,      only : peset, current_peset_num
-  integer(KIND=MPI_ADDRESS_KIND), intent(in)    :: len
-  real                   :: dummy
-  integer                :: ierror
-  !argument ptr is a cray pointer, points to a dummy argument in this routine
-  pointer( ptr, dummy )
-  include "mpi_gsmf.h"
-  if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GSM_MALLOC: You must first call mpp_init.' )
-
-  call gsm_alloc(len, GSM_SINGLERANK, 0, peset(current_peset_num)%id, ptr, ierror)
-  if (ierror .eq. -1) call mpp_error( FATAL, 'MPP_GSM_MALLOC: gsm_alloc failed.' )
-  return
-end subroutine mpp_gsm_malloc
-
-!#######################################################################
- !--- routine to free GSM allocations
- !
-subroutine mpp_gsm_free( ptr )
-  use mpp_data_mod,      only : peset, current_peset_num
-  real                   :: dummy
-  integer                :: ierror
-  !argument ptr is a cray pointer, points to a dummy argument in this routine
-  pointer( ptr, dummy )
-  include "mpi_gsmf.h"
-
-  call gsm_free(dummy, peset(current_peset_num)%id, ierror)
-  if (ierror .eq. -1) call mpp_error( FATAL, 'MPP_GSM_FREE: gsm_free failed.' )
-  return
-end subroutine mpp_gsm_free
-#endif
 
 !#######################################################################
     !set the mpp_stack variable to be at least n LONG words long

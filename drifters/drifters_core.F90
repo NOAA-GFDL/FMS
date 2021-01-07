@@ -44,7 +44,7 @@ module drifters_core_mod
      integer :: np     ! number of particles (drifters)
      integer :: npdim  ! max number of particles (drifters)
      integer, allocatable :: ids(:)_NULL  ! particle id number
-     real   , allocatable :: positions(:,:)  
+     real   , allocatable :: positions(:,:)
   end type drifters_core_type
 
   interface assignment(=)

@@ -516,20 +516,6 @@
       return
    end function mpp_get_recdimid
 
-    subroutine mpp_get_iospec( unit, iospec )
-      integer, intent(in) :: unit
-      character(len=*), intent(inout) :: iospec
-
-      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_IOSPEC: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_IOSPEC: invalid unit number.' )
-#ifdef SGICRAY
-!currently will write to stdout: don't know how to trap and return as string to iospec
-      call ASSIGN( 'assign -V f:'//trim(mpp_file(unit)%name), error )
-#endif
-      return
-    end subroutine mpp_get_iospec
-
-
   !#####################################################################
 ! <FUNCTION NAME="mpp_get_ncid">
 !   <OVERVIEW>

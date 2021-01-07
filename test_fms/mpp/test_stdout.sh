@@ -22,14 +22,35 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ed Hartnett 11/29/19
+# Colin Gladue 06/12/20
 
 # Set common test settings.
 . ../test_common.sh
 
-# Setup the run directory
-##tnum=$( printf "%2.2d" ${BATS_TEST_NUMBER} )
-##rm -f diag_test_${tnum}* > /dev/null 2>&1
-##sed "s/<test_num>/${tnum}/" input.nml_base > input.nml
+# Run test with one processor
+echo "Running stdout unit test with 1 proc..."; echo
+run_test test_stdout 1
+echo; echo "stdout test passed with 1 proc."; echo
 
-run_test test_mpp_pset 2 skip
+# If on a Linux system that uses the command `nproc`, run the test
+# with multiple processors
+
+if [ $(command -v nproc) ]
+  # Looks like a linux system
+  then
+  # Get the number of available CPUs on the system
+  nProc=$(nproc)
+  if [ ${nProc} -gt 1 ]
+  then
+    # Run the test with multiple processors
+    echo "Running stdout unit test with multiple procs..."; echo
+    err=0
+    run_test test_stdout 2 || err=1
+    if [ $err -eq 1 ]; then
+      echo; echo "Failed with multiple procs"
+      exit 1
+    fi
+    echo; echo "stdout test passed with multiple procs."
+  fi
+fi
+

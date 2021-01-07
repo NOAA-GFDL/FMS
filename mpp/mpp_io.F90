@@ -316,6 +316,13 @@ module mpp_io_mod
 #include <fms_platform.h>
 #define _MAX_FILE_UNITS 1024
 
+#ifdef use_netCDF
+use netcdf
+use netcdf_nf_data
+use netcdf_nf_interfaces
+use netcdf4_nf_interfaces
+#endif
+
 use mpp_parameter_mod,  only : MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII
 use mpp_parameter_mod,  only : MPP_IEEE32, MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL
 use mpp_parameter_mod,  only : MPP_DIRECT, MPP_SINGLE, MPP_MULTI, MPP_DELETE, MPP_COLLECT
@@ -354,10 +361,6 @@ use mpp_domains_mod, only: domainUG, &
 implicit none
 private
 
-#ifdef use_netCDF
-#include <netcdf.inc>
-#endif
-
   !--- public parameters  -----------------------------------------------
   public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32
   public :: MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL, MPP_DIRECT, MPP_SINGLE
@@ -371,7 +374,7 @@ private
   public :: default_field, default_axis, default_att
 
   !--- public interface from mpp_io_util.h ----------------------
-  public :: mpp_get_iospec, mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_is_valid
+  public :: mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_is_valid
   public :: mpp_set_unit_range, mpp_get_info, mpp_get_atts, mpp_get_fields
   public :: mpp_get_times, mpp_get_axes, mpp_get_recdimid, mpp_get_axis_data, mpp_get_axis_by_name
   public :: mpp_io_set_stack_size, mpp_get_field_index, mpp_get_axis_index

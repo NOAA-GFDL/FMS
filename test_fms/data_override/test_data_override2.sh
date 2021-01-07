@@ -28,12 +28,21 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Run the ongrid test case:
+# Run the ongrid test case with 2 halos in x and y
 touch input.nml
 printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 run_test test_data_override_ongrid 6
 rm -rf "INPUT"
+
+# Run the ongrid test case again with no halos
+printf "&test_data_override_ongrid_nml \n nhalox=0 \n nhaloy=0\n/" | cat > input.nml
+[ ! -d "INPUT" ] && mkdir -p "INPUT"
+run_test test_data_override_ongrid 6
+rm -rf "INPUT"
+
+# Run the get_grid_v1 test:
+run_test test_get_grid_v1 1
 
 # Copy to builddir and rename data files for tests.
 #cp $top_srcdir/test_fms/data_override/data_table_base data_table

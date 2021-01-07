@@ -41,7 +41,7 @@ subroutine get_global_attribute_0d(fileobj, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    charbuf(1))
-                call string_copy(attribute_value, charbuf(1))
+                call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
             type is (integer(kind=int32))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
@@ -77,7 +77,7 @@ subroutine get_global_attribute_0d(fileobj, &
             call mpp_broadcast(charbuf, len(charbuf), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-            call string_copy(attribute_value, charbuf(1))
+            call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
         type is (integer(kind=int32))
             call mpp_broadcast(attribute_value, &
 
