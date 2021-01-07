@@ -44,7 +44,7 @@ program test_system_clock
   integer(LONG_KIND) :: count1, count_rate1, count_max1, count2, count_rate2, count_max2
   integer :: ierr
 !> Initialize mpp
-  call mpp_init(test_level=mpp_init_test_init_true_only) 
+  call mpp_init(test_level=mpp_init_test_init_true_only)
 !> Call system_clock and ensure output is not undefined
   call system_clock(count1, count_rate1, count_max1)
   write(*,*) count1, count_rate1, count_max1
