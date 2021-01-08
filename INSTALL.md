@@ -19,7 +19,7 @@ when compiled with the GNU C and Fortran compilers.
 
 ## MPI Support
 
-The default way to build libMPI is with MPI support.  We have found that using
+The default way to build libFMS is with MPI support.  We have found that using
 the MPI aware compiler, or the MPI compiler wrappers (mpif90, mpicc, etc.), in
 general, offer the best results when building with MPI support.  If you decide
 to not use an MPI aware compiler, you should pass the include and library

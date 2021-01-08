@@ -2,11 +2,10 @@
 
 Today’s climate models simulate highly complex systems. In response to
 increasingly complex models, the climate community has developed tools and
-methodologies to facilitate the modeling process, developing modeling frameworks
-that provide infrastructure and tools to structure climate model codes and
-facilitate many common tasks (e.g., calendar management, grid generation, I/O).
-Such frameworks come with a number of advantages, including decreased model
-development time and increased compatibility of interfaces.
+methodologies to facilitate the modeling process, and many common tasks (e.g.,
+calendar management, grid generation, I/O). Such frameworks come with a number
+of advantages, including decreased model development time and increased
+compatibility of interfaces.
 
 The Flexible Modeling System (FMS) is a software environment that supports the
 efficient development, construction, execution, and scientific interpretation of
@@ -29,7 +28,7 @@ and new algorithms.
 
 The Flexible Modeling System (FMS) is a software framework for supporting the
 efficient development, construction, execution, and scientific interpretation of
-atmospheric, oceanic, and climate system models.  FMS comprises of the
+atmospheric, oceanic, and climate system models.  FMS consists of the
 following:
 
 1. A software infrastructure for constructing and running atmospheric, oceanic,
