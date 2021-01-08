@@ -1,18 +1,35 @@
 # Modeling Framework: Flexible Modeling System (FMS)
 
-Today’s climate models simulate highly complex systems. In response to increasingly complex models, the climate community has developed tools and methodologies to facilitate the modeling process, developing modeling frameworks that provide infrastructure and tools to structure climate model codes and facilitate many common tasks (e.g., calendar management, grid generation, I/O). Such frameworks come with a number of advantages, including decreased model development time and increased compatibility of interfaces.
+Today’s climate models simulate highly complex systems. In response to
+increasingly complex models, the climate community has developed tools and
+methodologies to facilitate the modeling process, developing modeling frameworks
+that provide infrastructure and tools to structure climate model codes and
+facilitate many common tasks (e.g., calendar management, grid generation, I/O).
+Such frameworks come with a number of advantages, including decreased model
+development time and increased compatibility of interfaces.
 
-The Flexible Modeling System (FMS) is a software environment that supports the efficient development, construction, execution, and scientific interpretation of atmospheric, oceanic, and climate system models. This framework allows algorithms to be expressed on a variety of high-end computing architectures using common and easy-to-use expressions of the underlying platforms, spanning distributed and shared memory, as well as high-performance architectures. Scientific groups at GFDL can develop new physics and new algorithms concurrently, and coordinate periodically through this framework.
+The Flexible Modeling System (FMS) is a software environment that supports the
+efficient development, construction, execution, and scientific interpretation of
+atmospheric, oceanic, and climate system models. This framework allows
+algorithms to be expressed on a variety of high-end computing architectures
+using common and easy-to-use expressions of the underlying platforms, spanning
+distributed and shared memory, as well as high-performance architectures.
+Scientific groups at GFDL can develop new physics and new algorithms
+concurrently, and coordinate periodically through this framework.
 
 ![FMS Framework](docs/images/FMS.gif)
 
-Modeling frameworks for the construction of coupled models, made from independent model components, are now prevalent across this field. This framework, FMS, was one of the first to be developed — since the advent of the Cray T3E in 1998 — and is still in use and development today, using new architectures and new algorithms.
+Modeling frameworks for the construction of coupled models, made from
+independent model components, are now prevalent across this field. FMS was one
+of the first frameworks to be developed — since the advent of the Cray T3E in
+1998 — and is still in use and under development today, using new architectures
+and new algorithms.
 
 ## What is FMS
 
 The Flexible Modeling System (FMS) is a software framework for supporting the
-efficient development, construction, execution, and scientific interpretation
-of atmospheric, oceanic, and climate system models.  FMS comprises of the
+efficient development, construction, execution, and scientific interpretation of
+atmospheric, oceanic, and climate system models.  FMS comprises of the
 following:
 
 1. A software infrastructure for constructing and running atmospheric, oceanic,
