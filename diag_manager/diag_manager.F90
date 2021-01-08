@@ -3534,7 +3534,8 @@ CONTAINS
     IF ( (output_fields(out_num)%time_ops) .AND. (.NOT. mix_snapshot_average_fields) ) THEN
        middle_time = (output_fields(out_num)%last_output+output_fields(out_num)%next_output)/2
        if (output_fields(out_num)%n_diurnal_samples > 1) then
-          CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, use_mpp_io_arg=use_mpp_io)
+          CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, &
+                 & use_mpp_io_arg=use_mpp_io, filename_time=output_fields(out_num)%last_output)
        else
           CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
                  & use_mpp_io_arg=use_mpp_io, filename_time=output_fields(out_num)%last_output)

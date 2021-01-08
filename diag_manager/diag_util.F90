@@ -1777,9 +1777,9 @@ CONTAINS
     INTEGER, INTENT(in) :: file !< File ID.
     TYPE(time_type), INTENT(in) :: time !< Time for the file time stamp
     logical :: use_mpp_io !< controls which IO is used for output
-    TYPE(time_type), INTENT(in), optional :: filename_time
+    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
-    TYPE(time_type) :: fname_time
+    TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
     REAL, DIMENSION(2) :: DATA
     INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
@@ -2605,7 +2605,7 @@ CONTAINS
     TYPE(time_type), INTENT(in) :: time
     LOGICAL, OPTIONAL, INTENT(in):: final_call_in, static_write_in
     logical,optional,intent(in) :: use_mpp_io_arg !< Switch for which IO to use for outputting data
-    type(time_type), intent(in), optional :: filename_time
+    type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     LOGICAL :: final_call, do_write, static_write
     INTEGER :: i, num
@@ -2772,7 +2772,7 @@ CONTAINS
     TYPE(time_type), INTENT(in) :: time !< Current model time.
     LOGICAL, INTENT(out) :: do_write !< .TRUE. if file is expecting more data to write, .FALSE. otherwise.
     LOGICAL, INTENT(in) :: use_mpp_io !< true=mpp_io, false=fms2_io
-    TYPE(time_type), INTENT(in), optional :: filename_time
+    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file
