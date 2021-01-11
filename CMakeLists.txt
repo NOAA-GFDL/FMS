@@ -186,6 +186,13 @@ list(APPEND fms_defs
   use_libMPI
   use_netCDF)
 
+# check gettid
+include(CheckFunctionExists)
+check_function_exists(gettid HAVE_GETTID)
+if(HAVE_GETTID)
+  list(APPEND fms_defs HAVE_GETTID)
+endif()
+
 # Additional (optional) compiler definitions
 if(GFS_PHYS)
   list(APPEND fms_defs GFS_PHYS)
