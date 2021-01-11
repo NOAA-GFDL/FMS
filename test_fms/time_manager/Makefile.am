@@ -37,8 +37,12 @@ test_time_manager_SOURCES = test_time_manager.F90
 # Run the test program.
 TESTS = test_time_manager2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # These files will be included in the distribution.
-EXTRA_DIST = test_time_manager2.sh input_base.nml
+EXTRA_DIST = test_time_manager2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out*

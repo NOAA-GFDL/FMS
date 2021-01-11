@@ -345,6 +345,7 @@ AC_CONFIG_FILES([
   test_fms/fms/Makefile
   test_fms/fms2_io/Makefile
   test_fms/horiz_interp/Makefile
+  test_fms/time_manager/Makefile
   FMS.pc
   ])
 
@@ -355,7 +356,6 @@ AC_CONFIG_FILES([
   # test_fms/mpp/Makefile
   # test_fms/mpp_io/Makefile
   # test_fms/time_interp/Makefile
-  # test_fms/time_manager/Makefile
 AC_OUTPUT()
 
 ## if tests are being skipped, output warning at end of output

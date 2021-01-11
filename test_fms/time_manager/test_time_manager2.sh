@@ -25,10 +25,42 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy file for test.
-cp $top_srcdir/test_fms/time_manager/input_base.nml input.nml
+cat <<_EOF > input_base.nml
+&test_nml
+test1 =.false.
+test2 =.false.
+test3 =.false.
+test4 =.false.
+test5 =.false.
+test6 =.false.
+test7 =.false.
+test8 =.false.
+test9 =.false.
+test10=.false.
+test11=.false.
+test12=.false.
+test13=.false.
+test14=.false.
+test15=.false.
+test16=.false.
+test17=.false.
+test18=.false.
+test19=.false.
+/
+_EOF
 
-# Run the test.
-run_test test_time_manager 1
+# Loop through tests
+testNum=1
+while [ $testNum -le 19 ]
+do
+    sed "s/test$testNum *=.false./test$testNum =.true./" input_base.nml > input.nml
+    test_expect_success "time manager test #$testNum" '
+        mpirun -n 1 ./test_time_manager
+    '
+    testNum=$((testNum + 1))
+done
+
+test_done
