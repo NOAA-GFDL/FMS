@@ -366,13 +366,6 @@ subroutine fms_init (localcomm )
     call fms_io_init
     call fms2_io_init ()
     logunitnum = stdlog()
-#ifdef use_mpp_io
-    call mpp_error("fms_init","You are using mpp_io for your FMS modules",NOTE)
-    write (logunitnum,*)"You are using mpp_io for your FMS modules"
-#else
-    call mpp_error("fms_init","You are using fms2_io for your FMS modules",NOTE)
-    write (logunitnum,*)"You are using fms2_io for your FMS modules"
-#endif
 !---- read namelist input ----
 
     call nml_error_init  ! first initialize namelist iostat error codes
