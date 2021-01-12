@@ -1063,13 +1063,14 @@ CONTAINS
   !   <IN NAME="file_duration" TYPE="INTEGER, OPTIONAL">How long file is to be used.</IN>
   !   <IN NAME="file_duration_units" TYPE="INTEGER, OPTIONAL">File duration unit.  (MIN, HOURS, DAYS, etc.)</IN>
   SUBROUTINE init_file(name, output_freq, output_units, format, time_units, long_name, tile_count,&
-       & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units)
+       & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units, filename_time_bounds)
     CHARACTER(len=*), INTENT(in) :: name, long_name
     INTEGER, INTENT(in) :: output_freq, output_units, format, time_units
     INTEGER, INTENT(in) :: tile_count
     INTEGER, INTENT(in), OPTIONAL :: new_file_freq, new_file_freq_units
     INTEGER, INTENT(in), OPTIONAL :: file_duration, file_duration_units
     TYPE(time_type), INTENT(in), OPTIONAL :: start_time
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: filename_time_bounds
 
     INTEGER :: new_file_freq1, new_file_freq_units1
     INTEGER :: file_duration1, file_duration_units1
@@ -1201,6 +1202,7 @@ CONTAINS
 !> Initialize the times to 0
     files(num_files)%rtime_current = -1.0
     files(num_files)%time_index = 0
+    files(num_files)%filename_time_bounds = filename_time_bounds
 
     IF ( PRESENT(start_time) ) THEN
        files(num_files)%start_time = start_time

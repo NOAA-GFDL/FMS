@@ -3414,6 +3414,7 @@ CONTAINS
     TYPE(time_type), INTENT(in) :: time
 
     TYPE(time_type) :: middle_time
+    TYPE(time_type) :: filename_time
     LOGICAL :: time_max, time_min, reduced_k_range, missvalue_present
     LOGICAL :: average, time_rms, need_compute, phys_window
     INTEGER :: in_num, file_num, freq, units
@@ -3533,12 +3534,20 @@ CONTAINS
     endif
     IF ( (output_fields(out_num)%time_ops) .AND. (.NOT. mix_snapshot_average_fields) ) THEN
        middle_time = (output_fields(out_num)%last_output+output_fields(out_num)%next_output)/2
+       if (trim(files(file_num)%filename_time_bounds) == "begin") then
+           filename_time = output_fields(out_num)%last_output
+       elseif (trim(files(file_num)%filename_time_bounds) == "middle") then
+           filename_time = middle_time
+       elseif (trim(files(file_num)%filename_time_bounds) == "end") then
+           filename_time = output_fields(out_num)%next_output
+       endif
+
        if (output_fields(out_num)%n_diurnal_samples > 1) then
           CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io, filename_time=output_fields(out_num)%last_output)
+                 & use_mpp_io_arg=use_mpp_io, filename_time=filename_time)
        else
           CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io, filename_time=output_fields(out_num)%last_output)
+                 & use_mpp_io_arg=use_mpp_io, filename_time=filename_time)
        endif
     ELSE
        if (output_fields(out_num)%n_diurnal_samples > 1) then
