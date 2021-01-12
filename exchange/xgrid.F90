@@ -573,7 +573,7 @@ subroutine xgrid_init(remap_method)
   if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
 
   if (use_mpp_io) then
-! Tell user which IO they are using 
+! Tell user which IO they are using
         call error_mesg('xgrid_init', "Using mpp_io in xgrid_mod",NOTE)
         if ( mpp_pe() == mpp_root_pe() ) write (unit,'(a)')"Using mpp_io in xgrid_mod"
   else
