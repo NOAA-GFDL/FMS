@@ -37,8 +37,12 @@ test_mpp_io_SOURCES = test_mpp_io.F90
 # Run the test program.
 TESTS = test_mpp_io2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # These files will also be distributed.
-EXTRA_DIST = test_mpp_io2.sh input_base.nml
+EXTRA_DIST = test_mpp_io2.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out

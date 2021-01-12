@@ -34,14 +34,14 @@ SUBDIRS = \
   field_manager \
   fms \
   fms2_io \
-  horiz_interp
+  horiz_interp \
+  time_manager \
+  mpp_io
 #  interpolator
 #  monin_obukhov
 #  mosaic
 #  mpp
-#  mpp_io
 #  time_interp
-#  time_manager
 #  fms2_io
 
 
