@@ -139,25 +139,6 @@ use platform_mod
   REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
   INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1 !< Return value for a diag_field that isn't found in the diag_table
 
-  ! <TYPE NAME="diag_grid">
-  !   <DESCRIPTION>
-  !     Contains the coordinates of the local domain to output.
-  !   </DESCRIPTION>
-  !   <DATA NAME="start" TYPE="REAL, DIMENSION(3)">
-  !     Start coordinates (Lat, Lon, Depth) of the local domain to output.
-  !   </DATA>
-  !   <DATA NAME="end" TYPE="REAL, DIMENSION(3)">
-  !     End coordinates (Lat, Lon, Depth) of the local domain to output.
-  !   </DATA>
-  !   <DATA NAME="l_start_indx" TYPE="INTEGER, DIMENSION(3)">
-  !     Start indices at each local PE.
-  !   </DATA>
-  !   <DATA NAME="l_end_indx" TYPE="INTEGER, DIMENSION(3)">
-  !     End indices at each local PE.
-  !   </DATA>
-  !   <DATA NAME="subaxes" TYPE="INTEGER, DIMENSION(3)">
-  !     ID returned from diag_subaxes_init of 3 subaces.
-  !   </DATA>
   !> @brief Contains the coordinates of the local domain to output.
   TYPE diag_grid
      REAL, DIMENSION(3) :: start !< start coordinates (lat,lon,depth) of local domain to output
@@ -166,26 +147,7 @@ use platform_mod
      INTEGER, DIMENSION(3) :: l_end_indx !< end indices at each LOCAL PE
      INTEGER, DIMENSION(3) :: subaxes !< id returned from diag_subaxes_init of 3 subaxes
   END TYPE diag_grid
-  ! </TYPE>
 
-  ! <TYPE NAME="diag_fieldtype">
-  !   <DESCRIPTION>
-  !     Diagnostic field type
-  !   </DESCRIPTION>
-  !   <DATA NAME="Field" TYPE="TYPE(fieldtype)">
-  !   </DATA>
-  !   <DATA NAME="Domain" TYPE="TYPE(domain2d)">
-  !   </DATA>
-  !   <DATA NAME="miss" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="miss_pack" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="miss_present" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="miss_pack_present" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="tile_count" TYPE="INTEGER">
-  !   </DATA>
   !> @brief Diagnostic field type
   TYPE diag_fieldtype
      TYPE(fieldtype) :: Field
@@ -195,31 +157,7 @@ use platform_mod
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count
   END TYPE diag_fieldtype
-  ! </TYPE>
 
-  ! <TYPE NAME="diag_atttype">
-  !   <DESCRIPTION>
-  !     Attribute type for diagnostic fields
-  !   </DESCRIPTION>
-  !   <DATA NAME="type">
-  !     Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
-  !   </DATA>
-  !   <DATA NAME="len">
-  !     Number of values in attribute, or if a character string then
-  !     length of the string.
-  !   </DATA>
-  !   <DATA NAME="name">
-  !     Name of the attribute
-  !   </DATA>
-  !   <DATA NAME="catt">
-  !     Character string to hold character value of attribute
-  !   </DATA>
-  !   <DATA NAME="fatt">
-  !     REAL array to hold value of REAL attributes.
-  !   </DATA>
-  !   <DATA NAME="iatt">
-  !     INTEGER array to hold value of INTEGER attributes.
-  !   </DATA>
   !> @brief Attribute type for diagnostic fields
   type :: diag_atttype
      INTEGER             :: type !< Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
@@ -230,23 +168,7 @@ use platform_mod
      REAL, allocatable, DIMENSION(:)    :: fatt !< REAL array to hold value of REAL attributes
      INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
   end type diag_atttype
-  ! </TYPE>
-  ! <TYPE NAME="coord_type">
-  !   <DESCRIPTION>
-  !     Define the region for field output.
-  !   </DESCRIPTION>
-  !   <DATA NAME="xbegin" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="xend" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="ybegin" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="yend" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="zbegin" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="zend" TYPE="REAL">
-  !   </DATA>
+
   !> @brief Define the region for field output
   TYPE coord_type
      REAL :: xbegin
@@ -256,76 +178,7 @@ use platform_mod
      REAL :: zbegin
      REAL :: zend
   END TYPE coord_type
-  ! </TYPE>
 
-  ! <TYPE NAME="file_type">
-  !   <DESCRIPTION>
-  !     Type to define the diagnostic files that will be written as defined by the diagnostic table.
-  !   </DESCRIPTION>
-  !   <DATA NAME="name" TYPE="CHARACTER(len=128)">
-  !     Name of the output file.
-  !   </DATA>
-  !   <DATA NAME="long_name" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="fields" TYPE="INTEGER, dimension(max_fields_per_file)">
-  !   </DATA>
-  !   <DATA NAME="num_fields" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="output_freq" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="output_units" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="format" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="time_units" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="file_unit" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="bytes_written" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="time_axis_id" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="time_bounds_id" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="new_file_freq" TYPE="INTEGER">
-  !     Frequency to create a new file.
-  !   </DATA>
-  !   <DATA NAME="new_file_freq_units" TYPE="INTEGER">
-  !     Time units of new_file_freq ( days, hours, years, ...)
-  !   </DATA>
-  !   <DATA NAME="duration" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="duration_units" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="tile_count" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="local" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="last_flush" TYPE="TYPE(time_type)">
-  !   </DATA>
-  !   <DATA NAME="next_open" TYPE="TYPE(time_type)">
-  !     Time to open next file.
-  !   </DATA>
-  !   <DATA NAME="start_time" TYPE="TYPE(time_type)">
-  !     Time file opened
-  !   </DATA>
-  !   <DATA NAME="close_time" TYPE="TYPE(time_type)">
-  !     Time file closed.  File does not allow data after close time
-  !   </DATA>
-  !   <DATA NAME="f_avg_start" TYPE="TYPE(diag_fieldtype)">
-  !   </DATA>
-  !   <DATA NAME="f_avg_end" TYPE="TYPE(diag_fieldtype)">
-  !   </DATA>
-  !   <DATA NAME="f_avg_nitems" TYPE="TYPE(diag_fieldtype)">
-  !   </DATA>
-  !   <DATA NAME="f_bounds" TYPE="TYPE(diag_fieldtype)">
-  !   </DATA>
-  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
-  !     Array to hold user definable attributes
-  !   </DATA>
-  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
-  !     Number of defined attibutes
-  !   </DATA>
   !> @brief Type to define the diagnostic files that will be written as defined by the diagnostic table.
   TYPE file_type
      CHARACTER(len=128) :: name !< Name of the output file.
@@ -363,66 +216,7 @@ use platform_mod
      real :: rtime_current
      integer :: time_index
   END TYPE file_type
-  ! </TYPE>
 
-  ! <TYPE NAME="input_field_type">
-  !   <DESCRIPTION>
-  !     Type to hold the input field description
-  !   </DESCRIPTION>
-  !   <DATA NAME="module_name" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="field_name" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="long_name" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="units" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="standard_name" TYPE="CHARACTER(len=256)">
-  !   </DATA>
-  !   <DATA NAME="interp_method" TYPE="CHARACTER(len=64)">
-  !   </DATA>
-  !   <DATA NAME="axes" TYPE="INTEGER, DIMENSION(3)">
-  !   </DATA>
-  !   <DATA NAME="num_axes" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="missing_value_present" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="range_present" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="missing_value" TYPE="REAL">
-  !   </DATA>
-  !   <DATA NAME="range" TYPE="REAL, DIMENSION(2)">
-  !   </DATA>
-  !   <DATA NAME="output_fields" TYPE="INTEGER, DIMENSION(max_out_per_in_field)">
-  !   </DATA>
-  !   <DATA NAME="num_output_fields" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="size" TYPE="INTEGER, DIMENSION(3)">
-  !   </DATA>
-  !   <DATA NAME="static" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="register" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="mask_variant" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="local" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="numthreads" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="active_omp_level" TYPE="INTEGER">
-  !     The current level of OpenMP nesting
-  !   </DATA>
-  !   <DATA NAME="tile_count" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="local_coord" TYPE="TYPE(coord_type)">
-  !   </DATA>
-  !   <DATA NAME="time" TYPE="TYPE(time_type)">
-  !   </DATA>
-  !   <DATA NAME="issued_mask_ignore_warning" TYPE="LOGICAL">
-  !     Indicates if the mask_ignore_warning has been issued for this input
-  !     field.  Once .TRUE. the warning message is suppressed on all subsequent
-  !     send_data calls.
-  !   </DATA>
   !> @brief Type to hold the input field description
   TYPE input_field_type
      CHARACTER(len=128) :: module_name, field_name, long_name, units
@@ -448,109 +242,7 @@ use platform_mod
                                            !! is suppressed on all subsequent
                                            !! send_data calls.
   END TYPE input_field_type
-  ! </TYPE>
 
-  ! <TYPE NAME="output_field_type">
-  !   <DESCRIPTION>
-  !     Type to hold the output field description.
-  !   </DESCRIPTION>
-  !   <DATA NAME="input_field" TYPE="INTEGER">
-  !     Index of the corresponding input field in the table
-  !   </DATA>
-  !   <DATA NAME="output_file" TYPE="INTEGER">
-  !     Index of the output file in the table
-  !   </DATA>
-  !   <DATA NAME="output_name" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="static" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="time_max" TYPE="LOGICAL">
-  !     .TRUE. if the output field is maximum over time interval
-  !   </DATA>
-  !   <DATA NAME="time_min" TYPE="LOGICAL">
-  !     .TRUE. if the output field is minimum over time interval
-  !   </DATA>
-  !   <DATA NAME="time_average" TYPE="LOGICAL">
-  !     .TRUE. if the output field is averaged over time interval.
-  !   </DATA>
-  !   <DATA NAME="time_rms" TYPE="LOGICAL">
-  !     .TRUE. if the output field is the rms.  In this case, time_average will also be true.
-  !   </DATA>
-  !   <DATA NAME="time_ops" TYPE="LOGICAL">
-  !     .TRUE. if any of time_min, time_max, time_rms, or time_average is true
-  !   </DATA>
-  !   <DATA NAME="pack" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="pow_value" TYPE="INTEGER">
-  !     Power to use When calculating the mean_pow(n)
-  !   </DATA>
-  !   <DATA NAME="time_method" TYPE="CHARACTER(len=50)">
-  !     Time method field from the input file
-  !   </DATA>
-  !   <DATA NAME="buffer" TYPE="REAL, allocatable, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
-  !     Coordinates of buffer are (x, y, z, time-of-day)
-  !   </DATA>
-  !   <DATA NAME="counter" TYPE="REAL, allocatable, DIMENSION(:,:,:,:)" DEFAULT="_NULL">
-  !     Coordinates of buffer are (x, y, z, time-of-day)
-  !   </DATA>
-  !   <DATA NAME="count_0d" TYPE="REAL, allocatable, DIMENSION(:)">
-  !   </DATA>
-  !   <DATA NAME="num_elements" TYPE="REAL, allocatable, DIMENSION(:)">
-  !   </DATA>
-  !   <DATA NAME="last_output" TYPE="TYPE(time_type)">
-  !   </DATA>
-  !   <DATA NAME="next_output" TYPE="TYPE(time_type)">
-  !   </DATA>
-  !   <DATA NAME="next_next_output" TYPE="TYPE(time_type)">
-  !   </DATA>
-  !   <DATA NAME="f_type" TYPE="TYPE(diag_fieldtype)">
-  !   </DATA>
-  !   <DATA NAME="axes" TYPE="INTEGER, DIMENSION(4)">
-  !   </DATA>
-  !   <DATA NAME="num_axes" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="total_elements" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="region_elements" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="n_diurnal_samples" TYPE="INTEGER">
-  !     Number of diurnal sample intervals, 1 or more
-  !   </DATA>
-  !   <DATA NAME="output_grid" TYPE="TYPE(diag_grid)">
-  !   </DATA>
-  !   <DATA NAME="local_output" TYPE="LOGICAL">
-  !     .TRUE. if this field is written out on a region and not globally.
-  !   </DATA>
-  !   <DATA NAME="need_compute" TYPE="LOGICAL">
-  !     .TRUE. if this field is written out on a region, not global.
-  !   </DATA>
-  !   <DATA NAME="phys_window" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="written_once" TYPE="LOGICAL">
-  !   </DATA>
-  !   <DATA NAME="reduced_k_range" TYPE="LOGICAL">
-  !     .TRUE. if dealing with vertical sub-level output.
-  !   </DATA>
-  !   <DATA NAME="imin" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="imax" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="jmin" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="jmax" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="kmin" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="kmax" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="Time_of_prev_field_data" TYPE="TYPE(time_type)">
-  !   </DATA>
-  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
-  !     Array to hold user definable attributes
-  !   </DATA>
-  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
-  !     Number of defined attibutes
-  !   </DATA>
   !> @brief Type to hold the output field description.
   TYPE output_field_type
      INTEGER :: input_field !< index of the corresponding input field in the table
@@ -605,59 +297,7 @@ use platform_mod
      logical :: reduced_k_unstruct = .false.
 !----------
   END TYPE output_field_type
-  ! </TYPE>
 
-  ! <TYPE NAME="diag_axis_type">
-  !   <DESCRIPTION>
-  !     Type to hold the diagnostic axis description.
-  !   </DESCRIPTION>
-  !   <DATA NAME="name" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="units" TYPE="CHARACTER(len=256)">
-  !   </DATA>
-  !   <DATA NAME="long_name" TYPE="CHARACTER(len=256)">
-  !   </DATA>
-  !   <DATA NAME="cart_name" TYPE="CHARACTER(len=1)">
-  !   </DATA>
-  !   <DATA NAME="data" TYPE="REAL, DIMENSION(:), POINTER">
-  !   </DATA>
-  !   <DATA NAME="start" TYPE="INTEGER, DIMENSION(MAX_SUBAXES)">
-  !   </DATA>
-  !   <DATA NAME="end" TYPE="INTEGER, DIMENSION(MAX_SUBAXES)">
-  !   </DATA>
-  !   <DATA NAME="subaxis_name" TYPE="CHARACTER(len=128), DIMENSION(MAX_SUBAXES)">
-  !   </DATA>
-  !   <DATA NAME="length" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="direction" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="edges" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="set" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="shift" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="Domain" TYPE="TYPE(domain1d)">
-  !   </DATA>
-  !   <DATA NAME="Domain2" TYPE="TYPE(domain2d)">
-  !   </DATA>
-  !   <DATA NAME="subaxis_domain2" TYPE="TYPE(domain2d), dimension(MAX_SUBAXES)">
-  !   </DATA>
-  !   <DATA NAME="aux" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="req" TYPE="CHARACTER(len=128)">
-  !   </DATA>
-  !   <DATA NAME="tile_count" TYPE="INTEGER">
-  !   </DATA>
-  !   <DATA NAME="attributes" TYPE="TYPE(diag_atttype), DIMENSION(:)">
-  !     Array to hold user definable attributes
-  !   </DATA>
-  !   <DATA NAME="num_attributes" TYPE="INTEGER" >
-  !     Number of defined attibutes
-  !   </DATA>
-  !   <DATA NAME="pos" TYPE="INTEGER" >
-  !     The position in the doman (NORTH or EAST or CENTER)
-  !   </DATA>
   !> @brief Type to hold the diagnostic axis description.
   TYPE diag_axis_type
      CHARACTER(len=128) :: name

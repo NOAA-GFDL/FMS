@@ -483,101 +483,20 @@ use platform_mod
      MODULE PROCEDURE send_data_3d_r8
 #endif
   END INTERFACE
-  ! </INTERFACE>
 
-  ! <INTERFACE NAME="register_diag_field">
-  !   <OVERVIEW>
-  !      Register Diagnostic Field.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     INTEGER FUNCTION register_diag_field (module_name, field_name, axes, init_time,
-  !           long_name, units, missing_value, range, mask_variant, standard_name,
-  !           verbose, area, volume, realm)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !      Return field index for subsequent calls to
-  !      <LINK SRC="#send_data">send_data</LINK>.
-  !
-  !      <TT>axes</TT> are the axis ID returned from <TT>diag_axis_init</TT>,
-  !      <TT>axes</TT> are required for fields of 1-3 dimension and NOT required
-  !      for scalars.
-  !
-  !      For a static scalar (constant) <TT>init_time</TT> is not needed.
-  !
-  !      Optional <TT>mask_variant</TT> is for fields that have a time-dependent
-  !      mask. If <TT>mask_variant</TT> is true then <TT>mask</TT> must be
-  !      present in argument list of <TT>send_data</TT>.
-  !
-  !      The pair (<TT>module_name</TT>, <TT>fieldname</TT>) should be registered
-  !      only once or a FATAL error will occur.
-  !    </DESCRIPTION>
-  !    <IN NAME="module_name" TYPE="CHARACTER(len=*)" />
-  !    <IN NAME="field_name" TYPE="CHARACTER(len=*)" />
-  !    <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)" />
-  !    <IN NAME="init_time" TYPE="TYPE(time_type)" />
-  !    <IN NAME="long_name" TYPE="CHARACTER(len=*)" />
-  !    <IN NAME="units" TYPE="CHARACTER(len=*)" />
-  !    <IN NAME="missing_value" TYPE="REAL" />
-  !    <IN NAME="range" TYPE="REAL, DIMENSION(2)" />
-  !    <IN NAME="mask_variant" TYPE="LOGICAL" />
-  !    <IN NAME="standard_name" TYPE="CHARACTER(len=*)" />
-  !    <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
-  !    <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
-  !    <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !> @brief Register Diagnostic Field.
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
   END INTERFACE
-  ! </INTERFACE>
 
-  !  <INTERFACE NAME="send_tile_averaged_data">
-  !    <OVERVIEW>
-  !      Send tile-averaged data over to output fields.
-  !    </OVERVIEW>
-  !    <TEMPLATE>
-  !      LOGICAL send_tile_averaged_data(diag_field_id, field, area, time, mask)
-  !    </TEMPLATE>
-  !    <DESCRIPTION>
-  !      <TT>send_tile_averaged_data</TT> is overloaded for 3D and 4D arrays.
-  !      <TT>diag_field_id</TT> corresponds to the ID returned by previous call
-  !      to <TT>register_diag_field</TT>. Logical masks can be used to mask out
-  !      undefined and/or unused values.  Note that the dimension of output field
-  !      is smaller by one than the dimension of the data, since averaging over
-  !      tiles (3D dimension) is performed.
-  !    </DESCRIPTION>
-  !    <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !    <IN NAME="field" TYPE="REAL" DIM="(:,:,:)" />
-  !    <IN NAME="area" TYPE="REAL" DIM="(:,:,:)" />
-  !    <IN NAME="time" TYPE="TYPE(time_type)" DIM="(:,:,:)" />
-  !    <IN NAME="mask" TYPE="LOGICAL" DIM="(:,:,:)" />
   !> @brief Send tile-averaged data over to output fields.
   INTERFACE send_tile_averaged_data
      MODULE PROCEDURE send_tile_averaged_data1d
      MODULE PROCEDURE send_tile_averaged_data2d
      MODULE PROCEDURE send_tile_averaged_data3d
   END INTERFACE
-  ! </INTERFACE>
 
-  ! <INTERFACE NAME="diag_field_add_attribute">
-  !   <OVERVIEW>
-  !     Add a attribute to the output field
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_field_add_attribute(diag_field_id, att_name, att_value, pack)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Add an arbitrary attribute and value to the output variable.  Any number
-  !     of attributes can be added to a given field.  All attribute addition must
-  !     be done before first <TT>send_data</TT> call.
-  !
-  !     If a real or integer attribute is already defined, a FATAL error will be called.
-  !     If a character attribute is already defined, then it will be prepended to the
-  !     existing attribute value.
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="REAL|INTEGER|CHARACTER(len=*)" />
   !> @brief Add a attribute to the output field
   INTERFACE diag_field_add_attribute
      MODULE PROCEDURE diag_field_add_attribute_scalar_r
@@ -842,39 +761,7 @@ CONTAINS
        END DO
     END IF
   END FUNCTION register_diag_field_array
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="register_static_field">
-  !   <OVERVIEW>
-  !     Register Static Field.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     INTEGER FUNCTION register_static_field(module_name, field_name, axes,
-  !       long_name, units, missing_value, range, mask_variant, standard_name,
-  !       dynamic, do_not_log, interp_method, tile_count, area, volume, realm)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return field index for subsequent call to send_data.
-  !   </DESCRIPTION>
-  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)" />
-  !   <IN NAME="long_name" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL" />
-  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL" />
-  !   <IN NAME="mask_variang" TYPE="LOGICAL, OPTIONAL" DEFAULT=".FALSE."/>
-  !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL" DEFAULT=".FALSE."/>
-  !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" DEFAULT=".TRUE."/>
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIOANL">
-  !     The interp method to be used when regridding the field in post-processing.
-  !     Valid options are "conserve_order1", "conserve_order2", and "none".
-  !   </IN>
-  !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
-  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for the area field associated with this field</IN>
-  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for the volume field associated with this field</IN>
-  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !> @brief Return field index for subsequent call to send_data.
   !! @return Return (integer) field index for subsequent call to send_data.
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
@@ -1329,22 +1216,7 @@ CONTAINS
        END DO
     END IF
   END FUNCTION register_static_field
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="get_diag_field_id">
-  !  <OVERVIEW>
-  !    Return the diagnostic field ID of a given variable.
-  !  </OVERVIEW>
-  !  <TEMPLATE>
-  !    INTEGER FUNCTION get_diag_field_id(module_name, field_name)
-  !  </TEMPLATE>
-  !  <DESCRIPTION>
-  !    get_diag_field_id will return the ID returned during the register_diag_field call.  If
-  !    the variable is not in the diag_table, then the value "DIAG_FIELD_NOT_FOUND" will be
-  !    returned.
-  !  </DESCRIPTION>
-  !  <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name that registered the variable</IN>
-  !  <IN NAME="field_name" TYPE="CHARACTER(len=*)">Variable name</IN>
   !> @brief Return the diagnostic field ID of a given variable.
   !! @return get_diag_field_id will return the ID returned during the register_diag_field call.
   !!   If the variable is not in the diag_table, then the value "DIAG_FIELD_NOT_FOUND" will be
@@ -1357,22 +1229,7 @@ CONTAINS
     ! included in the diag_table
     get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
   END FUNCTION get_diag_field_id
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="get_related_field">
-  !   <OVERVIEW>
-  !     Finds the corresponding related output field and file
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     LOGICAL FUNCTION get_related_field(field, rel_field, out_field_id, out_file_id)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Finds the corresponding related output field and file for a given input field
-  !   </DESCRIPTION>
-  !   <IN NAME="field" TYPE="INTEGER">input field ID to find the corresponding</IN>
-  !   <IN NAME="rel_field" TYPE="TYPE(output_field_type)">Output field that field must correspond to</IN>
-  !   <OUT NAME="out_field_id" TYPE="INTEGER">output_field index of related output field</OUT>
-  !   <OUT NAME="out_file_id" TYPE="INTEGER">file index of the out_field_id output field</OUT>
   !> @brief Finds the corresponding related output field and file for a given input field
   !! @return Logical get_related_field
   LOGICAL FUNCTION get_related_field(field, rel_field, out_field_id, out_file_id)
@@ -1433,22 +1290,7 @@ CONTAINS
        END DO
     END IF
   END FUNCTION get_related_field
-  ! </FUNCTION>
 
-  ! <SUBROUTINE NAME="init_field_cell_measures">
-  !   <OVERVIEW>
-  !     If needed, add cell_measures and associated_file attribute to out field/file
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE init_field_call_measure(ouput_field, area, volume, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     If needed, add cell_measures and associated_file attribute to out field/file
-  !   </DESCRIPTION>
-  !   <INOUT NAME="output_field" TYPE="TYPE(output_field_type)">Output field that needs the cell_measures</INOUT>
-  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">Field ID for area</IN>
-  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">Field ID for volume</IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"> </OUT>
   !> @brief If needed, add cell_measures and associated_file attribute to out field/file
   SUBROUTINE init_field_cell_measures(output_field, area, volume, err_msg)
     TYPE(output_field_type), INTENT(inout) :: output_field !< Output field that needs the cell_measures
@@ -3835,19 +3677,6 @@ CONTAINS
 
   END SUBROUTINE diag_send_complete
 
-  ! <SUBROUTINE NAME="diag_manager_end">
-  !   <OVERVIEW>
-  !     Exit Diagnostics Manager.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     Flushes diagnostic buffers where necessary. Close diagnostics files.
-  !
-  !     A warning will be issued here if a field in diag_table is not registered
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_manager_end(time)
-  !   </TEMPLATE>
-  !   <IN NAME="TIME" TYPE="time_type"></IN>
   !> @brief Flushes diagnostic buffers where necessary. Close diagnostics files.
   !!   A warning will be issued here if a field in diag_table is not registered
   SUBROUTINE diag_manager_end(time)
@@ -3868,19 +3697,7 @@ CONTAINS
   if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
   endif
   END SUBROUTINE diag_manager_end
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="closing_file">
-  !   <OVERVIEW>
-  !     Replaces diag_manager_end; close just one file: files(file)
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE closing_file(file, time)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !   </DESCRIPTION>
-  !   <IN NAME="file" TYPE="INTEGER"></IN>
-  !   <IN NAME="tile" TYPE="TYPE(time_type)"></IN>
   !> @brief Replaces diag_manager_end; close just one file: files(file)
   SUBROUTINE closing_file(file, time)
     INTEGER, INTENT(in) :: file
@@ -3970,21 +3787,7 @@ CONTAINS
     END IF
      if (allocated(diurnal_buffer)) deallocate(diurnal_buffer)
   END SUBROUTINE closing_file
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="diag_manager_init">
-  !   <OVERVIEW>
-  !     Initialize Diagnostics Manager.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_manager_init(diag_model_subset, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Open and read diag_table. Select fields and files for diagnostic output.
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_model_subset" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="time_init" TYPE="INTEGER, DIMENSION(6), OPTIONAL">Model time diag_manager initialized</IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
   !> @brief Initialize Diagnostics Manager.
   !! @details Open and read diag_table. Select fields and files for diagnostic output.
   SUBROUTINE diag_manager_init(diag_model_subset, time_init, err_msg)
@@ -4171,19 +3974,7 @@ CONTAINS
     null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'N', 'none')
     RETURN
   END SUBROUTINE diag_manager_init
-  ! </SUBROUTINE>
 
-
-  ! <FUNCTION NAME="get_base_time">
-  !   <OVERVIEW>
-  !     Return base time for diagnostics.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     TYPE(time_type) FUNCTION get_base_time()
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return base time for diagnostics (note: base time must be >= model time).
-  !   </DESCRIPTION>
   !> @brief Return base time for diagnostics.
   !! @return time_type get_base_time
   !! @details Return base time for diagnostics (note: base time must be >= model time).
@@ -4195,24 +3986,7 @@ CONTAINS
          & 'module has not been initialized', FATAL)
     get_base_time = base_time
   END FUNCTION get_base_time
-  ! </FUNCTION>
 
-  ! <SUBROUTINE NAME="get_base_date">
-  !   <OVERVIEW>
-  !     Return base date for diagnostics.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE get_base_date(year, month, day, hour, minute, second)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return date information for diagnostic reference time.
-  !   </DESCRIPTION>
-  !   <OUT NAME="year" TYPE="INTEGER"></OUT>
-  !   <OUT NAME="month" TYPE="INTEGER"></OUT>
-  !   <OUT NAME="day" TYPE="INTEGER"></OUT>
-  !   <OUT NAME="hour" TYPE="INTEGER"></OUT>
-  !   <OUT NAME="minute" TYPE="INTEGER"></OUT>
-  !   <OUT NAME="second" TYPE="INTEGER"></OUT>
   !> @brief Return base date for diagnostics.
   !! @details Return date information for diagnostic reference time.
   SUBROUTINE get_base_date(year, month, day, hour, minute, second)
@@ -4228,25 +4002,7 @@ CONTAINS
     minute = base_minute
     second = base_second
   END SUBROUTINE get_base_date
-  ! </SUBROUTINE>
 
-  ! <FUNCTION NAME="need_data">
-  !   <OVERVIEW>
-  !     Determine whether data is needed for the current model time step.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     LOGICAL need_data(diag_field_id, next_model_time)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Determine whether data is needed for the current model time step.
-  !     Since diagnostic data are buffered, the "next" model time is passed
-  !     instead of the current model time. This call can be used to minimize
-  !     overhead for complicated diagnostics.
-  !   </DESCRIPTION>
-  !   <IN NAME="next_model_time" TYPE="TYPE(time_type)">
-  !     next_model_time = current model time + model time_step
-  !   </IN>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
   !> @brief Determine whether data is needed for the current model time step.
   !! @return Logical need_data
   !! @details Determine whether data is needed for the current model time step.
@@ -4274,21 +4030,7 @@ CONTAINS
     END DO
     RETURN
   END FUNCTION need_data
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="init_diurnal_axis">
-  !   <OVERVIEW>
-  !     Finds or initializes a diurnal time axis and returns its' ID.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     INTEGER FUNCTION init_diurnal_axis(n_samples)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Given number of time intervals in the day, finds or initializes a diurnal time axis
-  !     and returns its ID. It uses get_base_date, so should be in the file where it's accessible.
-  !     The units are 'days since BASE_DATE', all diurnal axes belong to the set 'diurnal'
-  !   </DESCRIPTION>
-  !   <IN NAME="n_samples" TYPE="INTEGER">Number of intervals during the day</IN>
   !> @brief Finds or initializes a diurnal time axis and returns its' ID.
   !! @return Integer init_diurnal_axis
   !! @details Given number of time intervals in the day, finds or initializes a diurnal time axis
@@ -4564,23 +4306,7 @@ CONTAINS
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
   END SUBROUTINE diag_field_add_attribute_i1d
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="diag_field_add_cell_measures">
-  !   <OVERVIEW>
-  !     Add the cell_measures attribute to a diag out field
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Add the cell_measures attribute to a give diag field.  This is useful if the
-  !     area/volume fields for the diagnostic field are defined in another module after
-  !     the diag_field.
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
-  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
   !> @brief Add the cell_measures attribute to a diag out field
   !! @details Add the cell_measures attribute to a give diag field.  This is useful if the
   !!     area/volume fields for the diagnostic field are defined in another module after

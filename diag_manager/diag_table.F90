@@ -486,79 +486,6 @@ MODULE diag_table_mod
 
 CONTAINS
 
-  ! <SUBROUTINE NAME="parse_diag_table">
-  !   <OVERVIEW>
-  !     Parse the <TT>diag_table</TT> in preparation for diagnostic output.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE parse_diag_table(diag_subset, istat, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>parse_diag_table</TT> is the public interface to parse the diag_table, and setup the arrays needed to store the
-  !     requested diagnostics from the <TT>diag_table</TT>.  <TT>parse_diag_table</TT> will return a non-zero <TT>istat</TT> if
-  !     a problem parsing the <TT>diag_table</TT>.
-  !
-  !     NOT YET IMPLEMENTED: <TT>parse_diag_table</TT> will parse through the <TT>diag_table</TT> twice.  The first pass, will be
-  !     to get a good "guess" of array sizes.  These arrays, that will hold the requested diagnostic fields and files, will then be
-  !     allocated to the size of the "guess" plus a slight increase.
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_subset" TYPE="INTEGER, OPTIONAL">
-  !     Diagnostic sampling subset.
-  !   </IN>
-  !   <OUT NAME="iunit" TYPE="INTEGER, OPTIONAL">
-  !     Status of parsing the <TT>diag_table</TT>.  A non-zero status indicates a problem parsing the table.
-  !   </OUT>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">
-  !     Error message corresponding to the <TT>istat</TT> return value.
-  !   </OUT>
-  !   <ERROR STATUS="FATAL">
-  !     diag_table file does not exist.
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Error reading the global descriptor from the diagnostic table.
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Error reading the base date from the diagnostic table.
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     The base_year/month/day can not equal zero
-  !   </ERROR>
-  !   <ERROR STATUS="WARNING">
-  !     Problem reading diag_table, line numbers in errors may be incorrect.
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Problem reading the diag_table (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Incorrect file description FORMAT in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Invalid file FORMAT for file description in the diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Invalid time axis units in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Invalid output frequency units in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Invalid NEW file frequency units in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Invalid file duration units in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Invalid start time in the file description in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Field description FORMAT is incorrect in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Packing is out of range for the field description in diag_table. (line: <line_number>)
-  !   </ERROR>
-  !   <ERROR STATUS="FATAL">
-  !     Error in regional output description for field description in diag_table. (line: <line_number>)
-  !   </ERROR>
   !> @brief Parse the <TT>diag_table</TT> in preparation for diagnostic output.
   !! @details <TT>parse_diag_table</TT> is the public interface to parse the diag_table, and setup the arrays needed to store the
   !!     requested diagnostics from the <TT>diag_table</TT>.  <TT>parse_diag_table</TT> will return a non-zero <TT>istat</TT> if
@@ -753,26 +680,7 @@ CONTAINS
     END IF
 
   END SUBROUTINE parse_diag_table
-  ! </SUBROUTINE>
 
-  ! <PRIVATE>
-  ! <SUBROUTINE NAME="open_diag_table">
-  !   <OVERVIEW>
-  !     Open the diag_table file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE open_diag_table(iunit, iostat)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Open the <TT>diag_table</TT> file, and return the Fortran file unit number.
-  !   </DESCRIPTION>
-  !   <OUT NAME="iunit" TYPE="INTEGER">Fortran file unit number of the <TT>diag_table</TT>.</OUT>
-  !   <IN NAME="iostat" TYPE="INTEGER, OPTIONAL">
-  !     Status of opening file.  If iostat == 0, file exists.  If iostat > 0, the diag_table file does not exist.
-  !   </IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">
-  !     String to hold the return error message.
-  !   </OUT>
   !> @brief Open the <TT>diag_table</TT> file, and return the Fortran file unit number.
   SUBROUTINE open_diag_table(iunit, iostat, err_msg)
     INTEGER, INTENT(out) :: iunit !< Fortran file unit number of the <TT>diag_table</TT>.
@@ -799,51 +707,14 @@ CONTAINS
 
     CALL mpp_open(iunit, 'diag_table', action=MPP_RDONLY)
   END SUBROUTINE open_diag_table
-  ! </SUBROUTINE>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <SUBROUTINE NAME="close_diag_table">
-  !   <OVERVIEW>
-  !     Close the diag_table file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE close_diag_table(iunit)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Closes the diag_table file.
-  !   </DESCRIPTION>
-  !   <IN NAME="iunit" TYPE="INTEGER">Fortran file unit number of the <TT>diag_table</TT>.</IN>
   !> @brief Closes the diag_table file.
   SUBROUTINE close_diag_table(iunit)
     INTEGER, INTENT(in) :: iunit !< Fortran file unit number of the <TT>diag_table</TT>.
 
     CALL close_file(iunit)
   END SUBROUTINE close_diag_table
-  ! </SUBROUTINE>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="parse_file_line">
-  !   <OVERVIEW>
-  !     Parse a file description line from the <TT>diag_table</TT> file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     TYPE(file_description_type) FUNCTION parse_file_line(line, istat, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>parse_file_line</TT> parses a file description line from the <TT>diag_table</TT> file, and returns a
-  !     <TT>TYPE(file_description_type)</TT>.  The calling function, would then need to call the <TT>init_file</TT> to initialize
-  !     the diagnostic output file.
-  !   </DESCRIPTION>
-  !   <IN NAME="line" TYPE="CHARACTER(len=*)">Line to parse from the <TT>diag_table</TT> file.</IN>
-  !   <OUT NAME="istat" TYPE="INTEGER, OPTIONAL">
-  !     Return state of the function.  A value of 0 indicates success.  A positive value indicates a <TT>FATAL</TT> error occurred,
-  !     and a negative value indicates a <TT>WARNING</TT> should be issued.
-  !   </OUT>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">
-  !     Error string to include in the <TT>FATAL</TT> or <TT>WARNING</TT> message.
-  !   </OUT>
   !> @brief <TT>parse_file_line</TT> parses a file description line from the <TT>diag_table</TT> file, and returns a
   !!     <TT>TYPE(file_description_type)</TT>.  The calling function, would then need to call the <TT>init_file</TT> to initialize
   !!     the diagnostic output file.
@@ -991,30 +862,7 @@ CONTAINS
     END IF new_file_freq_present
 
   END FUNCTION parse_file_line
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="parse_field_line">
-  !   <OVERVIEW>
-  !     Parse a field description line from the <TT>diag_table</TT> file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     TYPE(field_description_type) FUNCTION parse_field_line(line, istat, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>parse_field_line</TT> parses a field description line from the <TT>diag_table</TT> file, and returns a
-  !     <TT>TYPE(field_description_type)</TT>.  The calling function, would then need to call the <TT>init_input_field</TT> and
-  !     <TT>init_output_field</TT> to initialize the diagnostic output field.
-  !   </DESCRIPTION>
-  !   <IN NAME="line" TYPE="CHARACTER(len=*)">Line to parse from the <TT>diag_table</TT> file.</IN>
-  !   <OUT NAME="istat" TYPE="INTEGER, OPTIONAL">
-  !     Return state of the function.  A value of 0 indicates success.  A positive value indicates a <TT>FATAL</TT> error occurred,
-  !     and a negative value indicates a <TT>WARNING</TT> should be issued.
-  !   </OUT>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">
-  !     Error string to include in the <TT>FATAL</TT> or <TT>WARNING</TT> message.
-  !   </OUT>
   !> @brief Parse a field description line from the <TT>diag_table</TT> file.
   !! @return field_description_type parse_field_line
   !! @details <TT>parse_field_line</TT> parses a field description line from the <TT>diag_table</TT> file, and returns a
@@ -1101,22 +949,7 @@ CONTAINS
        END IF
     END IF
   END FUNCTION parse_field_line
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="is_a_file">
-  !   <OVERVIEW>
-  !     Determines if a line from the diag_table file is a file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE LOGICAL FUNCTION is_a_file(line)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>is_a_file</TT> checks a diag_table line to determine if the line describes a file.  If the line describes a file, the
-  !     <TT>is_a_file</TT> will return <TT>.TRUE.</TT>.  Otherwise, it will return <TT>.FALSE.</TT>
-  !   </DESCRIPTION>
-  !   <IN NAME="line" TYPE="CARACTER(len=*)">String containing the <TT>diag_table</TT> line.</IN>
   !> @brief Determines if a line from the diag_table file is a file
   !! @return Logical is_a_file
   !! @details <TT>is_a_file</TT> checks a diag_table line to determine if the line describes a file.  If the line describes a file, the
@@ -1147,23 +980,7 @@ CONTAINS
     ! The line is a file if my status is zero after the read.
     is_a_file = mystat == 0
   END FUNCTION is_a_file
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="fix_file_name(file_name_string)">
-  !   <OVERVIEW>
-  !     Fixes the file name for use with diagnostic file and field initializations.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE CHARACTER(len=128) FUNCTION fix_file_name(file_name_string)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Removes any trailing '.nc' and appends (if requested) append_pelist_name.
-  !
-  !     Presently, the ensemble appendix will override the append_pelist_name variable.
-  !   </DESCRIPTION>
-  !   <IN NAME="file_name_string" TYPE="CHARACTER(len=*)">String containing the file name from the <TT>diag_table</TT>.</IN>
   !> @brief Fixes the file name for use with diagnostic file and field initializations.
   !! @return Character(len=128) fix_file_name
   PURE CHARACTER(len=128) FUNCTION fix_file_name(file_name_string)
@@ -1189,30 +1006,7 @@ CONTAINS
        fix_file_name(file_name_len+1:) = TRIM(pelist_name)
     END IF
   END FUNCTION fix_file_name
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="find_unit_ivalue">
-  !   <OVERVIEW>
-  !     Return the integer value for the given time unit.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE INTEGER FUNCTION find_unit_ivalue(unit_string)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Returns the corresponding integer value for the given time unit.
-  !     <UL>
-  !       <LI> seconds = 1 </LI>
-  !       <LI> minutes = 2 </LI>
-  !       <LI> hours = 3 </LI>
-  !       <LI> days = 4 </LI>
-  !       <LI> months = 5 </LI>
-  !       <LI> years = 6 </LI>
-  !       <LI> unknown = -1 </LI>
-  !     </UL>
-  !   </DESCRIPTION>
-  !   <IN NAME="unit_string" TYPE="CHARACTER(len=*)">String containing the unit.</IN>
   !> @brief Return the integer value for the given time unit.
   !! @return Integer find_unit_ivalue
   !! @details Returns the corresponding integer value for the given time unit.
@@ -1245,25 +1039,10 @@ CONTAINS
        find_unit_ivalue = -1 ! Return statement if an incorrect / unknown unit used.
     END SELECT
   END FUNCTION find_unit_ivalue
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <SUBROUTINE NAME="initialize_output_arrays">
-  !   <OVERVIEW>
-  !     Allocate the file, in and out field arrays after reading the <TT>diag_table</TT> file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE initialize_output_arrays()
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     After reading in the <TT>diag_table</TT> file, the arrays that will hold the file, in, and out field data need to be
-  !     allocated.  This routine will determine the size of the arrays, and then allocate the arrays.
-  !   </DESCRIPTION>
   !> @brief Allocate the file, in and out field arrays after reading the <TT>diag_table</TT> file. (CURRENTLY EMPTY)
   SUBROUTINE initialize_output_arrays()
     ! Place Holder
   END SUBROUTINE initialize_output_arrays
-  ! </SUBROUTINE>
-  ! </PRIVATE>
+
 END MODULE diag_table_mod
