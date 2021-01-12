@@ -20,8 +20,8 @@
 program test_io_with_mask
 !> @brief  This programs tests fms2io/include/domain_write ability to write
 !! data when the domain contains a mask table. For the points that are
-!! masked out, no data should be writen. 
-!! It also tests fms2io/include/domain_read ability to read the data when 
+!! masked out, no data should be writen.
+!! It also tests fms2io/include/domain_read ability to read the data when
 !! the domain contains a mask table. For this case the masked data should
 !! not be read.
 

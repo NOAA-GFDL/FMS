@@ -47,7 +47,7 @@ type block_control_type
   integer, dimension(:),        allocatable :: ibs  , &  !< block extents for mpp-style
                                                ibe  , &  !! decompositions
                                                jbs  , &
-                                               jbe  
+                                               jbe
   type(ix_type), dimension(:),  allocatable :: ix    !< dereference packed index from global index
   !--- packed blocking fields
   integer, dimension(:),        allocatable :: blksz !< number of points in each individual block
