@@ -60,7 +60,7 @@ subroutine mpp_error_basic( errortype, errormsg )
      write( errunit,'(/a/)' )trim(text)
      write( outunit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
-        call FLUSH(outunit)
+        FLUSH(outunit)
         call ABORT() !automatically calls traceback on Cray systems
      end if
   end select

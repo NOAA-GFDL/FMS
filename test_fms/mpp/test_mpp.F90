@@ -385,7 +385,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
   print *, 'pe, max(pe+1)=', pe, a(1)
   !pelist check
   call mpp_sync()
-  call flush(out_unit)
+  flush(out_unit)
   if( npes.GE.2 )then
      if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
      call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
