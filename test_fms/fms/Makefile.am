@@ -40,3 +40,8 @@ TESTS = test_fms_io2.sh
 
 # These will also be included in the distribution.
 EXTRA_DIST = test_fms_io2.sh
+
+CLEANFILES = input.nml logfile.*.out
+
+clean-local:
+	rm -rf RESTART
