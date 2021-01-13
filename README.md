@@ -2,7 +2,7 @@
 
 Today’s climate models simulate highly complex systems. In response to
 increasingly complex models, the climate community has developed tools and
-methodologies to facilitate the modeling process, and many common tasks (e.g.,
+methodologies to facilitate the modeling process and many common tasks (e.g.,
 calendar management, grid generation, I/O). Such frameworks come with a number
 of advantages, including decreased model development time and increased
 compatibility of interfaces.
