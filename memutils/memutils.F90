@@ -1,5 +1,7 @@
 !> \file
+!! \brief Module to expose the memory printing API
 !! \author V. Balaji
+!! \email gfdl.climate.model.info@noaa.gov
 !!
 !! \section LICENSE
 !!
