@@ -17,32 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief A set of utilities for manipulating axes and extracting axis attributes
+!! @author M.J. Harrison
+!! @email gfdl.climate.model.info@noaa.gov
 module axis_utils_mod
-  !
-  !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
-  !
-  !<REVIEWER EMAIL="Bruce.Wyman@noaa.gov">Bruce Wyman</REVIEWER>
-  !
-
-  !<OVERVIEW>
-  ! A set of utilities for manipulating axes and extracting axis
-  ! attributes
-  !</OVERVIEW>
-
-  !<DESCRIPTION>
-  !
-  ! subroutine get_axis_cart(axis,cart) : Returns X,Y,Z or T cartesian attribute
-  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of
-  !                                                    available axes, or defined based on axis mid-points
-  ! function get_axis_modulo : Returns true if axis has the modulo attribute
-  ! function get_axis_fold   : Returns is axis is folded at a boundary (non-standard meta-data)
-  ! function lon_in_range    : Returns lon_strt <= longitude <= lon_strt+360
-  ! subroutine tranlon       : Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
-  ! subroutine nearest_index : Return index of nearest point along axis
-  !
-  !</DESCRIPTION>
-  !
-
   use netcdf
   use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
                         mpp_get_atts, mpp_get_axis_data, mpp_modify_meta,     &
@@ -73,7 +52,7 @@ module axis_utils_mod
 
 contains
 
-
+  !> @brief Returns X,Y,Z or T cartesian attribute
   subroutine get_axis_cart(axis, cart)
 
     type(axistype), intent(in) :: axis
@@ -143,7 +122,7 @@ contains
 
   end subroutine get_axis_cart
 
-
+  !> @brief Return axis_bound either from an array of available axes, or defined based on axis mid-points
   subroutine get_axis_bounds(axis,axis_bound,axes,bnd_name,err_msg)
 
     type(axistype), intent(in) :: axis
@@ -198,6 +177,8 @@ contains
     return
   end subroutine get_axis_bounds
 
+  !> @brief Returns true if axis has the modulo attribute
+  !! @return logical get_axis_modulo
   function get_axis_modulo(axis)
 
     type(axistype) :: axis
@@ -220,6 +201,7 @@ contains
     return
   end function get_axis_modulo
 
+  !> @return logical get_axis_modulo_times
   function get_axis_modulo_times(axis, tbeg, tend)
 
     logical :: get_axis_modulo_times
@@ -264,6 +246,8 @@ contains
 
   end function get_axis_modulo_times
 
+  !> @brief Returns if axis is folded at a boundary (non-standard meta-data)
+  !! @return logical get_axis_fold
   function get_axis_fold(axis)
 
     type(axistype) :: axis
@@ -286,6 +270,8 @@ contains
     return
   end function get_axis_fold
 
+  !> @brief Returns lon_strt <= longitude <= lon_strt+360
+  !! @return real lon_in_range
   function lon_in_range(lon, l_strt)
     real :: lon, l_strt, lon_in_range, l_end
 
@@ -314,6 +300,7 @@ contains
 
   end function lon_in_range
 
+  !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
   subroutine tranlon(lon, lon_start, istrt)
 
     ! returns array of longitudes s.t.  lon_strt <= lon < lon_strt+360.
@@ -363,6 +350,7 @@ contains
     return
   end subroutine tranlon
 
+  !> @return real frac_index
   function frac_index (value, array)
     !=======================================================================
     !
@@ -400,10 +388,10 @@ contains
     !     be the nearest data point to 0.0
     !
     !=======================================================================
-
     integer :: ia, i, ii, unit
-    real :: value, frac_index
-    real, dimension(:) :: array
+    real :: value !< arbitrary data...same units as elements in "array"
+    real :: frac_index
+    real, dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))
@@ -438,6 +426,8 @@ contains
     endif
   end function frac_index
 
+  !> @brief Return index of nearest point along axis
+  !! @return integer nearest_index
   function nearest_index (value, array)
     !=======================================================================
     !
@@ -477,9 +467,14 @@ contains
     !
     !=======================================================================
 
-    integer :: nearest_index, ia, i, ii, unit
-    real :: value
-    real, dimension(:) :: array
+    integer :: nearest_index !< index of nearest data point to "value"
+                             !! if "value" is outside the domain of "array" then nearest_index = 1
+                             !! or "ia" depending on whether array(1) or array(ia) is
+                             !! closest to "value"
+    Integer :: i, ii, unit
+    integer :: ia !< dimension of "array"
+    real :: value !< arbitrary data...same units as elements in "array"
+    real, dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))

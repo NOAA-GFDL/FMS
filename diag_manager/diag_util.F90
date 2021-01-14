@@ -17,6 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+
+!> @file
+!! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
+!! @author Seth Underwood
+!! @email gfdl.climate.model.info@noaa.gov
 MODULE diag_util_mod
 
 use platform_mod
@@ -96,42 +101,13 @@ use fms2_io_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
        & prepend_attribute, attribute_init, diag_util_init
 
-  ! <INTERFACE NAME="prepend_attribute">
-  !   <OVERVIEW>
-  !     prepend a value to a string attribute in the output field or output file
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE prepend_attribute(output_field, att_name, att_value)
-  !     SUBROUTINE prepend_attribute(output_file, att_name, att_value)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Prepend a character string to a character attribute for a give field, or to a global attribute
-  !     in a give file.
-  !   </DESCRIPTION>
-  !   <IN NAME="output_field" TYPE="TYPE(output_field_type)" />
-  !   <IN NAME="output_file" TYPE="TYPE(file_type)" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="REAL|INTEGER|CHARACTER(len=*)" />
+  !> @brief prepend a value to a string attribute in the output field or output file
   INTERFACE prepend_attribute
      MODULE PROCEDURE prepend_attribute_field
      MODULE PROCEDURE prepend_attribute_file
   END INTERFACE prepend_attribute
-  ! </INTERFACE>
 
-  ! <INTERFACE NAME="attribute_init">
-  !   <OVERVIEW>
-  !     Allocates the atttype in out_file
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE attribute_init(out_file, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Allocates memory in out_file for the attributes.  Will <TT>FATAL</TT> if err_msg is not included
-  !     in the subroutine call.
-  !   </DESCRIPTION>
-  !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field to allocate memory for attribute</INOUT>
-  !   <INOUT NAME="out_file" TYPE="TYPE(file_type)">output file to allocate memory for attribute</INOUT>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  !> @brief Allocates the atttype in out_file
   INTERFACE attribute_init
      MODULE PROCEDURE attribute_init_field
      MODULE PROCEDURE attribute_init_file
@@ -146,16 +122,7 @@ use fms2_io_mod
 
 CONTAINS
 
-  ! <SUBROUTINE NAME="diag_util_init">
-  !   <OVERVIEW>
-  !     Write the version number of this file
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_util_init
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Write the version number of this file to the log file.
-  !   </DESCRIPTION>
+  !> @brief Write the version number of this file to the log file.
   SUBROUTINE diag_util_init()
     IF (module_initialized) THEN
        RETURN
@@ -164,24 +131,11 @@ CONTAINS
     ! Write version number out to log file
     call write_version_number("DIAG_UTIL_MOD", version)
   END SUBROUTINE diag_util_init
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="get_subfield_size">
-  !   <OVERVIEW>
-  !     Get the size, start, and end indices for output fields.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE get_subfield_size(axes, outnum)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Get the size, start and end indices for <TT>output_fields(outnum)</TT>, then
-  !     fill in <TT>output_fields(outnum)%output_grid%(start_indx, end_indx)</TT>
-  !   </DESCRIPTION>
-  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Axes of the <TT>input_field</TT>.</IN>
-  !   <IN NAME="outnum" TYPE="INTEGER">Position in array <TT>output_fields</TT>.</IN>
+  !> @brief Get the size, start, and end indices for output fields.
   SUBROUTINE get_subfield_size(axes, outnum)
-    INTEGER, INTENT(in) :: axes(:) ! axes of the input_field
-    INTEGER, INTENT(in) :: outnum  ! position in array output_fields
+    INTEGER, INTENT(in) :: axes(:) !< axes of the input_field
+    INTEGER, INTENT(in) :: outnum  !< position in array output_fields
 
     REAL, ALLOCATABLE   :: global_lat(:), global_lon(:), global_depth(:)
     INTEGER :: global_axis_size, global_axis_sizey
@@ -189,9 +143,13 @@ CONTAINS
     CHARACTER(len=1) :: cart
     TYPE(domain2d) :: Domain2, Domain2_new
     TYPE(domain1d) :: Domain1, Domain1x, Domain1y
-    REAL :: start(3), end(3) ! start and end coordinates in 3 axes
-    INTEGER :: gstart_indx(3), gend_indx(3) ! global start and end indices of output domain in 3 axes
-    REAL, ALLOCATABLE :: subaxis_x(:), subaxis_y(:), subaxis_z(:) !containing local coordinates in x,y,z axes
+    REAL :: start(3) !< start coordinates in 3 axes
+    REAL :: end(3) !< end coordinates in 3 axes
+    INTEGER :: gstart_indx(3)!< global start indices of output domain in 3 axes
+    INTEGER :: gend_indx(3) !< global end indices of output domain in 3 axes
+    REAL, ALLOCATABLE :: subaxis_x(:) !< containing local coordinates in x,y,z axes
+    REAL, ALLOCATABLE :: subaxis_y(:) !< containing local coordinates in x,y,z axes
+    REAL, ALLOCATABLE :: subaxis_z(:) !< containing local coordinates in x,y,z axes
     CHARACTER(len=128) :: msg
     INTEGER :: ishift, jshift
     INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole axis, or a sub-axis
@@ -454,30 +412,19 @@ CONTAINS
     IF ( ALLOCATED(subaxis_x) ) DEALLOCATE(subaxis_x, global_lon)
     IF ( ALLOCATED(subaxis_y) ) DEALLOCATE(subaxis_y, global_lat)
   END SUBROUTINE get_subfield_size
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="get_subfield_vert_size">
-  !   <OVERVIEW>
-  !     Get size, start and end indices for output fields.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE get_subfield_vert_size(axes, outnum)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Get size, start and end indices for <TT>output_fields(outnum)</TT>, fill in
-  !     <TT>output_fields(outnum)%output_grid%(start_indx, end_indx)</TT>.
-  !   </DESCRIPTION>
-  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Axes of the <TT>input_field</TT></IN>
-  !   <IN NAME="outnum" TYPE="INTEGER">Position in array <TT>output_fields</TT>.</IN>
+  !> @brief Get size, start and end indices for output fields.
   SUBROUTINE get_subfield_vert_size(axes, outnum)
-    INTEGER, DIMENSION(:), INTENT(in) :: axes ! axes of the input_field
-    INTEGER, INTENT(in) :: outnum  ! position in array output_fields
+    INTEGER, DIMENSION(:), INTENT(in) :: axes !< axes of the input_field
+    INTEGER, INTENT(in) :: outnum  !< position in array output_fields
 
-    REAL, DIMENSION(3) :: start, end ! start and end coordinates in 3 axes
+    REAL, DIMENSION(3) :: start !< start and end coordinates in 3 axes
+    REAL, DIMENSION(3) :: end !< start and end coordinates in 3 axes
     REAL, ALLOCATABLE, DIMENSION(:) :: global_depth
-    REAL, ALLOCATABLE, DIMENSION(:) :: subaxis_z !containing local coordinates in x,y,z axes
+    REAL, ALLOCATABLE, DIMENSION(:) :: subaxis_z !< containing local coordinates in x,y,z axes
     INTEGER :: i, global_axis_size
-    INTEGER, DIMENSION(3) :: gstart_indx, gend_indx ! global start and end indices of output domain in 3 axes
+    INTEGER, DIMENSION(3) :: gstart_indx !< global start and end indices of output domain in 3 axes
+    INTEGER, DIMENSION(3) :: gend_indx !< global start and end indices of output domain in 3 axes
     CHARACTER(len=1) :: cart
     CHARACTER(len=128) :: msg
 !----------
@@ -596,22 +543,8 @@ CONTAINS
        output_fields(outnum)%output_grid%l_end_indx(3)   = 1
     END IF
   END SUBROUTINE get_subfield_vert_size
-  ! </SUBROUTINE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="get_index">
-  !   <OVERVIEW>
-  !     Find index <TT>i</TT> of array such that <TT>array(i)</TT> is closest to number.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     INTEGER FUNCTION get_index(number, array)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Find index <TT>i</TT> of array such that <TT>array(i)</TT> is closest to number.
-  !     Array must be  monotonouslly ordered.
-  !   </DESCRIPTION>
-  !   <IN NAME="number" TYPE="REAL"></IN>
-  !   <IN NAME="array" TYPE="REAL, DIMENSION(:)"></IN>
+  !> @brief Find index <TT>i</TT> of array such that <TT>array(i)</TT> is closest to number.
   INTEGER FUNCTION get_index(number, array)
     REAL, INTENT(in) :: number
     REAL, INTENT(in), DIMENSION(:) :: array
@@ -688,45 +621,28 @@ CONTAINS
        END IF
     END IF
   END FUNCTION get_index
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <SUBROUTINE NAME="log_diag_field_info">
-  !   <OVERVIEW>
-  !     Writes brief diagnostic field info to the log file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE log_diag_field_info(module_name, field_name, axes, long_name, units,
-  !     missing_value, range, dynamic)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     If the <TT>do_diag_field_log</TT> namelist parameter is .TRUE.,
-  !     then a line briefly describing diagnostic field is added to
-  !     the log file.  Normally users should not call this subroutine
-  !     directly, since it is called by register_static_field and
-  !     register_diag_field if do_not_log is not set to .TRUE..  It is
-  !     used, however, in LM3 to avoid excessive logs due to the
-  !     number of fields registered for each of the tile types.  LM3
-  !     code uses a do_not_log parameter in the registration calls,
-  !     and subsequently calls this subroutine to log field information
-  !     under a generic name.
-  !   </DESCRIPTION>
-  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name.</IN>
-  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)">Field name.</IN>
-  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)">Axis IDs.</IN>
-  !   <IN NAME="long_name" TYPE="CHARACTER(len=*), OPTIONAL">Long name for field.</IN>
-  !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL">Unit of field.</IN>
-  !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL">Missing value value.</IN>
-  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL">Valid range of values for field.</IN>
-  !   <IN NAME="dynamic" TYPE="LOGICAL, OPTIONAL"><TT>.TRUE.</TT> if field is not static.</IN>
+  !> @brief Writes brief diagnostic field info to the log file.
+  !! @details If the <TT>do_diag_field_log</TT> namelist parameter is .TRUE.,
+  !!     then a line briefly describing diagnostic field is added to
+  !!     the log file.  Normally users should not call this subroutine
+  !!     directly, since it is called by register_static_field and
+  !!     register_diag_field if do_not_log is not set to .TRUE..  It is
+  !!     used, however, in LM3 to avoid excessive logs due to the
+  !!     number of fields registered for each of the tile types.  LM3
+  !!     code uses a do_not_log parameter in the registration calls,
+  !!     and subsequently calls this subroutine to log field information
+  !!     under a generic name.
   SUBROUTINE log_diag_field_info(module_name, field_name, axes, long_name, units,&
        & missing_value, range, dynamic)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    INTEGER, DIMENSION(:), INTENT(in) :: axes
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units
-    REAL, OPTIONAL, INTENT(in) :: missing_value
-    REAL, DIMENSION(2), OPTIONAL, INTENT(IN) :: range
-    LOGICAL, OPTIONAL, INTENT(in) :: dynamic
+    CHARACTER(len=*), INTENT(in) :: module_name !< Module name
+    CHARACTER(len=*), INTENT(in) :: field_name !< Field name
+    INTEGER, DIMENSION(:), INTENT(in) :: axes !< Axis IDs
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name !< Long name for field.
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< Unit of field.
+    REAL, OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
+    REAL, DIMENSION(2), OPTIONAL, INTENT(IN) :: range !< Valid range of values for field.
+    LOGICAL, OPTIONAL, INTENT(in) :: dynamic !< <TT>.TRUE.</TT> if field is not static.
 
     ! ---- local vars
     CHARACTER(len=256) :: lmodule, lfield, lname, lunits
@@ -798,27 +714,16 @@ CONTAINS
          & TRIM(lmissval), sep, TRIM(lmin),    sep, TRIM(lmax),     sep,&
          & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="update_bounds">
-  !   <OVERVIEW>
-  !     Update the <TT>output_fields</TT> min and max boundaries.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE update_bounds(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices).
-  !   </DESCRIPTION>
-  !   <IN NAME="out_num" TYPE="INTEGER"><TT>output_field</TT> ID.</IN>
-  !   <IN NAME="lower_i" TYPE="INTEGER">Lower <TT>i</TT> bound.</IN>
-  !   <IN NAME="upper_i" TYPE="INTEGER">Upper <TT>i</TT> bound.</IN>
-  !   <IN NAME="lower_j" TYPE="INTEGER">Lower <TT>j</TT> bound.</IN>
-  !   <IN NAME="upper_j" TYPE="INTEGER">Upper <TT>j</TT> bound.</IN>
-  !   <IN NAME="lower_k" TYPE="INTEGER">Lower <TT>k</TT> bound.</IN>
-  !   <IN NAME="upper_k" TYPE="INTEGER">Upper <TT>k</TT> bound.</IN>
+  !> @brief Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices).
   SUBROUTINE update_bounds(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-    INTEGER, INTENT(in) :: out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k
+    INTEGER, INTENT(in) :: out_num !< output field ID
+    INTEGER, INTENT(in) :: lower_i !< Lower i bound.
+    INTEGER, INTENT(in) :: upper_i !< Upper i bound.
+    INTEGER, INTENT(in) :: lower_j !< Lower j bound.
+    INTEGER, INTENT(in) :: upper_j !< Upper j bound.
+    INTEGER, INTENT(in) :: lower_k !< Lower k bound.
+    INTEGER, INTENT(in) :: upper_k !< Upper k bound.
 
     output_fields(out_num)%imin = MIN(output_fields(out_num)%imin, lower_i)
     output_fields(out_num)%imax = MAX(output_fields(out_num)%imax, upper_i)
@@ -827,35 +732,14 @@ CONTAINS
     output_fields(out_num)%kmin = MIN(output_fields(out_num)%kmin, lower_k)
     output_fields(out_num)%kmax = MAX(output_fields(out_num)%kmax, upper_k)
   END SUBROUTINE update_bounds
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="check_out_of_bounds">
-  !   <OVERVIEW>
-  !     Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the <TT>output_fields(out_num)%buffer</TT> upper
-  !     and lower bounds.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>check_out_of_bounds</TT> verifies the array min and max indices in the x, y, and z directions of <TT>
-  !     output_fields(out_num)</TT> are not outside the upper and lower array boundaries of
-  !     <TT>output_fields(out_num)%buffer</TT>.  If the min and max indices are outside the upper and lower bounds of the buffer
-  !     array, then <TT>check_out_of_bounds</TT> returns an error string.
-  !   </DESCRIPTION>
-  !   <IN NAME="out_num" TYPE="INTEGER">
-  !     Output field ID number.
-  !   </IN>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER">
-  !     Input field ID number.
-  !   </IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*)">
-  !     Return status of <TT>check_out_of_bounds</TT>.  An empty error string indicates the x, y, and z indices are not outside the
-  !     buffer array boundaries.
-  !   </OUT>
+  !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the <TT>output_fields(out_num)%buffer</TT> upper
+  !!     and lower bounds.
   SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
-    INTEGER, INTENT(in) :: out_num, diag_field_id
-    CHARACTER(len=*), INTENT(out) :: err_msg
+    INTEGER, INTENT(in) :: out_num !< Output field ID number.
+    INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
+    CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty error string indicates the x, y, and z indices are not outside the
+                                             !!     buffer array boundaries.
 
     CHARACTER(len=128) :: error_string1, error_string2
 
@@ -894,40 +778,18 @@ CONTAINS
     END IF
 
   END SUBROUTINE check_out_of_bounds
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="check_bounds_are_exact_dynamic">
-  !   <OVERVIEW>
-  !     Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the <TT>output_fields(out_num)%buffer</TT>
-  !     upper and lower bounds.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>check_bounds_are_exact_dynamic</TT> checks if the min and max array indices for <TT>output_fields(out_num)</TT> are
-  !     equal to the upper and lower bounds of <TT>output_fields(out_num)%buffer</TT>.  This check is only performed if
-  !     <TT>output_fields(out_num)%Time_of_prev_field_data</TT> doesn't equal <TT>Time</TT> or <TT>Time_zero</TT>.
-  !     <TT>check_bounds_are_exact_dynamic</TT> returns an error string if the array indices do not match the buffer bounds.
-  !   </DESCRIPTION>
-  !   <IN NAME="out_num" TYPE="INTEGER">
-  !     Output field ID number.
-  !   </IN>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER">
-  !     Input field ID number.
-  !   </IN>
-  !   <IN NAME="Time" TYPE="TYPE(time_type)">
-  !     Time to use in check.  The check is only performed if <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
-  !     equal to <TT>Time</TT> or <TT>Time_zero</TT>.
-  !   </IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*)">
-  !     Return status of <TT>check_bounds_are_exact_dynamic</TT>.  An empty error string indicates the x, y, and z indices are
-  !     equal to the buffer array boundaries.
-  !   </OUT>
+  !> @brief  Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the <TT>output_fields(out_num)%buffer</TT>
+  !!     upper and lower bounds.
   SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
-    INTEGER, INTENT(in) :: out_num, diag_field_id
-    TYPE(time_type), INTENT(in) :: Time
-    CHARACTER(len=*), INTENT(out) :: err_msg
+    INTEGER, INTENT(in) :: out_num !< Output field ID number.
+    INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
+    TYPE(time_type), INTENT(in) :: Time !< Time to use in check.  The check is only performed if
+                                        !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
+                                        !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
+    CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
+                                             !! An empty error string indicates the x, y, and z indices are
+                                             !!     equal to the buffer array boundaries.
 
     CHARACTER(len=128) :: error_string1, error_string2
     LOGICAL :: do_check
@@ -982,23 +844,12 @@ CONTAINS
        output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
     END IF
   END SUBROUTINE check_bounds_are_exact_dynamic
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="check_bounds_are_exact_static">
-  !   <OVERVIEW>
-  !     Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the <TT>output_fields(out_num)%buffer</TT>
-  !     upper and lower bounds.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !   </DESCRIPTION>
-  !   <IN NAME="out_num" TYPE="INTEGER">Output field ID</IN>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER">Input field ID.</IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*)"></OUT>
+  !> @brief Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the <TT>output_fields(out_num)%buffer</TT>
+  !!     upper and lower bounds.
   SUBROUTINE check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
-    INTEGER, INTENT(in) :: out_num, diag_field_id
+    INTEGER, INTENT(in) :: out_num !< Output field ID
+    INTEGER, INTENT(in) :: diag_field_id !< Input field ID.
     CHARACTER(len=*), INTENT(out) :: err_msg
 
     CHARACTER(len=128)  :: error_string1, error_string2
@@ -1036,40 +887,22 @@ CONTAINS
     output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
 
   END SUBROUTINE check_bounds_are_exact_static
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="init_file">
-  !   <OVERVIEW>
-  !     Initialize the output file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE init_file(name, output_freq, output_units, format, time_units
-  !     long_name, tile_count, new_file_freq, new_file_freq_units, start_time,
-  !     file_duration, file_duration_units)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Initialize the output file.
-  !   </DESCRIPTION>
-  !   <IN NAME="name" TYPE="CHARACTER(len=*)">File name.</IN>
-  !   <IN NAME="output_freq" TYPE="INTEGER">How often data is to be written to the file.</IN>
-  !   <IN NAME="output_units" TYPE="INTEGER">The output frequency unit.  (MIN, HOURS, DAYS, etc.)</IN>
-  !   <IN NAME="format" TYPE="INTEGER">Number type/kind the data is to be written out to the file.</IN>
-  !   <IN NAME="time_units" TYPE="INTEGER">Time axis units.</IN>
-  !   <IN NAME="log_name" TYPE="CHARACTER(len=*)">Long name for time axis.</IN>
-  !   <IN NAME="tile_count" TYPE="INTEGER">Tile number.</IN>
-  !   <IN NAME="new_file_freq" TYPE="INTEGER, OPTIONAL">How often a new file is to be created.</IN>
-  !   <IN NAME="new_file_freq_units" TYPE="INTEGER, OPTIONAL">The new file frequency unit.  (MIN, HOURS, DAYS, etc.)</IN>
-  !   <IN NAME="start_time" TYPE="TYPE(time_type), OPTIONAL">Time when the file is to start </IN>
-  !   <IN NAME="file_duration" TYPE="INTEGER, OPTIONAL">How long file is to be used.</IN>
-  !   <IN NAME="file_duration_units" TYPE="INTEGER, OPTIONAL">File duration unit.  (MIN, HOURS, DAYS, etc.)</IN>
+  !> @brief Initialize the output file.
   SUBROUTINE init_file(name, output_freq, output_units, format, time_units, long_name, tile_count,&
        & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units)
-    CHARACTER(len=*), INTENT(in) :: name, long_name
-    INTEGER, INTENT(in) :: output_freq, output_units, format, time_units
-    INTEGER, INTENT(in) :: tile_count
-    INTEGER, INTENT(in), OPTIONAL :: new_file_freq, new_file_freq_units
-    INTEGER, INTENT(in), OPTIONAL :: file_duration, file_duration_units
-    TYPE(time_type), INTENT(in), OPTIONAL :: start_time
+    CHARACTER(len=*), INTENT(in) :: name !< File name.
+    CHARACTER(len=*), INTENT(in) :: long_name !< Long name for time axis.
+    INTEGER, INTENT(in) :: output_freq !< How often data is to be written to the file.
+    INTEGER, INTENT(in) :: output_units !< The output frequency unit.  (MIN, HOURS, DAYS, etc.)
+    INTEGER, INTENT(in) :: format !< Number type/kind the data is to be written out to the file.
+    INTEGER, INTENT(in) :: time_units !< Time axis units.
+    INTEGER, INTENT(in) :: tile_count !< Tile number.
+    INTEGER, INTENT(in), OPTIONAL :: new_file_freq !< How often a new file is to be created.
+    INTEGER, INTENT(in), OPTIONAL :: new_file_freq_units !< The new file frequency unit.  (MIN, HOURS, DAYS, etc.)</IN>
+    INTEGER, INTENT(in), OPTIONAL :: file_duration !< How long file is to be used.
+    INTEGER, INTENT(in), OPTIONAL :: file_duration_units !< File duration unit.  (MIN, HOURS, DAYS, etc.)
+    TYPE(time_type), INTENT(in), OPTIONAL :: start_time !< Time when the file is to start
 
     INTEGER :: new_file_freq1, new_file_freq_units1
     INTEGER :: file_duration1, file_duration_units1
@@ -1228,29 +1061,17 @@ CONTAINS
     files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number',&
          & set_name='nv')
   END SUBROUTINE init_file
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="sync_file_times">
-  !   <OVERVIEW>
-  !     Synchronize the file's start and close times with the model start and end times.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE sync_file_times(init_time)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>sync_file_times</TT> checks to see if the file start time is less than the
-  !     model's init time (passed in as the only argument).  If it is less, then the
-  !     both the file start time and end time are synchronized using the passed in initial time
-  !     and the duration as calculated by the <TT>diag_time_inc</TT> function.  <TT>sync_file_times</TT>
-  !     will also increase the <TT>next_open</TT> until it is greater than the init_time.
-  !   </DESCRIPTION>
-  !   <IN NAME="file_id" TYPE="INTEGER">The file ID</IN>
-  !   <IN NAME="init_time" TYPE="TYPE(time_type)">Initial time use for the synchronization.</IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Return error message</OUT>
+  !> @brief Synchronize the file's start and close times with the model start and end times.
+  !! @details <TT>sync_file_times</TT> checks to see if the file start time is less than the
+  !!     model's init time (passed in as the only argument).  If it is less, then the
+  !!     both the file start time and end time are synchronized using the passed in initial time
+  !!     and the duration as calculated by the <TT>diag_time_inc</TT> function.  <TT>sync_file_times</TT>
+  !!     will also increase the <TT>next_open</TT> until it is greater than the init_time.
   SUBROUTINE sync_file_times(file_id, init_time, err_msg)
-    INTEGER, INTENT(in) :: file_id
-    TYPE(time_type), INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(out) :: err_msg
+    INTEGER, INTENT(in) :: file_id !< The file ID
+    TYPE(time_type), INTENT(in) :: init_time !< Initial time use for the synchronization.
+    CHARACTER(len=*), OPTIONAL, INTENT(out) :: err_msg !< Return error message
 
     CHARACTER(len=128) :: msg
 
@@ -1274,29 +1095,15 @@ CONTAINS
        END IF
     END DO
   END SUBROUTINE sync_file_times
-  ! </SUBROUTINE>
 
-  ! <FUNCTION NAME="diag_time_inc">
-  !   <OVERVIEW>
-  !     Return the next time data/file is to be written based on the frequency and units.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     TYPE(time_type) FUNCTION diag_time_inc(time, output_freq, output_units, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return the next time data/file is to be written.  This value is based on the current time and the frequency and units.
-  !     Function completed successful if the optional <TT>err_msg</TT> is empty.
-  !   </DESCRIPTION>
-  !   <IN NAME="time" TYPE="TYPE(time_type)">Current model time.</IN>
-  !   <IN NAME="output_freq" TYPE="INTEGER">Output frequency number value.</IN>
-  !   <IN NAME="output_units" TYPE="INTEGER">Output frequency unit.</IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER, OPTIONAL">
-  !     Function error message.  An empty string indicates the next output time was found successfully.
-  !   </OUT>
+  !> @brief Return the next time data/file is to be written based on the frequency and units.
   TYPE(time_type) FUNCTION diag_time_inc(time, output_freq, output_units, err_msg)
-    TYPE(time_type), INTENT(in) :: time
-    INTEGER, INTENT(in):: output_freq, output_units
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+    TYPE(time_type), INTENT(in) :: time !< Current model time.
+    INTEGER, INTENT(in):: output_freq !< Output frequency number value.
+    INTEGER, INTENT(in):: output_units !< Output frequency unit.
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Function error message.
+                                                       !! An empty string indicates the next output
+                                                       !! time was found successfully.
 
     CHARACTER(len=128) :: error_message_local
 
@@ -1357,24 +1164,12 @@ CONTAINS
        IF ( fms_error_handler('diag_time_inc',error_message_local,err_msg) ) RETURN
     END IF
   END FUNCTION diag_time_inc
-  ! </FUNCTION>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="find_file">
-  !   <OVERVIEW>
-  !     Return the file number for file name and tile.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     INTEGER FUNCTION fild_file(name, time_count)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Find the file number for the file name and tile number given.  A return value of <TT>-1</TT> indicates the file was not found.
-  !   </DESCRIPTION>
-  !   <IN NAME="name=" TYPE="CHARACTER(len=*)">File name.</IN>
-  !   <IN NAME="tile_count" TYPE="INTEGER">Tile number.</IN>
+  !> @brief Return the file number for file name and tile.
+  !! @return Integer find_file
   INTEGER FUNCTION find_file(name, tile_count)
-    INTEGER, INTENT(in) :: tile_count
-    CHARACTER(len=*), INTENT(in) :: name
+    INTEGER, INTENT(in) :: tile_count !< Tile number.
+    CHARACTER(len=*), INTENT(in) :: name !< File name.
 
     INTEGER :: i
 
@@ -1386,26 +1181,13 @@ CONTAINS
        END IF
     END DO
   END FUNCTION find_file
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <FUNCTION NAME="find_input_field">
-  !   <OVERVIEW>
-  !     Return the field number for the given module name, field name, and tile number.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     INTEGER FUNCTION find_input_field(module_name, field_name, tile_count)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Return the field number for the given module name, field name and tile number.  A return value of <TT>-1</TT> indicates
-  !     the field was not found.
-  !   </DESCRIPTION>
-  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name.</IN>
-  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)">field name.</IN>
-  !   <IN NAME="tile_count" TYPE="INTEGER">Tile number.</IN>
+  !> @brief Return the field number for the given module name, field name, and tile number.
+  !! @return Integer find_input_field
   INTEGER FUNCTION find_input_field(module_name, field_name, tile_count)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    INTEGER, INTENT(in) :: tile_count
+    CHARACTER(len=*), INTENT(in) :: module_name !< Module name.
+    CHARACTER(len=*), INTENT(in) :: field_name !< field name.
+    INTEGER, INTENT(in) :: tile_count !< Tile number.
 
     INTEGER :: i
 
@@ -1419,24 +1201,12 @@ CONTAINS
        END IF
     END DO
   END FUNCTION find_input_field
-  ! </FUNCTION>
 
-  ! <SUBROUTINE NAME="init_input_field">
-  !   <OVERVIEW>
-  !     Initialize the input field.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE init_input_field(module_name, field_name, tile_count)
-  !   </TEMPLATE>
-  !     Initialize the input field.
-  !   <DESCRIPTION>
-  !   </DESCRIPTION>
-  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name.</IN>
-  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)">Input field name.</IN>
-  !   <IN NAME="tile_count" TYPE="INTEGER">Tile number.</IN>
+  !> @brief Initialize the input field.
   SUBROUTINE init_input_field(module_name, field_name, tile_count)
-    CHARACTER(len=*),  INTENT(in) :: module_name, field_name
-    INTEGER, INTENT(in) :: tile_count
+    CHARACTER(len=*),  INTENT(in) :: module_name !< Module name.
+    CHARACTER(len=*),  INTENT(in) :: field_name !< Input field name.
+    INTEGER, INTENT(in) :: tile_count !< Tile number.
 
     ! Get a number for this input_field if not already set up
     IF ( find_input_field(module_name, field_name, tile_count) < 0 ) THEN
@@ -1463,35 +1233,21 @@ CONTAINS
     input_fields(num_input_fields)%active_omp_level = 0
     input_fields(num_input_fields)%time = time_zero
   END SUBROUTINE init_input_field
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="init_output_field">
-  !   <OVERVIEW>
-  !     Initialize the output field.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE init_output_field(module_name, field_name, output_name, output_file
-  !     time_method, pack, tile_count, local_coord)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Initialize the output field.
-  !   </DESCRIPTION>
-  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)">Module name.</IN>
-  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)">Output field name.</IN>
-  !   <IN NAME="output_name" TYPE="CHARACTER(len=*)">Output name written to file.</IN>
-  !   <IN NAME="output_file" TYPE="CHARACTER(len=*)">File where field should be written.</IN>
-  !   <IN NAME="time_method" TYPE="CHARACTER(len=*)">
-  !     Data reduction method.  See <LINK SRC="diag_manager.html">diag_manager_mod</LINK> for valid methods.</IN>
-  !   <IN NAME="pack" TYPE="INTEGER">Packing method.</IN>
-  !   <IN NAME="tile_count" TYPE="INTEGER">Tile number.</IN>
-  !   <IN NAME="local_coord" TYPE="INTEGER, OPTIONAL">Region to be written.  If missing, then all data to be written.</IN>
+  !> @brief Initialize the output field.
   SUBROUTINE init_output_field(module_name, field_name, output_name, output_file,&
        & time_method, pack, tile_count, local_coord)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name, output_name, output_file
-    CHARACTER(len=*), INTENT(in) :: time_method
-    INTEGER, INTENT(in) :: pack
-    INTEGER, INTENT(in) :: tile_count
-    TYPE(coord_type), INTENT(in), OPTIONAL :: local_coord
+    CHARACTER(len=*), INTENT(in) :: module_name !< Module name.
+    CHARACTER(len=*), INTENT(in) :: field_name !< Output field name.
+    CHARACTER(len=*), INTENT(in) :: output_name !< Output name written to file.
+    CHARACTER(len=*), INTENT(in) :: output_file !< File where field should be written.
+    CHARACTER(len=*), INTENT(in) :: time_method !< Data reduction method.
+                                                !! See <LINK SRC="diag_manager.html">diag_manager_mod</LINK>
+                                                !! for valid methods.</IN>
+    INTEGER, INTENT(in) :: pack !< Packing method.
+    INTEGER, INTENT(in) :: tile_count !< Tile number.
+    TYPE(coord_type), INTENT(in), OPTIONAL :: local_coord !< Region to be written.
+                                                          !! If missing, then all data to be written.</IN>
     INTEGER :: out_num, in_num, file_num, file_num_tile1
     INTEGER :: num_fields, i, method_selected, l1
     INTEGER :: ioerror
@@ -1770,9 +1526,8 @@ CONTAINS
     output_fields(out_num)%num_elements(:) = 0
     output_fields(out_num)%num_attributes = 0
   END SUBROUTINE init_output_field
-  ! </SUBROUTINE>
 
-!> \brief Open file for output.
+  !> @brief Open file for output, and write the meta data.
   SUBROUTINE opening_file(file, time, use_mpp_io)
     ! WARNING: Assumes that all data structures are fully initialized
     INTEGER, INTENT(in) :: file !< File ID.
@@ -2379,37 +2134,42 @@ CONTAINS
     if (associated(fileob)) nullify(fileob)
    endif !< use_mpp_io
   END SUBROUTINE opening_file
-  ! </SUBROUTINE>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="get_time_string">
-  !   <OVERVIEW>
-  !     This function determines a string based on current time.
-  !     This string is used as suffix in output file name
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     CHARACTER(len=128) FUNCTION get_time_string(filename, current_time)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     This function determines a string based on current time.
-  !     This string is used as suffix in output file name
-  !   </DESCRIPTION>
-  !   <IN NAME="filename" TYPE="CHARACTER(len=128)">File name.</IN>
-  !   <IN NAME="current_time" TYPE="TYPE(time_type)">Current model time.</IN>
+  !> @brief This function determines a string based on current time.
+  !!     This string is used as suffix in output file name
+  !! @return Character(len=128) get_time_string
   CHARACTER(len=128) FUNCTION get_time_string(filename, current_time)
-    CHARACTER(len=128), INTENT(in) :: filename
-    TYPE(time_type), INTENT(in) :: current_time
+    CHARACTER(len=128), INTENT(in) :: filename !< File name.
+    TYPE(time_type), INTENT(in) :: current_time !< Current model time.
 
-    INTEGER :: yr1, mo1, dy1, hr1, mi1, sc1  ! get from current time
-    INTEGER :: yr2, dy2, hr2, mi2            ! for computing next_level time unit
-    INTEGER :: yr1_s, mo1_s, dy1_s, hr1_s, mi1_s, sc1_s ! actual values to write string
-    INTEGER :: abs_sec, abs_day              ! component of current_time
+    INTEGER :: yr1 !< get from current time
+    INTEGER :: mo1 !< get from current time
+    INTEGER :: dy1 !< get from current time
+    INTEGER :: hr1 !< get from current time
+    INTEGER :: mi1 !< get from current time
+    INTEGER :: sc1 !< get from current time
+    INTEGER :: yr2 !< for computing next_level time unit
+    INTEGER :: dy2 !< for computing next_level time unit
+    INTEGER :: hr2 !< for computing next_level time unit
+    INTEGER :: mi2 !< for computing next_level time unit
+    INTEGER :: yr1_s !< actual values to write string
+    INTEGER :: mo1_s !< actual values to write string
+    INTEGER :: dy1_s !< actual values to write string
+    INTEGER :: hr1_s !< actual values to write string
+    INTEGER :: mi1_s !< actual values to write string
+    INTEGER :: sc1_s !< actual values to write string
+    INTEGER :: abs_day              !< component of current_time
+    INTEGER :: abs_sec              !< component of current_time
     INTEGER :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
     INTEGER :: julian_day, i, position, len, first_percent
-    CHARACTER(len=1) :: width  ! width of the field in format write
+    CHARACTER(len=1) :: width  !< width of the field in format write
     CHARACTER(len=10) :: format
-    CHARACTER(len=20) :: yr, mo, dy, hr, mi, sc        ! string of current time (output)
+    CHARACTER(len=20) :: yr !< string of current time (output)
+    CHARACTER(len=20) :: mo !< string of current time (output)
+    CHARACTER(len=20) :: dy !< string of current time (output)
+    CHARACTER(len=20) :: hr !< string of current time (output)
+    CHARACTER(len=20) :: mi !< string of current time (output)
+    CHARACTER(len=20) :: sc !< string of current time (output)
     CHARACTER(len=128) :: filetail
 
     format = '("_",i*.*)'
@@ -2516,25 +2276,13 @@ CONTAINS
     ENDIF
     get_time_string = TRIM(yr)//TRIM(mo)//TRIM(dy)//TRIM(hr)//TRIM(mi)//TRIM(sc)
   END FUNCTION get_time_string
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <FUNCTION NAME="get_date_dif">
-  !   <OVERVIEW>
-  !     Return the difference between two times in units.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     REAL FUNCTION get_date_dif(t2, t1, units)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Calculate and return the difference between the two times given in the unit given using the function <TT>t2 - t1</TT>.
-  !   </DESCRIPTION>
-  !   <IN NAME="t2" TYPE="TYPE(time_type)">Most recent time.</IN>
-  !   <IN NAME="t1" TYPE="TYPE(time_type)">Most distant time.</IN>
-  !   <IN NAME="units" TYPE="INTEGER">Unit of return value.</IN>
+  !> @brief Return the difference between two times in units.
+  !! @return Real get_data_dif
   REAL FUNCTION get_date_dif(t2, t1, units)
-    TYPE(time_type), INTENT(in) :: t2, t1
-    INTEGER, INTENT(in) :: units
+    TYPE(time_type), INTENT(in) :: t2 !< Most recent time.
+    TYPE(time_type), INTENT(in) :: t1 !< Most distant time.
+    INTEGER, INTENT(in) :: units !< Unit of return value.
 
     INTEGER :: dif_seconds, dif_days
     TYPE(time_type) :: dif_time
@@ -2575,29 +2323,15 @@ CONTAINS
        CALL error_mesg('diag_util_mod::diag_date_dif', 'illegal time units', FATAL)
     END IF
   END FUNCTION get_date_dif
-  ! </FUNCTION>
 
-  ! <SUBROUTINE NAME="diag_data_out">
-  !   <OVERVIEW>
-  !     Write data out to file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_data_out(file, field, dat, time, fianl_call_in, static_write_in)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Write data out to file, and if necessary flush the buffers.
-  !   </DESCRIPTION>
-  !   <IN NAME="file" TYPE="INTEGER">File ID.</IN>
-  !   <IN NAME="field" TYPE="INTEGER">Field ID.</IN>
-  !   <INOUT NAME="dat" TYPE="REAL, DIMENSION(:,:,:,:)">Data to write out.</INOUT>
-  !   <IN NAME="time" TYPE="TYPE(time_type)">Current model time.</IN>
-  !   <IN NAME="final_call_in" TYPE="LOGICAL, OPTIONAL"><TT>.TRUE.</TT> if this is the last write for file.</IN>
-  !   <IN NAME="static_write_in" TYPE="LOGICAL, OPTIONAL"><TT>.TRUE.</TT> if static fields are to be written to file.</IN>
+  !> @brief Write data out to file, and if necessary flush the buffers.
   SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in, use_mpp_io_arg)
-    INTEGER, INTENT(in) :: file, field
-    REAL, DIMENSION(:,:,:,:), INTENT(inout) :: dat
-    TYPE(time_type), INTENT(in) :: time
-    LOGICAL, OPTIONAL, INTENT(in):: final_call_in, static_write_in
+    INTEGER, INTENT(in) :: file !< File ID.
+    INTEGER, INTENT(in) :: field !< Field ID.
+    REAL, DIMENSION(:,:,:,:), INTENT(inout) :: dat !< Data to write out.
+    TYPE(time_type), INTENT(in) :: time !< Current model time.
+    LOGICAL, OPTIONAL, INTENT(in):: final_call_in !< <TT>.TRUE.</TT> if this is the last write for file.
+    LOGICAL, OPTIONAL, INTENT(in):: static_write_in !< <TT>.TRUE.</TT> if static fields are to be written to file.
     logical,optional,intent(in) :: use_mpp_io_arg !< Switch for which IO to use for outputting data
 
     LOGICAL :: final_call, do_write, static_write
@@ -2741,28 +2475,16 @@ CONTAINS
        END IF
     END IF
   END SUBROUTINE diag_data_out
-  ! </SUBROUTINE>
 
-  ! <PRIVATE>
-  ! <SUBROUTINE NAME="check_and_open">
-  !   <OVERVIEW>
-  !     Checks if it is time to open a new file.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE check_and_open(file, time, do_write)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Checks if it is time to open a new file. If yes, it first closes the
-  !     current file, opens a new file and returns file_unit
-  !     previous diag_manager_end is replaced by closing_file and output_setup by opening_file.
-  !   </DESCRIPTION>
-  !   <IN NAME="file" TYPE="INTEGER">File ID.</IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)">Current model time.</IN>
-  !   <OUT NAME="do_write" TYPE="LOGICAL"><TT>.TRUE.</TT> if file is expecting more data to write, <TT>.FALSE.</TT> otherwise.</OUT>
+  !> @brief Checks if it is time to open a new file.
+  !! @details Checks if it is time to open a new file. If yes, it first closes the
+  !!     current file, opens a new file and returns file_unit
+  !!     previous diag_manager_end is replaced by closing_file and output_setup by opening_file.
   SUBROUTINE check_and_open(file, time, do_write, use_mpp_io)
     INTEGER, INTENT(in) :: file !<File ID.
     TYPE(time_type), INTENT(in) :: time !< Current model time.
-    LOGICAL, INTENT(out) :: do_write !< .TRUE. if file is expecting more data to write, .FALSE. otherwise.
+    LOGICAL, INTENT(out) :: do_write !< <TT>.TRUE.</TT> if file is expecting more data to write,
+                                     !! <TT>.FALSE.</TT> otherwise.
     LOGICAL, INTENT(in) :: use_mpp_io !< true=mpp_io, false=fms2_io
 
     IF ( time >= files(file)%start_time ) THEN
@@ -2796,10 +2518,8 @@ CONTAINS
        do_write = .FALSE.
     END IF
   END SUBROUTINE check_and_open
-  ! </SUBROUTINE>
-  ! </PRIVATE>
 
-!> \brief Output all static fields in this file
+  !> @brief Output all static fields in this file
   SUBROUTINE write_static(file, use_mpp_io)
     INTEGER, INTENT(in) :: file !< File ID.
     logical :: use_mpp_io !< Switch to select which IO is used to output history files
@@ -2842,22 +2562,10 @@ CONTAINS
     END IF
    endif  !< use_mpp_io
   END SUBROUTINE write_static
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="check_duplicate_output_fields">
-  !   <OVERVIEW>
-  !     Checks to see if <TT>output_name</TT> and <TT>output_file</TT> are unique in <TT>output_fields</TT>.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE check_duplicate_output_fields(err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Check to see if <TT>output_name</TT> and <TT>output_file</TT> are unique in <TT>output_fields</TT>.  An empty
-  !     <TT>err_msg</TT> indicates no duplicates found.
-  !   </DESCRIPTION>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message.  If empty, then no duplicates found.</OUT>
+  !> @brief Checks to see if <TT>output_name</TT> and <TT>output_file</TT> are unique in <TT>output_fields</TT>.
   SUBROUTINE check_duplicate_output_fields(err_msg)
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Error message.  If empty, then no duplicates found.
 
     INTEGER :: i, j, tmp_file
     CHARACTER(len=128) :: tmp_name
@@ -2884,24 +2592,11 @@ CONTAINS
        IF ( fms_error_handler(' ERROR in diag_table',err_msg_local,err_msg) ) RETURN
     END IF
   END SUBROUTINE check_duplicate_output_fields
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="attribute_init_field" INTERFACE="attribute_init">
-  !   <OVERVIEW>
-  !     Allocates the atttype in out_field
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE attribute_init(out_field, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Allocates memory in out_field for the attributes.  Will <TT>FATAL</TT> if err_msg is not included
-  !     in the subroutine call.
-  !   </DESCRIPTION>
-  !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field to allocate memory for attribute</INOUT>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  !> @brief Allocates the atttype in out_field
   SUBROUTINE attribute_init_field(out_field, err_msg)
-    TYPE(output_field_type), INTENT(inout) :: out_field
-    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
+    TYPE(output_field_type), INTENT(inout) :: out_field !< output field to allocate memory for attribute
+    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg !< Error message, passed back to calling function
 
     INTEGER :: istat
 
@@ -2925,29 +2620,14 @@ CONTAINS
        END IF
     END IF
   END SUBROUTINE attribute_init_field
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="prepend_attribute_field" INTERFACE="prepend_attribute">
-  !   <OVERVIEW>
-  !     Prepends the attribute value to an already existing attribute.  If the
-  !     attribute isn't yet defined, then creates a new attribute
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE prepend_attribute(out_field, attribute, prepend_value)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Checks if the attribute already exists in the <TT>out_field</TT>.  If it exists,
-  !     then prepend the <TT>prepend_value</TT>, otherwise, create the attribute
-  !     with the <TT>prepend_value</TT>. <TT>err_msg</TT> indicates no duplicates found.
-  !   </DESCRIPTION>
-  !   <INOUT NAME="out_field" TYPE="TYPE(output_field_type)">output field that will get the attribute</INOUT>
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)">Name of the attribute</IN>
-  !   <IN NAME="prepend_value" TYPE="CHARACTER(len=*)">Value to prepend</IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
+  !> @brief Prepends the attribute value to an already existing attribute.  If the
+  !!     attribute isn't yet defined, then creates a new attribute
   SUBROUTINE prepend_attribute_field(out_field, att_name, prepend_value, err_msg)
-    TYPE(output_field_type), INTENT(inout) :: out_field
-    CHARACTER(len=*), INTENT(in) :: att_name, prepend_value
-    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
+    TYPE(output_field_type), INTENT(inout) :: out_field !< output field that will get the attribute
+    CHARACTER(len=*), INTENT(in) :: att_name !< Name of the attribute
+    CHARACTER(len=*), INTENT(in) :: prepend_value !< Value to prepend
+    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg !< Error message, passed back to calling routine
 
     INTEGER :: length, i, this_attribute
     CHARACTER(len=512) :: err_msg_local
@@ -3029,24 +2709,10 @@ CONTAINS
        out_field%attributes(this_attribute)%len = length
     END IF
   END SUBROUTINE prepend_attribute_field
-  ! </SUBROUTINE>
-
-  ! <SUBROUTINE NAME="attribute_init_file" INTERFACE="attribute_init">
-  !   <OVERVIEW>
-  !     Allocates the atttype in out_file
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE attribute_init(out_file, err_msg)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Allocates memory in out_file for the attributes.  Will <TT>FATAL</TT> if err_msg is not included
-  !     in the subroutine call.
-  !   </DESCRIPTION>
-  !   <INOUT NAME="out_file" TYPE="TYPE(file_type)">output file to allocate memory for attribute</INOUT>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling function</OUT>
+  !> @brief Allocates the atttype in out_file
   SUBROUTINE attribute_init_file(out_file, err_msg)
-    TYPE(file_type), INTENT(inout) :: out_file
-    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg
+    TYPE(file_type), INTENT(inout) :: out_file !< output file to allocate memory for attribute
+    CHARACTER(LEN=*), INTENT(out), OPTIONAL :: err_msg !< Error message, passed back to calling function
 
     INTEGER :: istat
 
@@ -3069,29 +2735,14 @@ CONTAINS
        END IF
     END IF
   END SUBROUTINE attribute_init_file
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="prepend_attribute_file" INTERFACE="prepend_attribute">
-  !   <OVERVIEW>
-  !     Prepends the attribute value to an already existing attribute.  If the
-  !     attribute isn't yet defined, then creates a new attribute
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE prepend_attribute(out_file, attribute, prepend_value)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Checks if the attribute already exists in the <TT>out_file</TT>.  If it exists,
-  !     then prepend the <TT>prepend_value</TT>, otherwise, create the attribute
-  !     with the <TT>prepend_value</TT>. <TT>err_msg</TT> indicates no duplicates found.
-  !   </DESCRIPTION>
-  !   <INOUT NAME="out_file" TYPE="TYPE(file_type)">output file that will get the attribute</INOUT>
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)">Name of the attribute</IN>
-  !   <IN NAME="prepend_value" TYPE="CHARACTER(len=*)">Value to prepend</IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL">Error message, passed back to calling routine</OUT>
+  !> @brief Prepends the attribute value to an already existing attribute.  If the
+  !!     attribute isn't yet defined, then creates a new attribute
   SUBROUTINE prepend_attribute_file(out_file, att_name, prepend_value, err_msg)
-    TYPE(file_type), INTENT(inout) :: out_file
-    CHARACTER(len=*), INTENT(in) :: att_name, prepend_value
-    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg
+    TYPE(file_type), INTENT(inout) :: out_file !< output file that will get the attribute
+    CHARACTER(len=*), INTENT(in) :: att_name !< Name of the attribute
+    CHARACTER(len=*), INTENT(in) :: prepend_value !< Value to prepend
+    CHARACTER(len=*), INTENT(out) , OPTIONAL :: err_msg !< Error message, passed back to calling routine
 
     INTEGER :: length, i, this_attribute
     CHARACTER(len=512) :: err_msg_local

@@ -247,7 +247,7 @@ subroutine mpp_exit()
      end if
 
      call mpp_sync()
-     call FLUSH( out_unit )
+     FLUSH( out_unit )
 
      if( pe.EQ.root_pe )then
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
@@ -257,7 +257,7 @@ subroutine mpp_exit()
      end if
      write( log_unit,'(/37x,a)' ) 'time'
 
-     call FLUSH( out_unit )
+     FLUSH( out_unit )
      call mpp_sync()
      do i = 1,clock_num
         if( .NOT.ANY(peset(clocks(i)%peset_num)%list(:).EQ.pe) )cycle
@@ -312,12 +312,12 @@ subroutine mpp_exit()
 
   end if
 
-  call FLUSH( out_unit )
+  FLUSH( out_unit )
 
 ! close down etc_unit: 9
   inquire(unit=etc_unit, opened=opened)
   if (opened) then
-   call FLUSH (etc_unit)
+   FLUSH (etc_unit)
    close(etc_unit)
   endif
 
@@ -1255,6 +1255,7 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_alltoall_mpi.h>
 
+#ifndef no_8byte_integers
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1268,7 +1269,9 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_alltoall_mpi.h>
+#endif
 
+#ifdef OVERLOAD_R4
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1282,6 +1285,7 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_alltoall_mpi.h>
+#endif
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1297,6 +1301,7 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_alltoall_mpi.h>
 
+#ifdef OVERLOAD_C4
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1310,7 +1315,9 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_COMPLEX8
 #include <mpp_alltoall_mpi.h>
+#endif
 
+#ifdef OVERLOAD_C8
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1324,6 +1331,7 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 16
 #define MPI_TYPE_ MPI_COMPLEX16
 #include <mpp_alltoall_mpi.h>
+#endif
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1367,6 +1375,7 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_type_mpi.h>
 
+#ifndef no_8byte_integers
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
 #undef MPI_TYPE_
@@ -1374,7 +1383,9 @@ end subroutine mpp_exit
 #define MPP_TYPE_ integer(LONG_KIND)
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_type_mpi.h>
+#endif
 
+#ifdef OVERLOAD_R4
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
 #undef MPI_TYPE_
@@ -1382,6 +1393,7 @@ end subroutine mpp_exit
 #define MPP_TYPE_ real(FLOAT_KIND)
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_type_mpi.h>
+#endif
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
@@ -1391,6 +1403,7 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_type_mpi.h>
 
+#ifdef OVERLOAD_C4
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
 #undef MPI_TYPE_
@@ -1398,7 +1411,9 @@ end subroutine mpp_exit
 #define MPP_TYPE_ complex(FLOAT_KIND)
 #define MPI_TYPE_ MPI_COMPLEX8
 #include <mpp_type_mpi.h>
+#endif
 
+#ifdef OVERLOAD_C8
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_
 #undef MPI_TYPE_
@@ -1406,6 +1421,7 @@ end subroutine mpp_exit
 #define MPP_TYPE_ complex(DOUBLE_KIND)
 #define MPI_TYPE_ MPI_COMPLEX16
 #include <mpp_type_mpi.h>
+#endif
 
 #undef MPP_TYPE_CREATE_
 #undef MPP_TYPE_

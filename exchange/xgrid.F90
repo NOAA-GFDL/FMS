@@ -19,47 +19,64 @@
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
-! xgrid_mod - implements exchange grids.  An exchange grid is the grid whose
-!             boundary set is the union of the boundaries of the participating
-!             grids.  The exchange grid is the coarsest grid that is a
-!             refinement of each of the participating grids.  Every exchange
-!             grid cell is a subarea of one and only one cell in each of the
-!             participating grids.  The exchange grid has two purposes:
-!
-!               (1) The exchange cell areas are used as weights for
-!                   conservative interpolation between model grids.
-!
-!               (2) Computation of surface fluxes takes place on it,
-!                   thereby using the finest scale data obtainable.
-!
-!             The exchange cells are the 2D intersections between cells of the
-!             participating grids.  They are computed elsewhere and are
-!             read here from a NetCDF grid file as a sequence of quintuples
-!             (i and j on each of two grids and the cell area).
-!
-!             Each processing element (PE) computes a subdomain of each of the
-!             participating grids as well as a subset of the exchange cells.
-!             The geographic regions corresponding to these subdomains will,
-!             in general, not be the same so communication must occur between
-!             the PEs.  The scheme for doing this is as follows.  A distinction
-!             is drawn between the participating grids.  There is a single
-!             "side 1" grid and it does not have partitions (sub-grid surface
-!             types).  There are one or more "side 2" grids and they may have
-!             more than 1 partition.  In standard usage, the atmosphere grid is
-!             on side 1 and the land and sea ice grids are on side 2.  The set
-!             of exchange cells computed on a PE corresponds to its side 2
-!             geographic region(s).  Communication between the PEs takes place
-!             on the side 1 grid.  Note:  this scheme does not generally allow
-!             reproduction of answers across varying PE counts.  This is
-!             because, in the side 1 "get", exchange cells are first summed
-!             locally onto a side 1 grid, then these side 1 contributions are
-!             further summed after they have been communicated to their target
-!             PE.  For the make_exchange_reproduce option, a special side 1 get
-!             is used.  This get communicates individual exchange cells.  The
-!             cells are summed in the order they appear in the grid spec. file.
 !                                    Michael Winton (Michael.Winton@noaa.gov) Oct 2001
 !
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!> @file
+!! @brief <TT>xgrid_mod</TT> implements exchange grids for coupled models running on
+!!     multiple processors.  An exchange grid is formed from the union of
+!!     the bounding lines of the two (logically rectangular) participating
+!!     grids.  The exchange grid is therefore the coarsest grid that is a
+!!     refinement of both participating grids.  Exchange grids are used for
+!!     two purposes by coupled models:  (1) conservative interpolation of fields
+!!     between models uses the exchange grid cell areas as weights and
+!!     (2) the surface flux calculation takes place on the exchange grid thereby
+!!     using the finest scale data available.  <TT>xgrid_mod</TT> uses a NetCDF grid
+!!     specification file containing the grid cell overlaps in combination with
+!!     the <LINK SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90">
+!!     <TT>mpp_domains</TT></LINK> domain decomposition information to determine
+!!     the grid and processor connectivities.
+!! @author Michael Winton, Zhi Liang
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!! xgrid_mod - implements exchange grids.  An exchange grid is the grid whose
+!!             boundary set is the union of the boundaries of the participating
+!!             grids.  The exchange grid is the coarsest grid that is a
+!!             refinement of each of the participating grids.  Every exchange
+!!             grid cell is a subarea of one and only one cell in each of the
+!!             participating grids.  The exchange grid has two purposes:
+!!
+!!               (1) The exchange cell areas are used as weights for
+!!                   conservative interpolation between model grids.
+!!
+!!               (2) Computation of surface fluxes takes place on it,
+!!                   thereby using the finest scale data obtainable.
+!!
+!!             The exchange cells are the 2D intersections between cells of the
+!!             participating grids.  They are computed elsewhere and are
+!!             read here from a NetCDF grid file as a sequence of quintuples
+!!             (i and j on each of two grids and the cell area).
+!!
+!!             Each processing element (PE) computes a subdomain of each of the
+!!             participating grids as well as a subset of the exchange cells.
+!!             The geographic regions corresponding to these subdomains will,
+!!             in general, not be the same so communication must occur between
+!!             the PEs.  The scheme for doing this is as follows.  A distinction
+!!             is drawn between the participating grids.  There is a single
+!!             "side 1" grid and it does not have partitions (sub-grid surface
+!!             types).  There are one or more "side 2" grids and they may have
+!!             more than 1 partition.  In standard usage, the atmosphere grid is
+!!             on side 1 and the land and sea ice grids are on side 2.  The set
+!!             of exchange cells computed on a PE corresponds to its side 2
+!!             geographic region(s).  Communication between the PEs takes place
+!!             on the side 1 grid.  Note:  this scheme does not generally allow
+!!             reproduction of answers across varying PE counts.  This is
+!!             because, in the side 1 "get", exchange cells are first summed
+!!             locally onto a side 1 grid, then these side 1 contributions are
+!!             further summed after they have been communicated to their target
+!!             PE.  For the make_exchange_reproduce option, a special side 1 get
+!!             is used.  This get communicates individual exchange cells.  The
+!!             cells are summed in the order they appear in the grid spec. file.
 module xgrid_mod
 ! <CONTACT EMAIL="Michael.Winton@noaa.gov">
 !   Michael Winton
@@ -191,8 +208,8 @@ public xmap_type, setup_xmap, set_frac_area, put_to_xgrid, get_from_xgrid, &
 !--- paramters that determine the remapping method
 integer, parameter :: FIRST_ORDER        = 1
 integer, parameter :: SECOND_ORDER       = 2
-integer, parameter :: VERSION1           = 1 ! grid spec file
-integer, parameter :: VERSION2           = 2 ! mosaic grid file
+integer, parameter :: VERSION1           = 1 !< grid spec file
+integer, parameter :: VERSION2           = 2 !< mosaic grid file
 integer, parameter :: MAX_FIELDS         = 80
 
 ! <NAMELIST NAME="xgrid_nml">
@@ -212,18 +229,17 @@ integer, parameter :: MAX_FIELDS         = 80
 !     on highr processor count and solve receiving size mismatch issue on high processor count.
 !     Try to set nsubset = mpp_npes/MPI_rank_per_node.
 !   </DATA>
-!<  use_mpp_io Default = .false.  When true, uses mpp_io for IO.
-!! When false, uses fms2_io for IO.
-logical :: make_exchange_reproduce = .false. ! exactly same on different # PEs
+logical :: make_exchange_reproduce = .false. !< exactly same on different # PEs
 logical :: xgrid_log = .false.
 character(len=64) :: interp_method = 'first_order'
 logical :: debug_stocks = .false.
 logical :: xgrid_clocks_on = .false.
 logical :: monotonic_exchange = .false.
-integer :: nsubset = 0 ! 0 means mpp_npes()
+integer :: nsubset = 0 !< 0 means mpp_npes()
 logical :: do_alltoall = .true.
 logical :: do_alltoallv = .false.
-logical :: use_mpp_io = .false.
+logical :: use_mpp_io = .false.!< use_mpp_io Default = .false. When true, uses mpp_io for IO.
+                               !< When false, uses fms2_io for IO.
 namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid_clocks_on, &
     monotonic_exchange, nsubset, do_alltoall, do_alltoallv, &
     use_mpp_io
@@ -255,6 +271,7 @@ real, allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_
 !     exchange grid interpolation method. It has four possible values:
 !     FIRST_ORDER (=1), SECOND_ORDER(=2). Default value is FIRST_ORDER.
 !   </IN>
+!> @brief Scatters data from model grid onto exchange grid.
 interface put_to_xgrid
   module procedure put_side1_to_xgrid
   module procedure put_side2_to_xgrid
@@ -276,6 +293,7 @@ end interface
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
 !   <OUT NAME="d"  TYPE="real"  > </OUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
+!> @brief Sums data from exchange grid to model grid.
 interface get_from_xgrid
   module procedure get_side1_from_xgrid
   module procedure get_side2_from_xgrid
@@ -317,6 +335,11 @@ end interface
 !   <OUT NAME="" TYPE="real" DIM="3">The global sum of a variable.</OUT>
 !   <IN NAME="remap_method" TYPE="integer,optional">
 !   </IN>
+!> @brief Returns three numbers which are the global sum of a variable.
+!! @details Returns three numbers which are the global sum of a
+!!     variable (1) on its home model grid, (2) after interpolation to the other
+!!     side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!!     Conservation_check must be called by all PEs to work properly.
 interface conservation_check
   module procedure conservation_check_side1
   module procedure conservation_check_side2
@@ -329,15 +352,19 @@ end interface
 
 
 type xcell_type
-  integer :: i1, j1, i2, j2 ! indices of cell in model arrays on both sides
+  integer :: i1 !< indices of cell in model arrays on both sides
+  integer :: j1 !< indices of cell in model arrays on both sides
+  integer :: i2 !< indices of cell in model arrays on both sides
+  integer :: j2 !< indices of cell in model arrays on both sides
   integer :: l1, l2
-  integer :: recv_pos       ! position in the receive buffer.
-  integer :: pe             ! other side pe that has this cell
-  integer :: tile           ! tile index of side 1 mosaic.
-  real    :: area           ! geographic area of exchange cell
+  integer :: recv_pos       !< position in the receive buffer.
+  integer :: pe             !< other side pe that has this cell
+  integer :: tile           !< tile index of side 1 mosaic.
+  real    :: area           !< geographic area of exchange cell
 !  real    :: area1_ratio     !(= x_area/grid1_area), will be added in the future to improve efficiency
 !  real    :: area2_ratio     !(= x_area/grid2_area), will be added in the future to improve efficiency
-  real    :: di, dj         ! Weight for the gradient of flux
+  real    :: di !< Weight for the gradient of flux
+  real    :: dj !< Weight for the gradient of flux
   real    :: scale
 end type xcell_type
 
@@ -356,43 +383,59 @@ type grid_box_type
 end type grid_box_type
 
 type grid_type
-  character(len=3)                :: id                               ! grid identifier
-  integer                         :: npes                             ! number of processor on this grid.
-  logical                         :: on_this_pe                       ! indicate the domain is defined on this pe
-  integer                         :: root_pe                          ! indicate the root pe of the domain
-  integer, pointer, dimension(:)  :: pelist                           ! pelist of the domain
-  integer                         :: ntile                            ! number of tiles in mosaic
-  integer                         :: ni, nj                           ! max of global size of all the tiles
-  integer, pointer, dimension(:)  :: tile =>NULL()                    ! tile id ( pe index )
-  integer, pointer, dimension(:)  :: is =>NULL(), ie =>NULL()         ! domain - i-range (pe index)
-  integer, pointer, dimension(:)  :: js =>NULL(), je =>NULL()         ! domain - j-range (pe index)
-  integer, pointer                :: is_me =>NULL(),  ie_me =>NULL()  ! my domain - i-range
-  integer, pointer                :: js_me =>NULL(),  je_me =>NULL()  ! my domain - j-range
-  integer                         :: isd_me, ied_me                   ! my data domain - i-range
-  integer                         :: jsd_me, jed_me                   ! my data domain - j-range
-  integer                         :: nxd_me, nyd_me                   ! data domain size
-  integer                         :: nxc_me, nyc_me                   ! compute domain size
-  integer, pointer                :: tile_me                          ! my tile id
-  integer                         :: im , jm , km                     ! global domain range
-  real, pointer, dimension(:)     :: lon =>NULL(), lat =>NULL()       ! center of global grids
-  real, pointer, dimension(:,:)   :: geolon=>NULL(), geolat=>NULL()   ! geographical grid center
-  real, pointer, dimension(:,:,:) :: frac_area =>NULL()               ! partition fractions
-  real, pointer, dimension(:,:)   :: area =>NULL()                    ! cell area
-  real, pointer, dimension(:,:)   :: area_inv =>NULL()                ! 1 / area for normalization
-  integer                         :: first, last                      ! xgrid index range
-  integer                         :: first_get, last_get              ! xgrid index range for get_2_from_xgrid
-  integer                         :: size                             ! # xcell patterns
-  type(xcell_type), pointer       :: x(:) =>NULL()                    ! xcell patterns
-  integer                         :: size_repro                       ! # side 1 patterns for repro
-  type(xcell_type), pointer       :: x_repro(:) =>NULL()              ! side 1 patterns for repro
-  type(Domain2d)                  :: domain                           ! used for conservation checks
-  type(Domain2d)                  :: domain_with_halo                 ! used for second order remapping
-  logical                         :: is_latlon                        ! indicate if the grid is lat-lon grid or not.
-  type(grid_box_type)             :: box                              ! used for second order remapping.
+  character(len=3)                :: id                               !< grid identifier
+  integer                         :: npes                             !< number of processor on this grid.
+  logical                         :: on_this_pe                       !< indicate the domain is defined on this pe
+  integer                         :: root_pe                          !< indicate the root pe of the domain
+  integer, pointer, dimension(:)  :: pelist                           !< pelist of the domain
+  integer                         :: ntile                            !< number of tiles in mosaic
+  integer                         :: ni !< max of global size of all the tiles
+  integer                         :: nj !< max of global size of all the tiles
+  integer, pointer, dimension(:)  :: tile =>NULL()                    !< tile id ( pe index )
+  integer, pointer, dimension(:)  :: is =>NULL() !< domain - i-range (pe index)
+  integer, pointer, dimension(:)  :: ie =>NULL() !< domain - i-range (pe index)
+  integer, pointer, dimension(:)  :: js =>NULL() !< domain - j-range (pe index)
+  integer, pointer, dimension(:)  :: je =>NULL() !< domain - j-range (pe index)
+  integer, pointer                :: is_me =>NULL() !< my domain - i-range
+  integer, pointer                :: ie_me =>NULL() !< my domain - i-range
+  integer, pointer                :: js_me =>NULL() !< my domain - j-range
+  integer, pointer                :: je_me =>NULL() !< my domain - j-range
+  integer                         :: isd_me                   !< my data domain - i-range
+  integer                         :: ied_me                   !< my data domain - i-range
+  integer                         :: jsd_me                   !< my data domain - j-range
+  integer                         :: jed_me                   !< my data domain - j-range
+  integer                         :: nxd_me                   !< data domain size
+  integer                         :: nyd_me                   !< data domain size
+  integer                         :: nxc_me                   !< compute domain size
+  integer                         :: nyc_me                   !< compute domain size
+  integer, pointer                :: tile_me                          !< my tile id
+  integer                         :: im                     !< global domain range
+  integer                         :: jm                     !< global domain range
+  integer                         :: km                     !< global domain range
+  real, pointer, dimension(:)     :: lon =>NULL()       !< center of global grids
+  real, pointer, dimension(:)     :: lat =>NULL()       !< center of global grids
+  real, pointer, dimension(:,:)   :: geolon=>NULL()   !< geographical grid center
+  real, pointer, dimension(:,:)   :: geolat=>NULL()   !< geographical grid center
+  real, pointer, dimension(:,:,:) :: frac_area =>NULL()               !< partition fractions
+  real, pointer, dimension(:,:)   :: area =>NULL()                    !< cell area
+  real, pointer, dimension(:,:)   :: area_inv =>NULL()                !< 1 / area for normalization
+  integer                         :: first                      !< xgrid index range
+  integer                         :: last                       !< xgrid index range
+  integer                         :: first_get              !< xgrid index range for get_2_from_xgrid
+  integer                         :: last_get               !< xgrid index range for get_2_from_xgrid
+  integer                         :: size                             !< # xcell patterns
+  type(xcell_type), pointer       :: x(:) =>NULL()                    !< xcell patterns
+  integer                         :: size_repro                       !< # side 1 patterns for repro
+  type(xcell_type), pointer       :: x_repro(:) =>NULL()              !< side 1 patterns for repro
+  type(Domain2d)                  :: domain                           !< used for conservation checks
+  type(Domain2d)                  :: domain_with_halo                 !< used for second order remapping
+  logical                         :: is_latlon                        !< indicate if the grid is lat-lon grid or not.
+  type(grid_box_type)             :: box                              !< used for second order remapping.
   !--- The following is for land unstruct domain
   logical                         :: is_ug
   integer                         :: nxl_me
-  integer, pointer                :: ls_me =>NULL(),  le_me =>NULL()  ! unstruct domain
+  integer, pointer                :: ls_me =>NULL()  !< unstruct domain
+  integer, pointer                :: le_me =>NULL()  !< unstruct domain
   integer, pointer, dimension(:)  :: ls =>NULL(), le =>NULL()
   integer, pointer                :: gs_me =>NULL(),  ge_me =>NULL()
   integer, pointer, dimension(:)  :: gs =>NULL(), ge =>NULL()
@@ -403,16 +446,17 @@ end type grid_type
 
 type x1_type
   integer :: i, j
-  real    :: area   ! (= geographic area * frac_area)
+  real    :: area   !< (= geographic area * frac_area)
 !  real    :: area_ratio !(= x1_area/grid1_area) ! will be added in the future to improve efficiency
-  real    :: di, dj ! weight for the gradient of flux
-  integer :: tile           ! tile index of side 1 mosaic.
+  real    :: di !< weight for the gradient of flux
+  real    :: dj !< weight for the gradient of flux
+  integer :: tile           !< tile index of side 1 mosaic.
   integer :: pos
 end type x1_type
 
 type x2_type
   integer :: i, j, l, k, pos
-  real    :: area   ! geographic area of exchange cell
+  real    :: area   !< geographic area of exchange cell
 !  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
@@ -439,42 +483,42 @@ end type comm_type
 
 type xmap_type
   private
-  integer :: size            ! # of exchange grid cells with area > 0 on this pe
-  integer :: size_put1       ! # of exchange grid cells for put_1_to_xgrid
-  integer :: size_get2       ! # of exchange grid cells for get_2_to_xgrid
+  integer :: size            !< # of exchange grid cells with area > 0 on this pe
+  integer :: size_put1       !< # of exchange grid cells for put_1_to_xgrid
+  integer :: size_get2       !< # of exchange grid cells for get_2_to_xgrid
   integer :: me, npes, root_pe
-  logical, pointer, dimension(:) :: your1my2  =>NULL()! true if side 1 domain on
-                                                      ! indexed pe overlaps side 2
-                                                      ! domain on this pe
-  logical, pointer, dimension(:) :: your2my1 =>NULL() ! true if a side 2 domain on
-                                                      ! indexed pe overlaps side 1
-                                                      ! domain on this pe
-  integer, pointer, dimension(:) :: your2my1_size=>NULL() ! number of exchange grid of
-                                                          ! a side 2 domain on
-                                                          ! indexed pe overlaps side 1
-                                                          ! domain on this pe
+  logical, pointer, dimension(:) :: your1my2  =>NULL()!< true if side 1 domain on
+                                                      !! indexed pe overlaps side 2
+                                                      !! domain on this pe
+  logical, pointer, dimension(:) :: your2my1 =>NULL() !< true if a side 2 domain on
+                                                      !! indexed pe overlaps side 1
+                                                      !! domain on this pe
+  integer, pointer, dimension(:) :: your2my1_size=>NULL() !< number of exchange grid of
+                                                          !! a side 2 domain on
+                                                          !! indexed pe overlaps side 1
+                                                          !! domain on this pe
 
-  type (grid_type), pointer, dimension(:) :: grids =>NULL() ! 1st grid is side 1;
-                                                            ! rest on side 2
+  type (grid_type), pointer, dimension(:) :: grids =>NULL() !< 1st grid is side 1;
+                                                            !! rest on side 2
   !
   ! Description of the individual exchange grid cells (index is cell #)
   !
-  type(x1_type), pointer, dimension(:) :: x1 =>NULL() ! side 1 info
-  type(x1_type), pointer, dimension(:) :: x1_put =>NULL() ! side 1 info
-  type(x2_type), pointer, dimension(:) :: x2 =>NULL() ! side 2 info
-  type(x2_type), pointer, dimension(:) :: x2_get =>NULL() ! side 2 info
+  type(x1_type), pointer, dimension(:) :: x1 =>NULL() !< side 1 info
+  type(x1_type), pointer, dimension(:) :: x1_put =>NULL() !< side 1 info
+  type(x2_type), pointer, dimension(:) :: x2 =>NULL() !< side 2 info
+  type(x2_type), pointer, dimension(:) :: x2_get =>NULL() !< side 2 info
 
   integer, pointer, dimension(:) :: send_count_repro =>NULL()
   integer, pointer, dimension(:) :: recv_count_repro  =>NULL()
-  integer                        :: send_count_repro_tot ! sum(send_count_repro)
-  integer                        :: recv_count_repro_tot ! sum(recv_count_repro)
-  integer :: version                                  ! version of xgrids. version=VERSION! is for grid_spec file
-                                                      ! and version=VERSION2 is for mosaic grid.
-  integer, pointer, dimension(:) :: ind_get1 =>NULL() ! indx for side1 get and side2 put.
-  integer, pointer, dimension(:) :: ind_put1 =>NULL() ! indx for side1 put and side 2get.
-  type(comm_type), pointer       :: put1 =>NULL()      ! for put_1_to_xgrid
-  type(comm_type), pointer       :: get1 =>NULL()      ! for get_1_from_xgrid
-  type(comm_type), pointer       :: get1_repro =>NULL()! for get_1_from_xgrid_repro
+  integer                        :: send_count_repro_tot !< sum(send_count_repro)
+  integer                        :: recv_count_repro_tot !< sum(recv_count_repro)
+  integer :: version                                  !< version of xgrids. version=VERSION! is for grid_spec file
+                                                      !! and version=VERSION2 is for mosaic grid.
+  integer, pointer, dimension(:) :: ind_get1 =>NULL() !< indx for side1 get and side2 put.
+  integer, pointer, dimension(:) :: ind_put1 =>NULL() !< indx for side1 put and side 2get.
+  type(comm_type), pointer       :: put1 =>NULL()      !< for put_1_to_xgrid
+  type(comm_type), pointer       :: get1 =>NULL()      !< for get_1_from_xgrid
+  type(comm_type), pointer       :: get1_repro =>NULL()!< for get_1_from_xgrid_repro
 end type xmap_type
 
 !-----------------------------------------------------------------------
@@ -529,7 +573,7 @@ end type xmap_type
 contains
 
 !#######################################################################
-
+!> @return logical in_box
 logical function in_box(i, j, is, ie, js, je)
   integer, intent(in) :: i, j, is, ie, js, je
 
@@ -554,8 +598,12 @@ end function in_box
 !     exchange grid interpolation method. It has four possible values:
 !     FIRST_ORDER (=1), SECOND_ORDER(=2).
 !   </OUT>
+!> @brief Initialize the xgrid_mod.
+!! @details Initialization routine for the xgrid module. It reads the xgrid_nml,
+!!     writes the version information and xgrid_nml to the log file.
 subroutine xgrid_init(remap_method)
-  integer, intent(out) :: remap_method
+  integer, intent(out) :: remap_method !< exchange grid interpolation method. It has four possible values:
+                                       !! FIRST_ORDER (=1), SECOND_ORDER(=2).
 
   integer :: unit, ierr, io, out_unit
 
@@ -1342,6 +1390,9 @@ end subroutine load_xgrid
 !          - atm and land grid
 !
 
+!> @brief read the center point of the grid from version 1 grid file.
+!!   only the grid at the side 1 is needed, so we only read
+!!   atm and land grid
 subroutine get_grid_version1(grid, grid_id, grid_file)
   type(grid_type), intent(inout)          :: grid
   character(len=3), intent(in)            :: grid_id
@@ -1415,6 +1466,9 @@ end subroutine get_grid_version1
 !
 !
 
+!> @brief read the center point of the grid from version 1 grid file.
+!!   only the grid at the side 1 is needed, so we only read
+!!   atm and land grid
 subroutine get_grid_version2(grid, grid_id, grid_file)
   type(grid_type), intent(inout)          :: grid
   character(len=3), intent(in)            :: grid_id
@@ -1500,7 +1554,7 @@ return
 end subroutine get_grid_version2
 
 !#######################################################################
-! Read the area elements from NetCDF file
+!> @brief Read the area elements from NetCDF file
 subroutine get_area_elements_fms2_io(fileobj, name, data)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
@@ -1536,6 +1590,11 @@ end subroutine get_area_elements_fms2_io
 
 !   <IN NAME="ocean_domain" TYPE="type(Domain2d)"> </IN>
 !   <IN NAME="grid_file" TYPE="character(len=*)" > </IN>
+!> @brief Read Ocean area element data.
+!! @details If available in the NetCDF file, this routine will read the
+!!      AREA_OCN_MODEL field and load the data into global AREA_OCN_MODEL.
+!!      If not available, then the array AREA_OCN_MODEL will be left
+!!      unallocated. Must be called by all PEs.
 subroutine get_ocean_model_area_elements(domain, grid_file)
 
   type(Domain2d), intent(in) :: domain
@@ -1592,6 +1651,8 @@ end subroutine get_ocean_model_area_elements
 !   <IN NAME="atmos_grid" TYPE="type(grid_box_type),optional" > </IN>
 !   <OUT NAME="xmap" TYPE="xmap_type"  > </OUT>
 
+!> @brief Sets up exchange grid connectivity using grid specification file and
+!!      processor domain decomposition.
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_domain)
   type (xmap_type),                        intent(inout) :: xmap
   character(len=3), dimension(:),            intent(in ) :: grid_ids
@@ -2132,7 +2193,8 @@ end subroutine setup_xmap
 ! </SUBROUTINE>
 
 !----------------------------------------------------------------------------
-! currently we are assuming there is only one nest region
+!> @brief currently we are assuming there is only one nest region
+!! @return integer get_nest_contact
 function get_nest_contact_fms2_io(fileobj, tile_nest_out, tile_parent_out, is_nest_out, &
                           ie_nest_out, js_nest_out, je_nest_out, is_parent_out, &
                           ie_parent_out, js_parent_out, je_parent_out) &
@@ -3151,6 +3213,7 @@ end subroutine regen
 !   <IN NAME="grid_id" TYPE="character(len=3)" > </IN>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
+!> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_sg(f, grid_id, xmap)
 real, dimension(:,:,:), intent(in   ) :: f
 character(len=3),       intent(in   ) :: grid_id
@@ -3199,6 +3262,7 @@ end subroutine  set_frac_area_sg
 !   <IN NAME="grid_id" TYPE="character(len=3)" > </IN>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
+!> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_ug(f, grid_id, xmap)
 real, dimension(:,:),   intent(in   ) :: f
 character(len=3),       intent(in   ) :: grid_id
@@ -3249,6 +3313,8 @@ end subroutine  set_frac_area_ug
 !   <IN NAME="xmap" TYPE="xmap_type" > </IN>
 !   <OUT NAME="xgrid_count"  TYPE="integer"  > </OUT>
 
+!> @brief Returns current size of exchange grid variables.
+!! @return integer xgrid_count
 integer function xgrid_count(xmap)
 type (xmap_type), intent(inout) :: xmap
 
@@ -3264,7 +3330,6 @@ end function xgrid_count
 !   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
-
 subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   real, dimension(:,:), intent(in   )    :: d
   character(len=3),     intent(in   )    :: grid_id
@@ -3519,10 +3584,11 @@ end subroutine get_side2_from_xgrid
 !     logical associating exchange grid cells with given side 2 grid.
 !   </OUT>
 
+!> @brief Returns logical associating exchange grid cells with given side two grid.
 subroutine some(xmap, some_arr, grid_id)
 type (xmap_type),           intent(in) :: xmap
 character(len=3), optional, intent(in) :: grid_id
-logical, dimension(:), intent(out) :: some_arr
+logical, dimension(:), intent(out) :: some_arr !< logical associating exchange grid cells with given side 2 grid.
 
   integer :: g
 
@@ -4165,10 +4231,10 @@ end subroutine get_1_from_xgrid_repro
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_side1" TYPE="real" DIM="dimension(3)" > </OUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
-! conservation_check - returns three numbers which are the global sum of a
-! variable (1) on its home model grid, (2) after interpolation to the other
-! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!
+!> @brief conservation_check - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_side1
 function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
 real, dimension(:,:),    intent(in   ) :: d
 character(len=3),        intent(in   ) :: grid_id
@@ -4223,6 +4289,10 @@ end function conservation_check_side1
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_side2" TYPE="real" DIM="dimension(3)" > </OUT>
 
+!> @brief conservation_check - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_side2
 function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
 real, dimension(:,:,:), intent(in   )  :: d
 character(len=3),       intent(in   )  :: grid_id
@@ -4285,6 +4355,10 @@ end function conservation_check_side2
 ! variable (1) on its home model grid, (2) after interpolation to the other
 ! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !
+!> @brief conservation_check_ug - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_ug_side1
 function conservation_check_ug_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
 real, dimension(:,:),    intent(in   ) :: d
 character(len=3),        intent(in   ) :: grid_id
@@ -4365,6 +4439,10 @@ end function conservation_check_ug_side1
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <OUT NAME="conservation_check_ug_side2" TYPE="real" DIM="dimension(3)" > </OUT>
 
+!> @brief conservation_check_ug - returns three numbers which are the global sum of a
+!!   variable (1) on its home model grid, (2) after interpolation to the other
+!!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!! @return real conservation_check_ug_side2
 function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
 real, dimension(:,:,:), intent(in   )  :: d
 character(len=3),       intent(in   )  :: grid_id
@@ -4444,7 +4522,7 @@ end function conservation_check_ug_side2
 
 
 !******************************************************************************
-! This routine is used to get the grid area of component model with id.
+!> @brief This routine is used to get the grid area of component model with id.
 subroutine get_xmap_grid_area(id, xmap, area)
   character(len=3),     intent(in   ) :: id
   type (xmap_type),     intent(inout) :: xmap
@@ -4469,10 +4547,10 @@ end subroutine get_xmap_grid_area
 
 !#######################################################################
 
-! This function is used to calculate the gradient along zonal direction.
-! Maybe need to setup a limit for the gradient. The grid is assumeed
-! to be regular lat-lon grid
-
+!> @brief This function is used to calculate the gradient along zonal direction.
+!!   Maybe need to setup a limit for the gradient. The grid is assumeed
+!!   to be regular lat-lon grid
+!! @return real grad_zonal_latlon
 function grad_zonal_latlon(d, lon, lat, is, ie, js, je, isd, jsd)
 
   integer,                    intent(in) :: isd, jsd
@@ -4510,9 +4588,9 @@ end function grad_zonal_latlon
 
 !#######################################################################
 
-! This function is used to calculate the gradient along meridinal direction.
-! Maybe need to setup a limit for the gradient. regular lat-lon grid are assumed
-
+!> @brief This function is used to calculate the gradient along meridinal direction.
+!!   Maybe need to setup a limit for the gradient. regular lat-lon grid are assumed
+!! @return grad_merid_latlon
 function grad_merid_latlon(d, lat, is, ie, js, je, isd, jsd)
   integer,                    intent(in) :: isd, jsd
   real, dimension(isd:,jsd:), intent(in) :: d
@@ -4558,6 +4636,10 @@ subroutine get_index_range(xmap, grid_index, is, ie, js, je, km)
 end subroutine get_index_range
 !#######################################################################
 
+!> @brief this version takes rank 3 data, it can be used to compute the flux on anything but the
+!!   first grid, which typically is on the atmos side.
+!!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+!!   if these are present.
 subroutine stock_move_3d(from, to, grid_index, data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
@@ -4570,12 +4652,13 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   use mpp_domains_mod, only : domain2D, mpp_redistribute, mpp_get_compute_domain
 
   type(stock_type), intent(inout), optional :: from, to
-  integer, intent(in)             :: grid_index        ! grid index
-  real, intent(in)                :: data(:,:,:)  ! data array is 3d
+  integer, intent(in)             :: grid_index        !< grid index
+  real, intent(in)                :: data(:,:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       ! earth radius
+  integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       !< earth radius
   character(len=*), intent(in), optional      :: verbose
   integer, intent(out)            :: ier
 
@@ -4614,7 +4697,9 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
 end subroutine stock_move_3d
 
 !...................................................................
-
+!> @brief this version takes rank 2 data, it can be used to compute the flux on the atmos side
+!!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+!!   if these are present.
 subroutine stock_move_2d(from, to, grid_index, data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
@@ -4627,11 +4712,12 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, optional, intent(in)   :: grid_index
-  real, intent(in)                :: data(:,:)    ! data array is 2d
+  real, intent(in)                :: data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       ! earth radius
+  integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       !< earth radius
   character(len=*), intent(in)    :: verbose
   integer, intent(out)            :: ier
 
@@ -4674,7 +4760,10 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 end subroutine stock_move_2d
 
 !#######################################################################
-
+!> @brief this version takes rank 3 data, it can be used to compute the flux on anything but the
+!!   first grid, which typically is on the atmos side.
+!!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
+!!   if these are present.
 subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
@@ -4687,12 +4776,13 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   use mpp_domains_mod, only : domain2D, mpp_redistribute, mpp_get_compute_domain
 
   type(stock_type), intent(inout), optional :: from, to
-  integer, intent(in)             :: grid_index        ! grid index
-  real, intent(in)                :: data(:,:)  ! data array is 3d
+  integer, intent(in)             :: grid_index        !< grid index
+  real, intent(in)                :: data(:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  integer, intent(in)             :: from_side, to_side ! ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       ! earth radius
+  integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
+  real, intent(in)                :: radius       !< earth radius
   character(len=*), intent(in), optional      :: verbose
   integer, intent(out)            :: ier
   real, dimension(size(data,1),size(data,2)) :: tmp
@@ -4735,16 +4825,17 @@ end subroutine stock_move_ug_3d
 
 
 !#######################################################################
+!> @brief surface/time integral of a 2d array
 subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
 
   ! surface/time integral of a 2d array
 
   use mpp_mod, only : mpp_sum
 
-  real, intent(in)                :: data(:,:)    ! data array is 2d
+  real, intent(in)                :: data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
   real, intent(in)                :: delta_t
-  real, intent(in)                :: radius       ! earth radius
+  real, intent(in)                :: radius       !< earth radius
   real, intent(out)               :: res
   integer, intent(out)            :: ier
 
@@ -4774,14 +4865,14 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
   type(stock_type), intent(in)  :: stck
   type(time_type), intent(in)   :: Time
   character(len=*)              :: comp_name
-  integer, intent(in)           :: index     ! to map stock element (water, heat, ..) to a name
-  real, intent(in)              :: ref_value ! the stock value returned by the component per PE
+  integer, intent(in)           :: index     !< to map stock element (water, heat, ..) to a name
+  real, intent(in)              :: ref_value !< the stock value returned by the component per PE
   real, intent(in)              :: radius
   integer, intent(in), optional :: pelist(:)
 
-  integer, parameter :: initID = -2 ! initial value for diag IDs. Must not be equal to the value
-  ! that register_diag_field returns when it can't register the filed -- otherwise the registration
-  ! is attempted every time this subroutine is called
+  integer, parameter :: initID = -2 !< initial value for diag IDs. Must not be equal to the value
+  !! that register_diag_field returns when it can't register the filed -- otherwise the registration
+  !! is attempted every time this subroutine is called
 
   real :: f_value, c_value, planet_area
   character(len=80) :: formatString
@@ -4865,6 +4956,7 @@ end subroutine stock_print
 
 
 !###############################################################################
+ !> @return logical is_lat_lon
  function is_lat_lon(lon, lat)
     real, dimension(:,:), intent(in) :: lon, lat
     logical                          :: is_lat_lon
@@ -4991,7 +5083,7 @@ end subroutine get_side1_from_xgrid_ug
 !   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
-! Currently only support first order.
+!> @brief Currently only support first order.
 subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
   real, dimension(:),   intent(in   )    :: d
   character(len=3),     intent(in   )    :: grid_id
@@ -5484,6 +5576,7 @@ type (xmap_type),       intent(in   ) :: xmap
 end subroutine get_2_from_xgrid_ug
 
 !######################################################################
+!> @return logical in_box_me
 logical function in_box_me(i, j, grid)
   integer,          intent(in) :: i, j
   type (grid_type), intent(in) :: grid
@@ -5499,6 +5592,7 @@ logical function in_box_me(i, j, grid)
 end function in_box_me
 
 !######################################################################
+!> @return logical in_box_nbr
 logical function in_box_nbr(i, j, grid, p)
   integer,          intent(in) :: i, j, p
   type (grid_type), intent(in) :: grid
