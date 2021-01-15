@@ -251,6 +251,7 @@ private
   type :: clock
      private
      character(len=32)    :: name
+     integer(LONG_KIND)   :: hits
      integer(LONG_KIND)   :: tick
      integer(LONG_KIND)   :: total_ticks
      integer              :: peset_num
