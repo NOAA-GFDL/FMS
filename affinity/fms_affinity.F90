@@ -17,10 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \file
-!! \author @bensonr
-
-!> Fortran API interfaces to set the thread affinity.
+!> @file
+!! @brief Fortran API interfaces to set the thread affinity.
+!! @author Rusty Benson
+!! @email gfdl.climate.model.info@noaa.gov
 !!
 !! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
 !! are managed in the C routines in affinity.c.
@@ -74,7 +74,7 @@ module fms_affinity_mod
 
 contains
 
-  !> initialization routine for affinity handling
+  !> @brief initialization routine for affinity handling
   subroutine fms_affinity_init()
     !--- local variables
     integer:: io_stat
@@ -101,7 +101,7 @@ contains
   end subroutine fms_affinity_init
 
 
-  !> routine to set affinity
+  !> @brief routine to set affinity
   subroutine fms_affinity_set (component, use_hyper_thread, nthreads)
     !--- interface variables
     character(len=*),  intent(in):: component !< Component name

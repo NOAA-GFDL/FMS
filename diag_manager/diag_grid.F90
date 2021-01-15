@@ -17,6 +17,23 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief diag_grid_mod is a set of procedures to work with the
+!!   model's global grid to allow regional output.
+!! @author Seth Underwood
+!! @email gfdl.climate.model.info@noaa.gov
+!! @description TT>diag_grid_mod</TT> contains useful utilities for dealing
+!!   with, mostly, regional output for grids other than the standard
+!!   lat/lon grid.  This module contains three public procedures <TT>
+!!   diag_grid_init</TT>, which is shared globably in the <TT>
+!!   diag_manager_mod</TT>, <TT>diag_grid_end</TT> which will free
+!!   up memory used during the register field calls, and
+!!   <TT>get_local_indexes</TT>.  The <TT>send_global_grid</TT>
+!!   procedure is called by the model that creates the global grid.
+!!   <TT>send_global_grid</TT> needs to be called before any fields
+!!   are registered that will output only regions.  <TT>get_local_indexes</TT>
+!!   is to be called by the <TT>diag_manager_mod</TT> to discover the
+!!   global indexes defining a subregion on the tile.
 MODULE diag_grid_mod
 use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -81,109 +98,50 @@ use platform_mod
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  ! Derived data types
-  ! <PRIVATE>
-  ! <TYPE NAME="diag_global_grid_type">
-  !   <DESCRIPTION>
-  !     Contains the model's global grid data, and other grid information.
-  !   </DESCRIPTION>
-  !   <DATA NAME="glo_lat" TYPE="REAL, allocatable, DIMENSION(:,:)">
-  !     The latitude values on the global grid.
-  !   </DATA>
-  !   <DATA NAME="glo_lon" TYPE="REAL, allocatable, DIMENSION(:,:)">
-  !     The longitude values on the global grid.
-  !   </DATA>
-  !   <DATA NAME="aglo_lat" TYPE="REAL, allocatable, DIMENSION(:,:)">
-  !     The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
-  !     jsc=1:jec+1 to be passed in.
-  !   </DATA>
-  !   <DATA NAME="aglo_lon" TYPE="REAL, allocatable, DIMENSION(:,:)">
-  !     The longitude values on the global a-grid.  Here we expec isc-1:iec+j and
-  !     jsc-1:jec+1 to be passed in.
-  !   </DATA>
-  !   <DATA NAME="myXbegin" TYPE="INTEGER">
-  !     The starting index of the compute domain on the current PE.
-  !   </DATA>
-  !   <DATA NAME="myYbegin" TYPE="INTEGER">
-  !     The starting index of the compute domain on the cureent PE.
-  !   </DATA>
-  !   <DATA NAME="dimI" TYPE="INTEGER">
-  !     The dimension of the global grid in the 'i' / longitudal direction.
-  !   </DATA>
-  !   <DATA NAME="dimJ" TYPE="INTEGER">
-  !     The dimension of the global grid in the 'j' / latitudal direction.
-  !   </DATA>
-  !   <DATA NAME="adimI" TYPE="INTEGER">
-  !     The dimension of the global a-grid in the 'i' / longitudal direction.  Again,
-  !     the expected dimension for diag_grid_mod is isc-1:iec+1.
-  !   </DATA>
-  !   <DATA NAME="adimJ" TYPE="INTEGER">
-  !     The dimension of the global a-grid in the 'j' / latitudal direction.  Again,
-  !     the expected dimension for diag_grid_mod is jsc-1:jec+1.
-  !   </DATA>
-  !   <DATA NAME="tile_number" TYPE="INTEGER">
-  !     The tile the <TT>glo_lat</TT> and <TT>glo_lon</TT> define.
-  !   </DATA>
-  !   <DATA NAME="ntimes" TYPE="INTEGER">
-  !     The number of tiles.
-  !   </DATA>
-  !   <DATA NAME="peStart" TYPE="INTEGER">
-  !     The starting PE number for the current tile.
-  !   </DATA>
-  !   <DATA NAME="peEnd" TYPE="INTEGER">
-  !     The ending PE number for the current tile.
-  !   </DATA>
-  !   <DATA NAME="grid_type" TYPE="CHARACTER(len=128)">
-  !     The global grid type.
-  !   </DATA>
+  !> @brief Contains the model's global grid data, and other grid information.
   TYPE :: diag_global_grid_type
-     REAL, allocatable, DIMENSION(:,:) :: glo_lat, glo_lon
-     REAL, allocatable, DIMENSION(:,:) :: aglo_lat, aglo_lon
-     INTEGER :: myXbegin, myYbegin
-     INTEGER :: dimI, dimJ
-     INTEGER :: adimI, adimJ
-     INTEGER :: tile_number
-     INTEGER :: ntiles
-     INTEGER :: peStart, peEnd
-     CHARACTER(len=128) :: grid_type
+     REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
+     REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
+     REAL, allocatable, DIMENSION(:,:) :: aglo_lat !< The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
+                                                   !! jsc=1:jec+1 to be passed in.
+     REAL, allocatable, DIMENSION(:,:) :: aglo_lon !< The longitude values on the global a-grid.  Here we expec isc-1:iec+j and
+                                                   !! jsc-1:jec+1 to be passed in.
+     INTEGER :: myXbegin !< The starting index of the compute domain on the current PE.
+     INTEGER :: myYbegin !< The starting index of the compute domain on the current PE.
+     INTEGER :: dimI !< The dimension of the global grid in the 'i' / longitudal direction.
+     INTEGER :: dimJ !< The dimension of the global grid in the 'j' / latitudal direction.
+     INTEGER :: adimI !< The dimension of the global a-grid in the 'i' / longitudal direction.  Again,
+                      !! the expected dimension for diag_grid_mod is isc-1:iec+1.
+     INTEGER :: adimJ !< The dimension of the global a-grid in the 'j' / latitudal direction.  Again,
+                      !! the expected dimension for diag_grid_mod is jsc-1:jec+1.
+     INTEGER :: tile_number !< The tile the <TT>glo_lat</TT> and <TT>glo_lon</TT> define.
+     INTEGER :: ntiles !< The number of tiles.
+     INTEGER :: peStart !< The starting PE number for the current tile.
+     INTEGER :: peEnd !< The ending PE number for the current tile.
+     CHARACTER(len=128) :: grid_type !< The global grid type.
   END TYPE diag_global_grid_type
-  ! </TYPE>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <TYPE NAME="point">
-  !   <DESCRIPTION>
-  !      Private point type to hold the (x,y,z) location for a (lat,lon)
-  !      location.
-  !   </DESCRIPTION>
-  !   <DATA NAME="x" TYPE="REAL">
-  !     The x value of the (x,y,z) coordinates.
-  !   </DATA>
-  !   <DATA NAME="y" TYPE="REAL">
-  !     The y value of the (x,y,z) coordinates.
-  !   </DATA>
-  !   <DATA NAME="z" TYPE="REAL">
-  !     The z value of the (x,y,z) coordinates.
-  !   </DATA>
+  !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
+  !!   location.
   TYPE :: point
-     REAL :: x,y,z
+     REAL :: x !< The x value of the (x,y,z) coordinates.
+     REAL :: y !< The y value of the (x,y,z) coordinates.
+     REAL :: z !< The z value of the (x,y,z) coordinates.
   END TYPE point
-  ! </TYPE>
-  ! </PRIVATE>
 
   ! <PRIVATE>
   ! <DATA NAME="diag_global_grid" TYPE="TYPE(diag_global_grid_type)">
   !   Variable to hold the global grid data
   ! </DATA>
   ! </PRIVATE>
-  TYPE(diag_global_grid_type) :: diag_global_grid
+  TYPE(diag_global_grid_type) :: diag_global_grid !< Variable to hold the global grid data
 
   ! <PRIVATE>
   ! <DATA NAME="diag_grid_initialized" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   Indicates if the diag_grid_mod has been initialized.
   ! </DATA>
   ! </PRIVATE>
-  LOGICAL :: diag_grid_initialized = .FALSE.
+  LOGICAL :: diag_grid_initialized = .FALSE. !< Indicates if the diag_grid_mod has been initialized.
 
   PRIVATE
   PUBLIC :: diag_grid_init, diag_grid_end, get_local_indexes,  &
@@ -191,44 +149,22 @@ use platform_mod
 
 CONTAINS
 
-  ! <SUBROUTINE NAME="diag_grid_init">
-  !   <OVERVIEW>
-  !     Send the global grid to the <TT>diag_manager_mod</TT> for
-  !     regional output.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_grid_init(domain, glo_lat, glo_lon, aglo_lat, aglo_lon)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     In order for the diag_manager to do regional output for grids
-  !     other than the standard lat/lon grid, the <TT>
-  !     diag_manager_mod</TT> needs to know the the latitude and
-  !     longitude values for the entire global grid.  This procedure
-  !     is the mechanism the models will use to share their grid with
-  !     the diagnostic manager.
-  !
-  !     This procedure needs to be called after the grid is created,
-  !     and before the first call to register the fields.
-  !   </DESCRIPTION>
-  !   <IN NAME="domain" TYPE="INTEGER">
-  !     The domain to which the grid data corresponds.
-  !   </IN>
-  !   <IN NAME="glo_lat" TYPE="REAL, DIMENSION(:,:)">
-  !     The latitude information for the grid tile.
-  !   </IN>
-  !   <IN NAME="glo_lon" TYPE="REAL, DIMENSION(:,:)">
-  !     The longitude information for the grid tile.
-  !   </IN>
-  !   <IN NAME="aglo_lat" TYPE="REAL, DIMENSION(:,:)">
-  !     The latitude information for the a-grid tile.
-  !   </IN>
-  !   <IN NAME="aglo_lon" TYPE="REAL, DIMENSION(:,:)">
-  !     The longitude information for the a-grid tile.
-  !   </IN>
+  !> @brief Send the global grid to the <TT>diag_manager_mod</TT> for
+  !!   regional output.
+  !! @description In order for the diag_manager to do regional output for grids
+  !!     other than the standard lat/lon grid, the <TT>
+  !!     diag_manager_mod</TT> needs to know the the latitude and
+  !!     longitude values for the entire global grid.  This procedure
+  !!     is the mechanism the models will use to share their grid with
+  !!     the diagnostic manager.
+  !!     This procedure needs to be called after the grid is created,
+  !!     and before the first call to register the fields.
   SUBROUTINE diag_grid_init(domain, glo_lat, glo_lon, aglo_lat, aglo_lon)
-    TYPE(domain2d), INTENT(in) :: domain
-    REAL, INTENT(in), DIMENSION(:,:) :: glo_lat, glo_lon
-    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lat, aglo_lon
+    TYPE(domain2d), INTENT(in) :: domain !< The domain to which the grid data corresponds.
+    REAL, INTENT(in), DIMENSION(:,:) :: glo_lat !< The latitude information for the grid tile.
+    REAL, INTENT(in), DIMENSION(:,:) :: glo_lon !< The longitude information for the grid tile.
+    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lat !< The latitude information for the a-grid tile.
+    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lon !< The longitude information for the a-grid tile.
 
     INTEGER, DIMENSION(1) :: tile
     INTEGER :: ntiles
@@ -380,22 +316,13 @@ CONTAINS
     DEALLOCATE(xend)
     DEALLOCATE(yend)
   END SUBROUTINE diag_grid_init
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="diag_grid_end">
-  !   <OVERVIEW>
-  !     Unallocate the diag_global_grid variable.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_grid_end()
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     The <TT>diag_global_grid</TT> variable is only needed during
-  !     the register field calls, and then only if there are fields
-  !     requestion regional output.  Once all the register fields
-  !     calls are complete (before the first <TT>send_data</TT> call
-  !     this procedure can be called to free up memory.
-  !   </DESCRIPTION>
+  !> @brief Unallocate the diag_global_grid variable.
+  !! @description The <TT>diag_global_grid</TT> variable is only needed during
+  !!     the register field calls, and then only if there are fields
+  !!     requestion regional output.  Once all the register fields
+  !!     calls are complete (before the first <TT>send_data</TT> call
+  !!     this procedure can be called to free up memory.
   SUBROUTINE diag_grid_end()
 
     IF ( diag_grid_initialized ) THEN
@@ -431,55 +358,21 @@ CONTAINS
        diag_grid_initialized = .FALSE.
     END IF
   END SUBROUTINE diag_grid_end
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="get_local_indexes">
-  !   <OVERVIEW>
-  !     Find the local start and local end indexes on the local PE
-  !     for regional output.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE get_local_indexes(latStart, latEnd, lonStart,
-  !     lonEnd, istart, iend, jstart, jend)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Given a defined region, find the local indexes on the local
-  !     PE surrounding the region.
-  !   </DESCRIPTION>
-  !   <IN NAME="latStart" TYPE="REAL">
-  !     The minimum latitude value defining the region.  This value
-  !     must be less than latEnd, and be in the range [-90,90]
-  !   </IN>
-  !   <IN NAME="latEnd" TYPE="REAL">
-  !     The maximum latitude value defining the region.  This value
-  !     must be greater than latStart, and be in the range [-90,90]
-  !   </IN>
-  !   <IN NAME="lonStart" TYPE="REAL">
-  !     The western most longitude value defining the region.
-  !     Possible ranges are either [-180,180] or [0,360].
-  !   </IN>
-  !   <IN NAME="lonEnd" TYPE="REAL">
-  !     The eastern most longitude value defining the region.
-  !     Possible ranges are either [-180,180] or [0,360].
-  !   </IN>
-  !   <OUT NAME="istart" TYPE="INTEGER">
-  !     The local start index on the local PE in the 'i' direction.
-  !   </OUT>
-  !   <OUT NAME="iend" TYPE="INTEGER">
-  !     The local end index on the local PE in the 'i' direction.
-  !   </OUT>
-  !   <OUT NAME="jstart" TYPE="INTEGER">
-  !     The local start index on the local PE in the 'j' direction.
-  !   </OUT>
-  !   <OUT NAME="jend" TYPE="INTEGER">
-  !     The local end index on the local PE in the 'j' direction.
-  !   </OUT>
+  !> @brief Find the local start and local end indexes on the local PE
+  !!   for regional output.
+  !! @description Given a defined region, find the local indexes on the local
+  !!   PE surrounding the region.
   SUBROUTINE get_local_indexes(latStart, latEnd, lonStart, lonEnd,&
        & istart, iend, jstart, jend)
-    REAL, INTENT(in) :: latStart, lonStart !< lat/lon start angles
-    REAL, INTENT(in) :: latEnd, lonEnd !< lat/lon end angles
-    INTEGER, INTENT(out) :: istart, jstart !< i/j start indexes
-    INTEGER, INTENT(out) :: iend, jend !< i/j end indexes
+    REAL, INTENT(in) :: latStart !< lat start angles
+    REAL, INTENT(in) :: lonStart !< lon start angles
+    REAL, INTENT(in) :: latEnd !< lat end angles
+    REAL, INTENT(in) :: lonEnd !< lon end angles
+    INTEGER, INTENT(out) :: istart !< i start indexes
+    INTEGER, INTENT(out) :: jstart !< j start indexes
+    INTEGER, INTENT(out) :: iend !< i end indexes
+    INTEGER, INTENT(out) :: jend !< j end indexes
 
     REAL, ALLOCATABLE, DIMENSION(:,:) :: delta_lat, delta_lon, grid_lon
 
@@ -716,37 +609,15 @@ CONTAINS
     END IF
 
   END SUBROUTINE get_local_indexes
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="get_local_indexes2">
-  !   <OVERVIEW>
-  !     Find the indices of the nearest grid point of the a-grid to the
-  !     specified (lon,lat) location on the local PE. if desired point not
-  !     within domain of local PE, return (0,0) as the indices.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE get_local_indexes2 (lat, lon, iindex, jindex)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Given a specified location, find the nearest a-grid indices on
-  !     the local PE.
-  !   </DESCRIPTION>
-  !   <IN NAME="lat" TYPE="REAL">
-  !     The requested latitude.  This value must be in the range [-90,90]
-  !   </IN>
-  !   <IN NAME="lon" TYPE="REAL">
-  !     The requested longitude.
-  !     Possible ranges are either [-180,180] or [0,360].
-  !   </IN>
-  !   <OUT NAME="iindex" TYPE="INTEGER">
-  !     The local index on the local PE in the 'i' direction.
-  !   </OUT>
-  !   <OUT NAME="jindex" TYPE="INTEGER">
-  !     The local index on the local PE in the 'j' direction.
-  !   </OUT>
+  !> @brief Find the indices of the nearest grid point of the a-grid to the
+  !!   specified (lon,lat) location on the local PE. if desired point not
+  !!   within domain of local PE, return (0,0) as the indices.
   SUBROUTINE get_local_indexes2(lat, lon, iindex, jindex)
-    REAL, INTENT(in) :: lat, lon !< lat/lon location
-    INTEGER, INTENT(out) :: iindex, jindex !< i/j indexes
+    REAL, INTENT(in) :: lat !< lat location
+    REAL, INTENT(in) :: lon !< lon location
+    INTEGER, INTENT(out) :: iindex !< i indexes
+    INTEGER, INTENT(out) :: jindex !< j indexes
 
     INTEGER  :: indexes(2)
 
@@ -776,90 +647,49 @@ CONTAINS
     ENDIF
 
   END SUBROUTINE get_local_indexes2
-  ! </SUBROUTINE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="rad2deg">
-  !   <OVERVIEW>
-  !     Convert and angle in radian to degrees.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE ELEMENTAL REAL FUNCTION rad2deg(angle)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Given a scalar, or an array of angles in radians this
-  !     function will return a scalar or array (of the same
-  !     dimension) of angles in degrees.
-  !   </DESCRIPTION>
-  !   <IN NAME="angle" TYPE="REAL">
-  !     Scalar or array of angles in radians.
-  !   </IN>
-  !   <OUT NAME="rad2deg" TYPE="REAL">
-  !     Scalar or array (depending on the size of angle) of angles in
-  !     degrees.
-  !   </OUT>
+  !> @brief Convert an angle in radian to degrees.
+  !! @description Given a scalar, or an array of angles in radians this
+  !!   function will return a scalar or array (of the same
+  !!   dimension) of angles in degrees.
+  !! @return Scalar or array (depending on the size of angle) of angles in
+  !!   degrees.
   PURE ELEMENTAL REAL FUNCTION rad2deg(angle)
-    REAL, INTENT(in) :: angle
+    REAL, INTENT(in) :: angle !< Scalar or array of angles in radians.
 
     rad2deg = RAD_TO_DEG * angle
   END FUNCTION rad2deg
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="deg2rad">
-  !   <OVERVIEW>
-  !     Convert an angle in degrees to radians.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE ELEMENTAL REAL FUNCTION deg2rad(angle)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Given a scalar, or an array of angles in degrees this
-  !     function will return a scalar or array (of the same
-  !     dimension) of angles in radians.
-  !   </DESCRIPTION>
-  !   <IN NAME="angle" TYPE="REAL">
-  !     Scalar or array of angles in degrees.
-  !   </IN>
+  !> @brief Convert an angle in degrees to radians.
+  !! @description Given a scalar, or an array of angles in degrees this
+  !!   function will return a scalar or array (of the same
+  !!   dimension) of angles in radians.
+  !! @return Scalar or array (depending on the size of angle) of angles in
+  !!   radians.
   PURE ELEMENTAL REAL FUNCTION deg2rad(angle)
-    REAL, INTENT(in) :: angle
+    REAL, INTENT(in) :: angle !< Scalar or array of angles in degrees.
 
     deg2rad = DEG_TO_RAD * angle
   END FUNCTION deg2rad
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="find_pole_index_agrid">
-  !   <OVERVIEW>
-  !     Return the closest index (i,j) to the given (lat,lon) point.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE FUNCTION find_pole_index_agrid(lat, lon)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     This function searches a pole a-grid tile looking for the grid point
-  !     closest to the give (lat, lon) location, and returns the i
-  !     and j indexes of the point.
-  !   </DESCRIPTION>
-  !   <IN NAME="lat" TYPE="REAL">
-  !     Latitude location
-  !   </IN>
-  !   <IN NAME="lon" TYPE="REAL">
-  !     Longitude location
-  !   </IN>
-  !   <OUT NAME="find_pole_index" TYPE="INTEGER, DIMENSION(2)">
-  !     The (i, j) location of the closest grid to the given (lat,
-  !     lon) location.
-  !   </OUT>
+  !> @brief Return the closest index (i,j) to the given (lat,lon) point.
+  !! @description This function searches a pole a-grid tile looking for the grid point
+  !!   closest to the give (lat, lon) location, and returns the i
+  !!   and j indexes of the point.
+  !! @return The (i, j) location of the closest grid to the given (lat,
+  !!   lon) location.
   PURE FUNCTION find_pole_index_agrid(lat, lon)
-    INTEGER, DIMENSION(2) :: find_pole_index_agrid
-    REAL, INTENT(in) :: lat, lon
+    INTEGER, DIMENSION(2) :: find_pole_index_agrid !< The (i, j) location of the closest grid to the given (lat,
+                                                   !! lon) location.
+    REAL, INTENT(in) :: lat !< Latitude location
+    REAL, INTENT(in) :: lon !< Longitude location
 
-    INTEGER :: indxI, indxJ !< Indexes to be returned.
-    INTEGER :: dimI, dimJ !< Size of the grid dimensions
-    INTEGER :: i,j !< Count indexes
+    INTEGER :: indxI !< Indexes to be returned.
+    INTEGER :: indxJ !< Indexes to be returned.
+    INTEGER :: dimI !< Size of the grid dimensions
+    INTEGER :: dimJ !< Size of the grid dimensions
+    INTEGER :: i !< Count indexes
+    INTEGER :: j !< Count indexes
     INTEGER :: nearestCorner !< index of the nearest corner.
     INTEGER, DIMENSION(4,2) :: ijArray !< indexes of the cornerPts and pntDistances arrays
     REAL :: llat, llon
@@ -1004,35 +834,18 @@ CONTAINS
     ! Set the return value for the funtion
     find_pole_index_agrid = (/indxI, indxJ/)
   END FUNCTION find_pole_index_agrid
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="find_equator_index_agrid">
-  !   <OVERVIEW>
-  !     Return the closest index (i,j) to the given (lat,lon) point.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE FUNCTION find_equator_index_agrid(lat, lon)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     This function searches a equator grid tile looking for the grid point
-  !     closest to the give (lat, lon) location, and returns the i
-  !     and j indexes of the point.
-  !   </DESCRIPTION>
-  !   <IN NAME="lat" TYPE="REAL">
-  !     Latitude location
-  !   </IN>
-  !   <IN NAME="lon" TYPE="REAL">
-  !     Longitude location
-  !   </IN>
-  !   <OUT NAME="find_equator_index" TYPE="INTEGER, DIMENSION(2)">
-  !     The (i, j) location of the closest grid to the given (lat,
-  !     lon) location.
-  !   </OUT>
+  !> @brief Return the closest index (i,j) to the given (lat,lon) point.
+  !! @description This function searches a equator grid tile looking for the grid point
+  !!   closest to the give (lat, lon) location, and returns the i
+  !!   and j indexes of the point.
+  !! @return The (i, j) location of the closest grid to the given (lat,
+  !!   lon) location.
   PURE FUNCTION find_equator_index_agrid(lat, lon)
-    INTEGER, DIMENSION(2) :: find_equator_index_agrid
-    REAL, INTENT(in) :: lat, lon
+    INTEGER, DIMENSION(2) :: find_equator_index_agrid !< The (i, j) location of the closest grid to the given (lat,
+                                                      !! lon) location.
+    REAL, INTENT(in) :: lat !< Latitude location
+    REAL, INTENT(in) :: lon !< Longitude location
 
     INTEGER :: indxI, indxJ !< Indexes to be returned.
     INTEGER :: indxI_tmp !< Hold the indxI value if on tile 3 or 4
@@ -1163,40 +976,28 @@ CONTAINS
     ! Set the return value for the function
     find_equator_index_agrid = (/indxI, indxJ/)
   END FUNCTION find_equator_index_agrid
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="latlon2xyz">
-  !   <OVERVIEW>
-  !     Return the (x,y,z) position of a given (lat,lon) point.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE ELEMENTAL TYPE(point) FUNCTION latlon2xyz(lat, lon)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Given a specific (lat, lon) point on the Earth, return the
-  !     corresponding (x,y,z) location.  The return of latlon2xyz
-  !     will be either a scalar or an array of the same size as lat
-  !     and lon.
-  !   </DESCRIPTION>
-  !   <IN NAME="lat" TYPE="REAL">
-  !     The latitude of the (x,y,z) location to find.  <TT>lat</TT>
-  !     can be either a scalar or array.  <TT>lat</TT> must be of the
-  !     same rank / size as <TT>lon</TT>.  This function assumes
-  !     <TT>lat</TT> is in the range [-90,90].
-  !   </IN>
-  !   <IN NAME="lon" TYPE="REAL">
-  !     The longitude of the (x,y,z) location to find.  <TT>lon</TT>
-  !     can be either a scalar or array.  <TT>lon</TT> must be of the
-  !     same rank / size as <TT>lat</TT>.  This function assumes
-  !     <TT>lon</TT> is in the range [0,360].
-  !   </IN>
+  !> @brief Return the (x,y,z) position of a given (lat,lon) point.
+  !! @description Given a specific (lat, lon) point on the Earth, return the
+  !!   corresponding (x,y,z) location.  The return of latlon2xyz
+  !!   will be either a scalar or an array of the same size as lat
+  !!   and lon.
+  !! @return The return of latlon2xyz
+  !!   will be either a scalar or an array of the same size as lat
+  !!   and lon.
   PURE ELEMENTAL TYPE(point) FUNCTION latlon2xyz(lat, lon)
-    REAL, INTENT(in) :: lat, lon
+    REAL, INTENT(in) :: lat !< The latitude of the (x,y,z) location to find.  <TT>lat</TT>
+                            !! can be either a scalar or array.  <TT>lat</TT> must be of the
+                            !! same rank / size as <TT>lon</TT>.  This function assumes
+                            !! <TT>lat</TT> is in the range [-90,90].
+    REAL, INTENT(in) :: lon !< The longitude of the (x,y,z) location to find.  <TT>lon</TT>
+                            !! can be either a scalar or array.  <TT>lon</TT> must be of the
+                            !! same rank / size as <TT>lat</TT>.  This function assumes
+                            !! <TT>lon</TT> is in the range [0,360].
 
     ! lat/lon angles in radians
-    REAL :: theta, phi
+    REAL :: theta !< lat angles in radians
+    REAL :: phi   !< lon angles in radians
 
     ! Convert the lat lon values to radians The lat values passed in
     ! are in the range [-90,90], but we need to have a radian range
@@ -1210,27 +1011,15 @@ CONTAINS
     latlon2xyz%y = RADIUS * SIN(theta) * SIN(phi)
     latlon2xyz%z = RADIUS * COS(theta)
   END FUNCTION latlon2xyz
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <PRIVATE>
-  ! <FUNCTION NAME="distanceSqrd">
-  !   <OVERVIEW>
-  !     Find the distance between two points in the Cartesian
-  !     coordinate space.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE ELEMENTAL REAL FUNCTION distanceSqrd(pt1, pt2)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>distanceSqrd</TT> will find the distance squared between
-  !     two points in the xyz coordinate space.  <TT>pt1</TT> and <TT>
-  !     pt2</TT> can either be both scalars, both arrays of the same
-  !     size, or one a scalar and one an array.  The return value
-  !     will be a scalar or array of the same size as the input array.
-  !   </DESCRIPTION>
-  !   <IN NAME="pt1" TYPE="TYPE(POINT)" />
-  !   <IN NAME="pt2" TYPE="TYPE(POINT)" />
+  !> @brief Find the distance between two points in the Cartesian
+  !!   coordinate space.
+  !! @description <TT>distanceSqrd</TT> will find the distance squared between
+  !!   two points in the xyz coordinate space.  <TT>pt1</TT> and <TT>
+  !!   pt2</TT> can either be both scalars, both arrays of the same
+  !!   size, or one a scalar and one an array.  The return value
+  !!   will be a scalar or array of the same size as the input array.
+  !! @return The return value will be a scalar or array of the same size as the input array.
   PURE ELEMENTAL REAL FUNCTION distanceSqrd(pt1, pt2)
     TYPE(point), INTENT(in) :: pt1, pt2
 
@@ -1238,24 +1027,11 @@ CONTAINS
          &         (pt1%y-pt2%y)**2 +&
          &         (pt1%z-pt2%z)**2
   END FUNCTION distanceSqrd
-  ! </FUNCTION>
-  ! </PRIVATE>
 
-  ! <FUNCTION NAME="gCirDistance">
-  !   <OVERVIEW>
-  !     Find the distance, along the geodesic, between two points.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     PURE ELEMENTAL REAL FUNCTION gCirDistance(lat1, lon1, lat2, lon2)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     <TT>aCirDistance</TT> will find the distance, along the geodesic, between two points defined by the (lat,lon) position of
-  !     each point.
-  !   </DESCRIPTION>
-  !   <IN NAME="lat1" TYPE="REAL">Latitude of the first point</IN>
-  !   <IN NAME="lon1" TYPE="REAL">Longitude of the first point</IN>
-  !   <IN NAME="lat2" TYPE="REAL">Latitude of the second point</IN>
-  !   <IN NAME="lon2" TYPE="REAL">Longitude of the second point</IN>
+  !> @brief Find the distance, along the geodesic, between two points.
+  !> @description <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined
+  !!   by the (lat,lon) position of each point.
+  !! @return real
   PURE ELEMENTAL REAL FUNCTION gCirDistance(lat1, lon1, lat2, lon2)
     REAL, INTENT(in) :: lat1, lat2, lon1, lon2
 
@@ -1270,10 +1046,9 @@ CONTAINS
 
     gCirDistance = RADIUS * 2. * ASIN(SQRT((SIN(deltaTheta/2.))**2 + COS(theta1)*COS(theta2)*(SIN(deltaLambda/2.))**2))
   END FUNCTION gCirDistance
-  ! </FUNCTION>
 
-  !Find the i,j indices and distance of the a-grid point nearest to
-  !the inputted lat,lon point.
+  !> @brief Find the i,j indices and distance of the a-grid point nearest to
+  !!   the inputted lat,lon point.
   SUBROUTINE find_nearest_agrid_index(lat, &
                                       lon, &
                                       minI, &

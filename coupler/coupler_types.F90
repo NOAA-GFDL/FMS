@@ -17,10 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \brief This module contains type declarations for the coupler.
-!!
-!! \author Richard Slater <Richard.Slater@noaa.gov>
-!! \author John Dunne <John.Dunne@noaa.gov>
+!> @file
+!! @brief This module contains type declarations for the coupler.
+!! @author Richard Slater, John Dunne
+!! @email gfdl.climate.model.info@noaa.gov
 module coupler_types_mod
 
   use fms_mod,           only: write_version_number
@@ -201,7 +201,7 @@ module coupler_types_mod
 
   ! Interface definitions for overloaded routines
 
-  !> This is the interface to spawn one coupler_bc_type into another and then
+  !> @brief This is the interface to spawn one coupler_bc_type into another and then
   !! register diagnostics associated with the new type.
   interface  coupler_type_copy
     module procedure coupler_type_copy_1d_2d, coupler_type_copy_1d_3d
@@ -209,92 +209,92 @@ module coupler_types_mod
     module procedure coupler_type_copy_3d_2d, coupler_type_copy_3d_3d
   end interface coupler_type_copy
 
-  !> This is the interface to spawn one coupler_bc_type into another.
+  !> @brief This is the interface to spawn one coupler_bc_type into another.
   interface  coupler_type_spawn
     module procedure CT_spawn_1d_2d, CT_spawn_2d_2d, CT_spawn_3d_2d
     module procedure CT_spawn_1d_3d, CT_spawn_2d_3d, CT_spawn_3d_3d
   end interface coupler_type_spawn
 
-  !> This is the interface to copy the field data from one coupler_bc_type
+  !> @brief This is the interface to copy the field data from one coupler_bc_type
   !! to another of the same rank, size and decomposition.
   interface coupler_type_copy_data
     module procedure CT_copy_data_2d, CT_copy_data_3d, CT_copy_data_2d_3d
   end interface coupler_type_copy_data
 
-  !> This is the interface to redistribute the field data from one coupler_bc_type
+  !> @brief This is the interface to redistribute the field data from one coupler_bc_type
   !! to another of the same rank and global size, but a different decomposition.
   interface coupler_type_redistribute_data
     module procedure CT_redistribute_data_2d, CT_redistribute_data_3d
   end interface coupler_type_redistribute_data
 
-  !> This is the interface to rescale the field data in a coupler_bc_type.
+  !> @brief This is the interface to rescale the field data in a coupler_bc_type.
   interface coupler_type_rescale_data
     module procedure CT_rescale_data_2d, CT_rescale_data_3d
   end interface coupler_type_rescale_data
 
-  !> This is the interface to increment the field data from one coupler_bc_type
+  !> @brief This is the interface to increment the field data from one coupler_bc_type
   !! with the data from another.  Both must have the same horizontal size and
   !! decomposition, but a 2d type may be incremented by a 2d or 3d type
   interface coupler_type_increment_data
     module procedure CT_increment_data_2d_2d, CT_increment_data_3d_3d, CT_increment_data_2d_3d
   end interface coupler_type_increment_data
 
-  !> This is the interface to extract a field in a coupler_bc_type into an array.
+  !> @brief This is the interface to extract a field in a coupler_bc_type into an array.
   interface coupler_type_extract_data
     module procedure CT_extract_data_2d, CT_extract_data_3d, CT_extract_data_3d_2d
   end interface coupler_type_extract_data
 
-  !> This is the interface to set a field in a coupler_bc_type from an array.
+  !> @brief This is the interface to set a field in a coupler_bc_type from an array.
   interface coupler_type_set_data
     module procedure CT_set_data_2d, CT_set_data_3d, CT_set_data_2d_3d
   end interface coupler_type_set_data
 
-  !> This is the interface to set diagnostics for the arrays in a coupler_bc_type.
+  !> @brief This is the interface to set diagnostics for the arrays in a coupler_bc_type.
   interface coupler_type_set_diags
     module procedure CT_set_diags_2d, CT_set_diags_3d
   end interface coupler_type_set_diags
 
-  !> This is the interface to write out checksums for the elements of a coupler_bc_type.
+  !> @brief This is the interface to write out checksums for the elements of a coupler_bc_type.
   interface coupler_type_write_chksums
     module procedure CT_write_chksums_2d, CT_write_chksums_3d
   end interface coupler_type_write_chksums
 
-  !> This is the interface to write out diagnostics of the arrays in a coupler_bc_type.
+  !> @brief This is the interface to write out diagnostics of the arrays in a coupler_bc_type.
   interface coupler_type_send_data
     module procedure CT_send_data_2d, CT_send_data_3d
   end interface coupler_type_send_data
 
-  !> This is the interface to override the values of the arrays in a coupler_bc_type.
+  !> @brief This is the interface to override the values of the arrays in a coupler_bc_type.
   interface coupler_type_data_override
     module procedure CT_data_override_2d, CT_data_override_3d
   end interface coupler_type_data_override
 
-  !> This is the interface to register the fields in a coupler_bc_type to be saved
+  !> @brief This is the interface to register the fields in a coupler_bc_type to be saved
   !! in restart files.
   interface coupler_type_register_restarts
     module procedure CT_register_restarts_2d, CT_register_restarts_3d
     module procedure CT_register_restarts_to_file_2d, CT_register_restarts_to_file_3d
   end interface coupler_type_register_restarts
 
-  !> This is the interface to read in the fields in a coupler_bc_type that have
+  !> @brief This is the interface to read in the fields in a coupler_bc_type that have
   !! been saved in restart files.
   interface coupler_type_restore_state
     module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
-  !> This function interface indicates whether a coupler_bc_type has been initialized.
+  !> @brief This function interface indicates whether a coupler_bc_type has been initialized.
   interface coupler_type_initialized
     module procedure CT_initialized_1d, CT_initialized_2d, CT_initialized_3d
   end interface coupler_type_initialized
 
-  !> This is the interface to deallocate any data associated with a coupler_bc_type.
+  !> @brief This is the interface to deallocate any data associated with a coupler_bc_type.
   interface coupler_type_destructor
     module procedure CT_destructor_1d, CT_destructor_2d, CT_destructor_3d
   end interface coupler_type_destructor
 
 contains
 
-  !> \brief Initialize the coupler types
+  !> @brief Initialize the coupler types
   subroutine coupler_types_init
 
     logical, save   :: module_is_initialized = .false.
@@ -313,9 +313,9 @@ contains
   end subroutine  coupler_types_init  !}
 
 
-  !> \brief Copy fields from one coupler type to another. 1-D to 2-D version for generic coupler_type_copy.
+  !> @brief Copy fields from one coupler type to another. 1-D to 2-D version for generic coupler_type_copy.
   !!
-  !! \throw FATAL, "Number of output fields exceeds zero"
+  !! @throw FATAL, "Number of output fields exceeds zero"
   subroutine coupler_type_copy_1d_2d(var_in, var_out, is, ie, js, je,&
       & diag_name, axes, time, suffix)
     type(coupler_1d_bc_type), intent(in)    :: var_in !< variable to copy information from
@@ -347,10 +347,10 @@ contains
         & call CT_set_diags_2d(var_out, diag_name, axes, time)
   end subroutine  coupler_type_copy_1d_2d
 
-  !> \brief Copy fields from one coupler type to another. 1-D to 3-D version for generic coupler_type_copy.
+  !> @brief Copy fields from one coupler type to another. 1-D to 3-D version for generic coupler_type_copy.
   !!
   !!
-  !! \throw FATAL, "Number of output fields is exceeds zero"
+  !! @throw FATAL, "Number of output fields is exceeds zero"
   subroutine coupler_type_copy_1d_3d(var_in, var_out, is, ie, js, je, kd,&
       & diag_name, axes, time, suffix)
     type(coupler_1d_bc_type), intent(in)    :: var_in !< variable to copy information from
@@ -383,9 +383,9 @@ contains
         & call CT_set_diags_3d(var_out, diag_name, axes, time)
   end subroutine  coupler_type_copy_1d_3d
 
-  !> \brief Copy fields from one coupler type to another. 2-D to 2-D version for generic coupler_type_copy.
+  !> @brief Copy fields from one coupler type to another. 2-D to 2-D version for generic coupler_type_copy.
   !!
-  !! \throw FATAL, "Number of output fields is exceeds zero"
+  !! @throw FATAL, "Number of output fields is exceeds zero"
   subroutine coupler_type_copy_2d_2d(var_in, var_out, is, ie, js, je,&
       & diag_name, axes, time, suffix)
     type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
@@ -417,9 +417,9 @@ contains
         & call CT_set_diags_2d(var_out, diag_name, axes, time)
   end subroutine  coupler_type_copy_2d_2d
 
-  !> \brief Copy fields from one coupler type to another. 2-D to 3-D version for generic coupler_type_copy.
+  !> @brief Copy fields from one coupler type to another. 2-D to 3-D version for generic coupler_type_copy.
   !!
-  !! \throw FATAL, "Number of output fields is exceeds zero"
+  !! @throw FATAL, "Number of output fields is exceeds zero"
   subroutine coupler_type_copy_2d_3d(var_in, var_out, is, ie, js, je, kd,&
       & diag_name, axes, time, suffix)
     type(coupler_2d_bc_type), intent(in)    :: var_in !< variable to copy information from
@@ -452,9 +452,9 @@ contains
         & call CT_set_diags_3d(var_out, diag_name, axes, time)
   end subroutine  coupler_type_copy_2d_3d
 
-  !> \brief Copy fields from one coupler type to another. 3-D to 2-D version for generic coupler_type_copy.
+  !> @brief Copy fields from one coupler type to another. 3-D to 2-D version for generic coupler_type_copy.
   !!
-  !! \throw FATAL, "Number of output fields is exceeds zero"
+  !! @throw FATAL, "Number of output fields is exceeds zero"
   subroutine coupler_type_copy_3d_2d(var_in, var_out, is, ie, js, je,&
       & diag_name, axes, time, suffix)
     type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
@@ -486,9 +486,9 @@ contains
         & call CT_set_diags_2d(var_out, diag_name, axes, time)
   end subroutine  coupler_type_copy_3d_2d
 
-  !> \brief Copy fields from one coupler type to another. 3-D to 3-D version for generic coupler_type_copy.
+  !> @brief Copy fields from one coupler type to another. 3-D to 3-D version for generic coupler_type_copy.
   !!
-  !! \throw FATAL, "Number of output fields exceeds zero"
+  !! @throw FATAL, "Number of output fields exceeds zero"
   subroutine coupler_type_copy_3d_3d(var_in, var_out, is, ie, js, je, kd,&
       & diag_name, axes, time, suffix)
     type(coupler_3d_bc_type), intent(in)    :: var_in !< variable to copy information from
@@ -522,15 +522,15 @@ contains
   end subroutine  coupler_type_copy_3d_3d
 
 
-  !> \brief Generate one coupler type using another as a template. 1-D to 2-D version for generic coupler_type_spawn.
+  !> @brief Generate one coupler type using another as a template. 1-D to 2-D version for generic coupler_type_spawn.
   !!
-  !! \throw FATAL, "The output type has already been initialized"
-  !! \throw FATAL, "The parent type has not been initialized"
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "var%bc already assocated"
-  !! \throw FATAL, "var%bc('n')%field already associated"
-  !! \throw FATAL, "var%bc('n')%field('m')%values already associated"
+  !! @throw FATAL, "The output type has already been initialized"
+  !! @throw FATAL, "The parent type has not been initialized"
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "var%bc already assocated"
+  !! @throw FATAL, "var%bc('n')%field already associated"
+  !! @throw FATAL, "var%bc('n')%field('m')%values already associated"
   subroutine CT_spawn_1d_2d(var_in, var, idim, jdim, suffix, as_needed)
     type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
     type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -617,15 +617,15 @@ contains
     endif
   end subroutine  CT_spawn_1d_2d
 
-  !> \brief Generate one coupler type using another as a template. 1-D to 3-D version for generic CT_spawn.
+  !> @brief Generate one coupler type using another as a template. 1-D to 3-D version for generic CT_spawn.
   !!
-  !! \throw FATAL, "The output type has already been initialized"
-  !! \throw FATAL, "The parent type has not been initialized"
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "var%bc already assocated"
-  !! \throw FATAL, "var%bc('n')%field already associated"
-  !! \throw FATAL, "var%bc('n')%field('m')%values already associated"
+  !! @throw FATAL, "The output type has already been initialized"
+  !! @throw FATAL, "The parent type has not been initialized"
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "var%bc already assocated"
+  !! @throw FATAL, "var%bc('n')%field already associated"
+  !! @throw FATAL, "var%bc('n')%field('m')%values already associated"
   subroutine CT_spawn_1d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
     type(coupler_1d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
     type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -721,15 +721,15 @@ contains
   end subroutine  CT_spawn_1d_3d
 
 
-  !> \brief Generate one coupler type using another as a template. 2-D to 2-D version for generic CT_spawn.
+  !> @brief Generate one coupler type using another as a template. 2-D to 2-D version for generic CT_spawn.
   !!
-  !! \throw FATAL, "The output type has already been initialized"
-  !! \throw FATAL, "The parent type has not been initialized"
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "var%bc already assocated"
-  !! \throw FATAL, "var%bc('n')%field already associated"
-  !! \throw FATAL, "var%bc('n')%field('m')%values already associated"
+  !! @throw FATAL, "The output type has already been initialized"
+  !! @throw FATAL, "The parent type has not been initialized"
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "var%bc already assocated"
+  !! @throw FATAL, "var%bc('n')%field already associated"
+  !! @throw FATAL, "var%bc('n')%field('m')%values already associated"
   subroutine CT_spawn_2d_2d(var_in, var, idim, jdim, suffix, as_needed)
     type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
     type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -815,16 +815,16 @@ contains
     endif
   end subroutine  CT_spawn_2d_2d
 
-  !> \brief Generate one coupler type using another as a template. 2-D to 3-D version for generic CT_spawn.
+  !> @brief Generate one coupler type using another as a template. 2-D to 3-D version for generic CT_spawn.
   !!
-  !! \throw FATAL, "The output type has already been initialized"
-  !! \throw FATAL, "The parent type has not been initialized"
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "Disordered k-dimension index bound list"
-  !! \throw FATAL, "var%bc already assocated"
-  !! \throw FATAL, "var%bc('n')%field already associated"
-  !! \throw FATAL, "var%bc('n')%field('m')%values already associated"
+  !! @throw FATAL, "The output type has already been initialized"
+  !! @throw FATAL, "The parent type has not been initialized"
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "Disordered k-dimension index bound list"
+  !! @throw FATAL, "var%bc already assocated"
+  !! @throw FATAL, "var%bc('n')%field already associated"
+  !! @throw FATAL, "var%bc('n')%field('m')%values already associated"
   subroutine CT_spawn_2d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
     type(coupler_2d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
     type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -918,15 +918,15 @@ contains
     endif
   end subroutine  CT_spawn_2d_3d
 
-  !> \brief Generate one coupler type using another as a template. 3-D to 2-D version for generic CT_spawn.
+  !> @brief Generate one coupler type using another as a template. 3-D to 2-D version for generic CT_spawn.
   !!
-  !! \throw FATAL, "The output type has already been initialized"
-  !! \throw FATAL, "The parent type has not been initialized"
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "var%bc already assocated"
-  !! \throw FATAL, "var%bc('n')%field already associated"
-  !! \throw FATAL, "var%bc('n')%field('m')%values already associated"
+  !! @throw FATAL, "The output type has already been initialized"
+  !! @throw FATAL, "The parent type has not been initialized"
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "var%bc already assocated"
+  !! @throw FATAL, "var%bc('n')%field already associated"
+  !! @throw FATAL, "var%bc('n')%field('m')%values already associated"
   subroutine CT_spawn_3d_2d(var_in, var, idim, jdim, suffix, as_needed)
     type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
     type(coupler_2d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1012,16 +1012,16 @@ contains
     endif
   end subroutine  CT_spawn_3d_2d
 
-!> \brief Generate one coupler type using another as a template. 3-D to 3-D version for generic CT_spawn.
-!!
-  !! \throw FATAL, "The output type has already been initialized"
-  !! \throw FATAL, "The parent type has not been initialized"
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "Disordered k-dimension index bound list"
-  !! \throw FATAL, "var%bc already assocated"
-  !! \throw FATAL, "var%bc('n')%field already associated"
-  !! \throw FATAL, "var%bc('n')%field('m')%values already associated"
+  !> @brief Generate one coupler type using another as a template. 3-D to 3-D version for generic CT_spawn.
+  !!
+  !! @throw FATAL, "The output type has already been initialized"
+  !! @throw FATAL, "The parent type has not been initialized"
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "Disordered k-dimension index bound list"
+  !! @throw FATAL, "var%bc already assocated"
+  !! @throw FATAL, "var%bc('n')%field already associated"
+  !! @throw FATAL, "var%bc('n')%field('m')%values already associated"
   subroutine CT_spawn_3d_3d(var_in, var, idim, jdim, kdim, suffix, as_needed)
     type(coupler_3d_bc_type), intent(in)    :: var_in  !< structure from which to copy information
     type(coupler_3d_bc_type), intent(inout) :: var     !< structure into which to copy information
@@ -1116,18 +1116,17 @@ contains
   end subroutine  CT_spawn_3d_3d
 
 
-  !> Copy all elements of coupler_2d_bc_type
-  !!
+  !> @brief Copy all elements of coupler_2d_bc_type.
   !! Do a direct copy of the data in all elements of one
   !! coupler_2d_bc_type into another.  Both must have the same array sizes.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "bc_index must be present if field_index is present."
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "bc_index must be present if field_index is present."
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   subroutine CT_copy_data_2d(var_in, var, halo_size, bc_index, field_index,&
       & exclude_flux_type, only_flux_type, pass_through_ice)
     type(coupler_2d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to copy
@@ -1209,20 +1208,20 @@ contains
     enddo
   end subroutine CT_copy_data_2d
 
-  !> Copy all elements of coupler_3d_bc_type
+  !> @brief Copy all elements of coupler_3d_bc_type
   !!
   !! Do a direct copy of the data in all elements of one
   !! coupler_3d_bc_type into another.  Both must have the same array sizes.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "bc_index must be present if field_index is present."
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an k-direction computational domain size mismatch."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive k-direction halo size for the input structure."
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "bc_index must be present if field_index is present."
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an k-direction computational domain size mismatch."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive k-direction halo size for the input structure."
   subroutine CT_copy_data_3d(var_in, var, halo_size, bc_index, field_index,&
       & exclude_flux_type, only_flux_type, pass_through_ice)
     type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to copy
@@ -1311,19 +1310,19 @@ contains
     enddo
   end subroutine CT_copy_data_3d
 
-  !> Copy all elements of coupler_2d_bc_type to coupler_3d_bc_type
+  !> @brief Copy all elements of coupler_2d_bc_type to coupler_3d_bc_type
   !!
   !! Do a direct copy of the data in all elements of one coupler_2d_bc_type into a
   !! coupler_3d_bc_type.  Both must have the same array sizes for the first two dimensions, while
   !! the extend of the 3rd dimension that is being filled may be specified via optional arguments..
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "bc_index must be present if field_index is present."
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "bc_index must be present if field_index is present."
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   subroutine CT_copy_data_2d_3d(var_in, var, halo_size, bc_index, field_index,&
       & exclude_flux_type, only_flux_type, pass_through_ice,&
       & ind3_start, ind3_end)
@@ -1417,13 +1416,13 @@ contains
   end subroutine CT_copy_data_2d_3d
 
 
-  !> Redistribute the data in all elements of a coupler_2d_bc_type
+  !> @brief Redistribute the data in all elements of a coupler_2d_bc_type
   !!
   !! Redistributes the data in all elements of one coupler_2d_bc_type
   !! into another, which may be on different processors with a different decomposition.
   !!
-  !! \throw FATAL, "Mismatch in num_bcs in CT_copy_data_2d."
-  !! \throw FATAL, "Mismatch in the total number of fields in CT_redistribute_data_2d."
+  !! @throw FATAL, "Mismatch in num_bcs in CT_copy_data_2d."
+  !! @throw FATAL, "Mismatch in the total number of fields in CT_redistribute_data_2d."
   subroutine CT_redistribute_data_2d(var_in, domain_in, var_out, domain_out, complete)
     type(coupler_2d_bc_type), intent(in)    :: var_in     !< BC_type structure with the data to copy (intent in)
     type(domain2D),           intent(in)    :: domain_in  !< The FMS domain for the input structure
@@ -1510,7 +1509,7 @@ contains
     endif
   end subroutine CT_redistribute_data_2d
 
-  !> Redistributes the data in all elements of one coupler_2d_bc_type
+  !> @brief Redistributes the data in all elements of one coupler_2d_bc_type
   !!
   !! Redistributes the data in all elements of one coupler_2d_bc_type into another, which may be on
   !! different processors with a different decomposition.
@@ -1602,7 +1601,7 @@ contains
   end subroutine CT_redistribute_data_3d
 
 
-  !> Rescales the fields in the fields in the elements of a coupler_2d_bc_type
+  !> @brief Rescales the fields in the fields in the elements of a coupler_2d_bc_type
   !!
   !! Rescales the fields in the elements of a coupler_2d_bc_type by multiplying by a factor scale.
   !! If scale is 0, this is a direct assignment to 0, so that NaNs will not persist.
@@ -1692,7 +1691,7 @@ contains
     enddo
   end subroutine CT_rescale_data_2d
 
-  !! Rescales the fields in the elements of a coupler_3d_bc_type
+  !! @brief Rescales the fields in the elements of a coupler_3d_bc_type
   !!
   !! This subroutine rescales the fields in the elements of a coupler_3d_bc_type by multiplying by a
   !! factor scale.  If scale is 0, this is a direct assignment to 0, so that NaNs will not persist.
@@ -1787,18 +1786,18 @@ contains
   end subroutine CT_rescale_data_3d
 
 
-  !! Increment data in all elements of one coupler_2d_bc_type
+  !! @brief Increment data in all elements of one coupler_2d_bc_type
   !!
   !! Do a direct increment of the data in all elements of one coupler_2d_bc_type into another.  Both
   !! must have the same array sizes.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "bc_index must be present if field_index is present."
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "bc_index must be present if field_index is present."
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   subroutine CT_increment_data_2d_2d(var_in, var, halo_size, bc_index, field_index,&
       & scale_factor, scale_prev, exclude_flux_type, only_flux_type, pass_through_ice)
     type(coupler_2d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to add to the other type
@@ -1894,20 +1893,20 @@ contains
   end subroutine CT_increment_data_2d_2d
 
 
-  !! Increment data in all elements of one coupler_3d_bc_type
+  !! @brief Increment data in all elements of one coupler_3d_bc_type
   !!
   !! Do a direct increment of the data in all elements of one coupler_3d_bc_type into another.  Both
   !! must have the same array sizes.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "bc_index must be present if field_index is present."
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an k-direction computational domain size mismatch."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive k-direction halo size for the input structure."
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "bc_index must be present if field_index is present."
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an k-direction computational domain size mismatch."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive k-direction halo size for the input structure."
   subroutine CT_increment_data_3d_3d(var_in, var, halo_size, bc_index, field_index,&
       & scale_factor, scale_prev, exclude_flux_type, only_flux_type, pass_through_ice)
     type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to add to the other type
@@ -2006,23 +2005,23 @@ contains
     enddo
   end subroutine CT_increment_data_3d_3d
 
-  !! Increment data in the elements of a coupler_2d_bc_type with weighted averages of elements of a
+  !! @brief Increment data in the elements of a coupler_2d_bc_type with weighted averages of elements of a
   !! coupler_3d_bc_type
   !!
   !! Increments the data in the elements of a coupler_2d_bc_type with the weighed average of the
   !! elements of a coupler_3d_bc_type. Both must have the same horizontal array sizes and the
   !! normalized weight array must match the array sizes of the coupler_3d_bc_type.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "bc_index must be present if field_index is present."
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an k-direction computational domain size mismatch."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "weights array must be the i-size of a computational or data domain."
-  !! \throw FATAL, "weights array must be the j-size of a computational or data domain."
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "bc_index must be present if field_index is present."
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an k-direction computational domain size mismatch."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "weights array must be the i-size of a computational or data domain."
+  !! @throw FATAL, "weights array must be the j-size of a computational or data domain."
   subroutine CT_increment_data_2d_3d(var_in, weights, var, halo_size, bc_index, field_index,&
       & scale_factor, scale_prev, exclude_flux_type, only_flux_type, pass_through_ice)
     type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to add to the other type
@@ -2145,22 +2144,22 @@ contains
     enddo
   end subroutine CT_increment_data_2d_3d
 
-  !> Extract a 2d field from a coupler_2d_bc_type
+  !> @brief Extract a 2d field from a coupler_2d_bc_type
   !!
   !! Extract a single 2-d field from a coupler_2d_bc_type into a two-dimensional array.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
   subroutine CT_extract_data_2d(var_in, bc_index, field_index, array_out,&
       & scale_factor, halo_size, idim, jdim)
     type(coupler_2d_bc_type),   intent(in)    :: var_in    !< BC_type structure with the data to extract
@@ -2281,23 +2280,23 @@ contains
     enddo
   end subroutine CT_extract_data_2d
 
-  !! Extract a single k-level of a 3d field from a coupler_3d_bc_type
+  !! @brief Extract a single k-level of a 3d field from a coupler_3d_bc_type
   !!
   !! Extract a single k-level of a 3-d field from a coupler_3d_bc_type into a two-dimensional array.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The extracted k-index of 'k' is outside of the valid range of 'ks' to 'ke'"
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The extracted k-index of 'k' is outside of the valid range of 'ks' to 'ke'"
   subroutine CT_extract_data_3d_2d(var_in, bc_index, field_index, k_in, array_out,&
       & scale_factor, halo_size, idim, jdim)
     type(coupler_3d_bc_type),   intent(in)    :: var_in    !< BC_type structure with the data to extract
@@ -2424,23 +2423,23 @@ contains
     enddo
   end subroutine CT_extract_data_3d_2d
 
-  !> Extract single 3d field from a coupler_3d_bc_type
+  !> @brief Extract single 3d field from a coupler_3d_bc_type
   !!
   !! Extract a single 3-d field from a coupler_3d_bc_type into a three-dimensional array.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with k-dimension size 'n' does not match the data of size 'd'"
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with k-dimension size 'n' does not match the data of size 'd'"
   subroutine CT_extract_data_3d(var_in, bc_index, field_index, array_out,&
       & scale_factor, halo_size, idim, jdim)
     type(coupler_3d_bc_type),   intent(in)    :: var_in    !< BC_type structure with the data to extract
@@ -2571,22 +2570,22 @@ contains
     enddo
   end subroutine CT_extract_data_3d
 
-  !> Set single 2d field in coupler_3d_bc_type
+  !> @brief Set single 2d field in coupler_3d_bc_type
   !!
   !! Set a single 2-d field in a coupler_3d_bc_type from a two-dimensional array.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
   subroutine CT_set_data_2d(array_in, bc_index, field_index, var,&
       & scale_factor, halo_size, idim, jdim)
     real, dimension(1:,1:),     intent(in)   :: array_in   !< The source array for the field; its size
@@ -2703,24 +2702,24 @@ contains
     enddo
   end subroutine CT_set_data_2d
 
-  !> Set one k-level of a single 3d field in a coupler_3d_bc_type
+  !> @brief Set one k-level of a single 3d field in a coupler_3d_bc_type
   !!
   !! This subroutine sets a one k-level of a single 3-d field in a coupler_3d_bc_type from a
   !! two-dimensional array.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The k-index of 'k' is outside of the valid range of 'ks' to 'ke'"
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The k-index of 'k' is outside of the valid range of 'ks' to 'ke'"
   subroutine CT_set_data_2d_3d(array_in, bc_index, field_index, k_out, var,&
       & scale_factor, halo_size, idim, jdim)
     real, dimension(1:,1:),     intent(in)    :: array_in  !< The source array for the field; its size
@@ -2845,23 +2844,23 @@ contains
     enddo
   end subroutine CT_set_data_2d_3d
 
-  !> Set a single 3d field in a coupler_3d_bc_type
+  !> @brief Set a single 3d field in a coupler_3d_bc_type
   !!
   !! This subroutine sets a single 3-d field in a coupler_3d_bc_type from a three-dimensional array.
   !!
-  !! \throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! \throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! \throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! \throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! \throw FATAL, "Disordered i-dimension index bound list"
-  !! \throw FATAL, "Disordered j-dimension index bound list"
-  !! \throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! \throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! \throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! \throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
-  !! \throw FATAL, "The target array with K-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
+  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
+  !! @throw FATAL, "Disordered i-dimension index bound list"
+  !! @throw FATAL, "Disordered j-dimension index bound list"
+  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
+  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
+  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
+  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
+  !! @throw FATAL, "The target array with K-dimension size 'n' is too small to match the data of size 'd'"
   subroutine CT_set_data_3d(array_in, bc_index, field_index, var,&
       & scale_factor, halo_size, idim, jdim)
     real, dimension(1:,1:,1:),  intent(in)    :: array_in  !< The source array for the field; its size
@@ -2990,9 +2989,9 @@ contains
   end subroutine CT_set_data_3d
 
 
-  !! Register the diagnostics of a coupler_2d_bc_type
+  !! @brief Register the diagnostics of a coupler_2d_bc_type
   !!
-  !! \throw FATAL, "axes has less than 2 elements"
+  !! @throw FATAL, "axes has less than 2 elements"
   subroutine CT_set_diags_2d(var, diag_name, axes, time)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
     character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
@@ -3017,9 +3016,9 @@ contains
     enddo
   end subroutine CT_set_diags_2d
 
-  !> Register the diagnostics of a coupler_3d_bc_type.
+  !> @brief Register the diagnostics of a coupler_3d_bc_type.
   !!
-  !! \throw FATAL, "axes has less than 3 elements"
+  !! @throw FATAL, "axes has less than 3 elements"
   subroutine CT_set_diags_3d(var, diag_name, axes, time)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
     character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
@@ -3045,7 +3044,7 @@ contains
   end subroutine CT_set_diags_3d
 
 
-  !> Write out all diagnostics of elements of a coupler_2d_bc_type
+  !> @brief Write out all diagnostics of elements of a coupler_2d_bc_type
   subroutine CT_send_data_2d(var, Time)
     type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
     type(time_type),          intent(in) :: time !< The current model time
@@ -3062,7 +3061,7 @@ contains
     enddo
   end subroutine CT_send_data_2d
 
-  !> Write out all diagnostics of elements of a coupler_3d_bc_type
+  !> @brief Write out all diagnostics of elements of a coupler_3d_bc_type
   subroutine CT_send_data_3d(var, Time)
     type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
     type(time_type),          intent(in) :: time !< The current model time
@@ -3079,7 +3078,7 @@ contains
     enddo
   end subroutine CT_send_data_3d
 
-  !! Register the fields in a coupler_2d_bc_type to be saved in restart files
+  !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !!
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
@@ -3135,7 +3134,7 @@ contains
     enddo
   end subroutine CT_register_restarts_2d
 
-  !! Register the fields in a coupler_2d_bc_type to be saved to restart files
+  !! @brief Register the fields in a coupler_2d_bc_type to be saved to restart files
   !!
   !! This subroutine  registers the  fields in  a coupler_2d_bc_type  to be  saved in  the specified
   !! restart file.
@@ -3168,7 +3167,7 @@ contains
     enddo
   end subroutine CT_register_restarts_to_file_2d
 
-  !! Register the fields in a coupler_3d_bc_type to be saved to restart files
+  !! @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
   !!
   !! This subroutine registers the fields in a coupler_3d_bc_type to be saved in restart files
   !! specified in the field table.
@@ -3223,7 +3222,7 @@ contains
     enddo
   end subroutine CT_register_restarts_3d
 
-  !> Register the fields in a coupler_3d_bc_type to be saved to restart files
+  !> @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
   !!
   !! Registers the fields in a coupler_3d_bc_type to be saved in the specified restart file.
   subroutine CT_register_restarts_to_file_3d(var, file_name, rest_file, mpp_domain, varname_prefix)
@@ -3256,7 +3255,7 @@ contains
   end subroutine CT_register_restarts_to_file_3d
 
 
-  !> Reads in fields from restart files into a coupler_2d_bc_type
+  !> @brief Reads in fields from restart files into a coupler_2d_bc_type
   !!
   !! This subroutine reads in the fields in a coupler_2d_bc_type that have been saved in restart
   !! files.
@@ -3326,7 +3325,7 @@ contains
     endif
   end subroutine CT_restore_state_2d
 
-  !> Read in fields from restart files into a coupler_3d_bc_type
+  !> @brief Read in fields from restart files into a coupler_3d_bc_type
   !!
   !! This subroutine reads in the fields in a coupler_3d_bc_type that have been saved in restart
   !! files.
@@ -3398,7 +3397,7 @@ contains
   end subroutine CT_restore_state_3d
 
 
-  !> Potentially override the values in a coupler_2d_bc_type
+  !> @brief Potentially override the values in a coupler_2d_bc_type
   subroutine CT_data_override_2d(gridname, var, Time)
     character(len=3),         intent(in)    :: gridname !< 3-character long model grid ID
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to override
@@ -3413,7 +3412,7 @@ contains
     enddo
   end subroutine CT_data_override_2d
 
-  !> Potentially override the values in a coupler_3d_bc_type
+  !> @brief Potentially override the values in a coupler_3d_bc_type
   subroutine CT_data_override_3d(gridname, var, Time)
     character(len=3),         intent(in)    :: gridname !< 3-character long model grid ID
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to override
@@ -3429,7 +3428,7 @@ contains
   end subroutine CT_data_override_3d
 
 
-  !> Write out checksums for the elements of a coupler_2d_bc_type
+  !> @brief Write out checksums for the elements of a coupler_2d_bc_type
   subroutine CT_write_chksums_2d(var, outunit, name_lead)
     type(coupler_2d_bc_type),   intent(in) :: var  !< BC_type structure for which to register diagnostics
     integer,                    intent(in) :: outunit !< The index of a open output file
@@ -3451,7 +3450,7 @@ contains
     enddo
   end subroutine CT_write_chksums_2d
 
-  !> Write out checksums for the elements of a coupler_3d_bc_type
+  !> @brief Write out checksums for the elements of a coupler_3d_bc_type
   subroutine CT_write_chksums_3d(var, outunit, name_lead)
     type(coupler_3d_bc_type),   intent(in) :: var  !< BC_type structure for which to register diagnostics
     integer,                    intent(in) :: outunit !< The index of a open output file
@@ -3474,28 +3473,31 @@ contains
   end subroutine CT_write_chksums_3d
 
 
-  !> Indicate whether a coupler_1d_bc_type has been initialized.
+  !> @brief Indicate whether a coupler_1d_bc_type has been initialized.
+  !! @return Logical
   logical function CT_initialized_1d(var)
     type(coupler_1d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
 
     CT_initialized_1d = var%set
   end function CT_initialized_1d
 
-  !> Indicate whether a coupler_2d_bc_type has been initialized.
+  !> @brief Indicate whether a coupler_2d_bc_type has been initialized.
+  !! @return Logical
   logical function CT_initialized_2d(var)
     type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
 
     CT_initialized_2d = var%set
   end function CT_initialized_2d
 
-  !> Indicate whether a coupler_3d_bc_type has been initialized.
+  !> @brief Indicate whether a coupler_3d_bc_type has been initialized.
+  !! @return Logical
   logical function CT_initialized_3d(var)
     type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
 
     CT_initialized_3d = var%set
   end function CT_initialized_3d
 
-  !> Deallocate all data associated with a coupler_1d_bc_type
+  !> @brief Deallocate all data associated with a coupler_1d_bc_type
   subroutine CT_destructor_1d(var)
     type(coupler_1d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
 
@@ -3515,7 +3517,7 @@ contains
     var%set = .false.
   end subroutine CT_destructor_1d
 
-  !> Deallocate all data associated with a coupler_2d_bc_type
+  !> @brief Deallocate all data associated with a coupler_2d_bc_type
   subroutine CT_destructor_2d(var)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
 
@@ -3535,7 +3537,7 @@ contains
     var%set = .false.
   end subroutine CT_destructor_2d
 
-  !> Deallocate all data associated with a coupler_3d_bc_type
+  !> @brief Deallocate all data associated with a coupler_3d_bc_type
   subroutine CT_destructor_3d(var)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be deconstructed
 

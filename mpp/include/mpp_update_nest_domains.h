@@ -542,7 +542,7 @@ subroutine MPP_UPDATE_NEST_FINE_4D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
 
 end subroutine MPP_UPDATE_NEST_FINE_4D_V_
 
-#endif VECTOR_FIELD_
+#endif
 
 subroutine MPP_UPDATE_NEST_COARSE_2D_(field_in, nest_domain, field_out, nest_level, complete, position, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field_in(:,:)
@@ -948,4 +948,4 @@ subroutine MPP_UPDATE_NEST_COARSE_4D_V_(fieldx_in, fieldy_in, nest_domain, field
 end subroutine MPP_UPDATE_NEST_COARSE_4D_V_
 
 
-#endif VECTOR_FIELD_
+#endif

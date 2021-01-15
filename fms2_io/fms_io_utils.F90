@@ -18,8 +18,8 @@
 !***********************************************************************
 
 !> @file
-
-!> @brief Utility routines.
+!! @brief Utility routines.
+!! @email gfdl.climate.model.info@noaa.gov
 module fms_io_utils_mod
 use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
 #ifdef _OPENMP
@@ -393,7 +393,6 @@ end function has_io_domain_tile_string
 
 
 !> @brief Add the I/O domain tile id to an input filepath.
-!!
 subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
 
   character(len=*), intent(inout) :: dest !< Output filepath.
@@ -420,7 +419,6 @@ end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
-!!
 subroutine restart_filepath_mangle(dest, source)
 
   character(len=*), intent(inout) :: dest
