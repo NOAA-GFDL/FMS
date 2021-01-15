@@ -594,7 +594,8 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
       call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
     else
-      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d.  The data sent in has an unsupported dimensionality")
+      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d."//&
+                 " The data sent in has an unsupported dimensionality")
     endif
   enddo
 

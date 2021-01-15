@@ -193,7 +193,7 @@ program test_global_arrays
   sumR4_5d = mpp_global_sum(domain, dataR4_5d)
 
   ! check that shuffled array results are approximately the same as the original array
-  if(abs((sumR4-sumR4_5d)/sumR4) .gt. 1e-5) then
+  if(abs((sumR4-sumR4_5d)/sumR4) .gt. 1e-4) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumR4_5d
     write(strTmp2,*) sumR4
