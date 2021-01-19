@@ -242,6 +242,7 @@ module mpp_domains_mod
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
+  public :: mpp_shift_nest_domains
   public :: mpp_get_nest_coarse_domain, mpp_get_nest_fine_domain
   public :: mpp_is_nest_coarse, mpp_is_nest_fine
   public :: mpp_get_nest_pelist, mpp_get_nest_npes
@@ -458,6 +459,7 @@ module mpp_domains_mod
   type nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
+     integer,               pointer :: nest_level(:)    !  Ramstrom -- Added for moving nest functionality
      type(nest_level_type), pointer :: nest(:) => NULL()
      integer                        :: num_nest
      integer,               pointer :: tile_fine(:), tile_coarse(:)
