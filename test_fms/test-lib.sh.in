@@ -223,14 +223,20 @@ test_run_ () {
 
 match_pattern_list_ () {
   arg="$1"
+  numIndex=`expr index $arg '.'`
+  numLen=`expr length $arg`
+  numLen=`expr $numLen - $numIndex`
+  numIndex=`expr $numIndex + 1`
   shift
   test -z "$*" && return 1
   for pattern_
   do
-    case "$arg" in
-    $pattern_)
+    # changed to check for more than one digit test numbers
+    if [[ "$pattern_" == *[-\[]"`expr substr "$arg" $numIndex $numLen`"[-\]]* ]]; then
       return 0
-      esac
+    else
+      return 1
+    fi 
   done
   return 1
 }
@@ -284,5 +290,6 @@ test_expect_success () {
 
 test_done () {
   EXIT_OK=t
+  [ test -z "$SKIP_TESTS" ] || say "Skipped $SKIPPED_TESTS"
   say "1..$test_count"
 }
