@@ -30,4 +30,3 @@ jobs:
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.distcheck-conf-flags }}"
     - name: Build the library
       run: make -j distcheck
-
