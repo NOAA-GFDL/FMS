@@ -326,6 +326,7 @@ use platform_mod
 !Support for fms2_io time
      real :: rtime_current
      integer :: time_index
+     CHARACTER(len=10) :: filename_time_bounds
   END TYPE file_type
   ! </TYPE>
 
