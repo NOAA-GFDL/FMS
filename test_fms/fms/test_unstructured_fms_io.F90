@@ -833,7 +833,9 @@ contains
                                                        "compressed c", &
                                                        "C", &
                                                        compressed_c_axis_size, &
-                                                       unstructured_domain)
+                                                       unstructured_domain, &
+                                                       dimlen_name="C", &
+                                                       dimlen_lname="C compressed")
         allocate(compressed_c_axis_size_per_rank(io_domain_npes))
         compressed_c_axis_size_per_rank = 0
         do i = 1,io_domain_npes
@@ -867,7 +869,9 @@ contains
                                                        "compressed h", &
                                                        "H", &
                                                        compressed_h_axis_size, &
-                                                       unstructured_domain)
+                                                       unstructured_domain, &
+                                                       dimlen_name="H", &
+                                                       dimlen_lname="H compressed")
         allocate(compressed_h_axis_size_per_rank(io_domain_npes))
         compressed_h_axis_size_per_rank = 0
         do i = 1,io_domain_npes

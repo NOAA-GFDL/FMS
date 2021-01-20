@@ -17,65 +17,50 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief Provides observed SST and ice mask data sets that have been interpolated onto your model's grid.
+!! @author Bruce Wyman
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!! Three possible data sets are available:
+!!
+!!     1)  AMIP \link http://www-pcmdi.llnl.gov/amip \endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
+!!     2)  Reynolds OI \link amip_interp.rey_oi.txt \endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+!!     3)  Reynolds EOF \link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html \endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!!
+!!     All original data are observed monthly means. This module
+!!     interpolates linearly in time between pairs of monthly means.
+!!     Horizontal interpolation is done using the horiz_interp module.
+!!
+!!     When a requested date falls outside the range of dates available
+!!     a namelist option allows for use of the climatological monthly
+!!     mean values which are computed from all of the data in a particular
+!!     data set.
+!! Dataset Name = AMIP 1
+!!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).
+!! Dataset Name = Reynolds OI
+!!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+!!             The analysis uses in situ and satellite SST's plus
+!!             SST's simulated by sea-ice cover.
+!! Dataset Name = Reynold's EOF
+!!   from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!!             NCEP Reynolds Historical Reconstructed Sea Surface Temperature
+!!             The analysis uses both in-situ SSTs and satellite derived SSTs
+!!             from the NOAA Advanced Very High Resolution Radiometer.
+!!             In-situ data is used from 1950 to 1981, while both AVHRR derived
+!!             satellite SSTs and in-situ data are used from 1981 to the
+!!             end of 1998.
+!!
+!! Note: The data set used by this module have been reformatted as 32-bit IEEE.
+!!   The data values are packed into 16-bit integers.
+!!
+!!   The data sets are read from the following files:
+!!
+!!         amip1           INPUT/amip1_sst.data
+!!         reynolds_io     INPUT/reyoi_sst.data
+!!         reynolds_eof    INPUT/reynolds_sst.data
 
 module amip_interp_mod
-
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Provides observed SST and ice mask data sets that have been
-!   interpolated onto your model's grid.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-! Three possible data sets are available:
-!
-!     1)  <LINK SRC="http://www-pcmdi.llnl.gov/amip">AMIP 1</LINK>        from Jan 1979 to Jan 1989 (2 deg x 2 deg)<BR/>
-!     2)  <LINK SRC="amip_interp.rey_oi.txt">Reynolds OI</LINK>   from Nov 1981 to Jan 1999 (1 deg x 1 deg)<BR/>
-!     3)  <LINK SRC="ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html">Reynolds EOF</LINK>  from Jan 1950 to Dec 1998 (2 deg x 2 deg)<BR/><BR/>
-!
-!     All original data are observed monthly means. This module
-!     interpolates linearly in time between pairs of monthly means.
-!     Horizontal interpolation is done using the horiz_interp module.
-!
-!     When a requested date falls outside the range of dates available
-!     a namelist option allows for use of the climatological monthly
-!     mean values which are computed from all of the data in a particular
-!     data set.
-! </DESCRIPTION>
-
-! <DATASET NAME="AMIP 1">
-!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).
-! </DATASET>
-! <DATASET NAME="Reynolds OI">
-!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!             The analysis uses in situ and satellite SST's plus
-!             SST's simulated by sea-ice cover.
-! </DATASET>
-! <DATASET NAME="Reynolds EOF">
-!   from Jan 1950 to Dec 1998 (2 deg x 2 deg)
-!             NCEP Reynolds Historical Reconstructed Sea Surface Temperature
-!             The analysis uses both in-situ SSTs and satellite derived SSTs
-!             from the NOAA Advanced Very High Resolution Radiometer.
-!             In-situ data is used from 1950 to 1981, while both AVHRR derived
-!             satellite SSTs and in-situ data are used from 1981 to the
-!             end of 1998.
-!
-! Note: The data set used by this module have been reformatted as 32-bit IEEE.
-!   The data values are packed into 16-bit integers.
-!
-!   The data sets are read from the following files:
-!
-!         amip1           INPUT/amip1_sst.data
-!         reynolds_io     INPUT/reyoi_sst.data
-!         reynolds_eof    INPUT/reynolds_sst.data
-! </DATASET>
-!-----------------------------------------------------------------------
 
 use  time_interp_mod, only: time_interp, fraction_of_year
 
@@ -163,89 +148,78 @@ interface operator (>)
 end interface
 
 ! <INTERFACE NAME="amip_interp_new">
-!   <OVERVIEW>
-!     Function that initializes data needed for the horizontal
-!         interpolation between the sst grid and model grid. The
-!         returned variable of type amip_interp_type is needed when
-!         calling get_amip_sst and get_amip_ice.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Function that initializes data needed for the horizontal
-!         interpolation between the sst grid and model grid. The
-!         returned variable of type amip_interp_type is needed when
-!         calling get_amip_sst and get_amip_ice.
-!   </DESCRIPTION>
-!   <IN NAME="lon">
-!     Longitude in radians of the model's grid box edges (1d lat/lon grid case)
-!     or at grid box mid-point (2d case for arbitrary grids).
-!   </IN>
-!   <IN NAME="lat">
-!     Latitude in radians of the model's grid box edges (1d lat/lon grid case)
-!     or at grid box mid-point (2d case for arbitrary grids).
-!   </IN>
-!   <IN NAME="mask">
-!     A mask for the model grid.
-!   </IN>
-!   <IN NAME="use_climo">
-!     Flag the specifies that monthly mean climatological values will be used.
-!   </IN>
-!   <IN NAME="use_annual">
-!     Flag the specifies that the annual mean climatological
-!              will be used.  If both use_annual = use_climo = true,
-!              then use_annual = true will be used.
-!   </IN>
-!   <IN NAME="interp_method">
-!     specify the horiz_interp scheme. = "conservative" means conservative scheme,
-!     = "bilinear" means  bilinear interpolation.
-!   </IN>
-!   <OUT NAME="Interp">
-!     A defined data type variable needed when calling get_amip_sst and get_amip_ice.
-!   </OUT>
-!   <TEMPLATE>
-!     Interp = amip_interp_new ( lon, lat, mask, use_climo, use_annual, interp_method )
-!   </TEMPLATE>
-
-!   <NOTE>
-!     This function may be called to initialize multiple variables
-!     of type amip_interp_type.  However, there currently is no
-!     call to release the storage used by this variable.
-!   </NOTE>
-!   <NOTE>
-!     The size of input augment mask must be a function of the size
-!     of input augments lon and lat. The first and second dimensions
-!     of mask must equal (size(lon,1)-1, size(lat,2)-1).
-!   </NOTE>
-
-!   <ERROR MSG="the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL">
-!     Check the value of namelist variable DATA_SET.
-!   </ERROR>
-!   <ERROR MSG="requested input data set does not exist" STATUS="FATAL">
-!     The data set requested is valid but the data does not exist in
-!      the INPUT subdirectory. You may have requested amip2 data which
-!      has not been officially set up.
-!      See the section on DATA SETS to properly set the data up.
-!   </ERROR>
-!   <ERROR MSG="use_climo mismatch" STATUS="FATAL">
-!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
-!     argument use_climo = true.  This combination is not allowed.
-!   </ERROR>
-!   <ERROR MSG="use_annual(climo) mismatch" STATUS="FATAL">
-!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
-!     argument use_annual = true.  This combination is not allowed.
-!   </ERROR>
+!> @brief Function that initializes data needed for the horizontal
+!!         interpolation between the sst grid and model grid. The
+!!         returned variable of type amip_interp_type is needed when
+!!         calling get_amip_sst and get_amip_ice.
+!!
+!!      Function that initializes data needed for the horizontal
+!!         interpolation between the sst grid and model grid. The
+!!         returned variable of type amip_interp_type is needed when
+!!         calling get_amip_sst and get_amip_ice.
+!!
+!!   IN NAME="lon"
+!!     Longitude in radians of the model's grid box edges (1d lat/lon grid case)
+!!     or at grid box mid-point (2d case for arbitrary grids).
+!!
+!!   IN NAME="lat"
+!!     Latitude in radians of the model's grid box edges (1d lat/lon grid case)
+!!     or at grid box mid-point (2d case for arbitrary grids).
+!!
+!!   IN NAME="mask"
+!!     A mask for the model grid.
+!!
+!!   IN NAME="use_climo"
+!!     Flag the specifies that monthly mean climatological values will be used.
+!!
+!!   IN NAME="use_annual"
+!!     Flag the specifies that the annual mean climatological
+!!              will be used.  If both use_annual = use_climo = true,
+!!              then use_annual = true will be used.
+!!
+!!   IN NAME="interp_method"
+!!     specify the horiz_interp scheme. = "conservative" means conservative scheme,
+!!     = "bilinear" means  bilinear interpolation.
+!!
+!!   OUT NAME="Interp"
+!!     A defined data type variable needed when calling get_amip_sst and get_amip_ice.
+!!
+!!     Interp = amip_interp_new ( lon, lat, mask, use_climo, use_annual, interp_method )
+!!
+!!     This function may be called to initialize multiple variables
+!!     of type amip_interp_type.  However, there currently is no
+!!     call to release the storage used by this variable.
+!!
+!!     The size of input augment mask must be a function of the size
+!!     of input augments lon and lat. The first and second dimensions
+!!     of mask must equal (size(lon,1)-1, size(lat,2)-1).
+!!
+!!   ERROR MSG="the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL"
+!!     Check the value of namelist variable DATA_SET.
+!!
+!!   ERROR MSG="requested input data set does not exist" STATUS="FATAL"
+!!     The data set requested is valid but the data does not exist in
+!!      the INPUT subdirectory. You may have requested amip2 data which
+!!      has not been officially set up.
+!!      See the section on DATA SETS to properly set the data up.
+!!
+!!   ERROR MSG="use_climo mismatch" STATUS="FATAL"
+!!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
+!!     argument use_climo = true.  This combination is not allowed.
+!!
+!!   ERROR MSG="use_annual(climo) mismatch" STATUS="FATAL"
+!!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
+!!     argument use_annual = true.  This combination is not allowed.
 interface amip_interp_new
    module procedure amip_interp_new_1d
    module procedure amip_interp_new_2d
 end interface
-! </INTERFACE>
 
 
 !-----------------------------------------------------------------------
 !----- public data type ------
-! <DATA NAME="amip_interp_type"  TYPE="type (horiz_interp_type)"  >
-!   All variables in this data type are PRIVATE. It contains information
-!   needed by the interpolation module (exchange_mod) and buffers data.
-! </DATA>
+! DATA NAME="amip_interp_type"  TYPE="type (horiz_interp_type)"
+!> @brief All variables in this data type are PRIVATE. It contains information needed by the interpolation module (exchange_mod) and buffers data.
 type amip_interp_type
    private
    type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
@@ -344,50 +318,43 @@ end type
 !                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
 !                may be useful in accessing model sensitivities.
 !   </DATA>
- character(len=24) :: data_set = 'amip1'   !  use 'amip1'
-                                           !      'amip2'
-                                           !      'reynolds_eof'
-                                           !      'reynolds_oi'
-                                           !      'hurrell'
-                                           ! add by JHC:
-                                           !      'daily', when "use_daily=.T."
+ character(len=24) :: data_set = 'amip1'   !<  use 'amip1'
+                                           !!      'amip2'
+                                           !!      'reynolds_eof'
+                                           !!      'reynolds_oi'
+                                           !!      'hurrell'
+                                           !!      'daily', when "use_daily=.T."
+                                           ! add by JHC
 
- character(len=16) :: date_out_of_range = 'fail'  !  use 'fail'
-                                                  !      'initclimo'
-                                                  !      'climo'
+ character(len=16) :: date_out_of_range = 'fail'  !<  use 'fail'
+                                                  !!      'initclimo'
+                                                  !!      'climo'
 
- real    :: tice_crit    = -1.80       !  in degC or degK
- integer :: verbose      = 0           !  0 <= verbose <= 3
+ real    :: tice_crit    = -1.80       !<  in degC or degK
+ integer :: verbose      = 0           !<  0 <= verbose <= 3
 
-!parameters for prescribed zonal sst option
- logical :: use_zonal    = .false.
- real :: teq  = 305.
- real :: tdif = 50.
- real :: tann = 20.
- real :: tlag = 0.875
+ logical :: use_zonal    = .false. !< parameters for prescribed zonal sst option
+ real :: teq  = 305. !< parameters for prescribed zonal sst option
+ real :: tdif = 50. !< parameters for prescribed zonal sst option
+ real :: tann = 20. !< parameters for prescribed zonal sst option
+ real :: tlag = 0.875 !< parameters for prescribed zonal sst option
 
 
-!amip date for repeating single day (rsd) option
- integer :: amip_date(3)=(/-1,-1,-1/)
+ integer :: amip_date(3)=(/-1,-1,-1/) !< amip date for repeating single day (rsd) option
 
-!global temperature perturbation used for sensitivity experiments
- real :: sst_pert = 0.
+ real :: sst_pert = 0. !< global temperature perturbation used for sensitivity experiments
 
-! add by JHC
- character(len=6) :: sst_pert_type = 'fixed'  ! use 'random' or 'fixed'
+ character(len=6) :: sst_pert_type = 'fixed'  !< use 'random' or 'fixed'
  logical :: do_sst_pert = .false.
- logical :: use_daily = .false. ! if '.true.', give 'data_set = 'daily''
-! end add by JHC
+ logical :: use_daily = .false. !< if '.true.', give 'data_set = 'daily''
 
-! SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
-!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
-! For seasonal forecast: use_ncep_ice = .F.
-
- logical :: use_ncep_sst = .false.
- logical ::  no_anom_sst = .true.
- logical :: use_ncep_ice = .false.
- logical :: interp_oi_sst = .false.       ! changed to false for regular runs
- logical :: use_mpp_io = .false. ! Set to .true. to use mpp_io, otherwise fms2io is used
+ logical :: use_ncep_sst = .false. !< SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
+                                   !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
+ logical ::  no_anom_sst = .true.  !< SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
+                                   !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
+ logical :: use_ncep_ice = .false. !< For seasonal forecast: use_ncep_ice = .F.
+ logical :: interp_oi_sst = .false. !< changed to false for regular runs
+ logical :: use_mpp_io = .false. !< Set to .true. to use mpp_io, otherwise fms2io is used
 
  namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
                             interp_oi_sst, data_set, date_out_of_range,          &
@@ -858,6 +825,7 @@ endif
 !   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative"></IN>
 !   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
 
+ !> @return amip_interp_type Interp
  function amip_interp_new_1d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
@@ -908,6 +876,7 @@ endif
 !   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative "></IN>
 !   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
 
+ !> @return amip_interp_type Interp
  function amip_interp_new_2d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
@@ -1096,23 +1065,9 @@ endif
 
 !#######################################################################
 
-! <SUBROUTINE NAME="amip_interp_del">
-
-!   <OVERVIEW>
-!     Call this routine for all amip_interp_type variables created by amip_interp_new.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Call this routine for all amip_interp_type variables created by amip_interp_new.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call amip_interp_del (Interp)
-!   </TEMPLATE>
-!   <INOUT NAME="Interp" TYPE="amip_interp_type">
-!     A defined data type variable initialized by amip_interp_new
-!            and used when calling get_amip_sst and get_amip_ice.
-!   </INOUT>
-
+!> @brief Call this routine for all amip_interp_type variables created by amip_interp_new.
    subroutine amip_interp_del (Interp)
+   !> @brief A defined data type variable initialized by amip_interp_new and used when calling get_amip_sst and get_amip_ice.
    type (amip_interp_type), intent(inout) :: Interp
 
      if(associated(Interp%data1)) deallocate(Interp%data1)
@@ -1222,7 +1177,7 @@ endif
    integer, intent(in):: nx, ny
    integer, intent(in):: n1, n2
    real, intent(in) :: dat1(nx,ny)
-   real, intent(out):: dat2(n1,n2)      ! output interpolated data
+   real, intent(out):: dat2(n1,n2)      !< output interpolated data
 
 ! local:
   real:: lon1(nx), lat1(ny)
@@ -1240,9 +1195,8 @@ endif
 !                     lat: -89.5, -88.5, ... , 88.5, 89.5
 !-----------------------------------------------------------
 
-! INput Grid
-  dx1 = 360./real(nx)
-  dy1 = 180./real(ny)
+  dx1 = 360./real(nx) !< INput Grid
+  dy1 = 180./real(ny) !< INput Grid
 
   do i=1,nx
      lon1(i) = 0.5*dx1 + real(i-1)*dx1
@@ -1251,9 +1205,8 @@ endif
      lat1(j) = -90. + 0.5*dy1 + real(j-1)*dy1
   enddo
 
-! OutPut Grid:
-  dx2 = 360./real(n1)
-  dy2 = 180./real(n2)
+  dx2 = 360./real(n1) !< OutPut Grid:
+  dy2 = 180./real(n2) !< OutPut Grid:
 
   do i=1,n1
      lon2(i) = 0.5*dx2 + real(i-1)*dx2
@@ -1329,32 +1282,17 @@ endif
 
 ! <SUBROUTINE NAME="get_sst_grid_size">
 
-!   <OVERVIEW>
-!     Returns the size (i.e., number of longitude and latitude
-!         points) of the observed data grid.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns the size (i.e., number of longitude and latitude
-!         points) of the observed data grid.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_sst_grid_size (nlon, nlat)
-!   </TEMPLATE>
-!   <OUT NAME="nlon" TYPE="integer">
-!     The number of longitude points (first dimension) in the
-!        observed data grid.  For AMIP 1 nlon = 180, and the Reynolds nlon = 360.
-!   </OUT>
-!   <OUT NAME="nlat" TYPE="integer">
-!     The number of latitude points (second dimension) in the
-!        observed data grid.  For AMIP 1 nlon = 91, and the Reynolds nlon = 180.
-!   </OUT>
-!   <ERROR MSG="have not called amip_interp_new" STATUS="FATAL">
-!     Must call amip_interp_new before get_sst_grid_size.
-!   </ERROR>
-
+!>   @brief Returns the size (i.e., number of longitude and latitude
+!!         points) of the observed data grid.
+!!
+!!   ERROR MSG="have not called amip_interp_new" STATUS="FATAL"
+!!     Must call amip_interp_new before get_sst_grid_size.
    subroutine get_sst_grid_size (nlon, nlat)
 
-   integer, intent(out) :: nlon, nlat
+   integer, intent(out) :: nlon !< The number of longitude points (first dimension) in the
+                                !! observed data grid.  For AMIP 1 nlon = 180, and the Reynolds nlon = 360.
+   integer, intent(out) :: nlat !< The number of latitude points (second dimension) in the
+                                !! observed data grid.  For AMIP 1 nlon = 91, and the Reynolds nlon = 180.
 
       if ( .not.module_is_initialized ) call amip_interp_init
 
@@ -1367,35 +1305,22 @@ endif
 
 ! <SUBROUTINE NAME="get_sst_grid_boundary">
 
-!   <OVERVIEW>
-!     Returns the grid box boundaries of the observed data grid.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns the grid box boundaries of the observed data grid.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_sst_grid_boundary (blon, blat, mask)
-!   </TEMPLATE>
-!   <OUT NAME="blon" TYPE="real" DIM="(:)">
-!     The grid box edges (in radians) for longitude points of the
-!        observed data grid. The size of this argument must be nlon+1.
-!   </OUT>
-!   <OUT NAME="blat" TYPE="real" DIM="(:)">
-!     The grid box edges (in radians) for latitude points of the
-!        observed data grid. The size of this argument must be nlat+1.
-!   </OUT>
-!   <ERROR MSG="have not called amip_interp_new" STATUS="FATAL">
-!     Must call amip_interp_new before get_sst_grid_boundary.
-!   </ERROR>
-!   <ERROR MSG="invalid argument dimensions" STATUS="FATAL">
-!     The size of the output argument arrays do not agree with
-!      the size of the observed data. See the documentation for
-!      interfaces get_sst_grid_size and get_sst_grid_boundary.
-!   </ERROR>
 
+!> @brief Returns the grid box boundaries of the observed data grid.
+!!
+!! ERROR MSG="have not called amip_interp_new" STATUS="FATAL"
+!!     Must call amip_interp_new before get_sst_grid_boundary.
+!!
+!! ERROR MSG="invalid argument dimensions" STATUS="FATAL"
+!!     The size of the output argument arrays do not agree with
+!!     the size of the observed data. See the documentation for
+!!     interfaces get_sst_grid_size and get_sst_grid_boundary.
    subroutine get_sst_grid_boundary (blon, blat, mask)
 
-   real,    intent(out) :: blon(:), blat(:)
+   real,    intent(out) :: blon(:) !< The grid box edges (in radians) for longitude points of the
+                                   !! observed data grid. The size of this argument must be nlon+1.
+   real,    intent(out) :: blat(:) !< The grid box edges (in radians) for latitude points of the
+                                   !! observed data grid. The size of this argument must be nlat+1.
    logical, intent(out) :: mask(:,:)
 
       if ( .not.module_is_initialized ) call amip_interp_init
@@ -1579,6 +1504,7 @@ endif
 
 !#######################################################################
 
+!> @return logical answer
 function date_equals (Left, Right) result (answer)
 type (date_type), intent(in) :: Left, Right
 logical :: answer
@@ -1595,6 +1521,7 @@ end function date_equals
 
 !#######################################################################
 
+!> @return logical answer
 function date_not_equals (Left, Right) result (answer)
 type (date_type), intent(in) :: Left, Right
 logical :: answer
@@ -1611,6 +1538,7 @@ end function date_not_equals
 
 !#######################################################################
 
+!> #return logical answer
 function date_gt (Left, Right) result (answer)
 type (date_type), intent(in) :: Left, Right
 logical :: answer

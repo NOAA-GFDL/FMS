@@ -672,7 +672,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
 
 end subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_
 
-#endif   !VECTOR_FIELD_
+#endif
 
 
 !###############################################################################
@@ -1156,4 +1156,4 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
 
 end subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_
 
-#endif   !VECTOR_FIELD_
+#endif

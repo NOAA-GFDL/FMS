@@ -1333,7 +1333,7 @@ subroutine print_nest_overlap(overlap, msg)
      write(1000+mpp_pe(),*) trim(msg), ",index=", overlap%is(i), overlap%ie(i),overlap%js(i),overlap%je(i)
      write(1000+mpp_pe(),*) trim(msg), ",rotation=", overlap%dir(i), overlap%rotation(i), overlap%msgsize(i)
   enddo
-  call flush(1000+mpp_pe())
+  flush(1000+mpp_pe())
 
 end subroutine print_nest_overlap
 
