@@ -160,27 +160,9 @@
               write( unit,* )field%id, subdomain, time_level, time, data
           else                      !MPP_IEEE32 or MPP_NATIVE
               if( mpp_file(unit)%access.EQ.MPP_SEQUENTIAL )then
-#ifdef __sgi
-                  if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
-                      data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
-                      write(unit)field%id, subdomain, time_level, time, data_r4
-                  else
-                      write(unit)field%id, subdomain, time_level, time, data
-                  end if
-#else
                   write(unit)field%id, subdomain, time_level, time, data
-#endif
               else                  !MPP_DIRECT
-#ifdef __sgi
-                  if( mpp_file(unit)%format.EQ.MPP_IEEE32 )then
-                      data_r4 = data !IEEE conversion layer on SGI until assign -N ieee_32 is supported
-                      write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data_r4
-                  else
-                      write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
-                  end if
-#else
                   write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
-#endif
                   if( debug )print '(a,i6,a,i6)', 'MPP_WRITE: PE=', pe, ' wrote record ', mpp_file(unit)%record
               end if
           end if
