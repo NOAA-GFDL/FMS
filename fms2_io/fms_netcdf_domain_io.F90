@@ -351,8 +351,11 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
 
   !Get the path of a "combined" file.
   io_layout = mpp_get_io_domain_layout(domain)
-  if (mpp_get_ntile_count(domain) .gt. 1) then
-    tile_id = mpp_get_tile_id(domain)
+  tile_id = mpp_get_tile_id(domain)
+
+  !< If the number of tiles is greater than 1 or if the current tile is greater
+  !than 1 add .tileX. to the filename
+  if (mpp_get_ntile_count(domain) .gt. 1 .or. tile_id(1) > 1) then
     call domain_tile_filepath_mangle(combined_filepath, path, tile_id(1))
   else
     call string_copy(combined_filepath, path)

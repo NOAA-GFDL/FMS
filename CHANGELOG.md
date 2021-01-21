@@ -21,6 +21,7 @@ A unit test was added to test the functionality of `get_grid_version_1`
 ### Changed
 - The autotools build has been changed to copy each subdirectory module (.mod) files to a common .mod directory located at the top of the source directory.  This change simplifies the include path specifications.
 - Use F90 module files for external libraries (MPI and NetCDF) for improved interface checking, thereby removing the reliance on library header include files.
+- FMS2_IO: Changed how nest file names are created to be consistent with mpp_io
 ### Removed
 - LIBFMS: The flag -Duse_mpp_io should not be used and will cause a crash
 - LIBFMS: Macros and logic for interfacing to the Flexible File I/O library
@@ -28,11 +29,14 @@ A unit test was added to test the functionality of `get_grid_version_1`
 - LIBFMS: Macros for IBM AIX compilers
 - LIBFMS: Files in mpp supporting the CRAY SHMEM communications library
 - LIBFMS: Files in mpp for the SGI PSET approach for communication via GSM
+- MPP_IO: removed left over #ifdefs from backwards compatibility changes
 ### Fixed
 - DATA_OVERRIDE: Fixed a bug in `get_grid_version_1` where the variable_size calls were not correct
 - FMS2_IO: Fixed a bug in `get_valid` where the mpp_broadcast calls were done inside `if (root_pe)` blocks
 The fms2_io unit tests were modified so they can work with the AOCC compiler
 - XGRID: Fixed a bug in `load_xgrid` by checking if a dimension exists before calling `get_dimension_size` to avoid `FATAL: NetCDF: Invalid dimension ID or name` crashes
+- DIAG_MANAGER: Fixed a bug where files were getting written with redundant time_bounds data
+- Fixed a bug causing the cmake build to fail on latest versions of Ubuntu
 ### Tag Commit Hashes
 - 2020.04-alpha1 (2428bb182133b8062432ee1b15974739753ca470)
 - 2020.04-alpha2 (ad9915d83a2f34610cd748fd85889ba1f0f1fc02)

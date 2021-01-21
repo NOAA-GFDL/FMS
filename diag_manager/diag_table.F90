@@ -478,6 +478,7 @@ MODULE diag_table_mod
      CHARACTER(len=10) :: new_file_freq_units
      CHARACTER(len=25) :: start_time_s
      CHARACTER(len=10) :: file_duration_units
+     CHARACTER(len=10) :: filename_time_bounds
      TYPE(time_type) :: start_time
   END TYPE file_description_type
 
@@ -627,7 +628,7 @@ CONTAINS
                 ELSE IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1' is for the tile_count
                    CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
                         & temp_file%iTime_units, temp_file%long_name, 1, temp_file%new_file_freq, temp_file%iNew_file_freq_units,&
-                        & temp_file%start_time, temp_file%file_duration, temp_file%iFile_duration_units)
+                        & temp_file%start_time, temp_file%file_duration, temp_file%iFile_duration_units, temp_file%filename_time_bounds)
                 ELSE
                    CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
                         & temp_file%iTime_units, temp_file%long_name, 1)
@@ -744,12 +745,13 @@ CONTAINS
     parse_file_line%start_time_s = ''
     parse_file_line%file_duration = 0
     parse_file_line%file_duration_units = ''
+    parse_file_line%filename_time_bounds = ''
 
     ! Read in the file description line..
     READ (line, FMT=*, IOSTAT=mystat) parse_file_line%file_name, parse_file_line%output_freq, parse_file_line%output_freq_units,&
          & parse_file_line%file_format, parse_file_line%time_units, parse_file_line%long_name,&
          & parse_file_line%new_file_freq, parse_file_line%new_file_freq_units, parse_file_line%start_time_s,&
-         & parse_file_line%file_duration, parse_file_line%file_duration_units
+         & parse_file_line%file_duration, parse_file_line%file_duration_units, parse_file_line%filename_time_bounds
     IF ( mystat > 0 ) THEN
        pstat = mystat
        IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Incorrect file description format in diag_table.', err_msg) )&
@@ -860,6 +862,19 @@ CONTAINS
           parse_file_line%iFile_duration_units = parse_file_line%iNew_file_freq_units
        END IF
     END IF new_file_freq_present
+
+    !< If filename_time_bounds is empty using defaults
+    IF (trim(parse_file_line%filename_time_bounds) == "") THEN
+        parse_file_line%filename_time_bounds = "middle"
+    ELSE
+        !< Check if the filename_time_bounds is one of the accepted values
+        IF (trim(parse_file_line%filename_time_bounds) /= "begin" .or. &
+          & trim(parse_file_line%filename_time_bounds) /= "middle" .or. &
+          & trim(parse_file_line%filename_time_bounds) /= "end") THEN
+              IF ( fms_error_handler('diag_table_mod::parse_file_line',&
+                  & 'filename_time_bounds must be "begin", "middle", "end".', err_msg) ) RETURN
+        ENDIF
+     ENDIF
 
   END FUNCTION parse_file_line
 
