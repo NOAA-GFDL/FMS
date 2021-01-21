@@ -731,24 +731,36 @@ private
      module procedure mpp_alltoall_int8
      module procedure mpp_alltoall_real4
      module procedure mpp_alltoall_real8
+#ifdef OVERLOAD_C4
      module procedure mpp_alltoall_cmplx4
+#endif
+#ifdef OVERLOAD_C8
      module procedure mpp_alltoall_cmplx8
+#endif
      module procedure mpp_alltoall_logical4
      module procedure mpp_alltoall_logical8
      module procedure mpp_alltoall_int4_v
      module procedure mpp_alltoall_int8_v
      module procedure mpp_alltoall_real4_v
      module procedure mpp_alltoall_real8_v
+#ifdef OVERLOAD_C4
      module procedure mpp_alltoall_cmplx4_v
+#endif
+#ifdef OVERLOAD_C8
      module procedure mpp_alltoall_cmplx8_v
+#endif
      module procedure mpp_alltoall_logical4_v
      module procedure mpp_alltoall_logical8_v
      module procedure mpp_alltoall_int4_w
      module procedure mpp_alltoall_int8_w
      module procedure mpp_alltoall_real4_w
      module procedure mpp_alltoall_real8_w
+#ifdef OVERLOAD_C4
      module procedure mpp_alltoall_cmplx4_w
+#endif
+#ifdef OVERLOAD_C8
      module procedure mpp_alltoall_cmplx8_w
+#endif
      module procedure mpp_alltoall_logical4_w
      module procedure mpp_alltoall_logical8_w
   end interface
