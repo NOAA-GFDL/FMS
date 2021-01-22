@@ -20,7 +20,6 @@
 !> @file
 !! @email gfdl.climate.model.info@noaa.gov
 module drifters_input_mod
-  use :: platform_mod
   implicit none
   private
 
