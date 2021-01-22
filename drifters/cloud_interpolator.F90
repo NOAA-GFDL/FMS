@@ -25,7 +25,6 @@
 !! @author
 !! @email gfdl.climate.model.info@noaa.gov
 MODULE cloud_interpolator_mod
-  use platform_mod
   implicit none
   private
 
