@@ -20,10 +20,7 @@
 # @uramirez, Ed Hartnett, @underwoo
 
 # Find the needed mod and inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include \
-  -I${top_builddir}/mpp \
-  -I${top_builddir}/affinity \
-  -I${top_builddir}/platform
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
@@ -65,7 +62,7 @@ check_PROGRAMS = test_mpp \
 	test_mpp_alltoall \
 	test_mpp_global_field \
 	test_mpp_global_field_ug \
-  test_mpp_global_sum_ad
+	test_mpp_global_sum_ad
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -120,21 +117,21 @@ test_mpp_global_sum_ad_SOURCES=test_mpp_global_sum_ad.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
-  test_redistribute_int.sh \
-  test_global_arrays.sh  \
-  test_mpp2.sh \
-  test_mpp_memuse \
-  test_mpp_mem_dump \
-  test_mpp_memutils_mod.sh \
-  test_read_ascii_file.sh \
-  test_read_input_nml2.sh \
-  test_stdout.sh \
-  test_stderr.sh \
-  test_mpp_get_ascii_lines2.sh \
-  test_system_clock.sh \
-  test_mpp_broadcast.sh \
-  test_clock_init.sh \
-  test_mpp_npes.sh \
+	test_redistribute_int.sh \
+	test_global_arrays.sh  \
+	test_mpp2.sh \
+	test_mpp_memuse \
+	test_mpp_mem_dump \
+	test_mpp_memutils_mod.sh \
+	test_read_ascii_file.sh \
+	test_read_input_nml2.sh \
+	test_stdout.sh \
+	test_stderr.sh \
+	test_mpp_get_ascii_lines2.sh \
+	test_system_clock.sh \
+	test_mpp_broadcast.sh \
+	test_clock_init.sh \
+	test_mpp_npes.sh \
 	test_mpp_pe.sh \
 	test_mpp_root_pe.sh \
 	test_peset.sh \
@@ -149,7 +146,7 @@ TESTS = test_mpp_domains2.sh \
 	test_mpp_transmit.sh \
 	test_mpp_alltoall.sh \
 	test_mpp_global_field.sh \
-  test_mpp_global_field_ug.sh \
+	test_mpp_global_field_ug.sh \
 	test_mpp_global_sum_ad.sh
 
 # These files will also be included in the distribution.
@@ -187,7 +184,7 @@ EXTRA_DIST = input_base.nml \
 	test_mpp_transmit.sh \
 	test_mpp_alltoall.sh \
 	test_mpp_global_field.sh \
-  test_mpp_global_field_ug.sh \
+	test_mpp_global_field_ug.sh \
 	test_mpp_global_sum_ad.sh
 
 # Each mod file depends on the .lo (library object) file.

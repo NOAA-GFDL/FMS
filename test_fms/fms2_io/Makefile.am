@@ -23,8 +23,7 @@
 # J.Liptak, R.Menzel, U.Ramirez
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/.mod \
-  -I${top_builddir}/platform
+AM_CPPFLAGS = -I${top_builddir}/.mod
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
@@ -57,7 +56,7 @@ test_fms2_io.lo: argparse.mod
 
 # Mod files are built and then installed as headers.
 MODFILES = argparse.mod \
-	setup.mod
+           setup.mod
 
 BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)

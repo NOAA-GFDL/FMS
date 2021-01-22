@@ -23,15 +23,15 @@
 # uramirez, Ed Hartnett, Ryan Mulhall
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp -I${top_builddir}/platform
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_mpp_io \
-  test_io_R4_R8              \
-  test_io_mosaic_R4_R8
+	test_io_R4_R8              \
+	test_io_mosaic_R4_R8
 
 # This is the source code for the test.
 test_mpp_io_SOURCES = test_mpp_io.F90
@@ -40,8 +40,8 @@ test_io_mosaic_R4_R8_SOURCES = test_io_mosaic_R4_R8.F90
 
 # Run the test program.
 TESTS = test_mpp_io2.sh \
-  test_io_R4_R8.sh      \
-  test_io_mosaic_R4_R8.sh
+	test_io_R4_R8.sh      \
+	test_io_mosaic_R4_R8.sh
 
 # These files will also be distributed.
 EXTRA_DIST = test_mpp_io2.sh test_io_R4_R8.sh test_io_mosaic_R4_R8.sh input_base.nml
