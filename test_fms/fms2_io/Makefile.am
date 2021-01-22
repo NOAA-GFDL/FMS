@@ -30,16 +30,16 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
-								 test_get_mosaic_tile_grid
+                 test_get_mosaic_tile_grid
 
 # This is the source code for the test.
 test_get_is_valid_SOURCES = test_get_is_valid.F90
 test_fms2_io_SOURCES = argparse.F90 test_fms2_io.F90 create_atmosphere_domain.inc \
-											 create_land_domain.inc create_ocean_domain.inc \
-											 ocean_restart_file_test.inc land_compressed_restart_file_test.inc \
-											 land_unstructured_restart_file_test.inc
+                       create_land_domain.inc create_ocean_domain.inc \
+		       ocean_restart_file_test.inc land_compressed_restart_file_test.inc \ 
+                       land_unstructured_restart_file_test.inc
 test_atmosphere_io_SOURCES = argparse.F90 setup.F90 test_atmosphere_io.F90 \
-														 atmosphere_restart_file_test.inc
+			     atmosphere_restart_file_test.inc
 test_io_simple_SOURCES = test_io_simple.F90 argparse.F90 setup.F90
 test_global_att_SOURCES = test_global_att.F90
 test_io_with_mask_SOURCES=test_io_with_mask.F90
@@ -74,6 +74,6 @@ endif
 
 # Set srcdir as evironment variable to be reference in the job script
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
-										netcdf_version_skip=${skipflag}
+		    netcdf_version_skip=${skipflag}
 
 CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask
