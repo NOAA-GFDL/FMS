@@ -27,6 +27,7 @@
 # Set common test settings.
 . ../test_common.sh
 # Run the test for one processor
+touch input.nml
 echo "Running test_mpp_update_domains with 1 pe"
 run_test test_mpp_update_domains 1
 # If on a Linux system that uses the command `nproc`, run the test
