@@ -152,7 +152,6 @@ module drifters_mod
                                 drifters_comm_set_domain, drifters_comm_gather, drifters_comm_update
 
   use cloud_interpolator_mod, only: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, cld_ntrp_get_cell_values
-  use platform_mod
   implicit none
   private
 
