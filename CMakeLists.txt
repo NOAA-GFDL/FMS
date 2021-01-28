@@ -312,7 +312,7 @@ export(EXPORT FMSExports
   FILE fms-targets.cmake)
 
 configure_package_config_file(
-  ${CMAKE_SOURCE_DIR}/cmake/FMSConfig.cmake.in ${CMAKE_BINARY_DIR}/fms-config.cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FMSConfig.cmake.in ${CMAKE_BINARY_DIR}/fms-config.cmake
   INSTALL_DESTINATION ${CONFIG_INSTALL_DESTINATION})
 install(FILES ${CMAKE_BINARY_DIR}/fms-config.cmake
   DESTINATION ${CONFIG_INSTALL_DESTINATION})
