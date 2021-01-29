@@ -36,7 +36,8 @@ A unit test was added to test the functionality of `get_grid_version_1`
 The fms2_io unit tests were modified so they can work with the AOCC compiler
 - XGRID: Fixed a bug in `load_xgrid` by checking if a dimension exists before calling `get_dimension_size` to avoid `FATAL: NetCDF: Invalid dimension ID or name` crashes
 - DIAG_MANAGER: Fixed a bug where files were getting written with redundant time_bounds data
-- Fixed a bug causing the cmake build to fail on latest versions of Ubuntu
+- CMAKE: Fixed a bug causing the build to fail on latest versions of Ubuntu
+- CMAKE: Fixed a bug that caused the build to fail from incorrect source paths
 ### Tag Commit Hashes
 - 2020.04-alpha1 (2428bb182133b8062432ee1b15974739753ca470)
 - 2020.04-alpha2 (ad9915d83a2f34610cd748fd85889ba1f0f1fc02)
