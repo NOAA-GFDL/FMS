@@ -855,7 +855,7 @@ end function rarray_to_char
   !#####################################################################
   subroutine mpp_clock_end(id)
     integer, intent(in) :: id
-    integer(LONG_KIND)  :: delta
+    integer(i8_kind)  :: delta
     integer             :: errunit
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_END: You must first call mpp_init.' )
@@ -907,7 +907,7 @@ end function rarray_to_char
     integer,           intent(in) :: event_id
     integer, intent(in), optional :: bytes
     integer                       :: n
-    integer(LONG_KIND)            :: delta
+    integer(i8_kind)            :: delta
     integer                       :: errunit
 
     if( .not. mpp_record_timing_data )return

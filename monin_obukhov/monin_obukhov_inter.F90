@@ -19,7 +19,6 @@
 
 
 module monin_obukhov_inter
-#include <fms_platform.h>
 implicit none
 private
 
@@ -38,7 +37,7 @@ public :: monin_obukhov_stable_mix
 contains
 
 
-_PURE subroutine monin_obukhov_diff(vonkarm,                &
+pure subroutine monin_obukhov_diff(vonkarm,                &
      & ustar_min,                                     &
      & neutral, stable_option,new_mo_option,rich_crit, zeta_trans, &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
@@ -86,7 +85,7 @@ _PURE subroutine monin_obukhov_diff(vonkarm,                &
 end subroutine monin_obukhov_diff
 
 
-_PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
+pure subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
      & error, zeta_min, max_iter, small,                         &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans,&
      & drag_min_heat, drag_min_moist, drag_min_mom,              &
@@ -197,7 +196,7 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
 end subroutine monin_obukhov_drag_1d
 
 
-_PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
+pure subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
      & stable_option, new_mo_option, rich_crit, zeta_trans,        & !miz
      & n, rich, z, z0, zt, zq, f_m, f_t, f_q, mask, ier)
 
@@ -314,7 +313,7 @@ end subroutine monin_obukhov_solve_zeta
 
 ! the differential similarity function for buoyancy and tracers
 ! Note: seems to be the same as monin_obukhov_derivative_m?
-_PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
+pure subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
      & n, phi_t, zeta, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -370,7 +369,7 @@ end subroutine monin_obukhov_derivative_t
 
 
 ! the differential similarity function for momentum
-_PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
+pure subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
      & n, phi_m, zeta, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -418,7 +417,7 @@ _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans
 end subroutine monin_obukhov_derivative_m
 
 
-_PURE subroutine monin_obukhov_profile_1d(vonkarm, &
+pure subroutine monin_obukhov_profile_1d(vonkarm, &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
      & del_m, del_t, del_q, lavail, avail, ier)
@@ -502,7 +501,7 @@ end subroutine monin_obukhov_profile_1d
 
 
 !  the integral similarity function for momentum
-_PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
+pure subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
      & n, psi_m, zeta, zeta_0, ln_z_z0, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -578,7 +577,7 @@ end subroutine monin_obukhov_integral_m
 
 
 ! the integral similarity function for moisture and tracers
-_PURE subroutine monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
+pure subroutine monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, psi_t, psi_q, zeta, zeta_t, zeta_q, &
      & ln_z_zt, ln_z_zq, mask, ier)
 
@@ -676,7 +675,7 @@ end if
 end subroutine monin_obukhov_integral_tq
 
 
-_PURE subroutine monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
+pure subroutine monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
      &                              n, rich, mix, ier)
 
   integer, intent(in   )                 :: stable_option

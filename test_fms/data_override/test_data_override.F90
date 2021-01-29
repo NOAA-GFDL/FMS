@@ -87,8 +87,7 @@ program test
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-
-#include "../../include/fms_platform.h"
+  use platform_mod
 
  implicit none
 
@@ -664,7 +663,7 @@ contains
   subroutine compare_checksums( a, b, string )
     real, intent(in), dimension(:,:,:) :: a, b
     character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
+    integer(i8_kind) :: sum1, sum2
     integer :: i, j, k,pe
 
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.
@@ -709,7 +708,7 @@ contains
   subroutine compare_checksums_2D( a, b, string )
     real, intent(in), dimension(:,:) :: a, b
     character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
+    integer(i8_kind) :: sum1, sum2
     integer :: i, j,pe
 
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.

@@ -1,0 +1,5 @@
+"this is an ascii file with 5 lines"
+"it will contain commas inside quotes", "as well as outside quotes"
+"it will not have the same number of fields on every line"
+some lines will not have quotes
+"there might be a line with the character string \n"

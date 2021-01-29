@@ -63,7 +63,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
   integer, save              :: pos, whalosz, ehalosz, shalosz, nhalosz, update_flags_saved
   character(len=128)         :: text, field_name
   integer, save              :: ke_list(MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(LONG_KIND), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  integer(i8_kind), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
   type(overlapSpec), pointer :: update => NULL()
   MPP_TYPE_                  :: d_type
 
@@ -329,7 +329,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
   integer                    :: ke_max
   integer, save              :: list=0, l_size=0
   integer, save              :: ke_list(MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(LONG_KIND), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  integer(i8_kind), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
   character(len=128)         :: text
   MPP_TYPE_        :: d_type
 
@@ -538,8 +538,8 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
   integer,            save    :: whalosz, ehalosz, shalosz, nhalosz
   integer,            save    :: isize(2)=0,jsize(2)=0,l_size=0, offset_type=0, list=0
   integer,            save    :: ke_list (MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(LONG_KIND), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  integer(LONG_KIND), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  integer(i8_kind), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  integer(i8_kind), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
   type(overlapSpec),  pointer :: updatex => NULL()
   type(overlapSpec),  pointer :: updatey => NULL()
   MPP_TYPE_                   :: d_type
@@ -853,8 +853,8 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
   character(len=128)          :: text
   integer,            save    :: l_size=0, list=0
   integer,            save    :: ke_list (MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(LONG_KIND), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  integer(LONG_KIND), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  integer(i8_kind), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  integer(i8_kind), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
   type(overlapSpec),  pointer :: updatex => NULL()
   type(overlapSpec),  pointer :: updatey => NULL()
   MPP_TYPE_                   :: d_type
@@ -914,7 +914,8 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
        "mismatch of optional argument shalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
   if( nonblock_data(id_update)%update_nhalo .NE. update_nhalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
        "mismatch of optional argument nhalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_gridtype .NE. grid_offset_type ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
+  if( nonblock_data(id_update)%update_gridtype .NE. grid_offset_type ) &
+        call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
        "mismatch of optional argument gridtype between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
 
   max_ntile = domain%max_ntile_pe

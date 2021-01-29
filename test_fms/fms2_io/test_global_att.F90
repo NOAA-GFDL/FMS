@@ -20,17 +20,17 @@
 program test_global_att
 use   fms2_io_mod
 use   mpp_mod
-use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64
+use   platform_mod
 
 type(FmsNetcdfFile_t) :: fileobj  !< fms2io netcd file obj
-real(kind=real64) :: buf_real64 !< real64 buffer
-real(kind=real64), dimension(2) :: buf_real64_1d !< real64 1D buffer
-real(kind=real32) :: buf_real32 !< real32 buffer
-real(kind=real32), dimension(2)  :: buf_real32_1d !< real32 1D buffer
-integer(kind=int32)   :: buf_int32 !< int32 buffer
-integer(kind=int32), dimension(2)    :: buf_int32_1d !< int32 1D buffer
-integer(kind=int64)   :: buf_int64 !< int64 buffer
-integer(kind=int64), dimension(2)    :: buf_int64_1d !< int64 1D buffer
+real(kind=r8_kind) :: buf_r8_kind !< r8_kind buffer
+real(kind=r8_kind), dimension(2) :: buf_r8_kind_1d !< r8_kind 1D buffer
+real(kind=r4_kind) :: buf_r4_kind !< r4_kind buffer
+real(kind=r4_kind), dimension(2)  :: buf_r4_kind_1d !< r4_kind 1D buffer
+integer(kind=i4_kind)   :: buf_i4_kind !< i4_kind buffer
+integer(kind=i4_kind), dimension(2)    :: buf_i4_kind_1d !< i4_kind 1D buffer
+integer(kind=i8_kind)   :: buf_i8_kind !< i8_kind buffer
+integer(kind=i8_kind), dimension(2)    :: buf_i8_kind_1d !< i8_kind 1D buffer
 
 character(len=20) :: buf_str !< character buffer
 
@@ -39,17 +39,17 @@ call mpp_init
 
 !> Write out the different possible global attributes to a netcdf file
 if (open_file(fileobj, "test_global_att.nc", "overwrite")) then
-   call register_global_attribute(fileobj, "buf_real64", real(7., kind=real64))
-   call register_global_attribute(fileobj, "buf_real64_1d", (/ real(7., kind=real64), real(9., kind=real64) /))
+   call register_global_attribute(fileobj, "buf_r8_kind", real(7., kind=r8_kind))
+   call register_global_attribute(fileobj, "buf_r8_kind_1d", (/ real(7., kind=r8_kind), real(9., kind=r8_kind) /))
 
-   call register_global_attribute(fileobj, "buf_real32", real(4., kind=real32))
-   call register_global_attribute(fileobj, "buf_real32_1d", (/ real(4., kind=real32), real(6., kind=real32)/) )
+   call register_global_attribute(fileobj, "buf_r4_kind", real(4., kind=r4_kind))
+   call register_global_attribute(fileobj, "buf_r4_kind_1d", (/ real(4., kind=r4_kind), real(6., kind=r4_kind)/) )
 
-   call register_global_attribute(fileobj, "buf_int32", int(3, kind=int32))
-   call register_global_attribute(fileobj, "buf_int32_1d", (/ int(3, kind=int32), int(5, kind=int32) /) )
+   call register_global_attribute(fileobj, "buf_i4_kind", int(3, kind=i4_kind))
+   call register_global_attribute(fileobj, "buf_i4_kind_1d", (/ int(3, kind=i4_kind), int(5, kind=i4_kind) /) )
 
-   call register_global_attribute(fileobj, "buf_int64", int(2, kind=int64))
-   call register_global_attribute(fileobj, "buf_int64_1d", (/ int(2, kind=int64), int(4, kind=int64) /) )
+   call register_global_attribute(fileobj, "buf_i8_kind", int(2, kind=i8_kind))
+   call register_global_attribute(fileobj, "buf_i8_kind_1d", (/ int(2, kind=i8_kind), int(4, kind=i8_kind) /) )
 
    call register_global_attribute(fileobj, "buf_str", "some text"//char(0), str_len=10)
 
@@ -60,17 +60,17 @@ endif
 
 !> Read the global attributes from the netcdf file
 if (open_file(fileobj, "test_global_att.nc", "read")) then
-   call get_global_attribute(fileobj, "buf_real64", buf_real64)
-   call get_global_attribute(fileobj, "buf_real64_1d", buf_real64_1d)
+   call get_global_attribute(fileobj, "buf_r8_kind", buf_r8_kind)
+   call get_global_attribute(fileobj, "buf_r8_kind_1d", buf_r8_kind_1d)
 
-   call get_global_attribute(fileobj, "buf_real32", buf_real32)
-   call get_global_attribute(fileobj, "buf_real32_1d", buf_real32_1d)
+   call get_global_attribute(fileobj, "buf_r4_kind", buf_r4_kind)
+   call get_global_attribute(fileobj, "buf_r4_kind_1d", buf_r4_kind_1d)
 
-   call get_global_attribute(fileobj, "buf_int32", buf_int32)
-   call get_global_attribute(fileobj, "buf_int32_1d", buf_int32_1d)
+   call get_global_attribute(fileobj, "buf_i4_kind", buf_i4_kind)
+   call get_global_attribute(fileobj, "buf_i4_kind_1d", buf_i4_kind_1d)
 
-   call get_global_attribute(fileobj, "buf_int64", buf_int64)
-   call get_global_attribute(fileobj, "buf_int64_1d", buf_int64_1d)
+   call get_global_attribute(fileobj, "buf_i8_kind", buf_i8_kind)
+   call get_global_attribute(fileobj, "buf_i8_kind_1d", buf_i8_kind_1d)
 
    call get_global_attribute(fileobj, "buf_str", buf_str)
 
@@ -80,21 +80,21 @@ else
 endif
 
 !> Compares the values read with the expected values
-if (buf_real64 /= real(7., kind=real64)) call mpp_error(FATAL, "test_global_att: error reading buf_real64")
-if (buf_real64_1d(1) /= real(7., kind=real64) .or. buf_real64_1d(2) /= real(9., kind=real64)) &
-     call mpp_error(FATAL, "test_global_att: error reading buf_real64_1d")
+if (buf_r8_kind /= real(7., kind=r8_kind)) call mpp_error(FATAL, "test_global_att: error reading buf_r8_kind")
+if (buf_r8_kind_1d(1) /= real(7., kind=r8_kind) .or. buf_r8_kind_1d(2) /= real(9., kind=r8_kind)) &
+     call mpp_error(FATAL, "test_global_att: error reading buf_r8_kind_1d")
 
-if (buf_real32 /= real(4., kind=real32)) call mpp_error(FATAL, "test_global_att: error reading buf_real32")
-if (buf_real32_1d(1) /= real(4., kind=real32) .or. buf_real32_1d(2) /= real(6., kind=real32)) &
-    call mpp_error(FATAL, "test_global_att: error reading buf_real32_1d")
+if (buf_r4_kind /= real(4., kind=r4_kind)) call mpp_error(FATAL, "test_global_att: error reading buf_r4_kind")
+if (buf_r4_kind_1d(1) /= real(4., kind=r4_kind) .or. buf_r4_kind_1d(2) /= real(6., kind=r4_kind)) &
+    call mpp_error(FATAL, "test_global_att: error reading buf_r4_kind_1d")
 
-if (buf_int32 /= int(3, kind=int32)) call mpp_error(FATAL, "test_global_att: error reading buf_int32")
-if (buf_int32_1d(1) /= int(3, kind=int32) .or. buf_int32_1d(2) /= int(5, kind=int32)) &
-    call mpp_error(FATAL, "test_global_att: error reading buf_int32_1d")
+if (buf_i4_kind /= int(3, kind=i4_kind)) call mpp_error(FATAL, "test_global_att: error reading buf_i4_kind")
+if (buf_i4_kind_1d(1) /= int(3, kind=i4_kind) .or. buf_i4_kind_1d(2) /= int(5, kind=i4_kind)) &
+    call mpp_error(FATAL, "test_global_att: error reading buf_i4_kind_1d")
 
-if (buf_int64 /= int(2, kind=int64)) call mpp_error(FATAL, "test_global_att: error reading buf_int64")
-if (buf_int64_1d(1) /= int(2, kind=int64) .or. buf_int64_1d(2) /= int(4, kind=int64)) &
-    call mpp_error(FATAL, "test_global_att: error reading buf_int64_1d")
+if (buf_i8_kind /= int(2, kind=i8_kind)) call mpp_error(FATAL, "test_global_att: error reading buf_i8_kind")
+if (buf_i8_kind_1d(1) /= int(2, kind=i8_kind) .or. buf_i8_kind_1d(2) /= int(4, kind=i8_kind)) &
+    call mpp_error(FATAL, "test_global_att: error reading buf_i8_kind_1d")
 
 if (trim(buf_str) /= "some text") then
     print *, "buf_str read in = ", trim(buf_str)

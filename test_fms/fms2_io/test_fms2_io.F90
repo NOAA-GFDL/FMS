@@ -24,6 +24,7 @@ use mpi
 use mpp_mod
 use mpp_domains_mod
 use fms2_io_mod
+use platform_mod
 implicit none
 
 character(len=8), parameter :: green = achar(27)//"[1;32m"

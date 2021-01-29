@@ -890,7 +890,7 @@ CONTAINS
 
   !> @brief Initialize the output file.
   SUBROUTINE init_file(name, output_freq, output_units, format, time_units, long_name, tile_count,&
-       & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units)
+       & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units, filename_time_bounds)
     CHARACTER(len=*), INTENT(in) :: name !< File name.
     CHARACTER(len=*), INTENT(in) :: long_name !< Long name for time axis.
     INTEGER, INTENT(in) :: output_freq !< How often data is to be written to the file.
@@ -903,7 +903,8 @@ CONTAINS
     INTEGER, INTENT(in), OPTIONAL :: file_duration !< How long file is to be used.
     INTEGER, INTENT(in), OPTIONAL :: file_duration_units !< File duration unit.  (MIN, HOURS, DAYS, etc.)
     TYPE(time_type), INTENT(in), OPTIONAL :: start_time !< Time when the file is to start
-
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: filename_time_bounds !< Set time bound file name to
+                                                                   ! use "begin" "middle" or "end"
     INTEGER :: new_file_freq1, new_file_freq_units1
     INTEGER :: file_duration1, file_duration_units1
     INTEGER :: n
@@ -1034,6 +1035,7 @@ CONTAINS
 !> Initialize the times to 0
     files(num_files)%rtime_current = -1.0
     files(num_files)%time_index = 0
+    files(num_files)%filename_time_bounds = filename_time_bounds
 
     IF ( PRESENT(start_time) ) THEN
        files(num_files)%start_time = start_time
@@ -1528,12 +1530,14 @@ CONTAINS
   END SUBROUTINE init_output_field
 
   !> @brief Open file for output, and write the meta data.
-  SUBROUTINE opening_file(file, time, use_mpp_io)
+  SUBROUTINE opening_file(file, time, use_mpp_io, filename_time)
     ! WARNING: Assumes that all data structures are fully initialized
     INTEGER, INTENT(in) :: file !< File ID.
     TYPE(time_type), INTENT(in) :: time !< Time for the file time stamp
     logical :: use_mpp_io !< controls which IO is used for output
+    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
+    TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
     REAL, DIMENSION(2) :: DATA
     INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
@@ -1585,7 +1589,12 @@ CONTAINS
           CALL error_mesg('diag_util_mod::opening_file',&
                & 'file name '//TRIM(files(file)%name)//' does not contain % for time stamp string', FATAL)
        END IF
-       suffix = get_time_string(files(file)%name, time)
+       if (present(filename_time)) then
+          fname_time = filename_time
+       else
+          fname_time = time
+       endif
+       suffix = get_time_string(files(file)%name, fname_time)
     ELSE
        suffix = ' '
     END IF
@@ -2325,7 +2334,7 @@ CONTAINS
   END FUNCTION get_date_dif
 
   !> @brief Write data out to file, and if necessary flush the buffers.
-  SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in, use_mpp_io_arg)
+  SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in, use_mpp_io_arg, filename_time)
     INTEGER, INTENT(in) :: file !< File ID.
     INTEGER, INTENT(in) :: field !< Field ID.
     REAL, DIMENSION(:,:,:,:), INTENT(inout) :: dat !< Data to write out.
@@ -2333,6 +2342,7 @@ CONTAINS
     LOGICAL, OPTIONAL, INTENT(in):: final_call_in !< <TT>.TRUE.</TT> if this is the last write for file.
     LOGICAL, OPTIONAL, INTENT(in):: static_write_in !< <TT>.TRUE.</TT> if static fields are to be written to file.
     logical,optional,intent(in) :: use_mpp_io_arg !< Switch for which IO to use for outputting data
+    type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     LOGICAL :: final_call, do_write, static_write
     INTEGER :: i, num
@@ -2354,7 +2364,8 @@ CONTAINS
     dif = get_date_dif(time, base_time, files(file)%time_units)
 
     ! get file_unit, open new file and close curent file if necessary
-    IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) CALL check_and_open(file, time, do_write, use_mpp_io)
+    IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) &
+       CALL check_and_open(file, time, do_write, use_mpp_io, filename_time=filename_time)
     IF ( .NOT.do_write ) RETURN  ! no need to write data
    if( .not. use_mpp_io) then
 !> Set up the time index and write the correct time value to the time array
@@ -2480,16 +2491,17 @@ CONTAINS
   !! @details Checks if it is time to open a new file. If yes, it first closes the
   !!     current file, opens a new file and returns file_unit
   !!     previous diag_manager_end is replaced by closing_file and output_setup by opening_file.
-  SUBROUTINE check_and_open(file, time, do_write, use_mpp_io)
+  SUBROUTINE check_and_open(file, time, do_write, use_mpp_io, filename_time)
     INTEGER, INTENT(in) :: file !<File ID.
     TYPE(time_type), INTENT(in) :: time !< Current model time.
     LOGICAL, INTENT(out) :: do_write !< <TT>.TRUE.</TT> if file is expecting more data to write,
                                      !! <TT>.FALSE.</TT> otherwise.
     LOGICAL, INTENT(in) :: use_mpp_io !< true=mpp_io, false=fms2_io
+    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file
-          CALL opening_file(file, time, use_mpp_io)
+          CALL opening_file(file, time, use_mpp_io, filename_time=filename_time)
           do_write = .TRUE.
        ELSE
           do_write = .TRUE.
@@ -2497,7 +2509,8 @@ CONTAINS
              do_write = .FALSE. ! file still open but receives NO MORE data
           ELSE IF ( time > files(file)%next_open ) THEN ! need to close current file and open a new one
              CALL write_static(file, use_mpp_io)  ! write all static fields and close this file
-             CALL opening_file(file, time, use_mpp_io)
+             CALL opening_file(file, time, use_mpp_io, filename_time=filename_time)
+             files(file)%time_index = 0 !< Reset the number of times in the files back to 0
              files(file)%start_time = files(file)%next_open
              files(file)%close_time =&
                   & diag_time_inc(files(file)%start_time,files(file)%duration, files(file)%duration_units)

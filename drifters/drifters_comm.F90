@@ -21,7 +21,6 @@
 !> @file
 !! @email gfdl.climate.model.info@noaa.gov
 module drifters_comm_mod
-#include <fms_platform.h>
 
 #ifdef _SERIAL
 

@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
     subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type )
-      integer(LONG_KIND), intent(in)         :: f_in(:), f_out(:)
+      integer(i8_kind), intent(in)         :: f_in(:), f_out(:)
       type(DomainCommunicator2D), intent(in) :: d_comm
       MPP_TYPE_, intent(in)                  :: d_type
       MPP_TYPE_ :: field_in(d_comm%domain_in%x(1)%data%begin:d_comm%domain_in%x(1)%data%end, &

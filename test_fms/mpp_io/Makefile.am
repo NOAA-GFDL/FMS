@@ -20,7 +20,7 @@
 # This is an automake file for the test_fms/mpp_io directory of the
 # FMS package.
 
-# uramirez, Ed Hartnett
+# uramirez, Ed Hartnett, Ryan Mulhall
 
 # Find the fms_mod.mod file.
 AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
@@ -29,16 +29,22 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_mpp_io
+check_PROGRAMS = test_mpp_io \
+	test_io_R4_R8              \
+	test_io_mosaic_R4_R8
 
 # This is the source code for the test.
 test_mpp_io_SOURCES = test_mpp_io.F90
+test_io_R4_R8_SOURCES = test_io_R4_R8.F90
+test_io_mosaic_R4_R8_SOURCES = test_io_mosaic_R4_R8.F90
 
 # Run the test program.
-TESTS = test_mpp_io2.sh
+TESTS = test_mpp_io2.sh \
+	test_io_R4_R8.sh      \
+	test_io_mosaic_R4_R8.sh
 
 # These files will also be distributed.
-EXTRA_DIST = test_mpp_io2.sh input_base.nml
+EXTRA_DIST = test_mpp_io2.sh test_io_R4_R8.sh test_io_mosaic_R4_R8.sh input_base.nml
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out

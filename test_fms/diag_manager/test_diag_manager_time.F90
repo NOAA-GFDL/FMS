@@ -88,8 +88,8 @@ used = send_data(id_y, y, Time)
 used = send_data(id_z, z, Time)
 
 ! Increase the time and send data
-do i=1,20
-Time = set_date(2,1,i,0,0,0)
+do i=1,23
+Time = set_date(2,1,1,i,0,0)
 if(id_sst > 0) used = send_data(id_sst, sst, Time)
 enddo
 
