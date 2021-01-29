@@ -63,7 +63,8 @@ subroutine get_global_attribute_0d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             class default
-                call error("get_global_attribute_0d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+                call error("get_global_attribute_0d: unsupported type for "//&
+                &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
         call check_netcdf_code(err)
     endif
@@ -99,7 +100,8 @@ subroutine get_global_attribute_0d(fileobj, &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         class default
-             call error("get_global_attribute_0d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+             call error("get_global_attribute_0d: unsupported type for "//&
+             &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
     end select
 end subroutine get_global_attribute_0d
 !> @brief Get the value of a global attribute.
@@ -140,7 +142,8 @@ subroutine get_global_attribute_1d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             class default
-                call error("get_global_attribute_1d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+                call error("get_global_attribute_1d: unsupported type for "//&
+                &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
         call check_netcdf_code(err)
     endif
@@ -171,6 +174,7 @@ subroutine get_global_attribute_1d(fileobj, &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         class default
-            call error("get_global_attribute_1d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+            call error("get_global_attribute_1d: unsupported type for "//&
+            &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
     end select
 end subroutine get_global_attribute_1d

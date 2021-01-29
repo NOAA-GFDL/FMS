@@ -18,7 +18,6 @@
 !***********************************************************************
 
  program test_fms_io
-#include <fms_platform.h>
 
  use mpp_mod,         only: mpp_pe, mpp_npes, mpp_root_pe, mpp_init, mpp_exit
  use mpp_mod,         only: stdout, mpp_error, FATAL, NOTE, mpp_chksum
@@ -32,6 +31,7 @@
  use fms_io_mod,      only: file_exist, register_restart_field, save_restart, restore_state
  use fms_io_mod,      only: restart_file_type
  use mpp_io_mod,      only: MAX_FILE_SIZE
+ use platform_mod
 
  implicit none
 
@@ -479,7 +479,7 @@ contains
   subroutine compare_data_r5d( a, b, string )
     real, intent(in), dimension(:,:,:,:,:) :: a, b
     character(len=*), intent(in)         :: string
-    integer(LONG_KIND)                   :: sum1, sum2
+    integer(i8_kind)                   :: sum1, sum2
     integer                              :: i, j, k, l, n
     integer, parameter                   :: stdunit = 6
 
@@ -519,7 +519,7 @@ contains
   subroutine compare_data_r4d( a, b, string )
     real, intent(in), dimension(:,:,:,:) :: a, b
     character(len=*), intent(in)         :: string
-    integer(LONG_KIND)                   :: sum1, sum2
+    integer(i8_kind)                   :: sum1, sum2
     integer                              :: i, j, k, l
     integer, parameter                   :: stdunit = 6
 
@@ -568,7 +568,7 @@ contains
   subroutine compare_data_r3d( a, b, string )
     real, intent(in), dimension(:,:,:) :: a, b
     character(len=*), intent(in)       :: string
-    integer(LONG_KIND)                 :: sum1, sum2
+    integer(i8_kind)                 :: sum1, sum2
     integer                            :: i, j, l
     integer, parameter                 :: stdunit = 6
 
@@ -615,7 +615,7 @@ contains
   subroutine compare_data_r2d( a, b, string )
     real, intent(in), dimension(:,:) :: a, b
     character(len=*), intent(in)     :: string
-    integer(LONG_KIND)               :: sum1, sum2
+    integer(i8_kind)               :: sum1, sum2
     integer                          :: i, l
     integer, parameter               :: stdunit = 6
 
@@ -659,7 +659,7 @@ contains
   subroutine compare_data_r1d( a, b, string )
     real, intent(in), dimension(:) :: a, b
     character(len=*), intent(in)   :: string
-    integer(LONG_KIND)             :: sum1, sum2
+    integer(i8_kind)             :: sum1, sum2
     integer                        :: l
     integer, parameter             :: stdunit = 6
 

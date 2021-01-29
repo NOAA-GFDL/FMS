@@ -19,7 +19,7 @@
 !***********************************************************************
     subroutine MPP_DO_CHECK_3D_( f_addrs, domain, check, d_type, ke, flags, name)
 !updates data domain of 3D field whose computational domains have been computed
-      integer(LONG_KIND),         intent(in) :: f_addrs(:,:)
+      integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
       type(overlapSpec),          intent(in) :: check
       MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface

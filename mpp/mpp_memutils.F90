@@ -20,10 +20,9 @@
 !> Routines to initialize and report on memory usage during the model run.
 module mpp_memutils_mod
 
-#include "../include/fms_platform.h"
-
   use mpp_mod, only: mpp_min, mpp_max, mpp_sum, mpp_pe, mpp_root_pe
   use mpp_mod, only: mpp_error, FATAL, stderr, mpp_npes, get_unit
+  use platform_mod
 
   implicit none
   private

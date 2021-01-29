@@ -22,7 +22,7 @@
 !> @file
 !! @email gfdl.climate.model.info@noaa.gov
 module drifters_core_mod
-#include <fms_platform.h>
+  use platform_mod
   implicit none
   private
 
@@ -42,11 +42,11 @@ module drifters_core_mod
   type drifters_core_type
      ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
      ! when adding members
-     integer*8 :: it   !< time index
-     integer :: nd     !< number of dimensions
-     integer :: np     !< number of particles (drifters)
-     integer :: npdim  !< max number of particles (drifters)
-     integer, allocatable :: ids(:)_NULL  !< particle id number
+     integer(kind=i8_kind) :: it   ! time index
+     integer :: nd     ! number of dimensions
+     integer :: np     ! number of particles (drifters)
+     integer :: npdim  ! max number of particles (drifters)
+     integer, allocatable :: ids(:) ! particle id number
      real   , allocatable :: positions(:,:)
   end type drifters_core_type
 

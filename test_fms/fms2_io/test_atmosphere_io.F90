@@ -24,6 +24,7 @@ use fms2_io_mod
 use mpp_domains_mod
 use mpp_mod
 use setup
+use platform_mod
 
 
 type(Params) :: test_params
@@ -51,27 +52,27 @@ type(FmsNetcdfDomainFile_t) :: fileobj
 type(FmsNetcdfDomainFile_t) :: fileobjv
 integer, parameter :: ntiles = 6
 integer, parameter :: nt = 11
-real(kind=real64), dimension(:), allocatable :: double_buffer
-real(kind=real64), dimension(:,:), allocatable :: double_buffer2d
-real(kind=real64), dimension(:,:,:), allocatable :: var5
-real(kind=real64), dimension(:,:,:), allocatable :: var6
-real(kind=real64), dimension(:,:,:), allocatable :: var7
-real(kind=real64), dimension(:,:,:), allocatable :: var8
-real(kind=real64), dimension(:,:,:), allocatable :: var5p
-real(kind=real64), dimension(:,:,:), allocatable :: var6p
-real(kind=real64), dimension(:,:,:), allocatable :: var7p
-real(kind=real64), dimension(:,:,:), allocatable :: var8p
-real(kind=real64), dimension(:), allocatable :: var9
-integer(kind=int32), dimension(:,:), allocatable :: var10
-real(kind=real64), dimension(:,:,:), allocatable :: var11
-integer(kind=int64) :: var5_chksum
-integer(kind=int64) :: var6_chksum
-integer(kind=int64) :: var7_chksum
-integer(kind=int64) :: var8_chksum
-integer(kind=int64) :: var9_chksum
-integer(kind=int64) :: var10_chksum
-integer(kind=int64) :: var11_chksum
-integer(kind=int64) :: chksum
+real(kind=r8_kind), dimension(:), allocatable :: double_buffer
+real(kind=r8_kind), dimension(:,:), allocatable :: double_buffer2d
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var5
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var6
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var7
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var8
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var5p
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var6p
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var7p
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var8p
+real(kind=r8_kind), dimension(:), allocatable :: var9
+integer(kind=i4_kind), dimension(:,:), allocatable :: var10
+real(kind=r8_kind), dimension(:,:,:), allocatable :: var11
+integer(kind=i8_kind) :: var5_chksum
+integer(kind=i8_kind) :: var6_chksum
+integer(kind=i8_kind) :: var7_chksum
+integer(kind=i8_kind) :: var8_chksum
+integer(kind=i8_kind) :: var9_chksum
+integer(kind=i8_kind) :: var10_chksum
+integer(kind=i8_kind) :: var11_chksum
+integer(kind=i8_kind) :: chksum
 character(len=256), dimension(:), allocatable :: string_buffer
 character(len=256), dimension(:), allocatable :: string_buffer2
 character(len=256) :: string_buffer3
@@ -117,15 +118,15 @@ call open_check(open_file(fileobj, "atmosphere_io.nc", "overwrite", &
 call open_check(open_virtual_file(fileobjv, domain, "atm.nc"))
 
 !Add some global attributes to the restart file.
-call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
-call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
-call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
-call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
+call register_global_attribute(fileobj, "globalatt1", real(7., kind=r8_kind))
+call register_global_attribute(fileobj, "globalatt2", real(4., kind=r4_kind))
+call register_global_attribute(fileobj, "globalatt3", int(3, kind=i4_kind))
+call register_global_attribute(fileobj, "globalatt4", int(2, kind=i8_kind))
 call register_global_attribute(fileobj, "globalatt5", "some text", str_len=9)
-call register_global_attribute(fileobjv, "globalatt1", real(7., kind=real64))
-call register_global_attribute(fileobjv, "globalatt2", real(4., kind=real32))
-call register_global_attribute(fileobjv, "globalatt3", int(3, kind=int32))
-call register_global_attribute(fileobjv, "globalatt4", int(2, kind=int64))
+call register_global_attribute(fileobjv, "globalatt1", real(7., kind=r8_kind))
+call register_global_attribute(fileobjv, "globalatt2", real(4., kind=r4_kind))
+call register_global_attribute(fileobjv, "globalatt3", int(3, kind=i4_kind))
+call register_global_attribute(fileobjv, "globalatt4", int(2, kind=i8_kind))
 call register_global_attribute(fileobjv, "globalatt5", "some text", str_len=9)
 
 !Add dimensions and corresponding variables to the file.
@@ -326,7 +327,7 @@ call register_restart_field(fileobj, "var11", var11, names(1:4))
 
 !Perform a "simulation" and write restart data.
 do i = 1, nt
-  call write_data(fileobj, "time", real(i, kind=real32), unlim_dim_level=i)
+  call write_data(fileobj, "time", real(i, kind=r4_kind), unlim_dim_level=i)
   call create_data(var5)
   call create_data(var6)
   call create_data(var7)
