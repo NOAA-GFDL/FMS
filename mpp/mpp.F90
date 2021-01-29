@@ -243,7 +243,7 @@ private
   type :: event
      private
      character(len=16)                         :: name
-     integer(i8_kind), dimension(MAX_EVENTS) :: ticks, bytes
+     integer(i8_kind), dimension(MAX_EVENTS)   :: ticks, bytes
      integer                                   :: calls
   end type event
 
@@ -251,8 +251,9 @@ private
   type :: clock
      private
      character(len=32)    :: name
-     integer(i8_kind)   :: tick
-     integer(i8_kind)   :: total_ticks
+     integer(i8_kind)     :: hits
+     integer(i8_kind)     :: tick
+     integer(i8_kind)     :: total_ticks
      integer              :: peset_num
      logical              :: sync_on_begin, detailed
      integer              :: grain
@@ -264,12 +265,12 @@ private
   type :: Clock_Data_Summary
      private
      character(len=16)  :: name
-     real(r8_kind)  :: msg_size_sums(MAX_BINS)
-     real(r8_kind)  :: msg_time_sums(MAX_BINS)
-     real(r8_kind)  :: total_data
-     real(r8_kind)  :: total_time
-     integer(i8_kind) :: msg_size_cnts(MAX_BINS)
-     integer(i8_kind) :: total_cnts
+     real(r8_kind)      :: msg_size_sums(MAX_BINS)
+     real(r8_kind)      :: msg_time_sums(MAX_BINS)
+     real(r8_kind)      :: total_data
+     real(r8_kind)      :: total_time
+     integer(i8_kind)   :: msg_size_cnts(MAX_BINS)
+     integer(i8_kind)   :: total_cnts
   end type Clock_Data_Summary
 
   type :: Summary_Struct
@@ -1212,11 +1213,11 @@ private
   logical              :: module_is_initialized = .false.
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0
-  integer(i8_kind)   :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
+  integer(i8_kind)     :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
   integer              :: mpp_comm_private
   logical              :: first_call_system_clock_mpi=.TRUE.
-  real(r8_kind)    :: mpi_count0=0  ! use to prevent integer overflow
-  real(r8_kind)    :: mpi_tick_rate=0.d0  ! clock rate for mpi_wtick()
+  real(r8_kind)        :: mpi_count0=0  ! use to prevent integer overflow
+  real(r8_kind)        :: mpi_tick_rate=0.d0  ! clock rate for mpi_wtick()
   logical              :: mpp_record_timing_data=.TRUE.
   type(clock),save     :: clocks(MAX_CLOCKS)
   integer              :: log_unit, etc_unit

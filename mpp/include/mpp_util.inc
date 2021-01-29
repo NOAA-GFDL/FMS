@@ -733,6 +733,7 @@ end function rarray_to_char
     integer                       :: i
 
     clocks(id)%name = name
+    clocks(id)%hits = 0
     clocks(id)%tick = 0
     clocks(id)%total_ticks = 0
     clocks(id)%sync_on_begin = .FALSE.
@@ -845,6 +846,7 @@ end function rarray_to_char
       current_clock = id
     endif
     call SYSTEM_CLOCK( clocks(id)%tick )
+    clocks(id)%hits = clocks(id)%hits + 1
     clocks(id)%is_on = .true.
 !$OMP END MASTER
     return
