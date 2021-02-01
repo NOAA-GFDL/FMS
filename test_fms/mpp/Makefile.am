@@ -92,6 +92,11 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_root_pe.sh \
   test_peset.sh
 
+# Define test file extensions and log driver
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
   test_mpp_domains2.sh \
@@ -116,6 +121,6 @@ EXTRA_DIST = input_base.nml \
   test_peset.sh
 
 # Clean up
-CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
+CLEANFILES = *.nml *.out* *.tst* \
              include_files_mod.mod ascii* test_numb*
 

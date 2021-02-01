@@ -25,16 +25,12 @@
 # Eric Stofferahn 07/15/2020
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 skip_test="no"
 
-# Copy file for test.
-cp $top_srcdir/test_fms/mpp/base_ascii_5 ascii_5
-cp $top_srcdir/test_fms/mpp/base_ascii_25 ascii_25
-cp $top_srcdir/test_fms/mpp/base_ascii_0 ascii_0
-cp $top_srcdir/test_fms/mpp/base_ascii_skip ascii_skip
-cp $top_srcdir/test_fms/mpp/base_ascii_long ascii_long
+# call script to create files
+sh ./make_ascii_files.sh
 
 # Set up namelist to carry test_number.
 touch test_numb_base2.nml
@@ -45,17 +41,22 @@ echo "/" >> test_numb_base2.nml
 for tst in 1 2 3 4
 do
   sed "s/test_number = [0-9]/test_number = ${tst}/" test_numb_base2.nml > test_numb2.nml
-  echo "Running test ${tst}..."
-  run_test test_mpp_get_ascii_lines 2 $skip_test
-  echo "Test ${tst} has passed"
+  test_expect_success "test ${tst}" '
+      mpirun -n 2 ./test_mpp_get_ascii_lines
+  '
 done
 
 sed "s/test_number = [0-9]/test_number = 5/" test_numb_base2.nml > test_numb2.nml
-echo "Running test 5..."
-run_test test_mpp_get_ascii_lines 2 $skip_test || err=1
-if [ "$err" -ne 1 ]; then
-  echo "ERROR: Test 5 was unsuccessful."
-  exit 5
-else
-   echo "Test 5 has passed"
-fi
+test_expect_failure "test 5" '
+    mpirun -n 2 ./test_mpp_get_ascii_lines
+'
+#echo "Running test 5..."
+#run_test test_mpp_get_ascii_lines 2 $skip_test || err=1
+#if [ "$err" -ne 1 ]; then
+#  echo "ERROR: Test 5 was unsuccessful."
+#  exit 5
+#else
+#   echo "Test 5 has passed"
+#fi
+
+test_done

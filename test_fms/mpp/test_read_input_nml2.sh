@@ -25,7 +25,7 @@
 # Colin Gladue 05/22/2020
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 touch test_numb_base.nml
 echo "&test_read_input_nml_nml" > test_numb_base.nml
@@ -34,10 +34,11 @@ echo "/" >> test_numb_base.nml
 
 # Test 1
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
-cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
+#cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 echo "Running test 1..."
-run_test test_read_input_nml 1
-echo "Test 1 has passed"
+test_expect_success "test 1" '
+    mpirun -n 1 ./test_read_input_nml
+'
 
 # Test 2
 sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
@@ -63,3 +64,5 @@ touch input_blank.nml # Achieve a blank namelist to be read
 echo "Running test 4..."
 run_test test_read_input_nml 1
 echo "Test 4 has passed"
+
+test_done

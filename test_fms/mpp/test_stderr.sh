@@ -25,8 +25,9 @@
 # Colin Gladue 06/09/2020
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-echo "Running STDERR test..."; echo
-run_test test_stderr 1
-echo; echo "STDERR test has passed"
+test_expect_success "stderr test" '
+    mpirun -n 1 ./test_stderr
+'
+test_done

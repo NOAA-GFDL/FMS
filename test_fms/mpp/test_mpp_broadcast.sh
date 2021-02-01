@@ -25,7 +25,11 @@
 # Uriel Ramirez 07/15/2020
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 touch input.nml
-run_test test_mpp_broadcast 2
+test_expect_success "test_mpp_broadcast" '
+    mpirun -n 2 ./test_mpp_broadcast
+'
+
+test_done

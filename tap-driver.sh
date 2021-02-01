@@ -69,7 +69,10 @@ merge=0
 ignore_exit=0
 comments=0
 diag_string='#'
-verbose="false"
+# TODO second flag with better name
+#test "$?VERBOSE" && verbose="false" || verbose="$VERBOSE"
+verbose='false'
+
 while test $# -gt 0; do
   case $1 in
   --help) print_usage; exit $?;;
