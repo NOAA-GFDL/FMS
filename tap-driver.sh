@@ -121,8 +121,10 @@ else
   init_colors=''
 fi
 
-# Redirect to stdout for test output
+# use fd 5 to output tests' run scripts
 [[ "$verbose" = "true" ]] && exec 5>&1 || exec 5>/dev/null
+# use fd 6 to output individual return statuses
+exec 6>&1
 
 # :; is there to work around a bug in bash 3.2 (and earlier) which
 # does not always set '$?' properly on redirection failure.
@@ -145,7 +147,7 @@ fi
     # <http://mail.opensolaris.org/pipermail/ksh93-integration-discuss/2009-February/004121.html>
     trap : 1 3 2 13 15
     if test $merge -gt 0; then
-      exec 2>&1
+      exec 2>&6
     else
       exec 2>&5
     fi
@@ -216,7 +218,8 @@ function copy_in_global_log()
   #for (k in test_results_seen)
   #  if (k != "PASS")
   #    return 1
-  return verbose == "true" ? 1 : 0;
+  #return verbose == "true" ? 1 : 0;
+  return 1
 }
 
 function get_global_test_result()
@@ -282,10 +285,10 @@ function report(result, details)
   if (length(details))
     msg = msg " " details
   # Output on console might be colorized.
-  print decorate_result(result) msg
+  print decorate_result(result) msg | "cat >&6"
   # Log the result in the log file too, to help debugging (this is
   # especially true when said result is a TAP error or "Bail out!").
-  print result msg | "cat ";
+  print result msg | "cat";
 }
 
 function testsuite_error(error_message)
@@ -646,7 +649,9 @@ exit 0
 '
 
 # TODO: document that we consume the file descriptor 3 :-(
+#} 3>"$log_file"
 } | tee "$log_file" >&5
+
 
 test $? -eq 0 || fatal "I/O or internal error"
 

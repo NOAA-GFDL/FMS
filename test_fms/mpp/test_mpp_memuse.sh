@@ -22,17 +22,13 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Tom Robinson 04/21/2020
+# Ryan Mulhall 2/1/21 
 
 # Set common test settings.
 . ../test-lib.sh
 
-env NUM_PES=1
-test_expect_success "One processor test" '
-    mpirun -n 1 ./test_mpp_npes
-'
-env NUM_PES=2
-test_expect_success "All processor test" '
-    mpirun -n 2 ./test_mpp_npes
+touch input.nml
+test_expect_success "test mpp memory usage" '
+    mpirun -n 1 ./test_mpp_memuse
 '
 test_done
