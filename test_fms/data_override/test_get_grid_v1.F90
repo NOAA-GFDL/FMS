@@ -28,9 +28,10 @@ use mpp_mod,         only: mpp_init, mpp_exit, mpp_root_pe, mpp_pe, mpp_error, F
 use mpp_domains_mod, only: mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
                            domain2d
 use fms2_io_mod,     only: fms2_io_init
+use platform_mod
 
 use get_grid_version_fms2io_mod, only : get_grid_version_1, deg_to_radian
-use,  intrinsic :: iso_fortran_env, only : real64
+use,  intrinsic :: iso_fortran_env, only : r8_kind
 
 implicit none
 
@@ -47,8 +48,8 @@ real                                             :: lat_in(1), lon_in(1) !< Lat 
 real, dimension(:,:,:), allocatable              :: lat_vert_in, lon_vert_in !<Lat and lon vertices
 
 
-lat_in = real(55.5, kind=real64)
-lon_in = real(44.5, kind=real64)
+lat_in = real(55.5, kind=r8_kind)
+lon_in = real(44.5, kind=r8_kind)
 
 call mpp_init
 call fms2_io_init
@@ -103,8 +104,8 @@ call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat,
 
 !< Try again with ocean, "new_grid"
 allocate(lat_vert_in(1,1,4), lon_vert_in(1,1,4))
-lat_vert_in = real(55.5, kind=real64)
-lon_vert_in = real(65.5, kind=real64)
+lat_vert_in = real(55.5, kind=r8_kind)
+lon_vert_in = real(65.5, kind=r8_kind)
 
 !< Create a new grid_spec file with "x_T" instead of "geolon_t"
 if (mpp_pe() .eq. mpp_root_pe()) then
