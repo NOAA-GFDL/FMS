@@ -31,7 +31,6 @@ use fms2_io_mod,     only: fms2_io_init
 use platform_mod
 
 use get_grid_version_fms2io_mod, only : get_grid_version_1, deg_to_radian
-use,  intrinsic :: iso_fortran_env, only : r8_kind
 
 implicit none
 
