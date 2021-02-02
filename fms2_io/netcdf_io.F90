@@ -744,7 +744,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: variable_type !< Variable type.  Allowed
-                                                !! values are: "char", "int", "i8_kind",
+                                                !! values are: "char", "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
 
@@ -758,8 +758,8 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     call set_netcdf_mode(fileobj%ncid, define_mode)
     if (string_compare(variable_type, "int", .true.)) then
       vtype = nf90_int
-    elseif (string_compare(variable_type, "i8_kind", .true.)) then
-      vtype = nf90_i8_kind
+    elseif (string_compare(variable_type, "int64", .true.)) then
+      vtype = nf90_int64
     elseif (string_compare(variable_type, "float", .true.)) then
       vtype = nf90_float
     elseif (string_compare(variable_type, "double", .true.)) then
