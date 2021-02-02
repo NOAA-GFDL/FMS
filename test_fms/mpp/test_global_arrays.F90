@@ -333,8 +333,8 @@ function checkResultReal4(res)
     checkResultReal4 = .true.
   else
     call mpp_recv(tres,2, root)
-    checkResultReal4 = checkResultReal4 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-5) .and. &
-                       (abs((res(2)-tres(2))/res(2)) .lt. 1e-5)
+    checkResultReal4 = checkResultReal4 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-4) .and. &
+                       (abs((res(2)-tres(2))/res(2)) .lt. 1e-4)
   end if
   deallocate(tres)
 end function checkResultReal4
@@ -381,13 +381,13 @@ function checkSumReal4(gsum)
       call mpp_recv(recv, 2, i)
       nsum = nsum + recv(1)
       ! also check for matching global sum
-      if( abs((recv(2)-gsum)/gsum) .gt. 1e-5) then
+      if( abs((recv(2)-gsum)/gsum) .gt. 1e-4) then
         checkSumReal4 = .false.
         deallocate(recv)
         return
       endif
     end do
-    checkSumReal4 = (abs((nsum-gsum)/gsum) .lt. 1e-5)
+    checkSumReal4 = (abs((nsum-gsum)/gsum) .lt. 1e-4)
   else
     recv(1) = SUM(dataR4)
     recv(2) = gsum
