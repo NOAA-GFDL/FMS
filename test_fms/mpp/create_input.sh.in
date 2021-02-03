@@ -3,7 +3,7 @@
 # Creates input files for mpp unit testing
 
 [[ "$1" = "nml" ]] && cat <<_EOF > input_base.nml
- 
+
 _EOF
 
 if [[ "$1" = "ascii" ]]; then

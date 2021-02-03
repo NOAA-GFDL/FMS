@@ -1,4 +1,5 @@
 #! /bin/sh
+# TODO change licensing(???)
 # Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -22,6 +23,11 @@
 # This file is maintained in Automake, please report
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
+
+# Ryan Mulhall 2/2021 
+# Modified from original to add verbose output
+# Test scriot output enabled with SH_LOG_DRIVER_FLAGS='-v' or '--verbose' 
+# also can be enabled with TEST_VERBOSE='true'
 
 scriptversion=2013-12-23.17; # UTC
 
@@ -69,9 +75,8 @@ merge=0
 ignore_exit=0
 comments=0
 diag_string='#'
-# TODO second flag with better name
-#test "$?VERBOSE" && verbose="false" || verbose="$VERBOSE"
-verbose='false'
+# Prints verbose info if TEST_VERBOSE is set to true
+verbose=${TEST_VERBOSE:-"false"}
 
 while test $# -gt 0; do
   case $1 in

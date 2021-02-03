@@ -107,11 +107,6 @@ EXTRA_DIST = input_base.nml \
   test_stdout.sh \
   test_stderr.sh \
   test_mpp_get_ascii_lines2.sh \
-  base_ascii_5 \
-  base_ascii_25 \
-  base_ascii_0 \
-  base_ascii_skip \
-  base_ascii_long \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
   test_clock_init.sh \
@@ -120,7 +115,8 @@ EXTRA_DIST = input_base.nml \
   test_mpp_root_pe.sh \
   test_peset.sh \
   test_mpp_memuse.sh \
-  test_mpp_mem_dump.sh
+  test_mpp_mem_dump.sh \
+  make_files.sh 
 
 # Clean up
 CLEANFILES = *.nml *.out* *.tst* \

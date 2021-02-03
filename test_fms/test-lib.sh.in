@@ -232,11 +232,11 @@ match_pattern_list_ () {
   for pattern_
   do
     # changed to check for more than one digit test numbers
-    if [[ "$pattern_" == *[-\[]"`expr substr "$arg" $numIndex $numLen`"[-\]]* ]]; then
+    if [[ "$pattern_" == *[,.\[]"`expr substr "$arg" $numIndex $numLen`"[,.\]]* ]]; then
       return 0
     else
       return 1
-    fi 
+    fi
   done
   return 1
 }
@@ -290,6 +290,6 @@ test_expect_success () {
 
 test_done () {
   EXIT_OK=t
-  [ test -z "$SKIP_TESTS" ] || say "Skipped $SKIPPED_TESTS"
+  [[ -z "${SKIP_TESTS}" ]] || say "Skipped $SKIPPED_TESTS"
   say "1..$test_count"
 }

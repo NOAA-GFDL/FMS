@@ -27,7 +27,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-test_expect_success "Clock initialization test" ' 
+test_expect_success "Clock initialization test" '
     mpirun -n 1 ./test_clock_init
 '
 test_done
