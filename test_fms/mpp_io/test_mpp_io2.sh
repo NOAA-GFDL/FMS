@@ -30,6 +30,7 @@
 skip_test="no"
 
 # Copy file for test.
+touch input.nml
 cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
 
 

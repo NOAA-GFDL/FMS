@@ -51,7 +51,7 @@
 
       integer                 :: update_position, update_whalo, update_ehalo, update_shalo, update_nhalo, ntile
 
-      integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=-9999
+      integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=-9999
       integer          :: tile, max_ntile
       character(len=3) :: text
       logical          :: set_mismatch, is_complete
@@ -257,7 +257,7 @@
       integer                                :: grid_offset_type
       logical                                :: exchange_uv
 
-      integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrsx=-9999, f_addrsy=-9999
+      integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrsx=-9999, f_addrsy=-9999
       logical          :: do_update, is_complete
       integer, save    :: isize(2)=0,jsize(2)=0,ke=0,l_size=0, offset_type=0, list=0
       integer, save    :: whalosz, ehalosz, shalosz, nhalosz

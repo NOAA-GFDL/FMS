@@ -44,15 +44,15 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
   logical :: extra_y
   integer, dimension(2) :: c
   integer, dimension(2) :: e
-  integer(kind=int32), dimension(:,:), allocatable :: buf_int32
-  integer(kind=int64), dimension(:,:), allocatable :: buf_int64
-  real(kind=real32), dimension(:,:), allocatable :: buf_real32
-  real(kind=real64), dimension(:,:), allocatable :: buf_real64
-  integer(kind=int32) :: fill_int32
-  integer(kind=int64) :: fill_int64
-  real(kind=real32) :: fill_real32
-  real(kind=real64) :: fill_real64
-  integer(kind=int64) :: chksum_val
+  integer(kind=i4_kind), dimension(:,:), allocatable :: buf_i4_kind
+  integer(kind=i8_kind), dimension(:,:), allocatable :: buf_i8_kind
+  real(kind=r4_kind), dimension(:,:), allocatable :: buf_r4_kind
+  real(kind=r8_kind), dimension(:,:), allocatable :: buf_r8_kind
+  integer(kind=i4_kind) :: fill_i4_kind
+  integer(kind=i8_kind) :: fill_i8_kind
+  real(kind=r4_kind) :: fill_r4_kind
+  real(kind=r8_kind) :: fill_r8_kind
+  integer(kind=i8_kind) :: chksum_val
 
   is_decomposed = is_variable_domain_decomposed(fileobj, variable_name, &
                                                 xindex=xdim, yindex=ydim, &
@@ -88,46 +88,42 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
   endif
 
   select type (variable_data)
-    type is (integer(kind=int32))
-      call allocate_array(buf_int32, e)
-      call get_array_section(buf_int32, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_int32)) then
-        chksum_val = mpp_chksum(buf_int32, mask_val=fill_int32)
+    type is (integer(kind=i4_kind))
+      call allocate_array(buf_i4_kind, e)
+      call get_array_section(buf_i4_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_i4_kind)) then
+        chksum_val = mpp_chksum(buf_i4_kind, mask_val=fill_i4_kind)
       else
-        chksum_val = mpp_chksum(buf_int32)
+        chksum_val = mpp_chksum(buf_i4_kind)
       endif
-      deallocate(buf_int32)
-    type is (integer(kind=int64))
-      call allocate_array(buf_int64, e)
-      call get_array_section(buf_int64, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_int64)) then
-        chksum_val = mpp_chksum(buf_int64, mask_val=fill_int64)
+      deallocate(buf_i4_kind)
+    type is (integer(kind=i8_kind))
+      call allocate_array(buf_i8_kind, e)
+      call get_array_section(buf_i8_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_i8_kind)) then
+        chksum_val = mpp_chksum(buf_i8_kind, mask_val=fill_i8_kind)
       else
-        chksum_val = mpp_chksum(buf_int64)
+        chksum_val = mpp_chksum(buf_i8_kind)
       endif
-      deallocate(buf_int64)
-   type is (real(kind=real32))
-#ifdef OVERLOAD_R4
-     call allocate_array(buf_real32, e)
-     call get_array_section(buf_real32, variable_data, c, e)
-     if (get_fill_value(fileobj, variable_name, fill_real32)) then
-       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
+      deallocate(buf_i8_kind)
+   type is (real(kind=r4_kind))
+     call allocate_array(buf_r4_kind, e)
+     call get_array_section(buf_r4_kind, variable_data, c, e)
+     if (get_fill_value(fileobj, variable_name, fill_r4_kind)) then
+       chksum_val = mpp_chksum(buf_r4_kind, mask_val=fill_r4_kind)
      else
-       chksum_val = mpp_chksum(buf_real32)
+       chksum_val = mpp_chksum(buf_r4_kind)
      endif
-     deallocate(buf_real32)
-#else
-     call error("Compute_global_checksum: you are trying to use a real*4 without defining OVERLOAD_R4")
-#endif
-    type is (real(kind=real64))
-      call allocate_array(buf_real64, e)
-      call get_array_section(buf_real64, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_real64)) then
-        chksum_val = mpp_chksum(buf_real64, mask_val=fill_real64)
+     deallocate(buf_r4_kind)
+   type is (real(kind=r8_kind))
+      call allocate_array(buf_r8_kind, e)
+      call get_array_section(buf_r8_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_r8_kind)) then
+        chksum_val = mpp_chksum(buf_r8_kind, mask_val=fill_r8_kind)
       else
-        chksum_val = mpp_chksum(buf_real64)
+        chksum_val = mpp_chksum(buf_r8_kind)
       endif
-      deallocate(buf_real64)
+      deallocate(buf_r8_kind)
     class default
       call error("Compute_global_checksum: unsupported type.")
   end select
@@ -163,15 +159,15 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
   logical :: extra_y
   integer, dimension(3) :: c
   integer, dimension(3) :: e
-  integer(kind=int32), dimension(:,:,:), allocatable :: buf_int32
-  integer(kind=int64), dimension(:,:,:), allocatable :: buf_int64
-  real(kind=real32), dimension(:,:,:), allocatable :: buf_real32
-  real(kind=real64), dimension(:,:,:), allocatable :: buf_real64
-  integer(kind=int32) :: fill_int32
-  integer(kind=int64) :: fill_int64
-  real(kind=real32) :: fill_real32
-  real(kind=real64) :: fill_real64
-  integer(kind=int64) :: chksum_val
+  integer(kind=i4_kind), dimension(:,:,:), allocatable :: buf_i4_kind
+  integer(kind=i8_kind), dimension(:,:,:), allocatable :: buf_i8_kind
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: buf_r4_kind
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: buf_r8_kind
+  integer(kind=i4_kind) :: fill_i4_kind
+  integer(kind=i8_kind) :: fill_i8_kind
+  real(kind=r4_kind) :: fill_r4_kind
+  real(kind=r8_kind) :: fill_r8_kind
+  integer(kind=i8_kind) :: chksum_val
 
   is_decomposed = is_variable_domain_decomposed(fileobj, variable_name, &
                                                 xindex=xdim, yindex=ydim, &
@@ -206,46 +202,42 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
     e(ydim) = e(ydim) - 1
   endif
   select type (variable_data)
-    type is (integer(kind=int32))
-      call allocate_array(buf_int32, e)
-      call get_array_section(buf_int32, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_int32)) then
-        chksum_val = mpp_chksum(buf_int32, mask_val=fill_int32)
+    type is (integer(kind=i4_kind))
+      call allocate_array(buf_i4_kind, e)
+      call get_array_section(buf_i4_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_i4_kind)) then
+        chksum_val = mpp_chksum(buf_i4_kind, mask_val=fill_i4_kind)
       else
-        chksum_val = mpp_chksum(buf_int32)
+        chksum_val = mpp_chksum(buf_i4_kind)
       endif
-      deallocate(buf_int32)
-    type is (integer(kind=int64))
-      call allocate_array(buf_int64, e)
-      call get_array_section(buf_int64, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_int64)) then
-        chksum_val = mpp_chksum(buf_int64, mask_val=fill_int64)
+      deallocate(buf_i4_kind)
+    type is (integer(kind=i8_kind))
+      call allocate_array(buf_i8_kind, e)
+      call get_array_section(buf_i8_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_i8_kind)) then
+        chksum_val = mpp_chksum(buf_i8_kind, mask_val=fill_i8_kind)
       else
-        chksum_val = mpp_chksum(buf_int64)
+        chksum_val = mpp_chksum(buf_i8_kind)
       endif
-      deallocate(buf_int64)
-   type is (real(kind=real32))
-#ifdef OVERLOAD_R4
-     call allocate_array(buf_real32, e)
-     call get_array_section(buf_real32, variable_data, c, e)
-     if (get_fill_value(fileobj, variable_name, fill_real32)) then
-       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
+      deallocate(buf_i8_kind)
+   type is (real(kind=r4_kind))
+     call allocate_array(buf_r4_kind, e)
+     call get_array_section(buf_r4_kind, variable_data, c, e)
+     if (get_fill_value(fileobj, variable_name, fill_r4_kind)) then
+       chksum_val = mpp_chksum(buf_r4_kind, mask_val=fill_r4_kind)
      else
-       chksum_val = mpp_chksum(buf_real32)
+       chksum_val = mpp_chksum(buf_r4_kind)
      endif
-     deallocate(buf_real32)
-#else
-     call error("Compute_global_checksum: you are trying to use a real*4 without defining OVERLOAD_R4")
-#endif
-    type is (real(kind=real64))
-      call allocate_array(buf_real64, e)
-      call get_array_section(buf_real64, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_real64)) then
-        chksum_val = mpp_chksum(buf_real64, mask_val=fill_real64)
+     deallocate(buf_r4_kind)
+   type is (real(kind=r8_kind))
+      call allocate_array(buf_r8_kind, e)
+      call get_array_section(buf_r8_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_r8_kind)) then
+        chksum_val = mpp_chksum(buf_r8_kind, mask_val=fill_r8_kind)
       else
-        chksum_val = mpp_chksum(buf_real64)
+        chksum_val = mpp_chksum(buf_r8_kind)
       endif
-      deallocate(buf_real64)
+      deallocate(buf_r8_kind)
     class default
       call error("Compute_global_checksum: unsupported type.")
   end select
@@ -281,15 +273,15 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
   logical :: extra_y
   integer, dimension(4) :: c
   integer, dimension(4) :: e
-  integer(kind=int32), dimension(:,:,:,:), allocatable :: buf_int32
-  integer(kind=int64), dimension(:,:,:,:), allocatable :: buf_int64
-  real(kind=real32), dimension(:,:,:,:), allocatable :: buf_real32
-  real(kind=real64), dimension(:,:,:,:), allocatable :: buf_real64
-  integer(kind=int32) :: fill_int32
-  integer(kind=int64) :: fill_int64
-  real(kind=real32) :: fill_real32
-  real(kind=real64) :: fill_real64
-  integer(kind=int64) :: chksum_val
+  integer(kind=i4_kind), dimension(:,:,:,:), allocatable :: buf_i4_kind
+  integer(kind=i8_kind), dimension(:,:,:,:), allocatable :: buf_i8_kind
+  real(kind=r4_kind), dimension(:,:,:,:), allocatable :: buf_r4_kind
+  real(kind=r8_kind), dimension(:,:,:,:), allocatable :: buf_r8_kind
+  integer(kind=i4_kind) :: fill_i4_kind
+  integer(kind=i8_kind) :: fill_i8_kind
+  real(kind=r4_kind) :: fill_r4_kind
+  real(kind=r8_kind) :: fill_r8_kind
+  integer(kind=i8_kind) :: chksum_val
 
   is_decomposed = is_variable_domain_decomposed(fileobj, variable_name, &
                                                 xindex=xdim, yindex=ydim, &
@@ -325,46 +317,42 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
   endif
 
   select type (variable_data)
-    type is (integer(kind=int32))
-      call allocate_array(buf_int32, e)
-      call get_array_section(buf_int32, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_int32)) then
-        chksum_val = mpp_chksum(buf_int32, mask_val=fill_int32)
+    type is (integer(kind=i4_kind))
+      call allocate_array(buf_i4_kind, e)
+      call get_array_section(buf_i4_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_i4_kind)) then
+        chksum_val = mpp_chksum(buf_i4_kind, mask_val=fill_i4_kind)
       else
-        chksum_val = mpp_chksum(buf_int32)
+        chksum_val = mpp_chksum(buf_i4_kind)
       endif
-      deallocate(buf_int32)
-    type is (integer(kind=int64))
-      call allocate_array(buf_int64, e)
-      call get_array_section(buf_int64, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_int64)) then
-        chksum_val = mpp_chksum(buf_int64, mask_val=fill_int64)
+      deallocate(buf_i4_kind)
+    type is (integer(kind=i8_kind))
+      call allocate_array(buf_i8_kind, e)
+      call get_array_section(buf_i8_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_i8_kind)) then
+        chksum_val = mpp_chksum(buf_i8_kind, mask_val=fill_i8_kind)
       else
-        chksum_val = mpp_chksum(buf_int64)
+        chksum_val = mpp_chksum(buf_i8_kind)
       endif
-      deallocate(buf_int64)
-   type is (real(kind=real32))
-#ifdef OVERLOAD_R4
-     call allocate_array(buf_real32, e)
-     call get_array_section(buf_real32, variable_data, c, e)
-     if (get_fill_value(fileobj, variable_name, fill_real32)) then
-       chksum_val = mpp_chksum(buf_real32, mask_val=fill_real32)
+      deallocate(buf_i8_kind)
+   type is (real(kind=r4_kind))
+     call allocate_array(buf_r4_kind, e)
+     call get_array_section(buf_r4_kind, variable_data, c, e)
+     if (get_fill_value(fileobj, variable_name, fill_r4_kind)) then
+       chksum_val = mpp_chksum(buf_r4_kind, mask_val=fill_r4_kind)
      else
-       chksum_val = mpp_chksum(buf_real32)
+       chksum_val = mpp_chksum(buf_r4_kind)
      endif
-     deallocate(buf_real32)
-#else
-     call error("Compute_global_checksum: you are trying to use a real*4 without defining OVERLOAD_R4")
-#endif
-    type is (real(kind=real64))
-      call allocate_array(buf_real64, e)
-      call get_array_section(buf_real64, variable_data, c, e)
-      if (get_fill_value(fileobj, variable_name, fill_real64)) then
-        chksum_val = mpp_chksum(buf_real64, mask_val=fill_real64)
+     deallocate(buf_r4_kind)
+   type is (real(kind=r8_kind))
+      call allocate_array(buf_r8_kind, e)
+      call get_array_section(buf_r8_kind, variable_data, c, e)
+      if (get_fill_value(fileobj, variable_name, fill_r8_kind)) then
+        chksum_val = mpp_chksum(buf_r8_kind, mask_val=fill_r8_kind)
       else
-        chksum_val = mpp_chksum(buf_real64)
+        chksum_val = mpp_chksum(buf_r8_kind)
       endif
-      deallocate(buf_real64)
+      deallocate(buf_r8_kind)
     class default
       call error("Compute_global_checksum: unsupported type.")
   end select

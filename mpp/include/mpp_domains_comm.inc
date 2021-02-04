@@ -24,9 +24,9 @@
                                         isize_in,jsize_in,ksize_in,isize_out,jsize_out,ksize_out) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
       type(domain2D),target,      intent(in)    :: domain_in
-      integer(LONG_KIND),         intent(in)    :: l_addrs_in(:)
+      integer(i8_kind),         intent(in)    :: l_addrs_in(:)
       type(domain2D),target,      intent(in)    :: domain_out
-      integer(LONG_KIND),         intent(in)    :: l_addrs_out(:)
+      integer(i8_kind),         intent(in)    :: l_addrs_out(:)
       integer,                    intent(in)    :: isize_in
       integer,                    intent(in)    :: jsize_in
       integer,                    intent(in)    :: ksize_in
@@ -34,13 +34,13 @@
       integer,                    intent(in)    :: jsize_out
       integer,                    intent(in)    :: ksize_out
 
-      integer(LONG_KIND) :: domain_id
+      integer(i8_kind) :: domain_id
       integer :: m, list
       integer :: is, ie, js, je, ke, ioff, joff, list_size
       integer :: isc, iec, jsc, jec, mytile
       integer :: lsize,rsize,msgsize,to_pe,from_pe
       integer,           allocatable,dimension(:) :: isL, jsL
-      integer(LONG_KIND),allocatable,dimension(:,:) :: slist_addr
+      integer(i8_kind),allocatable,dimension(:,:) :: slist_addr
       character(len=8) :: text
 
 
@@ -204,25 +204,25 @@
                                         jsize_l, ksize,l_addr2,flags, position) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
       type(domain2D),target,      intent(in)    :: domain
-      integer(LONG_KIND),         intent(in)    :: l_addr
+      integer(i8_kind),         intent(in)    :: l_addr
       integer,                    intent(in)    :: isize_g
       integer,                    intent(in)    :: jsize_g
       integer,                    intent(in)    :: isize_l
       integer,                    intent(in)    :: jsize_l
       integer,                    intent(in)    :: ksize
-      integer(LONG_KIND),optional,intent(in)    :: l_addr2
+      integer(i8_kind),optional,intent(in)    :: l_addr2
       integer, optional,          intent(in)    :: flags
       integer, optional,          intent(in)    :: position
 
-      integer(LONG_KIND) :: domain_id
+      integer(i8_kind) :: domain_id
       integer :: n, lpos, rpos, list, nlist, tile_id
       integer :: update_flags
       logical :: xonly, yonly
       integer :: is, ie, js, je, ioff, joff, ishift, jshift
       integer :: lsize,msgsize,from_pe
       integer,           allocatable,dimension(:) :: isL, jsL
-      integer(LONG_KIND),allocatable,dimension(:,:) :: slist_addr
-      integer(LONG_KIND),save       ,dimension(2)   :: rem_addr
+      integer(i8_kind),allocatable,dimension(:,:) :: slist_addr
+      integer(i8_kind),save       ,dimension(2)   :: rem_addr
       character(len=8) :: text
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
@@ -427,12 +427,12 @@
     ! Since initialization of the d_comm type is expensive, freeing should be a rare
     ! event. Thus no attempt is made to salvage freed d_comm's.
       type(domain2D),             intent(in)    :: domain_in
-      integer(LONG_KIND),         intent(in)    :: l_addr
+      integer(i8_kind),         intent(in)    :: l_addr
       type(domain2D),             intent(in)    :: domain_out
-      integer(LONG_KIND),         intent(in)    :: l_addr2
+      integer(i8_kind),         intent(in)    :: l_addr2
       integer,                    intent(in)    :: ksize,lsize
 
-      integer(LONG_KIND) :: domain_id
+      integer(i8_kind) :: domain_id
 
       if(l_addr2 > 0)then
         domain_id = set_domain_id(domain_out%id,ksize+lsize)
@@ -447,13 +447,13 @@
     ! Since initialization of the d_comm type is expensive, freeing should be a rare
     ! event. Thus no attempt is made to salvage freed d_comm's.
       type(domain2D),             intent(in)    :: domain
-      integer(LONG_KIND),         intent(in)    :: l_addr
+      integer(i8_kind),         intent(in)    :: l_addr
       integer,                    intent(in)    :: ksize
-      integer(LONG_KIND),optional,intent(in)    :: l_addr2
+      integer(i8_kind),optional,intent(in)    :: l_addr2
       integer,           optional,intent(in)    :: flags
 
       integer :: update_flags
-      integer(LONG_KIND) :: domain_id
+      integer(i8_kind) :: domain_id
 
       update_flags=0; if(PRESENT(flags))update_flags=flags
       domain_id=set_domain_id(domain%id,ksize,update_flags)
@@ -464,23 +464,23 @@
     subroutine free_comm(domain_id,l_addr,l_addr2)
     ! Since initialization of the d_comm type is expensive, freeing should be a rare
     ! event. Thus no attempt is made to salvage freed d_comm's.
-      integer(LONG_KIND),         intent(in) :: domain_id
-      integer(LONG_KIND),         intent(in) :: l_addr
-      integer(LONG_KIND),optional,intent(in) :: l_addr2
+      integer(i8_kind),         intent(in) :: domain_id
+      integer(i8_kind),         intent(in) :: l_addr
+      integer(i8_kind),optional,intent(in) :: l_addr2
 
-      integer(LONG_KIND) :: dc_key,a_key
+      integer(i8_kind) :: dc_key,a_key
       integer :: dc_idx,a_idx,i_idx,insert,insert_a,insert_i
       integer :: a2_idx,insert_a2
 
 
       i_idx = find_key(domain_id,ids_sorted(1:n_ids),insert_i)
       a_idx = find_key(l_addr,addrs_sorted(1:a_sort_len),insert_a)
-      a_key = int(addrs_idx(a_idx),KIND(LONG_KIND))
+      a_key = int(addrs_idx(a_idx),KIND(i8_kind))
       if(PRESENT(l_addr2))then
         a2_idx = find_key(l_addr2,addrs2_sorted(1:a2_sort_len),insert_a2)
-        a_key = a_key + ADDR2_BASE*int(addrs2_idx(a2_idx),KIND(LONG_KIND))
+        a_key = a_key + ADDR2_BASE*int(addrs2_idx(a2_idx),KIND(i8_kind))
       endif
-      dc_key = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(LONG_KIND)) + a_key
+      dc_key = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(i8_kind)) + a_key
       dc_idx = find_key(dc_key,dcKey_sorted(1:dc_sort_len),insert)
 
       if(dc_idx < 0)then
@@ -494,24 +494,24 @@
 
 
     function get_comm(domain_id,l_addr,l_addr2)
-      integer(LONG_KIND),intent(in)       :: domain_id
-      integer(LONG_KIND),intent(in)       :: l_addr
-      integer(LONG_KIND),intent(in),optional :: l_addr2
+      integer(i8_kind),intent(in)       :: domain_id
+      integer(i8_kind),intent(in)       :: l_addr
+      integer(i8_kind),intent(in),optional :: l_addr2
       type(DomainCommunicator2D), pointer :: get_comm
 
-      integer(LONG_KIND) :: dc_key,a_key
+      integer(i8_kind) :: dc_key,a_key
       integer :: i,dc_idx,a_idx,i_idx,insert,insert_a,insert_i
       integer :: a2_idx,insert_a2
 
       if(.not.ALLOCATED(d_comm))ALLOCATE(d_comm(MAX_FIELDS))
       i_idx   = find_key(domain_id,ids_sorted(1:n_ids),insert_i)
       a_idx = find_key(l_addr,addrs_sorted(1:a_sort_len),insert_a)
-      a_key = int(addrs_idx(a_idx),KIND(LONG_KIND))
+      a_key = int(addrs_idx(a_idx),KIND(i8_kind))
       if(PRESENT(l_addr2))then
         a2_idx = find_key(l_addr2,addrs2_sorted(1:a2_sort_len),insert_a2)
-        a_key = a_key + ADDR2_BASE*int(addrs2_idx(a2_idx),KIND(LONG_KIND))
+        a_key = a_key + ADDR2_BASE*int(addrs2_idx(a2_idx),KIND(i8_kind))
       endif
-      dc_key   = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(LONG_KIND)) + a_key
+      dc_key   = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(i8_kind)) + a_key
       dc_idx   = find_key(dc_key,dcKey_sorted(1:dc_sort_len),insert)
       if(dc_idx > 0)then
         get_comm =>d_comm(d_comm_idx(dc_idx))
@@ -544,7 +544,7 @@
         endif
         a_key = int(addrs_idx(a_idx),KIND(8))
         if(PRESENT(l_addr2))a_key = a_key + ADDR2_BASE*int(addrs2_idx(a2_idx),KIND(8))
-        dc_key   = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(LONG_KIND)) + a_key
+        dc_key   = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(i8_kind)) + a_key
         dc_idx   = find_key(dc_key,dcKey_sorted(1:dc_sort_len),insert)
         if(dc_idx /= -1)call mpp_error(FATAL,'GET_COMM: attempt to insert existing key')
         n_comm = n_comm + 1
@@ -562,11 +562,11 @@
 
 
     function push_key(sorted,idx,n_idx,insert,key,ival)
-      integer(LONG_KIND),intent(inout),dimension(:)   :: sorted
+      integer(i8_kind),intent(inout),dimension(:)   :: sorted
       integer,           intent(inout),dimension(-1:) :: idx  ! Start -1 to simplify first call logic in get_comm
       integer,           intent(inout)                :: n_idx
       integer,           intent(in)                   :: insert
-      integer(LONG_KIND),intent(in)                   :: key
+      integer(i8_kind),intent(in)                   :: key
       integer,           intent(in)                   :: ival
 
       integer                                         :: push_key,i
@@ -583,7 +583,7 @@
 
 
     subroutine pop_key(sorted,idx,n_idx,key_idx)
-      integer(LONG_KIND),intent(inout),dimension(:)   :: sorted
+      integer(i8_kind),intent(inout),dimension(:)   :: sorted
       integer,           intent(inout),dimension(-1:) :: idx  ! Start -1 to simplify first call logic in get_comm
       integer,           intent(inout)                :: n_idx
       integer,           intent(in)                   :: key_idx
@@ -602,8 +602,8 @@
 
     function find_key(key,sorted,insert) RESULT(n)
     ! The algorithm used here requires monotonic keys w/out repetition.
-      integer(LONG_KIND),intent(in)              :: key        ! new address to be found in list
-      integer(LONG_KIND),dimension(:),intent(in) :: sorted  ! list of sorted local addrs
+      integer(i8_kind),intent(in)              :: key        ! new address to be found in list
+      integer(i8_kind),dimension(:),intent(in) :: sorted  ! list of sorted local addrs
       integer,                        intent(out) :: insert
       integer :: n, n_max, n_min, n_key
       logical :: not_found
@@ -696,18 +696,18 @@
 
 
     function set_domain_id(d_id,ksize,flags,gtype, position, whalo, ehalo, shalo, nhalo)
-      integer(LONG_KIND), intent(in) :: d_id
+      integer(i8_kind), intent(in) :: d_id
       integer           , intent(in) :: ksize
       integer           , optional, intent(in) :: flags
       integer           , optional, intent(in) :: gtype
       integer           , optional, intent(in) :: position
       integer           , optional, intent(in) :: whalo, ehalo, shalo, nhalo
 
-      integer(LONG_KIND)             :: set_domain_id
+      integer(i8_kind)             :: set_domain_id
 
       set_domain_id=d_id + KE_BASE*int(ksize,KIND(d_id))
       if(PRESENT(flags))set_domain_id=set_domain_id+int(flags,KIND(d_id))
-      if(PRESENT(gtype))set_domain_id=set_domain_id+GT_BASE*int(gtype,KIND(d_id))  ! Must be LONG_KIND arithmetic
+      if(PRESENT(gtype))set_domain_id=set_domain_id+GT_BASE*int(gtype,KIND(d_id))  ! Must be i8_kind arithmetic
       !--- gtype is never been used to set id. we need to add position to calculate id to seperate
       !--- BGRID and CGRID or scalar variable.
       if(present(position)) set_domain_id=set_domain_id+GT_BASE*int(2**position, KIND(d_id))

@@ -17,6 +17,28 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!! @brief The fms module provides routines that are commonly used
+!!   by most FMS modules.
+!! @author Bruce Wyman
+!! @email gfdl.climate.model.info@noaa.gov
+!!
+!! Here is a summary of the functions performed by routines
+!!     in the fms module.
+!!
+!!   1. Output module version numbers to a common (<TT>log</TT>) file
+!!     using a common format.<BR/>
+!!   2. Open specific types of files common to many FMS modules.
+!!     These include namelist files, restart files, and 32-bit IEEE
+!!     data files. There also is a matching interface to close the files.
+!!     If other file types are needed the <TT>mpp_open</TT> and <TT>mpp_close</TT>
+!!     interfaces in module <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html">mpp_io</LINK> must be used.<BR/>
+!!    3. Read and write distributed data to simple native unformatted files.
+!!     This type of file (called a restart file) is used to checkpoint
+!!     model integrations for a subsequent restart of the run.<BR/>
+!!    4. For convenience there are several routines published from
+!!     the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">mpp</LINK> module. These are routines for getting processor
+!!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
 module fms_mod
 
 ! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
@@ -345,6 +367,14 @@ contains
 ! initializes the fms module/package
 ! also calls mpp initialization routines and reads fms namelist
 
+!> @brief Initializes the FMS module and also calls the initialization routines for all
+!!     modules in the MPP package. Will be called automatically if the user does
+!!     not call it.
+!! @details Initialization routine for the fms module. It also calls initialization routines
+!!      for the mpp, mpp_domains, and mpp_io modules. Although this routine
+!!      will be called automatically by other fms_mod routines, users should
+!!      explicitly call fms_init. If this routine is called more than once it will
+!!      return silently. There are no arguments.
 subroutine fms_init (localcomm )
 
 !--- needed to output the version number of constants_mod to the logfile ---
@@ -366,13 +396,6 @@ subroutine fms_init (localcomm )
     call fms_io_init
     call fms2_io_init ()
     logunitnum = stdlog()
-#ifdef use_mpp_io
-    call mpp_error("fms_init","You are using mpp_io for your FMS modules",NOTE)
-    write (logunitnum,*)"You are using mpp_io for your FMS modules"
-#else
-    call mpp_error("fms_init","You are using fms2_io for your FMS modules",NOTE)
-    write (logunitnum,*)"You are using fms2_io for your FMS modules"
-#endif
 !---- read namelist input ----
 
     call nml_error_init  ! first initialize namelist iostat error codes
@@ -482,6 +505,10 @@ end subroutine fms_init
 ! terminates the fms module/package
 ! also calls mpp destructor routines
 
+!> @brief Calls the termination routines for all modules in the MPP package.
+!! @details Termination routine for the fms module. It also calls destructor routines
+!!      for the mpp, mpp_domains, and mpp_io modules. If this routine is called
+!!      more than once it will return silently. There are no arguments.
 subroutine fms_end ( )
 
     if (.not.module_is_initialized) return  ! return silently
@@ -535,9 +562,17 @@ end subroutine fms_end
 ! wrapper for the mpp error handler
 ! users should try to use the mpp_error interface
 
+ !> @brief Print notes, warnings and error messages; terminates program for warning
+ !!     and error messages. (use error levels NOTE,WARNING,FATAL, see example below)
+ !! @details Print notes, warnings and error messages; and terminates the program for
+ !!     error messages. This routine is a wrapper around mpp_error, and is provided
+ !!     for backward compatibility. This module also publishes mpp_error,
+ !!      <B>users should try to use the mpp_error interface</B>.
  subroutine error_mesg (routine, message, level)
-  character(len=*), intent(in) :: routine, message
-  integer,          intent(in) :: level
+  character(len=*), intent(in) :: routine !< Routine name where the warning or error has occurred.
+  character(len=*), intent(in) :: message !< Warning or error message to be printed.
+  integer,          intent(in) :: level !< Level of severity; set to NOTE, WARNING, or FATAL Termination always occurs
+                                        !! for FATAL, never for NOTE, and is settable for WARNING (see namelist).
 
 !  input:
 !      routine   name of the calling routine (character string)
@@ -579,11 +614,18 @@ end subroutine fms_end
 !     When err_msg is present: err_msg = message
 !   </OUT>
 
+ !> @brief Facilitates the control of fatal error conditions
+ !! @return logical fms_error_handler
+ !! @details When err_msg is present, message is copied into err_msg
+ !!     and the function returns a value of .true.
+ !!     Otherwise calls mpp_error to terminate execution.
+ !!     The intended use is as shown below.
  function fms_error_handler(routine, message, err_msg)
 
  logical :: fms_error_handler
- character(len=*), intent(in) :: routine, message
- character(len=*), intent(out), optional :: err_msg
+ character(len=*), intent(in) :: routine !< Routine name where the fatal error has occurred.
+ character(len=*), intent(in) :: message !< fatal error message to be printed.
+ character(len=*), intent(out), optional :: err_msg !< When err_msg is present: err_msg = message
 
  fms_error_handler = .false.
  if(present(err_msg)) then
@@ -664,9 +706,17 @@ end subroutine fms_end
 ! used to check the iostat argument that is
 ! returned after reading a namelist
 ! see the online documentation for how this routine might be used
+  !> @brief Checks the iostat argument that is returned after reading a namelist
+  !!     and determines if the error code is valid.
+  !! @return integer check_nml_error
+  !! @details The FMS allows multiple namelist records to reside in the same file.
+  !!     Use this interface to check the iostat argument that is returned after
+  !!     reading a record from the namelist file. If an invalid iostat value
+  !!     is detected this routine will produce a fatal error. See the NOTE below.
   INTEGER FUNCTION check_nml_error(IOSTAT, NML_NAME)
-    INTEGER, INTENT(in) :: IOSTAT
-    CHARACTER(len=*), INTENT(in) :: NML_NAME
+    INTEGER, INTENT(in) :: IOSTAT !< The iostat value returned when reading a namelist record.
+    CHARACTER(len=*), INTENT(in) :: NML_NAME !< The name of the namelist. This name will be printed if an error is
+                                             !! encountered, otherwise the name is not used.
 
     CHARACTER(len=256) :: err_str
 
@@ -695,6 +745,9 @@ end subroutine fms_end
 !-----------------------------------------------------------------------
 !   private routine for initializing allowable error codes
 
+  !> @brief Determines the IOSTAT error value for some common Namelist errors.
+  !!   Also checks if the compiler returns a non-zero status if there are
+  !!   multiple namelist records in a single file.
   SUBROUTINE nml_error_init
     ! Determines the IOSTAT error value for some common Namelist errors.
     ! Also checks if the compiler returns a non-zero status if there are
@@ -705,7 +758,8 @@ end subroutine fms_end
     LOGICAL :: opened
 
     ! Variables for sample namelists
-    INTEGER :: i1, i2
+    INTEGER :: i1 !< Variables for sample namelists
+    INTEGER :: i2 !< Variables for sample namelists
     REAL :: r1, r2
     LOGICAL :: l1
     NAMELIST /a_nml/ i1, r1
@@ -837,10 +891,18 @@ end subroutine fms_end
 ! match the input character string to a string
 ! in an array/list of character strings
 
+!> @brief match the input character string to a string
+!!     in an array/list of character strings
+!! @return logical found
+!! @details Tries to find a match for a character string in a list of character strings.
+!!      The match is case sensitive and disregards blank characters to the right of
+!!      the string.
 function string_array_index ( string, string_array, index ) result (found)
-character(len=*),  intent(in)  :: string, string_array(:)
-integer, optional, intent(out) :: index
-logical :: found
+character(len=*),  intent(in)  :: string !< Character string of arbitrary length.
+character(len=*),  intent(in)  :: string_array(:) !< Array/list of character strings.
+integer, optional, intent(out) :: index !< The index of string_array where the first match was found. If
+                                        !! no match was found then index = 0.
+logical :: found !< If an exact match was found then TRUE is returned, otherwise FALSE is returned.
 integer :: i
 
 ! initialize this function to false
@@ -894,10 +956,18 @@ end function string_array_index
 ! determines if the real input array has
 ! monotonically increasing or decreasing values
 
+!> @brief Determines if a real input array has monotonically increasing or
+!!     decreasing values.
+!! @return logical monotonic_array
 function monotonic_array ( array, direction )
-real,    intent(in)            :: array(:)
-integer, intent(out), optional :: direction
-logical :: monotonic_array
+real,    intent(in)            :: array(:) !< An array of real values. If the size(array) < 2 this function
+                                           !! assumes the array is not monotonic, no fatal error will occur.
+integer, intent(out), optional :: direction !< If the input array is:
+                                            !! >> monotonic (small to large) then direction = +1.
+                                            !! >> monotonic (large to small) then direction = -1.
+                                            !! >> not monotonic then direction = 0.
+logical :: monotonic_array !< If the input array of real values either increases or decreases monotonically
+                           !! then TRUE is returned, otherwise FALSE is returned.
 integer :: i
 
 ! initialize
