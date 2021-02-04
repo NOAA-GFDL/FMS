@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,15 +19,15 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the fms2_io/include directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
 
-include_HEADERS = array_utils_char.inc array_utils.inc compressed_read.inc \
-                  compressed_write.inc compute_global_checksum.inc domain_read.inc \
-                  domain_write.inc get_checksum.inc get_data_type_string.inc \
-                  get_global_attribute.inc get_variable_attribute.inc \
-                  netcdf_add_restart_variable.inc netcdf_read_data.inc \
-                  netcdf_write_data.inc register_domain_restart_variable.inc \
-                  register_global_attribute.inc register_unstructured_domain_restart_variable.inc \
-                  register_variable_attribute.inc unstructured_domain_read.inc \
-                  unstructured_domain_write.inc scatter_data_bc.inc gather_data_bc.inc
+# Author: Uriel Ramirez 07/07/20
+#
+# Set common test settings.
+. ../test_common.sh
+
+# make an input.nml for mpp_init to read
+touch input.nml
+
+run_test test_bc_restart 16

@@ -35,7 +35,9 @@ include/get_checksum.inc include/get_global_attribute.inc		\
 include/netcdf_add_restart_variable.inc include/netcdf_write_data.inc	\
 include/register_global_attribute.inc					\
 include/register_variable_attribute.inc					\
-include/unstructured_domain_write.inc
+include/unstructured_domain_write.inc                                   \
+include/scatter_data_bc.inc                                             \
+include/gather_data_bc.inc
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/fms2_io/include -I${top_builddir}/.mod
