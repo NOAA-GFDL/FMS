@@ -92,7 +92,7 @@ test_expect_success "Test normal usage with PELIST" '
 sed "s/test_numb = [0-9]/test_numb = 8/" test_numb_base_ascii.nml>test_numb_ascii.nml
 touch empty.nml
 test_expect_success "Test normal usage with empty file" '
-    mpirun -n 1 test_read_ascii_file
+    mpirun -n 1 ./test_read_ascii_file
 '
 
 test_done

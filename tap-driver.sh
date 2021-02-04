@@ -24,9 +24,9 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-# Ryan Mulhall 2/2021 
+# Ryan Mulhall 2/2021
 # Modified from original to add verbose output
-# Test scriot output enabled with SH_LOG_DRIVER_FLAGS='-v' or '--verbose' 
+# Test scriot output enabled with SH_LOG_DRIVER_FLAGS='-v' or '--verbose'
 # also can be enabled with TEST_VERBOSE='true'
 
 scriptversion=2013-12-23.17; # UTC
@@ -58,7 +58,7 @@ Usage:
                 [--expect-failure={yes|no}] [--color-tests={yes|no}]
                 [--enable-hard-errors={yes|no}] [--ignore-exit]
                 [--diagnostic-string=STRING] [--merge|--no-merge]
-                [--verbose | -v] [--comments|--no-comments] 
+                [--verbose | -v] [--comments|--no-comments]
                 [--] TEST-COMMAND
 The '--test-name', '-log-file' and '--trs-file' options are mandatory.
 END

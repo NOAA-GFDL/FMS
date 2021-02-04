@@ -27,10 +27,8 @@
 # Set common test settings.
 . ../test-lib.sh
 
-skip_test="no"
-
-# call script to create files
-sh ./make_ascii_files.sh
+# call script to create ascii files
+. ./create_input.sh ascii
 
 # Set up namelist to carry test_number.
 touch test_numb_base2.nml

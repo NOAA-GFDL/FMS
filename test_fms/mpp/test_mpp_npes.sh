@@ -27,11 +27,11 @@
 # Set common test settings.
 . ../test-lib.sh
 
-env NUM_PES=1
+export NUM_PES=1
 test_expect_success "One processor test" '
     mpirun -n 1 ./test_mpp_npes
 '
-env NUM_PES=2
+export NUM_PES=2
 test_expect_success "All processor test" '
     mpirun -n 2 ./test_mpp_npes
 '
