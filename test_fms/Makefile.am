@@ -24,7 +24,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Make targets will be run in each subdirectory. Order is significant.
-<<<<<<< HEAD
 SUBDIRS = \
   affinity \
   axis_utils \
@@ -35,7 +34,7 @@ SUBDIRS = \
   field_manager \
   fms \
   fms2_io \
-  horiz_interp
+  horiz_interp \
   mpp
 #  interpolator
 #  monin_obukhov

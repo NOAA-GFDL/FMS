@@ -345,6 +345,7 @@ AC_CONFIG_FILES([
   test_fms/fms/Makefile
   test_fms/fms2_io/Makefile
   test_fms/horiz_interp/Makefile
+  test_fms/mpp/Makefile
   FMS.pc
   ])
 
