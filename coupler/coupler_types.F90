@@ -278,16 +278,17 @@ module coupler_types_mod
   !> @brief This is the interface to register the fields in a coupler_bc_type to be saved
   !! in restart files.
   interface coupler_type_register_restarts
-    module procedure CT_register_restarts_2d, CT_register_restarts_3d
+    module procedure mpp_io_CT_register_restarts_2d, mpp_io_CT_register_restarts_3d
     module procedure mpp_io_CT_register_restarts_to_file_2d, mpp_io_CT_register_restarts_to_file_3d
-    module procedure CT_register_restarts_to_file_2d, CT_register_restarts_to_file_3d
+
+    module procedure CT_register_restarts_2d, CT_register_restarts_3d
   end interface coupler_type_register_restarts
 
   !> @brief This is the interface to read in the fields in a coupler_bc_type that have
   !! been saved in restart files.
   interface coupler_type_restore_state
     module procedure mpp_io_CT_restore_state_2d, mpp_io_CT_restore_state_3d
-    module procedure CT_restore_state_2d
+    module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
   !> @brief This function interface indicates whether a coupler_bc_type has been initialized.
@@ -3089,7 +3090,7 @@ contains
   !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_to_file_2d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart)
+  subroutine CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(FmsNetcdfDomainFile_t),  dimension(:), pointer  :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out) :: num_rest_files !< The number of restart files to use
@@ -3164,13 +3165,13 @@ contains
          endif
       enddo
     enddo
-  end subroutine CT_register_restarts_to_file_2d
+  end subroutine CT_register_restarts_2d
 
   !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !!
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
+  subroutine mpp_io_CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out) :: num_rest_files !< The number of restart files to use
@@ -3220,7 +3221,7 @@ contains
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
-  end subroutine CT_register_restarts_2d
+  end subroutine mpp_io_CT_register_restarts_2d
 
   !! @brief Register the fields in a coupler_2d_bc_type to be saved to restart files
   !!
@@ -3258,7 +3259,7 @@ contains
   !! @brief Register the fields in a coupler_3d_bc_type to be saved in restart files
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_to_file_3d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart)
+  subroutine CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(FmsNetcdfDomainFile_t),  dimension(:), pointer  :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out) :: num_rest_files !< The number of restart files to use
@@ -3333,13 +3334,13 @@ contains
          endif
       enddo
     enddo
-  end subroutine CT_register_restarts_to_file_3d
+  end subroutine CT_register_restarts_3d
 
   !! @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
   !!
   !! This subroutine registers the fields in a coupler_3d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
+  subroutine mpp_io_CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out)   :: num_rest_files !< The number of restart files to use
@@ -3388,7 +3389,7 @@ contains
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
-  end subroutine CT_register_restarts_3d
+  end subroutine mpp_io_CT_register_restarts_3d
 
   !> @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
   !!
@@ -3562,7 +3563,7 @@ contains
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
     character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
                                                     !! be found.  The default for FMS is 'INPUT'.
-    logical,        optional, intent(in)    :: use_fms2_io !< This is just to distinguish the interfaces
+    logical,        intent(in)              :: use_fms2_io !< This is just to distinguish the interfaces
     logical,        optional, intent(in)    :: all_or_nothing !< If true and there are non-mandatory
                                                     !! restart fields, it is still an error if some
                                                     !! fields are read successfully but others are not.
