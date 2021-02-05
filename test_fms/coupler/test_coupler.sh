@@ -34,3 +34,6 @@ touch input.nml
 rm -rf RESTART
 mkdir RESTART
 run_test test_coupler_2d 1
+
+
+rm -rf RESTART
