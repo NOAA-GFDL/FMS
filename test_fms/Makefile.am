@@ -36,11 +36,11 @@ SUBDIRS = \
   fms2_io \
   horiz_interp \
   time_manager \
-  mpp_io
+  mpp_io \
+  mpp
 #  interpolator
 #  monin_obukhov
 #  mosaic
-#  mpp
 #  time_interp
 #  fms2_io
 

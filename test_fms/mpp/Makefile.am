@@ -116,7 +116,7 @@ EXTRA_DIST = input_base.nml \
   test_peset.sh \
   test_mpp_memuse.sh \
   test_mpp_mem_dump.sh \
-  make_files.sh
+  create_input.sh.in
 
 # Clean up
 CLEANFILES = *.nml *.out* *.tst* \
