@@ -56,7 +56,8 @@ call mpp_get_data_domain(Domain, data_grid(1), data_grid(2), data_grid(3), data_
 
 !> Write the file with new io
 call set_up_coupler_type(bc_type, data_grid, appendix="new", to_read=.false.)
-call coupler_type_register_restarts(bc_type, bc_rest_files, num_rest_files, domain, to_read=.false., ocean_restart=.false.)
+call coupler_type_register_restarts(bc_type, bc_rest_files, num_rest_files, domain, to_read=.false., ocean_restart=.false., &
+                                    & directory="RESTART/")
 
 do i = 1, bc_type%num_bcs
    call write_restart(bc_rest_files(i))
@@ -65,7 +66,8 @@ enddo
 
 !< Now read the file back!
 call set_up_coupler_type(bc_type_read, data_grid, appendix="new", to_read=.true.)
-call coupler_type_register_restarts(bc_type_read, bc_rest_files, num_rest_files, domain, to_read=.true., ocean_restart=.false.)
+call coupler_type_register_restarts(bc_type_read, bc_rest_files, num_rest_files, domain, to_read=.true., ocean_restart=.false.,&
+                                    & directory="RESTART/")
 
 do i = 1, bc_type_read%num_bcs
    call read_restart(bc_rest_files(i))

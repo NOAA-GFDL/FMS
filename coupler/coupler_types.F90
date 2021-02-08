@@ -3090,13 +3090,14 @@ contains
   !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart)
+  subroutine CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart, directory)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(FmsNetcdfDomainFile_t),  dimension(:), pointer  :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out) :: num_rest_files !< The number of restart files to use
     type(domain2D),           intent(in)  :: mpp_domain     !< The FMS domain to use for this registration call
     logical,                  intent(in)  :: to_read        !< Flag indicating if reading/writing a file
-    logical,        optional, intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
+    logical,         optional,intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
+    character(len=*),optional,intent(in)  :: directory      !< Directory where to open the file
 
     character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
     character(len=80) :: file_nm
@@ -3105,7 +3106,9 @@ contains
 
     character(len=8), dimension(3)             :: dim_names !< Array of dimension names
     character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
-    logical, dimension(max(1,var%num_bcs))     :: file_is_open
+    logical, dimension(max(1,var%num_bcs))     :: file_is_open !< flag indicating if file is open
+    character(len=20)                          :: dir       !< Directory where to open the file
+
     dim_names(1) = "xaxis_1"
     dim_names(2) = "yaxis_1"
     dim_names(3) = "Time"
@@ -3113,8 +3116,15 @@ contains
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
 
-    io_type = "overwrite"
-    if (to_read) io_type = "read"
+    if (present(directory)) dir = trim(directory)
+
+    if (to_read) then
+        io_type = "read"
+        if (.not. present(directory)) dir = "INPUT/"
+    else
+        io_type = "overwrite"
+        if (.not. present(directory)) dir = "RESTART/"
+    endif
 
     ! Determine the number and names of the restart files
     num_rest_files = 0
@@ -3137,7 +3147,7 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
         if (file_is_open(n)) then
              call register_axis(bc_rest_files(n), dim_names(1), "x")
              call register_axis(bc_rest_files(n), dim_names(2), "y")
@@ -3259,13 +3269,14 @@ contains
   !! @brief Register the fields in a coupler_3d_bc_type to be saved in restart files
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart)
+  subroutine CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart, directory)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(FmsNetcdfDomainFile_t),  dimension(:), pointer  :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out) :: num_rest_files !< The number of restart files to use
     type(domain2D),           intent(in)  :: mpp_domain     !< The FMS domain to use for this registration call
     logical,                  intent(in)  :: to_read        !< Flag indicating if reading/writing a file
-    logical,        optional, intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
+    logical,         optional,intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
+    character(len=*),optional,intent(in)  :: directory      !< Directory where to open the file
 
     character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
     character(len=80) :: file_nm
@@ -3274,7 +3285,9 @@ contains
 
     character(len=8), dimension(3)             :: dim_names !< Array of dimension names
     character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
-    logical, dimension(max(1,var%num_bcs))     :: file_is_open
+    logical, dimension(max(1,var%num_bcs))     :: file_is_open !< Flag indicating if file is open
+    character(len=20)                          :: dir       !< Directory where to open the file
+
     dim_names(1) = "xaxis_1"
     dim_names(2) = "yaxis_1"
     dim_names(3) = "Time"
@@ -3282,8 +3295,15 @@ contains
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
 
-    io_type = "overwrite"
-    if (to_read) io_type = "read"
+    if (present(directory)) dir = trim(directory)
+
+    if (to_read) then
+        io_type = "read"
+        if (.not. present(directory)) dir = "INPUT/"
+    else
+        io_type = "overwrite"
+        if (.not. present(directory)) dir = "RESTART/"
+    endif
 
     ! Determine the number and names of the restart files
     num_rest_files = 0
@@ -3306,7 +3326,7 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
         if (file_is_open(n)) then
              call register_axis(bc_rest_files(n), dim_names(1), "x")
              call register_axis(bc_rest_files(n), dim_names(2), "y")
