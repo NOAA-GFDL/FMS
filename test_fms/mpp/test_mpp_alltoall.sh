@@ -21,12 +21,13 @@
 
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
-
-# Tom Robinson 04/21/2020
+# Ryan Mulhall 2020
 
 # Set common test settings.
-. ../test_common.sh
-
+. ../test-lib.sh
 
 # Run the test for one processor
-run_test test_mpp_alltoall 4
+test_expect_success "mpp all-to-all" '
+    mpirun -n 4 ./test_mpp_alltoall
+'
+test_done

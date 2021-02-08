@@ -25,7 +25,10 @@
 # Lauren Chilutti 08/18/2020
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Run the test for 5 processors
-run_test test_mpp_sum 5
+test_expect_success "mpp_sum with mixed precision" '
+    mpirun -n 5 ./test_mpp_sum
+'
+test_done

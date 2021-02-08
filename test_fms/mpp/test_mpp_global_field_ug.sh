@@ -22,10 +22,14 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Uriel Ramirez 07/15/2020
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 touch input.nml
-run_test test_mpp_global_field_ug 6
+test_expect_success "mpp global field ug" '
+    mpirunt -n 6 ./test_mpp_global_field_ug
+'
+
+test_done

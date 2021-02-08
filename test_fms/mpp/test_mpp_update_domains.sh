@@ -23,23 +23,16 @@
 # execute tests in the test_fms/mpp directory.
 
 # Jessica Liptak
+# Ryan Mulhall 2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 # Run the test for one processor
 touch input.nml
-echo "Running test_mpp_update_domains with 1 pe"
-run_test test_mpp_update_domains 1
-# If on a Linux system that uses the command `nproc`, run the test
-if [ $(command -v nproc) ]
- # Looks like a linux system
- then
-   # Get the number of available CPUs on the system
-   nProc=$(nproc)
-   if [ ${nProc} -ge 2 ]
-     then
-       # Run the test with 2 pes
-       echo "Running test_mpp_update_domains with 2 pes"
-       run_test test_mpp_update_domains 2
-   fi
-fi
+test_expect_success "Running test_mpp_update_domains with 1 pe" '
+    mpirun -n 1 ./test_mpp_update_domains
+'
+test_expect_success "Running test_mpp_update_domains with 2 pes" '
+    mpirun -n 2 ./test_mpp_update_domains
+'
+test_done
