@@ -26,6 +26,7 @@ module coupler_types_mod
   use fms_mod,           only: write_version_number
   use fms2_io_mod,       only: FmsNetcdfDomainFile_t, open_file, register_restart_field
   use fms2_io_mod,       only: register_axis, unlimited, variable_exists, check_if_open
+  use fms2_io_mod,       only: register_field
   use fms_io_mod,        only: restart_file_type, fms_io_register_restart_field=>register_restart_field
   use fms_io_mod,        only: query_initialized, restore_state
   use time_manager_mod,  only: time_type
@@ -3152,6 +3153,9 @@ contains
              call register_axis(bc_rest_files(n), dim_names(1), "x")
              call register_axis(bc_rest_files(n), dim_names(2), "y")
              call register_axis(bc_rest_files(n), dim_names(3), unlimited)
+
+             call register_field(bc_rest_files(n), dim_names(1), "double", (/dim_names(1)/))
+             call register_field(bc_rest_files(n), dim_names(2), "double", (/dim_names(2)/))
         endif
     enddo
 
