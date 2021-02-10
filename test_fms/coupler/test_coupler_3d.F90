@@ -18,29 +18,30 @@
 !***********************************************************************
 
 !> @brief  This programs tests the functionality in
-!! 1. coupler_type_register_restarts (CT_register_restarts_2d and mpp_io_CT_register_restarts_2d)
-!! 2. coupler_type_restore_state (CT_restore_state_2d and mpp_io_CT_restore_state_2d)
-program test_coupler_2d
+!! 1. coupler_type_register_restarts (CT_register_restarts_3d and mpp_io_CT_register_restarts_3d)
+!! 2. coupler_type_restore_state (CT_restore_state_3d and mpp_io_CT_restore_state_3d)
+program test_coupler_3d
 
 use   fms2_io_mod,        only: FmsNetcdfDomainFile_t, open_file, close_file, read_restart, write_restart
 use   fms_io_mod,         only: restart_file_type, save_restart, free_restart_type, restore_state
 use   fms_mod,            only: fms_init, fms_end
 use   mpp_mod,            only: mpp_error, FATAL
-use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain
-use   coupler_types_mod,  only: coupler_2d_bc_type, coupler_type_register_restarts, coupler_type_restore_state
+use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
+                                & mpp_domains_set_stack_size
+use   coupler_types_mod,  only: coupler_3d_bc_type, coupler_type_register_restarts, coupler_type_restore_state
 use   platform_mod,       only: r8_kind
 
 implicit none
 
-type(coupler_2d_bc_type)              :: bc_type          !< Coupler 2d restart types
-type(coupler_2d_bc_type)              :: bc_type_read     !< Coupler 2d restart types for reading
+type(coupler_3d_bc_type)              :: bc_type          !< Coupler 3d restart types
+type(coupler_3d_bc_type)              :: bc_type_read     !< Coupler 3d restart types for reading
 type(FmsNetcdfDomainFile_t), pointer  :: bc_rest_files(:)=> null() !< Array of fms2_io fileobjs
 type(restart_file_type), pointer      :: fms_io_bc_rest_files(:)=> null() !< Array of fms_io fileobjs
 type(domain2d)                        :: Domain           !< Domain with mask table
 integer, dimension(2)                 :: layout = (/1,1/) !< Domain layout
 integer                               :: nlon             !< Number of points in x axis
 integer                               :: nlat             !< Number of points in y axis
-integer, dimension(4)                 :: data_grid        !< Starting/Ending indices in x and y
+integer, dimension(5)                 :: data_grid        !< Starting/Ending indices in x and y, size of z dimension
                                                           !! for the data_domain
 integer                               :: num_rest_files   !< Number of restart files
 integer                               :: i                !< No description
@@ -50,9 +51,13 @@ call fms_init()
 nlat=60
 nlon=60
 
+call mpp_domains_set_stack_size(   72000)
+
 call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_coupler')
 call mpp_define_io_domain(Domain, (/1,1/))
 call mpp_get_data_domain(Domain, data_grid(1), data_grid(2), data_grid(3), data_grid(4))
+
+data_grid(5) = 10
 
 !> Write the file with new io
 call set_up_coupler_type(bc_type, data_grid, appendix="new", to_read=.false.)
@@ -121,10 +126,10 @@ call fms_end()
 
 contains
 
-!> @brief  Sets up the coupler_2d_bc_type with the information needed to run the test
+!> @brief  Sets up the coupler_3d_bc_type with the information needed to run the test
 subroutine set_up_coupler_type(bc_type, data_grid, appendix, to_read)
-   type(coupler_2d_bc_type), intent(inout) :: bc_type    !< Coupler 2d restart types
-   integer, dimension(4), intent(in)       :: data_grid  !< Starting and ending indexes of data_domain
+   type(coupler_3d_bc_type), intent(inout) :: bc_type    !< Coupler 3d restart types
+   integer, dimension(5), intent(in)       :: data_grid  !< Starting and ending indexes of data_domain
    character(len=3), intent(in)            :: appendix   !< Appendix to be added to the filename
    logical, intent(in)                     :: to_read    !< If true, it is reading a file so data is
                                                          !! set do a dummy value
@@ -139,10 +144,12 @@ subroutine set_up_coupler_type(bc_type, data_grid, appendix, to_read)
    bc_type%num_bcs = 2
    nfiles = bc_type%num_bcs
    allocate(bc_type%bc(nfiles))
+   bc_type%ks = 1
+   bc_type%ke = data_grid(5)
 
    do i = 1, nfiles
       write(file_num,'(i1)') i
-      bc_type%bc(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_2d.nc"
+      bc_type%bc(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_3d.nc"
 
       bc_type%bc(i)%num_fields=2
       nfields = bc_type%bc(i)%num_fields
@@ -151,7 +158,7 @@ subroutine set_up_coupler_type(bc_type, data_grid, appendix, to_read)
       do j = 1, nfields
          write(field_num,'(i1)') j
          bc_type%bc(i)%field(j)%name="var_"//field_num
-         allocate(bc_type%bc(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4)))
+         allocate(bc_type%bc(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4), data_grid(5)))
          if (to_read) then
              bc_type%bc(i)%field(j)%values = real(999., kind=r8_kind)
          else
@@ -162,9 +169,9 @@ subroutine set_up_coupler_type(bc_type, data_grid, appendix, to_read)
 
 endsubroutine
 
-!> @brief Cleans up the coupler_2d_bc_type
+!> @brief Cleans up the coupler_3d_bc_type
 subroutine destroy_coupler_type(bc_type)
-   type(coupler_2d_bc_type), intent(inout) :: bc_type !< Coupler 2d restart types
+   type(coupler_3d_bc_type), intent(inout) :: bc_type !< Coupler 3d restart types
 
    integer :: i,j !< No description
 
@@ -179,17 +186,17 @@ subroutine destroy_coupler_type(bc_type)
 
 end subroutine
 
-!> @brief Compares the data between two coupler_2d_bc_types
+!> @brief Compares the data between two coupler_3d_bc_types
 subroutine compare_answers(bc_type_read, bc_type)
-   type(coupler_2d_bc_type), intent(inout) :: bc_type_read !< Coupler 2d restart types read in
-   type(coupler_2d_bc_type), intent(inout) :: bc_type      !< Coupler 2d restart types
+   type(coupler_3d_bc_type), intent(inout) :: bc_type_read !< Coupler 3d restart types read in
+   type(coupler_3d_bc_type), intent(inout) :: bc_type      !< Coupler 3d restart types
 
    integer :: i,j !< No description
 
    do i=1, bc_type%num_bcs
       do j = 1, bc_type%bc(i)%num_fields
          if (sum(bc_type%bc(i)%field(j)%values) .ne. sum(bc_type_read%bc(i)%field(j)%values)) then
-             call mpp_error(FATAL, "test_coupler_2d: Answers do not match for: "//trim(bc_type%bc(i)%ice_restart_file)//&
+             call mpp_error(FATAL, "test_coupler_3d: Answers do not match for: "//trim(bc_type%bc(i)%ice_restart_file)//&
                             &" var: "//trim(bc_type%bc(i)%field(j)%name))
          endif
       end do
@@ -197,4 +204,4 @@ subroutine compare_answers(bc_type_read, bc_type)
 
 end subroutine
 
-end program test_coupler_2d
+end program test_coupler_3d

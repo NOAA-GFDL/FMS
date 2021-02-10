@@ -3287,14 +3287,16 @@ contains
     logical :: ocn_rest
     integer :: f, n, m
 
-    character(len=8), dimension(3)             :: dim_names !< Array of dimension names
+    character(len=8), dimension(4)             :: dim_names !< Array of dimension names
     character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< Flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
+    integer                                    :: nz        !< Length of the z direction of each file
 
     dim_names(1) = "xaxis_1"
     dim_names(2) = "yaxis_1"
-    dim_names(3) = "Time"
+    dim_names(3) = "zaxis_1"
+    dim_names(4) = "Time"
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
@@ -3309,6 +3311,7 @@ contains
         if (.not. present(directory)) dir = "RESTART/"
     endif
 
+    nz = var%ke - var%ks + 1 !< NOTE: This assumes that the z dimension is the same for every variable
     ! Determine the number and names of the restart files
     num_rest_files = 0
     do n = 1, var%num_bcs
@@ -3334,7 +3337,8 @@ contains
         if (file_is_open(n)) then
              call register_axis(bc_rest_files(n), dim_names(1), "x")
              call register_axis(bc_rest_files(n), dim_names(2), "y")
-             call register_axis(bc_rest_files(n), dim_names(3), unlimited)
+             call register_axis(bc_rest_files(n), dim_names(3), nz)
+             call register_axis(bc_rest_files(n), dim_names(4), unlimited)
         endif
     enddo
 

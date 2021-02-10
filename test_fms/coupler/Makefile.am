@@ -29,10 +29,11 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_coupler_2d
+check_PROGRAMS = test_coupler_2d test_coupler_3d
 
 # This is the source code for the test.
 test_coupler_2d_SOURCES = test_coupler_2d.F90
+test_coupler_3d_SOURCES = test_coupler_3d.F90
 
 # Run the test program.
 TESTS = test_coupler.sh
