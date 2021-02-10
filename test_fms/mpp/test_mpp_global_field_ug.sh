@@ -29,7 +29,7 @@
 
 touch input.nml
 test_expect_success "mpp global field ug" '
-    mpirunt -n 6 ./test_mpp_global_field_ug
+    mpirun -n 6 ./test_mpp_global_field_ug
 '
 
 test_done
