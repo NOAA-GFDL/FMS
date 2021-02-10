@@ -89,8 +89,7 @@ module time_manager_mod
 !    contains three PRIVATE variables: days, seconds and ticks.
 ! </DATA>
 
-#include <fms_platform.h>
-
+use platform_mod, only: r8_kind
 use constants_mod, only: rseconds_per_day=>seconds_per_day
 use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout
 
@@ -1255,7 +1254,7 @@ end subroutine time_assignment
 
 function time_type_to_real(time)
 
-real(DOUBLE_KIND)           :: time_type_to_real
+real(kind=r8_kind)           :: time_type_to_real
 type(time_type), intent(in) :: time
 
 if(.not.module_is_initialized) call time_manager_init

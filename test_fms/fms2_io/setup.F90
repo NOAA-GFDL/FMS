@@ -23,6 +23,8 @@ use mpi
 use argparse
 use mpp_mod
 use mpp_domains_mod
+use platform_mod
+
 implicit none
 private
 

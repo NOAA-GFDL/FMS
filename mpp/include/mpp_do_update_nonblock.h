@@ -19,7 +19,7 @@
 !***********************************************************************
 subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, flags, reuse_id_update, name)
   integer,                    intent(in) :: id_update
-  integer(LONG_KIND),         intent(in) :: f_addrs(:,:)
+  integer(i8_kind),         intent(in) :: f_addrs(:,:)
   type(domain2D),             intent(in) :: domain
   type(overlapSpec),          intent(in) :: update
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
@@ -256,7 +256,7 @@ end subroutine MPP_START_DO_UPDATE_3D_
 
 subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, flags)
   integer,             intent(in) :: id_update
-  integer(LONG_KIND),  intent(in) :: f_addrs(:,:)
+  integer(i8_kind),  intent(in) :: f_addrs(:,:)
   type(domain2d),      intent(in) :: domain
   type(overlapSpec),   intent(in) :: update
   integer,             intent(in) :: ke_max

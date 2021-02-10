@@ -30,7 +30,7 @@
 !! the second call returns a COUNT value greater than that of the
 !! first call.
 module include_files_mod
-#include "../../include/fms_platform.h"
+  use platform_mod
   logical :: first_call_system_clock_mpi=.TRUE.
 contains
 #include "../../mpp/include/system_clock.h"
@@ -41,7 +41,7 @@ program test_system_clock
   use mpp_mod, only : mpp_init, mpp_init_test_init_true_only, stderr, stdout, mpp_error, FATAL
   implicit none
 
-  integer(LONG_KIND) :: count1, count_rate1, count_max1, count2, count_rate2, count_max2
+  integer(i8_kind) :: count1, count_rate1, count_max1, count2, count_rate2, count_max2
   integer :: ierr
 !> Initialize mpp
   call mpp_init(test_level=mpp_init_test_init_true_only)

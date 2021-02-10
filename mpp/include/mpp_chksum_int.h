@@ -18,18 +18,18 @@
 !***********************************************************************
 
 function MPP_CHKSUM_INT_( var, pelist, mask_val )
-  integer(LONG_KIND) :: MPP_CHKSUM_INT_
-      MPP_TYPE_, intent(in) :: var MPP_RANK_
-      integer, optional :: pelist(:)
+  integer(i8_kind) :: MPP_CHKSUM_INT_
+  MPP_TYPE_, intent(in) :: var MPP_RANK_
+  integer, optional :: pelist(:)
   MPP_TYPE_, intent(in), optional :: mask_val
 
   if ( PRESENT(mask_val) ) then
      !PACK on var/=mask_val ignores values in var
      !equiv to setting those values=0, but on sparse arrays
      !pack should return much smaller array to sum
-     MPP_CHKSUM_INT_ = sum( INT( PACK(var,var/=mask_val),LONG_KIND) )
+     MPP_CHKSUM_INT_ = sum( INT( PACK(var,var/=mask_val),i8_kind) )
   else
-     MPP_CHKSUM_INT_ = sum(INT(var,LONG_KIND))
+     MPP_CHKSUM_INT_ = sum(INT(var,i8_kind))
   end if
 
       call mpp_sum( MPP_CHKSUM_INT_, pelist )
@@ -41,14 +41,14 @@ function MPP_CHKSUM_INT_( var, pelist, mask_val )
 !Handles real mask for easier implimentation
 ! until exists full integer vartypes...
 function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
-  integer(LONG_KIND) :: MPP_CHKSUM_INT_RMASK_
+  integer(KIND=i8_kind) :: MPP_CHKSUM_INT_RMASK_
   MPP_TYPE_, intent(in) :: var MPP_RANK_
   integer, optional :: pelist(:)
   real, intent(in) :: mask_val
   integer(KIND(var))::imask_val
-  integer(INT_KIND)::i4tmp(2)=0
-  real(FLOAT_KIND)::r4tmp(2)=0
-  integer(LONG_KIND) :: i8tmp=0
+  integer(KIND=i4_kind)::i4tmp(2)=0
+  real(KIND=r4_kind)::r4tmp(2)=0
+  integer(KIND=i8_kind) :: i8tmp=0
   !high fidelity error message
   character(LEN=1) :: tmpStr1,tmpStr2,tmpStr3
   character(LEN=32) :: tmpStr4,tmpStr5
@@ -61,7 +61,7 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
      ! we've packed an MPP_FILL_
      imask_val = MPP_FILL_INT
   !!! Current NETCDF fill values (AKA MPP_FILL_*) designed towards CEILING(MPP_FILL_{FLOAT,DOUBLE},kind=4byte)=MPP_FILL_INT
-  else if ( CEILING(mask_val,INT_KIND) == MPP_FILL_INT ) then
+  else if ( CEILING(mask_val, i4_kind) == MPP_FILL_INT ) then
      ! we've also packed an MPP_FILL_
      imask_val = MPP_FILL_INT
 ! Secondary Logic:
@@ -89,9 +89,11 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
         write(unit=tmpstr3,fmt="(I1)") KIND(mask_val)
         errStr = errStr // tmpstr3 // ") mask_val="
         write(unit=tmpstr4,fmt=*) mask_val
-        errStr = errStr // trim(tmpstr4) // "has been called with these strange values. Check your KINDS, _FillValue, pack and mask_val. // &
-            & Hint: Try being explicit and using MPP_FILL_{INT,FLOAT,DOUBLE}. Continuing by using the default MPP_FILL_INT. // &
-            & THIS WILL BE FATAL IN THE FUTURE!"
+        errStr = errStr // trim(tmpstr4) // "has been called with these strange values. Check your KINDS, "// &
+              "_FillValue, pack and mask_val. "// &
+              "Hint: Try being explicit and using MPP_FILL_{INT,FLOAT,DOUBLE}. "// &
+              "Continuing by using the default MPP_FILL_INT. " // &
+              "THIS WILL BE FATAL IN THE FUTURE!"
         call mpp_error(WARNING, trim(errStr) )
 
         imask_val = MPP_FILL_INT

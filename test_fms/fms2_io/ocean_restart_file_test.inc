@@ -28,14 +28,14 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
   type(domain2d), pointer :: io_domain
   integer :: nx
   integer :: ny
-  real(kind=real64), dimension(:), allocatable :: lon_data
-  real(kind=real64), dimension(:), allocatable :: lat_data
-  real(kind=real64), dimension(:), allocatable :: lev_data
-  real(kind=real64), dimension(:,:,:), allocatable :: temperature_data
-  integer(kind=int64) :: out_chksum
+  real(kind=r8_kind), dimension(:), allocatable :: lon_data
+  real(kind=r8_kind), dimension(:), allocatable :: lat_data
+  real(kind=r8_kind), dimension(:), allocatable :: lev_data
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: temperature_data
+  integer(kind=i8_kind) :: out_chksum
   integer :: ndims
   integer, dimension(:), allocatable :: dim_sizes
-  integer(kind=int64) :: in_chksum
+  integer(kind=i8_kind) :: in_chksum
   logical :: debug
   integer :: err
   integer :: i
@@ -68,6 +68,7 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
   endif
   call mpp_get_compute_domain(io_domain, xsize=nx, ysize=ny)
   allocate(temperature_data(nz, nx, ny))
+  temperature_data(:,:,:) = 0.0
 
   !Write a restart file.
   !Open a restart file and initialize the file object.
@@ -75,10 +76,10 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
                             nc_format="64bit", is_restart=.true.))
 
   !Add some global attributes to the restart file.
-  call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
-  call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
-  call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
-  call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
+  call register_global_attribute(fileobj, "globalatt1", real(7., kind=r8_kind))
+  call register_global_attribute(fileobj, "globalatt2", real(4., kind=r4_kind))
+  call register_global_attribute(fileobj, "globalatt3", int(3, kind=i4_kind))
+  call register_global_attribute(fileobj, "globalatt4", int(2, kind=i8_kind))
   call register_global_attribute(fileobj, "globalatt5", "some text", str_len=len_trim("some text"))
 
   !Add dimensions and corresponding variables to the file.

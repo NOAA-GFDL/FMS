@@ -2937,7 +2937,8 @@ subroutine save_unlimited_axis_restart(fileObj,restartpath)
         check_val = mpp_chksum(INT(fileObj%p1di(1,j)%p(:),8))
            cpack = 0  ! Write data as integer*4
         else
-        call mpp_error(FATAL, "fms_io(save_unlimited_axis_restart): There is no pointer associated with the record data of field "// &
+        call mpp_error(FATAL, "fms_io(save_unlimited_axis_restart):"//&
+            " There is no pointer associated with the record data of field "//&
                 trim(cur_var%name)//" of file "//trim(fileObj%name) )
         end if
      call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &

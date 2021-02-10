@@ -27,6 +27,7 @@ use mpp_mod
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
+use platform_mod
 implicit none
 private
 
@@ -351,8 +352,11 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
 
   !Get the path of a "combined" file.
   io_layout = mpp_get_io_domain_layout(domain)
-  if (mpp_get_ntile_count(domain) .gt. 1) then
-    tile_id = mpp_get_tile_id(domain)
+  tile_id = mpp_get_tile_id(domain)
+
+  !< If the number of tiles is greater than 1 or if the current tile is greater
+  !than 1 add .tileX. to the filename
+  if (mpp_get_ntile_count(domain) .gt. 1 .or. tile_id(1) > 1) then
     call domain_tile_filepath_mangle(combined_filepath, path, tile_id(1))
   else
     call string_copy(combined_filepath, path)
@@ -593,7 +597,8 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
       call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
     else
-      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d.  The data sent in has an unsupported dimensionality")
+      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d."//&
+                 " The data sent in has an unsupported dimensionality")
     endif
   enddo
 

@@ -17,15 +17,14 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \file
-!! \brief Contains the \ref block_control_mod module
+!> @file
+!! @brief Contains the \ref block_control_mod module
+!! @email gfdl.climate.model.info@noaa.gov
 
 module block_control_mod
-#include <fms_platform.h>
 
 use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL
 use mpp_domains_mod, only: mpp_compute_extent
-
 implicit none
 
 public block_control_type

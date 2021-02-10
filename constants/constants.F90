@@ -17,10 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!! \brief Defines useful constants for Earth. Constants are defined as real
-!! parameters. Constants are accessed through the "use" statement.
-!!
-!! \author Bruce Wyman <Bruce.Wyman@noaa.gov>
+!> @file
+!! @brief Defines useful constants for Earth. Constants are defined as real
+!!   parameters. Constants are accessed through the "use" statement.
+!! @author Bruce Wyman
+!! @email gfdl.climate.model.info@noaa.gov
+
 module constants_mod
 
 !---variable for strong typing grid parameters
@@ -140,7 +142,7 @@ public :: constants_init
 
 contains
 
-!> \brief dummy routine.
+!> @brief dummy routine.
 subroutine constants_init
 
 end subroutine constants_init

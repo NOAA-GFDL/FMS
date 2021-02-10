@@ -19,7 +19,7 @@
 !***********************************************************************
     subroutine MPP_DO_UPDATE_3D_( f_addrs, domain, update, d_type, ke, flags)
 !updates data domain of 3D field whose computational domains have been computed
-      integer(LONG_KIND),         intent(in) :: f_addrs(:,:)
+      integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
       type(overlapSpec),          intent(in) :: update
       MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface

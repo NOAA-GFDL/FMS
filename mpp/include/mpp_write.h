@@ -24,6 +24,6 @@ subroutine MPP_WRITE_( unit, field, data, tstamp)
       MPP_TYPE_, intent(in), optional :: tstamp
 
       if (unit == NULLUNIT) return
-      MPP_WRITE_RECORD_
+      call MPP_WRITE_RECORD_
       return
     end subroutine MPP_WRITE_

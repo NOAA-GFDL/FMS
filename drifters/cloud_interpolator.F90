@@ -20,8 +20,11 @@
 
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
+!> @file
+!! @brief cloud interpolator
+!! @author
+!! @email gfdl.climate.model.info@noaa.gov
 MODULE cloud_interpolator_mod
-#include <fms_platform.h>
   implicit none
   private
 
@@ -36,9 +39,9 @@ CONTAINS
 
 !...............................................................................
 pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
-    integer, intent(in)  ::  Ic    ! contacted index
-    integer, intent(out) ::  ie(:) ! expanded list of indices
-    integer, intent(out) ::  ier   ! error flag (0=ok)
+    integer, intent(in)  ::  Ic    !< contacted index
+    integer, intent(out) ::  ie(:) !< expanded list of indices
+    integer, intent(out) ::  ier   !< error flag (0=ok)
 
     integer j, nd
 
@@ -60,9 +63,9 @@ pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
-    integer, intent(in) ::  ie(:)  ! expanded list of indices
-    integer, intent(out)  ::  Ic   ! contacted index
-    integer, intent(out) ::  ier   ! error flag (0=ok)
+    integer, intent(in) ::  ie(:)  !< expanded list of indices
+    integer, intent(out)  ::  Ic   !< contacted index
+    integer, intent(out) ::  ier   !< error flag (0=ok)
 
     integer j, nd
 
@@ -83,10 +86,10 @@ pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
-    real, intent(in) :: fvals(0:)  ! values at the cell nodes
-    real, intent(in) :: ts(:)      ! normalized [0,1]^nd cell coordinates
-    real, intent(out):: f          ! interpolated value
-    integer, intent(out) ::  ier   ! error flag (0=ok)
+    real, intent(in) :: fvals(0:)  !< values at the cell nodes
+    real, intent(in) :: ts(:)      !< normalized [0,1]^nd cell coordinates
+    real, intent(out):: f          !< interpolated value
+    integer, intent(out) ::  ier   !< error flag (0=ok)
 
     integer j, nd, Ic, iflag
     integer ie(size(fvals))
@@ -114,10 +117,10 @@ pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_locate_cell(axis, x, index, ier)
-    real, intent(in)     :: axis(:) ! axis
-    real, intent(in)     :: x       ! abscissae
-    integer, intent(out) :: index   ! lower-left corner index
-    integer, intent(out) ::  ier    ! error flag (0=ok)
+    real, intent(in)     :: axis(:) !< axis
+    real, intent(in)     :: x       !< abscissae
+    integer, intent(out) :: index   !< lower-left corner index
+    integer, intent(out) ::  ier    !< error flag (0=ok)
 
     logical down
     integer n, index1, is
@@ -201,10 +204,10 @@ pure subroutine cld_ntrp_locate_cell(axis, x, index, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_get_flat_index(nsizes, indices, flat_index, ier)
-    integer, intent(in)  :: nsizes(:)  ! size of array along each axis
-    integer, intent(in)  :: indices(:) ! cell indices
-    integer, intent(out) :: flat_index ! index into flattened array
-    integer, intent(out) ::  ier       ! error flag (0=ok)
+    integer, intent(in)  :: nsizes(:)  !< size of array along each axis
+    integer, intent(in)  :: indices(:) !< cell indices
+    integer, intent(out) :: flat_index !< index into flattened array
+    integer, intent(out) ::  ier       !< error flag (0=ok)
 
     integer nd, id
 
@@ -228,11 +231,11 @@ pure subroutine cld_ntrp_get_flat_index(nsizes, indices, flat_index, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_get_cell_values(nsizes, fnodes, indices, fvals, ier)
-    integer, intent(in)  :: nsizes(:)  ! size of fnodes along each axis
-    real, intent(in)     :: fnodes(:)  ! flattened array of node values
-    integer, intent(in)  :: indices(:) ! cell indices
-    real, intent(out)    :: fvals(0:)  ! returned array values in the cell
-    integer, intent(out) ::  ier       ! error flag (0=ok)
+    integer, intent(in)  :: nsizes(:)  !< size of fnodes along each axis
+    real, intent(in)     :: fnodes(:)  !< flattened array of node values
+    integer, intent(in)  :: indices(:) !< cell indices
+    real, intent(out)    :: fvals(0:)  !< returned array values in the cell
+    integer, intent(out) ::  ier       !< error flag (0=ok)
 
     integer id, nt, nd, flat_index, Ic, iflag
     integer, dimension(size(nsizes)) :: cell_indices, node_indices
