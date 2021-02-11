@@ -29,12 +29,13 @@ use   netcdf     , only: nf90_create, nf90_def_var, nf90_put_att, nf90_enddef, &
                          nf90_close, nf90_clobber, nf90_64bit_offset, nf90_double
 
 use, intrinsic :: iso_fortran_env
+use platform_mod
 
 implicit none
 
 type(valid_t) :: valid_type               !> Fms2io valid object type
 type(FmsNetcdfFile_t) :: fileobj          !> Fms2io file obj
-real(kind=real64) :: sst(10,10)           !> Data
+real(kind=r8_kind) :: sst(10,10)           !> Data
 integer :: mask_in(10,10)                 !> Array defining if sst(:,:) is valid (1) or not (0)
 integer :: ncid, varid, err               !> Netcdf integers needed
 integer, dimension(:), allocatable :: pes !> Current pelist
@@ -49,8 +50,8 @@ if (mpp_root_pe() .eq. mpp_pe()) then
 !> Create your own file with a variable to test with:
    err = nf90_create('test_file.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
    err = nf90_def_var(ncid, 'sst', nf90_double,varid)
-   err = nf90_put_att(ncid, varid, "_FillValue", real(999,kind=real64))
-   err = nf90_put_att(ncid, varid, "missing_value", real(999,kind=real64))
+   err = nf90_put_att(ncid, varid, "_FillValue", real(999,kind=r8_kind))
+   err = nf90_put_att(ncid, varid, "missing_value", real(999,kind=r8_kind))
    err = nf90_enddef(ncid)
    err = nf90_close(ncid)
 endif
@@ -70,11 +71,11 @@ deallocate(pes)
 
 !> Error checking:
 if (.not. valid_type%has_fill) call mpp_error(FATAL, "test_get_valid: the fill valid_type%has_fill is not .true.")
-if (valid_type%fill_val .ne. real(999,kind=real64)) call mpp_error(FATAL, &
+if (valid_type%fill_val .ne. real(999,kind=r8_kind)) call mpp_error(FATAL, &
         "test_get_valid: the fill value is not correct")
 
 if (.not. valid_type%has_missing) call mpp_error(FATAL, "test_get_valid: the fill valid_type%has_fill is not .true.")
-if (valid_type%missing_val .ne. real(999,kind=real64)) call mpp_error(FATAL, &
+if (valid_type%missing_val .ne. real(999,kind=r8_kind)) call mpp_error(FATAL, &
         "test_get_valid: the fill value is not correct")
 
 if (.not. valid_type%has_range) call mpp_error(FATAL, "test_get_valid: the valid_type%has_range is not .true.")
@@ -85,8 +86,8 @@ if (valid_type%has_min) call mpp_error(FATAL, "test_get_valid: the valid_type%ha
 
 !> Create some fake data
 mask_in = 1
-sst = real(0, kind=real64)
-sst(1,1) = real(999, kind=real64)
+sst = real(0, kind=r8_kind)
+sst(1,1) = real(999, kind=r8_kind)
 
 !> Check where the data is valid
 !> Set the mask_in to 0 wherever sst is valid

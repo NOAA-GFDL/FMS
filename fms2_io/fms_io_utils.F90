@@ -57,26 +57,26 @@ endtype char_linked_list
 
 
 interface allocate_array
-  module procedure allocate_array_int32_1d
-  module procedure allocate_array_int32_2d
-  module procedure allocate_array_int32_3d
-  module procedure allocate_array_int32_4d
-  module procedure allocate_array_int32_5d
-  module procedure allocate_array_int64_1d
-  module procedure allocate_array_int64_2d
-  module procedure allocate_array_int64_3d
-  module procedure allocate_array_int64_4d
-  module procedure allocate_array_int64_5d
-  module procedure allocate_array_real32_1d
-  module procedure allocate_array_real32_2d
-  module procedure allocate_array_real32_3d
-  module procedure allocate_array_real32_4d
-  module procedure allocate_array_real32_5d
-  module procedure allocate_array_real64_1d
-  module procedure allocate_array_real64_2d
-  module procedure allocate_array_real64_3d
-  module procedure allocate_array_real64_4d
-  module procedure allocate_array_real64_5d
+  module procedure allocate_array_i4_kind_1d
+  module procedure allocate_array_i4_kind_2d
+  module procedure allocate_array_i4_kind_3d
+  module procedure allocate_array_i4_kind_4d
+  module procedure allocate_array_i4_kind_5d
+  module procedure allocate_array_i8_kind_1d
+  module procedure allocate_array_i8_kind_2d
+  module procedure allocate_array_i8_kind_3d
+  module procedure allocate_array_i8_kind_4d
+  module procedure allocate_array_i8_kind_5d
+  module procedure allocate_array_r4_kind_1d
+  module procedure allocate_array_r4_kind_2d
+  module procedure allocate_array_r4_kind_3d
+  module procedure allocate_array_r4_kind_4d
+  module procedure allocate_array_r4_kind_5d
+  module procedure allocate_array_r8_kind_1d
+  module procedure allocate_array_r8_kind_2d
+  module procedure allocate_array_r8_kind_3d
+  module procedure allocate_array_r8_kind_4d
+  module procedure allocate_array_r8_kind_5d
   module procedure allocate_array_char_1d
   module procedure allocate_array_char_2d
   module procedure allocate_array_char_3d
@@ -87,50 +87,50 @@ end interface allocate_array
 
 
 interface put_array_section
-  module procedure put_array_section_int32_1d
-  module procedure put_array_section_int32_2d
-  module procedure put_array_section_int32_3d
-  module procedure put_array_section_int32_4d
-  module procedure put_array_section_int32_5d
-  module procedure put_array_section_int64_1d
-  module procedure put_array_section_int64_2d
-  module procedure put_array_section_int64_3d
-  module procedure put_array_section_int64_4d
-  module procedure put_array_section_int64_5d
-  module procedure put_array_section_real32_1d
-  module procedure put_array_section_real32_2d
-  module procedure put_array_section_real32_3d
-  module procedure put_array_section_real32_4d
-  module procedure put_array_section_real32_5d
-  module procedure put_array_section_real64_1d
-  module procedure put_array_section_real64_2d
-  module procedure put_array_section_real64_3d
-  module procedure put_array_section_real64_4d
-  module procedure put_array_section_real64_5d
+  module procedure put_array_section_i4_kind_1d
+  module procedure put_array_section_i4_kind_2d
+  module procedure put_array_section_i4_kind_3d
+  module procedure put_array_section_i4_kind_4d
+  module procedure put_array_section_i4_kind_5d
+  module procedure put_array_section_i8_kind_1d
+  module procedure put_array_section_i8_kind_2d
+  module procedure put_array_section_i8_kind_3d
+  module procedure put_array_section_i8_kind_4d
+  module procedure put_array_section_i8_kind_5d
+  module procedure put_array_section_r4_kind_1d
+  module procedure put_array_section_r4_kind_2d
+  module procedure put_array_section_r4_kind_3d
+  module procedure put_array_section_r4_kind_4d
+  module procedure put_array_section_r4_kind_5d
+  module procedure put_array_section_r8_kind_1d
+  module procedure put_array_section_r8_kind_2d
+  module procedure put_array_section_r8_kind_3d
+  module procedure put_array_section_r8_kind_4d
+  module procedure put_array_section_r8_kind_5d
 end interface put_array_section
 
 
 interface get_array_section
-  module procedure get_array_section_int32_1d
-  module procedure get_array_section_int32_2d
-  module procedure get_array_section_int32_3d
-  module procedure get_array_section_int32_4d
-  module procedure get_array_section_int32_5d
-  module procedure get_array_section_int64_1d
-  module procedure get_array_section_int64_2d
-  module procedure get_array_section_int64_3d
-  module procedure get_array_section_int64_4d
-  module procedure get_array_section_int64_5d
-  module procedure get_array_section_real32_1d
-  module procedure get_array_section_real32_2d
-  module procedure get_array_section_real32_3d
-  module procedure get_array_section_real32_4d
-  module procedure get_array_section_real32_5d
-  module procedure get_array_section_real64_1d
-  module procedure get_array_section_real64_2d
-  module procedure get_array_section_real64_3d
-  module procedure get_array_section_real64_4d
-  module procedure get_array_section_real64_5d
+  module procedure get_array_section_i4_kind_1d
+  module procedure get_array_section_i4_kind_2d
+  module procedure get_array_section_i4_kind_3d
+  module procedure get_array_section_i4_kind_4d
+  module procedure get_array_section_i4_kind_5d
+  module procedure get_array_section_i8_kind_1d
+  module procedure get_array_section_i8_kind_2d
+  module procedure get_array_section_i8_kind_3d
+  module procedure get_array_section_i8_kind_4d
+  module procedure get_array_section_i8_kind_5d
+  module procedure get_array_section_r4_kind_1d
+  module procedure get_array_section_r4_kind_2d
+  module procedure get_array_section_r4_kind_3d
+  module procedure get_array_section_r4_kind_4d
+  module procedure get_array_section_r4_kind_5d
+  module procedure get_array_section_r8_kind_1d
+  module procedure get_array_section_r8_kind_2d
+  module procedure get_array_section_r8_kind_3d
+  module procedure get_array_section_r8_kind_4d
+  module procedure get_array_section_r8_kind_5d
 end interface get_array_section
 
 
