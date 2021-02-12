@@ -49,7 +49,7 @@
       integer                       :: unit_nml, io_status, iunit
       integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
-      real(DOUBLE_KIND)             :: doubledata = 0
+      real(r8_kind)             :: doubledata = 0
       real                          :: realarray(4)
 
       if( module_is_initialized )return

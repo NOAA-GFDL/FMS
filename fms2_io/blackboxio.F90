@@ -25,7 +25,8 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use mpp_mod, only: mpp_pe
-use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
+use, intrinsic :: iso_fortran_env, only: error_unit
+use platform_mod
 implicit none
 private
 
@@ -178,9 +179,9 @@ subroutine copy_metadata(fileobj, new_fileobj)
   integer :: i
   integer :: j
   integer :: k
-  integer(kind=int32), dimension(:), allocatable :: buf_int
-  real(kind=real32), dimension(:), allocatable :: buf_float
-  real(kind=real64), dimension(:), allocatable :: buf_double
+  integer(kind=i4_kind), dimension(:), allocatable :: buf_int
+  real(kind=r4_kind), dimension(:), allocatable :: buf_float
+  real(kind=r8_kind), dimension(:), allocatable :: buf_double
 
   if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
     !Copy global attributes to the new file.

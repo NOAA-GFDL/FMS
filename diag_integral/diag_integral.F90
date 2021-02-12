@@ -23,7 +23,6 @@
 !! @author Fei Liu
 !! @email gfdl.climate.model.info@noaa.gov
                      module diag_integral_mod
-#include <fms_platform.h>
 
 
 
@@ -97,6 +96,7 @@
 !! - format_data_init
 !!
 
+use platform_mod,     only:  i8_kind
 use time_manager_mod, only:  time_type, get_time, set_time,  &
                              time_manager_init, &
                              operator(+),  operator(-),      &
@@ -1203,7 +1203,7 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
       real    :: xtime, rcount
       integer :: nn, ninc, nst, nend, fields_to_print
       integer :: i, kount
-      integer(LONG_KIND) :: icount
+      integer(i8_kind) :: icount
 
 !-------------------------------------------------------------------------------
 !    each header and data format may be different and must be generated

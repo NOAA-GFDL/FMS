@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 program test
-#include <fms_platform.h>
 
+  use platform_mod,    only : i8_kind, r8_kind
   use mpp_mod,         only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_sync_self
   use mpp_mod,         only : FATAL, NOTE, mpp_chksum, MPP_DEBUG, mpp_set_stack_size, MPP_CLOCK_SYNC
   use mpp_mod,         only : mpp_sync, mpp_exit, mpp_clock_begin, mpp_clock_end, mpp_clock_id
@@ -76,8 +76,8 @@ program test
   type(axistype)     :: x, y, z, t
   type(fieldtype)    :: f
   type(domain1D)     :: xdom, ydom
-  integer(LONG_KIND) :: rchk, chk
-  real(DOUBLE_KIND)                  :: doubledata = 0.0
+  integer(i8_kind) :: rchk, chk
+  real(r8_kind)                  :: doubledata = 0.0
   real                               :: realarray(4)
 
   call mpp_init()

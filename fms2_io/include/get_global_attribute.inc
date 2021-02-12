@@ -42,28 +42,29 @@ subroutine get_global_attribute_0d(fileobj, &
                                    trim(attribute_name), &
                                    charbuf(1))
                 call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
-            type is (integer(kind=int32))
+            type is (integer(kind=i4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=int64))
+            type is (integer(kind=i8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real32))
+            type is (real(kind=r4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real64))
+            type is (real(kind=r8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
             class default
-                call error("get_global_attribute_0d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+                call error("get_global_attribute_0d: unsupported type for "//&
+                &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
         call check_netcdf_code(err)
     endif
@@ -78,28 +79,29 @@ subroutine get_global_attribute_0d(fileobj, &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
             call string_copy(attribute_value, charbuf(1), check_for_null=.true.)
-        type is (integer(kind=int32))
+        type is (integer(kind=i4_kind))
             call mpp_broadcast(attribute_value, &
 
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (integer(kind=int64))
+        type is (integer(kind=i8_kind))
             call mpp_broadcast(attribute_value, &
 
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real32))
+        type is (real(kind=r4_kind))
             call mpp_broadcast(attribute_value, &
 
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real64))
+        type is (real(kind=r8_kind))
             call mpp_broadcast(attribute_value, &
 
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         class default
-             call error("get_global_attribute_0d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+             call error("get_global_attribute_0d: unsupported type for "//&
+             &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
     end select
 end subroutine get_global_attribute_0d
 !> @brief Get the value of a global attribute.
@@ -119,28 +121,29 @@ subroutine get_global_attribute_1d(fileobj, &
     integer :: err
     if (fileobj%is_root) then
         select type(attribute_value)
-            type is (integer(kind=int32))
+            type is (integer(kind=i4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=int64))
+            type is (integer(kind=i8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real32))
+            type is (real(kind=r4_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real64))
+            type is (real(kind=r8_kind))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
             class default
-                call error("get_global_attribute_1d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+                call error("get_global_attribute_1d: unsupported type for "//&
+                &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
         call check_netcdf_code(err)
     endif
@@ -150,27 +153,28 @@ subroutine get_global_attribute_1d(fileobj, &
         endif
     endif
     select type(attribute_value)
-        type is (integer(kind=int32))
+        type is (integer(kind=i4_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (integer(kind=int64))
+        type is (integer(kind=i8_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real32))
+        type is (real(kind=r4_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
-        type is (real(kind=real64))
+        type is (real(kind=r8_kind))
             call mpp_broadcast(attribute_value, &
                                size(attribute_value), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)
         class default
-            call error("get_global_attribute_1d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+            call error("get_global_attribute_1d: unsupported type for "//&
+            &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
     end select
 end subroutine get_global_attribute_1d

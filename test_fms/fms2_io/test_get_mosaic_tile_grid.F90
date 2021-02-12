@@ -26,7 +26,10 @@ use   fms_mod,         only: fms_init, fms_end
 use   netcdf,          only: nf90_create, nf90_def_dim, nf90_clobber, nf90_64bit_offset, &
                              nf90_def_var, nf90_enddef, nf90_put_var, nf90_close, nf90_char, &
                              NF90_NOERR
+use   mpp_domains_mod, only: domain2d, mpp_define_mosaic, mpp_define_io_domain
+use   mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_error, FATAL
 use   mpi,             only: mpi_barrier, mpi_comm_world
+
 
 implicit none
 
