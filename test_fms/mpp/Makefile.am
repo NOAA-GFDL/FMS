@@ -186,33 +186,25 @@ EXTRA_DIST = input_base.nml \
 	test_mpp_global_field.sh \
 	test_mpp_global_field_ug.sh \
 	test_mpp_global_sum_ad.sh
+	
+BUILT_SOURCES = $(MODFILES) \
+compare_data_checksums.mod : compare_data_checksums.$(FC_MODEXT) \
+compare_data_checksums_int.mod : compare_data_checksums_int.$(FC_MODEXT) \
+fill_halo.mod : fill_halo.$(FC_MODEXT) \
+test_mpp_update_domains_real.mod : test_mpp_update_domains_real.$(FC_MODEXT) \
+test_mpp_update_domains_int.mod : test_mpp_update_domains_int.$(FC_MODEXT) \
+test_domains_utility_mod.mod : test_domains_utility_mod.$(FC_MODEXT)
 
-# Each mod file depends on the .lo (library object) file.
-compare_data_checksums.mod : compare_data_checksums.lo
-compare_data_checksums_int.mod : compare_data_checksums_int.lo
-fill_halo.mod : fill_halo.lo
-test_mpp_update_domains_real.mod : test_mpp_update_domains_real.lo
-test_mpp_update_domains_int.mod : test_mpp_update_domains_int.lo
-test_domains_utility_mod.mod : test_domains_utility_mod.lo
+# Some mods depend on other mods in this directory
+test_mpp_update_domains_main.$(FC_MODEXT) : test_mpp_update_domains_real.mod.$(FC_MODEXT) test_mpp_update_domains_int.mod.$(FC_MODEXT)
+test_mpp_update_domains_real.$(FC_MODEXT) : fill_halo.mod compare_data_checksums.mod.$(FC_MODEXT)
+test_mpp_update_domains_int.$(FC_MODEXT) : fill_halo.mod compare_data_checksums_int.mod.$(FC_MODEXT)
+test_update_domains_performance.$(FC_MODEXT) : compare_data_checksums.mod compare_data_checksums_int.mod.$(FC_MODEXT)
+test_mpp_update_domains_ad.$(FC_MODEXT) : compare_data_checksums.mod.$(FC_MODEXT)
+test_mpp_domains.$(FC_MODEXT) : compare_data_checksums.mod test_domains_utility_mod.mod.$(FC_MODEXT)
+test_mpp_global_field.$(FC_MODEXT) : compare_data_checksums.mod compare_data_checksums_int.mod.$(FC_MODEXT)
+test_mpp_global_field_ug.$(FC_MODEXT) : compare_data_checksums.mod compare_data_checksums_int.mod.$(FC_MODEXT)
 
-# Some mods are dependant on other mods in this directory
-test_mpp_update_domains_main.lo : test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
-test_mpp_update_domains_real.lo : fill_halo.mod compare_data_checksums.mod
-test_mpp_update_domains_int.lo: fill_halo.mod compare_data_checksums_int.mod
-test_update_domains_performance.lo : compare_data_checksums.mod compare_data_checksums_int.mod
-test_mpp_update_domains_ad.lo : compare_data_checksums.mod
-test_mpp_domains.lo : compare_data_checksums.mod test_domains_utility_mod.mod
-test_mpp_global_field.lo : compare_data_checksums.mod compare_data_checksums_int.mod
-test_mpp_global_field_ug.lo : compare_data_checksums.mod compare_data_checksums_int.mod
-
-# Mod files are built and then installed as headers.
-MODFILES = compare_data_checksums.mod \
-	compare_data_checksums_int.mod \
-	fill_halo.mod \
-	test_mpp_update_domains_real.mod \
-	test_mpp_update_domains_int.mod \
-	test_domains_utility_mod.mod
-BUILT_SOURCES = $(MODFILES)
 include_HEADERS = $(MODFILES)
 
 # Clean up
