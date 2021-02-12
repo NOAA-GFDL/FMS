@@ -197,13 +197,13 @@ test_domains_utility_mod.mod : test_domains_utility_mod.$(FC_MODEXT)
 
 # Some mods depend on other mods in this directory
 test_mpp_update_domains_main.$(FC_MODEXT) : test_mpp_update_domains_real.mod.$(FC_MODEXT) test_mpp_update_domains_int.mod.$(FC_MODEXT)
-test_mpp_update_domains_real.$(FC_MODEXT) : fill_halo.mod compare_data_checksums.mod.$(FC_MODEXT)
-test_mpp_update_domains_int.$(FC_MODEXT) : fill_halo.mod compare_data_checksums_int.mod.$(FC_MODEXT)
-test_update_domains_performance.$(FC_MODEXT) : compare_data_checksums.mod compare_data_checksums_int.mod.$(FC_MODEXT)
+test_mpp_update_domains_real.$(FC_MODEXT) : fill_halo.mod.$(FC_MODEXT) compare_data_checksums.mod.$(FC_MODEXT)
+test_mpp_update_domains_int.$(FC_MODEXT) : fill_halo.mod.$(FC_MODEXT) compare_data_checksums_int.mod.$(FC_MODEXT)
+test_update_domains_performance.$(FC_MODEXT) : compare_data_checksums.mod.$(FC_MODEXT) compare_data_checksums_int.mod.$(FC_MODEXT)
 test_mpp_update_domains_ad.$(FC_MODEXT) : compare_data_checksums.mod.$(FC_MODEXT)
-test_mpp_domains.$(FC_MODEXT) : compare_data_checksums.mod test_domains_utility_mod.mod.$(FC_MODEXT)
-test_mpp_global_field.$(FC_MODEXT) : compare_data_checksums.mod compare_data_checksums_int.mod.$(FC_MODEXT)
-test_mpp_global_field_ug.$(FC_MODEXT) : compare_data_checksums.mod compare_data_checksums_int.mod.$(FC_MODEXT)
+test_mpp_domains.$(FC_MODEXT) : compare_data_checksums.mod.$(FC_MODEXT) test_domains_utility_mod.mod.$(FC_MODEXT)
+test_mpp_global_field.$(FC_MODEXT) : compare_data_checksums.mod.$(FC_MODEXT) compare_data_checksums_int.mod.$(FC_MODEXT)
+test_mpp_global_field_ug.$(FC_MODEXT) : compare_data_checksums.mod.$(FC_MODEXT) compare_data_checksums_int.mod.$(FC_MODEXT)
 
 include_HEADERS = $(MODFILES)
 
