@@ -69,9 +69,9 @@ test_mpp_SOURCES = test_mpp.F90
 test_mpp_domains_SOURCES = \
   test_mpp_domains.F90 \
   compare_data_checksums.F90 \
-  test_domains_utility_mod.F90
-#  compare_data_checksums.$(FC_MODEXT) \
-#  test_domains_utility_mod.$(FC_MODEXT)
+  test_domains_utility_mod.F90 \
+  compare_data_checksums.$(FC_MODEXT) \
+  test_domains_utility_mod.$(FC_MODEXT)
 test_mpp_memuse_SOURCES = test_mpp_memuse.F90
 test_mpp_mem_dump_SOURCES = test_mpp_mem_dump.F90
 test_mpp_memutils_begin_end_SOURCES = test_mpp_memutils_begin_end.F90
@@ -98,43 +98,43 @@ test_mpp_update_domains_SOURCES = \
   test_mpp_update_domains_int.F90 \
   fill_halo.F90 \
   compare_data_checksums.F90 \
-  compare_data_checksums_int.F90
-#  test_mpp_update_domains_real.$(FC_MODEXT) \
-#  test_mpp_update_domains_int.$(FC_MODEXT) \
-#  fill_halo.$(FC_MODEXT) \
-#  compare_data_checksums.$(FC_MODEXT) \
-#  compare_data_checksums_int.$(FC_MODEXT)
+  compare_data_checksums_int.F90 \
+  test_mpp_update_domains_real.$(FC_MODEXT) \
+  test_mpp_update_domains_int.$(FC_MODEXT) \
+  fill_halo.$(FC_MODEXT) \
+  compare_data_checksums.$(FC_MODEXT) \
+  compare_data_checksums_int.$(FC_MODEXT)
 test_mpp_gatscat_SOURCES = test_mpp_gatscat.F90
 test_mpp_sendrecv_SOURCES = test_mpp_sendrecv.F90
 test_mpp_sum_SOURCES = test_mpp_sum.F90
 test_update_domains_performance_SOURCES = \
   test_update_domains_performance.F90 \
   compare_data_checksums.F90 \
-  compare_data_checksums_int.F90
-#  compare_data_checksums.$(FC_MODEXT) \
-#  compare_data_checksums_int.$(FC_MODEXT)
+  compare_data_checksums_int.F90 \
+  compare_data_checksums.$(FC_MODEXT) \
+  compare_data_checksums_int.$(FC_MODEXT)
 test_minmax_SOURCES = test_minmax.F90
 test_mpp_update_domains_ad_SOURCES = \
   test_mpp_update_domains_ad.F90 \
-  compare_data_checksums.F90
-#  compare_data_checksums.$(FC_MODEXT)
+  compare_data_checksums.F90 \
+  compare_data_checksums.$(FC_MODEXT)
 test_global_arrays_SOURCES = test_global_arrays.F90
 test_chksum_int_SOURCES = test_chksum_int.F90
 test_redistribute_int_SOURCES = test_redistribute_int.F90
 test_mpp_transmit_SOURCES = test_mpp_transmit.F90
 test_mpp_alltoall_SOURCES = test_mpp_alltoall.F90
 test_mpp_global_field_SOURCES = \
-  test_mpp_global_field.F90   \
+  test_mpp_global_field.F90 \
   compare_data_checksums.F90 \
-  compare_data_checksums_int.F90
-#  compare_data_checksums.$(FC_MODEXT)  \
-#  compare_data_checksums_int.$(FC_MODEXT)
+  compare_data_checksums_int.F90 \
+  compare_data_checksums.$(FC_MODEXT) \
+  compare_data_checksums_int.$(FC_MODEXT)
 test_mpp_global_field_ug_SOURCES = \
   test_mpp_global_field_ug.F90 \
   compare_data_checksums.F90 \
-  compare_data_checksums_int.F90
-#  compare_data_checksums.$(FC_MODEXT) \
-#  compare_data_checksums_int.$(FC_MODEXT)
+  compare_data_checksums_int.F90 \
+  compare_data_checksums.$(FC_MODEXT) \
+  compare_data_checksums_int.$(FC_MODEXT)
 test_mpp_global_sum_ad_SOURCES = test_mpp_global_sum_ad.F90
 
 # Run the test programs.
@@ -208,20 +208,6 @@ EXTRA_DIST = input_base.nml \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh
-
-test_mpp_update_domains_main.$(FC_MODEXT) : test_mpp_update_domains_real.$(FC_MODEXT) \
-  test_mpp_update_domains_int.$(FC_MODEXT)
-test_mpp_update_domains_real.$(FC_MODEXT) : fill_halo.$(FC_MODEXT) compare_data_checksums.$(FC_MODEXT)
-test_mpp_update_domains_int.$(FC_MODEXT): fill_halo.$(FC_MODEXT) compare_data_checksums_int.$(FC_MODEXT)
-test_update_domains_performance.$(FC_MODEXT) : compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT)
-test_mpp_update_domains_ad.$(FC_MODEXT) : compare_data_checksums.$(FC_MODEXT)
-test_mpp_domains.$(FC_MODEXT) : compare_data_checksums.$(FC_MODEXT) \
-  test_domains_utility_mod.$(FC_MODEXT)
-test_mpp_global_field.$(FC_MODEXT) : compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT)
-test_mpp_global_field_ug.$(FC_MODEXT) : compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
