@@ -544,7 +544,11 @@ else
                              lon_model, lat_model, interp_method="bilinear" )
 
     if (use_mpp_io) then
-       the_file_exists = fms_io_file_exists(ncfilename)
+            !! USE_MPP_IO_WARNING
+            call mpp_error ('amip_interp_mod', &
+             'MPP_IO is no longersupported.  Please remove from namelist'
+              WARNING)
+            the_file_exists = fms_io_file_exists(ncfilename)
     else
        the_file_exists = fms2_io_file_exists(ncfilename)
     endif !if (use_mpp_io)

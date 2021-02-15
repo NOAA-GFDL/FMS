@@ -540,7 +540,9 @@ module_is_initialized = .true.
 endif !> if (module_is_initilized)
 
 if (use_mpp_io) then
-    call mppio_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
+   call mpp_error(WARNING, "Interpolator::nml=interpolator_nml " //&
+           'MPP_IO is no longer supported.  Please remove from namelist')
+   call mppio_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
                               data_names, data_out_of_bounds,           &
                               vert_interp, clim_units, single_year_file)
 else

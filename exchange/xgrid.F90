@@ -623,7 +623,10 @@ subroutine xgrid_init(remap_method)
   if (use_mpp_io) then
 ! Tell user which IO they are using
         call error_mesg('xgrid_init', "Using mpp_io in xgrid_mod",NOTE)
-        if ( mpp_pe() == mpp_root_pe() ) write (unit,'(a)')"Using mpp_io in xgrid_mod"
+        call error_mesg('xgrid_init', &
+             'MPP_IO is no longer supported.  Please remove from namelist'
+              WARNING)
+       if ( mpp_pe() == mpp_root_pe() ) write (unit,'(a)')"Using mpp_io in xgrid_mod"
   else
         call error_mesg('xgrid_init',"Using fms2_io in xgrid_mod",NOTE)
         if ( mpp_pe() == mpp_root_pe() ) write (unit,'(a)')"Using fms2_io in xgrid_mod"
