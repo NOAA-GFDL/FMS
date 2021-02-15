@@ -546,7 +546,7 @@ else
     if (use_mpp_io) then
             !! USE_MPP_IO_WARNING
             call mpp_error ('amip_interp_mod', &
-             'MPP_IO is no longersupported.  Please remove from namelist'
+             'MPP_IO is no longersupported.  Please remove from namelist',&
               WARNING)
             the_file_exists = fms_io_file_exists(ncfilename)
     else
