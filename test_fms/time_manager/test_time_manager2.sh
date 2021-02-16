@@ -52,17 +52,36 @@ test19=.false.
 /
 _EOF
 
-# Loop through tests
-testNum=1
-while [ $testNum -le 19 ]
-do
-    sed "s/test$testNum *=.false./test$testNum =.true./" input_base.nml > input.nml
-    # test #8 must set calendar type for #9 to pass
-    [ $testNum -eq 9 ] && sed -i "s/test8 =.false./test8 =.true./" input.nml
-    test_expect_success "time manager test #$testNum" '
-        mpirun -n 1 ./test_time_manager
-    '
-    testNum=$((testNum + 1))
-done
+testNum=0
+
+function test_next() {
+  testNum=$((testNum + 1))
+  sed "s/test$testNum *=.false./test$testNum =.true./" input_base.nml > input.nml
+  # test #8 must set calendar type for #9 to pass
+  [ $testNum -eq 9 ] && sed -i "s/test8 =.false./test8 =.true./" input.nml
+  test_expect_success "$1" '
+      mpirun -n 1 ./test_time_manager
+  '
+}
+
+test_next("set_time_i and get_time without ticks")
+test_next("set_time_i and get_time with ticks")
+test_next("time operators")
+test_next("set_time_c")
+test_next("set_date_i")
+test_next("set_date_c")
+test_next("increment/decrement date")
+test_next("leap day cases")
+test_next("days_in_month")
+test_next("get_time error flag")
+test_next("increment/decrement time")
+test_next("negative increments")
+test_next("trap for negative time")
+test_next("negative seconds/ticks")
+test_next("day numbering between calenders")
+test_next("invalid dates")
+test_next("gregorian calendar")
+test_next("length_of_year")
+test_next("real_to_time_type")
 
 test_done
