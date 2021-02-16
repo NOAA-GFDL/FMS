@@ -30,13 +30,13 @@ subroutine land_unstructured_restart_file(domain, nz, nt, debug_flag)
   integer :: s
   integer, dimension(:), allocatable :: s2
   integer :: nx
-  real(kind=real64), dimension(:), allocatable :: tile_data
-  real(kind=real64), dimension(:), allocatable :: lev_data
-  real(kind=real64), dimension(:,:), allocatable :: temperature_data
-  integer(kind=int64) :: out_chksum
+  real(kind=r8_kind), dimension(:), allocatable :: tile_data
+  real(kind=r8_kind), dimension(:), allocatable :: lev_data
+  real(kind=r8_kind), dimension(:,:), allocatable :: temperature_data
+  integer(kind=i8_kind) :: out_chksum
   integer :: ndims
   integer, dimension(:), allocatable :: dim_sizes
-  integer(kind=int64) :: in_chksum
+  integer(kind=i8_kind) :: in_chksum
   logical :: debug
   integer :: err
   integer :: i
@@ -90,10 +90,10 @@ subroutine land_unstructured_restart_file(domain, nz, nt, debug_flag)
                             domain, nc_format="classic", is_restart=.true.))
 
   !Add some global attributes to the restart file.
-  call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
-  call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
-  call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
-  call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
+  call register_global_attribute(fileobj, "globalatt1", real(7., kind=r8_kind))
+  call register_global_attribute(fileobj, "globalatt2", real(4., kind=r4_kind))
+  call register_global_attribute(fileobj, "globalatt3", int(3, kind=i4_kind))
+  call register_global_attribute(fileobj, "globalatt4", int(2, kind=i8_kind))
   call register_global_attribute(fileobj, "globalatt5", "some text", str_len=len_trim("some text"))
 
   !Add dimensions and corresponding variables to the file.
