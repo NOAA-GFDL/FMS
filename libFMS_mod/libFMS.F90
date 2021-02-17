@@ -22,6 +22,8 @@
 !! @description Imports all FMS modules so that any public interfaces,
 !! variables and routines are usable via this module
 !!
+!! Some routines within FMS are overloaded for different IO code so older
+!! routines are renamed in this module with the suffix _fms_io
 !! Naming conflicts/differences between this and individual FMS module usage:
 !!
 !! - register_restart_field => fms2_io_mod
@@ -34,7 +36,14 @@ module libfms_mod
   use fms_affinity_mod
   use amip_interp_mod
   use astronomy_mod
-  use axis_utils_mod
+  use axis_utils_mod, only: interp_1_fms_io => interp_1d, &
+                            get_axis_cart_fms_io => get_axis_cart, &
+                            get_axis_modulo_fms_io => get_axis_modulo, & 
+                            lon_in_range_fms_io => lon_in_range, &
+                            tranlon_fms_io => tranlon, &
+                            frac_index_fms_io => frac_index, &
+                            nearest_index_fms_io => nearest_index, &
+                            get_axis_bounds
   use axis_utils2_mod !! for fms2io
   use block_control_mod
   use column_diagnostics_mod
@@ -70,9 +79,9 @@ module libfms_mod
   use blackboxio
   use fms_mod
   !> avoid any conflicts with fms2_io
-  use fms_io_mod, only : restart_file_type, save_restart, restore_state, &
-                         fms_io_init, fms_io_exit, &
-                         register_restart_field_fms_io => register_restart_field
+  use fms_io_mod, only: restart_file_type, save_restart, restore_state, &
+                        fms_io_init, fms_io_exit, &
+                        register_restart_field_fms_io => register_restart_field
   use horiz_interp_type_mod
   use horiz_interp_bicubic_mod
   use horiz_interp_bilinear_mod
@@ -101,7 +110,16 @@ module libfms_mod
   use sat_vapor_pres_k_mod
   use sat_vapor_pres_mod
   use time_interp_mod
-  use time_interp_external_mod
+  use time_interp_external_mod, only:init_external_field_fms_io=> init_external_field, &
+                                     time_interp_external_fms_io=> time_interp_external, &
+                                     time_interp_external_init_fms_io=> time_interp_external_init, &
+                                     time_interp_external_exit_fms_io=> time_interp_external_exit, &
+                                     get_external_field_size_fms_io=> get_external_field_size, &
+                                     get_time_axis_fms_io=> get_time_axis, &
+                                     get_external_field_missing_fms_io=> get_external_field_missing, &
+                                     set_override_region_fms_io=> set_override_region, &
+                                     reset_src_data_region_fms_io=> reset_src_data_region, &
+                                     get_external_field_axes
   use time_interp_external2_mod
   use time_manager_mod
   use get_cal_time_mod
@@ -111,6 +129,5 @@ module libfms_mod
   use tridiagonal_mod
 
   implicit none
-  logical :: using_libfms_mod = .true.
 
 end module libfms_mod
