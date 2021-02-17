@@ -54,14 +54,6 @@ test_atmosphere_io.lo: setup.mod
 test_io_simple.lo: setup.mod
 test_fms2_io.lo: argparse.mod
 
-# Mod files are built and then installed as headers.
-MODFILES = argparse.mod \
-           setup.mod
-
-BUILT_SOURCES = $(MODFILES)
-include_HEADERS = $(MODFILES)
-
-
 # Run the test program.
 TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
 
