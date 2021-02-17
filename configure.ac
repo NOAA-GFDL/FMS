@@ -335,6 +335,7 @@ AC_CONFIG_FILES([
   sat_vapor_pres/Makefile
   random_numbers/Makefile
   libFMS/Makefile
+  libFMS_mod/Makefile
   docs/Makefile
   test_fms/test_common.sh
   test_fms/Makefile

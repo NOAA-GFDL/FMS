@@ -64,6 +64,7 @@ SUBDIRS = \
   sat_vapor_pres \
   random_numbers \
   libFMS \
+  libFMS_mod \
   test_fms \
   ${DOCS}
 
