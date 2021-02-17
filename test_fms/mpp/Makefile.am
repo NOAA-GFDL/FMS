@@ -20,7 +20,7 @@
 # @uramirez, Ed Hartnett, @underwoo
 
 # Find the needed mod and inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
@@ -67,11 +67,9 @@ check_PROGRAMS = test_mpp \
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
 test_mpp_domains_SOURCES = \
-  test_mpp_domains.F90 \
   compare_data_checksums.F90 \
   test_domains_utility_mod.F90 \
-  compare_data_checksums.$(FC_MODEXT) \
-  test_domains_utility_mod.$(FC_MODEXT)
+  test_mpp_domains.F90
 test_mpp_memuse_SOURCES = test_mpp_memuse.F90
 test_mpp_mem_dump_SOURCES = test_mpp_mem_dump.F90
 test_mpp_memutils_begin_end_SOURCES = test_mpp_memutils_begin_end.F90
@@ -93,48 +91,34 @@ test_mpp_pe_SOURCES = test_mpp_pe.F90
 test_mpp_root_pe_SOURCES = test_mpp_root_pe.F90
 test_peset_SOURCES = test_peset.F90
 test_mpp_update_domains_SOURCES = \
-  test_mpp_update_domains_main.F90 \
-  test_mpp_update_domains_real.F90 \
-  test_mpp_update_domains_int.F90 \
   fill_halo.F90 \
   compare_data_checksums.F90 \
   compare_data_checksums_int.F90 \
-  test_mpp_update_domains_real.$(FC_MODEXT) \
-  test_mpp_update_domains_int.$(FC_MODEXT) \
-  fill_halo.$(FC_MODEXT) \
-  compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT)
+  test_mpp_update_domains_real.F90 \
+  test_mpp_update_domains_int.F90 \
+  test_mpp_update_domains_main.F90
 test_mpp_gatscat_SOURCES = test_mpp_gatscat.F90
 test_mpp_sendrecv_SOURCES = test_mpp_sendrecv.F90
 test_mpp_sum_SOURCES = test_mpp_sum.F90
 test_update_domains_performance_SOURCES = \
-  test_update_domains_performance.F90 \
   compare_data_checksums.F90 \
   compare_data_checksums_int.F90 \
-  compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT)
+  test_update_domains_performance.F90
 test_minmax_SOURCES = test_minmax.F90
-test_mpp_update_domains_ad_SOURCES = \
-  test_mpp_update_domains_ad.F90 \
-  compare_data_checksums.F90 \
-  compare_data_checksums.$(FC_MODEXT)
+test_mpp_update_domains_ad_SOURCES = test_mpp_update_domains_ad.F90
 test_global_arrays_SOURCES = test_global_arrays.F90
 test_chksum_int_SOURCES = test_chksum_int.F90
 test_redistribute_int_SOURCES = test_redistribute_int.F90
 test_mpp_transmit_SOURCES = test_mpp_transmit.F90
 test_mpp_alltoall_SOURCES = test_mpp_alltoall.F90
 test_mpp_global_field_SOURCES = \
-  test_mpp_global_field.F90 \
   compare_data_checksums.F90 \
   compare_data_checksums_int.F90 \
-  compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT)
+  test_mpp_global_field.F90
 test_mpp_global_field_ug_SOURCES = \
-  test_mpp_global_field_ug.F90 \
   compare_data_checksums.F90 \
   compare_data_checksums_int.F90 \
-  compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT)
+  test_mpp_global_field_ug.F90
 test_mpp_global_sum_ad_SOURCES = test_mpp_global_sum_ad.F90
 
 # Run the test programs.
@@ -209,19 +193,22 @@ EXTRA_DIST = input_base.nml \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh
 
-# Mod files are built and then installed as headers.
-MODFILES = \
-  compare_data_checksums.$(FC_MODEXT) \
-  compare_data_checksums_int.$(FC_MODEXT) \
-  fill_halo.$(FC_MODEXT) \
-  test_mpp_update_domains_real.$(FC_MODEXT) \
-  test_mpp_update_domains_int.$(FC_MODEXT) \
-  test_domains_utility_mod.$(FC_MODEXT)
-BUILT_SOURCES = $(MODFILES)
-nodist_include_HEADERS = $(MODFILES)
+fill_halo.mod: fill_halo.$(OBJEXT)
+compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)
+compare_data_checksums_int.mod: compare_data_checksums_int.$(OBJEXT)
+test_mpp_update_domains_real.mod: test_mpp_update_domains_real.$(OBJEXT)
+test_mpp_update_domains_int.mod: test_mpp_update_domains_int.$(OBJEXT)
+test_domains_utility_mod.mod: test_domains_utility_mod.$(OBJEXT)
 
-include $(top_srcdir)/mkmods.mk
+test_mpp_update_domains_real.$(OBJEXT): compare_data_checksums.mod fill_halo.mod test_mpp_update_domains
+test_mpp_update_domains_int.$(OBJEXT): compare_data_checksums_int.mod fill_halo.mod
+
+test_mpp_update_domains_main.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
+test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
+test_mpp_global_field.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
+test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
+test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
 
 # Clean up
-CLEANFILES += input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
+CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
   ascii* test_numb* *.mod
