@@ -20,9 +20,9 @@
 # This is an automake file for the libFMS directory of the FMS
 # package. This is the final packaging of the library.
 
-# Ryan Mulhall 2/2021 
+# Ryan Mulhall 2/2021
 
-# This builds the libFMS module file 
+# This builds the libFMS module file
 
 AM_CPPFLAGS = -I${top_builddir}/.mod -I${top_srcdir}/include -I${top_srcdir}/mpp/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)

@@ -19,17 +19,23 @@
 !> @file
 !! @author Ryan Mulhall 2/21
 !! @brief A convenience file to use all public FMS routines
-!! @description Imports all FMS modules so that when this module is 
-!! used, all public FMS routines are avaiable for use
-
-module libFMS_mod
+!! @description Imports all FMS modules so that any public interfaces,
+!! variables and routines are usable via this module
+!!
+!! Naming conflicts/differences between this and individual FMS module usage:
+!!
+!! - register_restart_field => fms2_io_mod
+!! - register_restart_field_fms_io => fms_io_mod
+!!
+!! -
+module libfms_mod
   !> import all FMS modules
-  !! for ones we might not need
+  use mpi
   use fms_affinity_mod
   use amip_interp_mod
   use astronomy_mod
-  use axis_utils_mod !! might be deprecated for 2
-  use axis_utils2_mod 
+  use axis_utils_mod
+  use axis_utils2_mod !! for fms2io
   use block_control_mod
   use column_diagnostics_mod
   use constants_mod
@@ -51,7 +57,7 @@ module libFMS_mod
   use drifters_core_mod
   use drifters_input_mod
   use drifters_io_mod
-  use cloud_interpolator_mod 
+  use cloud_interpolator_mod
   use xgrid_mod
   use stock_constants_mod
   use field_manager_mod
@@ -63,6 +69,10 @@ module libFMS_mod
   use fms_netcdf_unstructured_domain_io_mod
   use blackboxio
   use fms_mod
+  !> avoid any conflicts with fms2_io
+  use fms_io_mod, only : restart_file_type, save_restart, restore_state, &
+                         fms_io_init, fms_io_exit, &
+                         register_restart_field_fms_io => register_restart_field
   use horiz_interp_type_mod
   use horiz_interp_bicubic_mod
   use horiz_interp_bilinear_mod
@@ -101,7 +111,6 @@ module libFMS_mod
   use tridiagonal_mod
 
   implicit none
-  !! 
-  logical :: usingLibFMS = .true.
+  logical :: using_libfms_mod = .true.
 
-end module libFMS_mod
+end module libfms_mod
