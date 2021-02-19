@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 # TODO change licensing(???)
 # Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
@@ -26,8 +26,8 @@
 
 # Ryan Mulhall 2/2021
 # Modified from original to add verbose output
-# Test scriot output enabled with SH_LOG_DRIVER_FLAGS='-v' or '--verbose'
-# also can be enabled with TEST_VERBOSE='true'
+# Test scriot output enabled by setting SH_LOG_DRIVER_FLAGS='-v' or '--verbose'
+# also can be enabled with TEST_VERBOSE=true
 
 scriptversion=2013-12-23.17; # UTC
 
@@ -169,6 +169,7 @@ exec 6>&1
         -v comments="$comments" \
         -v diag_string="$diag_string" \
         -v verbose="$verbose" \
+        -v skippedTests="" \
 '
 # TODO: the usages of "cat >&3" below could be optimized when using
 #       GNU awk, and/on on systems that supports /dev/fd/.
@@ -325,6 +326,9 @@ function handle_tap_result()
       details = details " # " result_obj["directive"];
       if (length(result_obj["explanation"]))
         details = details " " result_obj["explanation"]
+      if (result_obj["directive"] == "SKIP")
+        skippedTests= (skippedTests=="") ? 
+		result_obj["number"] : skippedTests "," result_obj["number"]
     }
 
   report(stringify_result_obj(result_obj), details)
@@ -646,6 +650,8 @@ if (!bailed_out)
       }
   }
 
+if (skippedTests != "")
+  print color_map["blu"] "Skipped test numbers: " skippedTests | "cat >&6"
 write_test_results()
 
 exit 0

@@ -244,7 +244,6 @@ match_pattern_list_ () {
 test_skip_ () {
   local to_skip=
   local skipped_reason=
-  echo $SKIP_TESTS
   if match_pattern_list_ $TEST_NAME.$test_count $SKIP_TESTS
   then
     to_skip=t
@@ -293,6 +292,5 @@ test_expect_success () {
 
 test_done () {
   EXIT_OK=t
-  [[ -z "${SKIP_TESTS}" ]] || say "Skipped $SKIPPED_TESTS"
   say "1..$test_count"
 }
