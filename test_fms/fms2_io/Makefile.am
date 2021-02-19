@@ -47,10 +47,12 @@ test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh
 
-setup.$(FC_MODEXT): argparse.$(FC_MODEXT)
-
-BUILT_SOURCES = setup.$(FC_MODEXT) argparse.$(FC_MODEXT)
-nodist_include_HEADERS = $(BUILT_SOURCES)
+argparse.mod: argparse.$(OBJEXT)
+setup.mod: setup.$(OBJEXT)
+setup.$(OBJEXT): argparse.mod
+test_atmosphere_io.$(OBJEXT): setup.mod
+test_io_simple.$(OBJEXT): setup.mod
+test_fms2_io.$(OBJEXT): argparse.mod
 
 # Run the test program.
 TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
