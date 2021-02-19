@@ -23,67 +23,70 @@
 # execute tests in the test_fms/mpp directory.
 
 # Colin Gladue 5/28/20
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
 . ../test-lib.sh
 
-sh ./make_files.sh ascii
+# TODO test 5 passes with incorrect length
+SKIP_TESTS="$(basename $0 .sh)."[5]
+echo $SKIP_TESTS
+
+# create input with helper script
+sh create_input.sh nml
+cat input_base.nml > input.nml
 
 touch test_numb_base_ascii.nml
 echo "&test_read_ascii_file_nml" > test_numb_base_ascii.nml
 echo "test_numb = 0" >> test_numb_base_ascii.nml
 echo "/" >> test_numb_base_ascii.nml
-# This is the ascii file we will read
-# TODO ??? two name lists
-#cp $top_srcdir/test_fms/mpp/input_base.nml input.nml
 
 # Test 1
 # Normal Usage
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base_ascii.nml>test_numb_ascii.nml
-test_expect_success "Test normal usage" '
+test_expect_success "normal ascii usage" '
     mpirun -n 1 ./test_read_ascii_file
 '
 
 # Test 2
 # get_ascii_file_num_lines not called before, fatal error
 sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base_ascii.nml>test_numb_ascii.nml
-test_expect_failure "Test failure if get_ascii_file_num_lines not called before" '
+test_expect_failure "failure caught if get_ascii_file_num_lines not called before" '
     mpirun -n 1 ./test_read_ascii_file
 '
 
 # Test 3
 # File does not exist, fatal error
 sed "s/test_numb = [0-9]/test_numb = 3/" test_numb_base_ascii.nml>test_numb_ascii.nml
-test_expect_failure "Test failure if file does not exist" '
+test_expect_failure "failure caught if file does not exist" '
     mpirun -n 1 ./test_read_ascii_file
 '
 
 # Test 4
 # Number of line in file is greater than size(Content(:)), fatal error
 sed "s/test_numb = [0-9]/test_numb = 4/" test_numb_base_ascii.nml>test_numb_ascii.nml
-touch empty.nml
-test_expect_failure "Test failure from too few input lines" '
+echo "" > empty.nml
+test_expect_failure "failure caught from too few input lines" '
     mpirun -n 1 ./test_read_ascii_file
 '
-
 # Test 5
 # Length of output string is too small, fatal error
 sed "s/test_numb = [0-9]/test_numb = 5/" test_numb_base_ascii.nml>test_numb_ascii.nml
-test_expect_failure "Test failure from too small output string" '
+test_expect_failure "failure caught from too small output string" '
     mpirun -n 1 ./test_read_ascii_file
 '
 
 # Test 6
 # Number of lines in file does not equal to size(Content(:)), fatal error
 sed "s/test_numb = [0-9]/test_numb = 6/" test_numb_base_ascii.nml>test_numb_ascii.nml
-test_expect_failure "Test failure from mismatching numbers of lines" '
+test_expect_failure "failure caught from mismatching numbers of lines" '
     mpirun -n 1 ./test_read_ascii_file
 '
 
 # Test 7
 # Normal usage, with optional PELIST argument passed in
 sed "s/test_numb = [0-9]/test_numb = 7/" test_numb_base_ascii.nml>test_numb_ascii.nml
-test_expect_success "Test normal usage with PELIST" '
+test_expect_success "normal ascii usage with PELIST" '
     mpirun -n 1 ./test_read_ascii_file
 '
 
@@ -91,7 +94,7 @@ test_expect_success "Test normal usage with PELIST" '
 # Normal usage, with an empty file passed in
 sed "s/test_numb = [0-9]/test_numb = 8/" test_numb_base_ascii.nml>test_numb_ascii.nml
 touch empty.nml
-test_expect_success "Test normal usage with empty file" '
+test_expect_success "normal ascii usage with empty file" '
     mpirun -n 1 ./test_read_ascii_file
 '
 

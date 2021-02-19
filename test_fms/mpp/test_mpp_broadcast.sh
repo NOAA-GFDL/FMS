@@ -23,12 +23,13 @@
 # execute tests in the test_fms/mpp directory.
 
 # Uriel Ramirez 07/15/2020
+# Ryan Mulhall 2/2020
 
 # Set common test settings.
 . ../test-lib.sh
 
 touch input.nml
-test_expect_success "test_mpp_broadcast" '
+test_expect_success "mpp_broadcast with mixed precision" '
     mpirun -n 2 ./test_mpp_broadcast
 '
 

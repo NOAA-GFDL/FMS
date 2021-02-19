@@ -30,10 +30,10 @@
 touch input.nml
 
 # Run the tests
-test_expect_success "test peset with 1 pe" '
+test_expect_success "test peset with 1 PE" '
     mpirun -n 1 ./test_peset
 '
-test_expect_success "test peset with 2 pes" '
+test_expect_success "test peset with 2 PEs" '
     mpirun -n 2 ./test_peset
 '
 test_done

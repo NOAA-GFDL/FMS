@@ -52,8 +52,8 @@ test19=.false.
 /
 _EOF
 
+# selects next test to run through nml
 testNum=0
-
 function test_next() {
   testNum=$((testNum + 1))
   sed "s/test$testNum *=.false./test$testNum =.true./" input_base.nml > input.nml
@@ -64,24 +64,25 @@ function test_next() {
   '
 }
 
-test_next("set_time_i and get_time without ticks")
-test_next("set_time_i and get_time with ticks")
-test_next("time operators")
-test_next("set_time_c")
-test_next("set_date_i")
-test_next("set_date_c")
-test_next("increment/decrement date")
-test_next("leap day cases")
-test_next("days_in_month")
-test_next("get_time error flag")
-test_next("increment/decrement time")
-test_next("negative increments")
-test_next("trap for negative time")
-test_next("negative seconds/ticks")
-test_next("day numbering between calenders")
-test_next("invalid dates")
-test_next("gregorian calendar")
-test_next("length_of_year")
-test_next("real_to_time_type")
+# run tests
+test_next "set_time_i and get_time without ticks"
+test_next "set_time_i and get_time with ticks"
+test_next "time operators"
+test_next "set_time_c"
+test_next "set_date_i"
+test_next "set_date_c"
+test_next "increment/decrement date"
+test_next "leap day cases"
+test_next "days_in_month"
+test_next "get_time error flag"
+test_next "increment/decrement time"
+test_next "negative increments"
+test_next "trap for negative time"
+test_next "negative seconds/ticks"
+test_next "day numbering between calenders"
+test_next "invalid dates"
+test_next "gregorian calendar"
+test_next "length_of_year"
+test_next "real_to_time_type"
 
 test_done

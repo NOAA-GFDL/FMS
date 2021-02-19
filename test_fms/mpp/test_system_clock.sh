@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # Run the test for one processor
-test_expect_success "Test clock functionaility" '
+test_expect_success "system clock functionality" '
     mpirun -n 1 ./test_system_clock
 '
 test_done

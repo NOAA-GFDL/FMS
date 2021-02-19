@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 touch input.nml
-test_expect_success "test mpp memory usage" '
+test_expect_success "mpp memory usage" '
     mpirun -n 1 ./test_mpp_memuse
 '
 test_done

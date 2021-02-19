@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 touch input.nml
-test_expect_success "mpp global field ug" '
+test_expect_success "mpp global field ug with mixed precision" '
     mpirun -n 6 ./test_mpp_global_field_ug
 '
 

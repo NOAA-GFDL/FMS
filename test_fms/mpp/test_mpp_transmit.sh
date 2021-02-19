@@ -29,7 +29,7 @@
 . ../test-lib.sh
 
 # Run the test for 5 processors
-test_expect_success "mpp transmit" '
+test_expect_success "mpp transmit with mixed precision" '
     mpirun -n 6 ./test_mpp_transmit
 '
 test_done

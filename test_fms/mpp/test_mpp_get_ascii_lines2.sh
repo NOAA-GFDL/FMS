@@ -23,6 +23,7 @@
 # execute tests in the test_fms/mpp directory.
 
 # Eric Stofferahn 07/15/2020
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
 . ../test-lib.sh
@@ -36,25 +37,25 @@ echo "&test_mpp_get_ascii_lines_nml" > test_numb_base2.nml
 echo "test_number = 0" >> test_numb_base2.nml
 echo "/" >> test_numb_base2.nml
 
-for tst in 1 2 3 4
-do
-  sed "s/test_number = [0-9]/test_number = ${tst}/" test_numb_base2.nml > test_numb2.nml
-  test_expect_success "test ${tst}" '
-      mpirun -n 2 ./test_mpp_get_ascii_lines
-  '
-done
-
-sed "s/test_number = [0-9]/test_number = 5/" test_numb_base2.nml > test_numb2.nml
-test_expect_failure "test 5" '
+# run tests
+sed "s/test_number = [0-9]/test_number = 1/" test_numb_base2.nml > test_numb2.nml
+test_expect_success "5 lines" '
     mpirun -n 2 ./test_mpp_get_ascii_lines
 '
-#echo "Running test 5..."
-#run_test test_mpp_get_ascii_lines 2 $skip_test || err=1
-#if [ "$err" -ne 1 ]; then
-#  echo "ERROR: Test 5 was unsuccessful."
-#  exit 5
-#else
-#   echo "Test 5 has passed"
-#fi
-
+sed "s/test_number = [0-9]/test_number = 2/" test_numb_base2.nml > test_numb2.nml
+test_expect_success "25 lines" '
+    mpirun -n 2 ./test_mpp_get_ascii_lines
+'
+sed "s/test_number = [0-9]/test_number = 3/" test_numb_base2.nml > test_numb2.nml
+test_expect_success "0 lines" '
+    mpirun -n 2 ./test_mpp_get_ascii_lines
+'
+sed "s/test_number = [0-9]/test_number = 4/" test_numb_base2.nml > test_numb2.nml
+test_expect_success "blank line" '
+    mpirun -n 2 ./test_mpp_get_ascii_lines
+'
+sed "s/test_number = [0-9]/test_number = 5/" test_numb_base2.nml > test_numb2.nml
+test_expect_failure "failure caught from long line" '
+    mpirun -n 2 ./test_mpp_get_ascii_lines
+'
 test_done

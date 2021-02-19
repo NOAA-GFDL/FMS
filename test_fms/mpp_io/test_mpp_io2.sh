@@ -43,7 +43,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "test_mpp_io (test 1)" '
+test_expect_success "mpp_io functionality" '
     mpirun -n 12 ./test_mpp_io
 '
 

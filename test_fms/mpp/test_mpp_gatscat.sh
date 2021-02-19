@@ -27,8 +27,6 @@
 # Set common test settings.
 . ../test-lib.sh
 
-SKIP_TESTS=""
-
 touch input.nml
 test_expect_success "mpp gather and scatter with mixed precision" '
     mpirun -n 4 ./test_mpp_gatscat

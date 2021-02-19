@@ -25,36 +25,26 @@
 # Ryan Mulhall
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-skip_test="no"
+#Create file for test.
+cat <<_EOF > input.nml
+&test_mpp_io_nml
+  nx = 360
+  ny = 200
+  nz = 50
+  stackmaxd = 5000000
+  layout = 1,1
+  io_layout = 1,1
+/
 
-# Copy file for test.
-touch input.nml
-cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
+&mpp_io_nml
+  io_clocks_on = .true.
+/
+_EOF
 
+test_expect_success "mpp_io functionality with mixed prec reals" '
+    mpirun -n 12 ./test_io_R4_R8
+'
 
-# Get the number of available CPUs on the system
-if [ $(command -v nproc) ]
-then
-   # Looks like a linux system
-   nProc=$(nproc)
-elif [ $(command -v sysctl) ]
-then
-   # Looks like a Mac OS X system
-   nProc=$(sysctl -n hw.physicalcpu)
-else
-   nProc=-1
-fi
-
-if [ $nProc -lt 0 ]
-then
-   # Couldn't get the number of CPUs, skip the test.
-   skip_test="skip"
-elif [ $nProc -lt 12 ]
-then
-   # Need to oversubscribe the MPI
-   run_test test_io_R4_R8 12 $skip_test "true"
-fi
-
-run_test test_io_R4_R8 12 $skip_test
+test_done

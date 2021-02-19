@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 touch input.nml
-test_expect_success "mpp global field functions" '
+test_expect_success "mpp global field functions with mixed precision" '
     mpirun -n 4 ./test_mpp_global_field
 '
 test_done

@@ -23,16 +23,17 @@
 # execute tests in the test_fms/mpp directory.
 
 # Tom Robinson 04/21/2020
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
 . ../test-lib.sh
 
 export NUM_PES=1
-test_expect_success "One processor test" '
+test_expect_success "get number of PEs single processor" '
     mpirun -n 1 ./test_mpp_npes
 '
 export NUM_PES=2
-test_expect_success "All processor test" '
+test_expect_success "get number of PEs multiple processor" '
     mpirun -n 2 ./test_mpp_npes
 '
 test_done

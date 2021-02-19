@@ -22,15 +22,13 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ryan Mulhall 2021 
+# Ryan Mulhall 2/2021 
 
 # Set common test settings.
 . ../test-lib.sh
 
-TEST_SKIP=""
-
 touch input.nml
-test_expect_success "mpp min and max with mixed mode" '
+test_expect_success "mpp min and max with mixed precision" '
     mpirun -n 4 ./test_minmax
 '
 test_done

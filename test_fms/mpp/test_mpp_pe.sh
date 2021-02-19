@@ -28,12 +28,12 @@
 . ../test-lib.sh
 
 
-# Run the test for one processor
-test_expect_success "test mpp_pe with one proc" '
+# Run the tests
+test_expect_success "get current PE single processor" '
     mpirun -n 1 ./test_mpp_pe
 '
-test_expect_success "test mpp_pe with 2 procs" '
-    mpirun -n 2 ./test_mpp_pe
+test_expect_success "get current PE multiple processor" '
+    mpirun -n 5 ./test_mpp_pe
 '
 
 test_done

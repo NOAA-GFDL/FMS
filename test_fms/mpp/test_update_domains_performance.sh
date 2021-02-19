@@ -27,11 +27,11 @@
 # Set common test settings.
 . ../test-lib.sh
 # Run the test for one processor
-test_expect_success "domain update performance with 1 pe" '
+test_expect_success "domain update performance with 1 PE" '
     mpirun -n 1 ./test_update_domains_performance
 '
 # Run the test with 6 pes
-test_expect_success "domain update performance with 6 pes" '
+test_expect_success "domain update performance with 6 PEs" '
     mpirun -n 6 ./test_update_domains_performance
 '
 test_done

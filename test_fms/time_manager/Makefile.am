@@ -23,7 +23,7 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(MODDIR)
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la

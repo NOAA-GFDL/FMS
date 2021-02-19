@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # Run the test
-test_expect_success "mpp global sum ad(MP)" '
+test_expect_success "mpp global adjoint sum with mixed precision" '
     mpirun -n 4 ./test_mpp_global_sum_ad
 '
 test_done

@@ -23,12 +23,13 @@
 # execute tests in the test_fms/mpp directory.
 
 # Ed Hartnett 11/29/19
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
 . ../test-lib.sh
 
 touch input.nml
-test_expect_success "mpp send and receive functions" '
+test_expect_success "mpp send and receive functions with mixed precision" '
     mpirun -n 4 ./test_mpp_sendrecv
 '
 test_done

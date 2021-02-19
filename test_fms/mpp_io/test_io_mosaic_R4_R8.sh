@@ -27,7 +27,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-test_expect_success "mpp io mosaics with mixed precision" '
+test_expect_success "mpp_io mosaics with mixed precision" '
     mpirun -n 12 ./test_io_mosaic_R4_R8
 '
 

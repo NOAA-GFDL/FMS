@@ -28,12 +28,11 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# Run the test with one processor
-test_expect_success "test root pe with 1 proc" '
+# Run the test
+test_expect_success "get correct root PE single processor" '
     mpirun -n 1 ./test_mpp_root_pe
 '
-# Run the test with multiple processors
-test_expect_success "test root pe with 2 procs" '
+test_expect_success "get correct root PE multiple processor" '
     mpirun -n 2 ./test_mpp_root_pe
 '
 test_done

@@ -232,7 +232,7 @@ match_pattern_list_ () {
   for pattern_
   do
     # changed to check for more than one digit test numbers
-    if [[ "$pattern_" == *[,.\[]"`expr substr "$arg" $numIndex $numLen`"[,.\]]* ]]; then
+    if [[ "$pattern_" == *.*[!0-9]"`expr substr "$arg" $numIndex $numLen`"[!0-9]* ]]; then
       return 0
     else
       return 1
@@ -263,11 +263,14 @@ test_expect_failure () {
   test_start_
   test "$#" = 2 ||
     BUG "not 2 or 3 parameters to test-expect-failure"
-  if test_run_ "$2" expecting_failure
+  if ! test_skip_ "$@"
   then
-    test_known_broken_ok_ "$1"
-  else
-    test_known_broken_failure_ "$1"
+    if test_run_ "$2" expecting_failure
+    then
+      test_known_broken_ok_ "$1"
+    else
+      test_known_broken_failure_ "$1"
+    fi
   fi
   test_finish_
 }

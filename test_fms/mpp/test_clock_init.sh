@@ -23,11 +23,12 @@
 # execute tests in the test_fms/mpp directory.
 
 # Colin Gladue 6/08/2020
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
 . ../test-lib.sh
 
-test_expect_success "Clock initialization test" '
+test_expect_success "clock initialization" '
     mpirun -n 1 ./test_clock_init
 '
 test_done

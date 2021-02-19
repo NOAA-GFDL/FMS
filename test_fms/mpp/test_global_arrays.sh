@@ -22,12 +22,10 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ryan Mulhall 2021
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
 . ../test-lib.sh
-
-SKIP_TESTS=""
 
 test_expect_success "global array functions with mixed precision" '
     mpirun -n 8 ./test_global_arrays

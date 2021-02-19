@@ -27,7 +27,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-test_expect_success "stderr test" '
+test_expect_success "get stderr" '
     mpirun -n 1 ./test_stderr
 '
 test_done

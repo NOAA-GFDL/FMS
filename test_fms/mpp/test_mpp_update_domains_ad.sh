@@ -27,13 +27,12 @@
 # Set common test settings.
 . ../test-lib.sh
 # Run the test for one processor
-#rm -f input.nml
 touch input.nml
 
-test_expect_success "Running test_mpp_update_domains_ad with 1 pe" '
+test_expect_success "update adjoint domains with 1 PE" '
     mpirun -n 1 ./test_mpp_update_domains_ad
 '
-test_expect_success "Running test_mpp_update_domains_ad with 4 pes" '
+test_expect_success "update adjoint domains with 4 PEs" '
     mpirun -n 4 ./test_mpp_update_domains_ad
 '
 test_done

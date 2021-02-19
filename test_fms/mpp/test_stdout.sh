@@ -23,15 +23,16 @@
 # execute tests in the test_fms/mpp directory.
 
 # Colin Gladue 06/12/20
+# Ryan Mulhall 02/2021
 
 # Set common test settings.
 . ../test-lib.sh
 
 # Run test with one processor
-test_expect_success "test stdout with 1 procs" '
+test_expect_success "get stdout with 1 PE" '
     mpirun -n 2 ./test_stdout
 '
-test_expect_success "test stdout with 2 procs" '
+test_expect_success "get stdout with 2 PEs" '
     mpirun -n 2 ./test_stdout
 '
 test_done

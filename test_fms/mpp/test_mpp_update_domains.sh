@@ -29,10 +29,10 @@
 . ../test-lib.sh
 # Run the test for one processor
 touch input.nml
-test_expect_success "Running test_mpp_update_domains with 1 pe" '
+test_expect_success "domain updates with single PE" '
     mpirun -n 1 ./test_mpp_update_domains
 '
-test_expect_success "Running test_mpp_update_domains with 2 pes" '
+test_expect_success "domain updates with multiple PEs" '
     mpirun -n 2 ./test_mpp_update_domains
 '
 test_done

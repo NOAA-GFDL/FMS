@@ -29,23 +29,23 @@
 # All tests use blank input.nml file.
 touch input.nml
 
-test_expect_success "1: Test begin/end routines of mpp_memutils_mod" '
+test_expect_success "begin/end routines of mpp_memutils_mod" '
     mpirun -n 1 ./test_mpp_memutils_begin_end
 '
 
-test_expect_success "2: Test mpp_print_memuse_stats" '
+test_expect_success "mpp_print_memuse_stats" '
     mpirun -n 1 ./test_mpp_print_memuse_stats_stderr
 '
 
-test_expect_success "3: Test mpp_print_memuse_stats to file (stdout)" '
+test_expect_success "mpp_print_memuse_stats to file (stdout)" '
     mpirun -n 1 ./test_mpp_print_memuse_stats_file 1
 '
 
-test_expect_failure "4: Test failure caught if mpp_memuse_begin called multiple times" '
+test_expect_failure "failure caught if mpp_memuse_begin called multiple times" '
     mpirun -n 1 ./test_mpp_memutils_begin_2x
 '
 
-test_expect_failure "5: Test failure caught if mpp_memuse_end called before mpp_memuse_begin" '
+test_expect_failure "failure caught if mpp_memuse_end called before mpp_memuse_begin" '
     mpirun -n 1./test_mpp_memutils_end_before_begin
 '
 
