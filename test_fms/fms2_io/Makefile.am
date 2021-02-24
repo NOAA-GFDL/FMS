@@ -23,10 +23,10 @@
 # J.Liptak, R.Menzel, U.Ramirez
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
@@ -47,20 +47,12 @@ test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh
 
-argparse.mod: argparse.lo
-setup.mod: setup.lo
-setup.lo: argparse.mod
-test_atmosphere_io.lo: setup.mod
-test_io_simple.lo: setup.mod
-test_fms2_io.lo: argparse.mod
-
-# Mod files are built and then installed as headers.
-MODFILES = argparse.mod \
-           setup.mod
-
-BUILT_SOURCES = $(MODFILES)
-include_HEADERS = $(MODFILES)
-
+argparse.mod: argparse.$(OBJEXT)
+setup.mod: setup.$(OBJEXT)
+setup.$(OBJEXT): argparse.mod
+test_atmosphere_io.$(OBJEXT): setup.mod
+test_io_simple.$(OBJEXT): setup.mod
+test_fms2_io.$(OBJEXT): argparse.mod
 
 # Run the test program.
 TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
