@@ -22,6 +22,7 @@ A unit test was added to test the functionality of `get_grid_version_1`
 - The autotools build has been changed to copy each subdirectory module (.mod) files to a common .mod directory located at the top of the source directory.  This change simplifies the include path specifications.
 - Use F90 module files for external libraries (MPI and NetCDF) for improved interface checking, thereby removing the reliance on library header include files.
 - FMS2_IO: Changed how nest file names are created to be consistent with mpp_io
+- CMAKE: Changed visibility of FMS OpenMP libraries to private in order to avoid conflicts with model libraries
 ### Removed
 - LIBFMS: The flag -Duse_mpp_io should not be used and will cause a crash
 - LIBFMS: Macros and logic for interfacing to the Flexible File I/O library
