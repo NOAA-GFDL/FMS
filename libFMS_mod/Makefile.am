@@ -29,9 +29,9 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 noinst_LTLIBRARIES = libFMS.la
 libFMS_la_SOURCES = libFMS.F90
-libfms_mod.mod: libFMS.$(OBJEXT)
-BUILT_SOURCES = libfms_mod.mod
-include_HEADERS = libfms_mod.mod
-nodist_include_HEADERS = libfms_mod.mod
+fms.mod: libFMS.$(OBJEXT)
+BUILT_SOURCES = fms.mod
+include_HEADERS = fms.mod
+nodist_include_HEADERS = fms.mod
 
 include $(top_srcdir)/mkmods.mk
