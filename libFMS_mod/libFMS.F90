@@ -17,48 +17,54 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!! @author Ryan Mulhall 2/21
-!! @brief A convenience file to use all public FMS routines, functions, values
-!! @description Imports all FMS modules so that any public interfaces,
-!! variables and routines are usable via this module
-!! Does not include routines from/for mpp_io
+!! @author Ryan Mulhall 2/2021
+!! @brief A convenience file to use any FMS routines, functions, values
+!! @description Imports all supported FMS modules so that any public interfaces,
+!! variables or routines are usable via this module
+!! *Does not include routines from/for mpp_io
 
 module fms
 
   !> import each FMS module's public routines/functions, interfaces, and variables
   !! done explicitly to avoid including any unwanted/depracated routines
+
+  !> affinity
   use fms_affinity_mod, only: fms_affinity_init, fms_affinity_get, &
                               fms_affinity_set
   
+  !> amip_interp
   use amip_interp_mod, only: amip_interp_init, get_amip_sst, get_amip_ice, &
                              amip_interp_new,amip_interp_del, amip_interp_type, &
                              assignment(=), i_sst, j_sst, sst_ncep, sst_anom, &
                              forecast_mode, use_ncep_sst
-
+  !> astronomy
   use astronomy_mod, only: astronomy_init, get_period, set_period, &
                            set_orbital_parameters, get_orbital_parameters, &
                            set_ref_date_of_ae, get_ref_date_of_ae,  &
                            diurnal_solar, daily_mean_solar, annual_mean_solar,  &
                            astronomy_end, universal_time, orbital_time
 
-  !> axis_utils for fms2_io
+  !> axis_utils
   use axis_utils2_mod, only: get_axis_cart, get_axis_modulo, lon_in_range, &
                              tranlon, frac_index, nearest_index, interp_1d, &
                              get_axis_modulo_times, axis_edges
-!! use axis_utils_mod, only: get_axis_bounds !! this may be needed, not in 2 
+  !use axis_utils_mod, only: get_axis_bounds !! this may be needed, not in 2 
 
+  !>block_control
   use block_control_mod, only: block_control_type, define_blocks, &
                                define_blocks_packed
 
+  !> column_diagnostics
   use column_diagnostics_mod, only: column_diagnostics_init, &
                                     initialize_diagnostic_columns, &
                                     column_diagnostics_header, &
                                     close_column_diagnostics_units
 
-  !> no other modules used so only list not neccessary
+  !> constants
+  !! no other modules used so only list not neccessary
   use constants_mod
    
-  !> coupler modules 
+  !> coupler
   use coupler_types_mod, only: coupler_types_init, coupler_type_copy, &
                                coupler_type_spawn, coupler_type_set_diags, &
                                coupler_type_write_chksums, coupler_type_send_data, &
@@ -75,7 +81,7 @@ module fms
   use atmos_ocean_fluxes_mod, only: atmos_ocean_fluxes_init, atmos_ocean_type_fluxes_init, &
                                     aof_set_coupler_flux 
 
-  !> data override modules
+  !> data override
   use data_override_mod, only: data_override_init, data_override, &
                                data_override_unset_domains, data_override_UG 
   use get_grid_version_fms2io_mod, only: check_grid_sizes, deg_to_radian,&
@@ -85,18 +91,18 @@ module fms
                                sum_diag_integral_field, diag_integral_output, &
                                diag_integral_end
 
-  !> diag manager modules
-  use diag_manager_mod, only: diag_manager_init, send_data,send_tile_averaged_data, &
+  !> diag manager
+  use diag_manager_mod, only: diag_manager_init, send_data, send_tile_averaged_data, &
                               diag_manager_end, register_diag_field, register_static_field, &
                               diag_axis_init, get_base_time, get_base_date, need_data, &
                               DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, &
                               DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
                               DIAG_YEARS, get_diag_global_att, set_diag_global_att, &
                               diag_field_add_attribute, diag_field_add_cell_measures, &
-                              get_diag_field_id, &
-                              !> from diag_grid_mod
-                              diag_grid_init, diag_grid_end, diag_manager_set_time_end, & 
+                              get_diag_field_id, diag_manager_set_time_end, & 
                               diag_send_complete, diag_send_complete_instant
+  use diag_grid_mod, only: diag_grid_init, diag_grid_end, get_local_indexes, &
+                           get_local_indexes2 
   use diag_table_mod, only: parse_diag_table
   use diag_util_mod, only: get_subfield_size, log_diag_field_info, update_bounds, &
                            check_out_of_bounds, check_bounds_are_exact_dynamic, &
@@ -127,7 +133,7 @@ module fms
                            input_field_type, output_field_type, diag_axis_type, &
                            diag_global_att_type
 
-  !> drifters modules
+  !> drifters
   use drifters_mod, only: drifters_type, assignment(=), drifters_push, &
                           drifters_compute_k, drifters_set_field, drifters_new, &
                           drifters_del, drifters_set_domain, drifters_set_pe_neighbors, &
@@ -153,7 +159,7 @@ module fms
                                     cld_ntrp_get_cell_values, cld_ntrp_expand_index, &
                                     cld_ntrp_contract_indices
 
-  !> exchange modules
+  !> exchange
   !! TODO test
   use xgrid_mod, only: xmap_type, setup_xmap, set_frac_area, put_to_xgrid, &
                        get_from_xgrid, xgrid_count, some, conservation_check, &
@@ -167,7 +173,7 @@ module fms
                                  ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, stocks_file, &
                                  stocks_report, stocks_report_init, stocks_set_init_time
 
-  !> field manager modules
+  !> field manager
   use field_manager_mod, only: field_manager_init, field_manager_end, find_field_index, &
                                find_field_index_old, find_field_index_new, get_field_info, &
                                get_field_method, get_field_methods, parse, fm_change_list, &
@@ -200,7 +206,7 @@ module fms
                          fm_util_get_index_list, fm_util_get_index_string, &
                          fm_util_default_caller
 
-  !>fms2_io modules TODO testing
+  !> fms2_io
   use fms2_io_mod, only: unlimited, FmsNetcdfFile_t, FmsNetcdfDomainFile_t, &
                          FmsNetcdfUnstructuredDomainFile_t, open_file, open_virtual_file, &
                          close_file, register_axis, register_field, register_restart_field, &
@@ -220,87 +226,39 @@ module fms
                          get_variable_missing, get_variable_units, get_time_calendar, &
                          open_check, is_registered_to_restart, check_if_open, &
                          set_fileobj_time_name, is_dimension_registered, &
-                         fms2_io_init !!, get_mosaic_tile_grid TODO mosaic2 which/one
-!! TODO fms2_io has interfaces for most(or all) of these
-!  use fms_io_utils_mod, only: char_linked_list, error, file_exists, openmp_thread_trap, &
-!                              string_copy, is_in_list, append_to_list, destroy_list, &
-!                              domain_tile_filepath_mangle, io_domain_tile_filepath_mangle, &
-!                              allocate_array, put_array_section, get_array_section, &
-!                              get_data_type_string, get_checksum, open_check, &
-!                              string_compare, restart_filepath_mangle
-!  use fms_netcdf_domain_io_mod, only: FmsNetcdfDomainFile_t, open_domain_file, &
-!                         close_domain_file, register_domain_decomposed_dimension, &
-!                         register_domain_variable, register_domain_restart_variable_0d, &
-!                         register_domain_restart_variable_1d, &
-!                         register_domain_restart_variable_2d, &
-!                         register_domain_restart_variable_3d, &
-!                         register_domain_restart_variable_4d, &
-!                         register_domain_restart_variable_5d, &
-!                         domain_read_0d, domain_read_1d, domain_read_2d, domain_read_3d, &
-!                         domain_read_4d, domain_read_5d, domain_write_0d, domain_write_1d, &
-!                         domain_write_2d, domain_write_3d, domain_write_4d, domain_write_5d, &
-!                         save_domain_restart, restore_domain_state, &
-!                         get_compute_domain_dimension_indices, get_global_io_domain_indices, &
-!                         is_dimension_registered, get_mosaic_tile_grid
-  use netcdf_io_mod, only: no_unlimited_dimension, define_mode, data_mode, &
-                           max_num_restart_vars, unlimited, max_num_compressed_dims, &
-                           FmsNetcdfFile_t, Valid_t, netcdf_io_init, netcdf_file_open, &
-                           netcdf_file_close, netcdf_add_dimension, netcdf_add_variable, &
-                           netcdf_add_restart_variable, global_att_exists, variable_att_exists, &
-                           register_global_attribute, register_variable_attribute, &
-                           get_global_attribute, get_variable_attribute, get_num_dimensions, &
-                           get_dimension_names, dimension_exists, is_dimension_unlimited, &
-                           get_dimension_size, get_num_variables, get_variable_names, &
-                           variable_exists, get_variable_num_dimensions, &
-                           get_variable_dimension_names, get_variable_size, &
-                           get_variable_unlimited_dimension_index, netcdf_read_data, &
-                           netcdf_write_data, compressed_write, netcdf_save_restart, &
-                           netcdf_restore_state, get_valid, is_valid, &
-                           get_unlimited_dimension_name, netcdf_file_open_wrap, &
-                           netcdf_file_close_wrap, netcdf_add_variable_wrap, &
-                           netcdf_save_restart_wrap, compressed_write_0d_wrap, &
-                           compressed_write_1d_wrap, compressed_write_2d_wrap, &
-                           compressed_write_3d_wrap, compressed_write_4d_wrap, &
-                           compressed_write_5d_wrap, compressed_read_0d, compressed_read_1d, &
-                           compressed_read_2d, compressed_read_3d, compressed_read_4d, &
-                           compressed_read_5d, register_compressed_dimension, &
-                           netcdf_add_restart_variable_0d_wrap, &
-                           netcdf_add_restart_variable_1d_wrap, &
-                           netcdf_add_restart_variable_2d_wrap, &
-                           netcdf_add_restart_variable_3d_wrap, &
-                           netcdf_add_restart_variable_4d_wrap, &
-                           netcdf_add_restart_variable_5d_wrap, &
-                           compressed_start_and_count, get_fill_value, get_variable_sense, &
-                           get_variable_missing, get_variable_units, get_time_calendar, &
-                           is_registered_to_restart, set_netcdf_mode, check_netcdf_code, &
-                           check_if_open, set_fileobj_time_name
+                         fms2_io_init , get_mosaic_tile_grid !! second in mosaic2
+  ! used through fms2_io
+  !use fms_io_utils_mod
+  !use fms_netcdf_domain_io_mod
+  !use netcdf_io_mod
   !use fms_netcdf_unstructured_domain_io_mod
   !use blackboxio
 
-  !> fms modules (most unused from old io)
-  use fms_mod, only: fms_init, fms_end
-                     !open_namelist_file, open_restart_file, &
-                     !open_ieee32_file, close_file, open_file, open_direct_file, &
-                     !set_domain, read_data
+  !> fms
+  !! (only routines that don't use the old io)
+  use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, check_nml_error
+                     !, read_data, close_file, open_file, write_Data
 
-  !> horiz interp modules
+  !> horiz_interp
   use horiz_interp_mod, only: horiz_interp, horiz_interp_new, horiz_interp_del, &
                               horiz_interp_init, horiz_interp_end
   use horiz_interp_type_mod, only: horiz_interp_type, assignment(=)
-!  following used for interfaces in ^
-!  use horiz_interp_bicubic_mod
-!  use horiz_interp_bilinear_mod
-!  use horiz_interp_conserve_mod
-!  use horiz_interp_spherical_mod
+  !! used through horiz_interp
+  !use horiz_interp_bicubic_mod
+  !use horiz_interp_bilinear_mod
+  !use horiz_interp_conserve_mod
+  !use horiz_interp_spherical_mod
 
+  !> interpolator
   use interpolator_mod, only: interpolator_init, interpolator, interpolate_type_eq, &
                               obtain_interpolator_time_slices, unset_interpolator_time_flag, &
                               interpolator_end, init_clim_diag, query_interpolator, &
                               read_data !! this one may cause conflicts
 
+  !> memutils
   use memutils_mod, only: memutils_init, print_memuse_stats
 
-  !> monin obukhov modules
+  !> monin_obukhov
   use monin_obukhov_mod, only: monin_obukhov_init, monin_obukhov_end, &
                                mo_drag, mo_profile, mo_diff, stable_mix
   use monin_obukhov_inter, only: monin_obukhov_diff, monin_obukhov_drag_1d, &
@@ -309,10 +267,10 @@ module fms
                            monin_obukhov_integral_m, monin_obukhov_integral_tq, &
                            monin_obukhov_stable_mix
 
-  !> mosaic modules
+  !> mosaic
   use mosaic2_mod, only: get_mosaic_ntiles, get_mosaic_ncontacts, &
                          get_mosaic_grid_sizes, get_mosaic_contact, &
-                         get_mosaic_xgrid_size, get_mosaic_xgrid, & !! get_mosaic_tile_grid, 
+                         get_mosaic_xgrid_size, get_mosaic_xgrid, & !get_mosaic_tile_grid, &
                          calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area, &
                          is_inside_polygon
   use grid_mod, only: get_grid_ntiles, get_grid_size, get_grid_cell_centers, &
@@ -320,7 +278,7 @@ module fms
                       define_cube_mosaic
   use gradient_mod, only: gradient_cubic, calc_cubic_grid_info
 
-  !> mpp modules
+  !> mpp
   use mpp_mod, only: mpp_init_test_full_init, mpp_init_test_init_true_only, &
                      mpp_init_test_peset_allocated, mpp_init_test_clocks_init, &
                      mpp_init_test_datatype_list_init, mpp_init_test_logfile_init, &
@@ -337,7 +295,7 @@ module fms
                      mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv, &
                      mpp_sum_ad, mpp_broadcast, mpp_init, mpp_exit, mpp_gather, &
                      mpp_scatter, mpp_alltoall, mpp_type, mpp_byte, mpp_type_create, &
-                     mpp_type_free
+                     mpp_type_free, input_nml_file
   use mpp_parameter_mod,only:MAXPES, MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, &
                              NOTE, WARNING, FATAL, MPP_WAIT, MPP_READY, MAX_CLOCKS, &
                              MAX_EVENT_TYPES, MAX_EVENTS, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, &
@@ -373,13 +331,64 @@ module fms
                          mpp_efp_plus, mpp_efp_minus, mpp_efp_to_real, &
                          mpp_real_to_efp, mpp_efp_real_diff, operator(+), &
                          operator(-), assignment(=), mpp_query_efp_overflow_error, &
-                         mpp_reset_efp_overlow_error
-  use mpp_domains_mod, only: NULL_DOMAIN1D, NULL_DOMAIN2D 
+                         mpp_reset_efp_overlow_error, mpp_efp_type
+  use mpp_domains_mod, only: domain_axis_spec, domain1D, domain2D, DomainCommunicator2D, &
+                             nest_domain_type, mpp_group_update_type, &
+                             mpp_domains_set_stack_size, mpp_get_compute_domain, &
+                             mpp_get_compute_domains, mpp_get_data_domain, &
+                             mpp_get_global_domain, mpp_get_domain_components, &
+                             mpp_get_layout, mpp_get_pelist, operator(.EQ.), operator(.NE.), &
+                             mpp_domain_is_symmetry, mpp_domain_is_initialized, &
+                             mpp_get_neighbor_pe, mpp_nullify_domain_list, &
+                             mpp_set_compute_domain, mpp_set_data_domain, mpp_set_global_domain, &
+                             mpp_get_memory_domain, mpp_get_domain_shift, &
+                             mpp_domain_is_tile_root_pe, mpp_get_tile_id, &
+                             mpp_get_domain_extents, mpp_get_current_ntile, &
+                             mpp_get_ntile_count, mpp_get_tile_list, mpp_get_tile_npes, &
+                             mpp_get_domain_root_pe, mpp_get_tile_pelist, &
+                             mpp_get_tile_compute_domains, mpp_get_num_overlap, &
+                             mpp_get_overlap, mpp_get_io_domain, mpp_get_domain_pe, &
+                             mpp_get_domain_tile_root_pe, mpp_get_domain_name, &
+                             mpp_get_io_domain_layout, mpp_copy_domain, mpp_set_domain_symmetry, &
+                             mpp_get_update_pelist, mpp_get_update_size, &
+                             mpp_get_domain_npes, mpp_get_domain_pelist, &
+                             mpp_clear_group_update, mpp_group_update_initialized, &
+                             mpp_group_update_is_set, mpp_get_global_domains, &
+                             mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum, &
+                             mpp_global_sum_tl, mpp_global_sum_ad, mpp_broadcast_domain, &
+                             mpp_domains_init, mpp_domains_exit, mpp_redistribute, &
+                             mpp_update_domains, mpp_check_field, mpp_start_update_domains, &
+                             mpp_complete_update_domains, mpp_create_group_update, &
+                             mpp_do_group_update, mpp_start_group_update, &
+                             mpp_complete_group_update, mpp_reset_group_update_field, &
+                             mpp_update_nest_fine, mpp_update_nest_coarse, mpp_get_boundary, &
+                             mpp_update_domains_ad, mpp_get_boundary_ad, mpp_pass_SG_to_UG, &
+                             mpp_pass_UG_to_SG, mpp_define_layout, mpp_define_domains, &
+                             mpp_modify_domain, mpp_define_mosaic, mpp_define_mosaic_pelist, &
+                             mpp_define_null_domain, mpp_mosaic_defined, &
+                             mpp_define_io_domain, mpp_deallocate_domain, &
+                             mpp_compute_extent, mpp_compute_block_extent, &
+                             mpp_define_unstruct_domain, domainUG, mpp_get_UG_io_domain, &
+                             mpp_get_UG_domain_npes, mpp_get_UG_compute_domain, &
+                             mpp_get_UG_domain_tile_id, mpp_get_UG_domain_pelist, &
+                             mpp_get_ug_domain_grid_index, mpp_get_UG_domain_ntiles, &
+                             mpp_get_UG_global_domain, mpp_global_field_ug, &
+                             mpp_get_ug_domain_tile_list, mpp_get_UG_compute_domains, &
+                             mpp_define_null_UG_domain, NULL_DOMAINUG, mpp_get_UG_domains_index, &
+                             mpp_get_UG_SG_domain, mpp_get_UG_domain_tile_pe_inf, &
+                             mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index, &
+                             mpp_get_nest_coarse_domain, mpp_get_nest_fine_domain, &
+                             mpp_is_nest_coarse, mpp_is_nest_fine, &
+                             mpp_get_nest_pelist, mpp_get_nest_npes, &
+                             mpp_get_nest_fine_pelist, mpp_get_nest_fine_npes, &
+                             mpp_domain_UG_is_tile_root_pe, mpp_deallocate_domainUG, &
+                             mpp_get_io_domain_UG_layout, NULL_DOMAIN1D, NULL_DOMAIN2D
 
+  !> platform
   use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind, c8_kind, c4_kind, &
                           l8_kind, l4_kind, i2_kind, ptr_kind
 
-  !> random_numbers modules
+  !> random_numbers
   use mersennetwister_mod, only: randomNumberSequence, new_RandomNumberSequence, &
                                  finalize_RandomNumberSequence, getRandomInt, &
                                  getRandomPositiveInt, getRandomReal
@@ -396,6 +405,7 @@ module fms
                                 lookup_es3, lookup_des3, lookup_es3_des3, &
                                 lookup_es_des, compute_qs, compute_mrs, &
                                 escomp, descomp 
+
   !> time_interp 
   use time_interp_mod, only: time_interp_init, time_interp, fraction_of_year
   use time_interp_external2_mod, only: init_external_field, time_interp_external, &
@@ -422,12 +432,13 @@ module fms
                               get_date_julian, get_date_no_leap, date_to_string
   use get_cal_time_mod, only: get_cal_time
   
-  !> topography modules
+  !> topography
   use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
   use topography_mod, only: topography_init, get_topog_mean, get_topog_stdev, &
                             get_ocean_frac, get_ocean_mask, get_water_frac, &
                             get_water_mask
 
+  !> tracer_manager
   use tracer_manager_mod, only: tracer_manager_init, tracer_manager_end, &
                                 check_if_prognostic, get_tracer_indices,  &
                                 get_tracer_index, get_tracer_names, &
@@ -436,34 +447,14 @@ module fms
                                 register_tracers, get_number_tracers,  &
                                 adjust_mass, adjust_positive_def, NO_TRACER, MAX_TRACER_FIELDS
 
+  !> tridiagonal
   use tridiagonal_mod, only: tri_invert, close_tridiagonal
-  !! these are the depracated overloaded routines from mpp_io
+
+  !! these are the depracated modules from the old io
   !! if using any of the following, they must be imported directly
-  !use axis_utils_mod, only: interp_1_fms_io => interp_1d, &
-  !                          get_axis_cart_fms_io => get_axis_cart, &
-  !                          get_axis_modulo_fms_io => get_axis_modulo, & 
-  !                          lon_in_range_fms_io => lon_in_range, &
-  !                          tranlon_fms_io => tranlon, &
-  !                          frac_index_fms_io => frac_index, &
-  !                          nearest_index_fms_io => nearest_index, &
-  !                          get_axis_bounds
-  !use fms_io_mod, only: restart_file_type, save_restart, restore_state, &
-  !                      fms_io_init, fms_io_exit, open_file_fms_io=> open_file, &
-  !                      register_restart_field_fms_io=> register_restart_field, &
-  !                      read_data_fms_io=> read_data,write_data_fms_io=> write_data, &
-  !                      close_file_fms_io=> close_file, &
-  !                      register_restart_field_fms_io=> register_restart_field, &
-  !                      get_mosaic_tile_grid_fms_io=> get_mosaic_tile_grid
-  !use time_interp_external_mod, only:init_external_field_fms_io=> init_external_field, &
-  !                                   time_interp_external_fms_io=> time_interp_external, &
-  !                                   time_interp_external_init_fms_io=> time_interp_external_init, &
-  !                                   time_interp_external_exit_fms_io=> time_interp_external_exit, &
-  !                                   get_external_field_size_fms_io=> get_external_field_size, &
-  !                                   get_time_axis_fms_io=> get_time_axis, &
-  !                                   get_external_field_missing_fms_io=> get_external_field_missing, &
-  !                                   set_override_region_fms_io=> set_override_region, &
-  !                                   reset_src_data_region_fms_io=> reset_src_data_region, &
-  !                                   get_external_field_axes
+  !use axis_utils_mod
+  !use fms_io_mod
+  !use time_interp_external_mod
   !use get_grid_version_mpp_mod
   !use mpp_io_mod
   !use mosaic_mod
