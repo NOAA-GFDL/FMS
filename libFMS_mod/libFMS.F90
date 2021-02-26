@@ -23,7 +23,7 @@
 !! variables and routines are usable via this module
 !! Does not include routines from/for mpp_io
 
-module libfms_mod
+module fms
 
   !> import each FMS module's public routines/functions, interfaces, and variables
   !! done explicitly to avoid including any unwanted/depracated routines
@@ -469,4 +469,4 @@ module libfms_mod
   !use mosaic_mod
   implicit none
 
-end module libfms_mod
+end module fms
