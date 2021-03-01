@@ -44,7 +44,6 @@ public :: allocate_array
 public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
-public :: get_checksum
 public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
@@ -143,15 +142,6 @@ interface get_data_type_string
   module procedure get_data_type_string_5d
 end interface get_data_type_string
 
-
-interface get_checksum
-  module procedure get_checksum_0d
-  module procedure get_checksum_1d
-  module procedure get_checksum_2d
-  module procedure get_checksum_3d
-  module procedure get_checksum_4d
-  module procedure get_checksum_5d
-end interface get_checksum
 
 contains
 
@@ -460,7 +450,6 @@ end subroutine open_check
 include "array_utils.inc"
 include "array_utils_char.inc"
 include "get_data_type_string.inc"
-include "get_checksum.inc"
 
 
 end module fms_io_utils_mod
