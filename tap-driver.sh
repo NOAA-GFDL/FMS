@@ -327,7 +327,7 @@ function handle_tap_result()
       if (length(result_obj["explanation"]))
         details = details " " result_obj["explanation"]
       if (result_obj["directive"] == "SKIP")
-        skippedTests= (skippedTests=="") ? 
+        skippedTests= (skippedTests=="") ?
 		result_obj["number"] : skippedTests "," result_obj["number"]
     }
 
@@ -650,8 +650,11 @@ if (!bailed_out)
       }
   }
 
-if (skippedTests != "")
-  print color_map["blu"] "Skipped test numbers: " skippedTests | "cat >&6"
+if (skippedTests != "") {
+  print color_map["blu"] "Skipped the following test numbers in " test_script_name ": " | "cat >&6"
+  print color_map["blu"] skippedTests | "cat >&6"
+  print color_map["std"] | "cat >&6"# reset text color
+}
 write_test_results()
 
 exit 0

@@ -29,10 +29,10 @@
 . ../test-lib.sh
 
 # TODO Every test here fails except for 1
-SKIP_TESTS="$(basename $0 .sh)."[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+SKIP_TESTS="test_mpp_domains2.[2-16]"
 
 # Create base nml for input
-sh create_input.sh nml
+. ./create_input.sh nml
 
 cat input_base.nml > input.nml # Input.nml is required to run the following tests
 test_expect_success "simple functionality" '
