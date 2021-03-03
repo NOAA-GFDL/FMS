@@ -209,8 +209,8 @@ end subroutine mpi_check
 
 subroutine chksum_match(out_chksum, in_chksum, var_name, debug)
 
-  integer(kind=int64), intent(in) :: out_chksum
-  integer(kind=int64), intent(in) :: in_chksum
+  integer(kind=i8_kind), intent(in) :: out_chksum
+  integer(kind=i8_kind), intent(in) :: in_chksum
   character(len=*), intent(in) :: var_name
   logical, intent(in) :: debug
 

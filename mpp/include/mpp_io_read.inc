@@ -752,9 +752,10 @@
                     if (len.gt.MAX_ATT_LENGTH) call mpp_error(FATAL,'DIM ATT too long')
                     error=NF_GET_ATT_TEXT(ncid,i,trim(attname),mpp_file(unit)%Axis(dimid)%Att(j)%catt);
                     call netcdf_err( error, mpp_file(unit), attr=mpp_file(unit)%Axis(dimid)%att(j) )
-                    if( verbose .and. pe == 0 ) &
+                    if( verbose .and. pe == 0 ) then
                          print *, 'AXIS ',trim(mpp_file(unit)%Axis(dimid)%name),' ATT ',trim(attname)
                          print *, mpp_file(unit)%Axis(dimid)%Att(j)%catt(1:len)
+                    endif
                     ! store integers in float arrays
                     ! assume dimension data not packed
                  case (NF_SHORT)

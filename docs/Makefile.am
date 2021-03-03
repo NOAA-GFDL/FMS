@@ -32,6 +32,4 @@ all:
 
 check: all
 
-CLEANFILES = *.log
-
-EXTRA_DIST = Doxyfile
+EXTRA_DIST = Doxyfile.in
