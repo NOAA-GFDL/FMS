@@ -182,8 +182,8 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
 use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        read_data, write_data, read_compressed, read_distributed, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
-                       set_domain, get_domain_decomp, nullify_domain, &
-                       open_file, open_direct_file, string, get_mosaic_tile_grid, &
+                       get_domain_decomp, &
+                       open_file, open_direct_file, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
                        write_version_number
 use fms2_io_mod, only: fms2_io_init
@@ -202,8 +202,8 @@ public :: open_namelist_file, open_restart_file, &
           open_file, open_direct_file
 
 ! routines for reading/writing distributed data
-public :: set_domain, read_data, write_data, read_compressed, read_distributed
-public :: get_domain_decomp, field_size, nullify_domain
+public :: read_data, write_data, read_compressed, read_distributed
+public :: get_domain_decomp, field_size
 public :: get_global_att_value
 
 ! routines for get mosaic information
@@ -216,7 +216,7 @@ public :: file_exist, check_nml_error, field_exist,     &
 public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
-public :: lowercase, uppercase, string,        &
+public :: lowercase, uppercase,        &
           string_array_index, monotonic_array
 
 ! public mpp interfaces
@@ -231,6 +231,16 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+!public from the old fms_io but not exists here
+public :: string, set_domain, nullify_domain
+!------ private data, pointer to current 2d domain ------
+! entrained from fms_mod.  This will be deprecated in the future.
+! Copied from fms_io.  Not sure if there is a better way.
+type(domain2D), pointer, private :: Current_domain =>NULL()
+integer, private :: is,ie,js,je      ! compute domain
+integer, private :: isd,ied,jsd,jed  ! data domain
+integer, private :: isg,ieg,jsg,jeg  ! global domain
+
 ! public mpp-io interfaces
 public :: do_cf_compliance
 
@@ -330,6 +340,11 @@ integer, public :: clock_flag_default
 
   logical :: module_is_initialized = .FALSE.
 
+!> Converts a number to a string 
+interface string
+   module procedure string_from_integer
+   module procedure string_from_real
+end interface
 
 contains
 
@@ -998,6 +1013,68 @@ integer :: i
 
 end function monotonic_array
 ! </FUNCTION>
+!! Functions from the old fms_io
+!> \brief Converts an integer to a string
+!! This has been updated from the fms_io function.
+  function string_from_integer(i) result (res)
+    integer, intent(in) :: i !< Integer to be converted to a string
+    character(:),allocatable :: res !< String converted frominteger
+    character(range(i)+2) :: tmp !< Temp string that is set to correct size
+    write(tmp,'(i0)') i
+    res = trim(tmp)
+   return
+
+  end function string_from_integer
+
+  !#######################################################################
+!> \brief Converts a real to a string
+  function string_from_real(a)
+    real, intent(in) :: a
+    character(len=32) :: string_from_real
+
+    write(string_from_real,*) a
+
+    return
+
+  end function string_from_real
+
+  !#######################################################################
+
+
+
+!> \brief set_domain is called to save the domain2d data type prior to
+!! calling the distributed data I/O routines, read_data and write_data.
+subroutine set_domain (Domain2)
+
+  type(domain2D), intent(in), target :: Domain2 !< domain to be passed to
+                                                !! routines in IO, Current_domain
+                                                !! will point to this Domain2
+
+!  --- set_domain must be called before a read_data or write_data ---
+  if (associated(Current_domain)) nullify (Current_domain)
+  Current_domain => Domain2
+
+  !  --- module indexing to shorten read/write routines ---
+
+  call mpp_get_compute_domain (Current_domain,is ,ie ,js ,je )
+  call mpp_get_data_domain    (Current_domain,isd,ied,jsd,jed)
+  call mpp_get_global_domain  (Current_domain,isg,ieg,jsg,jeg)
+end subroutine set_domain
+!#######################################################################
+! </SUBROUTINE>
+
+
+
+!> \brief Use to nulify domain that has been assigned by set_domain.
+!! \note set_domain must be called before a read_data or write_data
+subroutine nullify_domain ()
+
+  if (associated(Current_domain)) nullify (Current_domain)
+  is=0;ie=0;js=0;je=0
+  isd=0;ied=0;jsd=0;jed=0
+  isg=0;ieg=0;jsg=0;jeg=0
+end subroutine nullify_domain
+
 
 end module fms_mod
 ! <INFO>

@@ -7411,7 +7411,7 @@ end subroutine close_file
 subroutine set_domain (Domain2)
 
   type(domain2D), intent(in), target :: Domain2
-
+  call mpp_error(WARNING, "set_domain has been moved to fms_mod.  Please update.")
   if (.NOT.module_is_initialized) call fms_io_init ( )
 
 !  --- set_domain must be called before a read_data or write_data ---
@@ -7429,6 +7429,7 @@ end subroutine set_domain
 
 ! <SUBROUTINE NAME="nullify_domain">
 subroutine nullify_domain ()
+  call mpp_error(WARNING, "nullify_domain has been moved to fms_mod.  Please update.")
 !   <DESCRIPTION>
 ! Use to nulify domain that has been assigned by set_domain.
 !   </DESCRIPTION>
@@ -7701,7 +7702,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_integer(n)
     integer, intent(in) :: n
     character(len=16) :: string_from_integer
-
+  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
     if(n<0) then
        call mpp_error(FATAL, 'fms_io_mod: n should be non-negative integer, contact developer')
     else if( n<10 ) then
@@ -7732,6 +7733,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_real(a)
     real, intent(in) :: a
     character(len=32) :: string_from_real
+  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
 
     write(string_from_real,*) a
 
