@@ -232,14 +232,7 @@ public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
 !public from the old fms_io but not exists here
-public :: string, set_domain, nullify_domain
-!------ private data, pointer to current 2d domain ------
-! entrained from fms_mod.  This will be deprecated in the future.
-! Copied from fms_io.  Not sure if there is a better way.
-type(domain2D), pointer, private :: Current_domain =>NULL()
-integer, private :: is,ie,js,je      ! compute domain
-integer, private :: isd,ied,jsd,jed  ! data domain
-integer, private :: isg,ieg,jsg,jeg  ! global domain
+public :: string
 
 ! public mpp-io interfaces
 public :: do_cf_compliance
@@ -1037,45 +1030,6 @@ end function monotonic_array
     return
 
   end function string_from_real
-
-  !#######################################################################
-
-
-
-!> \brief set_domain is called to save the domain2d data type prior to
-!! calling the distributed data I/O routines, read_data and write_data.
-subroutine set_domain (Domain2)
-
-  type(domain2D), intent(in), target :: Domain2 !< domain to be passed to
-                                                !! routines in IO, Current_domain
-                                                !! will point to this Domain2
-
-!  --- set_domain must be called before a read_data or write_data ---
-  if (associated(Current_domain)) nullify (Current_domain)
-  Current_domain => Domain2
-
-  !  --- module indexing to shorten read/write routines ---
-
-  call mpp_get_compute_domain (Current_domain,is ,ie ,js ,je )
-  call mpp_get_data_domain    (Current_domain,isd,ied,jsd,jed)
-  call mpp_get_global_domain  (Current_domain,isg,ieg,jsg,jeg)
-end subroutine set_domain
-!#######################################################################
-! </SUBROUTINE>
-
-
-
-!> \brief Use to nulify domain that has been assigned by set_domain.
-!! \note set_domain must be called before a read_data or write_data
-subroutine nullify_domain ()
-
-  if (associated(Current_domain)) nullify (Current_domain)
-  is=0;ie=0;js=0;je=0
-  isd=0;ied=0;jsd=0;jed=0
-  isg=0;ieg=0;jsg=0;jeg=0
-end subroutine nullify_domain
-
-
 end module fms_mod
 ! <INFO>
 !   <BUG>
