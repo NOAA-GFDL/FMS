@@ -18,14 +18,15 @@
 !***********************************************************************
 
 !> @brief  This programs tests the functionality in
-!! 1. coupler_type_register_restarts (CT_register_restarts_2d and mpp_io_CT_register_restarts_2d)
-!! 2. coupler_type_restore_state (CT_restore_state_2d and mpp_io_CT_restore_state_2d)
+!! 1. coupler_type_register_restarts (CT_register_restarts_2d)
+!! 2. coupler_type_restore_state (CT_restore_state_2d)
 program test_coupler_2d
 
 use   fms2_io_mod,        only: FmsNetcdfDomainFile_t, open_file, close_file, read_restart, write_restart
-use   fms_io_mod,         only: restart_file_type, save_restart, free_restart_type, restore_state
+use   fms2_io_mod,        only: FmsNetcdfFile_t, register_axis, register_field, write_data
+use   fms2_io_mod,        only: register_variable_attribute
 use   fms_mod,            only: fms_init, fms_end
-use   mpp_mod,            only: mpp_error, FATAL
+use   mpp_mod,            only: mpp_error, mpp_pe, mpp_root_pe, FATAL
 use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain
 use   coupler_types_mod,  only: coupler_2d_bc_type, coupler_type_register_restarts, coupler_type_restore_state
 use   platform_mod,       only: r8_kind
@@ -35,7 +36,6 @@ implicit none
 type(coupler_2d_bc_type)              :: bc_type          !< Coupler 2d restart types
 type(coupler_2d_bc_type)              :: bc_type_read     !< Coupler 2d restart types for reading
 type(FmsNetcdfDomainFile_t), pointer  :: bc_rest_files(:)=> null() !< Array of fms2_io fileobjs
-type(restart_file_type), pointer      :: fms_io_bc_rest_files(:)=> null() !< Array of fms_io fileobjs
 type(domain2d)                        :: Domain           !< Domain with mask table
 integer, dimension(2)                 :: layout = (/1,1/) !< Domain layout
 integer                               :: nlon             !< Number of points in x axis
@@ -44,6 +44,8 @@ integer, dimension(4)                 :: data_grid        !< Starting/Ending ind
                                                           !! for the data_domain
 integer                               :: num_rest_files   !< Number of restart files
 integer                               :: i                !< No description
+type(FmsNetcdfFile_t)                 :: fileobj          !< fms2_io fileobjs
+real, allocatable                     :: dummy_var(:,:)   !< Dummy variable
 
 call fms_init()
 
@@ -53,6 +55,37 @@ nlon=60
 call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_coupler')
 call mpp_define_io_domain(Domain, (/1,1/))
 call mpp_get_data_domain(Domain, data_grid(1), data_grid(2), data_grid(3), data_grid(4))
+
+!> Create a dummy general file
+if (mpp_pe() .eq. mpp_root_pe()) then
+   if (open_file(fileobj, "RESTART/default_3_ice_restart_2d.res.nc", "overwrite")) then
+       call register_axis(fileobj, "lonx", nlon)
+       call register_axis(fileobj, "laty", nlat)
+
+       call register_field(fileobj, "lonx", "double", (/ "lonx" /))
+       call register_field(fileobj, "laty", "double", (/ "laty" /))
+
+       call register_field(fileobj, "var_1", "double", (/ "lonx", "laty" /))
+       call register_field(fileobj, "var_2", "double", (/ "lonx", "laty" /))
+
+       call register_variable_attribute(fileobj, "lonx", "axis", "x", str_len=1)
+       call register_variable_attribute(fileobj, "laty", "axis", "y", str_len=1)
+
+       allocate(dummy_var(nlon, nlat))
+       dummy_var = real(1, kind=r8_kind)
+       call write_data(fileobj, "var_1", dummy_var)
+
+       dummy_var = real(2, kind=r8_kind)
+       call write_data(fileobj, "var_2", dummy_var)
+
+       call close_file(fileobj)
+
+       deallocate(dummy_var)
+   endif
+
+
+endif
+
 
 !> Write the file with new io
 call set_up_coupler_type(bc_type, data_grid, appendix="new", to_read=.false.)
@@ -87,36 +120,6 @@ call destroy_coupler_type(bc_type_read)
 
 deallocate(bc_rest_files)
 
-! ---------------------------------------------------------------------------------------------------!
-!> Try with fms_io
-call set_up_coupler_type(bc_type, data_grid, appendix="old", to_read=.false.)
-call coupler_type_register_restarts(bc_type, fms_io_bc_rest_files, num_rest_files, domain, ocean_restart=.false.)
-do i = 1, bc_type%num_bcs
-   call save_restart(fms_io_bc_rest_files(i))
-   call free_restart_type(fms_io_bc_rest_files(i))
-end do
-
-call set_up_coupler_type(bc_type_read, data_grid, appendix="old", to_read=.true.)
-call coupler_type_register_restarts(bc_type_read, fms_io_bc_rest_files, num_rest_files, domain, ocean_restart=.false.)
-do i = 1, bc_type_read%num_bcs
-   call restore_state(fms_io_bc_rest_files(i), directory="RESTART") !< RESTART is needed because the files were
-                                                                    !! written in that directory by the test
-end do
-
-call coupler_type_restore_state(bc_type_read, directory="RESTART", test_by_field=.true.)
-
-do i = 1, bc_type%num_bcs
-   call free_restart_type(fms_io_bc_rest_files(i))
-end do
-
-!< Compare answers!
-call compare_answers(bc_type_read, bc_type)
-
-call destroy_coupler_type(bc_type)
-call destroy_coupler_type(bc_type_read)
-
-deallocate(fms_io_bc_rest_files)
-
 call fms_end()
 
 contains
@@ -136,13 +139,22 @@ subroutine set_up_coupler_type(bc_type, data_grid, appendix, to_read)
    integer :: nfiles  !< Number of files
    integer :: i,j     !< No description
 
-   bc_type%num_bcs = 2
+   if (to_read) then
+       bc_type%num_bcs = 3
+   else
+       bc_type%num_bcs = 2
+   endif
+
    nfiles = bc_type%num_bcs
    allocate(bc_type%bc(nfiles))
 
    do i = 1, nfiles
       write(file_num,'(i1)') i
-      bc_type%bc(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_2d.nc"
+      if (i==3) then
+          bc_type%bc(i)%ice_restart_file="default_"//file_num//"_ice_restart_2d.nc"
+      else
+          bc_type%bc(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_2d.nc"
+      endif
 
       bc_type%bc(i)%num_fields=2
       nfields = bc_type%bc(i)%num_fields
@@ -194,6 +206,16 @@ subroutine compare_answers(bc_type_read, bc_type)
          endif
       end do
    end do
+
+   !< Check the dummy general file
+   if (sum(bc_type_read%bc(3)%field(1)%values) .ne. sum(bc_type_read%bc(1)%field(1)%values)) then
+       call mpp_error(FATAL, "test_coupler_2d: Answers do not match for var: "//trim(bc_type_read%bc(3)%field(1)%name))
+   endif
+
+   if (sum(bc_type_read%bc(3)%field(2)%values) .ne. sum(bc_type_read%bc(1)%field(2)%values)) then
+       call mpp_error(FATAL, "test_coupler_2d: Answers do not match for var: "//trim(bc_type_read%bc(3)%field(2)%name))
+   endif
+
 
 end subroutine
 

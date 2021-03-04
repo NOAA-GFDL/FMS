@@ -22,11 +22,13 @@
 !! @author Richard Slater, John Dunne
 !! @email gfdl.climate.model.info@noaa.gov
 module coupler_types_mod
-
-  use fms_mod,           only: write_version_number
+  use fms_mod,           only: write_version_number, lowercase
   use fms2_io_mod,       only: FmsNetcdfDomainFile_t, open_file, register_restart_field
   use fms2_io_mod,       only: register_axis, unlimited, variable_exists, check_if_open
-  use fms2_io_mod,       only: register_field
+  use fms2_io_mod,       only: register_field, get_num_dimensions, variable_att_exists
+  use fms2_io_mod,       only: get_variable_attribute, get_dimension_size, get_dimension_names
+  use fms2_io_mod,       only: register_variable_attribute, get_variable_dimension_names
+  use fms2_io_mod,       only: get_variable_num_dimensions
   use fms_io_mod,        only: restart_file_type, fms_io_register_restart_field=>register_restart_field
   use fms_io_mod,        only: query_initialized, restore_state
   use time_manager_mod,  only: time_type
@@ -3105,14 +3107,10 @@ contains
     logical :: ocn_rest
     integer :: f, n, m
 
-    character(len=8), dimension(3)             :: dim_names !< Array of dimension names
+    character(len=20), allocatable, dimension(:)             :: dim_names !< Array of dimension names
     character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
-
-    dim_names(1) = "xaxis_1"
-    dim_names(2) = "yaxis_1"
-    dim_names(3) = "Time"
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
@@ -3150,12 +3148,7 @@ contains
     do n = 1, num_rest_files
         file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
         if (file_is_open(n)) then
-             call register_axis(bc_rest_files(n), dim_names(1), "x")
-             call register_axis(bc_rest_files(n), dim_names(2), "y")
-             call register_axis(bc_rest_files(n), dim_names(3), unlimited)
-
-             call register_field(bc_rest_files(n), dim_names(1), "double", (/dim_names(1)/))
-             call register_field(bc_rest_files(n), dim_names(2), "double", (/dim_names(2)/))
+             call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
         endif
     enddo
 
@@ -3173,13 +3166,131 @@ contains
 
       do m = 1, var%bc(n)%num_fields
          if (file_is_open(f)) then
+            if( to_read ) then
+                !< If reading get the dimension names from the file
+                if (variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
+                    allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                    call get_variable_dimension_names(bc_rest_files(f), &
+                    & var%bc(n)%field(m)%name, dim_names)
+                endif !< If variable_exists
+            else
+                !< If writing use dummy dimension names
+                allocate(dim_names(3))
+                dim_names(1) = "xaxis_1"
+                dim_names(2) = "yaxis_1"
+                dim_names(3) = "Time"
+            endif !< to_read
+
             call register_restart_field(bc_rest_files(f),&
-                 & var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, dim_names, &
-                 & is_optional=var%bc(n)%field(m)%may_init )
-         endif
-      enddo
-    enddo
+            & var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, dim_names, &
+            & is_optional=var%bc(n)%field(m)%may_init )
+
+            deallocate(dim_names)
+         endif !< If file_is_open
+      enddo !< num_fields
+    enddo !< num_bcs
+
   end subroutine CT_register_restarts_2d
+
+  !< If reading a restart, register the dimensions that are in the file
+  subroutine register_axis_wrapper_read(fileobj)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
+
+    character(len=20), dimension(:), allocatable :: file_dim_names !< Array of dimension names
+    integer :: i !< No description
+    integer :: dim_size !< Size of the dimension
+    integer :: ndims !< Number of dimensions in the file
+    logical :: is_domain_decomposed !< Flag indication if domain decomposed
+    character(len=1) :: buffer !< string buffer
+
+    ndims = get_num_dimensions(fileobj)
+    allocate(file_dim_names(ndims))
+
+    call get_dimension_names(fileobj, file_dim_names)
+
+    do i = 1, ndims
+       is_domain_decomposed = .false.
+
+       !< Check if the dimension is also a variable
+       if (variable_exists(fileobj, file_dim_names(i))) then
+
+          !< If the variable exists look for the "cartesian_axis" or "axis" variable attribute
+          if (variable_att_exists(fileobj, file_dim_names(i), "axis")) then
+              call get_variable_attribute(fileobj, file_dim_names(i), "axis", buffer)
+
+              !< If the attribute exists and it is "x" or "y" register it as a domain decomposed dimension
+              if (lowercase(buffer) .eq. "x" .or. lowercase(buffer) .eq. "y" ) then
+                  is_domain_decomposed = .true.
+                  call register_axis(fileobj, file_dim_names(i), buffer)
+              endif
+
+          else if (variable_att_exists(fileobj, file_dim_names(i), "cartesian_axis")) then
+              call get_variable_attribute(fileobj, file_dim_names(i), "cartesian_axis", buffer)
+
+              !< If the attribute exists and it "x" or "y" register it as a domain decomposed dimension
+              if (lowercase(buffer) .eq. "x" .or. lowercase(buffer) .eq. "y" ) then
+                  is_domain_decomposed = .true.
+                  call register_axis(fileobj, file_dim_names(i), buffer)
+              endif
+
+          endif !< If variable attribute exists
+       endif !< If variable exists
+
+       if (.not. is_domain_decomposed) then
+          call get_dimension_size(fileobj, file_dim_names(i), dim_size)
+          call register_axis(fileobj, file_dim_names(i), dim_size)
+       endif
+
+    end do
+
+  end subroutine register_axis_wrapper_read
+
+  !< If writting a restart, register the variables with dummy axis names
+  subroutine register_axis_wrapper_write(fileobj, nz)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
+    integer, intent(in), optional :: nz !< length of the z dimension
+
+    character(len=20) :: dim_names(4) !< Array of dimension names
+
+    dim_names(1) = "xaxis_1"
+    dim_names(2) = "yaxis_1"
+
+    call register_axis(fileobj, dim_names(1), "x")
+    call register_axis(fileobj, dim_names(2), "y")
+
+    !< If nz is present register a zaxis
+    if (.not. present(nz)) then
+       dim_names(3) = "Time"
+       call register_axis(fileobj, dim_names(3), unlimited)
+    else
+       dim_names(3) = "zaxis_1"
+       dim_names(4) = "Time"
+
+       call register_axis(fileobj, dim_names(3), nz)
+       call register_axis(fileobj, dim_names(4), unlimited)
+    endif !< if (.not. present(nz))
+
+    !< Add the dimension names as variable so that the combiner can work correctly
+    call register_field(fileobj, dim_names(1), "double", (/dim_names(1)/))
+    call register_variable_attribute(fileobj, dim_names(1), "axis", "x", str_len=1)
+
+    call register_field(fileobj, dim_names(2), "double", (/dim_names(2)/))
+    call register_variable_attribute(fileobj, dim_names(2), "axis", "y", str_len=1)
+
+  end subroutine register_axis_wrapper_write
+
+  subroutine register_axis_wrapper(fileobj, to_read, nz)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
+    logical, intent(in) :: to_read !< Flag indicating if reading file
+    integer, intent(in), optional :: nz !< length of the z dimension
+
+    if (to_read) then
+        call register_axis_wrapper_read(fileobj)
+    else
+        call register_axis_wrapper_write(fileobj, nz)
+    endif
+
+  end subroutine
 
   !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !!
@@ -3287,16 +3398,11 @@ contains
     logical :: ocn_rest
     integer :: f, n, m
 
-    character(len=8), dimension(4)             :: dim_names !< Array of dimension names
+    character(len=20), allocatable, dimension(:) :: dim_names !< Array of dimension names
     character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< Flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
     integer                                    :: nz        !< Length of the z direction of each file
-
-    dim_names(1) = "xaxis_1"
-    dim_names(2) = "yaxis_1"
-    dim_names(3) = "zaxis_1"
-    dim_names(4) = "Time"
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
@@ -3335,10 +3441,12 @@ contains
     do n = 1, num_rest_files
         file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
         if (file_is_open(n)) then
-             call register_axis(bc_rest_files(n), dim_names(1), "x")
-             call register_axis(bc_rest_files(n), dim_names(2), "y")
-             call register_axis(bc_rest_files(n), dim_names(3), nz)
-             call register_axis(bc_rest_files(n), dim_names(4), unlimited)
+
+             if (to_read) then
+                call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
+             else
+                call register_axis_wrapper(bc_rest_files(n), to_read=to_read, nz=nz)
+             endif
         endif
     enddo
 
@@ -3356,12 +3464,30 @@ contains
 
       do m = 1, var%bc(n)%num_fields
          if (file_is_open(f)) then
+            if( to_read ) then
+                !< If reading get the dimension names from the file
+                if (variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
+                    allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                    call get_variable_dimension_names(bc_rest_files(f), &
+                    & var%bc(n)%field(m)%name, dim_names)
+                endif !< If variable_exists
+            else
+                !< If writing use dummy dimension names
+                allocate(dim_names(4))
+                dim_names(1) = "xaxis_1"
+                dim_names(2) = "yaxis_1"
+                dim_names(3) = "zaxis_1"
+                dim_names(4) = "Time"
+            endif !< to_read
+
             call register_restart_field(bc_rest_files(f),&
                  & var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, dim_names, &
                  & is_optional=var%bc(n)%field(m)%may_init )
-         endif
-      enddo
-    enddo
+            deallocate(dim_names)
+         endif !< If file_is_open
+      enddo !< num_fields
+    enddo !< num_bcs
+
   end subroutine CT_register_restarts_3d
 
   !! @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
