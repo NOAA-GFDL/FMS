@@ -22,7 +22,7 @@
 !! @email gfdl.climate.model.info@noaa.gov
 module fms_io_utils_mod
 use, intrinsic :: iso_fortran_env, only: error_unit
-use mpp_mod, only : get_ascii_file_num_lines_and_length, read_ascii_file
+!use mpp_mod, only : get_ascii_file_num_lines_and_length, read_ascii_file
 #ifdef _OPENMP
 use omp_lib
 #endif
@@ -50,6 +50,7 @@ public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
 public :: ascii_read
+public :: parse_mask_table
 
 !> @brief A linked list of strings
 type :: char_linked_list
@@ -57,6 +58,11 @@ type :: char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
+
+interface parse_mask_table
+  module procedure parse_mask_table_2d
+  module procedure parse_mask_table_3d
+end interface parse_mask_table
 
 interface allocate_array
   module procedure allocate_array_i4_kind_1d
@@ -466,6 +472,160 @@ subroutine ascii_read(ascii_filename, ascii_var)
   allocate(character(len=lines_and_length(2))::ascii_var(lines_and_length(1)))
   call read_ascii_file(ascii_filename, lines_and_length(2), ascii_var)
 end subroutine ascii_read
+
+subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
+
+  character(len=*), intent(in) :: mask_table
+  logical,         intent(out) :: maskmap(:,:)
+  character(len=*), intent(in) :: modelname
+  integer                      :: nmask, layout(2)
+  integer, allocatable         :: mask_list(:,:)
+  character(len=:), dimension(:), allocatable :: mask_table_contents !< Content array
+  integer                      :: mystat, n, stdoutunit
+  character(len=128)           :: record
+
+  maskmap = .true.
+  nmask = 0
+  stdoutunit = stdout()
+  call ascii_read(mask_table, mask_table_contents)
+  if( mpp_pe() == mpp_root_pe() ) then
+     read(mask_table_contents, FMT=*, IOSTAT=mystat) nmask
+     write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
+     if( nmask > 0 ) then
+        !--- read layout from mask_table and confirm it matches the shape of maskmap
+        read(mask_table_contents, FMT=*, IOSTAT=mystat) layout
+        if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
+           write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): layout in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        !--- make sure mpp_npes() == layout(1)*layout(2) - nmask
+        if( mpp_npes() .NE. layout(1)*layout(2) - nmask ) call mpp_error(FATAL, &
+           "fms2_io(parse_mask_table_2d): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
+     endif
+   endif
+
+   call mpp_broadcast(nmask, mpp_root_pe())
+
+   if(nmask==0) return
+
+   allocate(mask_list(nmask,2))
+
+   if( mpp_pe() == mpp_root_pe() ) then
+     n = 0
+     do while( .true. )
+        read(mask_table_contents,'(a)',end=999) record
+        if (record(1:1) == '#') cycle
+        if (record(1:10) == '          ') cycle
+        n = n + 1
+        if( n > nmask ) then
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): number of mask_list entry "// &
+                "is greater than nmask in file "//trim(mask_table) )
+        endif
+        read(record,*,err=888) mask_list(n,1), mask_list(n,2)
+     enddo
+888  call mpp_error(FATAL, "fms2_io(parse_mask_table_2d):  Error in reading mask_list from file "//trim(mask_table))
+
+999  continue
+     !--- make sure the number of entry for mask_list is nmask
+     if( n .NE. nmask) call mpp_error(FATAL, &
+        "fms2_io(parse_mask_table_2d): number of mask_list entry does not match nmask in file "//trim(mask_table))
+  endif
+
+  call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
+  do n = 1, nmask
+     if(debug_mask_list) then
+       write(stdoutunit,*) "==>NOTE from parse_mask_table_2d: ", trim(modelname), " mask_list = ", mask_list(n,1), mask_list(n,2)
+     endif
+     maskmap(mask_list(n,1),mask_list(n,2)) = .false.
+  enddo
+
+  deallocate(mask_list)
+
+end subroutine parse_mask_table_2d
+
+
+!#######################################################################
+subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
+
+  character(len=*), intent(in) :: mask_table
+  logical,         intent(out) :: maskmap(:,:,:)
+  character(len=*), intent(in) :: modelname
+  integer                      :: nmask, layout(2)
+  integer, allocatable         :: mask_list(:,:)
+  character(len=:), dimension(:), allocatable :: mask_table_contents !< Content array
+  integer                      :: mystat, n, stdoutunit, ntiles
+  character(len=128)           :: record
+
+  maskmap = .true.
+  nmask = 0
+  stdoutunit = stdout()
+  call ascii_read(mask_table, mask_table_contents)
+  if( mpp_pe() == mpp_root_pe() ) then
+     read(mask_table_contents, FMT=*, IOSTAT=mystat) nmask
+     write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
+     if( nmask > 0 ) then
+        !--- read layout from mask_table and confirm it matches the shape of maskmap
+        read(mask_table_contents, FMT=*, IOSTAT=mystat) layout(1), layout(2), ntiles
+        if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
+           write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): layout in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        if( ntiles .NE. size(maskmap,3) ) then
+           write(stdoutunit,*)"ntiles=", ntiles, ", size(maskmap,3) = ", size(maskmap,3)
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): ntiles in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        !--- make sure mpp_npes() == layout(1)*layout(2) - nmask
+        if( mpp_npes() .NE. layout(1)*layout(2)*ntiles - nmask ) then
+           print*, "layout=", layout, nmask, mpp_npes()
+           call mpp_error(FATAL, &
+              "fms2_io(parse_mask_table_3d): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
+        endif
+      endif
+   endif
+
+   call mpp_broadcast(nmask, mpp_root_pe())
+
+   if(nmask==0) return
+
+   allocate(mask_list(nmask,3))
+
+   if( mpp_pe() == mpp_root_pe() ) then
+     n = 0
+     do while( .true. )
+        read(mask_table_contents,'(a)',end=999) record
+        if (record(1:1) == '#') cycle
+        if (record(1:10) == '          ') cycle
+        n = n + 1
+        if( n > nmask ) then
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): number of mask_list entry "// &
+                "is greater than nmask in file "//trim(mask_table) )
+        endif
+        read(record,*,err=888) mask_list(n,1), mask_list(n,2), mask_list(n,3)
+     enddo
+888  call mpp_error(FATAL, "fms2_io(parse_mask_table_3d):  Error in reading mask_list from file "//trim(mask_table))
+
+999  continue
+     !--- make sure the number of entry for mask_list is nmask
+     if( n .NE. nmask) call mpp_error(FATAL, &
+        "fms2_io(parse_mask_table_3d): number of mask_list entry does not match nmask in file "//trim(mask_table))
+!     call mpp_close(unit)
+  endif
+
+  call mpp_broadcast(mask_list, 3*nmask, mpp_root_pe())
+  do n = 1, nmask
+     if(debug_mask_list) then
+       write(stdoutunit,*) "==>NOTE from parse_mask_table_3d: ", trim(modelname), " mask_list = ", &
+                           mask_list(n,1), mask_list(n,2), mask_list(n,3)
+     endif
+     maskmap(mask_list(n,1),mask_list(n,2),mask_list(n,3)) = .false.
+  enddo
+
+  deallocate(mask_list)
+
+end subroutine parse_mask_table_3d
 
 include "array_utils.inc"
 include "array_utils_char.inc"
