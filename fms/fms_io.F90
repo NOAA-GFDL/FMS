@@ -7411,7 +7411,6 @@ end subroutine close_file
 subroutine set_domain (Domain2)
 
   type(domain2D), intent(in), target :: Domain2
-  call mpp_error(WARNING, "set_domain has been moved to fms_mod.  Please update.")
   if (.NOT.module_is_initialized) call fms_io_init ( )
 
 !  --- set_domain must be called before a read_data or write_data ---
@@ -7429,7 +7428,6 @@ end subroutine set_domain
 
 ! <SUBROUTINE NAME="nullify_domain">
 subroutine nullify_domain ()
-  call mpp_error(WARNING, "nullify_domain has been moved to fms_mod.  Please update.")
 !   <DESCRIPTION>
 ! Use to nulify domain that has been assigned by set_domain.
 !   </DESCRIPTION>
