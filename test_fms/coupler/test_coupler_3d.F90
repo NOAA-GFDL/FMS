@@ -71,8 +71,8 @@ if (mpp_pe() .eq. mpp_root_pe()) then
        call register_field(fileobj, "lonx", "double", (/ "lonx" /))
        call register_field(fileobj, "laty", "double", (/ "laty" /))
 
-       call register_field(fileobj, "var_1", "double", (/ "lonx", "laty", "z" /))
-       call register_field(fileobj, "var_2", "double", (/ "lonx", "laty", "z" /))
+       call register_field(fileobj, "var_1", "double", (/ "lonx", "laty", "z    " /))
+       call register_field(fileobj, "var_2", "double", (/ "lonx", "laty", "z    " /))
 
        call register_variable_attribute(fileobj, "lonx", "axis", "x", str_len=1)
        call register_variable_attribute(fileobj, "laty", "axis", "y", str_len=1)
