@@ -2492,7 +2492,7 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
   character(len=80)  :: restartname          ! The restart file name (no dir).
   character(len=336) :: restartpath          ! The restart file path (dir/file).
   integer :: i !< For looping
-  logical :: has_dot
+  logical :: has_dot !< For determining if the time_stamp has a .
   ! This approach is taken rather than interface overloading in order to preserve
   ! use of the register_restart_field infrastructure
 
@@ -2509,7 +2509,7 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
           "Length of restart file name + time_stamp is greater than allowed character length of 79")
            has_dot = .false.
            do i=1,len(trim(time_stamp))
-              if (time_stamp(i:i) == ".") had_dot = .true.
+              if (time_stamp(i:i) == ".") has_dot = .true.
            enddo
            if (has_dot) then
               restartname = trim(time_stamp)//trim(restartname)
