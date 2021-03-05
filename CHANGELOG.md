@@ -10,16 +10,16 @@ sequential patch number (starting from `01`).
 ### Added
 - MPP: A counter for timers to report how many times a timer section is run
 - MPP: Adds missing interfaces to be consistent with interfaces that use the OVERLOAD and no_8byte_integer macros in order to allow building without MPI
-- MIXED PRECISION: Extends interfaces for read and write routines to include 32-bit and 64-bit real data arrays
-- MIXED PRECISION: Adds various unit tests for mpp and mpp_io for all public routines with mixed-precision interfaces and expands on existing tests for mixed-precision
+- MPP: Extends interfaces for read and write routines to include 32-bit and 64-bit real data arrays
+- MPP: Adds unit tests for mpp and mpp_io for all public routines with mixed-precision interfaces and expands on existing tests for mixed-precision
 - Adds an .editorconfig file with the project's preferred editor configuration
 - A variable MODDIR in configure.ac for use in Makefiles to find required Fortran module files
 - Adds FMS description web page as a markdown file
 ### Changed
-- DOCS: Updates various modules to doxygen style comments and makes adjustments to correctly generate doxygen documentation through the build system 
-- Changes all previous uses of flush subroutine calls to function calls
-- Changes travis CI to Github actions CI and removes all trailing whitespace
+- DOCS: Updates various modules to doxygen style comments and makes adjustments to correctly generate doxygen documentation through the build system
 - PLATFORM: changes usage of platform.h to platform_mod and it's associated data types
+- Changes all previous uses of flush subroutine calls to function calls
+- Changes travis CI to Github actions CI and removed all trailing whitespace
 ### Removed
 ### Fixed
 - MPP: Fixed a bug causing mpp_get_UG_domain_tile_pe_inf to seg fault from the incorrect assignment of an optional argument
