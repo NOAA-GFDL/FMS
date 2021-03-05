@@ -52,6 +52,13 @@ program test_mpp_domains
   use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
   use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
   use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE, mpp_get_tile_id
+  !! added for old tests
+  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE
+  use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
+  use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
+  use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
+  use fms_mod,         only : check_nml_error
+  !!
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
   use fms_affinity_mod, only : fms_affinity_set
   use mpp_io_mod,       only: mpp_io_init
@@ -76,7 +83,7 @@ program test_mpp_domains
   integer :: nx_cubic = 0, ny_cubic = 0
   logical :: test_nest = .false.
   logical :: test_performance = .false.
-  logical :: test_interface = .true.
+  logical :: test_interface = .false.
   logical :: test_edge_update = .false.
   logical :: test_nonsym_edge = .false.
   logical :: test_group = .false.
@@ -99,6 +106,7 @@ program test_mpp_domains
   integer :: nthreads = 1
   logical :: test_adjoint = .false.
   logical :: wide_halo = .false.
+  logical :: test_unstruct = .false.
 
   !--- namelist variable for nest domain
   integer, parameter :: MAX_NNEST=20
@@ -120,19 +128,20 @@ program test_mpp_domains
                                whalo, ehalo, shalo, nhalo, x_cyclic_offset, y_cyclic_offset, &
                                warn_level, wide_halo_x, wide_halo_y, nx_cubic, ny_cubic, &
                                test_performance, test_interface, num_fields, do_sleep, num_iter, &
-                               test_nest, num_nest, ntiles_nest_all, nest_level, tile_fine, tile_coarse, &
-                               refine_ratio, istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &
-                               extra_halo, npes_nest_tile, cyclic_nest, mix_2D_3D, test_get_nbr, &
-                               test_edge_update, test_cubic_grid_redistribute, ensemble_size, &
-                               layout_cubic, layout_ensemble, nthreads, test_boundary, &
-                               layout_tripolar, test_group, test_global_sum, test_subset, &
-                               test_nonsym_edge, test_halosize_performance, test_adjoint, wide_halo
+                               test_nest, num_nest, ntiles_nest_all, nest_level, tile_fine, &
+                               tile_coarse, refine_ratio, istart_coarse, icount_coarse, &
+                               jstart_coarse, jcount_coarse, extra_halo, npes_nest_tile, &
+                               cyclic_nest, mix_2D_3D, test_get_nbr, test_edge_update, &
+                               test_cubic_grid_redistribute, ensemble_size, layout_cubic, &
+                               layout_ensemble, nthreads, test_boundary, layout_tripolar, &
+                               test_group, test_global_sum, test_subset, test_nonsym_edge, &
+                               test_halosize_performance, test_adjoint, wide_halo, test_unstruct
   integer :: i, j, k, n
   integer :: layout(2)
   integer :: id
   integer :: outunit, errunit, io_status
   integer :: omp_get_num_threads, omp_get_thread_num
-  integer                         :: ierr
+  integer :: ierr
 
 
   call mpp_init(test_level=mpp_init_test_requests_allocated)
@@ -196,6 +205,12 @@ program test_mpp_domains
      call test_update_nest_domain_r4('Cubic-Grid')
     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_update_nest_domain <-------------------'
   endif
+  !> re-added after mixed prec
+  if(test_subset) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_subset_update <-------------------'
+      call test_subset_update()
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_subset_update <-------------------'
+  endif
 
   if( test_halosize_performance ) then
      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_halosize_performance <-------------------'
@@ -218,6 +233,13 @@ program test_mpp_domains
       call test_update_nonsym_edge( 'Folded-north' ) !includes vector field test
       call test_update_nonsym_edge( 'Folded-north symmetry' )
      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_nonsym_edge <-------------------'
+  endif
+  !> re-added after mixed prec
+  if( test_performance) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_performance <-------------------'
+      call update_domains_performance('Folded-north')
+      call update_domains_performance('Cubic-Grid')
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_performance <-------------------'
   endif
 
   if( test_global_sum ) then
@@ -248,6 +270,12 @@ program test_mpp_domains
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_adjoint <-------------------'
   endif
 
+  !> re-added after mixed prec
+  if( test_unstruct) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_unstruct <-------------------'
+     call test_unstruct_update( 'Cubic-Grid' )
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_unstruct <-------------------'
+  endif
   if( test_group) then
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_group <-------------------'
      call test_group_update( 'Folded-north' )
@@ -1671,6 +1699,596 @@ contains
   end subroutine test_uniform_mosaic
 
   !###############################################################
+  subroutine update_domains_performance( type )
+    character(len=*), intent(in) :: type
+
+    type(domain2D) :: domain
+    integer        :: num_contact, ntiles, npes_per_tile, ntile_per_pe
+    integer        :: i, j, k, l, n, shift
+    integer        :: ism, iem, jsm, jem
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+
+    integer, allocatable, dimension(:)       :: tile
+    integer, allocatable, dimension(:)       :: pe_start, pe_end, tile1, tile2
+    integer, allocatable, dimension(:)       :: istart1, iend1, jstart1, jend1
+    integer, allocatable, dimension(:)       :: istart2, iend2, jstart2, jend2
+    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+    real,    allocatable, dimension(:,:,:,:) :: x, x1, y, y1, x_save, y_save
+    real,    allocatable, dimension(:,:,:,:) :: a, a1, b, b1
+    real,    allocatable, dimension(:,:,:  ) :: a1_2D, b1_2D
+    integer            :: id_update
+    integer            :: id1, id2
+    logical            :: folded_north
+    logical            :: cubic_grid, single_tile, four_tile
+    character(len=3)   :: text
+    integer            :: nx_save, ny_save
+    integer            :: id_single, id_update_single
+
+    folded_north       = .false.
+    cubic_grid         = .false.
+    single_tile        = .false.
+    four_tile          = .false.
+    nx_save = nx
+    ny_save = ny
+    !--- check the type
+    select case(type)
+    case ( 'Single-Tile' )   !--- single with cyclic along x- and y-direction
+       single_tile = .true.
+       ntiles = 1
+       num_contact = 2
+    case ( 'Folded-north' )
+       ntiles = 1
+       num_contact = 2
+       folded_north = .true.
+    case ( 'Four-Tile' ) !--- cyclic along both x- and y-direction.
+       ntiles = 4
+       num_contact = 8
+       four_tile = .true.
+    case ( 'Cubic-Grid' )
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'update_domains_performance: for Cubic_grid mosaic, nx_cubic is zero, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'update_domains_performance: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles = 6
+       num_contact = 12
+       cubic_grid = .true.
+
+    case default
+       call mpp_error(FATAL, 'update_domains_performance: no such test: '//type)
+    end select
+
+    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+    if( mod(npes, ntiles) == 0 ) then
+       npes_per_tile = npes/ntiles
+       write(outunit,*)'NOTE from update_domains_performance ==> For Mosaic "', trim(type), &
+                       '", each tile will be distributed over ', npes_per_tile, ' processors.'
+       ntile_per_pe = 1
+       allocate(tile(ntile_per_pe))
+       tile = pe/npes_per_tile+1
+       if(cubic_grid) then
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+       do n = 1, ntiles
+          pe_start(n) = (n-1)*npes_per_tile
+          pe_end(n)   = n*npes_per_tile-1
+       end do
+    else if ( mod(ntiles, npes) == 0 ) then
+       ntile_per_pe = ntiles/npes
+       write(outunit,*)'NOTE from update_domains_performance ==> For Mosaic "', trim(type), &
+                        '", there will be ', ntile_per_pe, ' tiles on each processor.'
+       allocate(tile(ntile_per_pe))
+       do n = 1, ntile_per_pe
+          tile(n) = pe*ntile_per_pe + n
+       end do
+       do n = 1, ntiles
+          pe_start(n) = (n-1)/ntile_per_pe
+          pe_end(n)   = pe_start(n)
+       end do
+       layout = 1
+    else
+       call mpp_error(NOTE,'update_domains_performance: npes should be multiple of ntiles or ' // &
+            'ntiles should be multiple of npes. No test is done for '//trim(type) )
+       return
+    end if
+
+    do n = 1, ntiles
+       global_indices(:,n) = (/1,nx,1,ny/)
+       layout2D(:,n)         = layout
+    end do
+
+    allocate(tile1(num_contact), tile2(num_contact) )
+    allocate(istart1(num_contact), iend1(num_contact), jstart1(num_contact), jend1(num_contact) )
+    allocate(istart2(num_contact), iend2(num_contact), jstart2(num_contact), jend2(num_contact) )
+
+    !--- define domain
+    if(single_tile) then
+       !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
+       istart2(1) = 1;  iend2(1) = 1;  jstart2(1) = 1;  jend2(1) = ny
+       !--- Contact line 2, between tile 1 (SOUTH) and tile 1 (NORTH)  --- cyclic
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = 1;  iend1(2) = nx; jstart1(2) = 1;   jend1(2) = 1
+       istart2(2) = 1;  iend2(2) = nx; jstart2(2) = ny;  jend2(2) = ny
+       call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+            istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+            pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+            name = type, symmetry = .false. )
+    else if(folded_north) then
+       !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)  --- cyclic
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
+       istart2(1) = 1;  iend2(1) = 1;  jstart2(1) = 1;  jend2(1) = ny
+       !--- Contact line 2, between tile 1 (NORTH) and tile 1 (NORTH)  --- folded-north-edge
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = 1;  iend1(2) = nx/2;   jstart1(2) = ny;  jend1(2) = ny
+       istart2(2) = nx; iend2(2) = nx/2+1; jstart2(2) = ny;  jend2(2) = ny
+       call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+                              istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+                              pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                              name = type, symmetry = .false.  )
+    else if( four_tile ) then
+       call define_fourtile_mosaic(type, domain, (/nx,nx,nx,nx/), (/ny,ny,ny,ny/), global_indices, &
+                                   layout2D, pe_start, pe_end, symmetry = .false. )
+    else if( cubic_grid ) then
+       call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+                                global_indices, layout2D, pe_start, pe_end )
+    endif
+
+    !--- setup data
+    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    call mpp_get_memory_domain   ( domain, ism, iem, jsm, jem )
+    allocate( x (ism:iem,jsm:jem,nz, ntile_per_pe) )
+    allocate( x_save (ism:iem,jsm:jem,nz, ntile_per_pe) )
+    allocate( a (ism:iem,jsm:jem,nz, ntile_per_pe) )
+    x = 0
+    do l = 1, ntile_per_pe
+       do k = 1, nz
+          do j = jsc, jec
+             do i = isc, iec
+                x(i, j, k, l) = tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             enddo
+          enddo
+       enddo
+    enddo
+
+    a  = x
+    x_save = x
+
+    if(num_fields<1) then
+       call mpp_error(FATAL, "test_mpp_domains: num_fields must be a positive integer")
+    endif
+
+    id1 = mpp_clock_id( type, flags=MPP_CLOCK_SYNC)
+    id_single = mpp_clock_id( type//' non-blocking', flags=MPP_CLOCK_SYNC)
+
+
+    call mpp_clock_begin(id1)
+    call mpp_update_domains( x, domain)
+    call mpp_clock_end  (id1)
+
+    call mpp_clock_begin(id_single)
+    id_update_single =  mpp_start_update_domains(a, domain)
+    call mpp_clock_end  (id_single)
+
+    !---- sleep some time for non-blocking.
+    if(do_sleep) call sleep(1)
+
+    id1 = mpp_clock_id( type//' group', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' group non-blocking', flags=MPP_CLOCK_SYNC )
+
+
+    if(ntile_per_pe == 1) then
+       allocate( x1(ism:iem,jsm:jem,nz, num_fields) )
+       allocate( a1(ism:iem,jsm:jem,nz, num_fields) )
+       if(mix_2D_3D) allocate( a1_2D(ism:iem,jsm:jem,num_fields) )
+
+       do n = 1, num_iter
+          do l = 1, num_fields
+             x1(:,:,:,l) = x_save(:,:,:,1)
+             a1(:,:,:,l) = x_save(:,:,:,1)
+             if(mix_2D_3D) a1_2D(:,:,l) = x_save(:,:,1,1)
+          enddo
+
+          call mpp_clock_begin(id1)
+          do l = 1, num_fields
+             call mpp_update_domains( x1(:,:,:,l), domain, complete=l==num_fields )
+          enddo
+          call mpp_clock_end  (id1)
+
+          ! non-blocking update
+          call mpp_clock_begin(id2)
+          if( n == 1 ) then
+             do l = 1, num_fields
+                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), domain, complete=.false.)
+                id_update =  mpp_start_update_domains(a1(:,:,:,l), domain, complete=l==num_fields)
+             enddo
+          else
+             do l = 1, num_fields
+                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), domain, update_id=id_update, complete=.false.)
+                id_update =  mpp_start_update_domains(a1(:,:,:,l), domain, update_id=id_update, complete=l==num_fields)
+             enddo
+          endif
+          call mpp_clock_end  (id2)
+
+          !---- sleep some time for non-blocking.
+          if(do_sleep) call sleep(1)
+
+          call mpp_clock_begin(id2)
+          do l = 1, num_fields
+             if(mix_2D_3D) call mpp_complete_update_domains(id_update, a1_2D(:,:,l), domain, complete=.false.)
+             call mpp_complete_update_domains(id_update, a1(:,:,:,l), domain, complete=l==num_fields)
+          enddo
+          call mpp_clock_end  (id2)
+
+
+          !--- compare checksum
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums( x1(:,:,:,l), a1(:,:,:,l), type//' X'//text)
+          enddo
+          if(mix_2D_3D)call compare_checksums( x1(:,:,1,:), a1_2D(:,:,:), type//' X 2D')
+       enddo
+       deallocate(x1, a1)
+       if(mix_2D_3D) deallocate(a1_2D)
+    endif
+
+    call mpp_clock_begin(id_single)
+    call mpp_complete_update_domains(id_update_single, a, domain)
+    call mpp_clock_end  (id_single)
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type)
+    deallocate(x, a, x_save)
+
+
+    !------------------------------------------------------------------
+    !              vector update : BGRID_NE, one extra point in each direction for cubic-grid
+    !------------------------------------------------------------------
+    !--- setup data
+    shift = 0
+    if(single_tile .or. four_tile .or. folded_north) then
+       shift = 0
+    else
+       shift = 1
+    endif
+
+    allocate( x (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
+    allocate( y (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
+    allocate( x_save (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
+    allocate( y_save (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
+    allocate( a (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
+    allocate( b (ism:iem+shift,jsm:jem+shift,nz,ntile_per_pe) )
+    x = 0
+    y = 0
+    do l = 1, ntile_per_pe
+       do k = 1, nz
+          do j = jsc, jec+shift
+             do i = isc, iec+shift
+                x(i,j,k,l) = 1.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+                y(i,j,k,l) = 2.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    enddo
+    a  = x; b  = y
+    x_save  = x; y_save  = y
+
+    id1 = mpp_clock_id( trim(type)//' BGRID', flags=MPP_CLOCK_SYNC )
+    id_single = mpp_clock_id( trim(type)//' BGRID non-blocking', flags=MPP_CLOCK_SYNC )
+
+    call mpp_clock_begin(id1)
+    call mpp_update_domains( x, y, domain, gridtype=BGRID_NE)
+    call mpp_clock_end  (id1)
+
+    !--- non-blocking update
+    call mpp_clock_begin(id_single)
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=BGRID_NE)
+    call mpp_clock_end  (id_single)
+
+    !---- sleep some time for non-blocking.
+    if(do_sleep) call sleep(1)
+
+    id1 = mpp_clock_id( trim(type)//' BGRID group', flags=MPP_CLOCK_SYNC)
+    id2 = mpp_clock_id( trim(type)//' BGRID group non-blocking', flags=MPP_CLOCK_SYNC)
+    if(ntile_per_pe == 1) then
+       allocate( x1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       allocate( y1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       allocate( a1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       allocate( b1(ism:iem+shift,jsm:jem+shift,nz,num_fields) )
+       if(mix_2D_3D) then
+          allocate( a1_2D(ism:iem+shift,jsm:jem+shift,num_fields) )
+          allocate( b1_2D(ism:iem+shift,jsm:jem+shift,num_fields) )
+       endif
+
+       do n = 1, num_iter
+          do l = 1, num_fields
+             x1(:,:,:,l) = x_save(:,:,:,1)
+             a1(:,:,:,l) = x_save(:,:,:,1)
+             y1(:,:,:,l) = y_save(:,:,:,1)
+             b1(:,:,:,l) = y_save(:,:,:,1)
+             if(mix_2D_3D) then
+                a1_2D(:,:,l) = x_save(:,:,1,1)
+                b1_2D(:,:,l) = y_save(:,:,1,1)
+             endif
+          enddo
+
+          call mpp_clock_begin(id1)
+          do l = 1, num_fields
+             call mpp_update_domains( x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=BGRID_NE, complete=l==num_fields )
+          enddo
+          call mpp_clock_end  (id1)
+
+          !--- non-blocking update
+          call mpp_clock_begin(id2)
+          if( n == 1 ) then
+             do l = 1, num_fields
+                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), b1_2D(:,:,l), domain, &
+                             gridtype=BGRID_NE, complete=.false.)
+                id_update =  mpp_start_update_domains(a1(:,:,:,l), b1(:,:,:,l), domain, &
+                             gridtype=BGRID_NE, complete=l==num_fields)
+             enddo
+          else
+             do l = 1, num_fields
+                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), b1_2D(:,:,l), domain, gridtype=BGRID_NE, &
+                                update_id=id_update, complete=.false.)
+                id_update =  mpp_start_update_domains(a1(:,:,:,l), b1(:,:,:,l), domain, gridtype=BGRID_NE, &
+                                update_id=id_update, complete=l==num_fields)
+             enddo
+          endif
+          call mpp_clock_end  (id2)
+
+          !---- sleep some time for non-blocking.
+          if(do_sleep) call sleep(1)
+
+          call mpp_clock_begin(id2)
+          do l = 1, num_fields
+             if(mix_2D_3D)call mpp_complete_update_domains(id_update, a1_2D(:,:,l), b1_2D(:,:,l), domain, &
+                                              gridtype=BGRID_NE, complete=.false.)
+             call mpp_complete_update_domains(id_update, a1(:,:,:,l), b1(:,:,:,l), domain, &
+                                              gridtype=BGRID_NE, complete=l==num_fields)
+          enddo
+          call mpp_clock_end  (id2)
+
+          !--- compare checksum
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums( x1(:,:,:,l), a1(:,:,:,l), type//' BGRID X'//text)
+             call compare_checksums( y1(:,:,:,l), b1(:,:,:,l), type//' BGRID Y'//text)
+             if(mix_2D_3D) then
+                call compare_checksums( x1(:,:,:,l), a1(:,:,:,l), type//' BGRID X'//text)
+                call compare_checksums( y1(:,:,:,1), b1(:,:,:,1), type//' BGRID Y'//text)
+             endif
+          enddo
+          if(mix_2D_3D) then
+             call compare_checksums( x1(:,:,1,:), a1_2D(:,:,:), type//' BGRID X 2D')
+             call compare_checksums( y1(:,:,1,:), b1_2D(:,:,:), type//' BGRID Y 2D')
+          endif
+       enddo
+       deallocate(x1, y1, a1, b1)
+       if(mix_2D_3D) deallocate(a1_2D, b1_2D)
+    endif
+
+    call mpp_clock_begin(id_single)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=BGRID_NE)
+    call mpp_clock_end  (id_single)
+
+
+    !--- compare checksum
+
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' BGRID X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' BGRID Y')
+
+
+    deallocate(x, y, a, b, x_save, y_save)
+    !------------------------------------------------------------------
+    !              vector update : CGRID_NE, one extra point in each direction for cubic-grid
+    !------------------------------------------------------------------
+    allocate( x (ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+    allocate( y (ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+    allocate( a (ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+    allocate( b (ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+    allocate( x_save (ism:iem+shift,jsm:jem  ,nz,ntile_per_pe) )
+    allocate( y_save (ism:iem  ,jsm:jem+shift,nz,ntile_per_pe) )
+
+
+    x = 0
+    y = 0
+    do l = 1, ntile_per_pe
+       do k = 1, nz
+          do j = jsc, jec
+             do i = isc, iec+shift
+                x(i,j,k,l) = 1.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+          do j = jsc, jec+shift
+             do i = isc, iec
+                y(i,j,k,l) = 2.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    enddo
+
+    a  = x; b  = y
+    x_save  = x; y_save  = y
+
+    id1 = mpp_clock_id( trim(type)//' CGRID', flags=MPP_CLOCK_SYNC )
+    id_single = mpp_clock_id( trim(type)//' CGRID non-blocking', flags=MPP_CLOCK_SYNC )
+
+    call mpp_clock_begin(id1)
+    call mpp_update_domains( x, y, domain, gridtype=CGRID_NE)
+    call mpp_clock_end  (id1)
+
+    !--- non-blocking update
+    call mpp_clock_begin(id_single)
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=CGRID_NE)
+    call mpp_clock_end  (id_single)
+
+    !---- sleep some time for non-blocking.
+    if(do_sleep) call sleep(1)
+
+    id1 = mpp_clock_id( trim(type)//' CGRID group', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( trim(type)//' CGRID group non-blocking', flags=MPP_CLOCK_SYNC )
+
+    if(ntile_per_pe == 1) then
+       allocate( x1(ism:iem+shift,jsm:jem      ,nz,num_fields) )
+       allocate( y1(ism:iem      ,jsm:jem+shift,nz,num_fields) )
+       allocate( a1(ism:iem+shift,jsm:jem      ,nz,num_fields) )
+       allocate( b1(ism:iem      ,jsm:jem+shift,nz,num_fields) )
+       if(mix_2D_3D) then
+          allocate( a1_2D(ism:iem+shift,jsm:jem      ,num_fields) )
+          allocate( b1_2D(ism:iem      ,jsm:jem+shift,num_fields) )
+       endif
+
+       do n = 1, num_iter
+          do l = 1, num_fields
+             x1(:,:,:,l) = x_save(:,:,:,1)
+             a1(:,:,:,l) = x_save(:,:,:,1)
+             y1(:,:,:,l) = y_save(:,:,:,1)
+             b1(:,:,:,l) = y_save(:,:,:,1)
+             if(mix_2D_3D) then
+                a1_2D(:,:,l) = x_save(:,:,1,1)
+                b1_2D(:,:,l) = y_save(:,:,1,1)
+             endif
+          enddo
+
+          call mpp_clock_begin(id1)
+          do l = 1, num_fields
+             call mpp_update_domains( x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE, complete=l==num_fields )
+          enddo
+          call mpp_clock_end  (id1)
+
+          !--- non-blocking update
+          call mpp_clock_begin(id2)
+          if( n == 1 ) then
+             do l = 1, num_fields
+                if(mix_2D_3D) id_update = mpp_start_update_domains(a1_2D(:,:,l), b1_2D(:,:,l), domain, &
+                       gridtype=CGRID_NE, complete=.false.)
+                id_update = mpp_start_update_domains(a1(:,:,:,l), b1(:,:,:,l), domain, &
+                       gridtype=CGRID_NE, complete=l==num_fields)
+             enddo
+          else
+             do l = 1, num_fields
+             if(mix_2D_3D)id_update = mpp_start_update_domains(a1_2D(:,:,l), b1_2D(:,:,l), domain, gridtype=CGRID_NE, &
+                            update_id=id_update, complete=.false.)
+             id_update = mpp_start_update_domains(a1(:,:,:,l), b1(:,:,:,l), domain, gridtype=CGRID_NE, &
+                            update_id=id_update, complete=l==num_fields)
+             enddo
+          endif
+          call mpp_clock_end  (id2)
+
+          !---- sleep some time for non-blocking.
+          if(do_sleep) call sleep(1)
+
+          call mpp_clock_begin(id2)
+          do l = 1, num_fields
+             if(mix_2D_3D)call mpp_complete_update_domains(id_update, a1_2D(:,:,l), b1_2D(:,:,l), domain, &
+                   gridtype=CGRID_NE, complete=.false.)
+             call mpp_complete_update_domains(id_update, a1(:,:,:,l), b1(:,:,:,l), domain, &
+                   gridtype=CGRID_NE, complete=l==num_fields)
+          enddo
+          call mpp_clock_end  (id2)
+
+          !--- compare checksum
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums( x1(:,:,:,l), a1(:,:,:,l), type//' CGRID X'//text)
+             call compare_checksums( y1(:,:,:,l), b1(:,:,:,l), type//' CGRID Y'//text)
+          enddo
+          if(mix_2D_3D) then
+             call compare_checksums( x1(:,:,1,:), a1_2D(:,:,:), type//' BGRID X 2D')
+             call compare_checksums( y1(:,:,1,:), b1_2D(:,:,:), type//' BGRID Y 2D')
+          endif
+       enddo
+       deallocate(x1, y1, a1, b1)
+       if(mix_2D_3D) deallocate(a1_2D, b1_2D)
+    endif
+
+    call mpp_clock_begin(id_single)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=CGRID_NE)
+    call mpp_clock_end  (id_single)
+
+    !--- compare checksum
+
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' CGRID X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' CGRID Y')
+
+    deallocate(x, y, a, b, x_save, y_save)
+
+
+    !------------------------------------------------------------------
+    !              vector update : AGRID vector and scalar pair
+    !------------------------------------------------------------------
+    allocate( x (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( y (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( a (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( b (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( x_save (ism:iem,jsm:jem,nz,ntile_per_pe) )
+    allocate( y_save (ism:iem,jsm:jem,nz,ntile_per_pe) )
+
+
+    x = 0
+    y = 0
+    do l = 1, ntile_per_pe
+       do k = 1, nz
+          do j = jsc, jec
+             do i = isc, iec+shift
+                x(i,j,k,l) = 1.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+          do j = jsc, jec+shift
+             do i = isc, iec
+                y(i,j,k,l) = 2.0e3 + tile(l) + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             end do
+          end do
+       end do
+    enddo
+
+    a  = x; b  = y
+    x_save  = x; y_save  = y
+
+    call mpp_update_domains( x, y, domain, gridtype=AGRID)
+
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=AGRID)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=AGRID)
+
+    !--- compare checksum
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' AGRID X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' AGRID Y')
+
+    x = x_save; y = y_save
+    a = x_save; b = y_save
+
+    call mpp_update_domains( x, y, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+
+    id_update_single =  mpp_start_update_domains(a, b, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+    call mpp_complete_update_domains(id_update_single, a, b, domain, gridtype=AGRID, flags = SCALAR_PAIR)
+
+    !--- compare checksum
+    call compare_checksums( x(:,:,:,1), a(:,:,:,1), type//' AGRID SCALAR-PAIR X')
+    call compare_checksums( y(:,:,:,1), b(:,:,:,1), type//' AGRID SCALAR-PAIR Y')
+
+    deallocate(x, y, a, b, x_save, y_save)
+
+    nx = nx_save
+    ny = ny_save
+
+    deallocate(layout2D, global_indices, pe_start, pe_end, tile1, tile2)
+    deallocate(istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2 )
+
+
+  end subroutine update_domains_performance
+  !###############################################################
   subroutine test_mpp_global_sum( type )
     character(len=*), intent(in) :: type
 
@@ -2755,6 +3373,340 @@ end subroutine test_group_update
 
 end subroutine test_halosize_update
 
+  !#################################################################################
+  subroutine test_unstruct_update( type )
+    character(len=*), intent(in) :: type
+
+    type(domain2D) :: SG_domain
+    type(domainUG) :: UG_domain
+    integer        :: num_contact, ntiles, npes_per_tile
+    integer        :: i, j, k, l, n, shift
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+    integer        :: ism, iem, jsm, jem, lsg, leg
+  !#################################################################################
+
+    integer, allocatable, dimension(:)       :: pe_start, pe_end, npts_tile, grid_index, ntiles_grid
+    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+    real,    allocatable, dimension(:,:)     :: x1, x2, g1, g2
+    real,    allocatable, dimension(:,:,:)   :: a1, a2, gdata
+    real,    allocatable, dimension(:,:)     :: rmask
+    real,    allocatable, dimension(:)       :: frac_crit
+    logical, allocatable, dimension(:,:,:)   :: lmask
+    integer, allocatable, dimension(:)       :: isl, iel, jsl, jel
+    logical            :: cubic_grid
+    character(len=3)   :: text
+    integer            :: nx_save, ny_save, tile
+    integer            :: ntotal_land, istart, iend, pos
+
+    cubic_grid         = .false.
+
+    nx_save = nx
+    ny_save = ny
+    !--- check the type
+    select case(type)
+    case ( 'Cubic-Grid' )
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_unstruct_update: for Cubic_grid mosaic, nx_cubic is zero, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_unstruct_update: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles = 6
+       num_contact = 12
+       cubic_grid = .true.
+       if( mod(npes, ntiles) == 0 ) then
+          npes_per_tile = npes/ntiles
+          write(outunit,*)'NOTE from test_unstruct_update ==> For Mosaic "', trim(type), &
+               '", each tile will be distributed over ', npes_per_tile, ' processors.'
+       else
+          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          return
+       endif
+       if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
+          layout = layout_cubic
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+       allocate(frac_crit(ntiles))
+       frac_crit(1) = 0.3; frac_crit(2) = 0.1; frac_crit(3) = 0.6
+       frac_crit(4) = 0.2; frac_crit(5) = 0.4; frac_crit(6) = 0.5
+
+    case default
+       call mpp_error(FATAL, 'test_group_update: no such test: '//type)
+    end select
+
+    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+    do n = 1, ntiles
+       pe_start(n) = (n-1)*npes_per_tile
+       pe_end(n)   = n*npes_per_tile-1
+    end do
+
+    do n = 1, ntiles
+       global_indices(:,n) = (/1,nx,1,ny/)
+       layout2D(:,n)         = layout
+    end do
+
+    !--- define domain
+    if( cubic_grid ) then
+       call define_cubic_mosaic(type, SG_domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+            global_indices, layout2D, pe_start, pe_end )
+    endif
+
+    !--- setup data
+    call mpp_get_compute_domain( SG_domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( SG_domain, isd, ied, jsd, jed )
+
+    allocate(lmask(nx,ny,ntiles))
+    allocate(npts_tile(ntiles))
+    lmask = .false.
+    if(mpp_pe() == mpp_root_pe() ) then
+       allocate(rmask(nx,ny))
+       !--- construct gmask.
+       do n = 1, ntiles
+          call random_number(rmask)
+          do j = 1, ny
+             do i = 1, nx
+                if(rmask(i,j) > frac_crit(n)) then
+                   lmask(i,j,n) = .true.
+                endif
+             enddo
+          enddo
+          npts_tile(n) = count(lmask(:,:,n))
+       enddo
+       ntotal_land = sum(npts_tile)
+       allocate(grid_index(ntotal_land))
+       l = 0
+       allocate(isl(0:mpp_npes()-1), iel(0:mpp_npes()-1))
+       allocate(jsl(0:mpp_npes()-1), jel(0:mpp_npes()-1))
+       call mpp_get_compute_domains(SG_domain,xbegin=isl,xend=iel,ybegin=jsl,yend=jel)
+
+       do n = 1, ntiles
+          do j = 1, ny
+             do i = 1, nx
+                if(lmask(i,j,n)) then
+                   l = l + 1
+                   grid_index(l) = (j-1)*nx+i
+                endif
+             enddo
+          enddo
+       enddo
+       deallocate(rmask, isl, iel, jsl, jel)
+    endif
+    call mpp_broadcast(npts_tile, ntiles, mpp_root_pe())
+    if(mpp_pe() .NE. mpp_root_pe()) then
+       ntotal_land = sum(npts_tile)
+       allocate(grid_index(ntotal_land))
+    endif
+    call mpp_broadcast(grid_index, ntotal_land, mpp_root_pe())
+
+    allocate(ntiles_grid(ntotal_land))
+    ntiles_grid = 1
+   !--- define the unstructured grid domain
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_get_UG_compute_domain(UG_domain, istart, iend)
+
+    !--- figure out lmask according to grid_index
+    pos = 0
+    do n = 1, ntiles
+       do l = 1, npts_tile(n)
+          pos = pos + 1
+          j = (grid_index(pos)-1)/nx + 1
+          i = mod((grid_index(pos)-1),nx) + 1
+          lmask(i,j,n) = .true.
+       enddo
+    enddo
+
+    !--- set up data
+    allocate(gdata(nx,ny,ntiles))
+    gdata = -999
+    do n = 1, ntiles
+       do j = 1, ny
+          do i = 1, nx
+             if(lmask(i,j,n)) then
+                gdata(i,j,n) = n*1.e+3 + i + j*1.e-3
+             endif
+          end do
+       end do
+    end do
+
+    !--- test the 2-D data is on computing domain
+    allocate( a1(isc:iec, jsc:jec,1), a2(isc:iec,jsc:jec,1 ) )
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do j = jsc, jec
+       do i = isc, iec
+          a1(i,j,1) = gdata(i,j,tile)
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,1), x2(istart:iend,1))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       x2(l,1) = gdata(i,j,tile)
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1(:,:,1), x1(:,1))
+    call compare_checksums(x1, x2, type//' SG2UG 2-D compute domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1(:,1), a2(:,:,1))
+
+    call compare_checksums(a1(:,:,1:1),a2(:,:,1:1),type//' UG2SG 2-D compute domain')
+    deallocate(a1,a2,x1,x2)
+
+    !--- test the 3-D data is on computing domain
+    allocate( a1(isc:iec, jsc:jec,nz), a2(isc:iec,jsc:jec,nz ) )
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do k = 1, nz
+       do j = jsc, jec
+          do i = isc, iec
+             a1(i,j,k) = gdata(i,j,tile)
+             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
+          enddo
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,nz), x2(istart:iend,nz))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       do k = 1, nz
+          x2(l,k) = gdata(i,j,tile) + k*1.e-6
+       enddo
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1, x1)
+    call compare_checksums(x1, x2, type//' SG2UG 3-D compute domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1, a2)
+
+    call compare_checksums(a1,a2,type//' UG2SG 3-D compute domain')
+    deallocate(a1,a2,x1,x2)
+
+    !--- test the 2-D data is on data domain
+    allocate( a1(isd:ied, jsd:jed,1), a2(isd:ied,jsd:jed,1 ) )
+    a1 = -999; a2 = -999
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do j = jsc, jec
+       do i = isc, iec
+          a1(i,j,1) = gdata(i,j,tile)
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,1), x2(istart:iend,1))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       x2(l,1) = gdata(i,j,tile)
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1(:,:,1), x1(:,1))
+    call compare_checksums(x1, x2, type//' SG2UG 2-D data domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1(:,1), a2(:,:,1))
+
+    call compare_checksums(a1(:,:,1:1),a2(:,:,1:1),type//' UG2SG 2-D data domain')
+    deallocate(a1,a2,x1,x2)
+
+    !--- test the 3-D data is on computing domain
+    allocate( a1(isd:ied, jsd:jed,nz), a2(isd:ied,jsd:jed,nz ) )
+    a1 = -999; a2 = -999
+
+    tile = mpp_pe()/npes_per_tile + 1
+    do k = 1, nz
+       do j = jsc, jec
+          do i = isc, iec
+             a1(i,j,k) = gdata(i,j,tile)
+             if(a1(i,j,k) .NE. -999) a1(i,j,k) = a1(i,j,k) + k*1.e-6
+          enddo
+       enddo
+    enddo
+    a2 = -999
+
+    allocate(x1(istart:iend,nz), x2(istart:iend,nz))
+    x1 = -999
+    x2 = -999
+    !--- fill the value of x2
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    pos = 0
+    do n = 1, tile-1
+       pos = pos + npts_tile(n)
+    enddo
+    do l = istart, iend
+       i = mod((grid_index(pos+l)-1), nx) + 1
+       j = (grid_index(pos+l)-1)/nx + 1
+       do k = 1, nz
+          x2(l,k) = gdata(i,j,tile) + k*1.e-6
+       enddo
+    enddo
+
+    call mpp_pass_SG_to_UG(UG_domain, a1, x1)
+    call compare_checksums(x1, x2, type//' SG2UG 3-D data domain')
+    call mpp_pass_UG_to_SG(UG_domain, x1, a2)
+
+    call compare_checksums(a1,a2,type//' UG2SG 3-D data domain')
+    deallocate(a1,a2,x1,x2)
+
+    !----------------------------------------------------------------
+    !    test mpp_global_field_ug
+    !----------------------------------------------------------------
+    call mpp_get_UG_global_domain(UG_domain, lsg, leg)
+    tile = mpp_get_UG_domain_tile_id(UG_domain)
+    allocate(g1(lsg:leg,nz), g2(lsg:leg,nz), x1(istart:iend,nz))
+    g1 = 0
+    g2 = 0
+    x1 = 0
+    do k = 1, nz
+       do l = lsg, leg
+          g1(l,k) = tile*1e6 + l + k*1.e-3
+       enddo
+       do l = istart, iend
+          x1(l,k) = g1(l,k)
+       enddo
+    enddo
+
+    call mpp_global_field_ug(UG_domain, x1, g2)
+    call compare_checksums(g1,g2,type//' global_field_ug 3-D')
+
+    g2 = 0.0
+    call mpp_global_field_ug(UG_domain, x1(:,1), g2(:,1))
+    call compare_checksums(g1(:,1:1),g2(:,1:1),type//' global_field_ug 2-D')
+
+    deallocate(g1,g2,x1)
+
+  end subroutine test_unstruct_update
   !#################################################################################
 
   subroutine fill_halo_zero(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
@@ -4600,6 +5552,67 @@ end subroutine test_halosize_update
 
   end subroutine set_corner_zero
 
+  !##################################################################################
+  subroutine test_subset_update( )
+    real, allocatable, dimension(:,:,:) :: x
+    type(domain2D) :: domain
+    real,    allocatable :: global(:,:,:)
+    integer              :: i, xhalo, yhalo
+    integer              :: is, ie, js, je, isd, ied, jsd, jed
+!   integer :: pes9(9)=(/1,2,3,4,5,6,7,8,9/)
+    integer :: pes9(9)=(/0,2,4,10,12,14,20,22,24/)
+    integer :: ni, nj
+
+    if(mpp_npes() < 25) then
+       call mpp_error(FATAL,"test_mpp_domains: test_subset_update will&
+            & not be done when npes < 25")
+       return
+    endif
+
+    call mpp_declare_pelist(pes9)
+    if(any(mpp_pe()==pes9)) then
+       call mpp_set_current_pelist(pes9)
+       layout = (/3,3/)
+       ni = 3; nj =3
+       call mpp_define_domains((/1,ni,1,nj/), layout, domain, xhalo=1&
+            &, yhalo=1, xflags=CYCLIC_GLOBAL_DOMAIN, yflags&
+            &=CYCLIC_GLOBAL_DOMAIN, name='subset domain')
+       call mpp_get_compute_domain(domain, is, ie, js, je)
+       print*, "pe=", mpp_pe(), is, ie, js, je
+
+       allocate(global(0:ni+1,0:nj+1,nz) )
+
+       global = 0
+       do k = 1,nz
+          do j = 1,nj
+             do i = 1,ni
+                global(i,j,k) = k + i*1e-3 + j*1e-6
+             end do
+          end do
+       end do
+
+    global(0,      1:nj,:) = global(ni,     1:nj,:)
+    global(ni+1,   1:nj,:) = global(1,      1:nj,:)
+    global(0:ni+1, 0,   :) = global(0:ni+1, nj,  :)
+    global(0:ni+1, nj+1,:) = global(0:ni+1, 1,   :)
+
+    !set up x array
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    allocate( x (isd:ied,jsd:jed,nz) )
+
+    x = 0.
+    x (is:ie,js:je,:) = global(is:ie,js:je,:)
+
+!full update
+    call mpp_update_domains( x, domain )
+    call compare_checksums( x, global(isd:ied,jsd:jed,:), '9pe subset' )
+    deallocate(x, global)
+    call mpp_deallocate_domain(domain)
+  endif
+   call mpp_set_current_pelist()
+
+  end subroutine test_subset_update
   !##################################################################################
   subroutine test_update_edge( type )
     character(len=*), intent(in) :: type
@@ -7779,7 +8792,6 @@ end subroutine test_halosize_update
           call compare_checksums(nbufferx, nbufferx2, trim(type2)//' north buffer coarse to fine DGRID vector X')
           call compare_checksums(nbuffery, nbuffery2, trim(type2)//' north buffer coarse to fine DGRID vector Y')
        endif
-
        if(allocated(x)) deallocate(x)
        if(allocated(y)) deallocate(y)
        if(is_fine_pe) then
