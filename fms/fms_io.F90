@@ -2508,7 +2508,7 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
         if(len_trim(restartname)+len_trim(time_stamp) > 79) call mpp_error(FATAL, "fms_io(save_restart): " // &
           "Length of restart file name + time_stamp is greater than allowed character length of 79")
            has_dot = .false.
-           do i=1,len(trim(time_stamp))
+           do i=1,len(time_stamp)
               if (time_stamp(i:i) == ".") has_dot = .true.
            enddo
            if (has_dot) then
