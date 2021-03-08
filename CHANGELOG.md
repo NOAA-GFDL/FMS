@@ -6,7 +6,7 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
-## [2021.01] - 2021-03-05
+## [2021.01] - 2021-03-08
 ### Added
 - MPP: A counter for timers to report how many times a timer section is run
 - MPP: Adds missing interfaces to be consistent with interfaces that use the OVERLOAD and no_8byte_integer macros in order to allow building without MPI
@@ -26,6 +26,7 @@ sequential patch number (starting from `01`).
 - FMS: Fixes issues with FMS unit tests failing from pointer allocations by reworking deallocate_unstruct_pass_type 
 - MPP_IO: Fixes unintentional printing of file attributes
 - An issue with the automake build system causing unnecessary rebuilds of source files
+- Fixes CMake build of the FMS library to install configuration files in the appropriate directories; and for OpenMP dependencies to the private
 ### Tag Commit Hashes
 - 2021.01-alpha1 (dbe8a1060fb33167c2d12239484226b40fb01fd0)
 - 2021.01-alpha2 (b94eb18fe8e686c5958cbbacc4cf9130873afc85)
