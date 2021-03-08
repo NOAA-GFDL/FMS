@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.7...3.15 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2020.04
+  VERSION 2021.01
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -285,7 +285,7 @@ foreach(kind ${kinds})
                                          MPI::MPI_Fortran)
 
   if(OpenMP_Fortran_FOUND)
-    target_link_libraries(${libTgt} PUBLIC OpenMP::OpenMP_Fortran)
+    target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_Fortran)
   endif()
 
   add_library(FMS::${libTgt} ALIAS ${libTgt})
