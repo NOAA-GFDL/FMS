@@ -27,11 +27,13 @@
 AM_CPPFLAGS = -I${top_srcdir}/include -I${top_srcdir}/mpp/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-noinst_LTLIBRARIES = libFMS.la
-libFMS_la_SOURCES = libFMS.F90
-fms.mod: libFMS.$(OBJEXT)
-BUILT_SOURCES = fms.mod
-include_HEADERS = fms.mod
-nodist_include_HEADERS = fms.mod
+noinst_LTLIBRARIES = libFMS_mod.la
+libFMS_mod_la_SOURCES = libFMS.F90
+
+fms.$(FC_MODEXT): \
+  $(MODDIR)/*_mod.$(FC_MODEXT)
+
+BUILT_SOURCES = fms.$(FC_MODEXT)
+nodist_include_HEADERS = fms.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk
