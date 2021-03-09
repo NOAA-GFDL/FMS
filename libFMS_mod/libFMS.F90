@@ -294,11 +294,7 @@ module fms
   use gradient_mod, only: gradient_cubic, calc_cubic_grid_info
 
   !> mpp
-  use mpp_mod, only: mpp_init_test_full_init, mpp_init_test_init_true_only, &
-                     mpp_init_test_peset_allocated, mpp_init_test_clocks_init, &
-                     mpp_init_test_datatype_list_init, mpp_init_test_logfile_init, &
-                     mpp_init_test_read_namelist, mpp_init_test_etc_unit, &
-                     mpp_init_test_requests_allocated, stdin, stdout, stderr, &
+  use mpp_mod, only: stdin, stdout, stderr, &
                      stdlog, lowercase, uppercase, mpp_error, mpp_error_state, &
                      mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_set_stack_size, &
                      mpp_pe, mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist, &
@@ -411,10 +407,6 @@ module fms
                                 getRandomNumbers, constructSeed
 
   !> sat_vapor_pres
-  use sat_vapor_pres_k_mod, only: sat_vapor_pres_init_k, lookup_es_k, lookup_des_k, &
-                                lookup_es_des_k, lookup_es2_k, lookup_des2_k, &
-                                lookup_es2_des2_k, lookup_es3_k, lookup_des3_k, &
-                                lookup_es3_des3_k, compute_qs_k, compute_mrs_k
   use sat_vapor_pres_mod, only: lookup_es, lookup_des, sat_vapor_pres_init, &
                                 lookup_es2, lookup_des2, lookup_es2_des2, &
                                 lookup_es3, lookup_des3, lookup_es3_des3, &
