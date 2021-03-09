@@ -25,12 +25,13 @@
 !! (ie. `use fms, only: OPERATOR(*)` includes any defined '*' operators within FMS).
 !!
 !! Remappings due to conflicts:
-!!           read_data from interpolator_mod => read_data_interp
-!!           ZERO from interpolator_mod      => ZERO_INTERP
+!!           get_mosaic_tile_grid from mosaic2(fms2_io) => get_mosaic_tile_grid_2
+!!           read_data from interpolator_mod(fms2_io)   => read_data_interp
+!!           ZERO from interpolator_mod(mpp_parameter)  => ZERO_INTERP
 !!
 !! Not in this module: axis_utils_mod, fms_io_mod, time_interp_external_mod
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
-!!                     fms_mod(old io excluded)
+!!                     fms_mod(partial, old io excluded)
 !! 
 module fms
 
@@ -240,7 +241,7 @@ module fms
                          get_variable_missing, get_variable_units, get_time_calendar, &
                          open_check, is_registered_to_restart, check_if_open, &
                          set_fileobj_time_name, is_dimension_registered, &
-                         fms2_io_init
+                         fms2_io_init, get_mosaic_tile_grid
   ! used via fms2_io
   ! fms_io_utils_mod, fms_netcdf_domain_io_mod, netcdf_io_mod, 
   ! fms_netcdf_unstructured_domain_io_mod, blackboxio
@@ -283,9 +284,10 @@ module fms
   !> mosaic
   use mosaic2_mod, only: get_mosaic_ntiles, get_mosaic_ncontacts, &
                       get_mosaic_grid_sizes, get_mosaic_contact, &
-                      get_mosaic_xgrid_size, get_mosaic_xgrid, get_mosaic_tile_grid, &
+                      get_mosaic_xgrid_size, get_mosaic_xgrid, &
                       calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area, &
-                      is_inside_polygon
+                      is_inside_polygon, &
+                      get_mosaic_tile_grid_2 => get_mosaic_tile_grid !overloaded in fms2_io
   use grid_mod, only: get_grid_ntiles, get_grid_size, get_grid_cell_centers, &
                       get_grid_cell_vertices, get_grid_cell_Area, get_grid_comp_area, &
                       define_cube_mosaic
