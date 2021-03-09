@@ -34,6 +34,6 @@ fms.$(FC_MODEXT): \
   $(MODDIR)/*_mod.$(FC_MODEXT)
 
 BUILT_SOURCES = fms.$(FC_MODEXT)
-nodist_include_HEADERS = fms.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODDIR)/fms.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk
