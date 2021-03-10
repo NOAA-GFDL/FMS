@@ -25,9 +25,9 @@
 !! (ie. `use fms, only: OPERATOR(*)` includes any defined '*' operators within FMS).
 !!
 !! Remappings due to conflicts:
-!!           get_mosaic_tile_grid from mosaic2(fms2_io) => get_mosaic_tile_grid_2
-!!           read_data from interpolator_mod(fms2_io)   => read_data_interp
-!!           ZERO from interpolator_mod(mpp_parameter)  => ZERO_INTERP
+!!           get_mosaic_tile_grid from mosaic2(fms2_io) => mosaic2_get_mosaic_tile_grid
+!!           read_data from interpolator_mod(fms2_io)   => interpolator_read_data
+!!           ZERO from interpolator_mod(mpp_parameter)  => INTERPOLATOR_ZERO
 !!
 !! Not in this module: axis_utils_mod, fms_io_mod, time_interp_external_mod
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
@@ -58,7 +58,6 @@ module fms
   use axis_utils2_mod, only: get_axis_cart, get_axis_modulo, lon_in_range, &
                              tranlon, frac_index, nearest_index, interp_1d, &
                              get_axis_modulo_times, axis_edges
-  !use axis_utils_mod, only: get_axis_bounds !! not in 2 
 
   !>block_control
   use block_control_mod, only: block_control_type, define_blocks, &
@@ -156,10 +155,6 @@ module fms
                           drifters_set_v_axes, drifters_set_domain_bounds, & 
                           drifters_positions2lonlat, drifters_print_checksums, &
                           drifters_save, drifters_write_restart, drifters_distribute
-  use drifters_comm_mod, only: drifters_comm_Type, drifters_comm_new, &
-                          drifters_comm_del, drifters_comm_set_pe_neighbors, &
-                          drifters_comm_set_domain, drifters_comm_update, &
-                          drifters_comm_gather
   use drifters_core_mod, only: drifters_core_type, drifters_core_new, drifters_core_del, &
                           drifters_core_set_ids, drifters_core_remove_and_add, &
                           drifters_core_set_positions, assignment(=), &
@@ -266,8 +261,8 @@ module fms
                               interpolator_end, init_clim_diag, query_interpolator, &
                               interpolate_type, CONSTANT, &
                               INTERP_WEIGHTED_P, INTERP_LINEAR_P, INTERP_LOG_P, &
-                              ZERO_INTERP=>ZERO, & !! conflicts with mpp_parameter's ZERO 
-                              read_data_interp=>read_data !! conflicts with fms2_io interface
+                              INTERPOLATOR_ZERO=>ZERO, & !! conflicts with mpp_parameter's ZERO 
+                              interpolator_read_data=>read_data !! conflicts with fms2_io interface
 
   !> memutils
   use memutils_mod, only: memutils_init, print_memuse_stats
@@ -287,7 +282,7 @@ module fms
                       get_mosaic_xgrid_size, get_mosaic_xgrid, &
                       calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area, &
                       is_inside_polygon, &
-                      get_mosaic_tile_grid_2 => get_mosaic_tile_grid !overloaded in fms2_io
+                      mosaic2_get_mosaic_tile_grid => get_mosaic_tile_grid !overloaded in fms2_io
   use grid_mod, only: get_grid_ntiles, get_grid_size, get_grid_cell_centers, &
                       get_grid_cell_vertices, get_grid_cell_Area, get_grid_comp_area, &
                       define_cube_mosaic
