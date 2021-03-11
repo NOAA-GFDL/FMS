@@ -31,8 +31,7 @@
 !!
 !! Not in this module: axis_utils_mod, fms_io_mod, time_interp_external_mod
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
-!!                     fms_mod(partial, old io excluded)
-!! 
+!!                     fms_mod(partial, old io excluded), drifters modules
 module fms
 
   !> import each FMS module's public routines/functions, interfaces, and variables
@@ -108,67 +107,17 @@ module fms
                                diag_integral_end
 
   !> diag manager
+  !! includes imports from submodules made public
   use diag_manager_mod, only: diag_manager_init, send_data, send_tile_averaged_data, &
                            diag_manager_end, register_diag_field, register_static_field, &
                            get_base_time, get_base_date, need_data, &
-                           diag_field_add_attribute, diag_field_add_cell_measures, &
-                           get_diag_field_id, diag_manager_set_time_end, & 
-                           diag_send_complete, diag_send_complete_instant
-  use diag_grid_mod, only: diag_grid_init, diag_grid_end, get_local_indexes, &
-                           get_local_indexes2 
-  use diag_table_mod, only: parse_diag_table
-  use diag_util_mod, only: get_subfield_size, log_diag_field_info, update_bounds, &
-                           check_out_of_bounds, check_bounds_are_exact_dynamic, &
-                           check_bounds_are_exact_static, init_file, diag_time_inc, &
-                           find_input_field, init_input_field, init_output_field, &
-                           diag_data_out, write_static, check_duplicate_output_fields, &
-                           get_date_dif, get_subfield_vert_size, sync_file_times, &
-                           prepend_attribute, attribute_init, diag_util_init
-  use diag_output_mod, only: diag_output_init, write_axis_meta_data, write_field_meta_data, &
-                           done_meta_data, get_diag_global_att, &
-                           set_diag_global_att, diag_field_write, diag_write_time
-  use diag_axis_mod, only: diag_axis_init, get_diag_axis, get_domain1d, &
-                           get_domain2d, get_axis_length, get_axis_global_length, &
-                           diag_subaxes_init, get_diag_axis_cart, get_diag_axis_data, &
-                           max_axes, get_axis_aux, get_tile_count, get_axes_shift, &
-                           get_diag_axis_name, get_axis_num, get_diag_axis_domain_name, &
-                           diag_axis_add_attribute, get_domainUG, axis_compatible_check, &
-                           axis_is_compressed, get_compressed_axes_ids, get_axis_reqfld, &
-                           DIAG_AXIS_NODOMAIN, DIAG_AXIS_2DDOMAIN, DIAG_AXIS_UGDOMAIN
-  use diag_data_mod, only: MAX_FIELDS_PER_FILE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, &
-                           VERY_LARGE_FILE_FREQ, VERY_LARGE_AXIS_LENGTH, EVERY_TIME, &
-                           END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
-                           DIAG_MONTHS, DIAG_YEARS, MAX_SUBAXES, GLO_REG_VAL, &
-                           GLO_REG_VAL_ALT, CMOR_MISSING_VALUE, DIAG_FIELD_NOT_FOUND, &
-                           num_files, num_input_fields, num_output_fields, null_axis_id, &
-                           diag_grid, diag_fieldtype, diag_atttype, coord_type, file_type, &
-                           input_field_type, output_field_type, diag_axis_type, &
-                           diag_global_att_type, FILL_VALUE, EMPTY, &
-                           MAX_VALUE, MIN_VALUE, diag_init_time, base_time, &
-                           base_year, base_month, base_day, base_hour, base_minute, &
-                           base_second, global_descriptor
-
-  !> drifters
-  use drifters_mod, only: drifters_type, assignment(=), drifters_push, &
-                          drifters_compute_k, drifters_set_field, drifters_new, &
-                          drifters_del, drifters_set_domain, drifters_set_pe_neighbors, &
-                          drifters_set_v_axes, drifters_set_domain_bounds, & 
-                          drifters_positions2lonlat, drifters_print_checksums, &
-                          drifters_save, drifters_write_restart, drifters_distribute
-  use drifters_core_mod, only: drifters_core_type, drifters_core_new, drifters_core_del, &
-                          drifters_core_set_ids, drifters_core_remove_and_add, &
-                          drifters_core_set_positions, assignment(=), &
-                          drifters_core_print,  drifters_core_resize 
-  use drifters_input_mod, only: drifters_input_type, drifters_input_new, &
-                          drifters_input_del, drifters_input_save, &
-                          assignment(=)
-  use drifters_io_mod, only: drifters_io_type, drifters_io_new, drifters_io_del, &
-                          drifters_io_set_time_units, drifters_io_set_position_names, &
-                          drifters_io_set_position_units, drifters_io_set_field_names, &
-                          drifters_io_set_field_units, drifters_io_write
-  use cloud_interpolator_mod, only: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, &
-                          cld_ntrp_get_cell_values, cld_ntrp_expand_index, &
-                          cld_ntrp_contract_indices
+                           DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
+                           DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, &
+                           get_diag_global_att, set_diag_global_att, diag_field_add_attribute, &
+                           diag_field_add_cell_measures, get_diag_field_id, &
+                           diag_axis_add_attribute, diag_grid_init, diag_grid_end, &
+                           diag_manager_set_time_end, diag_send_complete, &
+                           diag_send_complete_instant, DIAG_FIELD_NOT_FOUND
 
   !> exchange
   use xgrid_mod, only: xmap_type, setup_xmap, set_frac_area, put_to_xgrid, &

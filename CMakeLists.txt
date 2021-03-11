@@ -162,7 +162,7 @@ list(APPEND fms_fortran_src_files
   topography/topography.F90
   tracer_manager/tracer_manager.F90
   tridiagonal/tridiagonal.F90
-  libFMS_mod/libFMS.F90
+  libFMS.F90
 )
 
 # Collect FMS C source files
