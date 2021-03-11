@@ -110,7 +110,7 @@ module fms
   !! includes imports from submodules made public
   use diag_manager_mod, only: diag_manager_init, send_data, send_tile_averaged_data, &
                            diag_manager_end, register_diag_field, register_static_field, &
-                           get_base_time, get_base_date, need_data, &
+                           diag_axis_init, get_base_time, get_base_date, need_data, &
                            DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
                            DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, &
                            get_diag_global_att, set_diag_global_att, diag_field_add_attribute, &
