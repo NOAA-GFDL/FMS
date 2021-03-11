@@ -51,6 +51,7 @@ public :: string_compare
 public :: restart_filepath_mangle
 public :: ascii_read
 public :: parse_mask_table
+public :: get_mosaic_tile_file
 
 !> @brief A linked list of strings
 type :: char_linked_list
@@ -63,6 +64,11 @@ interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
 end interface parse_mask_table
+
+interface get_mosaic_tile_file
+  module procedure get_mosaic_tile_file_sg
+  module procedure get_mosaic_tile_file_ug
+end interface get_mosaic_tile_file
 
 interface allocate_array
   module procedure allocate_array_i4_kind_1d
@@ -626,6 +632,95 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   deallocate(mask_list)
 
 end subroutine parse_mask_table_3d
+
+subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile_count)
+  character(len=*), intent(in)                   :: file_in
+  character(len=*), intent(out)                  :: file_out
+  logical,          intent(in)                   :: is_no_domain
+  type(domain2D),   intent(in), optional, target :: domain
+  integer,          intent(in), optional         :: tile_count
+  character(len=256)                             :: basefile, tilename
+  integer                                        :: lens, ntiles, ntileMe, tile, my_tile_id
+  integer, dimension(:), allocatable             :: tile_id
+  type(domain2d), pointer, save                  :: d_ptr =>NULL()
+  logical                                        :: domain_exist
+
+  if(index(file_in, '.nc', back=.true.)==0) then
+     basefile = trim(file_in)
+  else
+     lens = len_trim(file_in)
+     if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
+          'fms_io_mod: .nc should be at the end of file '//trim(file_in))
+     basefile = file_in(1:lens-3)
+  end if
+
+  !--- get the tile name
+  ntiles = 1
+  my_tile_id = 1
+  domain_exist = .false.
+  if(PRESENT(domain))then
+     domain_exist = .true.
+     ntiles = mpp_get_ntile_count(domain)
+     d_ptr => domain
+  endif
+
+  if(domain_exist) then
+     ntileMe = mpp_get_current_ntile(d_ptr)
+     allocate(tile_id(ntileMe))
+     tile_id = mpp_get_tile_id(d_ptr)
+     tile = 1
+     if(present(tile_count)) tile = tile_count
+     my_tile_id = tile_id(tile)
+  endif
+
+  if(ntiles > 1 .or. my_tile_id > 1 )then
+     tilename = 'tile'//string(my_tile_id)
+     if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
+        basefile = trim(basefile)//'.'//trim(tilename);
+     end if
+  end if
+  if(allocated(tile_id)) deallocate(tile_id)
+
+  file_out = trim(basefile)//'.nc'
+
+  d_ptr =>NULL()
+
+end subroutine get_mosaic_tile_file_sg
+
+subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
+  character(len=*), intent(in)                   :: file_in
+  character(len=*), intent(out)                  :: file_out
+  type(domainUG),   intent(in), optional         :: domain
+  character(len=256)                             :: basefile, tilename
+  integer                                        :: lens, ntiles, my_tile_id
+
+  if(index(file_in, '.nc', back=.true.)==0) then
+     basefile = trim(file_in)
+  else
+     lens = len_trim(file_in)
+     if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
+          'fms_io_mod: .nc should be at the end of file '//trim(file_in))
+     basefile = file_in(1:lens-3)
+  end if
+
+  !--- get the tile name
+  ntiles = 1
+  my_tile_id = 1
+  if(PRESENT(domain))then
+     ntiles = mpp_get_UG_domain_ntiles(domain)
+     my_tile_id = mpp_get_UG_domain_tile_id(domain)
+  endif
+
+  if(ntiles > 1 .or. my_tile_id > 1 )then
+     tilename = 'tile'//string(my_tile_id)
+     if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
+        basefile = trim(basefile)//'.'//trim(tilename);
+     end if
+  end if
+
+  file_out = trim(basefile)//'.nc'
+
+end subroutine get_mosaic_tile_file_ug
 
 include "array_utils.inc"
 include "array_utils_char.inc"
