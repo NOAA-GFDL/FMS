@@ -470,23 +470,29 @@ subroutine open_check(flag, fname)
   endif
 end subroutine open_check
 
+!> @brief Read the ascii text from filename `ascii_filename`into string array
+!! `ascii_var`
 subroutine ascii_read(ascii_filename, ascii_var)
-  character(len=*), intent(in) :: ascii_filename
-  character(len=:), dimension(:), allocatable, intent(out) :: ascii_var
-  integer, dimension(2) :: lines_and_length !lines = 1, length = 2
+  character(len=*), intent(in) :: ascii_filename !< The file name to be read
+  character(len=:), dimension(:), allocatable, intent(out) :: ascii_var !< The
+                                                                        !! string
+                                                                        !! array
+  integer, dimension(2) :: lines_and_length !< lines = 1, length = 2
   lines_and_length = get_ascii_file_num_lines_and_length(ascii_filename)
   allocate(character(len=lines_and_length(2))::ascii_var(lines_and_length(1)))
   call read_ascii_file(ascii_filename, lines_and_length(2), ascii_var)
 end subroutine ascii_read
 
+!> @brief Populate 2D maskmap from mask_table given a model
 subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
 
-  character(len=*), intent(in) :: mask_table
-  logical,         intent(out) :: maskmap(:,:)
-  character(len=*), intent(in) :: modelname
+  character(len=*), intent(in) :: mask_table !< Mask table to be read in
+  logical,         intent(out) :: maskmap(:,:) !< 2D Mask output
+  character(len=*), intent(in) :: modelname !< Model to which this applies
+
   integer                      :: nmask, layout(2)
   integer, allocatable         :: mask_list(:,:)
-  character(len=:), dimension(:), allocatable :: mask_table_contents !< Content array
+  character(len=:), dimension(:), allocatable :: mask_table_contents
   integer                      :: mystat, n, stdoutunit
   character(len=128)           :: record
 
@@ -551,15 +557,16 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
 end subroutine parse_mask_table_2d
 
 
-!#######################################################################
+!> @brief Populate 3D maskmap from mask_table given a model
 subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
 
-  character(len=*), intent(in) :: mask_table
-  logical,         intent(out) :: maskmap(:,:,:)
-  character(len=*), intent(in) :: modelname
+  character(len=*), intent(in) :: mask_table !< Mask table to be read in
+  logical,         intent(out) :: maskmap(:,:,:) !< 2D Mask output
+  character(len=*), intent(in) :: modelname !< Model to which this applies
+
   integer                      :: nmask, layout(2)
   integer, allocatable         :: mask_list(:,:)
-  character(len=:), dimension(:), allocatable :: mask_table_contents !< Content array
+  character(len=:), dimension(:), allocatable :: mask_table_contents
   integer                      :: mystat, n, stdoutunit, ntiles
   character(len=128)           :: record
 
@@ -630,15 +637,18 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   enddo
 
   deallocate(mask_list)
-
 end subroutine parse_mask_table_3d
 
+!> @brief Determine tile_file for structured grid based on filename and current
+!! tile on mpp_domain (this is mostly used for ongrid data_overrides)
 subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile_count)
-  character(len=*), intent(in)                   :: file_in
-  character(len=*), intent(out)                  :: file_out
-  logical,          intent(in)                   :: is_no_domain
-  type(domain2D),   intent(in), optional, target :: domain
-  integer,          intent(in), optional         :: tile_count
+  character(len=*), intent(in)            :: file_in !< name of 'base' file
+  character(len=*), intent(out)           :: file_out !< name of tile_file
+  logical,          intent(in)            :: is_no_domain !< are we providing a
+                                                          !! domain
+  type(domain2D),   intent(in), optional, target :: domain !< domain provided
+  integer,          intent(in), optional  :: tile_count !< tile count
+
   character(len=256)                             :: basefile, tilename
   integer                                        :: lens, ntiles, ntileMe, tile, my_tile_id
   integer, dimension(:), allocatable             :: tile_id
@@ -687,12 +697,15 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
 
 end subroutine get_mosaic_tile_file_sg
 
+!> @brief Determine tile_file for unstructured grid based on filename and current
+!! tile on mpp_domain (this is mostly used for ongrid data_overrides)
 subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
-  character(len=*), intent(in)                   :: file_in
-  character(len=*), intent(out)                  :: file_out
-  type(domainUG),   intent(in), optional         :: domain
-  character(len=256)                             :: basefile, tilename
-  integer                                        :: lens, ntiles, my_tile_id
+  character(len=*), intent(in)           :: file_in !< name of base file
+  character(len=*), intent(out)          :: file_out !< name of tile file
+  type(domainUG),   intent(in), optional :: domain !< domain provided
+
+  character(len=256)                     :: basefile, tilename
+  integer                                :: lens, ntiles, my_tile_id
 
   if(index(file_in, '.nc', back=.true.)==0) then
      basefile = trim(file_in)

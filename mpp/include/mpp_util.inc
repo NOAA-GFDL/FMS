@@ -1409,11 +1409,13 @@ end function rarray_to_char
   end function get_ascii_file_num_lines
 
   !#######################################################################
+  !> @brief Function to determine the maximum line length and number of lines from an ascii file
   function get_ascii_file_num_lines_and_length(FILENAME, PELIST)
-    character(len=*), intent(in) :: FILENAME
-    integer, intent(in), optional, dimension(:) :: PELIST
+    character(len=*), intent(in) :: FILENAME !< name of the file to be read
+    integer, intent(in), optional, dimension(:) :: PELIST !< optional pelist
 
-    integer, dimension(2) :: get_ascii_file_num_lines_and_length
+    integer, dimension(2) :: get_ascii_file_num_lines_and_length !< number of lines (1) and
+                                                                 !! max line length (2)
     integer :: num_lines, max_length
     integer, parameter :: LENGTH=1024
     character(len=LENGTH) :: str_tmp
