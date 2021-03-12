@@ -106,8 +106,9 @@ contains
        enddo
      enddo
 
-     sum1 = mpp_chksum( a, (/pe/) )
-     sum2 = mpp_chksum( b, (/pe/) )
+     ! these fail if the pe is provided for mpp_domains subset test
+     sum1 = mpp_chksum( a )
+     sum2 = mpp_chksum( b )
 
      if( sum1.EQ.sum2 )then
        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )

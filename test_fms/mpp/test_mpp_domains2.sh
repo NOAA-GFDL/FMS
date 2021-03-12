@@ -39,11 +39,11 @@ test_expect_success "simple functionality" '
 '
 sed "s/test_nest = .false./test_nest = .true./" input_base.nml > input.nml
 test_expect_success "update nest domain" '
-    mpirun -n 2 ./test_mpp_domains
+    mpirun -n 16 ./test_mpp_domains
 '
 sed "s/test_subset = .false./test_subset = .true./" input_base.nml > input.nml
 test_expect_success "subset update" '
-    mpirun -n 26 ./test_mpp_domains
+    mpirun -n 25 ./test_mpp_domains
 '
 sed "s/test_halosize_performance = .false./test_halosize_performance = .true./" input_base.nml > input.nml
 test_expect_success "halosize performance" '
