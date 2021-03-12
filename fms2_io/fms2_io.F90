@@ -86,6 +86,7 @@ public :: is_dimension_registered
 public :: fms2_io_init
 public :: get_mosaic_tile_grid
 public :: ascii_read
+public :: get_mosaic_tile_file
 
 interface open_file
   module procedure netcdf_file_open_wrap

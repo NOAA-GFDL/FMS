@@ -27,6 +27,9 @@ use, intrinsic :: iso_fortran_env, only: error_unit
 use omp_lib
 #endif
 use mpp_mod
+use mpp_domains_mod, only: domain2D, domainUG, mpp_get_ntile_count, &
+                           mpp_get_current_ntile, mpp_get_tile_id, &
+                           mpp_get_UG_domain_ntiles, mpp_get_UG_domain_tile_id 
 use platform_mod
 implicit none
 private
@@ -493,7 +496,7 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
   integer                      :: nmask, layout(2)
   integer, allocatable         :: mask_list(:,:)
   character(len=:), dimension(:), allocatable :: mask_table_contents
-  integer                      :: mystat, n, stdoutunit
+  integer                      :: mystat, n, stdoutunit, offset
   character(len=128)           :: record
 
   maskmap = .true.
@@ -501,11 +504,11 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
   stdoutunit = stdout()
   call ascii_read(mask_table, mask_table_contents)
   if( mpp_pe() == mpp_root_pe() ) then
-     read(mask_table_contents, FMT=*, IOSTAT=mystat) nmask
+     read(mask_table_contents(1), FMT=*, IOSTAT=mystat) nmask
      write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
      if( nmask > 0 ) then
         !--- read layout from mask_table and confirm it matches the shape of maskmap
-        read(mask_table_contents, FMT=*, IOSTAT=mystat) layout
+        read(mask_table_contents(2), FMT=*, IOSTAT=mystat) layout
         if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
            write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): layout in file "//trim(mask_table)// &
@@ -525,10 +528,16 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
 
    if( mpp_pe() == mpp_root_pe() ) then
      n = 0
+     offset = 2
      do while( .true. )
-        read(mask_table_contents,'(a)',end=999) record
-        if (record(1:1) == '#') cycle
-        if (record(1:10) == '          ') cycle
+        read(mask_table_contents(n+offset),'(a)',end=999) record
+        if (record(1:1) == '#') then
+            offset = offset + 1
+            cycle
+        elseif (record(1:10) == '          ') then
+            offset = offset + 1
+            cycle
+        endif
         n = n + 1
         if( n > nmask ) then
            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): number of mask_list entry "// &
@@ -546,9 +555,6 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
 
   call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
   do n = 1, nmask
-     if(debug_mask_list) then
-       write(stdoutunit,*) "==>NOTE from parse_mask_table_2d: ", trim(modelname), " mask_list = ", mask_list(n,1), mask_list(n,2)
-     endif
      maskmap(mask_list(n,1),mask_list(n,2)) = .false.
   enddo
 
@@ -567,7 +573,7 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   integer                      :: nmask, layout(2)
   integer, allocatable         :: mask_list(:,:)
   character(len=:), dimension(:), allocatable :: mask_table_contents
-  integer                      :: mystat, n, stdoutunit, ntiles
+  integer                      :: mystat, n, stdoutunit, ntiles, offset
   character(len=128)           :: record
 
   maskmap = .true.
@@ -575,11 +581,11 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   stdoutunit = stdout()
   call ascii_read(mask_table, mask_table_contents)
   if( mpp_pe() == mpp_root_pe() ) then
-     read(mask_table_contents, FMT=*, IOSTAT=mystat) nmask
+     read(mask_table_contents(1), FMT=*, IOSTAT=mystat) nmask
      write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
      if( nmask > 0 ) then
         !--- read layout from mask_table and confirm it matches the shape of maskmap
-        read(mask_table_contents, FMT=*, IOSTAT=mystat) layout(1), layout(2), ntiles
+        read(mask_table_contents(2), FMT=*, IOSTAT=mystat) layout(1), layout(2), ntiles
         if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
            write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): layout in file "//trim(mask_table)// &
@@ -607,10 +613,16 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
 
    if( mpp_pe() == mpp_root_pe() ) then
      n = 0
+     offset = 2
      do while( .true. )
-        read(mask_table_contents,'(a)',end=999) record
-        if (record(1:1) == '#') cycle
-        if (record(1:10) == '          ') cycle
+        read(mask_table_contents(n+offset),'(a)',end=999) record
+        if (record(1:1) == '#') then
+            offset = offset + 1
+            cycle
+        elseif (record(1:10) == '          ') then
+            offset = offset + 1
+            cycle
+        endif
         n = n + 1
         if( n > nmask ) then
            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): number of mask_list entry "// &
@@ -629,10 +641,6 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
 
   call mpp_broadcast(mask_list, 3*nmask, mpp_root_pe())
   do n = 1, nmask
-     if(debug_mask_list) then
-       write(stdoutunit,*) "==>NOTE from parse_mask_table_3d: ", trim(modelname), " mask_list = ", &
-                           mask_list(n,1), mask_list(n,2), mask_list(n,3)
-     endif
      maskmap(mask_list(n,1),mask_list(n,2),mask_list(n,3)) = .false.
   enddo
 
@@ -650,6 +658,7 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
   integer,          intent(in), optional  :: tile_count !< tile count
 
   character(len=256)                             :: basefile, tilename
+  character(len=1)                               :: my_tile_str
   integer                                        :: lens, ntiles, ntileMe, tile, my_tile_id
   integer, dimension(:), allocatable             :: tile_id
   type(domain2d), pointer, save                  :: d_ptr =>NULL()
@@ -684,7 +693,8 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
   endif
 
   if(ntiles > 1 .or. my_tile_id > 1 )then
-     tilename = 'tile'//string(my_tile_id)
+     write(my_tile_str, '(I1)') my_tile_id
+     tilename = 'tile'//my_tile_str
      if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
         basefile = trim(basefile)//'.'//trim(tilename);
      end if
@@ -705,6 +715,7 @@ subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
   type(domainUG),   intent(in), optional :: domain !< domain provided
 
   character(len=256)                     :: basefile, tilename
+  character(len=1)                       :: my_tile_str
   integer                                :: lens, ntiles, my_tile_id
 
   if(index(file_in, '.nc', back=.true.)==0) then
@@ -725,7 +736,8 @@ subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
   endif
 
   if(ntiles > 1 .or. my_tile_id > 1 )then
-     tilename = 'tile'//string(my_tile_id)
+     write(my_tile_str, '(I1)') my_tile_id
+     tilename = 'tile'//my_tile_str
      if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
         basefile = trim(basefile)//'.'//trim(tilename);
      end if
