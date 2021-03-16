@@ -26,6 +26,6 @@
 . ../test_common.sh
 # make an input.nml for mpp_init to read
 printf "EOF\n&dummy\nEOF" | cat > input.nml
-cp $top_srcdir/test_fms/fms2_io/ascii_test1 ascii_test1
+printf "5, 14   \n23\n\"forlendula\"" | cat > ascii_test1
 # run the tests
 run_test test_read_ascii_file 6 $netcdf_version_skip

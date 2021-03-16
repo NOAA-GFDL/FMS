@@ -33,7 +33,7 @@ program test_read_ascii_file
   character(len=256) :: filename2 !< Name of alternative ascii file to be read
   character(len=256) :: line !< Content of a line of the read ascii file
   integer :: num_lines !< Number of lines in the ascii file
-  integer :: stat !< IOSTATUS from the read method
+  integer, dimension(2) :: stat !< IOSTATUS from the read method
   integer, allocatable :: cur_pelist(:) !< PELIST is read into this variable
   integer :: ierr !< used by MPI_FINALIZE
 
@@ -48,6 +48,12 @@ program test_read_ascii_file
   call fms2_io_init()
   filename = "ascii_test1"
   call ascii_read(filename, test_array)
+  read(test_array(1), *) stat
+  print *, stat(1)*6, stat(2)+3
+  read(test_array(2), *) num_lines
+  print *, num_lines-11
+  read(test_array(3), *) line
+  print *, trim(line)//"wut"
 !  if (test_numb == 1 .or. test_numb == 7 .or. test_numb == 8) then
 !    if (test_numb == 1) then
 !      filename = "input.nml"

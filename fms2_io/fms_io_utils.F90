@@ -528,9 +528,9 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
 
    if( mpp_pe() == mpp_root_pe() ) then
      n = 0
-     offset = 2
-     do while( .true. )
-        read(mask_table_contents(n+offset),'(a)',end=999) record
+     offset = 3
+     do while (offset + n < size(mask_table_contents)+1)
+        read(mask_table_contents(n+offset),'(a)') record
         if (record(1:1) == '#') then
             offset = offset + 1
             cycle
@@ -543,11 +543,9 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): number of mask_list entry "// &
                 "is greater than nmask in file "//trim(mask_table) )
         endif
-        read(record,*,err=888) mask_list(n,1), mask_list(n,2)
+        read(record,*) mask_list(n,1), mask_list(n,2)
      enddo
-888  call mpp_error(FATAL, "fms2_io(parse_mask_table_2d):  Error in reading mask_list from file "//trim(mask_table))
 
-999  continue
      !--- make sure the number of entry for mask_list is nmask
      if( n .NE. nmask) call mpp_error(FATAL, &
         "fms2_io(parse_mask_table_2d): number of mask_list entry does not match nmask in file "//trim(mask_table))
@@ -613,9 +611,9 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
 
    if( mpp_pe() == mpp_root_pe() ) then
      n = 0
-     offset = 2
-     do while( .true. )
-        read(mask_table_contents(n+offset),'(a)',end=999) record
+     offset = 3
+     do while (offset + n < size(mask_table_contents)+1)
+        read(mask_table_contents(n+offset),'(a)') record
         if (record(1:1) == '#') then
             offset = offset + 1
             cycle
@@ -628,11 +626,9 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): number of mask_list entry "// &
                 "is greater than nmask in file "//trim(mask_table) )
         endif
-        read(record,*,err=888) mask_list(n,1), mask_list(n,2), mask_list(n,3)
+        read(record,*) mask_list(n,1), mask_list(n,2), mask_list(n,3)
      enddo
-888  call mpp_error(FATAL, "fms2_io(parse_mask_table_3d):  Error in reading mask_list from file "//trim(mask_table))
 
-999  continue
      !--- make sure the number of entry for mask_list is nmask
      if( n .NE. nmask) call mpp_error(FATAL, &
         "fms2_io(parse_mask_table_3d): number of mask_list entry does not match nmask in file "//trim(mask_table))

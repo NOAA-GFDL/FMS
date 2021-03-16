@@ -44,7 +44,7 @@ test_io_simple_SOURCES = test_io_simple.F90 argparse.F90 setup.F90
 test_global_att_SOURCES = test_global_att.F90
 test_io_with_mask_SOURCES=test_io_with_mask.F90
 test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
-test_read_ascii_file_SOURCES=test_read_ascii_file.F90 ascii_test1
+test_read_ascii_file_SOURCES=test_read_ascii_file.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh test_read_ascii_file.sh
 
@@ -69,4 +69,4 @@ endif
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
                     netcdf_version_skip=${skipflag}
 
-CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask
+CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask ascii_test1
