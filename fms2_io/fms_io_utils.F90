@@ -496,7 +496,7 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
   integer                      :: nmask, layout(2)
   integer, allocatable         :: mask_list(:,:)
   character(len=:), dimension(:), allocatable :: mask_table_contents
-  integer                      :: mystat, n, stdoutunit, offset
+  integer                      :: iocheck, n, stdoutunit, offset
   character(len=128)           :: record
 
   maskmap = .true.
@@ -504,11 +504,21 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
   stdoutunit = stdout()
   call ascii_read(mask_table, mask_table_contents)
   if( mpp_pe() == mpp_root_pe() ) then
-     read(mask_table_contents(1), FMT=*, IOSTAT=mystat) nmask
+     read(mask_table_contents(1), FMT=*, IOSTAT=iocheck) nmask
+     if (iocheck > 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading nmask from file variable")
+     elseif (iocheck < 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: nmask not completely read from file variable")
+     endif
      write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
      if( nmask > 0 ) then
         !--- read layout from mask_table and confirm it matches the shape of maskmap
-        read(mask_table_contents(2), FMT=*, IOSTAT=mystat) layout
+        read(mask_table_contents(2), FMT=*, IOSTAT=iocheck) layout
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading layout from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: layout not completely read from file variable")
+        endif
         if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
            write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): layout in file "//trim(mask_table)// &
@@ -530,7 +540,12 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
      n = 0
      offset = 3
      do while (offset + n < size(mask_table_contents)+1)
-        read(mask_table_contents(n+offset),'(a)') record
+        read(mask_table_contents(n+offset),'(a)',iostat=iocheck) record
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading record from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: record not completely read from file variable")
+        endif
         if (record(1:1) == '#') then
             offset = offset + 1
             cycle
@@ -543,7 +558,12 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): number of mask_list entry "// &
                 "is greater than nmask in file "//trim(mask_table) )
         endif
-        read(record,*) mask_list(n,1), mask_list(n,2)
+        read(record,*,iostat=iocheck) mask_list(n,1), mask_list(n,2)
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading mask_list from record variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: mask_list not completely read from record variable")
+        endif
      enddo
 
      !--- make sure the number of entry for mask_list is nmask
@@ -571,7 +591,7 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   integer                      :: nmask, layout(2)
   integer, allocatable         :: mask_list(:,:)
   character(len=:), dimension(:), allocatable :: mask_table_contents
-  integer                      :: mystat, n, stdoutunit, ntiles, offset
+  integer                      :: iocheck, n, stdoutunit, ntiles, offset
   character(len=128)           :: record
 
   maskmap = .true.
@@ -579,11 +599,21 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   stdoutunit = stdout()
   call ascii_read(mask_table, mask_table_contents)
   if( mpp_pe() == mpp_root_pe() ) then
-     read(mask_table_contents(1), FMT=*, IOSTAT=mystat) nmask
+     read(mask_table_contents(1), FMT=*, IOSTAT=iocheck) nmask
+     if (iocheck > 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading nmask from file variable")
+     elseif (iocheck < 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: nmask not completely read from file variable")
+     endif
      write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
      if( nmask > 0 ) then
         !--- read layout from mask_table and confirm it matches the shape of maskmap
-        read(mask_table_contents(2), FMT=*, IOSTAT=mystat) layout(1), layout(2), ntiles
+        read(mask_table_contents(2), FMT=*, IOSTAT=iocheck) layout(1), layout(2), ntiles
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading layout from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: layout not completely read from file variable")
+        endif
         if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
            write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): layout in file "//trim(mask_table)// &
@@ -613,7 +643,12 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
      n = 0
      offset = 3
      do while (offset + n < size(mask_table_contents)+1)
-        read(mask_table_contents(n+offset),'(a)') record
+        read(mask_table_contents(n+offset),'(a)',iostat=iocheck) record
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading record from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: record not completely read from file variable")
+        endif
         if (record(1:1) == '#') then
             offset = offset + 1
             cycle
@@ -626,7 +661,12 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): number of mask_list entry "// &
                 "is greater than nmask in file "//trim(mask_table) )
         endif
-        read(record,*) mask_list(n,1), mask_list(n,2), mask_list(n,3)
+        read(record,*,iostat=iocheck) mask_list(n,1), mask_list(n,2), mask_list(n,3)
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading mask_list from record variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: mask_list not completely read from record variable")
+        endif
      enddo
 
      !--- make sure the number of entry for mask_list is nmask

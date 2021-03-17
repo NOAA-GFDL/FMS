@@ -37,85 +37,15 @@ program test_read_ascii_file
   integer, allocatable :: cur_pelist(:) !< PELIST is read into this variable
   integer :: ierr !< used by MPI_FINALIZE
 
-!  namelist /test_read_ascii_file_nml/ test_numb
-
-!  open(20, file="test_numb_ascii.nml", form="formatted", status="old")
-!  read(20, nml=test_read_ascii_file_nml)
-!  close(20)
-
-  ! Tests not meant to raise errors
   call mpp_init()
   call fms2_io_init()
   filename = "ascii_test1"
   call ascii_read(filename, test_array)
   read(test_array(1), *) stat
-  print *, stat(1)*6, stat(2)+3
+  if (stat(1)*6 - (stat(2)+3) /= 13) call mpp_error(FATAL, "test_read_ascii: failed to read integers")
   read(test_array(2), *) num_lines
-  print *, num_lines-11
+  if (num_lines-11 /= 12) call mpp_error(FATAL, "test_read_ascii: failed to read integer")
   read(test_array(3), *) line
-  print *, trim(line)//"wut"
-!  if (test_numb == 1 .or. test_numb == 7 .or. test_numb == 8) then
-!    if (test_numb == 1) then
-!      filename = "input.nml"
-!      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
-!      allocate(test_array(num_lines))
-!      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
-!    else if (test_numb == 7) then
-!      filename = "input.nml"
-!      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
-!      allocate(test_array(num_lines))
-!      allocate(cur_pelist(0:mpp_npes()-1))
-!      call mpp_get_current_pelist(cur_pelist)
-!      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array, PELIST=cur_pelist)
-!    else if (test_numb == 8) then
-!      filename = "empty.nml"
-!      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
-!      allocate(test_array(num_lines))
-!      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
-!    end if
-!    ! Content check
-!    open(2, file=filename, iostat=stat)
-!    do i=1, num_lines-1
-!      read(2, '(A)', iostat=stat) line
-!      if (stat.eq.-1) then
-!        call mpp_error(FATAL, "Problem reading the ascii file")
-!      end if
-!      if (test_array(i).ne.line) then
-!        call mpp_error(FATAL, "Content array variable does not&
-!                                   & match the ascii file content")
-!      end if
-!    end do
-!  ! Tests meant to raise errors
-!  else
-!    if (test_numb == 2) then
-!      filename = "input.nml"
-!      allocate(test_array(20))
-!      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
-!    else if (test_numb == 3) then
-!      filename = "doesnotexist.txt"
-!      ! Need to pass in an exist file name below to avoid raising error on
-!      ! get_ascii_file_num_lines call in order to get to the error in read_ascii_file
-!      filename2 = "input.nml"
-!      num_lines = get_ascii_file_num_lines(filename2, INPUT_STR_LENGTH)
-!      allocate(test_array(num_lines))
-!      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
-!    else if (test_numb == 4) then
-!      filename = "input.nml"
-!      filename2 = "empty.nml"
-!      num_lines = get_ascii_file_num_lines(filename2, INPUT_STR_LENGTH)
-!      allocate(test_array(num_lines))
-!      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
-!    else if (test_numb == 5) then
-!      filename = "input.nml"
-!      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
-!      allocate(test_array(num_lines))
-!      call read_ascii_file(filename, 0, test_array)
-!    else if (test_numb == 6) then
-!      filename = "input.nml"
-!      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
-!      allocate(test_array(num_lines-1))
-!      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
-!    end if
-!  end if
+  if (trim(line)//"wut" /= "forlendulawut") call mpp_error(FATAL, "test_read_ascii: failed to read string")
   call MPI_FINALIZE(ierr)
 end program test_read_ascii_file
