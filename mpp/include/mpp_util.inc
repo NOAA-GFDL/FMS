@@ -1301,7 +1301,8 @@ end function rarray_to_char
     character(len=*), intent(in), optional :: pelist_name_in
 ! private variables
     integer :: log_unit
-    integer :: num_lines, i
+    integer :: i
+    integer, dimension(2) :: lines_and_length
     logical :: file_exist
     character(len=len(peset(current_peset_num)%name)) :: pelist_name
     character(len=128) :: filename
@@ -1328,9 +1329,9 @@ end function rarray_to_char
     if (.not. file_exist ) then
        filename='input.nml'
     endif
-    num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
-    allocate(input_nml_file(num_lines))
-    call read_ascii_file(filename, INPUT_STR_LENGTH, input_nml_file)
+    lines_and_length = get_ascii_file_num_lines_and_length(filename)
+    allocate(character(len=lines_and_length(2))::input_nml_file(lines_and_length(1)))
+    call read_ascii_file(filename, lines_and_length(2), input_nml_file)
 
 ! write info logfile
     if (pe == root_pe) then
@@ -1338,7 +1339,7 @@ end function rarray_to_char
        write(log_unit,'(a)')  '========================================================================'
        write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(version)
        write(log_unit,'(a)')  'READ_INPUT_NML: '//trim(filename)//' '
-       do i = 1, num_lines
+       do i = 1, lines_and_length(1)
           write(log_unit,*) trim(input_nml_file(i))
        enddo
     end if
