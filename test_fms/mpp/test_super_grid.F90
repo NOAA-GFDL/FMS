@@ -18,7 +18,7 @@
 !***********************************************************************
 
 !> @brief  This programs tests mpp_copy_domains and makes sure the domain was
-!>         copied correctly tests mpp_create_super_grid and makes sure the
+!>         copied correctly tests mpp_create_super_grid_domain and makes sure the
 !>         domain is correct
 program test_super_grid
 use   fms_mod,            only: fms_init, fms_end
@@ -27,7 +27,7 @@ use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_copy_domain
 use   mpp_domains_mod,    only: mpp_get_data_domain
 use   mpp_domains_mod,    only: mpp_get_compute_domain, mpp_get_compute_domains
 use   mpp_domains_mod,    only: mpp_get_global_domain, mpp_get_global_domains
-use   mpp_domains_mod,    only: mpp_create_super_grid
+use   mpp_domains_mod,    only: mpp_create_super_grid_domain
 
 implicit none
 
@@ -46,7 +46,7 @@ call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, xhalo=2, yhalo=2, na
 call mpp_copy_domain(Domain, Domain2)
 call compare_domains(Domain, Domain2, supergrid=.false.)
 
-call mpp_create_super_grid(Domain2)
+call mpp_create_super_grid_domain(Domain2)
 call compare_domains(Domain, Domain2, supergrid=.true.)
 
 call fms_end()

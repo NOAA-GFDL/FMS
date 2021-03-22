@@ -287,7 +287,7 @@
   end subroutine mpp_set_super_grid_indices
 
   !> @brief Modifies the indices of the input domain to create the supergrid domain
-  subroutine mpp_create_super_grid(domain)
+  subroutine mpp_create_super_grid_domain(domain)
     type(domain2D), intent(inout) :: domain !< Input domain
 
     integer :: xbegin !< Begining x indices
@@ -319,7 +319,7 @@
         !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%data)
     enddo
 
-  end subroutine mpp_create_super_grid
+  end subroutine mpp_create_super_grid_domain
 
   !#####################################################################
   subroutine mpp_set_compute_domain1D( domain, begin, end, size, is_global )

@@ -161,7 +161,7 @@ module mpp_domains_mod
   public :: mpp_clear_group_update
   public :: mpp_group_update_initialized, mpp_group_update_is_set
   public :: mpp_get_global_domains
-  public :: mpp_create_super_grid
+  public :: mpp_create_super_grid_domain
 
   !--- public interface from mpp_domains_reduce.h
   public :: mpp_global_field, mpp_global_max, mpp_global_min, mpp_global_sum
