@@ -1,3 +1,6 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
 !* FMS is free software: you can redistribute it and/or modify it under
@@ -122,7 +125,7 @@ subroutine gather_data_bc_2d(fileobj, vdata, bc_info)
            deallocate(global_buf_r8_kind)
        endif
      class default
-        call error("unsupported type.")
+         call error("gather_data_bc_2d: unsupported type. Currently only r8_kind and r4_kinds are supported")
    end select
 
    !> Save the checksum, so you can write it later
@@ -243,7 +246,7 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
            deallocate(global_buf_r8_kind)
        endif
      class default
-        call error("unsupported type.")
+         call error("gather_data_bc_3d: unsupported type. Currently only r8_kind and r4_kinds are supported")
    end select
 
    !> Save the checksum, so you can write it later

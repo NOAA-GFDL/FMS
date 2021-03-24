@@ -81,8 +81,8 @@ type :: RestartVariable_t
   class(*), dimension(:,:,:,:,:), pointer :: data5d => null() !< 5d data pointer.
   logical :: was_read !< Flag to support legacy "query_initialized" feature, which
                       !! keeps track if a file was read.
-  logical :: is_bc_variable
-  type(bc_information) :: bc_info
+  logical :: is_bc_variable !< Flag indicating if variable is a bc_variable
+  type(bc_information) :: bc_info !< information about the boundary condition variable
 endtype RestartVariable_t
 
 !> @brief Compressed dimension.
@@ -502,7 +502,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   integer :: nc_format_param
   integer :: err
-  character(len=256) :: buf, buf2
+  character(len=256) :: buf !< Filename with .res in the filename if it is a restart
+  character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 

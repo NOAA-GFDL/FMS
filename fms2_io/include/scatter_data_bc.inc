@@ -161,7 +161,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       if (fileobj%is_root) deallocate(global_buf_r8_kind)
 
       class default
-         call error("unsupported type.")
+         call error("scatter_data_bc_2d: unsupported type. Currently only r8_kind and r4_kinds are supported")
     end select
 end subroutine scatter_data_bc_2d
 
@@ -312,6 +312,6 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       if (fileobj%is_root) deallocate(global_buf_r8_kind)
 
       class default
-         call error("unsupported type.")
+         call error("scatter_data_bc_3d: unsupported type. Currently only r8_kind and r4_kinds are supported")
     end select
 end subroutine scatter_data_bc_3d
