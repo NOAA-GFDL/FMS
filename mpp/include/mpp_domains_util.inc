@@ -1766,6 +1766,10 @@ end subroutine mpp_get_tile_compute_domains
      integer :: starting(2)  !< Starting bounds
      integer :: ending(2)    !< Ending bounds
 
+     if (associated(domain_out%x)) then
+         call mpp_error(FATAL, "mpp_copy_domain: domain_out is already set")
+     endif
+
      domain_out%id             = domain_in%id
      domain_out%pe             = domain_in%pe
      domain_out%fold           = domain_in%fold
@@ -1790,7 +1794,6 @@ end subroutine mpp_get_tile_compute_domains
         call mpp_copy_domain1D(domain_in%x(n), domain_out%x(n))
         call mpp_copy_domain1D(domain_in%y(n), domain_out%y(n))
      enddo
-     domain_out%tile_id = domain_in%tile_id
 
      if (associated(domain_in%pearray)) then
          starting = lbound(domain_in%pearray)
