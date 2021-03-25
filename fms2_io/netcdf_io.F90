@@ -2094,6 +2094,11 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
     call error("file "//trim(fileobj%path)//" is not a restart file.")
   endif
 
+ !> Loop through the variables, root pe gathers the data from the other pes and writes out the checksum.
+ !! Then loop through the variables again to write the data to the netcdf file.
+ !! All the metadata should be written before the data to prevent netcdf from rewriting the file
+ !! if the header is not big enough. That is why the two do loops are needed.
+
  do i = 1, fileobj%num_restart_vars
     !> Go away if you are not in the pelist!
     if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
@@ -2101,8 +2106,7 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
     !> Go away if this is not a BC variable
     if (.not. fileobj%restart_vars(i)%is_bc_variable) cycle
 
-    !> Gather the data from the pelist and write out the checksum (all the metadata should be written before the
-    !! the actual data ...
+    !> Root pe gathers the data from the other ranks, saves it in a buffer, and writes out the checksum.
     if (associated(fileobj%restart_vars(i)%data2d)) then
         call gather_data_bc(fileobj, fileobj%restart_vars(i)%data2d, fileobj%restart_vars(i)%bc_info)
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, "checksum", &
