@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,17 +19,22 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/data_override directory.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Ed Hartnett 11/26/19
+# Uriel Ramirez 07/22/20
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic interpolator fms mpp mpp_io time_interp time_manager \
-horiz_interp field_manager axis_utils affinity fms2_io
+# Set common test settings.
+. ../test_common.sh
 
-# This input file must be distributed, it is turned into
-# test_common.sh by configure.
-EXTRA_DIST = test_common.sh.in
+# Run the ongrid test case with 2 halos in x and y
+touch input.nml
+
+rm -rf RESTART
+mkdir RESTART
+run_test test_coupler_2d 1
+
+run_test test_coupler_3d 1
+
+rm -rf RESTART

@@ -355,6 +355,7 @@ AC_CONFIG_FILES([
   test_fms/axis_utils/Makefile
   test_fms/mosaic/Makefile
   test_fms/affinity/Makefile
+  test_fms/coupler/Makefile
   FMS.pc
   ])
 
