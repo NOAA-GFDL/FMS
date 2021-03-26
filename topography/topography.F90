@@ -163,6 +163,8 @@ end interface
      if ( use_mpp_io ) then
        call error_mesg('topography_init',"Using mpp_io in topography_mod",NOTE)
        if( mpp_pe() == mpp_root_pe()) write(std_log, '(a)')"Using mpp_io in topography_mod"
+       if( mpp_pe() == mpp_root_pe()) write(std_log, '(a)')&
+        'WARNING:: MPP_IO is no longer supported.  Please remove from namelist'
      else
        call error_mesg('topography_init',"Using fms2_io in topography_mod",NOTE)
        if( mpp_pe() == mpp_root_pe()) write(std_log, '(a)')"Using fms2_io in topography_mod"
