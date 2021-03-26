@@ -22,23 +22,12 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/fms2_io directory.
 
-# Author: Ed Hartnett 6/10/20
+# Author: Uriel Ramirez 07/07/20
 #
 # Set common test settings.
 . ../test_common.sh
 
 # make an input.nml for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+touch input.nml
 
-echo "Test the filename_appendix functionality"
-run_test test_file_appendix 1
-
-# run the tests
-run_test test_io_simple 6
-
-echo "Test the get_mosaic_tile_grid functionality"
-run_test test_get_mosaic_tile_grid 6
-
-echo "Test the get_valid is_valid functionality"
-run_test test_get_is_valid 1
-run_test test_get_is_valid 2
+run_test test_bc_restart 16
