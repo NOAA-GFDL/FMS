@@ -22,22 +22,18 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/fms directory.
 
-# Ed Hartnett 11/29/19
+# Tom Robinson 03/02/2021
 
 # Set common test settings.
 . ../test_common.sh
 
 # Create the base input.nml file needed for the tests
 cat <<_EOF > input.nml
-&test_fms_io_nml
-  io_layout = 1,1
+&test_fms_nml
 /
 _EOF
 
 # Test the structured grid
 rm -rf RESTART && mkdir RESTART
-run_test test_fms_io 6
+run_test test_fms 6
 
-# Ensure the restart directory is empty
-rm -rf RESTART && mkdir RESTART
-run_test test_unstructured_fms_io 6
