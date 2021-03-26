@@ -2491,7 +2491,8 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
   character(len=256) :: dir
   character(len=80)  :: restartname          ! The restart file name (no dir).
   character(len=336) :: restartpath          ! The restart file path (dir/file).
-
+  integer :: i !< For looping
+  logical :: has_dot !< For determining if the time_stamp has a .
   ! This approach is taken rather than interface overloading in order to preserve
   ! use of the register_restart_field infrastructure
 
@@ -2506,7 +2507,15 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
      if (PRESENT(time_stamp)) then
         if(len_trim(restartname)+len_trim(time_stamp) > 79) call mpp_error(FATAL, "fms_io(save_restart): " // &
           "Length of restart file name + time_stamp is greater than allowed character length of 79")
-        restartname = trim(time_stamp)//"."//trim(restartname)
+           has_dot = .false.
+           do i=1,len(time_stamp)
+              if (time_stamp(i:i) == ".") has_dot = .true.
+           enddo
+           if (has_dot) then
+              restartname = trim(time_stamp)//trim(restartname)
+           else
+              restartname = trim(time_stamp)//"."//trim(restartname)
+           endif
      endif
   end if
   if(len_trim(dir) > 0) then
