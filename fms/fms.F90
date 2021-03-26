@@ -182,10 +182,10 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
 use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        read_data, write_data, read_compressed, read_distributed, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
-                       set_domain, get_domain_decomp, nullify_domain, &
-                       open_file, open_direct_file, string, get_mosaic_tile_grid, &
+                       get_domain_decomp, &
+                       open_file, open_direct_file, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
-                       write_version_number
+                       write_version_number, set_domain, nullify_domain
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 
@@ -202,8 +202,8 @@ public :: open_namelist_file, open_restart_file, &
           open_file, open_direct_file
 
 ! routines for reading/writing distributed data
-public :: set_domain, read_data, write_data, read_compressed, read_distributed
-public :: get_domain_decomp, field_size, nullify_domain
+public :: read_data, write_data, read_compressed, read_distributed
+public :: get_domain_decomp, field_size
 public :: get_global_att_value
 
 ! routines for get mosaic information
@@ -216,8 +216,9 @@ public :: file_exist, check_nml_error, field_exist,     &
 public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
-public :: lowercase, uppercase, string,        &
-          string_array_index, monotonic_array
+public :: lowercase, uppercase,        &
+          string_array_index, monotonic_array, &
+          set_domain, nullify_domain
 
 ! public mpp interfaces
 public :: mpp_error, NOTE, WARNING, FATAL, &
@@ -231,6 +232,9 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+!public from the old fms_io but not exists here
+public :: string
+
 ! public mpp-io interfaces
 public :: do_cf_compliance
 
@@ -330,6 +334,11 @@ integer, public :: clock_flag_default
 
   logical :: module_is_initialized = .FALSE.
 
+!> Converts a number to a string 
+interface string
+   module procedure string_from_integer
+   module procedure string_from_real
+end interface
 
 contains
 
@@ -998,7 +1007,30 @@ integer :: i
 
 end function monotonic_array
 ! </FUNCTION>
+!! Functions from the old fms_io
+!> \brief Converts an integer to a string
+!! This has been updated from the fms_io function.
+  function string_from_integer(i) result (res)
+    integer, intent(in) :: i !< Integer to be converted to a string
+    character(:),allocatable :: res !< String converted frominteger
+    character(range(i)+2) :: tmp !< Temp string that is set to correct size
+    write(tmp,'(i0)') i
+    res = trim(tmp)
+   return
 
+  end function string_from_integer
+
+  !#######################################################################
+!> \brief Converts a real to a string
+  function string_from_real(a)
+    real, intent(in) :: a
+    character(len=32) :: string_from_real
+
+    write(string_from_real,*) a
+
+    return
+
+  end function string_from_real
 end module fms_mod
 ! <INFO>
 !   <BUG>

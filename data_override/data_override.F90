@@ -262,6 +262,8 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
 !  Read coupler_table
     if(use_mpp_bug) then
+     call mpp_error(WARNING, 'data_override_mod:' &
+                     //'MPP_IO is no longer supported.  Please remove "use_mpp_bug" from namelist')
       call mpp_open(iunit, 'data_table', action=MPP_RDONLY)
     else
       iunit = get_unit()

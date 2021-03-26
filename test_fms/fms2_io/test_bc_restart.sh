@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,29 +19,15 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/fms directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
 
-# uramirez, Ed Hartnett
+# Author: Uriel Ramirez 07/07/20
+#
+# Set common test settings.
+. ../test_common.sh
 
-# Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+# make an input.nml for mpp_init to read
+touch input.nml
 
-# Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
-
-# Build these test programs.
-check_PROGRAMS = test_fms
-
-# These are the sources for the tests.
-test_fms_SOURCES = test_fms.F90
-# Run the test programs.
-TESTS = test_fms2.sh
-
-# These will also be included in the distribution.
-EXTRA_DIST = test_fms2.sh
-
-CLEANFILES = input.nml logfile.*.out
-
-clean-local:
-	rm -rf RESTART
+run_test test_bc_restart 16

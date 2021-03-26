@@ -276,6 +276,55 @@
     return
   end subroutine mpp_get_memory_domain2D
 
+  !> @brief Modifies the indices in the domain_axis_spec type to those of the supergrid
+  subroutine mpp_set_super_grid_indices(grid)
+   type(domain_axis_spec), intent(inout) :: grid !< domain_axis_spec type
+
+   grid%begin = 2*grid%begin-1
+   grid%end = 2*grid%end+1
+   grid%size = grid%end-grid%begin+1
+
+  end subroutine mpp_set_super_grid_indices
+
+  !> @brief Modifies the indices of the input domain to create the supergrid domain
+  !> @example This is an example of how to use mpp_create_super_grid_domain
+  !! call mpp_copy_domain(domain_in, domain_out)
+  !! call super_grid_domain(domain_out)
+  !! domain_in is the original domain, domain_out is the domain with the supergrid indices
+  subroutine mpp_create_super_grid_domain(domain)
+    type(domain2D), intent(inout) :: domain !< Input domain
+
+    integer :: xbegin !< Begining x indices
+    integer :: ybegin !< Begining y indices
+    integer :: xend   !< Ending x indices
+    integer :: yend   !< Ending y indices
+    integer :: xsize  !< Size of the x domain
+    integer :: ysize  !< Size of the y domain
+    integer :: i      !< For loops
+
+    call mpp_get_global_domain(domain, xbegin=xbegin, xend=xend, ybegin=ybegin, yend=yend, xsize=xsize, ysize=ysize)
+    call mpp_set_global_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, 2*(yend-ybegin)+3)
+
+    call mpp_get_compute_domain(domain, xbegin=xbegin, xend=xend, ybegin=ybegin, yend=yend, xsize=xsize, ysize=ysize)
+    call mpp_set_compute_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, 2*(yend-ybegin)+3)
+
+    call mpp_get_data_domain(domain, xbegin=xbegin, xend=xend, ybegin=ybegin, yend=yend, xsize=xsize, ysize=ysize)
+    call mpp_set_data_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, 2*(yend-ybegin)+3)
+
+    do i=1, size(domain%list(:))
+        call mpp_set_super_grid_indices(domain%list(i-1)%x(1)%global)
+        call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%global)
+
+        call mpp_set_super_grid_indices(domain%list(i-1)%x(1)%compute)
+        call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%compute)
+
+        !< There is no data domain in domain%list
+        !call mpp_set_super_grid_indices(domain%list(i-1)%x(1)%data)
+        !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%data)
+    enddo
+
+  end subroutine mpp_create_super_grid_domain
+
   !#####################################################################
   subroutine mpp_set_compute_domain1D( domain, begin, end, size, is_global )
     type(domain1D), intent(inout) :: domain
@@ -1680,10 +1729,14 @@ end subroutine mpp_get_tile_compute_domains
 
   end subroutine mpp_set_domain_symmetry
 
+  !> @brief Copies input 1d domain to the output 1d domain
+  recursive subroutine mpp_copy_domain1D(domain_in, domain_out)
+     type(domain1D),    intent(in) :: domain_in  !< Input domain
+     type(domain1D), intent(inout) :: domain_out !< Output domain
 
-  subroutine mpp_copy_domain1D(domain_in, domain_out)
-     type(domain1D),    intent(in) :: domain_in
-     type(domain1D), intent(inout) :: domain_out
+     integer                       :: i        !< For loop
+     integer                       :: starting !< Starting bounds
+     integer                       :: ending   !< Ending bounds
 
      domain_out%compute = domain_in%compute
      domain_out%data    = domain_in%data
@@ -1693,16 +1746,33 @@ end subroutine mpp_get_tile_compute_domains
      domain_out%pe      = domain_in%pe
      domain_out%pos     = domain_in%pos
 
+     if (associated(domain_in%list)) then
+         starting = lbound(domain_in%list, 1)
+         ending = ubound(domain_in%list, 1)
+         allocate(domain_out%list(starting:ending))
+
+         do i = starting, ending
+            call mpp_copy_domain1D(domain_in%list(i), domain_out%list(i))
+         enddo
+
+     endif
+
   end subroutine mpp_copy_domain1D
 
   !#################################################################
-  !z1l: This is not fully implemented. The current purpose is to make
-  !     it work in read_data.
+  !> @brief Copies input 2d domain to the output 2d domain
   subroutine mpp_copy_domain2D(domain_in, domain_out)
-     type(domain2D),    intent(in) :: domain_in
-     type(domain2D), intent(inout) :: domain_out
+     type(domain2D),    intent(in) :: domain_in  !< Input domain
+     type(domain2D), intent(inout) :: domain_out !< Output domain
 
-     integer :: n, ntiles
+     integer :: n,i          !< For loops
+     integer :: ntiles       !< Number of tiles
+     integer :: starting(2)  !< Starting bounds
+     integer :: ending(2)    !< Ending bounds
+
+     if (associated(domain_out%x)) then
+         call mpp_error(FATAL, "mpp_copy_domain: domain_out is already set")
+     endif
 
      domain_out%id             = domain_in%id
      domain_out%pe             = domain_in%pe
@@ -1728,11 +1798,110 @@ end subroutine mpp_get_tile_compute_domains
         call mpp_copy_domain1D(domain_in%x(n), domain_out%x(n))
         call mpp_copy_domain1D(domain_in%y(n), domain_out%y(n))
      enddo
-     domain_out%tile_id = domain_in%tile_id
+
+     if (associated(domain_in%pearray)) then
+         starting = lbound(domain_in%pearray)
+         ending = ubound(domain_in%pearray)
+
+         allocate(domain_out%pearray(starting(1):ending(1), starting(2):ending(2)))
+         domain_out%pearray=domain_in%pearray
+     endif
+
+     if (associated(domain_in%tile_id)) then
+         starting(1) = lbound(domain_in%tile_id,1)
+         ending(1) = ubound(domain_in%tile_id,1)
+
+         allocate(domain_out%tile_id(starting(1):ending(1)))
+         domain_out%tile_id = domain_in%tile_id
+     endif
+
+     if (associated(domain_in%tile_id_all)) then
+         starting(1) = lbound(domain_in%tile_id_all,1)
+         ending(1) = ubound(domain_in%tile_id_all,1)
+
+         allocate(domain_out%tile_id_all(starting(1):ending(1)))
+         domain_out%tile_id_all = domain_in%tile_id_all
+     endif
+
+     if (associated(domain_in%list)) then
+         starting(1) = lbound(domain_in%list,1)
+         ending(1) = ubound(domain_in%list,1)
+
+         allocate(domain_out%list(starting(1):ending(1)))
+         do i = starting(1), ending(1)
+            call mpp_copy_domain2D_spec(domain_in%list(i),domain_out%list(i))
+         enddo
+     endif
 
      return
 
   end subroutine mpp_copy_domain2D
+
+  !> @brief Copies input 2d domain spec to the output 2d domain spec
+  subroutine mpp_copy_domain2D_spec(domain2D_spec_in, domain2d_spec_out)
+  type(domain2D_spec), intent(in) :: domain2D_spec_in   !< Input
+  type(domain2D_spec), intent(out) :: domain2D_spec_out !< Output
+
+  integer :: starting  !< Starting bounds
+  integer :: ending    !< Ending bounds
+  integer :: i         !< For loop
+
+  domain2D_spec_out%pe = domain2D_spec_in%pe
+  domain2D_spec_out%pos = domain2D_spec_in%pos
+  domain2D_spec_out%tile_root_pe = domain2D_spec_in%tile_root_pe
+
+  if (associated(domain2D_spec_in%tile_id)) then
+      starting = lbound(domain2D_spec_in%tile_id,1)
+      ending = ubound(domain2D_spec_in%tile_id,1)
+
+      allocate(domain2D_spec_out%tile_id(starting:ending))
+      domain2D_spec_out%tile_id = domain2D_spec_in%tile_id
+  endif
+
+  if (associated(domain2D_spec_in%x)) then
+      starting = lbound(domain2D_spec_in%x,1)
+      ending = ubound(domain2D_spec_in%x,1)
+
+      allocate(domain2D_spec_out%x(starting:ending))
+      do i = starting, ending
+         call mpp_copy_domain1D_spec(domain2D_spec_in%x(i), domain2D_spec_out%x(i))
+      enddo
+  endif
+
+  if (associated(domain2D_spec_in%y)) then
+      starting = lbound(domain2D_spec_in%y,1)
+      ending = ubound(domain2D_spec_in%y,1)
+
+      allocate(domain2D_spec_out%y(starting:ending))
+      do i = starting, ending
+         call mpp_copy_domain1D_spec(domain2D_spec_in%y(i), domain2D_spec_out%y(i))
+      enddo
+  endif
+
+  end subroutine mpp_copy_domain2D_spec
+
+  !> @brief Copies input 1d domain spec to the output 1d domain spec
+  subroutine mpp_copy_domain1D_spec(domain1D_spec_in, domain1D_spec_out)
+     type(domain1D_spec), intent(in) :: domain1D_spec_in   !< Input
+     type(domain1D_spec), intent(out) :: domain1D_spec_out !< Output
+
+     domain1D_spec_out%pos = domain1D_spec_in%pos
+
+     call mpp_copy_domain_axis_spec(domain1D_spec_in%compute, domain1D_spec_out%compute)
+     call mpp_copy_domain_axis_spec(domain1D_spec_in%global, domain1D_spec_out%global)
+  end subroutine mpp_copy_domain1D_spec
+
+  !> @brief Copies input domain_axis_spec to the output domain_axis_spec
+  subroutine mpp_copy_domain_axis_spec(domain_axis_spec_in, domain_axis_spec_out)
+     type(domain_axis_spec), intent(in) :: domain_axis_spec_in   !< Input
+     type(domain_axis_spec), intent(out) :: domain_axis_spec_out !< Output
+
+     domain_axis_spec_out%begin = domain_axis_spec_in%begin
+     domain_axis_spec_out%end = domain_axis_spec_in%end
+     domain_axis_spec_out%size = domain_axis_spec_in%size
+     domain_axis_spec_out%max_size = domain_axis_spec_in%max_size
+     domain_axis_spec_out%is_global = domain_axis_spec_in%is_global
+  end subroutine mpp_copy_domain_axis_spec
 
   !######################################################################
   subroutine set_group_update(group, domain)

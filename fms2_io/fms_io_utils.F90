@@ -34,6 +34,8 @@ use platform_mod
 implicit none
 private
 
+character(len=32), save :: filename_appendix = '' !< Appendix added to the restart filename
+
 public :: char_linked_list
 public :: error
 public :: file_exists
@@ -55,6 +57,10 @@ public :: restart_filepath_mangle
 public :: ascii_read
 public :: parse_mask_table
 public :: get_mosaic_tile_file
+public :: get_filename_appendix
+public :: set_filename_appendix
+public :: get_instance_filename
+public :: nullify_filename_appendix
 
 !> @brief A linked list of strings
 type :: char_linked_list
@@ -782,6 +788,62 @@ subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
   file_out = trim(basefile)//'.nc'
 
 end subroutine get_mosaic_tile_file_ug
+
+!> @brief Writes filename appendix to "string_out"
+subroutine get_filename_appendix(string_out)
+  character(len=*) , intent(out) :: string_out !< String to write the filename_appendix to
+
+  string_out = trim(filename_appendix)
+
+end subroutine get_filename_appendix
+
+!> @brief Clears the filename_appendix module variable
+subroutine nullify_filename_appendix()
+
+  filename_appendix = ''
+
+end subroutine nullify_filename_appendix
+
+!> @brief Save "string_in" as a module variable that will added to the filename
+!! of the restart files
+subroutine set_filename_appendix(string_in)
+  character(len=*) , intent(in) :: string_in !< String that will be saved as a module variable
+
+  ! Check if string has already been added
+  if (len_trim(filename_appendix) > 0) then
+      call error("Set_filename_appendix: The filename appendix has already be set " &
+                 //"call 'nullify_filename_appendix' first")
+  endif
+
+  filename_appendix = trim(string_in)
+
+end subroutine set_filename_appendix
+
+!> @brief Adds the filename_appendix to name_in and sets it as name_out
+subroutine get_instance_filename(name_in,name_out)
+  character(len=*)  , intent(in)  :: name_in  !< Buffer to add the filename_appendix to
+  character(len=*), intent(inout) :: name_out !< name_in with the filename_appendix
+
+  integer :: length !< Length of name_in
+  integer :: i !< no description
+
+  length = len_trim(name_in)
+  name_out = name_in(1:length)
+
+  !< If the filename_appendix is set append it to name_out before the .nc or at
+  !! the end
+  if(len_trim(filename_appendix) > 0) then
+     if (has_domain_tile_string(name_in)) then
+         i = index(trim(name_in), ".tile", back=.true.)
+         name_out = name_in(1:i-1)    //'.'//trim(filename_appendix)//name_in(i:length)
+     else if(name_in(length-2:length) == '.nc') then
+        name_out = name_in(1:length-3)//'.'//trim(filename_appendix)//'.nc'
+     else
+        name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+     end if
+  end if
+
+end subroutine get_instance_filename
 
 include "array_utils.inc"
 include "array_utils_char.inc"

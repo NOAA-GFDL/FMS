@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,29 +19,21 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/fms directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms directory.
 
-# uramirez, Ed Hartnett
+# Tom Robinson 03/02/2021
 
-# Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+# Set common test settings.
+. ../test_common.sh
 
-# Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
+# Create the base input.nml file needed for the tests
+cat <<_EOF > input.nml
+&test_fms_nml
+/
+_EOF
 
-# Build these test programs.
-check_PROGRAMS = test_fms
+# Test the structured grid
+rm -rf RESTART && mkdir RESTART
+run_test test_fms 6
 
-# These are the sources for the tests.
-test_fms_SOURCES = test_fms.F90
-# Run the test programs.
-TESTS = test_fms2.sh
-
-# These will also be included in the distribution.
-EXTRA_DIST = test_fms2.sh
-
-CLEANFILES = input.nml logfile.*.out
-
-clean-local:
-	rm -rf RESTART

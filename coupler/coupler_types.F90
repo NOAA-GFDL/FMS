@@ -22,9 +22,14 @@
 !! @author Richard Slater, John Dunne
 !! @email gfdl.climate.model.info@noaa.gov
 module coupler_types_mod
-
-  use fms_mod,           only: write_version_number
-  use fms_io_mod,        only: restart_file_type, register_restart_field
+  use fms_mod,           only: write_version_number, lowercase
+  use fms2_io_mod,       only: FmsNetcdfDomainFile_t, open_file, register_restart_field
+  use fms2_io_mod,       only: register_axis, unlimited, variable_exists, check_if_open
+  use fms2_io_mod,       only: register_field, get_num_dimensions, variable_att_exists
+  use fms2_io_mod,       only: get_variable_attribute, get_dimension_size, get_dimension_names
+  use fms2_io_mod,       only: register_variable_attribute, get_variable_dimension_names
+  use fms2_io_mod,       only: get_variable_num_dimensions
+  use fms_io_mod,        only: restart_file_type, fms_io_register_restart_field=>register_restart_field
   use fms_io_mod,        only: query_initialized, restore_state
   use time_manager_mod,  only: time_type
   use diag_manager_mod,  only: register_diag_field, send_data
@@ -84,6 +89,8 @@ module coupler_types_mod
     character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
+    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
+                                                                        !! That is used for this field
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
@@ -130,6 +137,8 @@ module coupler_types_mod
     character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
+    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
+                                                                        !! That is used for this field
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
@@ -272,13 +281,16 @@ module coupler_types_mod
   !> @brief This is the interface to register the fields in a coupler_bc_type to be saved
   !! in restart files.
   interface coupler_type_register_restarts
+    module procedure mpp_io_CT_register_restarts_2d, mpp_io_CT_register_restarts_3d
+    module procedure mpp_io_CT_register_restarts_to_file_2d, mpp_io_CT_register_restarts_to_file_3d
+
     module procedure CT_register_restarts_2d, CT_register_restarts_3d
-    module procedure CT_register_restarts_to_file_2d, CT_register_restarts_to_file_3d
   end interface coupler_type_register_restarts
 
   !> @brief This is the interface to read in the fields in a coupler_bc_type that have
   !! been saved in restart files.
   interface coupler_type_restore_state
+    module procedure mpp_io_CT_restore_state_2d, mpp_io_CT_restore_state_3d
     module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
@@ -3079,10 +3091,212 @@ contains
   end subroutine CT_send_data_3d
 
   !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
+  !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
+  !! specified in the field table.
+  subroutine CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart, directory)
+    type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
+    type(FmsNetcdfDomainFile_t),  dimension(:), pointer  :: bc_rest_files !< Structures describing the restart files
+    integer,                  intent(out) :: num_rest_files !< The number of restart files to use
+    type(domain2D),           intent(in)  :: mpp_domain     !< The FMS domain to use for this registration call
+    logical,                  intent(in)  :: to_read        !< Flag indicating if reading/writing a file
+    logical,         optional,intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
+    character(len=*),optional,intent(in)  :: directory      !< Directory where to open the file
+
+    character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
+    character(len=80) :: file_nm
+    logical :: ocn_rest
+    integer :: f, n, m
+
+    character(len=20), allocatable, dimension(:)             :: dim_names !< Array of dimension names
+    character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
+    logical, dimension(max(1,var%num_bcs))     :: file_is_open !< flag indicating if file is open
+    character(len=20)                          :: dir       !< Directory where to open the file
+
+    ocn_rest = .true.
+    if (present(ocean_restart)) ocn_rest = ocean_restart
+
+    if (present(directory)) dir = trim(directory)
+
+    if (to_read) then
+        io_type = "read"
+        if (.not. present(directory)) dir = "INPUT/"
+    else
+        io_type = "overwrite"
+        if (.not. present(directory)) dir = "RESTART/"
+    endif
+
+    ! Determine the number and names of the restart files
+    num_rest_files = 0
+    do n = 1, var%num_bcs
+      if (var%bc(n)%num_fields <= 0) cycle
+      file_nm = trim(var%bc(n)%ice_restart_file)
+      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+      do f = 1, num_rest_files
+        if (trim(file_nm) == trim(rest_file_names(f))) exit
+      enddo
+      if (f>num_rest_files) then
+        num_rest_files = num_rest_files + 1
+        rest_file_names(f) = trim(file_nm)
+      endif
+    enddo
+
+    if (num_rest_files == 0) return
+
+    allocate(bc_rest_files(num_rest_files))
+
+    !< Open the files
+    do n = 1, num_rest_files
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        if (file_is_open(n)) then
+             call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
+        endif
+    enddo
+
+    ! Register the fields with the restart files
+    do n = 1, var%num_bcs
+      if (var%bc(n)%num_fields <= 0) cycle
+
+      file_nm = trim(var%bc(n)%ice_restart_file)
+      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+      do f = 1, num_rest_files
+        if (trim(file_nm) == trim(rest_file_names(f))) exit
+      enddo
+
+      var%bc(n)%fms2_io_rest_type => bc_rest_files(f)
+
+      do m = 1, var%bc(n)%num_fields
+         if (file_is_open(f)) then
+            if( to_read ) then
+                !< If reading get the dimension names from the file
+                if (variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
+                    allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                    call get_variable_dimension_names(bc_rest_files(f), &
+                    & var%bc(n)%field(m)%name, dim_names)
+                endif !< If variable_exists
+            else
+                !< If writing use dummy dimension names
+                allocate(dim_names(3))
+                dim_names(1) = "xaxis_1"
+                dim_names(2) = "yaxis_1"
+                dim_names(3) = "Time"
+            endif !< to_read
+
+            call register_restart_field(bc_rest_files(f),&
+            & var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, dim_names, &
+            & is_optional=var%bc(n)%field(m)%may_init )
+
+            deallocate(dim_names)
+         endif !< If file_is_open
+      enddo !< num_fields
+    enddo !< num_bcs
+
+  end subroutine CT_register_restarts_2d
+
+  !< If reading a restart, register the dimensions that are in the file
+  subroutine register_axis_wrapper_read(fileobj)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
+
+    character(len=20), dimension(:), allocatable :: file_dim_names !< Array of dimension names
+    integer :: i !< No description
+    integer :: dim_size !< Size of the dimension
+    integer :: ndims !< Number of dimensions in the file
+    logical :: is_domain_decomposed !< Flag indication if domain decomposed
+    character(len=1) :: buffer !< string buffer
+
+    ndims = get_num_dimensions(fileobj)
+    allocate(file_dim_names(ndims))
+
+    call get_dimension_names(fileobj, file_dim_names)
+
+    do i = 1, ndims
+       is_domain_decomposed = .false.
+
+       !< Check if the dimension is also a variable
+       if (variable_exists(fileobj, file_dim_names(i))) then
+
+          !< If the variable exists look for the "cartesian_axis" or "axis" variable attribute
+          if (variable_att_exists(fileobj, file_dim_names(i), "axis")) then
+              call get_variable_attribute(fileobj, file_dim_names(i), "axis", buffer)
+
+              !< If the attribute exists and it is "x" or "y" register it as a domain decomposed dimension
+              if (lowercase(buffer) .eq. "x" .or. lowercase(buffer) .eq. "y" ) then
+                  is_domain_decomposed = .true.
+                  call register_axis(fileobj, file_dim_names(i), buffer)
+              endif
+
+          else if (variable_att_exists(fileobj, file_dim_names(i), "cartesian_axis")) then
+              call get_variable_attribute(fileobj, file_dim_names(i), "cartesian_axis", buffer)
+
+              !< If the attribute exists and it "x" or "y" register it as a domain decomposed dimension
+              if (lowercase(buffer) .eq. "x" .or. lowercase(buffer) .eq. "y" ) then
+                  is_domain_decomposed = .true.
+                  call register_axis(fileobj, file_dim_names(i), buffer)
+              endif
+
+          endif !< If variable attribute exists
+       endif !< If variable exists
+
+       if (.not. is_domain_decomposed) then
+          call get_dimension_size(fileobj, file_dim_names(i), dim_size)
+          call register_axis(fileobj, file_dim_names(i), dim_size)
+       endif
+
+    end do
+
+  end subroutine register_axis_wrapper_read
+
+  !< If writting a restart, register the variables with dummy axis names
+  subroutine register_axis_wrapper_write(fileobj, nz)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
+    integer, intent(in), optional :: nz !< length of the z dimension
+
+    character(len=20) :: dim_names(4) !< Array of dimension names
+
+    dim_names(1) = "xaxis_1"
+    dim_names(2) = "yaxis_1"
+
+    call register_axis(fileobj, dim_names(1), "x")
+    call register_axis(fileobj, dim_names(2), "y")
+
+    !< If nz is present register a zaxis
+    if (.not. present(nz)) then
+       dim_names(3) = "Time"
+       call register_axis(fileobj, dim_names(3), unlimited)
+    else
+       dim_names(3) = "zaxis_1"
+       dim_names(4) = "Time"
+
+       call register_axis(fileobj, dim_names(3), nz)
+       call register_axis(fileobj, dim_names(4), unlimited)
+    endif !< if (.not. present(nz))
+
+    !< Add the dimension names as variable so that the combiner can work correctly
+    call register_field(fileobj, dim_names(1), "double", (/dim_names(1)/))
+    call register_variable_attribute(fileobj, dim_names(1), "axis", "x", str_len=1)
+
+    call register_field(fileobj, dim_names(2), "double", (/dim_names(2)/))
+    call register_variable_attribute(fileobj, dim_names(2), "axis", "y", str_len=1)
+
+  end subroutine register_axis_wrapper_write
+
+  subroutine register_axis_wrapper(fileobj, to_read, nz)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
+    logical, intent(in) :: to_read !< Flag indicating if reading file
+    integer, intent(in), optional :: nz !< length of the z dimension
+
+    if (to_read) then
+        call register_axis_wrapper_read(fileobj)
+    else
+        call register_axis_wrapper_write(fileobj, nz)
+    endif
+
+  end subroutine
+
+  !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !!
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
+  subroutine mpp_io_CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out) :: num_rest_files !< The number of restart files to use
@@ -3127,18 +3341,18 @@ contains
 
       var%bc(n)%rest_type => bc_rest_files(f)
       do m = 1, var%bc(n)%num_fields
-        var%bc(n)%field(m)%id_rest = register_restart_field(bc_rest_files(f),&
+        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(bc_rest_files(f),&
             & rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values,&
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
-  end subroutine CT_register_restarts_2d
+  end subroutine mpp_io_CT_register_restarts_2d
 
   !! @brief Register the fields in a coupler_2d_bc_type to be saved to restart files
   !!
   !! This subroutine  registers the  fields in  a coupler_2d_bc_type  to be  saved in  the specified
   !! restart file.
-  subroutine CT_register_restarts_to_file_2d(var, file_name, rest_file, mpp_domain, varname_prefix)
+  subroutine mpp_io_CT_register_restarts_to_file_2d(var, file_name, rest_file, mpp_domain, varname_prefix)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     character(len=*),         intent(in)    :: file_name !< The name of the restart file
     type(restart_file_type),  pointer       :: rest_file !< A (possibly associated) structure describing the restart file
@@ -3160,18 +3374,127 @@ contains
       do m = 1, var%bc(n)%num_fields
         var_name = trim(var%bc(n)%field(m)%name)
         if (present(varname_prefix)) var_name = trim(varname_prefix)//trim(var_name)
-        var%bc(n)%field(m)%id_rest = register_restart_field(rest_file,&
+        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(rest_file,&
             & file_name, var_name, var%bc(n)%field(m)%values,&
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
-  end subroutine CT_register_restarts_to_file_2d
+  end subroutine mpp_io_CT_register_restarts_to_file_2d
+
+  !! @brief Register the fields in a coupler_3d_bc_type to be saved in restart files
+  !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
+  !! specified in the field table.
+  subroutine CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, to_read, ocean_restart, directory)
+    type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
+    type(FmsNetcdfDomainFile_t),  dimension(:), pointer  :: bc_rest_files !< Structures describing the restart files
+    integer,                  intent(out) :: num_rest_files !< The number of restart files to use
+    type(domain2D),           intent(in)  :: mpp_domain     !< The FMS domain to use for this registration call
+    logical,                  intent(in)  :: to_read        !< Flag indicating if reading/writing a file
+    logical,         optional,intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
+    character(len=*),optional,intent(in)  :: directory      !< Directory where to open the file
+
+    character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
+    character(len=80) :: file_nm
+    logical :: ocn_rest
+    integer :: f, n, m
+
+    character(len=20), allocatable, dimension(:) :: dim_names !< Array of dimension names
+    character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
+    logical, dimension(max(1,var%num_bcs))     :: file_is_open !< Flag indicating if file is open
+    character(len=20)                          :: dir       !< Directory where to open the file
+    integer                                    :: nz        !< Length of the z direction of each file
+
+    ocn_rest = .true.
+    if (present(ocean_restart)) ocn_rest = ocean_restart
+
+    if (present(directory)) dir = trim(directory)
+
+    if (to_read) then
+        io_type = "read"
+        if (.not. present(directory)) dir = "INPUT/"
+    else
+        io_type = "overwrite"
+        if (.not. present(directory)) dir = "RESTART/"
+    endif
+
+    nz = var%ke - var%ks + 1 !< NOTE: This assumes that the z dimension is the same for every variable
+    ! Determine the number and names of the restart files
+    num_rest_files = 0
+    do n = 1, var%num_bcs
+      if (var%bc(n)%num_fields <= 0) cycle
+      file_nm = trim(var%bc(n)%ice_restart_file)
+      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+      do f = 1, num_rest_files
+        if (trim(file_nm) == trim(rest_file_names(f))) exit
+      enddo
+      if (f>num_rest_files) then
+        num_rest_files = num_rest_files + 1
+        rest_file_names(f) = trim(file_nm)
+      endif
+    enddo
+
+    if (num_rest_files == 0) return
+
+    allocate(bc_rest_files(num_rest_files))
+
+    !< Open the files
+    do n = 1, num_rest_files
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        if (file_is_open(n)) then
+
+             if (to_read) then
+                call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
+             else
+                call register_axis_wrapper(bc_rest_files(n), to_read=to_read, nz=nz)
+             endif
+        endif
+    enddo
+
+    ! Register the fields with the restart files
+    do n = 1, var%num_bcs
+      if (var%bc(n)%num_fields <= 0) cycle
+
+      file_nm = trim(var%bc(n)%ice_restart_file)
+      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
+      do f = 1, num_rest_files
+        if (trim(file_nm) == trim(rest_file_names(f))) exit
+      enddo
+
+      var%bc(n)%fms2_io_rest_type => bc_rest_files(f)
+
+      do m = 1, var%bc(n)%num_fields
+         if (file_is_open(f)) then
+            if( to_read ) then
+                !< If reading get the dimension names from the file
+                if (variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
+                    allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                    call get_variable_dimension_names(bc_rest_files(f), &
+                    & var%bc(n)%field(m)%name, dim_names)
+                endif !< If variable_exists
+            else
+                !< If writing use dummy dimension names
+                allocate(dim_names(4))
+                dim_names(1) = "xaxis_1"
+                dim_names(2) = "yaxis_1"
+                dim_names(3) = "zaxis_1"
+                dim_names(4) = "Time"
+            endif !< to_read
+
+            call register_restart_field(bc_rest_files(f),&
+                 & var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, dim_names, &
+                 & is_optional=var%bc(n)%field(m)%may_init )
+            deallocate(dim_names)
+         endif !< If file_is_open
+      enddo !< num_fields
+    enddo !< num_bcs
+
+  end subroutine CT_register_restarts_3d
 
   !! @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
   !!
   !! This subroutine registers the fields in a coupler_3d_bc_type to be saved in restart files
   !! specified in the field table.
-  subroutine CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
+  subroutine mpp_io_CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
     integer,                  intent(out)   :: num_rest_files !< The number of restart files to use
@@ -3215,17 +3538,17 @@ contains
 
       var%bc(n)%rest_type => bc_rest_files(f)
       do m = 1, var%bc(n)%num_fields
-        var%bc(n)%field(m)%id_rest = register_restart_field(bc_rest_files(f),&
+        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(bc_rest_files(f),&
             & rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values,&
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
-  end subroutine CT_register_restarts_3d
+  end subroutine mpp_io_CT_register_restarts_3d
 
   !> @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
   !!
   !! Registers the fields in a coupler_3d_bc_type to be saved in the specified restart file.
-  subroutine CT_register_restarts_to_file_3d(var, file_name, rest_file, mpp_domain, varname_prefix)
+  subroutine mpp_io_CT_register_restarts_to_file_3d(var, file_name, rest_file, mpp_domain, varname_prefix)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     character(len=*),         intent(in)  :: file_name !< The name of the restart file
     type(restart_file_type),  pointer     :: rest_file !< A (possibly associated) structure describing the restart file
@@ -3247,19 +3570,80 @@ contains
       do m = 1, var%bc(n)%num_fields
         var_name = trim(var%bc(n)%field(m)%name)
         if (present(varname_prefix)) var_name = trim(varname_prefix)//trim(var_name)
-        var%bc(n)%field(m)%id_rest = register_restart_field(rest_file,&
+        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(rest_file,&
             & file_name, var_name, var%bc(n)%field(m)%values,&
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
-  end subroutine CT_register_restarts_to_file_3d
+  end subroutine mpp_io_CT_register_restarts_to_file_3d
 
+  subroutine CT_restore_state_2d(var, use_fms2_io, directory, all_or_nothing, all_required, test_by_field)
+    type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
+    character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
+                                                    !! be found.  The default for FMS is 'INPUT'.
+    logical,        optional, intent(in)    :: all_or_nothing !< If true and there are non-mandatory
+                                                    !! restart fields, it is still an error if some
+                                                    !! fields are read successfully but others are not.
+    logical,        optional, intent(in)    :: all_required !< If true, all fields must be successfully
+                                                    !! read from the restart file, even if they were
+                                                    !! registered as not mandatory.
+    logical,        optional, intent(in)    :: test_by_field !< If true, all or none of the variables
+                                                    !! in a single field must be read successfully.
+    logical,        intent(in)    :: use_fms2_io !< This is just to distinguish the interfaces
+
+    integer :: n, m, num_fld
+    character(len=80) :: unset_varname
+    logical :: any_set, all_set, all_var_set, any_var_set, var_set
+
+    any_set = .false.
+    all_set = .true.
+    num_fld = 0
+    unset_varname = ""
+
+    do n = 1, var%num_bcs
+      any_var_set = .false.
+      all_var_set = .true.
+      do m = 1, var%bc(n)%num_fields
+        var_set = .false.
+        if (check_if_open(var%bc(n)%fms2_io_rest_type)) then
+            var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%name)
+        endif
+
+        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+        if (var_set) any_set = .true.
+        if (all_set) all_set = var_set
+        if (var_set) any_var_set = .true.
+        if (all_var_set) all_var_set = var_set
+      enddo
+
+      num_fld = num_fld + var%bc(n)%num_fields
+      if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
+        if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
+            & "CT_restore_state_2d: test_by_field is true, and "//&
+            & trim(unset_varname)//" was not read but some other fields in "//&
+            & trim(trim(var%bc(n)%name))//" were.")
+      endif
+    enddo
+
+    if ((num_fld > 0) .and. present(all_or_nothing)) then
+      if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL,&
+          & "CT_restore_state_2d: all_or_nothing is true, and "//&
+          & trim(unset_varname)//" was not read but some other fields were.")
+    endif
+
+    if (present(all_required)) then
+      if (all_required .and. .not.all_set) then
+        call mpp_error(FATAL, "CT_restore_state_2d: all_required is true, but "//&
+            & trim(unset_varname)//" was not read from its restart file.")
+      endif
+    endif
+  end subroutine CT_restore_state_2d
 
   !> @brief Reads in fields from restart files into a coupler_2d_bc_type
   !!
   !! This subroutine reads in the fields in a coupler_2d_bc_type that have been saved in restart
   !! files.
-  subroutine CT_restore_state_2d(var, directory, all_or_nothing, all_required, test_by_field)
+  subroutine mpp_io_CT_restore_state_2d(var, directory, all_or_nothing, all_required, test_by_field)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
     character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
                                                     !! be found.  The default for FMS is 'INPUT'.
@@ -3305,7 +3689,7 @@ contains
       num_fld = num_fld + var%bc(n)%num_fields
       if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
         if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
-            & "CT_restore_state_2d: test_by_field is true, and "//&
+            & "mpp_io_CT_restore_state_2d: test_by_field is true, and "//&
             & trim(unset_varname)//" was not read but some other fields in "//&
             & trim(trim(var%bc(n)%name))//" were.")
       endif
@@ -3313,23 +3697,90 @@ contains
 
     if ((num_fld > 0) .and. present(all_or_nothing)) then
       if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL,&
-          & "CT_restore_state_2d: all_or_nothing is true, and "//&
+          & "mpp_io_CT_restore_state_2d: all_or_nothing is true, and "//&
           & trim(unset_varname)//" was not read but some other fields were.")
     endif
 
     if (present(all_required)) then
       if (all_required .and. .not.all_set) then
-        call mpp_error(FATAL, "CT_restore_state_2d: all_required is true, but "//&
+        call mpp_error(FATAL, "mpp_io_CT_restore_state_2d: all_required is true, but "//&
             & trim(unset_varname)//" was not read from its restart file.")
       endif
     endif
-  end subroutine CT_restore_state_2d
+  end subroutine mpp_io_CT_restore_state_2d
 
   !> @brief Read in fields from restart files into a coupler_3d_bc_type
   !!
   !! This subroutine reads in the fields in a coupler_3d_bc_type that have been saved in restart
   !! files.
-  subroutine CT_restore_state_3d(var, directory, all_or_nothing, all_required, test_by_field)
+  subroutine CT_restore_state_3d(var, use_fms2_io, directory, all_or_nothing, all_required, test_by_field)
+    type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
+    character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
+                                                    !! be found.  The default for FMS is 'INPUT'.
+    logical,        intent(in)              :: use_fms2_io !< This is just to distinguish the interfaces
+    logical,        optional, intent(in)    :: all_or_nothing !< If true and there are non-mandatory
+                                                    !! restart fields, it is still an error if some
+                                                    !! fields are read successfully but others are not.
+    logical,        optional, intent(in)    :: all_required !< If true, all fields must be successfully
+                                                    !! read from the restart file, even if they were
+                                                    !! registered as not mandatory.
+    logical,        optional, intent(in)    :: test_by_field !< If true, all or none of the variables
+                                                    !! in a single field must be read successfully.
+
+    integer :: n, m, num_fld
+    character(len=80) :: unset_varname
+    logical :: any_set, all_set, all_var_set, any_var_set, var_set
+
+    any_set = .false.
+    all_set = .true.
+    num_fld = 0
+    unset_varname = ""
+
+    do n = 1, var%num_bcs
+      any_var_set = .false.
+      all_var_set = .true.
+      do m = 1, var%bc(n)%num_fields
+        var_set = .false.
+        if (check_if_open(var%bc(n)%fms2_io_rest_type)) then
+            var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%name)
+        endif
+
+        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+
+        if (var_set) any_set = .true.
+        if (all_set) all_set = var_set
+        if (var_set) any_var_set = .true.
+        if (all_var_set) all_var_set = var_set
+      enddo
+
+      num_fld = num_fld + var%bc(n)%num_fields
+      if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
+        if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
+            & "CT_restore_state_3d: test_by_field is true, and "//&
+            & trim(unset_varname)//" was not read but some other fields in "//&
+            & trim(trim(var%bc(n)%name))//" were.")
+      endif
+    enddo
+
+    if ((num_fld > 0) .and. present(all_or_nothing)) then
+      if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL,&
+          & "CT_restore_state_3d: all_or_nothing is true, and "//&
+          & trim(unset_varname)//" was not read but some other fields were.")
+    endif
+
+    if (present(all_required)) then
+      if (all_required .and. .not.all_set) then
+        call mpp_error(FATAL, "CT_restore_state_3d: all_required is true, but "//&
+            & trim(unset_varname)//" was not read from its restart file.")
+      endif
+    endif
+  end subroutine CT_restore_state_3d
+
+  !> @brief Read in fields from restart files into a coupler_3d_bc_type
+  !!
+  !! This subroutine reads in the fields in a coupler_3d_bc_type that have been saved in restart
+  !! files.
+  subroutine mpp_io_CT_restore_state_3d(var, directory, all_or_nothing, all_required, test_by_field)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
     character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
                                                     !! be found.  The default for FMS is 'INPUT'.
@@ -3376,7 +3827,7 @@ contains
       num_fld = num_fld + var%bc(n)%num_fields
       if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
         if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
-            & "CT_restore_state_3d: test_by_field is true, and "//&
+            & "mpp_io_CT_restore_state_3d: test_by_field is true, and "//&
             & trim(unset_varname)//" was not read but some other fields in "//&
             & trim(trim(var%bc(n)%name))//" were.")
       endif
@@ -3384,17 +3835,17 @@ contains
 
     if ((num_fld > 0) .and. present(all_or_nothing)) then
       if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL,&
-          & "CT_restore_state_3d: all_or_nothing is true, and "//&
+          & "mpp_io_CT_restore_state_3d: all_or_nothing is true, and "//&
           & trim(unset_varname)//" was not read but some other fields were.")
     endif
 
     if (present(all_required)) then
       if (all_required .and. .not.all_set) then
-        call mpp_error(FATAL, "CT_restore_state_3d: all_required is true, but "//&
+        call mpp_error(FATAL, "mpp_io_CT_restore_state_3d: all_required is true, but "//&
             & trim(unset_varname)//" was not read from its restart file.")
       endif
     endif
-  end subroutine CT_restore_state_3d
+  end subroutine mpp_io_CT_restore_state_3d
 
 
   !> @brief Potentially override the values in a coupler_2d_bc_type
