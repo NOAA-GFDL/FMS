@@ -86,6 +86,9 @@ public :: fms2_io_init
 public :: write_restart_bc
 public :: read_restart_bc
 public :: get_mosaic_tile_grid
+public :: ascii_read
+public :: get_mosaic_tile_file
+public :: parse_mask_table
 public :: get_filename_appendix
 public :: set_filename_appendix
 public :: get_instance_filename
