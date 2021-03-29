@@ -1,8 +1,7 @@
 # Supported Public Interfaces for FMS
 
 List of supported public interfaces and associated types meant for external use through the 'fms' module.
-This list can also be found in the Doxygen generated documentation for the 'fms' module (not to be confused with the 'fms_mod' module).
-Importing assignment or operator overrides will import for all types.
+Additional information for this module and others can be found in the Doxygen generated documentation. 
 
 ### affinity
 ##### Interfaces
@@ -558,8 +557,8 @@ Importing assignment or operator overrides will import for all types.
 - mpp_domain_UG_is_tile_root_pe
 - mpp_deallocate_domainUG
 - mpp_get_io_domain_UG_layout
-- operator(.EQ.) for domain2D types
-- operator(.NE.) for domain2D types
+- OPERATOR(.EQ.) for domain2D types
+- OPERATOR(.NE.) for domain2D types
 - mpp_create_super_grid_domain
 ##### Types
 - domain_axis_spec
