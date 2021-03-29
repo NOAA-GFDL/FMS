@@ -20,38 +20,21 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms2_io directory.
+# execute tests in the test_fms/data_override directory.
 
-# Author: Uriel Ramirez 07/07/20
-#
+# Ed Hartnett 11/26/19
+# Uriel Ramirez 07/22/20
+
 # Set common test settings.
 . ../test_common.sh
 
-# make an input.nml for mpp_init to read
+# Run the ongrid test case with 2 halos in x and y
 touch input.nml
 
-# make a masktable
-# This mask table masks out 1 rank (1st line), for a layout of 2,3 (2nd line)
-# 1,1 is the section that gets masked out
-# . ----- . ----- .
-# | (1,1) | (1,2) |
-# . ----- . ----- .
-# | (2,1) | (2,2) |
-# . ----- . ----- .
-# | (3,1) | (3,2) |
-# . ----- . ----- .
-printf "1\n2,3\n1,1" | cat > the_mask
+rm -rf RESTART
+mkdir RESTART
+run_test test_coupler_2d 1
 
-# For example, if you have a grid that is 60 by 60 and a layout of 2,3
-# You are going to need 6 ranks:
-   # rank 1 is going to handle: x: 1-30 y: 1-20
-   # rank 2 is going to handle: x: 31-60 y: 1-20
-   # rank 3 is going to handle: x: 1-30 y: 21-40
-   # rank 4 is going to handle: x: 31-60 y: 21-40
-   # rank 5 is going to handle: x: 1-30 y: 41-60
-   # rank 6 is going to handle: x: 31-60 y: 41-60
-# But with the mask table above, rank 0 is going to be masked out so you know need
-# 5 ranks and nothing is going to be done for x: 1-30 y: 1-20
+run_test test_coupler_3d 1
 
-# run the tests
-run_test test_io_with_mask 5
+rm -rf RESTART

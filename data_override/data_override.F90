@@ -62,15 +62,16 @@ use time_interp_external2_mod, only:time_interp_external_init_fms2io=>time_inter
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    get_external_fileobj
 use fms_mod, only: write_version_number, field_exist, lowercase, check_nml_error
-use fms_io_mod, only: fms_io_init, get_mosaic_tile_file
 use axis_utils_mod, only: get_axis_bounds
 use axis_utils2_mod,  only : nearest_index, axis_edges
+use fms_io_mod, only: fms_io_init, get_mosaic_tile_file_classic=>get_mosaic_tile_file
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
 use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
 use time_manager_mod, only: time_type
 use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
-                            read_data, fms2_io_init, variable_exists
+                            read_data, fms2_io_init, variable_exists, &
+                            get_mosaic_tile_file_fms2_io=>get_mosaic_tile_file
 use get_grid_version_mpp_mod, only: get_grid_version_classic_1, get_grid_version_classic_2
 use get_grid_version_fms2io_mod, only: get_grid_version_1, get_grid_version_2
 
@@ -261,6 +262,8 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
 !  Read coupler_table
     if(use_mpp_bug) then
+     call mpp_error(WARNING, 'data_override_mod:' &
+                     //'MPP_IO is no longer supported.  Please remove "use_mpp_bug" from namelist')
       call mpp_open(iunit, 'data_table', action=MPP_RDONLY)
     else
       iunit = get_unit()
@@ -877,7 +880,11 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 !  Allow on-grid data_overrides on cubed sphere grid
         inquire(file=trim(filename),EXIST=exists)
         if (.not. exists) then
-           call get_mosaic_tile_file(filename,filename2,.false.,domain)
+           if (use_mpp_bug) then
+             call get_mosaic_tile_file_classic(filename,filename2,.false.,domain)
+           else
+             call get_mosaic_tile_file_fms2_io(filename,filename2,.false.,domain)
+           endif
            filename = filename2
         endif
 

@@ -3943,6 +3943,9 @@ CONTAINS
     else
        CALL error_mesg('diag_manager_mod::diag_manager_init',&
                & 'diag_manager is using mpp_io', NOTE)
+       CALL error_mesg('diag_manager_mod::diag_manager_init',&
+             &'MPP_IO is no longer supported.  Please remove from namelist',&
+              &WARNING)
     endif
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)

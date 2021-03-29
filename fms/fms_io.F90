@@ -2491,7 +2491,8 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
   character(len=256) :: dir
   character(len=80)  :: restartname          ! The restart file name (no dir).
   character(len=336) :: restartpath          ! The restart file path (dir/file).
-
+  integer :: i !< For looping
+  logical :: has_dot !< For determining if the time_stamp has a .
   ! This approach is taken rather than interface overloading in order to preserve
   ! use of the register_restart_field infrastructure
 
@@ -2506,7 +2507,15 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
      if (PRESENT(time_stamp)) then
         if(len_trim(restartname)+len_trim(time_stamp) > 79) call mpp_error(FATAL, "fms_io(save_restart): " // &
           "Length of restart file name + time_stamp is greater than allowed character length of 79")
-        restartname = trim(time_stamp)//"."//trim(restartname)
+           has_dot = .false.
+           do i=1,len(time_stamp)
+              if (time_stamp(i:i) == ".") has_dot = .true.
+           enddo
+           if (has_dot) then
+              restartname = trim(time_stamp)//trim(restartname)
+           else
+              restartname = trim(time_stamp)//"."//trim(restartname)
+           endif
      endif
   end if
   if(len_trim(dir) > 0) then
@@ -7411,7 +7420,6 @@ end subroutine close_file
 subroutine set_domain (Domain2)
 
   type(domain2D), intent(in), target :: Domain2
-
   if (.NOT.module_is_initialized) call fms_io_init ( )
 
 !  --- set_domain must be called before a read_data or write_data ---
@@ -7701,7 +7709,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_integer(n)
     integer, intent(in) :: n
     character(len=16) :: string_from_integer
-
+  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
     if(n<0) then
        call mpp_error(FATAL, 'fms_io_mod: n should be non-negative integer, contact developer')
     else if( n<10 ) then
@@ -7732,6 +7740,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_real(a)
     real, intent(in) :: a
     character(len=32) :: string_from_real
+  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
 
     write(string_from_real,*) a
 

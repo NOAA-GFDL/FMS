@@ -17,29 +17,29 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/fms directory of the FMS
+# This is an automake file for the test_fms/data_override directory of the FMS
 # package.
 
 # uramirez, Ed Hartnett
 
-# Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
-# Build these test programs.
-check_PROGRAMS = test_fms
+# Build this test program.
+check_PROGRAMS = test_coupler_2d test_coupler_3d
 
-# These are the sources for the tests.
-test_fms_SOURCES = test_fms.F90
-# Run the test programs.
-TESTS = test_fms2.sh
+# This is the source code for the test.
+test_coupler_2d_SOURCES = test_coupler_2d.F90
+test_coupler_3d_SOURCES = test_coupler_3d.F90
 
-# These will also be included in the distribution.
-EXTRA_DIST = test_fms2.sh
+# Run the test program.
+TESTS = test_coupler.sh
 
-CLEANFILES = input.nml logfile.*.out
+# Include these files with the distribution.
+EXTRA_DIST = test_coupler.sh
 
-clean-local:
-	rm -rf RESTART
+# Clean up
+CLEANFILES = input.nml *.nc* *.out

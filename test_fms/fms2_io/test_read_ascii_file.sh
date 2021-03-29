@@ -20,24 +20,12 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms directory.
-
-# Ed Hartnett 11/29/19
+# execute tests in the test_fms/fms2_io directory.
 
 # Set common test settings.
 . ../test_common.sh
-
-# Create the base input.nml file needed for the tests
-cat <<_EOF > input.nml
-&test_fms_io_nml
-  io_layout = 1,1
-/
-_EOF
-
-# Test the structured grid
-rm -rf RESTART && mkdir RESTART
-run_test test_fms_io 6
-
-# Ensure the restart directory is empty
-rm -rf RESTART && mkdir RESTART
-run_test test_unstructured_fms_io 6
+# make an input.nml for mpp_init to read
+printf "EOF\n&dummy\nEOF" | cat > input.nml
+printf "5, 14   \n23\n\"forlendula\"" | cat > ascii_test1
+# run the tests
+run_test test_read_ascii_file 6 $netcdf_version_skip
