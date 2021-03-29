@@ -17,21 +17,39 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!! @author Ryan Mulhall 2/2021
-!! @brief A convenience file to use any FMS routines, functions, values
-!! @description Imports all supported FMS modules so that any public interfaces,
+!
+!> @author
+!> Ryan Mulhall
+!>
+!> @date
+!> 2/2021
+!>
+!> @brief
+!> A convenience file to use any FMS routines, functions, values
+!>
+!> Imports all supported FMS modules so that any public interfaces,
 !! variables or routines can be used via this module. Excludes mpp_io modules
-!! and routines. Overloaded type operators/assignments cannot be imported individually 
+!! and routines. Overloaded type operators/assignments cannot be imported individually
 !! (ie. `use fms, only: OPERATOR(*)` includes any defined '*' operators within FMS).
 !!
 !! Remappings due to conflicts:
+!!
 !!           get_mosaic_tile_grid from mosaic2(fms2_io) => mosaic2_get_mosaic_tile_grid
+!!
 !!           read_data from interpolator_mod(fms2_io)   => interpolator_read_data
+!!
 !!           ZERO from interpolator_mod(mpp_parameter)  => INTERPOLATOR_ZERO
 !!
-!! Not in this module: axis_utils_mod, fms_io_mod, time_interp_external_mod
+!! Not in this module:
+!!
+!!                     axis_utils_mod, fms_io_mod, time_interp_external_mod
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
 !!                     fms_mod(partial, old io excluded), drifters modules
+!!
+!! A full list of supported interfaces and public types intended for use via
+!! this module is provided in the [supported_interfaces.md](../../supported_interfaces.md)
+!! file.
+
 module fms
 
   !> import each FMS module's public routines/functions, interfaces, and variables
@@ -40,7 +58,7 @@ module fms
   !> affinity
   use fms_affinity_mod, only: fms_affinity_init, fms_affinity_get, &
                               fms_affinity_set
-  
+
   !> amip_interp
   use amip_interp_mod, only: amip_interp_init, get_amip_sst, get_amip_ice, &
                              amip_interp_new,amip_interp_del, amip_interp_type, &
@@ -70,7 +88,7 @@ module fms
 
   !> constants
   use constants_mod
-   
+
   !> coupler
   use coupler_types_mod, only: coupler_types_init, coupler_type_copy, &
                                coupler_type_spawn, coupler_type_set_diags, &
@@ -93,20 +111,18 @@ module fms
                                get_ensemble_pelist, ensemble_pelist_setup, &
                                get_ensemble_filter_pelist
   use atmos_ocean_fluxes_mod, only: atmos_ocean_fluxes_init, atmos_ocean_type_fluxes_init, &
-                               aof_set_coupler_flux 
+                               aof_set_coupler_flux
 
-  !> data override
+  !> data_override
   use data_override_mod, only: data_override_init, data_override, &
-                               data_override_unset_domains, data_override_UG 
-  use get_grid_version_fms2io_mod, only: check_grid_sizes, deg_to_radian,&
-                               get_grid_version_1, get_grid_version_2
+                               data_override_unset_domains, data_override_UG
 
-  !> diag integral
+  !> diag_integral
   use diag_integral_mod, only: diag_integral_init, diag_integral_field_init, &
                                sum_diag_integral_field, diag_integral_output, &
                                diag_integral_end
 
-  !> diag manager
+  !> diag_manager
   !! includes imports from submodules made public
   use diag_manager_mod, only: diag_manager_init, send_data, send_tile_averaged_data, &
                            diag_manager_end, register_diag_field, register_static_field, &
@@ -125,7 +141,7 @@ module fms
                        xgrid_init, AREA_ATM_SPHERE, AREA_OCN_SPHERE, AREA_ATM_MODEL, &
                        AREA_OCN_MODEL, get_ocean_model_area_elements, grid_box_type, &
                        get_xmap_grid_area, put_to_xgrid_ug, get_from_xgrid_ug, &
-                       set_frac_area_ug, FIRST_ORDER, SECOND_ORDER, stock_move_ug, & 
+                       set_frac_area_ug, FIRST_ORDER, SECOND_ORDER, stock_move_ug, &
                        stock_move, stock_type, stock_print, get_index_range, &
                        stock_integrate_2d
   use stock_constants_mod, only: NELEMS, ISTOCK_WATER, ISTOCK_HEAT, ISTOCK_SALT, &
@@ -134,15 +150,13 @@ module fms
 
   !> field manager
   use field_manager_mod, only: field_manager_init, field_manager_end, find_field_index, &
-                         find_field_index_old, find_field_index_new, get_field_info, &
+                         get_field_info, &
                          get_field_method, get_field_methods, parse, fm_change_list, &
                          fm_change_root, fm_dump_list, fm_exists, fm_get_index, &
                          fm_get_current_list, fm_get_length, fm_get_type, fm_get_value, &
-                         fm_get_value_integer, fm_get_value_logical, fm_get_value_real, &
-                         fm_get_value_string, fm_intersection, fm_init_loop, &
+                         fm_intersection, fm_init_loop, &
                          fm_loop_over_list, fm_new_list, fm_new_value, &
-                         fm_new_value_integer, fm_new_value_logical,fm_new_value_real, &
-                         fm_new_value_string, fm_reset_loop, fm_return_root, &
+                         fm_reset_loop, fm_return_root, &
                          fm_modify_name, fm_query_method, fm_find_methods, fm_copy_list, &
                          fm_set_verbosity, fm_field_name_len, fm_path_name_len, &
                          fm_string_len, fm_type_name_len, NUM_MODELS, NO_FIELD, &
@@ -185,9 +199,13 @@ module fms
                          get_variable_missing, get_variable_units, get_time_calendar, &
                          open_check, is_registered_to_restart, check_if_open, &
                          set_fileobj_time_name, is_dimension_registered, &
-                         fms2_io_init, get_mosaic_tile_grid
+                         fms2_io_init, get_mosaic_tile_grid, &
+                         write_restart_bc, read_restart_bc, get_filename_appendix, & !> 2021.02-a1
+                         set_filename_appendix, get_instance_filename, &
+                         nullify_filename_appendix, ascii_read, get_mosaic_tile_file, &
+                         parse_mask_table
   ! used via fms2_io
-  ! fms_io_utils_mod, fms_netcdf_domain_io_mod, netcdf_io_mod, 
+  ! fms_io_utils_mod, fms_netcdf_domain_io_mod, netcdf_io_mod,
   ! fms_netcdf_unstructured_domain_io_mod, blackboxio
 
   !> fms
@@ -210,7 +228,7 @@ module fms
                               interpolator_end, init_clim_diag, query_interpolator, &
                               interpolate_type, CONSTANT, &
                               INTERP_WEIGHTED_P, INTERP_LINEAR_P, INTERP_LOG_P, &
-                              INTERPOLATOR_ZERO=>ZERO, & !! conflicts with mpp_parameter's ZERO 
+                              INTERPOLATOR_ZERO=>ZERO, & !! conflicts with mpp_parameter's ZERO
                               interpolator_read_data=>read_data !! conflicts with fms2_io interface
 
   !> memutils
@@ -286,7 +304,7 @@ module fms
                      mpp_efp_plus, mpp_efp_minus, mpp_efp_to_real, &
                      mpp_real_to_efp, mpp_efp_real_diff, operator(+), &
                      operator(-), assignment(=), mpp_query_efp_overflow_error, &
-                     mpp_reset_efp_overlow_error, mpp_efp_type
+                     mpp_reset_efp_overflow_error, mpp_efp_type
   use mpp_domains_mod, only: domain_axis_spec, domain1D, domain2D, DomainCommunicator2D, &
                      nest_domain_type, mpp_group_update_type, &
                      mpp_domains_set_stack_size, mpp_get_compute_domain, &
@@ -337,16 +355,14 @@ module fms
                      mpp_get_nest_pelist, mpp_get_nest_npes, &
                      mpp_get_nest_fine_pelist, mpp_get_nest_fine_npes, &
                      mpp_domain_UG_is_tile_root_pe, mpp_deallocate_domainUG, &
-                     mpp_get_io_domain_UG_layout, NULL_DOMAIN1D, NULL_DOMAIN2D
+                     mpp_get_io_domain_UG_layout, NULL_DOMAIN1D, NULL_DOMAIN2D, &
+                     mpp_create_super_grid_domain
 
   !> platform
   use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind, c8_kind, c4_kind, &
                           l8_kind, l4_kind, i2_kind, ptr_kind
 
   !> random_numbers
-  use mersennetwister_mod, only: randomNumberSequence, new_RandomNumberSequence, &
-                                finalize_RandomNumberSequence, getRandomInt, &
-                                getRandomPositiveInt, getRandomReal
   use random_numbers_mod, only: randomNumberStream, initializeRandomNumberStream, &
                                 getRandomNumbers, constructSeed
 
@@ -355,9 +371,9 @@ module fms
                                 lookup_es2, lookup_des2, lookup_es2_des2, &
                                 lookup_es3, lookup_des3, lookup_es3_des3, &
                                 lookup_es_des, compute_qs, compute_mrs, &
-                                escomp, descomp 
+                                escomp, descomp
 
-  !> time_interp 
+  !> time_interp
   use time_interp_mod, only: time_interp_init, time_interp, fraction_of_year, &
                              NONE, YEAR, MONTH, DAY
   use time_interp_external2_mod, only: init_external_field, time_interp_external, &
@@ -367,7 +383,7 @@ module fms
                              reset_src_data_region, get_external_fileobj, &
                              NO_REGION, INSIDE_REGION, OUTSIDE_REGION, &
                              SUCCESS, ERR_FIELD_NOT_FOUND
- 
+
   !> time_manager
   use time_manager_mod, only: time_type, operator(+), operator(-), operator(*), &
                               operator(/), operator(>), operator(>=), operator(==), &
@@ -383,7 +399,7 @@ module fms
                               time_manager_init, print_time, print_date, set_date_julian, &
                               get_date_julian, get_date_no_leap, date_to_string
   use get_cal_time_mod, only: get_cal_time
-  
+
   !> topography
   use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
   use topography_mod, only: topography_init, get_topog_mean, get_topog_stdev, &
