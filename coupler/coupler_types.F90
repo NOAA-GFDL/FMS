@@ -3166,13 +3166,11 @@ contains
 
       do m = 1, var%bc(n)%num_fields
          if (file_is_open(f)) then
-            if( to_read ) then
+            if( to_read .and. variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
                 !< If reading get the dimension names from the file
-                if (variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
-                    allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
-                    call get_variable_dimension_names(bc_rest_files(f), &
-                    & var%bc(n)%field(m)%name, dim_names)
-                endif !< If variable_exists
+                allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                call get_variable_dimension_names(bc_rest_files(f), &
+                & var%bc(n)%field(m)%name, dim_names)
             else
                 !< If writing use dummy dimension names
                 allocate(dim_names(3))
