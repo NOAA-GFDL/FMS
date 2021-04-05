@@ -1,0 +1,71 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+#
+# Each line is a file pattern followed by one or more owners.  The owner
+# can be specified by their @username, or an email address.
+#
+# Order is important.  The last matching pattern takes the most precedence.
+
+# These owners will be the default owners for all the files in the
+# repository.  Unless a later match is found, these owners
+# will be requested for a review when a PR is opened.
+*          @wrongkindofdoctor @thomas-robinson @bensonr @rem1776
+
+# GNU autotools files
+Makefile.am      @uramirez8707 @rem1776
+/configure.ac    @uramirez8707 @rem1776
+/m4/             @uramirez8707 @rem1776
+*.m4             @uramirez8707 @rem1776
+
+# cmake files
+CM*              @mlee03 @ngs333
+cmake            @mlee03 @ngs333
+
+# Files specific to GitHub or GitLab
+/.github/        @GFDL-Eric @rem1776
+/.gitlab/        @GFDL-Eric @rem1776
+
+# Testing files
+/.gitlab-ci.yml  @uramirez8707 @mlee03 @bensonr @thomas-robinson @wrongkindofdoctor @rem1776
+/test_fms/       @uramirez8707 @mlee03 @bensonr @thomas-robinson @wrongkindofdoctor @rem1776
+
+# Specific component directories
+/affinity/          @bensonr
+/test_fms/affinity/ @bensonr @rem1776
+
+/block_control/          @bensonr
+/test_fms/block_control/ @bensonr @rem1776
+
+/data_override/          @GFDL-Eric
+/test_fms/data_override/ @GFDL-Eric @rem1776
+
+/diag_manager            @thomas-robinson @ngs333
+/test_fms/diag_manager/  @thomas-robinson @ngs333
+
+/fv3gfs/          @bensonr
+
+/fms/             @wrongkindofdoctor @thomas-robinson @rem1776
+/test_fms/fms/    @wrongkindofdoctor @thomas-robinson @rem1776
+/fms2/            @uramirez8707 @GFDL-Eric
+/test_fms/fms2/   @uramirez8707 @GFDL-Eric
+
+/libFMS/           @thomas-robinson @rem1776
+
+/mpp/              @wrongkindofdoctor @thomas-robinson @bensonr
+/test_fms/mpp/     @wrongkindofdoctor @thomas-robinson @bensonr @rem1776

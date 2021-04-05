@@ -1576,6 +1576,7 @@ end subroutine check_message_size
     integer                          :: ism, iem, jsm, jem
     integer                          :: is2, ie2, js2, je2
     integer                          :: is3, ie3, js3, je3
+    integer                          :: isd3, ied3, jsd3, jed3
     integer                          :: isd2, ied2, jsd2, jed2
     logical                          :: folded, need_adjust_1, need_adjust_2, need_adjust_3, folded_north
     type(overlap_type)               :: overlap
@@ -2377,6 +2378,7 @@ end subroutine check_message_size
           jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%compute%end+nhalo+jshift
           is=isc; ie=iec; js=jsc; je=jec
           is2 = 0; ie2 = -1; js2 = 0; je2 = -1
+          is3 = 0; ie3 = -1; js3 = 0; je3 = -1
           if(x_cyclic_offset == 0 .AND. y_cyclic_offset == 0) then
              js2 = -1; je2 = 0
              if( jsd .GT. jeg ) then ! jed > jeg
@@ -2399,6 +2401,13 @@ end subroutine check_message_size
                    isd2 = isd; ied2 = ied; jsd2 = jsd; jed2 = jeg
                    jsd = jeg+1
                    call get_fold_index_north(isg, ieg, jeg, ishift, position, is, ie, js, je)
+                   if(isd < isg .and. ied .GE. isg .and. domain%symmetry) then
+                      isd3 = isd; ied3 = isg-1
+                      jsd3 = jsd; jed3 = jed
+                      is3 = is-ioff; ie3=ie-ioff
+                      js3 = js; je3 = je
+                      isd = isg;
+                   endif
                 end if
              endif
 
@@ -2410,6 +2419,9 @@ end subroutine check_message_size
                 call fill_overlap_recv_nofold(overlap, domain, m, is, ie, js, je, isd, ied, jsd, jed, &
                      isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              endif
+
+             if(ie3 .GE. is3) call fill_overlap_recv_nofold(overlap, domain, m, is3, ie3, js3, je3, isd3, ied3, jsd3, jed3, &
+                     isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
 
              if(ie2 .GE. is2) then
                 if( jeg .GE. js2 .AND. jeg .LE. je2 .AND. jed2 == jeg .AND. folded_north &
@@ -2578,6 +2590,7 @@ end subroutine check_message_size
           jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%compute%end+nhalo+jshift
           is=isc; ie=iec; js=jsc; je=jec
           is2 = 0; ie2=-1; js2=0; je2=-1
+          is3 = 0; ie3 = -1; js3 = 0; je3 = -1
           if(x_cyclic_offset == 0 .AND. y_cyclic_offset == 0) then
              js2 = -1; je2 = 0
              if( jsd .GT. jeg ) then ! jed > jeg
@@ -2600,6 +2613,13 @@ end subroutine check_message_size
                    isd2 = isd; ied2 = ied; jsd2 = jsd; jed2 = jeg
                    jsd = jeg+1
                    call get_fold_index_north(isg, ieg, jeg, ishift, position, is, ie, js, je)
+                   if(ied > ieg .and. isd .LE. ieg .and. domain%symmetry) then
+                      isd3 = ieg+1; ied3 = ied
+                      jsd3 = jsd; jed3 = jed
+                      is3 = is+ioff; ie3=ie+ioff
+                      js3 = js; je3 = je
+                      ied = ieg;
+                   endif
                 end if
              endif
              if( jeg .GE. js .AND. jeg .LE. je .AND. jed == jeg .AND. folded_north &
@@ -2610,6 +2630,8 @@ end subroutine check_message_size
                 call fill_overlap_recv_nofold(overlap, domain, m, is, ie, js, je, isd, ied, jsd, jed, &
                      isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              endif
+             if(ie3 .GE. is3) call fill_overlap_recv_nofold(overlap, domain, m, is3, ie3, js3, je3, isd3, ied3, jsd3, jed3, &
+                     isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              if(ie2 .GE. is2) then
                 if(jeg .GE. js2 .AND. jeg .LE. je2 .AND. jed2 == jeg .AND. folded_north &
                      .AND. (position == CORNER .OR. position == NORTH)) then
@@ -2802,7 +2824,7 @@ end subroutine check_message_size
 
     if(ie2 .GE. is2) then
        call insert_update_overlap( overlap, domain%list(m)%pe,              &
-            is2, ie2, js, je, isc, iec, jsc, jec, dir, symmetry=symmetry)
+            is2, ie2, js, je, isc, iec, jsc, jec, dir)
     endif
 
   end subroutine fill_overlap_send_fold
@@ -2911,7 +2933,7 @@ end subroutine check_message_size
 
    if(ie2 .GE. is2) then
       call insert_update_overlap( overlap, domain%list(m)%pe,              &
-           is2, ie2, js, je, isd2, ied2, jsd, jed, dir, symmetry=symmetry)
+           is2, ie2, js, je, isd2, ied2, jsd, jed, dir)
    endif
 
   end subroutine fill_overlap_recv_fold
@@ -5166,6 +5188,12 @@ end subroutine check_message_size
        if(overlap_out%pe .NE. overlap_in%pe) call mpp_error(FATAL,  &
             "mpp_domains_define.inc(set_single_overlap): mismatch of pe between overlap_in and overlap_out")
     endif
+
+    if(isoff .NE. 0 .and. ieoff .NE. 0) call mpp_error(FATAL,  &
+          "mpp_domains_define.inc(set_single_overlap): both isoff and ieoff are non-zero")
+    if(jsoff .NE. 0 .and. jeoff .NE. 0) call mpp_error(FATAL,  &
+          "mpp_domains_define.inc(set_single_overlap): both jsoff and jeoff are non-zero")
+
 
     overlap_out%count = overlap_out%count + 1
     count = overlap_out%count

@@ -25,12 +25,9 @@ include ../../NEMS/src/conf/configure.nems
 LIBRARY  = libfms.a
 FMS_INSTALL=$(realpath $(PWD)/..)/FMS_INSTALL
 
-FFLAGS   += -I../include -I../mpp/include -I../fms
+FFLAGS   += -I../include -I../mpp/include -I../fms -I../fms2_io/include
 
 SRCS_f   =
-
-SRCS_f90 = \
-		   ../oda_tools/xbt_drop_rate_adjust.f90
 
 SRCS_F   =
 
@@ -39,6 +36,7 @@ SRCS_F90 = \
          ../amip_interp/amip_interp.F90                                     \
          ../astronomy/astronomy.F90                                         \
          ../axis_utils/axis_utils.F90                                       \
+         ../axis_utils/axis_utils2.F90                                      \
          ../block_control/block_control.F90                                 \
          ../column_diagnostics/column_diagnostics.F90                       \
          ../constants/constants.F90                                         \
@@ -46,11 +44,12 @@ SRCS_F90 = \
          ../coupler/coupler_types.F90                                       \
          ../coupler/ensemble_manager.F90                                    \
          ../data_override/data_override.F90                                 \
+         ../data_override/get_grid_version_fms2io.F90                       \
+         ../data_override/get_grid_version_mpp.F90                          \
          ../diag_integral/diag_integral.F90                                 \
          ../diag_manager/diag_axis.F90                                      \
          ../diag_manager/diag_data.F90                                      \
          ../diag_manager/diag_grid.F90                                      \
-         ../diag_manager/diag_manifest.F90                                  \
          ../diag_manager/diag_manager.F90                                   \
          ../diag_manager/diag_output.F90                                    \
          ../diag_manager/diag_table.F90                                     \
@@ -64,12 +63,16 @@ SRCS_F90 = \
          ../drifters/quicksort.F90                                          \
          ../exchange/stock_constants.F90                                    \
          ../exchange/xgrid.F90                                              \
-         ../fft/fft.F90                                                     \
-         ../fft/fft99.F90                                                   \
          ../field_manager/field_manager.F90                                 \
          ../field_manager/fm_util.F90                                       \
          ../fms/fms.F90                                                     \
          ../fms/fms_io.F90                                                  \
+         ../fms2_io/blackboxio.F90                                          \
+         ../fms2_io/fms2_io.F90                                             \
+         ../fms2_io/fms_io_utils.F90                                        \
+         ../fms2_io/fms_netcdf_domain_io.F90                                \
+         ../fms2_io/fms_netcdf_unstructured_domain_io.F90                   \
+         ../fms2_io/netcdf_io.F90                                           \
          ../horiz_interp/horiz_interp.F90                                   \
          ../horiz_interp/horiz_interp_bicubic.F90                           \
          ../horiz_interp/horiz_interp_bilinear.F90                          \
@@ -83,6 +86,7 @@ SRCS_F90 = \
          ../mosaic/gradient.F90                                             \
          ../mosaic/grid.F90                                                 \
          ../mosaic/mosaic.F90                                               \
+         ../mosaic/mosaic2.F90                                              \
          ../mpp/mpp.F90                                                     \
          ../mpp/mpp_data.F90                                                \
          ../mpp/mpp_domains.F90                                             \
@@ -90,20 +94,15 @@ SRCS_F90 = \
          ../mpp/mpp_io.F90                                                  \
          ../mpp/mpp_memutils.F90                                            \
          ../mpp/mpp_parameter.F90                                           \
-         ../mpp/mpp_pset.F90                                                \
          ../mpp/mpp_utilities.F90                                           \
-         ../oda_tools/oda_core.F90                                          \
-         ../oda_tools/oda_core_ecda.F90                                     \
-         ../oda_tools/oda_types.F90                                         \
-         ../oda_tools/write_ocean_data.F90                                  \
          ../platform/platform.F90                                           \
          ../random_numbers/MersenneTwister.F90                              \
          ../random_numbers/random_numbers.F90                               \
          ../sat_vapor_pres/sat_vapor_pres.F90                               \
          ../sat_vapor_pres/sat_vapor_pres_k.F90                             \
-         ../station_data/station_data.F90                                   \
          ../time_interp/time_interp.F90                                     \
          ../time_interp/time_interp_external.F90                            \
+         ../time_interp/time_interp_external2.F90                           \
          ../time_manager/get_cal_time.F90                                   \
          ../time_manager/time_manager.F90                                   \
          ../topography/gaussian_topog.F90                                   \
@@ -113,14 +112,12 @@ SRCS_F90 = \
 
 SRCS_c   = \
          ../affinity/affinity.c                                             \
-         ../memutils/memuse.c                                               \
          ../mosaic/create_xgrid.c                                           \
          ../mosaic/gradient_c2l.c                                           \
          ../mosaic/interp.c                                                 \
          ../mosaic/mosaic_util.c                                            \
          ../mosaic/read_mosaic.c                                            \
-         ../mpp/nsclock.c                                                   \
-         ../mpp/threadloc.c
+         ../mpp/mpp_memuse.c
 
 DEPEND_FILES = $(SRCS_f) $(SRCS_f90) $(SRCS_F) $(SRCS_F90)
 

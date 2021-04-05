@@ -49,8 +49,7 @@ module horiz_interp_mod
 !-----------------------------------------------------------------------
 
 use fms_mod,                    only: write_version_number, fms_error_handler
-use fms_mod,                    only: file_exist, close_file
-use fms_mod,                    only: check_nml_error, open_namelist_file
+use fms_mod,                    only: check_nml_error
 use mpp_mod,                    only: mpp_error, FATAL, stdout, stdlog, mpp_min
 use mpp_mod,                    only: input_nml_file, WARNING, mpp_pe, mpp_root_pe
 use constants_mod,              only: pi
@@ -252,20 +251,8 @@ contains
   if(module_is_initialized) return
   call write_version_number("HORIZ_INTERP_MOD", version)
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, horiz_interp_nml, iostat=io)
   ierr = check_nml_error(io,'horiz_interp_nml')
-#else
-  if (file_exist('input.nml')) then
-     unit = open_namelist_file ( )
-     ierr=1
-     do while (ierr /= 0)
-     read  (unit, nml=horiz_interp_nml, iostat=io, end=10)
-     ierr = check_nml_error(io,'horiz_interp_nml')  ! also initializes nml error codes
-     enddo
-10   call close_file (unit)
-  endif
-#endif
   if (mpp_pe() == mpp_root_pe() ) then
      unit = stdlog()
      write (unit, nml=horiz_interp_nml)
@@ -1222,61 +1209,3 @@ contains
 !#####################################################################
 
 end module horiz_interp_mod
-
-! <INFO>
-!   <NOTE>
-!       Has not been checked with grids that do not cover the sphere.
-!
-!       Has not been checked with the optional mask arguments.
-!
-!       If a latitude or longitude index cannot be found the tolerance
-!       used for making this determination may need to be increased.
-!       This can be done by increasing the value of module variable
-!       num_iters (default 4).
-!   </NOTE>
-!   <TESTPROGRAM>
-!     <PRE>
-!       program test
-!       use horiz_interp_mod
-!       implicit none
-!       integer, parameter :: nxi=177, nyi=91, nxo=133, nyo=77 ! resolution
-!       real :: zi(nxi,nyi), zo(nxo,nyo)                       ! data
-!       real :: xi(nxi+1), yi(nyi+1), xo(nxo+1), yo(nyo+1)     ! grid edges
-!       real :: pi, tpi, hpi, dx, dy
-!
-!       ! constants
-!         hpi = acos(0.0)
-!          pi = hpi*2.0
-!         tpi = hpi*4.0
-!
-!       ! grid setup: west to east, south to north
-!         dx = tpi/real(nxi); call setaxis (0.,dx,xi);   xi(nxi+1) = xi(1)+tpi
-!         dx = tpi/real(nxo); call setaxis (0.,dx,xo);   xo(nxo+1) = xo(1)+tpi
-!         dy =  pi/real(nyi); call setaxis (-hpi,dy,yi); yi(nyi+1) = hpi
-!         dy =  pi/real(nyo); call setaxis (-hpi,dy,yo); yo(nyo+1) = hpi
-!
-!       ! random data on the input grid
-!         call random_number (zi)
-!
-!       ! interpolate (flipping y-axis)
-!         call horiz_interp (zi(:,1:nyi:+1), xi, yi(1:nyi+1:+1), xo, yo(1:nyo+1:+1), zo, verbose=2)
-!         call horiz_interp (zi(:,nyi:1:-1), xi, yi(nyi+1:1:-1), xo, yo(1:nyo+1:+1), zo, verbose=2)
-!         call horiz_interp (zi(:,nyi:1:-1), xi, yi(nyi+1:1:-1), xo, yo(nyo+1:1:-1), zo, verbose=2)
-!         call horiz_interp (zi(:,1:nyi:+1), xi, yi(1:nyi+1:+1), xo, yo(nyo+1:1:-1), zo, verbose=2)
-!
-!       contains
-!     ! set up a sequence of numbers
-!         subroutine setaxis (xo,dx,x)
-!         real, intent(in)  :: xo, dx
-!         real, intent(out) :: x(:)
-!         integer :: i
-!           x(1) = xo
-!           do i=2,size(x(:))
-!             x(i) = x(i-1)+dx
-!           enddo
-!         end subroutine setaxis
-!
-!       end program test
-!     </PRE>
-!   </TESTPROGRAM>
-! </INFO>

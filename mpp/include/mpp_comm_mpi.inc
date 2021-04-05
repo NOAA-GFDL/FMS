@@ -27,12 +27,14 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
-  subroutine mpp_init( flags, localcomm )
+  subroutine mpp_init( flags, localcomm, test_level )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm
+  integer, optional, intent(in) :: test_level
   integer                       :: my_pe, num_pes, len, i, iunit
   logical                       :: opened, existed
   integer                       :: unit_begin, unit_end, unit_nml, io_status
+  integer                       :: t_level
   character(len=5) :: this_pe
   type(mpp_type), pointer :: dtype
 
@@ -48,14 +50,14 @@
   endif
   call MPI_COMM_RANK( mpp_comm_private, pe,   error )
   call MPI_COMM_SIZE( mpp_comm_private, npes, error )
-#ifdef use_MPI_SMA
-  call SHMEM_BARRIER_ALL()
-  call SHPALLOC( p_pSync, SHMEM_BARRIER_SYNC_SIZE, error, -1 )
-  call SHMEM_BARRIER_ALL()
-#endif
 
   module_is_initialized = .TRUE.
-
+  if (present(test_level)) then
+    t_level = test_level
+  else
+    t_level = -1
+  endif
+  if (t_level == 0) return
 
   !PEsets: make defaults illegal
   allocate(peset(0:current_peset_max))
@@ -74,11 +76,13 @@
   call MPI_COMM_GROUP( mpp_comm_private, peset(0)%group, error )
   world_peset_num = get_peset( (/(i,i=0,npes-1)/) )
   current_peset_num = world_peset_num !initialize current PEset to world
+  if (t_level == 1) return
 
   !initialize clocks
   call SYSTEM_CLOCK( count=tick0, count_rate=ticks_per_sec, count_max=max_ticks )
   tick_rate = 1./ticks_per_sec
   clock0 = mpp_clock_id( 'Total runtime', flags=MPP_CLOCK_SYNC )
+  if (t_level == 2) return
 
   ! Create the bytestream (default) mpp_datatype
   mpp_byte%counter = 1
@@ -101,9 +105,11 @@
      debug   = flags.EQ.MPP_DEBUG
      verbose = flags.EQ.MPP_VERBOSE .OR. debug
   end if
+  if (t_level == 3) return
 
   call mpp_init_logfile()
   call read_input_nml
+  if (t_level == 4) return
 
   !--- read namelist
 #ifdef INTERNAL_FILE_NML
@@ -124,6 +130,7 @@
   if (io_status > 0) then
      call mpp_error(FATAL,'=>mpp_init: Error reading input.nml')
   endif
+  if (t_level == 5) return
 
   if(sync_all_clocks .AND. mpp_pe()==mpp_root_pe() ) call mpp_error(NOTE, &
      "mpp_mod: mpp_nml variable sync_all_clocks is set to .true., all clocks are synchronized in mpp_clock_begin.")
@@ -148,6 +155,8 @@
      endif
   endif
 
+  if (t_level == 6) return
+
 ! max_request is set to maximum of npes * REQUEST_MULTIPLY ( default is 20) and MAX_REQUEST_MIN ( default 10000)
   max_request = max(MAX_REQUEST_MIN, mpp_npes()*REQUEST_MULTIPLY)
 
@@ -159,6 +168,8 @@
   request_recv(:) = MPI_REQUEST_NULL
   size_recv(:)    = 0
   type_recv(:)    = 0
+
+  if (t_level == 7) return
 
   !if optional argument logunit=stdout, write messages to stdout instead.
   !if specifying non-defaults, you must specify units not yet in use.
@@ -326,68 +337,6 @@ subroutine mpp_exit()
 
   return
 end subroutine mpp_exit
-
-!#######################################################################
-    subroutine mpp_malloc( ptr, newlen, len )
-      integer, intent(in)    :: newlen
-      integer, intent(inout) :: len
-#ifdef use_MPI_SMA
-      real                   :: dummy
-      pointer( ptr, dummy )
-      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_MALLOC: You must first call mpp_init.' )
-!use existing allocation if it is enough
-      if( newlen.LE.len )return
-
-      call SHMEM_BARRIER_ALL()
-!if the pointer is already allocated, deallocate
-!      if( len.NE.0 )call SHPDEALLC( ptr, error_8, -1 ) !BWA: error_8 instead of error, see PV 682618 (fixed in mpt.1.3.0.1)
-      if( len.NE.0 )call SHPDEALLC( ptr, error, -1 )
-!allocate new length: assume that the array is KIND=8
-      call SHPALLOC( ptr, newlen, error, -1 )
-      len = newlen
-      call SHMEM_BARRIER_ALL()
-#else
-      integer(POINTER_KIND), intent(in) :: ptr
-      call mpp_error( FATAL, 'mpp_malloc: requires use_MPI_SMA' )
-#endif
-      return
-    end subroutine mpp_malloc
-
-#ifdef use_MPI_GSM
-!#######################################################################
- !--- routine to perform GSM allocations
- !
-subroutine mpp_gsm_malloc( ptr, len )
-  use mpp_data_mod,      only : peset, current_peset_num
-  integer(KIND=MPI_ADDRESS_KIND), intent(in)    :: len
-  real                   :: dummy
-  integer                :: ierror
-  !argument ptr is a cray pointer, points to a dummy argument in this routine
-  pointer( ptr, dummy )
-  include "mpi_gsmf.h"
-  if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GSM_MALLOC: You must first call mpp_init.' )
-
-  call gsm_alloc(len, GSM_SINGLERANK, 0, peset(current_peset_num)%id, ptr, ierror)
-  if (ierror .eq. -1) call mpp_error( FATAL, 'MPP_GSM_MALLOC: gsm_alloc failed.' )
-  return
-end subroutine mpp_gsm_malloc
-
-!#######################################################################
- !--- routine to free GSM allocations
- !
-subroutine mpp_gsm_free( ptr )
-  use mpp_data_mod,      only : peset, current_peset_num
-  real                   :: dummy
-  integer                :: ierror
-  !argument ptr is a cray pointer, points to a dummy argument in this routine
-  pointer( ptr, dummy )
-  include "mpi_gsmf.h"
-
-  call gsm_free(dummy, peset(current_peset_num)%id, ierror)
-  if (ierror .eq. -1) call mpp_error( FATAL, 'MPP_GSM_FREE: gsm_free failed.' )
-  return
-end subroutine mpp_gsm_free
-#endif
 
 !#######################################################################
     !set the mpp_stack variable to be at least n LONG words long
@@ -1354,6 +1303,34 @@ end subroutine mpp_gsm_free
 #undef MPP_TYPE_
 #undef MPP_TYPE_BYTELEN_
 #undef MPI_TYPE_
+#define MPP_ALLTOALL_ mpp_alltoall_cmplx4
+#define MPP_ALLTOALLV_ mpp_alltoall_cmplx4_v
+#define MPP_ALLTOALLW_ mpp_alltoall_cmplx4_w
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_BYTELEN_ 8
+#define MPI_TYPE_ MPI_COMPLEX8
+#include <mpp_alltoall_mpi.h>
+
+#undef MPP_ALLTOALL_
+#undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
+#undef MPP_TYPE_
+#undef MPP_TYPE_BYTELEN_
+#undef MPI_TYPE_
+#define MPP_ALLTOALL_ mpp_alltoall_cmplx8
+#define MPP_ALLTOALLV_ mpp_alltoall_cmplx8_v
+#define MPP_ALLTOALLW_ mpp_alltoall_cmplx8_w
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_BYTELEN_ 16
+#define MPI_TYPE_ MPI_COMPLEX16
+#include <mpp_alltoall_mpi.h>
+
+#undef MPP_ALLTOALL_
+#undef MPP_ALLTOALLV_
+#undef MPP_ALLTOALLW_
+#undef MPP_TYPE_
+#undef MPP_TYPE_BYTELEN_
+#undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_logical4
 #define MPP_ALLTOALLV_ mpp_alltoall_logical4_v
 #define MPP_ALLTOALLW_ mpp_alltoall_logical4_w
@@ -1412,6 +1389,22 @@ end subroutine mpp_gsm_free
 #define MPP_TYPE_CREATE_ mpp_type_create_real8
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #define MPI_TYPE_ MPI_REAL8
+#include <mpp_type_mpi.h>
+
+#undef MPP_TYPE_CREATE_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx4
+#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPI_TYPE_ MPI_COMPLEX8
+#include <mpp_type_mpi.h>
+
+#undef MPP_TYPE_CREATE_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx8
+#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPI_TYPE_ MPI_COMPLEX16
 #include <mpp_type_mpi.h>
 
 #undef MPP_TYPE_CREATE_

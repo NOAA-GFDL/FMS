@@ -1,0 +1,14 @@
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"ocn_default%4yr%2mo%2dy%2hr",      6,  "hours", 1, "hours", "time", 6, "hours", "2 1 1 0 0 0"
+"ocn_middle%4yr%2mo%2dy%2hr",      6,  "hours", 1, "hours", "time", 6, "hours", "2 1 1 0 0 0", 0, "", "middle"
+"ocn_begin%4yr%2mo%2dy%2hr",      6,  "hours", 1, "hours", "time", 6, "hours", "2 1 1 0 0 0" 0, "", "begin"
+"ocn_end%4yr%2mo%2dy%2hr",      6,  "hours", 1, "hours", "time", 6, "hours", "2 1 1 0 0 0" 0, "", "end"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "ocn_default%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
+ "test_diag_manager_mod", "sst", "sst", "ocn_middle%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
+ "test_diag_manager_mod", "sst", "sst", "ocn_begin%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
+ "test_diag_manager_mod", "sst", "sst", "ocn_end%4yr%2mo%2dy%2hr",  "all", .true., "none", 2

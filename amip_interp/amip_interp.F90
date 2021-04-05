@@ -84,23 +84,28 @@ use time_manager_mod, only: time_type, operator(+), operator(>), &
 
 ! add by JHC
 use get_cal_time_mod, only: get_cal_time
-use mpp_io_mod, only : mpp_open, mpp_read, MPP_RDONLY, MPP_NETCDF, &
-                       MPP_MULTI, MPP_SINGLE, mpp_close, mpp_get_times
+
 ! end add by JHC
 
 use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
                              horiz_interp_new, horiz_interp_del, &
                              horiz_interp_type, assignment(=)
 
-use           fms_mod, only: file_exist, error_mesg, write_version_number,  &
+use           fms_mod, only: error_mesg, write_version_number,  &
                              NOTE, WARNING, FATAL, stdlog, check_nml_error, &
-                             open_namelist_file, open_ieee32_file,          &
-                             mpp_pe, close_file, lowercase, mpp_root_pe,    &
+                             mpp_pe, lowercase, mpp_root_pe,    &
                              NOTE, mpp_error, fms_error_handler
-use        fms_io_mod, only: read_data, field_size ! add by JHC
+
 use     constants_mod, only: TFREEZE, pi
 use      platform_mod, only: R4_KIND, I2_KIND
 use mpp_mod,           only: input_nml_file
+use fms2_io_mod,       only: FmsNetcdfFile_t, fms2_io_file_exists=>file_exists, open_file, close_file, &
+                             get_dimension_size, fms2_io_read_data=>read_data
+!! These are fms_io specific:
+use        fms_io_mod, only: mpp_io_read_data=>read_data, field_size
+use        mpp_io_mod, only : mpp_open, mpp_read, MPP_RDONLY, MPP_NETCDF, &
+                       MPP_MULTI, MPP_SINGLE, mpp_close, mpp_get_times
+use           fms_mod, only: fms_io_file_exists=>file_exist
 
 implicit none
 private
@@ -262,6 +267,7 @@ end type
    integer, parameter :: maxc = 128
    integer :: unit
    character(len=maxc) :: file_name_sst, file_name_ice
+   type(FmsNetcdfFile_t), target :: fileobj_sst, fileobj_ice
 
    type (date_type) :: Curr_date = date_type( -99, -99, -99 )
    type (date_type) :: Date_end  = date_type( -99, -99, -99 )
@@ -381,6 +387,7 @@ end type
  logical ::  no_anom_sst = .true.
  logical :: use_ncep_ice = .false.
  logical :: interp_oi_sst = .false.       ! changed to false for regular runs
+ logical :: use_mpp_io = .false. ! Set to .true. to use mpp_io, otherwise fms2io is used
 
  namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
                             interp_oi_sst, data_set, date_out_of_range,          &
@@ -389,7 +396,8 @@ end type
                             sst_pert, sst_pert_type, do_sst_pert,                &
                             use_daily,                                           &
                             ! end add by JHC
-                            verbose, i_sst, j_sst, forecast_mode
+                            verbose, i_sst, j_sst, forecast_mode,                &
+                            use_mpp_io
 ! </NAMELIST>
 
 
@@ -435,8 +443,11 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     character(len=30) :: time_unit
     real, dimension(:), allocatable :: timeval
     character(len=maxc) :: ncfilename
+    type(FmsNetcdfFile_t) :: fileobj
+    logical :: the_file_exists
 ! end add by JHC
-
+    !< These are fms_io specific
+    integer :: unit
 
     if(present(err_msg)) err_msg = ''
     if(.not.Interp%I_am_initialized) then
@@ -519,16 +530,6 @@ if ( .not.use_daily ) then
           Interp % Date2 = Date2
       endif
 
-!   ---- if the unit was opened, close it and print dates ----
-
-        if (unit /= -1) then
-           call close_file (unit)
-           if (verbose > 0 .and. mpp_pe() == 0)         &
-                                 call print_dates (Amip_Time,   &
-                                  Interp % Date1, Udate1,  &
-                                  Interp % Date2, Udate2, fmonth)
-        endif
-
 !-----------------------------------------------------------------------
 !---------- time interpolation (between months) of sst's ---------------
 !-----------------------------------------------------------------------
@@ -575,24 +576,39 @@ else
     call horiz_interp_new ( Interp%Hintrp2, lon_bnd, lat_bnd, &
                              lon_model, lat_model, interp_method="bilinear" )
 
+    if (use_mpp_io) then
+       the_file_exists = fms_io_file_exists(ncfilename)
+    else
+       the_file_exists = fms2_io_file_exists(ncfilename)
+    endif !if (use_mpp_io)
 
-    if ( (.NOT. file_exist(ncfilename))  ) call mpp_error ('amip_interp_mod', &
+    if ( (.NOT. the_file_exists)  ) then
+        call mpp_error ('amip_interp_mod', &
              'cannot find daily SST input data file: '//trim(ncfilename), NOTE)
-
-    if (file_exist(ncfilename)) then
+    else
         if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
              'Reading NetCDF formatted daily SST from: '//trim(ncfilename), NOTE)
 
-        call field_size(ncfilename, 'TIME', siz)
-        nrecords = siz (1)
-        if (nrecords < 1) call mpp_error('amip_interp_mod', &
+        if (use_mpp_io) then
+            call field_size(ncfilename, 'TIME', siz)
+            nrecords = siz (1)
+            if (nrecords < 1) call mpp_error('amip_interp_mod', &
                            'Invalid number of SST records in daily SST data file: '//trim(ncfilename), FATAL)
-        allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
+            allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
 
-        call mpp_open( unit, ncfilename, MPP_RDONLY, MPP_NETCDF, MPP_MULTI, MPP_SINGLE )
-        call mpp_get_times(unit, timeval)
-        call mpp_close(unit)
+            call mpp_open( unit, ncfilename, MPP_RDONLY, MPP_NETCDF, MPP_MULTI, MPP_SINGLE )
+            call mpp_get_times(unit, timeval)
+            call mpp_close(unit)
+        else
+            if(.not. open_file(fileobj, trim(ncfilename), 'read')) &
+                call error_mesg ('get_amip_sst', 'Error in opening file '//trim(ncfilename), FATAL)
 
+            call get_dimension_size(fileobj, 'TIME', nrecords)
+            if (nrecords < 1) call mpp_error('amip_interp_mod', &
+                           'Invalid number of SST records in daily SST data file: '//trim(ncfilename), FATAL)
+            allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
+            call fms2_io_read_data(fileobj, 'TIME', timeval)
+        endif !if (use_mpp_io)
 !!! DEBUG CODE
 !          if (mpp_pe() == 0) then
 !             print *, 'JHC: nrecords = ', nrecords
@@ -626,8 +642,13 @@ else
    !---- read NETCDF data ----
      if ( .not. allocated(tempamip) ) allocate (tempamip(mobs_sst,nobs_sst))
 
-     if (file_exist(ncfilename)) then
-          call read_data(ncfilename, 'SST', tempamip, timelevel=k, no_domain=.true.)
+     if (the_file_exists) then
+          if (use_mpp_io) then
+             call mpp_io_read_data(ncfilename, 'SST', tempamip, timelevel=k, no_domain=.true.)
+          else
+             call fms2_io_read_data(fileobj, 'SST', tempamip, unlim_dim_level=k)
+             call close_file(fileobj)
+          endif !if (use_mpp_io)
           tempamip = tempamip + TFREEZE
 
 !!! DEBUG CODE
@@ -811,16 +832,6 @@ else
 
     endif
 
-!   ---- if the unit was opened, close it and print dates ----
-
-      if (unit /= -1) then
-         call close_file (unit)
-         if (verbose > 0 .and. mpp_pe() == 0)         &
-                               call print_dates (Amip_Time,   &
-                                Interp % Date1, Udate1,  &
-                                Interp % Date2, Udate2, fmonth)
-      endif
-
 !-----------------------------------------------------------------------
 !---------- time interpolation (between months) ------------------------
 !-----------------------------------------------------------------------
@@ -949,19 +960,8 @@ endif
 
 !   ---- read namelist ----
 
-#ifdef INTERNAL_FILE_NML
     read (input_nml_file, amip_interp_nml, iostat=io)
     ierr = check_nml_error(io,'amip_interp_nml')
-#else
-    if ( file_exist('input.nml')) then
-       unit = open_namelist_file( )
-       ierr=1; do while (ierr /= 0)
-       read  (unit, nml=amip_interp_nml, iostat=io, end=10)
-       ierr = check_nml_error(io,'amip_interp_nml')
-       enddo
-  10   call close_file (unit)
-    endif
-#endif
 
 !  ----- write namelist/version info -----
     call write_version_number("AMIP_INTERP_MOD", version)
@@ -970,7 +970,6 @@ endif
     if (mpp_pe() == 0) then
         write (unit,nml=amip_interp_nml)
     endif
-    call close_file (unit)
 
     if ( .not. use_ncep_sst ) interp_oi_sst = .false.
 
@@ -1064,16 +1063,33 @@ endif
               print *, 'ice_crit,tice_crit_k=',ice_crit,tice_crit_k
 
 !  --- check existence of sst data file ??? ---
+    file_name_sst = trim(file_name_sst)//'.nc'
+    file_name_ice = trim(file_name_ice)//'.nc'
 
-    if (.not.file_exist(trim(file_name_sst)) .and. .not.file_exist(trim(file_name_sst)//'.nc')) then
-      call error_mesg ('amip_interp_init', &
-            'Neither '//trim(file_name_sst)//' or '//trim(file_name_sst)//'.nc exists', FATAL)
-    endif
-    if (.not.file_exist(trim(file_name_ice)) .and. .not.file_exist(trim(file_name_ice)//'.nc')) then
-      call error_mesg ('amip_interp_init', &
-            'Neither '//trim(file_name_ice)//' or '//trim(file_name_ice)//'.nc exists', FATAL)
-    endif
+    if (use_mpp_io) then
+       if (.not. fms_io_file_exists(trim(file_name_sst)) ) then
+           call error_mesg ('amip_interp_init', &
+               'file '//trim(file_name_sst)//' does not exist', FATAL)
+       endif
+       if (.not. fms_io_file_exists(trim(file_name_ice)) ) then
+           call error_mesg ('amip_interp_init', &
+               'file '//trim(file_name_ice)//' does not exist', FATAL)
+       endif
+    else
+       if (.not. fms2_io_file_exists(trim(file_name_sst)) ) then
+           call error_mesg ('amip_interp_init', &
+               'file '//trim(file_name_sst)//' does not exist', FATAL)
+       endif
+       if (.not. fms2_io_file_exists(trim(file_name_ice)) ) then
+           call error_mesg ('amip_interp_init', &
+               'file '//trim(file_name_ice)//' does not exist', FATAL)
+       endif
 
+       if (.not. open_file(fileobj_sst, trim(file_name_sst), 'read')) &
+           call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_sst), FATAL)
+       if (.not. open_file(fileobj_ice, trim(file_name_ice), 'read')) &
+           call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_ice), FATAL)
+    endif !if (use_mpp_io)
     module_is_initialized = .true.
 
  end subroutine amip_interp_init
@@ -1413,45 +1429,25 @@ endif
      real,             intent(out) :: dat(mobs,nobs)
      real :: tmp_dat(360,180)
 
-     real   (R4_KIND) :: dat4(mobs,nobs)
      integer(I2_KIND) :: idat(mobs,nobs)
      integer :: nrecords, yr, mo, dy, ierr, k
      integer, dimension(:), allocatable :: ryr, rmo, rdy
      character(len=38)   :: mesg
      character(len=maxc) :: ncfilename, ncfieldname
+     type(FmsNetcdfFile_t), pointer :: fileobj
 
     !---- set file and field name for NETCDF data sets ----
 
         ncfieldname = 'sst'
      if(type(1:3) == 'sst') then
-        ncfilename = trim(file_name_sst)//'.nc'
+        ncfilename = trim(file_name_sst)
+        if (.not. use_mpp_io) fileobj => fileobj_sst
      else if(type(1:3) == 'ice') then
-        ncfilename = trim(file_name_ice)//'.nc'
+        ncfilename = trim(file_name_ice)
+        if (.not. use_mpp_io) fileobj => fileobj_ice
         if (lowercase(trim(data_set)) == 'amip2' .or. &
             lowercase(trim(data_set)) == 'hurrell' .or. &
             lowercase(trim(data_set)) == 'daily') ncfieldname = 'ice' ! modified by JHC
-     endif
-
-    !---- make sure IEEE format file is open ----
-
-     if ( (.NOT. file_exist(ncfilename))  ) then
-
-       ! rewind condition (if unit is open)
-        if (unit /= -1 .and. Curr_date % year == 0 .and.   &
-             date % month <= Curr_date % month ) then
-           if (verbose > 1 .and. mpp_pe() == 0)  &
-                print *, ' rewinding unit = ', unit
-           rewind unit
-        endif
-
-        if (unit == -1) then
-           if (type(1:3) == 'sst') then
-              unit = open_ieee32_file (file_name_sst, 'read')
-           else if (type(1:3) == 'ice') then
-              unit = open_ieee32_file (file_name_ice, 'read')
-           endif
-        endif
-
      endif
 
      dy = 0 ! only processing monthly data
@@ -1459,71 +1455,43 @@ endif
      if (verbose > 2 .and. mpp_pe() == 0)  &
           print *, 'looking for date = ', Date
 
-    !---- check dates in NETCDF file -----
-
      ! This code can handle amip1, reynolds, or reyoi type SST data files in netCDF format
-     if (file_exist(ncfilename)) then
-        if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
-             'Reading NetCDF formatted input data file: '//trim(ncfilename), NOTE)
-        call read_data (ncfilename, 'nrecords', nrecords, no_domain=.true.)
+     if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
+          'Reading NetCDF formatted input data file: '//trim(ncfilename), NOTE)
+
+     if (use_mpp_io) then
+        call mpp_io_read_data (ncfilename, 'nrecords', nrecords, no_domain=.true.)
         if (nrecords < 1) call mpp_error('amip_interp_mod', &
                            'Invalid number of SST records in SST datafile: '//trim(ncfilename), FATAL)
         allocate(ryr(nrecords), rmo(nrecords), rdy(nrecords))
-        call read_data(ncfilename, 'yr', ryr, no_domain=.true.)
-        call read_data(ncfilename, 'mo', rmo, no_domain=.true.)
-        call read_data(ncfilename, 'dy', rdy, no_domain=.true.)
-        ierr = 1
-        do k = 1, nrecords
-          yr = ryr(k);  mo = rmo(k)
-          Adate = date_type( yr, mo, 0)
-          Curr_date = Adate
-          if (verbose > 2 .and. mpp_pe() == 0)  &
-                print *, '....... checking   ', Adate
-          if (Date == Adate) ierr = 0
-          if (yr == 0 .and. mo == Date%month) ierr = 0
-          if (ierr == 0) exit
-        enddo
-        if (ierr .ne. 0) call mpp_error('amip_interp_mod', &
-                         'Model time is out of range not in SST data: '//trim(ncfilename), FATAL)
+        call mpp_io_read_data(ncfilename, 'yr', ryr, no_domain=.true.)
+        call mpp_io_read_data(ncfilename, 'mo', rmo, no_domain=.true.)
+        call mpp_io_read_data(ncfilename, 'dy', rdy, no_domain=.true.)
+     else
+        call fms2_io_read_data (fileobj, 'nrecords', nrecords)
+        if (nrecords < 1) call mpp_error('amip_interp_mod', &
+                           'Invalid number of SST records in SST datafile: '//trim(ncfilename), FATAL)
+        allocate(ryr(nrecords), rmo(nrecords), rdy(nrecords))
+        call fms2_io_read_data(fileobj, 'yr', ryr)
+        call fms2_io_read_data(fileobj, 'mo', rmo)
+        call fms2_io_read_data(fileobj, 'dy', rdy)
+     endif !if (use_mpp_io)
+
+     ierr = 1
+     do k = 1, nrecords
+       yr = ryr(k);  mo = rmo(k)
+       Adate = date_type( yr, mo, 0)
+       Curr_date = Adate
+       if (verbose > 2 .and. mpp_pe() == 0)  &
+             print *, '....... checking   ', Adate
+       if (Date == Adate) ierr = 0
+       if (yr == 0 .and. mo == Date%month) ierr = 0
+       if (ierr == 0) exit
+     enddo
+     if (ierr .ne. 0) call mpp_error('amip_interp_mod', &
+                      'Model time is out of range not in SST data: '//trim(ncfilename), FATAL)
         deallocate(ryr, rmo, rdy)
        !PRINT *, 'New SST data: ', k, yr, mo, dy, Date%year, Date%month, Date%day, ryr(1), rmo(1)
-
-    !---- check dates in IEEE file -----
-
-     else
-        if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
-             'Reading native formatted input data file: '//trim(data_set), NOTE)
-        k = 0
-        do
-           k = k + 1
-           if (lowercase(trim(data_set)) == 'amip2' .or. lowercase(trim(data_set)) == 'hurrell') then
-              read (unit, end=10)  yr, mo,     dat4
-              dat=dat4
-           else
-              read (unit, end=10)  yr, mo, dy, idat
-           endif
-           !new     read (unit, end=10)  yr, mo, dy
-           Adate = date_type( yr, mo, dy )
-           Curr_date = Adate
-           if (verbose > 2 .and. mpp_pe() == 0)  &
-                print *, '....... checking   ', Adate
-
-           !     --- found date ---
-           if (Date == Adate)                    exit
-           if (Date%month == mo .and. Date%day == dy .and. Date%year == yr ) exit
-           !     --- otherwise use monthly climo ---
-           if (yr == 0 .and. Date % month == mo) exit
-
-           !     --- skip this data record ---
-           !new  if (lowercase(trim(data_set)) /= 'amip2') read (unit)
-        enddo
-
-        !     --- read data ---
-        !new  if (lowercase(trim(data_set)) /= 'amip2') read (unit) idat
-
-        !   --- check if climo used when not wanted ---
-
-     endif ! if(file_exist(ncfilename))
 
    !---- check if climatological data should be used ----
 
@@ -1539,20 +1507,30 @@ endif
 
    !---- read NETCDF data ----
 
-     if (file_exist(ncfilename)) then
-         if ( interp_oi_sst ) then
-              call read_data(ncfilename, ncfieldname, tmp_dat, timelevel=k, no_domain=.true.)
+     if ( interp_oi_sst ) then
+          if (use_mpp_io) then
+             call mpp_io_read_data(ncfilename, ncfieldname, tmp_dat, timelevel=k, no_domain=.true.)
+          else
+             call fms2_io_read_data(fileobj, ncfieldname, tmp_dat, unlim_dim_level=k)
+          endif !if (use_mpp_io)
 !     interpolate tmp_dat(360, 180) ---> dat(mobs,nobs) (to enable SST anom computation)
-              if ( mobs/=360 .or. nobs/=180 ) then
-                   call a2a_bilinear(360, 180, tmp_dat, mobs, nobs, dat)
-              else
-                   dat(:,:) = tmp_dat(:,:)
-              endif
-         else
-              call read_data(ncfilename, ncfieldname, dat, timelevel=k, no_domain=.true.)
-         endif
-        idat =  nint(dat*100.) ! reconstruct packed data for reproducibity
+          if ( mobs/=360 .or. nobs/=180 ) then
+               call a2a_bilinear(360, 180, tmp_dat, mobs, nobs, dat)
+          else
+               dat(:,:) = tmp_dat(:,:)
+          endif
+     else
+          if (use_mpp_io) then
+              call mpp_io_read_data(ncfilename, ncfieldname, dat, timelevel=k, no_domain=.true.)
+          else
+              call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
+          endif !if (use_mpp_io)
      endif
+    if (use_mpp_io) then
+        idat =  nint(dat*100.) ! reconstruct packed data for reproducibility
+    else
+        idat =  nint(dat) ! reconstruct packed data for reproducibility
+    endif !(use_mpp_io)
 
    !---- unpacking of data ----
 

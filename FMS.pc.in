@@ -1,0 +1,41 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+# Including the following, as they may be useful when building other components
+# and as a way to better record how the library was built.
+ccompiler=@CC@
+fccompiler=@FC@
+cppflagss.compiled=@CPPFLAGS@
+cflags.compiled=@CFLAGS@
+fcflags.compiled=@FCFLAGS@
+ldflags.compiled=@LDFLAGS@
+
+Name: FMS
+Description: The Flexible Modeling System Infrastructure Library
+URL: https://www.gfdl.noaa.gov/fms
+Version: @VERSION@
+Libs: -L$(libdir) -lFMS
+Libs.private: @LIBS@
+Cflags: -I${includedir}
+Fflags: -I${includedir}

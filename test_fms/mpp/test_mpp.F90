@@ -23,31 +23,19 @@
 program test   !test various aspects of mpp_mod
 #include <fms_platform.h>
 
-#ifdef sgi_mipspro
-  use shmem_interface
-#endif
-
   use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, stdout
-  use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync, mpp_malloc
+  use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
   use mpp_mod, only : mpp_gather, mpp_error, FATAL, mpp_sync_self
   use mpp_io_mod, only: mpp_io_init, mpp_flush
-#ifdef use_MPI_GSM
-  use mpp_mod, only : mpp_gsm_malloc, mpp_gsm_free
-#endif
 
   implicit none
 
   integer, parameter              :: n=1048576
   real, allocatable, dimension(:) :: a, b, c
-#ifdef use_MPI_GSM
-  real                            :: d(n)
-  pointer (locd, d)
-#else
   real, allocatable, dimension(:) :: d
   integer(LONG_KIND) :: locd
-#endif
   integer                         :: tick, tick0, ticks_per_sec, id
   integer                         :: pe, npes, root, i, j, k, l, m, n2, istat
   integer                         :: out_unit
@@ -67,11 +55,6 @@ program test   !test various aspects of mpp_mod
     call test_gather2DV(npes,pe,root,out_unit)
   if( pe.EQ.root ) print *, '------------------> Finished test_gather <------------------'
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_broadcast <------------------'
-    call test_broadcast_2D()
-    call test_broadcast_char()
-  if( pe.EQ.root ) print *, '------------------> Finished test_broadcast <------------------'
-
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
   if( pe.EQ.root ) print *, '------------------> Calling test_time_transmit <------------------'
     call test_time_transmit()
@@ -90,123 +73,26 @@ program test   !test various aspects of mpp_mod
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_chksum <------------------'
 
 !test of pointer sharing
-#ifdef use_MPI_GSM
-      call mpp_gsm_malloc( locd, sizeof(d) )
-#else
   if( pe.EQ.root )then
       allocate( d(n) )
       locd = LOC(d)
   end if
   call mpp_broadcast(locd,root)
-#endif
   if( pe.EQ.root )then
       call random_number(d)
   end if
   call mpp_sync()
 !  call test_shared_pointers(locd,n)
 
-#ifdef use_MPI_GSM
-  call mpp_gsm_free( locd )
-#else
   if( pe.EQ.root )then
       deallocate( d )
   end if
-#endif
-
 
   call mpp_exit()
 
 contains
 
   !***********************************************
-  !currently only test the mpp_broadcast_char
-
-  subroutine test_broadcast_char()
-     integer, parameter :: ARRAYSIZE = 3
-     integer, parameter :: STRINGSIZE = 256
-     character(len=STRINGSIZE), dimension(ARRAYSIZE) :: textA, textB
-     integer :: n
-
-     textA(1) = "This is line 1 "
-     textA(2) = "Here comes the line 2 "
-     textA(3) = "Finally is line 3 "
-     do n = 1, ARRAYSIZE
-        textB(n) = TextA(n)
-     enddo
-
-     if(mpp_pe() .NE. mpp_root_pe()) then
-        do n =1, ARRAYSIZE
-           textA(n) = ""
-        enddo
-     endif
-
-     !--- comparing textA and textB. textA and textB are supposed to be different on pe other than root_pe
-     if(mpp_pe() == mpp_root_pe()) then
-        do n = 1, ARRAYSIZE
-           if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should equal textB")
-        enddo
-     else
-        do n = 1, ARRAYSIZE
-           if(textA(n) == textB(n)) call mpp_error(FATAL, "test_broadcast: on root_pe, textA should not equal textB")
-        enddo
-     endif
-     call mpp_broadcast(textA, STRINGSIZE, mpp_root_pe())
-     !--- after broadcast, textA and textB should be the same
-     do n = 1, ARRAYSIZE
-        if(textA(n) .NE. textB(n)) call mpp_error(FATAL, "test_broadcast: after broadcast, textA should equal textB")
-     enddo
-
-     write(out_unit,*) "==> NOTE from test_broadcast_char: The test is succesful"
-
-  end subroutine test_broadcast_char
-
-  subroutine test_broadcast_2D()
-  integer, parameter :: ARRAYSIZE = 3
-  integer :: n, m, p
-  real :: r(3,3), k(3,3)
-
-  p=0;
-  do n = 1, ARRAYSIZE
-    do m = 1, ARRAYSIZE
-       p = p + 1
-       k(n, m) = p
-       r(n, m) = k(n, m)
-    enddo
-  enddo
-
-  if(mpp_pe() .NE. mpp_root_pe()) then
-    do n =1, ARRAYSIZE
-       r(:, n) = 0
-    enddo
-  endif
-
-!--- comparing array m and n. m and n are supposed to be different on pe other than root_pe
-  if(mpp_pe() == mpp_root_pe()) then
-    do n = 1, ARRAYSIZE
-       do m = 1, ARRAYSIZE
-          if(r(n, m) .NE. k(n, m)) call mpp_error(FATAL, "test_broadcast: on root_pe, m should equal n")
-       enddo
-    enddo
-  else
-    do n = 1, ARRAYSIZE
-       do m = 1, ARRAYSIZE
-          if(r(n, m) == k(n, m)) call mpp_error(FATAL, "test_broadcast: on root_pe, m should not equal n")
-       enddo
-    enddo
-  endif
-
-  call mpp_broadcast(r, ARRAYSIZE*ARRAYSIZE, mpp_root_pe())
-
-!--- after broadcast, m and n should be the same
-  do n = 1, ARRAYSIZE
-     do m =1, ARRAYSIZE
-        if(r(n, m) .NE. k(n, m)) call mpp_error(FATAL, "test_broadcast: after broadcast, m should equal n")
-     enddo
-  enddo
-
-     write(out_unit,*) "==> NOTE from test_broadcast_2D: The test is succesful"
-
-  end subroutine test_broadcast_2D
 
   subroutine test_gather(npes,pe,root,out_unit)
      integer, intent(in) :: npes,pe,root,out_unit

@@ -46,11 +46,14 @@ program test_unstructured_fms_io
                                             mpp_io_exit
     use fms_io_mod,                   only: fms_io_init, &
                                             fms_io_exit
-    implicit none
-
 #ifdef use_netCDF
-#include <netcdf.inc>
+    use netcdf
+    use netcdf_nf_data
+    use netcdf_nf_interfaces
+    use netcdf4_nf_interfaces
 #endif
+
+    implicit none
 
    !Local variables
     integer(INT_KIND)              :: nx = 8                               !<Total number of grid points in the x-dimension (longitude?)
@@ -71,7 +74,6 @@ program test_unstructured_fms_io
     integer(INT_KIND)              :: stackmaxd = 500000                   !<Default size to which the mpp_domains stack will be set.
     logical(INT_KIND)              :: debug = .false.                      !<Flag to print debugging information.
     character(len=64)              :: test_file = "test_unstructured_grid" !<Base filename for the unit tests.
-    character(len=64)              :: iospec = '-F cachea'                 !<Something cray related ???
     integer(INT_KIND)              :: pack_size = 1                        !<(Number of bits in real(DOUBLE_KIND))/(Number of bits in real)
     integer(INT_KIND)              :: npes                                 !<Total number of ranks in the current pelist.
     integer(INT_KIND)              :: io_status                            !<Namelist read error code.
@@ -97,7 +99,6 @@ program test_unstructured_fms_io
                                         stackmaxd, &
                                         debug, &
                                         test_file, &
-                                        iospec, &
                                         ntiles_x, &
                                         ntiles_y, &
                                         layout, &

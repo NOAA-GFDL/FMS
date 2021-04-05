@@ -257,19 +257,6 @@ subroutine mpp_exit()
 end subroutine mpp_exit
 
 !#######################################################################
- !--- dummy routine, should never been called -------------------------
-    subroutine mpp_malloc( ptr, newlen, len )
-      integer, intent(in)    :: newlen
-      integer, intent(inout) :: len
-      real                   :: dummy
-      pointer( ptr, dummy )
-
-      call mpp_error(FATAL,'mpp_malloc: Should not been called when lib_SMA is not used')
-
-      return
-    end subroutine mpp_malloc
-
-!#######################################################################
     !set the mpp_stack variable to be at least n LONG words long
   subroutine mpp_set_stack_size(n)
     integer, intent(in) :: n

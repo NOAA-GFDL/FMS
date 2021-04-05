@@ -18,7 +18,7 @@
 !***********************************************************************
 program test_mpp_domains
   use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_set_warn_level
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
@@ -54,9 +54,11 @@ program test_mpp_domains
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
+  use fms_affinity_mod, only : fms_affinity_set
+
 
   implicit none
-#include <fms_platform.h>
+#include "../../include/fms_platform.h"
   integer :: pe, npes
   integer :: nx=128, ny=128, nz=40, stackmax=4000000
   integer :: unit=7
@@ -128,7 +130,7 @@ program test_mpp_domains
   integer :: layout(2)
   integer :: id
   integer :: outunit, errunit, io_status
-  integer :: get_cpu_affinity, base_cpu, omp_get_num_threads, omp_get_thread_num
+  integer :: omp_get_num_threads, omp_get_thread_num
 
   call mpp_memuse_begin()
   call mpp_init()
@@ -175,10 +177,9 @@ program test_mpp_domains
   end if
   call mpp_domains_set_stack_size(stackmax)
 
-!$      call omp_set_num_threads(nthreads)
-!$      base_cpu = get_cpu_affinity()
+!$  call omp_set_num_threads(nthreads)
 !$OMP PARALLEL
-!$        call set_cpu_affinity( base_cpu + omp_get_thread_num() )
+!$  call fms_affinity_set("test_mpp_domains", .FALSE., omp_get_num_threads())
 !$OMP END PARALLEL
 
   if( pe.EQ.mpp_root_pe() )print '(a,9i6)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
@@ -198,6 +199,7 @@ program test_mpp_domains
      "test_mpp_domain: nx_cubic and ny_cubic should be both zero or both positive")
 
   if( test_nest .and. (num_nest>0) ) then
+    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain <-------------------'
      do n = 1, num_nest
         if( istart_coarse(n) == 0 .OR. jstart_coarse(n) == 0 ) call mpp_error(FATAL, &
         "test_mpp_domain: check the setting of namelist variable istart_coarse, jstart_coarse")
@@ -409,7 +411,7 @@ contains
     thrnum = omp_get_thread_num()
     write( outunit,'(a,4i6)' )'pe,thrnum,js,je=', &
          pe, thrnum, js+thrnum*jthr,js+(thrnum+1)*jthr-1
-    write( outunit,'(a,3i6)' )'pe,thrnum,node=', pe, thrnum, mpp_node()
+    write( outunit,'(a,2i6)' )'pe,thrnum=', pe, thrnum
 !!$OMP DO
     do k = 1,nz
 !when omp DO is commented out, user must compute j loop limits
