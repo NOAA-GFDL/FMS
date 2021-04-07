@@ -179,6 +179,9 @@ CONTAINS
     END IF
 
     len_file_name = len(trim(file_name))
+!> If the file name has .tileX or .tileX.nc where X is a one or two digit tile number, remove
+!! that suffix from the time name because fms2_io will add it
+!! \note If mpp_domains accepts more than 99 tiles, this will need to be updated
     allocate(character(len=len_file_name) :: fname_no_tile)
     if (len_file_name < 6) then
        if (trim(file_name) == "tile") then
@@ -186,12 +189,33 @@ CONTAINS
        else
           fname_no_tile = trim(file_name)
        endif
+    !> One-digit tile numbers example
+    !! \verbatim
+    !! filename.tile1.nc
+    !!       09876543210
+    !!          ^  ^
+    !! filename.tile1
+    !!    09876543210
+    !!          ^  ^
     elseif (lowercase(file_name(len_file_name-4:len_file_name-1)) .eq. "tile") then
        fname_no_tile = file_name(1:len_file_name-6)
     elseif (len_file_name < 9) then
        fname_no_tile = trim(file_name)
     elseif (lowercase(file_name(len_file_name-7:len_file_name-4)) .eq. "tile") then
        fname_no_tile = file_name(1:len_file_name-9)
+    !> Two-digit tile numbers example
+    !! \verbatim
+    !! filename.tile10.nc
+    !!        09876543210
+    !!          ^  ^
+    !! filename.tile10
+    !!     09876543210
+    !!          ^  ^
+    elseif (lowercase(file_name(len_file_name-5:len_file_name-2)) .eq. "tile") then
+       fname_no_tile = file_name(1:len_file_name-7)
+
+    elseif (lowercase(file_name(len_file_name-5:len_file_name-8)) .eq. "tile") then
+       fname_no_tile = file_name(1:len_file_name-10)
     else
        fname_no_tile = trim(file_name)
     endif
