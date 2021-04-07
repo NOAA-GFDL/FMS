@@ -361,7 +361,7 @@ subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
   if (i .eq. 0) then
     call error("file "//trim(source)//" does not contain .nc")
   endif
-  write(dest, '(a,i1,a)') source(1:i-1)//".tile", &
+  write(dest, '(a,i0,a)') source(1:i-1)//".tile", &
                           domain_tile_id, source(i:len_trim(source))
 end subroutine domain_tile_filepath_mangle
 
