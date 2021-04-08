@@ -481,7 +481,7 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
 end subroutine register_domain_decomposed_dimension
 
 
-!> @brief Add a "domain_decomposed" attribute to certain variables because it is
+!> @brief Add a "domain_decomposed" attribute to the axis variables because it is
 !!        required by mppnccombine.
 !! @internal
 subroutine add_domain_attribute(fileobj, variable_name)
@@ -495,6 +495,12 @@ subroutine add_domain_attribute(fileobj, variable_name)
   integer :: eg
   integer :: s
   integer :: e
+  integer, dimension(2) :: io_layout !< Io_layout in the fileobj's domain
+
+  !< Don't add the "domain_decomposition" variable attribute if the io_layout is
+  !! 1,1, to avoid frecheck "failures"
+  io_layout = mpp_get_io_domain_layout(fileobj%domain)
+  if (io_layout(1)  .eq. 1 .and. io_layout(2) .eq. 1) return
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(variable_name, fileobj%xdims, fileobj%nx)

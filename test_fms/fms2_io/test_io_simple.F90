@@ -156,11 +156,7 @@ program test_io_simple
         if (varname .ne. "lon") stop 31
         if (xtype .ne. NF90_DOUBLE) stop 32
         if (ndims .ne. 1 .or. dimids(1) .ne. 1) stop 33
-        if (nAtts .ne. 1) stop 34
-        err = nf90_get_att(ncid, 1, "domain_decomposition", domain_decomposition)
-        if (err .ne. NF90_NOERR) stop 35
-        if (domain_decomposition(1) .ne. 1 .or. domain_decomposition(2) .ne. 96) stop 36
-        if (domain_decomposition(3) .ne. 1 .or. domain_decomposition(4) .ne. 96) stop 37
+        if (nAtts .ne. 0) stop 34
         err = nf90_get_var(ncid, 1, double_buffer_in)
         if (err .ne. NF90_NOERR) stop 38
         do j = 1, 96
