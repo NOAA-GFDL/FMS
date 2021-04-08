@@ -23,7 +23,7 @@ use constants_mod, only : PI, radius
 use fms_mod, only : uppercase, lowercase, error_mesg, string, FATAL, NOTE
 use fms2_io_mod, only : get_global_attribute, read_data, global_att_exists, &
                         variable_exists, file_exists,  open_file, close_file, get_variable_size, &
-                        FmsNetcdfDomainFile_t, FmsNetcdfFile_t
+                        FmsNetcdfFile_t
 use mosaic2_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
      get_mosaic_xgrid, calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area
 
@@ -105,7 +105,6 @@ logical :: module_is_initialized = .FALSE.
 logical :: grid_spec_exists = .TRUE.
 type(FmsNetcdfFile_t) :: gridfileobj
 type(FmsNetcdfFile_t), dimension(3) :: mosaic_fileobj
-type(FmsNetcdfDomainFile_t) :: gridfileobj_v1
 
 contains
 
@@ -119,22 +118,14 @@ subroutine grid_init
    call open_grid_file(gridfileobj, grid_file)
    great_circle_algorithm = get_great_circle_algorithm()
    grid_version = get_grid_version(gridfileobj)
-   if (grid_version == VERSION_2) then
-       call open_component_mosaics
-   else
-       call swap_grid_file
-   endif
+   if (grid_version == VERSION_2) call open_component_mosaics
    module_is_initialized = .TRUE.
 end subroutine grid_init
 
 subroutine grid_end
    if (grid_spec_exists) then
-       if (grid_version == Version_2) then
-           call close_component_mosaics
-           call close_file(gridfileobj)
-       else
-           call close_file(gridfileobj_v1)
-       endif
+       if (grid_version == Version_2) call close_component_mosaics
+       call close_file(gridfileobj)
    endif
 end subroutine grid_end
 
@@ -154,11 +145,6 @@ function get_great_circle_algorithm
    endif
 end function get_great_circle_algorithm
 
-subroutine swap_grid_file
-    call close_file(gridfileobj)
-    call open_grid_domain_file(gridfileobj_v1, grid_file)
-end subroutine swap_grid_file
-
 subroutine open_grid_file(myfileobj, myfilename)
   type(FmsNetcdfFile_t), intent(out)  :: myfileobj
   character(len=*), intent(in) :: myfilename
@@ -166,14 +152,6 @@ subroutine open_grid_file(myfileobj, myfilename)
       call mpp_error(FATAL, 'grid_mod(open_grid_file):Error in opening file '//trim(myfilename))
    endif
 end subroutine open_grid_file
-
-subroutine open_grid_domain_file(mydomainfileobj, mydomainfilename)
-  type(FmsNetcdfDomainFile_t), intent(out)  :: mydomainfileobj
-  character(len=*), intent(in) :: mydomainfilename
-   if(.not. open_file(mydomainfileobj, mydomainfilename, 'read')) then
-      call mpp_error(FATAL, 'grid_mod(open_grid_file):Error in opening file '//trim(mydomainfilename))
-   endif
-end subroutine open_grid_domain_file
 
 subroutine open_mosaic_file(mymosaicfileobj, component)
   type(FmsNetcdfFile_t), intent(out)  :: mymosaicfileobj
@@ -367,7 +345,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   logical :: is_nest
   integer :: found_xgrid_files ! how many xgrid files we actually found in the grid spec
   integer :: ibegin, iend, bsize, l
-  type(FmsNetcdfDomainFile_t) :: tilefileobj, xgrid_fileobj
+  type(FmsNetcdfFile_t) :: tilefileobj, xgrid_fileobj
 
   select case (grid_version)
   case(VERSION_0,VERSION_1)
@@ -555,7 +533,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
   integer                      :: start(4), nread(4)
   real, allocatable            :: tmp(:,:), x_vert_t(:,:,:), y_vert_t(:,:,:)
   character(len=MAX_FILE)      :: tilefile
-  type(FmsNetcdfDomainFile_t)  :: tilefileobj
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glonb(:))/=nlon+1) &
@@ -644,7 +622,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
   integer :: isg, jsg
   integer :: start(4), nread(4)
   character(len=MAX_FILE)      :: tilefile
-  type(FmsNetcdfDomainFile_t)  :: tilefileobj
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (present(domain)) then
@@ -831,7 +809,7 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
   integer                      :: start(4), nread(4)
   real, allocatable            :: tmp(:,:)
   character(len=MAX_FILE)      :: tilefile
-  type(FmsNetcdfDomainFile_t)  :: tilefileobj
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glon(:))/=nlon) &
@@ -906,7 +884,7 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
   integer :: isg, jsg
   integer :: start(4), nread(4)
   character(len=MAX_FILE)      :: tilefile
-  type(FmsNetcdfDomainFile_t)  :: tilefileobj
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (present(domain)) then
@@ -941,13 +919,13 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
         ! read coordinates of grid cell vertices
-        call read_data(gridfileobj_v1, 'xt'//lowercase(component(1:1)), buffer(1:nlon))
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), buffer(1:nlon))
         do j = js,je
         do i = is,ie
            lon(i+i0,j+j0) = buffer(i)
         enddo
         enddo
-        call read_data(gridfileobj_v1, 'yt'//lowercase(component(1:1)), buffer(1:nlat))
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), buffer(1:nlat))
         do j = js,je
         do i = is,ie
            lat(i+i0,j+j0) = buffer(j)
@@ -955,21 +933,21 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         enddo
         deallocate(buffer)
      case('OCN')
-        call read_data(gridfileobj_v1, 'geolon_t', lon)
-        call read_data(gridfileobj_v1, 'geolat_t', lat)
+        call read_data(gridfileobj, 'geolon_t', lon)
+        call read_data(gridfileobj, 'geolat_t', lat)
      end select
   case(VERSION_1)
      select case(trim(component))
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
         ! read coordinates of grid cell vertices
-        call read_data(gridfileobj_v1, 'xt'//lowercase(component(1:1)), buffer(1:nlon))
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), buffer(1:nlon))
         do j = js,je
         do i = is,ie
            lon(i+i0,j+j0) = buffer(i)
         enddo
         enddo
-        call read_data(gridfileobj_v1, 'yt'//lowercase(component(1:1)), buffer(1:nlat))
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), buffer(1:nlat))
         do j = js,je
         do i = is,ie
            lat(i+i0,j+j0) = buffer(j)
@@ -977,8 +955,8 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         enddo
         deallocate(buffer)
      case('OCN')
-        call read_data(gridfileobj_v1, 'x_T', lon)
-        call read_data(gridfileobj_v1, 'y_T', lat)
+        call read_data(gridfileobj, 'x_T', lon)
+        call read_data(gridfileobj, 'y_T', lat)
      end select
   case(VERSION_2) ! mosaic grid file
      ! get the name of the grid file for the component and tile
