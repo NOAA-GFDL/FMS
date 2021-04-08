@@ -172,6 +172,8 @@ integer(INT_KIND),parameter,public :: CCIDX = 8
 
 integer, parameter, private :: NIDX=8
 
+logical, private :: warn_string_function = .true.
+
 type meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
 !!$ Gfortran on gaea does not yet support deferred length character strings
@@ -7709,7 +7711,11 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_integer(n)
     integer, intent(in) :: n
     character(len=16) :: string_from_integer
-  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
+    
+    if (mpp_pe() == mpp_root_pe() .and. warn_string_function ) &
+            call mpp_error(WARNING, "The function named string has been moved "// &
+            "from fms_io_mod to fms_mod.  Please update your call.")
+    warn_string_function = .false.
     if(n<0) then
        call mpp_error(FATAL, 'fms_io_mod: n should be non-negative integer, contact developer')
     else if( n<10 ) then
@@ -7740,7 +7746,10 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_real(a)
     real, intent(in) :: a
     character(len=32) :: string_from_real
-  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
+    if (mpp_pe() == mpp_root_pe() .and. warn_string_function ) &
+            call mpp_error(WARNING, "The function named string has been moved "// &
+            "from fms_io_mod to fms_mod.  Please update your call.")
+    warn_string_function = .false.
 
     write(string_from_real,*) a
 
