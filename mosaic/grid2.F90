@@ -287,9 +287,9 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
   case(VERSION_0,VERSION_1)
      select case(trim(component))
      case('LND')
-        call read_data(gridfileobj_v1, 'AREA_LND_CELL', cellarea)
+        call read_data(gridfileobj, 'AREA_LND_CELL', cellarea)
      case('ATM','OCN')
-        call read_data(gridfileobj_v1, 'AREA_'//trim(uppercase(component)),cellarea)
+        call read_data(gridfileobj, 'AREA_'//trim(uppercase(component)),cellarea)
      case default
         call error_mesg(module_name//'/get_grid_cell_area',&
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
@@ -351,15 +351,15 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   case(VERSION_0,VERSION_1)
      select case(component)
      case('ATM')
-        call read_data(gridfileobj_v1,'AREA_ATM',area)
+        call read_data(gridfileobj,'AREA_ATM',area)
      case('OCN')
         allocate(rmask(size(area,1),size(area,2)))
-        call read_data(gridfileobj_v1,'AREA_OCN',area)
-        call read_data(gridfileobj_v1,'wet',     rmask)
+        call read_data(gridfileobj,'AREA_OCN',area)
+        call read_data(gridfileobj,'wet',     rmask)
         area = area*rmask
         deallocate(rmask)
      case('LND')
-        call read_data(gridfileobj_v1,'AREA_LND',area)
+        call read_data(gridfileobj,'AREA_LND',area)
      case default
         call error_mesg(module_name//'/get_grid_comp_area',&
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
@@ -552,29 +552,29 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
   case(VERSION_0)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(gridfileobj_v1, 'xb'//lowercase(component(1:1)), glonb)
-        call read_data(gridfileobj_v1, 'yb'//lowercase(component(1:1)), glatb)
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), glatb)
      case('OCN')
-        call read_data(gridfileobj_v1, "gridlon_vert_t", glonb)
-        call read_data(gridfileobj_v1, "gridlat_vert_t", glatb)
+        call read_data(gridfileobj, "gridlon_vert_t", glonb)
+        call read_data(gridfileobj, "gridlat_vert_t", glatb)
      end select
   case(VERSION_1)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(gridfileobj_v1, 'xb'//lowercase(component(1:1)), glonb)
-        call read_data(gridfileobj_v1, 'yb'//lowercase(component(1:1)), glatb)
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), glatb)
      case('OCN')
         allocate (x_vert_t(nlon,1,2), y_vert_t(1,nlat,2) )
         start = 1; nread = 1
         nread(1) = nlon; nread(2) = 1; start(3) = 1
-        call read_data(gridfileobj_v1, "x_vert_T", x_vert_t(:,:,1), corner=start, edge_lengths=nread)
+        call read_data(gridfileobj, "x_vert_T", x_vert_t(:,:,1), corner=start, edge_lengths=nread)
         nread(1) = nlon; nread(2) = 1; start(3) = 2
-        call read_data(gridfileobj_v1, "x_vert_T", x_vert_t(:,:,2), corner=start, edge_lengths=nread)
+        call read_data(gridfileobj, "x_vert_T", x_vert_t(:,:,2), corner=start, edge_lengths=nread)
 
         nread(1) = 1; nread(2) = nlat; start(3) = 1
-        call read_data(gridfileobj_v1, "y_vert_T", y_vert_t(:,:,1), corner=start, edge_lengths=nread)
+        call read_data(gridfileobj, "y_vert_T", y_vert_t(:,:,1), corner=start, edge_lengths=nread)
         nread(1) = 1; nread(2) = nlat; start(3) = 4
-        call read_data(gridfileobj_v1, "y_vert_T", y_vert_t(:,:,2), corner=start, edge_lengths=nread)
+        call read_data(gridfileobj, "y_vert_T", y_vert_t(:,:,2), corner=start, edge_lengths=nread)
         glonb(1:nlon) = x_vert_t(1:nlon,1,1)
         glonb(nlon+1) = x_vert_t(nlon,1,2)
         glatb(1:nlat) = y_vert_t(1,1:nlat,1)
@@ -655,13 +655,13 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)+1))
         ! read coordinates of grid cell vertices
-        call read_data(gridfileobj_v1, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1))
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1))
         do j = js, je+1
            do i = is, ie+1
               lonb(i+i0,j+j0) = buffer(i)
            enddo
         enddo
-        call read_data(gridfileobj_v1, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1))
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1))
         do j = js, je+1
            do i = is, ie+1
               latb(i+i0,j+j0) = buffer(j)
@@ -673,11 +673,11 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
            start = 1; nread = 1
            start(1) = is; start(2) = js
            nread(1) = ie-is+2; nread(2) = je-js+2
-           call read_data(gridfileobj_v1, "geolon_vert_t", lonb, corner=start, edge_lengths=nread)
-           call read_data(gridfileobj_v1, "geolat_vert_t", latb, corner=start, edge_lengths=nread)
+           call read_data(gridfileobj, "geolon_vert_t", lonb, corner=start, edge_lengths=nread)
+           call read_data(gridfileobj, "geolat_vert_t", latb, corner=start, edge_lengths=nread)
          else
-           call read_data(gridfileobj_v1, "geolon_vert_t", lonb)
-           call read_data(gridfileobj_v1, "geolat_vert_t", latb)
+           call read_data(gridfileobj, "geolon_vert_t", lonb)
+           call read_data(gridfileobj, "geolat_vert_t", latb)
          endif
      end select
   case(VERSION_1)
@@ -685,13 +685,13 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)+1))
         ! read coordinates of grid cell vertices
-        call read_data(gridfileobj_v1, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1))
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1))
         do j = js, je+1
            do i = is, ie+1
               lonb(i+i0,j+j0) = buffer(i)
            enddo
         enddo
-        call read_data(gridfileobj_v1, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1))
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1))
         do j = js, je+1
            do i = is, ie+1
               latb(i+i0,j+j0) = buffer(j)
@@ -701,8 +701,8 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
      case('OCN')
         nlon=ie-is+1; nlat=je-js+1
         allocate (x_vert_t(nlon,nlat,4), y_vert_t(nlon,nlat,4) )
-        call read_data(gridfileobj_v1, 'x_vert_T', x_vert_t)
-        call read_data(gridfileobj_v1, 'y_vert_T', y_vert_t)
+        call read_data(gridfileobj, 'x_vert_T', x_vert_t)
+        call read_data(gridfileobj, 'y_vert_T', y_vert_t)
         lonb(1:nlon,1:nlat) = x_vert_t(1:nlon,1:nlat,1)
         lonb(nlon+1,1:nlat) = x_vert_t(nlon,1:nlat,2)
         lonb(1:nlon,nlat+1) = x_vert_t(1:nlon,nlat,4)
@@ -828,20 +828,20 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
   case(VERSION_0)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(gridfileobj_v1, 'xt'//lowercase(component(1:1)), glon)
-        call read_data(gridfileobj_v1, 'yt'//lowercase(component(1:1)), glat)
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), glat)
      case('OCN')
-        call read_data(gridfileobj_v1, "gridlon_t", glon)
-        call read_data(gridfileobj_v1, "gridlat_t", glat)
+        call read_data(gridfileobj, "gridlon_t", glon)
+        call read_data(gridfileobj, "gridlat_t", glat)
      end select
   case(VERSION_1)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(gridfileobj_v1, 'xt'//lowercase(component(1:1)), glon)
-        call read_data(gridfileobj_v1, 'yt'//lowercase(component(1:1)), glat)
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), glat)
      case('OCN')
-        call read_data(gridfileobj_v1, "grid_x_T", glon)
-        call read_data(gridfileobj_v1, "grid_y_T", glat)
+        call read_data(gridfileobj, "grid_x_T", glon)
+        call read_data(gridfileobj, "grid_y_T", glat)
      end select
   case(VERSION_2)
      ! get the name of the grid file for the component and tile
