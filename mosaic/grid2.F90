@@ -47,6 +47,8 @@ public :: get_grid_comp_area
 ! decompose cubed sphere domains -- probably does not belong here, but it should
 ! be in some place available for component models
 public :: define_cube_mosaic
+public :: grid_init
+public :: grid_end
 ! ==== end of public interfaces ==============================================
 
 interface get_grid_size
