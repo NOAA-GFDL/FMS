@@ -51,6 +51,7 @@ public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
 public :: get_checksum
+public :: string
 public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
@@ -68,6 +69,11 @@ type :: char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
+
+interface string
+  module procedure string_from_integer
+  module procedure string_from_real
+end interface string
 
 interface parse_mask_table
   module procedure parse_mask_table_2d
@@ -844,6 +850,47 @@ subroutine get_instance_filename(name_in,name_out)
   end if
 
 end subroutine get_instance_filename
+
+function string_from_integer(n)
+    integer, intent(in) :: n
+    character(len=16) :: string_from_integer
+  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
+    if(n<0) then
+       call mpp_error(FATAL, 'fms_io_mod: n should be non-negative integer, contact developer')
+    else if( n<10 ) then
+       write(string_from_integer,'(i1)') n
+    else if( n<100 ) then
+       write(string_from_integer,'(i2)') n
+    else if( n<1000 ) then
+       write(string_from_integer,'(i3)') n
+    else if( n<10000 ) then
+       write(string_from_integer,'(i4)') n
+    else if( n<100000 ) then
+       write(string_from_integer,'(i5)') n
+    else if( n<1000000 ) then
+       write(string_from_integer,'(i6)') n
+    else if( n<10000000 ) then
+       write(string_from_integer,'(i7)') n
+    else if( n<100000000 ) then
+       write(string_from_integer,'(i8)') n
+    else
+       call mpp_error(FATAL, 'fms_io_mod: n is too big, contact developer')
+    end if
+
+    return
+
+end function string_from_integer
+
+function string_from_real(a)
+    real, intent(in) :: a
+    character(len=32) :: string_from_real
+  call mpp_error(WARNING, "function string has been moved to fms_mod.  Please update.")
+
+    write(string_from_real,*) a
+
+    return
+
+end function string_from_real
 
 include "array_utils.inc"
 include "array_utils_char.inc"
