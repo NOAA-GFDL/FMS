@@ -1,7 +1,7 @@
 name: Generate and host documentation 
 
-## manually run for now
-on: [workflow_dispatch]
+## run on push for now
+on: [push]
 
 jobs:
   update_docs:
@@ -19,3 +19,9 @@ jobs:
         uses: mattnotmitt/doxygen-action@v1
         with:
           doxyfile-path: 'docs/Doxyfile'
+      - name: Deploy
+        used: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+        
