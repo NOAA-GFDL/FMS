@@ -29,7 +29,7 @@ use omp_lib
 use mpp_mod
 use mpp_domains_mod, only: domain2D, domainUG, mpp_get_ntile_count, &
                            mpp_get_current_ntile, mpp_get_tile_id, &
-                           mpp_get_UG_domain_ntiles, mpp_get_UG_domain_tile_id 
+                           mpp_get_UG_domain_ntiles, mpp_get_UG_domain_tile_id
 use platform_mod
 implicit none
 private
@@ -384,7 +384,7 @@ subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
   if (i .eq. 0) then
     call error("file "//trim(source)//" does not contain .nc")
   endif
-  write(dest, '(a,i1,a)') source(1:i-1)//".tile", &
+  write(dest, '(a,i0,a)') source(1:i-1)//".tile", &
                           domain_tile_id, source(i:len_trim(source))
 end subroutine domain_tile_filepath_mangle
 
@@ -700,7 +700,7 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
   integer,          intent(in), optional  :: tile_count !< tile count
 
   character(len=256)                             :: basefile, tilename
-  character(len=1)                               :: my_tile_str
+  character(len=2)                               :: my_tile_str
   integer                                        :: lens, ntiles, ntileMe, tile, my_tile_id
   integer, dimension(:), allocatable             :: tile_id
   type(domain2d), pointer, save                  :: d_ptr =>NULL()
@@ -735,8 +735,8 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
   endif
 
   if(ntiles > 1 .or. my_tile_id > 1 )then
-     write(my_tile_str, '(I1)') my_tile_id
-     tilename = 'tile'//my_tile_str
+     write(my_tile_str, '(I0)') my_tile_id
+     tilename = 'tile'//trim(my_tile_str)
      if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
         basefile = trim(basefile)//'.'//trim(tilename);
      end if
@@ -757,7 +757,7 @@ subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
   type(domainUG),   intent(in), optional :: domain !< domain provided
 
   character(len=256)                     :: basefile, tilename
-  character(len=1)                       :: my_tile_str
+  character(len=2)                       :: my_tile_str
   integer                                :: lens, ntiles, my_tile_id
 
   if(index(file_in, '.nc', back=.true.)==0) then
@@ -778,8 +778,8 @@ subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
   endif
 
   if(ntiles > 1 .or. my_tile_id > 1 )then
-     write(my_tile_str, '(I1)') my_tile_id
-     tilename = 'tile'//my_tile_str
+     write(my_tile_str, '(I0)') my_tile_id
+     tilename = 'tile'//trim(my_tile_str)
      if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
         basefile = trim(basefile)//'.'//trim(tilename);
      end if
