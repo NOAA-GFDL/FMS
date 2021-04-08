@@ -117,8 +117,8 @@ public set_calendar_type
 public get_calendar_type
 public set_ticks_per_second
 public get_ticks_per_second
-public set_date
-public get_date
+public set_date, set_date2
+public get_date, get_date2
 public increment_date
 public decrement_date
 public days_in_month
@@ -199,6 +199,10 @@ end interface
 interface set_date
   module procedure set_date_i, set_date_c
 end interface
+
+interface set_date2
+  module procedure set_date_i2
+end interface set_date2
 
 !======================================================================
 
@@ -1711,6 +1715,51 @@ end function get_ticks_per_second
 
  end subroutine get_date
 ! </SUBROUTINE>
+!:MKL
+ subroutine get_date2(time, year, month, day, hour, minute, second, tick, err_msg)
+
+! Given a time, computes the corresponding date given the selected calendar
+
+ type(time_type), intent(in)    :: time
+ integer, intent(out)           :: second, minute, hour, day, month, year
+ integer, intent(out), optional :: tick
+ character(len=*), intent(out), optional :: err_msg
+ character(len=128) :: err_msg_local
+ integer :: tick1
+
+ if(.not.module_is_initialized) call time_manager_init
+ if(present(err_msg)) err_msg = ''
+
+ select case(calendar_type)
+ case(THIRTY_DAY_MONTHS)
+   call get_date_thirty   (time, year, month, day, hour, minute, second, tick1)
+ case(GREGORIAN)
+   call get_date_gregorian2(time, year, month, day, hour, minute, second, tick1)
+ case(JULIAN)
+   call get_date_julian_private   (time, year, month, day, hour, minute, second, tick1)
+ case(NOLEAP)
+   call get_date_no_leap_private  (time, year, month, day, hour, minute, second, tick1)
+ case(NO_CALENDAR)
+   err_msg_local = 'Cannot produce a date when the calendar type is NO_CALENDAR'
+   if(error_handler('subroutine get_date', err_msg_local, err_msg)) return
+ case default
+   err_msg_local = 'Invalid calendar type'
+   if(error_handler('subroutine get_date', err_msg_local, err_msg)) return
+ end select
+
+ if(present(tick)) then
+   tick = tick1
+ else
+   if(tick1 /= 0) then
+     err_msg_local = 'tick must be present when time has a second fraction'
+     if(error_handler('subroutine get_date', err_msg_local, err_msg)) return
+   endif
+ endif
+
+end subroutine get_date2
+! </SUBROUTINE>
+
+
 !------------------------------------------------------------------------
 
  subroutine get_date_gregorian(time, year, month, day, hour, minute, second, tick)
@@ -1742,6 +1791,79 @@ end function get_ticks_per_second
  tick = time%ticks
 
  end subroutine get_date_gregorian
+!:MKL
+ subroutine get_date_gregorian2(time, year, month, day, hour, minute, second, tick)
+
+! Computes date corresponding to time for gregorian calendar
+
+ type(time_type), intent(in) :: time
+ integer, intent(out) :: year, month, day, hour, minute, second
+ integer, intent(out) :: tick
+ integer :: iday, isec
+
+ integer :: l, ncenturies, nlpyrs
+ integer :: i, yearx, monthx, dayx, idayx
+
+ if(Time%seconds >= 86400) then ! This check appears to be unecessary.
+   call error_mesg('get_date','Time%seconds .ge. 86400 in subroutine get_date_gregorian',FATAL)
+ endif
+
+ iday = mod(Time%days+1,days_in_400_year_period)
+
+ yearx = 1
+ idayx = 0
+ if( iday.eq.0 ) then   ! year 400
+   yearx = 0
+   idayx = -366
+ else if( iday.gt.365 ) then
+   yearx      = int(iday/365) - 1 ! approximation off by -1 year by most
+   ncenturies = int(yearx/100)    ! 36524 days in a century
+   nlpyrs     = int((yearx-ncenturies*100)/4)
+   idayx      = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs
+   if( ncenturies.eq.4 ) idayx = idayx + 1 ! year 400 is a leap year
+   l = 0 ; if ( leap_year_gregorian_int(yearx+1) ) l = 1
+   if ( (iday-idayx).gt.365+l ) then
+     yearx = yearx + 1
+     idayx = idayx + 365 + l
+   end if
+   yearx = yearx + 1
+ end if
+
+ year = 400*int((Time%days+1)/days_in_400_year_period) + yearx
+
+ l = 0 ; if( leap_year_gregorian_int(year) ) l = 1
+ dayx   = iday - idayx
+ if( dayx.le.31 ) then
+   month = 1
+   day   = dayx
+ else
+   monthx = int(dayx/30)
+   if( l.eq.1 ) then
+     do i=1, monthx
+       dayx = dayx - days_per_month(i)
+       if(i.eq.2) dayx = dayx - l
+     end do
+   else
+     do i=1, monthx
+       dayx = dayx - days_per_month(i)
+     end do
+   end if
+   month = monthx + 1
+   day = dayx
+   if( dayx.le.0 ) then
+     month = monthx
+     day = dayx + days_per_month(monthx)
+     if(monthx.eq.2) day = day + l
+   end if
+ end if
+
+ hour   = Time%seconds / 3600
+ isec   = Time%seconds - 3600*hour
+ minute = isec / 60
+ second = isec - 60*minute
+ tick   = time%ticks
+
+ end subroutine get_date_gregorian2
 
 !------------------------------------------------------------------------
  function cut0(string)
@@ -1984,6 +2106,41 @@ end function get_ticks_per_second
 
  end function set_date_private
 ! </FUNCTION>
+!:MKL
+ function set_date_private2(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+
+! Given a date, computes the corresponding time given the selected
+! date time mapping algorithm.  Note that it is possible to specify
+! any number of illegal dates; these are checked for and generate
+! errors as appropriate.
+
+ logical :: set_date_private2
+ integer, intent(in) :: year, month, day, hour, minute, second, tick
+ type(time_type) :: Time_out
+ character(len=*), intent(out) :: err_msg
+
+ if(.not.module_is_initialized) call time_manager_init
+
+ err_msg = ''
+
+ select case(calendar_type)
+ case(THIRTY_DAY_MONTHS)
+   set_date_private2 = set_date_thirty   (year, month, day, hour, minute, second, tick, Time_out, err_msg)
+ case(GREGORIAN)
+   set_date_private2 = set_date_gregorian2(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+ case(JULIAN)
+   set_date_private2 = set_date_julian_private   (year, month, day, hour, minute, second, tick, Time_out, err_msg)
+ case(NOLEAP)
+   set_date_private2 = set_date_no_leap_private  (year, month, day, hour, minute, second, tick, Time_out, err_msg)
+ case (NO_CALENDAR)
+   err_msg = 'Cannot produce a date when calendar type is NO_CALENDAR'
+   set_date_private2 = .false.
+ case default
+   err_msg = 'Invalid calendar type'
+   set_date_private2 = .false.
+ end select
+
+ end function set_date_private2
 
 !------------------------------------------------------------------------
  function set_date_i(year, month, day, hour, minute, second, tick, err_msg)
@@ -2008,6 +2165,31 @@ end function get_ticks_per_second
  endif
 
  end function set_date_i
+!:MKL
+ function set_date_i2(year, month, day, hour, minute, second, tick, err_msg, chooseme)
+ type(time_type) :: set_date_i2
+ integer, intent(in) :: day, month, year
+ integer, intent(in), optional :: second, minute, hour, tick
+ logical, intent(in), optional :: chooseme
+ character(len=*), intent(out), optional :: err_msg
+ integer :: osecond, ominute, ohour, otick
+ character(len=128) :: err_msg_local
+
+ if(.not.module_is_initialized) call time_manager_init
+ if(present(err_msg)) err_msg = ''
+
+! Missing optionals are set to 0
+ osecond = 0; if(present(second)) osecond = second
+ ominute = 0; if(present(minute)) ominute = minute
+ ohour   = 0; if(present(hour))   ohour   = hour
+ otick   = 0; if(present(tick))   otick   = tick
+
+ if(.not.set_date_private2(year, month, day, ohour, ominute, osecond, otick, set_date_i2, err_msg_local)) then
+   if(error_handler('function set_date_i', err_msg_local, err_msg)) return
+ endif
+
+ end function set_date_i2
+
 !------------------------------------------------------------------------
 
  function set_date_c(string, zero_year_warning, err_msg, allow_rounding)
@@ -2163,6 +2345,64 @@ end function get_ticks_per_second
  set_date_gregorian = .true.
 
  end function set_date_gregorian
+!:MKL
+ function set_date_gregorian2(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+ logical :: set_date_gregorian2
+
+! Computes time corresponding to date for gregorian calendar.
+
+ integer,          intent(in)  :: year, month, day, hour, minute, second, tick
+ type(time_type),  intent(out) :: Time_out
+ character(len=*), intent(out) :: err_msg
+ integer :: yr1, day1
+ integer :: ncenturies, nlpyrs, l
+
+ if( .not.valid_increments(year,month,day,hour,minute,second,tick,err_msg) ) then
+   set_date_gregorian2 = .false.
+   return
+ endif
+
+ Time_out%seconds = second + 60*(minute + 60*hour)
+
+ yr1  = mod(year-1,400)
+ day1 = 0
+ if( yr1.gt.0 ) then
+   ncenturies = int( yr1/100 )
+   nlpyrs     = int( (yr1-ncenturies*100)/4 )
+   day1       = ncenturies*36524 + (yr1-ncenturies*100)*365 + nlpyrs
+   if( ncenturies.eq.4) day1 = day1 + 1
+ end if
+
+ l = 0 ; if( leap_year_gregorian_int(year) ) l = 1
+ select case( month )
+ case(1)  ; day1 = day1
+ case(2)  ; day1 = day1 + 31
+ case(3)  ; day1 = day1 + 59 + l
+ case(4)  ; day1 = day1 + 90 + l
+ case(5)  ; day1 = day1 + 120 + l
+ case(6)  ; day1 = day1 + 151 + l
+ case(7)  ; day1 = day1 + 181 + l
+ case(8)  ; day1 = day1 + 212 + l
+ case(9)  ; day1 = day1 + 243 + l
+ case(10) ; day1 = day1 + 273 + l
+ case(11) ; day1 = day1 + 304 + l
+ case(12) ; day1 = day1 + 334 + l
+ end select
+
+ day1 = int((year-1)/400)*days_in_400_year_period + day1 + day - 1
+
+  if(day1 == invalid_date) then
+   err_msg = 'Invalid_date. Date='//convert_integer_date_to_char(year,month,day,hour,minute,second)
+   set_date_gregorian2 = .false.
+   return
+ endif
+
+ Time_out%days = day1
+ Time_out%ticks = tick
+ err_msg = ''
+ set_date_gregorian2 = .true.
+
+end function set_date_gregorian2
 
 !------------------------------------------------------------------------
 
