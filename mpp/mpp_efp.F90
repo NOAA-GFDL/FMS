@@ -30,7 +30,7 @@ implicit none ; private
 public :: mpp_reproducing_sum, mpp_efp_list_sum_across_PEs
 public :: mpp_efp_plus, mpp_efp_minus, mpp_efp_to_real, mpp_real_to_efp, mpp_efp_real_diff
 public :: operator(+), operator(-), assignment(=)
-public :: mpp_query_efp_overflow_error, mpp_reset_efp_overlow_error
+public :: mpp_query_efp_overflow_error, mpp_reset_efp_overflow_error
 
 integer, parameter :: NUMBIT = 46  !< number of bits used in the 64-bit signed integer representation.
 integer, parameter :: NUMINT = 6   !< The number of long integers to use to represent
@@ -560,9 +560,9 @@ function mpp_query_efp_overflow_error()
   mpp_query_efp_overflow_error = overflow_error
 end function mpp_query_efp_overflow_error
 
-subroutine mpp_reset_efp_overlow_error()
+subroutine mpp_reset_efp_overflow_error()
   overflow_error = .false.
-end subroutine mpp_reset_efp_overlow_error
+end subroutine mpp_reset_efp_overflow_error
 
 function mpp_efp_plus(EFP1, EFP2)
   type(mpp_efp_type)             :: mpp_efp_plus
