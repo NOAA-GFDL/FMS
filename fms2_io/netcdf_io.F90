@@ -1973,15 +1973,20 @@ function get_variable_missing(fileobj, variable_name) &
   character(len=*), intent(in) :: variable_name
   real(kind=r8_kind) :: variable_missing
 
+  real(kind=r8_kind) :: variable_missing_1d(1) !< Workaround for pgi
+
   if (variable_att_exists(fileobj, variable_name, "_FillValue")) then
-    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing_value")) then
-    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing")) then
-    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing_1d)
   else
-    variable_missing = MPP_FILL_DOUBLE
+    variable_missing_1d = MPP_FILL_DOUBLE
   endif
+
+  variable_missing = variable_missing_1d(1)
+
 end function get_variable_missing
 
 
