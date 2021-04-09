@@ -10,17 +10,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup repo 
-        run: | # do autotool's job since we don't need a full build environement
+        run: | # do autotool's job of setting input/output paths since we don't need a full build environement
           mkdir gen_docs
           buildDir="`pwd`\/gen_docs"
-          sed 's/\@abs_top_builddir\@\/docs/\$buildDir/' docs/Doxyfile.in > gen_docs/Doxyfile
-          sed -i s/\@abs_top_srcdir\@/'`pwd`'/ gen_docs/Doxyfile
+          sed 's/@abs_top_builddir@\/docs/\$buildDir/' docs/Doxyfile.in > docs/Doxyfile
+          sed -i s/@abs_top_srcdir@/'`pwd`'/ docs/Doxyfile
       - name: Run Doxygen
         uses: mattnotmitt/doxygen-action@v1
         with:
-          doxyfile-path: 'gen_docs/Doxyfile'
+          doxyfile-path: 'docs/Doxyfile'
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          publish_dir: ./gen_docs
