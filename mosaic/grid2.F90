@@ -22,7 +22,7 @@ use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE
 use constants_mod, only : PI, radius
 use fms2_io_mod, only : get_global_attribute, read_data, global_att_exists, &
                         variable_exists, file_exists,  open_file, close_file, get_variable_size, &
-                        FmsNetcdfFile_t, string
+                        FmsNetcdfFile_t, string => string2
 use mosaic2_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
      get_mosaic_xgrid, calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area
 
@@ -163,6 +163,21 @@ subroutine open_mosaic_file(mymosaicfileobj, component)
   call open_grid_file(mymosaicfileobj, grid_dir//trim(mosaicfilename))
 end subroutine open_mosaic_file
 
+function read_file_name(thisfileobj, filevar, level)
+  type(FmsNetcdfFile_t), intent(in)  :: thisfileobj
+  character(len=*), intent(in) :: filevar
+  integer, intent(in) :: level
+  integer, dimension(2) :: file_list_size
+  character(len=MAX_FILE) :: read_file_name
+  character(len=MAX_FILE), dimension(:), allocatable :: file_names
+
+  call get_variable_size(thisfileobj, filevar, file_list_size)
+  allocate(file_names(file_list_size(2)))
+  call read_data(thisfileobj, filevar, file_names)
+  read_file_name = file_names(level)
+  deallocate(file_names)
+end function read_file_name
+
 function get_grid_version(fileobj)
   type(FmsNetcdfFile_t), intent(in) :: fileobj
   integer :: get_grid_version
@@ -230,7 +245,7 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
   integer, intent(inout) :: nx(:),ny(:)
 
   ! local vars
-  integer :: siz(4) ! for the size of external fields
+  integer :: siz(2) ! for the size of external fields
   character(len=MAX_NAME) :: varname1, varname2
 
   varname1 = 'AREA_'//trim(uppercase(component))
@@ -323,7 +338,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   type(domain2d), intent(in), optional :: domain
   ! local vars
   integer :: n_xgrid_files ! number of exchange grid files in the mosaic
-  integer :: siz(4), nxgrid
+  integer :: siz(2), nxgrid
   integer :: i,j,m,n
   integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
   real, allocatable :: xgrid_area(:)
@@ -399,9 +414,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
      allocate(nest_tile_name(ntiles))
      num_nest_tile = 0
      do n = 1, ntiles
-        call read_data(mosaic_fileobj(1), 'gridfiles', tilefile, unlim_dim_level=n)
-        tilefile = grid_dir//trim(tilefile)
-        call open_grid_domain_file(tilefileobj, tilefile)
+        tilefile = read_file_name(mosaic_fileobj(1), 'gridfiles', n)
+        call open_grid_file(tilefileobj, grid_dir//tilefile)
         if (global_att_exists(tilefileobj, "nest_grid")) then
            call get_global_attribute(tilefileobj, "nest_grid", attvalue)
            if(trim(attvalue) == "TRUE") then
@@ -423,8 +437,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         ! loop through all exchange grid files
         do n = 1, n_xgrid_files
            ! get the name of the current exchange grid file
-           call read_data(gridfileobj,xgrid_name,xgrid_file,unlim_dim_level=n)
-           call open_grid_domain_file(xgrid_fileobj, xgrid_file)
+           xgrid_file = read_file_name(gridfileobj,xgrid_name,n)
+           call open_grid_file(xgrid_fileobj, grid_dir//xgrid_file)
            ! skip the rest of the loop if the name of the current tile isn't found
            ! in the file name, but check this only if there is more than 1 tile
            if(n_xgrid_files>1) then
@@ -578,8 +592,8 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
      end select
   case(VERSION_2)
      ! get the name of the grid file for the component and tile
-     call read_data(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles', tilefile, unlim_dim_level=tile)
-     call open_grid_domain_file(tilefileobj, tilefile)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
 
      start = 1; nread = 1
      nread(1) = 2*nlon+1
@@ -709,8 +723,8 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
      end select
   case(VERSION_2)
      ! get the name of the grid file for the component and tile
-     call read_data(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles', tilefile, unlim_dim_level=tile)
-     call open_grid_domain_file(tilefileobj, tilefile)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
      if(PRESENT(domain)) then
         call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
         start = 1; nread = 1
@@ -838,8 +852,8 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
      end select
   case(VERSION_2)
      ! get the name of the grid file for the component and tile
-     call read_data(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles', tilefile, unlim_dim_level=tile)
-     call open_grid_domain_file(tilefileobj, tilefile)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
 
      start = 1; nread = 1
      nread(1) = 2*nlon+1; start(2) = 2
@@ -950,8 +964,8 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
      end select
   case(VERSION_2) ! mosaic grid file
      ! get the name of the grid file for the component and tile
-     call read_data(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles', tilefile, unlim_dim_level=tile)
-     call open_grid_domain_file(tilefileobj, tilefile)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
 
      if(PRESENT(domain)) then
         call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)

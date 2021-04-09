@@ -93,7 +93,7 @@ public :: get_filename_appendix
 public :: set_filename_appendix
 public :: get_instance_filename
 public :: nullify_filename_appendix
-public :: string
+public :: string2
 
 interface open_file
   module procedure netcdf_file_open_wrap
