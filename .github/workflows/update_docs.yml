@@ -19,7 +19,7 @@ jobs:
         with:
           doxyfile-path: 'gen_docs/Doxyfile'
       - name: Copy readme
-        run: cp README.md gen_docs/html
+        run: sudo cp README.md gen_docs/html
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
