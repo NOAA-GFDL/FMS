@@ -13,7 +13,7 @@ jobs:
         run: | # do autotool's job since we don't need a full build environement
           mkdir gen_docs
           buildDir="`pwd`\/gen_docs"
-          sed 's/\@abs_top_builddir\@\/docs/\$buildDir/' docs/Doxygen.in > gen_docs/Doxyfile
+          sed 's/\@abs_top_builddir\@\/docs/\$buildDir/' docs/Doxyfile.in > gen_docs/Doxyfile
           sed -i s/\@abs_top_srcdir\@/'`pwd`'/ gen_docs/Doxyfile
       - name: Run Doxygen
         uses: mattnotmitt/doxygen-action@v1
