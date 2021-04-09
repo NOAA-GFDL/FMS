@@ -1,7 +1,7 @@
-name: Generate and host documentation 
+name: Generate and deploy documentation on GH pages
 
-## run on push for now
-on: [push]
+# update on releases or when triggered manually(must have write access)
+on: [release, workflow_dispatch]
 
 jobs:
   update_docs:
@@ -12,6 +12,7 @@ jobs:
       - name: Setup repo 
         run: | # do autotool's job of setting input/output paths since we don't need a full build environement
           mkdir gen_docs
+          cp README.md gen_docs
           sed 's/@abs_top_builddir@\/docs/gen_docs/' docs/Doxyfile.in > gen_docs/Doxyfile
           sed -i 's/@abs_top_srcdir@/./' gen_docs/Doxyfile
       - name: Run Doxygen
