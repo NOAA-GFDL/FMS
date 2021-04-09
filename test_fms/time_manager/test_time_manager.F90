@@ -32,14 +32,12 @@ program test_time_manager
  use time_manager_mod, only: operator(-), operator(+),  operator(*),  operator(/),  &
                              operator(>), operator(>=), operator(==), operator(/=), &
                              operator(<), operator(<=), operator(//), assignment(=)
- use time_manager0_mod, only: time_type0 => time_type
 
  implicit none
 
- type(time_type) :: Time, time1, time2, Time22
+ type(time_type)  :: Time, time1, time2
  real    :: xx
  integer :: yr, mo, day, hr, min, sec, ticks
- integer :: yr2, mo2, day2, hr2, min2, sec2, ticks2
  integer :: year, month, dday, days_this_month
  integer :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
  logical :: leap
@@ -52,11 +50,11 @@ program test_time_manager
 
 logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true.,test8 =.true.
 logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true.,test16=.true.
-logical :: test17=.true.,test18=.true.,test19=.true.
+logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.,test21=.true.
 
  namelist / test_nml / test1 ,test2 ,test3 ,test4 ,test5 ,test6 ,test7 ,test8,  &
                        test9 ,test10,test11,test12,test13,test14,test15,test16, &
-                       test17,test18,test19
+                       test17,test18,test19,test20,test21
 
  call fms_init
  call constants_init
@@ -561,7 +559,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     write(errunit,'(a)')   '  It can be turned off with: &test_nml test17=.false./'
     write(errunit,'(a,/)') ' ====================================================='
     call set_calendar_type(GREGORIAN)
-    do year=1601,2200
+    do year=16801,2200
       leap = mod(year,4) == 0
       leap = leap .and. .not.mod(year,100) == 0
       leap = leap .or. mod(year,400) == 0
@@ -605,12 +603,58 @@ logical :: test17=.true.,test18=.true.,test19=.true.
     endif
   endif
  !==============================================================================================
-  write(outunit,'(/,a)') '############################################################################'
-  write(outunit,'(a,i6)') ' ticks_per_second=',get_ticks_per_second()
 
- !==============================================================================================
-
+  if(test20) then
+     write(outunit,'(/,a)') '#################################  test20  #################################'
+     call test_new_gregorian(outunit)
+  end if
 
  call fms_io_exit
  call fms_end
+
+contains
+
+  subroutine test_new_gregorian(outunit)
+
+    use time_manager0_mod, only : &
+         time_type0 => time_type, &
+         set_date0 => set_date,   &
+         get_date0 => get_date,   &
+         set_time0 => set_time,   &
+         set_calendar_type0 => set_calendar_type, &
+         GREGORIAN0 => GREGORIAN
+
+    implicit none
+
+    integer, intent(in) :: outunit
+
+    type(time_type0) :: Time0
+    integer :: yr0, mo0, day0, hr0, min0, sec0, ticks0
+
+    call set_calendar_type(GREGORIAN)
+    call set_calendar_type0(GREGORIAN0)
+
+    do year=1,2200
+       leap = mod(year,4) == 0
+       leap = leap .and. .not.mod(year,100) == 0
+       leap = leap .or. mod(year,400) == 0
+       do month=1,12
+          days_this_month = days_per_month(month)
+          if(leap .and. month == 2) days_this_month = 29
+          do dday=1,days_this_month
+             Time  = set_date(year, month, dday, 0, 0, 0)
+             Time0 = set_date0(year, month, dday, 0, 0, 0)
+             call get_date(Time, yr, mo, day, hr, min, sec)
+             call get_date0(Time0, yr0, mo0, day0, hr0, min0, sec0)
+             if ( yr.ne.yr0 .or. mo.ne.mo0 .or. day.ne.day0 ) then
+                write(outunit,"('EXPECTED YEAR',i5,'MO',i3,'DAY',i3)") yr0, mo0, day0
+                write(outunit,"('BUT GOT  YEAR',i5,'MO',i3,'DAY',i3)") yr, mo, day
+                call mpp_error(FATAL, 'ERROR')
+             end if
+          enddo
+       enddo
+    enddo
+
+  end subroutine test_new_gregorian
+
  end program test_time_manager
