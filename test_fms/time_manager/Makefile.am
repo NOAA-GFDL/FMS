@@ -23,7 +23,7 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(MODDIR)
+AM_CPPFLAGS = -I$(MODDIR) -I../../include
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
@@ -32,7 +32,10 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 check_PROGRAMS = test_time_manager
 
 # This is the source code for the test.
-test_time_manager_SOURCES = test_time_manager.F90
+test_time_manager_SOURCES = test_time_manager.F90 time_manager0.F90
+
+time_manager0_mod.mod : time_manager0.$(OBJEXT)
+test_time_manager.$(OBJEXT): time_manager0_mod.mod
 
 # Run the test program.
 TESTS = test_time_manager2.sh

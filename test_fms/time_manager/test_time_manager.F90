@@ -24,7 +24,7 @@ program test_time_manager
  use          fms_mod, only: open_namelist_file, check_nml_error, close_file, open_file
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
  use       fms_io_mod, only: fms_io_exit
- use time_manager_mod, only: time_type, set_date, set_date2, get_date, get_date2, set_time, set_calendar_type, real_to_time_type
+ use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
  use time_manager_mod, only: length_of_year, leap_year, days_in_month, days_in_year, print_time
  use time_manager_mod, only: set_ticks_per_second, get_ticks_per_second
  use time_manager_mod, only: decrement_date, increment_date, get_time, increment_time, decrement_time
@@ -32,6 +32,7 @@ program test_time_manager
  use time_manager_mod, only: operator(-), operator(+),  operator(*),  operator(/),  &
                              operator(>), operator(>=), operator(==), operator(/=), &
                              operator(<), operator(<=), operator(//), assignment(=)
+ use time_manager0_mod, only: time_type0 => time_type
 
  implicit none
 
@@ -570,14 +571,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.
         do dday=1,days_this_month
           Time = set_date(year, month, dday, 0, 0, 0)
           call get_date(Time, yr, mo, day, hr, min, sec)
-          call get_date2(Time, yr2, mo2, day2, hr2, min2, sec2)
-          if( yr.ne.yr2 .or. mo.ne.mo2 .or. day.ne.day2 ) then
-             write(outunit,*) 'YEAR', yr, 'YEAR2', yr2
-             write(outunit,*) 'MONTH', mo, 'MONTH2', mo2
-             write(outunit,*) 'DAY', day, 'DAY2', day2
-             call mpp_error(FATAL,'Error in get_date2')
-          end if
-          !write(outunit,100) yr, mo, day, leap_year(Time), days_in_month(Time), days_in_year(Time)
+          write(outunit,100) yr, mo, day, leap_year(Time), days_in_month(Time), days_in_year(Time)
         enddo
       enddo
     enddo
@@ -614,35 +608,6 @@ logical :: test17=.true.,test18=.true.,test19=.true.
   write(outunit,'(/,a)') '############################################################################'
   write(outunit,'(a,i6)') ' ticks_per_second=',get_ticks_per_second()
 
- !==============================================================================================
- !  Tests Gregorian calendar set_date
- !  This test loops through every day of an 400 year period and writes a line to the output file for each day.
-
-  write(outunit,'(/,a)') '#################################  test set_date  #################################'
-  call set_calendar_type(GREGORIAN)
-  do year=1601,2200
-     leap = mod(year,4) == 0
-     leap = leap .and. .not.mod(year,100) == 0
-     leap = leap .or. mod(year,400) == 0
-     do month=1,12
-        days_this_month = days_per_month(month)
-        if(leap .and. month == 2) days_this_month = 29
-        do dday=1,days_this_month
-           Time = set_date(year, month, dday, 0, 0, 0)
-           Time22 = set_date2(year, month, dday, 0, 0, 0,chooseme=.True.)
-           call get_date(Time, yr, mo, day, hr, min, sec)
-           call get_date(Time22, yr2, mo2, day2, hr2, min2, sec2)
-           if( yr.ne.yr2 .or. mo.ne.mo2 .or. day.ne.day2 ) then
-              write(outunit,*) 'YEAR', yr, 'YEAR2', yr2
-              write(outunit,*) 'MONTH', mo, 'MONTH2', mo2
-              write(outunit,*) 'DAY', day, 'DAY2', day2
-              call mpp_error(FATAL,'Error in get_date2')
-           end if
-          !write(outunit,100) yr, mo, day, leap_year(Time), days_in_month(Time), days_in_year(Time)
-        enddo
-     enddo
-  enddo
-  write(outunit,*) 'done'
  !==============================================================================================
 
 
