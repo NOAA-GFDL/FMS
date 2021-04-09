@@ -18,10 +18,8 @@ jobs:
         uses: mattnotmitt/doxygen-action@v1
         with:
           doxyfile-path: 'gen_docs/Doxyfile'
-      - name: Create additional files
-        run: | # disables jekyll support and copies in readme for main page
-          touch gen_docs/html/.nojekyll
-          cp README.md gen_docs/html
+      - name: Copy readme
+        run: cp README.md gen_docs/html
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
