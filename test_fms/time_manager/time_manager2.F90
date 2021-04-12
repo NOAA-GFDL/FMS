@@ -1727,24 +1727,67 @@ end function get_ticks_per_second
  integer, intent(out) :: tick
  integer :: iday, isec
 
+ integer :: l, ncenturies, nlpyrs
+ integer :: i, yearx, monthx, dayx, idayx
+
  if(Time%seconds >= 86400) then ! This check appears to be unecessary.
    call error_mesg('get_date','Time%seconds .ge. 86400 in subroutine get_date_gregorian',FATAL)
  endif
 
  iday = mod(Time%days+1,days_in_400_year_period)
- if(iday == 0) iday = days_in_400_year_period
 
- year = coded_date(iday)/512
- day = mod(coded_date(iday),32)
- month = coded_date(iday)/32 - 16*year
+ yearx = 1
+ idayx = 0
+ if( iday.eq.0 ) then ! year 400
+   yearx = 0
+   idayx = -366
+ else if( iday.gt.365 ) then
+   yearx      = int(iday/365) - 1 ! approximation off by -1 year by most
+   ncenturies = int(yearx/100)
+   nlpyrs     = int((yearx-ncenturies*100)/4)
+   idayx      = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs ! 36524 days in a century
+   if( ncenturies.eq.4 ) idayx = idayx + 1                             ! year 400 is a leap year
+   l = 0 ; if ( leap_year_gregorian_int(yearx+1) ) l = 1
+   if ( (iday-idayx).gt.365+l ) then ! off by -1 year
+     yearx = yearx + 1
+     idayx = idayx + 365 + l
+   end if
+   yearx = yearx + 1
+ end if
 
- year = year + 400*((Time%days)/days_in_400_year_period)
+ year = 400*int((Time%days+1)/days_in_400_year_period) + yearx
 
- hour = Time%seconds / 3600
- isec  = Time%seconds - 3600*hour
+ l = 0 ; if( leap_year_gregorian_int(year) ) l = 1
+ dayx = iday - idayx
+ if( dayx.le.31 ) then
+   month = 1
+   day   = dayx
+ else
+   monthx = int(dayx/30)
+   if( l.eq.1 ) then
+     do i=1, monthx
+       dayx = dayx - days_per_month(i)
+       if(i.eq.2) dayx = dayx - l
+     end do
+   else
+     do i=1, monthx
+       dayx = dayx - days_per_month(i)
+     end do
+   end if
+   month = monthx + 1
+   day   = dayx
+   if( dayx.le.0 ) then
+     month = monthx
+     day = dayx + days_per_month(monthx)
+     if(monthx.eq.2) day = day + l
+   end if
+ end if
+
+ hour   = Time%seconds / 3600
+ isec   = Time%seconds - 3600*hour
  minute = isec / 60
  second = isec - 60*minute
- tick = time%ticks
+ tick   = time%ticks
 
  end subroutine get_date_gregorian
 !------------------------------------------------------------------------
@@ -2186,28 +2229,76 @@ end function get_ticks_per_second
  integer,          intent(in)  :: year, month, day, hour, minute, second, tick
  type(time_type),  intent(out) :: Time_out
  character(len=*), intent(out) :: err_msg
- integer :: yr1, day1
+ integer :: yearx, monthx, dayx, hrx, minx, secx, tickx, ncenturies, nlpyrs, l
 
  if( .not.valid_increments(year,month,day,hour,minute,second,tick,err_msg) ) then
    set_date_gregorian = .false.
    return
  endif
 
- Time_out%seconds = second + 60*(minute + 60*hour)
+ l = 0 ; if( leap_year_gregorian_int(year) ) l = 1
 
- yr1 = mod(year,400)
- if(yr1 == 0) yr1 = 400
- day1 = date_to_day(yr1,month,day)
-  if(day1 == invalid_date) then
-   err_msg = 'Invalid_date. Date='//convert_integer_date_to_char(year,month,day,hour,minute,second)
-   set_date_gregorian = .false.
-   return
- endif
+ ! Check if date is invalid
+ if(month.eq.2) then
+   if(day.gt.days_per_month(month)+l .or. day.lt.1) then
+     err_msg = 'Invalid_date. Date='//convert_integer_date_to_char(year,month,day,hour,minute,second)
+     set_date_gregorian = .false.
+     return
+   end if
+ else
+   if(day.gt.days_per_month(month) .or. day.lt.1) then
+     err_msg = 'Invalid_date. Date='//convert_integer_date_to_char(year,month,day,hour,minute,second)
+     set_date_gregorian = .false.
+     return
+   end if
+ end if
 
- Time_out%days = day1 + days_in_400_year_period*((year-1)/400)
+Time_out%seconds = second + 60*(minute + 60*hour)
+
+ yearx = mod(year-1,400)
+ dayx  = 0
+ if(yearx.gt.0) then
+   ncenturies = int( yearx/100 )
+   nlpyrs     = int( (yearx-ncenturies*100)/4 )
+   dayx       = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs ! 36524 days in 100 years, year 100 not leap year
+   if(ncenturies.eq.4) dayx = dayx + 1 ! year 400 is a leap year
+ end if
+
+ select case( month )
+ case(1)  ; dayx = dayx
+ case(2)  ; dayx = dayx + 31
+ case(3)  ; dayx = dayx + 59 + l
+ case(4)  ; dayx = dayx + 90 + l
+ case(5)  ; dayx = dayx + 120 + l
+ case(6)  ; dayx = dayx + 151 + l
+ case(7)  ; dayx = dayx + 181 + l
+ case(8)  ; dayx = dayx + 212 + l
+ case(9)  ; dayx = dayx + 243 + l
+ case(10) ; dayx = dayx + 273 + l
+ case(11) ; dayx = dayx + 304 + l
+ case(12) ; dayx = dayx + 334 + l
+ end select
+
+ dayx = int((year-1)/400)*days_in_400_year_period + dayx + day - 1
+ Time_out%days  = dayx
  Time_out%ticks = tick
+
  err_msg = ''
  set_date_gregorian = .true.
+
+ ! check
+ yearx = year ; monthx = month ; dayx = day
+ hrx = hour ; minx = minute ; secx = second ; tickx = tick
+ call get_date_gregorian(Time_out, yearx, monthx, dayx, hrx, minx, secx, tickx)
+ l = 0 ; if( leap_year_gregorian_int(yearx) ) l = 1
+ if( monthx.lt.1 .or. monthx.gt.12 ) then
+   err_msg = 'Invalid_date. Date='//convert_integer_date_to_char(yearx,monthx,dayx,hour,minute,second)
+   set_date_gregorian = .false.
+ else if( dayx.lt.1 .or. dayx.gt.days_per_month(monthx) ) then
+   if( monthx.eq.2 .and. dayx.le.days_per_month(monthx)+l ) return
+   err_msg = 'Invalid_date. Date='//convert_integer_date_to_char(yearx,monthx,dayx,hour,minute,second)
+   set_date_gregorian = .false.
+ end if
 
  end function set_date_gregorian
 
