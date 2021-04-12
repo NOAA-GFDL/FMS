@@ -60,7 +60,7 @@ program test_mpp_domains
   use fms_mod,         only : check_nml_error
   !!
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-  use fms_affinity_mod, only : fms_affinity_set
+  use fms_affinity_mod, only : fms_affinity_set, fms_affinity_init
   use mpp_io_mod,       only: mpp_io_init
   use compare_data_checksums
   use test_domains_utility_mod
@@ -128,7 +128,8 @@ program test_mpp_domains
                                whalo, ehalo, shalo, nhalo, x_cyclic_offset, y_cyclic_offset, &
                                warn_level, wide_halo_x, wide_halo_y, nx_cubic, ny_cubic, &
                                test_performance, test_interface, num_fields, do_sleep, num_iter, &
-                               test_nest, num_nest, ntiles_nest_all, nest_level, tile_fine, &
+                               test_nest, num_nest, ntiles_nest_all, nest_level, &
+                               tile_fine, &
                                tile_coarse, refine_ratio, istart_coarse, icount_coarse, &
                                jstart_coarse, jcount_coarse, extra_halo, npes_nest_tile, &
                                cyclic_nest, mix_2D_3D, test_get_nbr, test_edge_update, &
@@ -143,12 +144,8 @@ program test_mpp_domains
   integer :: omp_get_num_threads, omp_get_thread_num
   integer :: ierr
 
-
-  call mpp_init(test_level=mpp_init_test_requests_allocated)
-  call mpp_domains_init(MPP_DEBUG)
-  call mpp_io_init()
-  call mpp_domains_set_stack_size(stackmax)
-
+  call mpp_memuse_begin()
+  call mpp_init()
   outunit = stdout()
   errunit = stderr()
 #ifdef INTERNAL_FILE_NML
@@ -160,18 +157,41 @@ program test_mpp_domains
      unit = unit + 1
      if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
   end do
-
   open( unit=unit, file='input.nml', iostat=io_status )
   read( unit,test_mpp_domains_nml, iostat=io_status )
   close(unit)
 #endif
-
   if (io_status > 0) then
      call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
   endif
+  select case(trim(warn_level))
+  case("fatal")
+     call mpp_set_warn_level(FATAL)
+  case("warning")
+     call mpp_set_warn_level(WARNING)
+  case default
+     call mpp_error(FATAL, "test_mpp_domains: warn_level should be fatal or warning")
+  end select
 
   pe = mpp_pe()
   npes = mpp_npes()
+
+!--- initialize mpp domains
+  if( (.not.debug) .and. test_nest ) then
+      call mpp_domains_init()
+  elseif( debug )then
+      call mpp_domains_init(MPP_DEBUG)
+  else
+      call mpp_domains_init(MPP_DOMAIN_TIME)
+  end if
+  call mpp_domains_set_stack_size(stackmax)
+
+  call fms_affinity_init()
+!$  call omp_set_num_threads(nthreads)
+!$OMP PARALLEL
+!$  call fms_affinity_set("test_mpp_domains", .FALSE., omp_get_num_threads())
+!$OMP END PARALLEL
+
 
   if( pe.EQ.mpp_root_pe() ) then
      print '(a,9i6)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
@@ -190,7 +210,7 @@ program test_mpp_domains
      "test_mpp_domain: nx_cubic and ny_cubic should be both zero or both positive")
 
   if( test_nest .and. (num_nest>0) ) then
-    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain <-------------------'
+    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain (cubic-grid)<-------------------'
      do n = 1, num_nest
         if( istart_coarse(n) == 0 .OR. jstart_coarse(n) == 0 ) call mpp_error(FATAL, &
         "test_mpp_domain: check the setting of namelist variable istart_coarse, jstart_coarse")
@@ -203,6 +223,23 @@ program test_mpp_domains
         "test_mpp_domain: check the setting of namelist variable refine_ratio")
      call test_update_nest_domain_r8('Cubic-Grid')
      call test_update_nest_domain_r4('Cubic-Grid')
+    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_update_nest_domain <-------------------'
+  endif
+  !> determine to run by if namelist values set
+  if(ntiles_nest_all == 4 .and. num_nest > 0) then
+    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain(cubed-sphere, single face) <-------------------'
+     do n = 1, num_nest
+        if( istart_coarse(n) == 0 .OR. jstart_coarse(n) == 0 ) call mpp_error(FATAL, &
+        "test_mpp_domain: check the setting of namelist variable istart_coarse, jstart_coarse")
+        if( icount_coarse(n) == 0 .OR. jcount_coarse(n) == 0 ) call mpp_error(FATAL, &
+        "test_mpp_domain: check the setting of namelist variable icount_coarse, jcount_coarse")
+        if( tile_coarse(n) .LE. 0) call mpp_error(FATAL, &
+            "test_mpp_domain: check the setting of namelist variable tile_coarse")
+     enddo
+     if(ANY(refine_ratio(:).LT.1)) call  mpp_error(FATAL, &
+        "test_mpp_domain: check the setting of namelist variable refine_ratio")
+     call test_update_nest_domain_r8('Cubed-sphere, single face')
+     !call test_update_nest_domain_r4('Cubed-sphere, single face')
     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_update_nest_domain <-------------------'
   endif
   !> re-added after mixed prec
@@ -5554,9 +5591,9 @@ end subroutine test_halosize_update
 
   !##################################################################################
   subroutine test_subset_update( )
-    real, allocatable, dimension(:,:,:) :: x
+    real(r4_kind), allocatable, dimension(:,:,:) :: x
     type(domain2D) :: domain
-    real,    allocatable :: global(:,:,:)
+    real(r4_kind),    allocatable :: global(:,:,:)
     integer              :: i, xhalo, yhalo
     integer              :: is, ie, js, je, isd, ied, jsd, jed
 !   integer :: pes9(9)=(/1,2,3,4,5,6,7,8,9/)
@@ -5616,10 +5653,10 @@ end subroutine test_halosize_update
   !##################################################################################
   subroutine test_update_edge( type )
     character(len=*), intent(in) :: type
-    real, allocatable, dimension(:,:,:) :: x, x2, a
-    real, allocatable, dimension(:,:,:) :: y, y2, b
+    real(r8_kind), allocatable, dimension(:,:,:) :: x, x2, a
+    real(r8_kind), allocatable, dimension(:,:,:) :: y, y2, b
     type(domain2D) :: domain
-    real,    allocatable :: global1(:,:,:), global2(:,:,:), global(:,:,:)
+    real(r8_kind),    allocatable :: global1(:,:,:), global2(:,:,:), global(:,:,:)
     logical, allocatable :: maskmap(:,:)
     integer              :: shift, i, xhalo, yhalo
     logical              :: is_symmetry, folded_south, folded_west, folded_east
@@ -5664,7 +5701,7 @@ end subroutine test_halosize_update
         call mpp_error( FATAL, 'test_update_edge: no such test: '//type )
     end select
 
-!set up x array
+ !set up x array
     call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
     call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
     allocate( x (isd:ied,jsd:jed,nz) )
@@ -5672,7 +5709,6 @@ end subroutine test_halosize_update
     allocate( x2 (isd:ied,jsd:jed,nz) )
     x2 (isd:ied,jsd:jed,:) = global(isd:ied,jsd:jed,:)
     call set_corner_zero(x2, isd, ied, jsd, jed, is, ie, js, je)
-
     x = 0.
     x (is:ie,js:je,:) = global(is:ie,js:je,:)
 
@@ -5684,10 +5720,14 @@ end subroutine test_halosize_update
     call compare_checksums( x, x2, type )
     deallocate(x2)
 
-    a = 0
+    a = 0.
     a(is:ie,js:je,:) = global(is:ie,js:je,:)
+    call set_corner_zero(a, isd, ied, jsd, jed, is, ie, js, je)
+
     id_update = mpp_start_update_domains( a, domain, flags=EDGEUPDATE)
     call mpp_complete_update_domains(id_update, a, domain, flags=EDGEUPDATE)
+    !call mpp_update_domains( a, domain, flags=EDGEUPDATE)
+    !! TODO fails here
     call compare_checksums( x, a, type//" nonblock")
 
         !--- test vector update for FOLDED and MASKED case.
@@ -5931,7 +5971,7 @@ end subroutine test_halosize_update
     !redundant points must be equal and opposite
     global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
     global2(1-whalo:0,     ny+shift,:) = -global2(nx-whalo+1:nx, ny+shift,:)
-!    global2(nx+1:nx+ehalo, ny+shift,:) = -global2(1:ehalo,       ny+shift,:)
+    global2(nx+1:nx+ehalo, ny+shift,:) = -global2(1:ehalo,       ny+shift,:)
 
     x2 = 0.0; y2 = 0.0
     if(is_symmetry) then
@@ -5949,7 +5989,7 @@ end subroutine test_halosize_update
     call mpp_create_group_update(group_update, x, y, domain, gridtype=CGRID_NE, &
                                  flags=WUPDATE+SUPDATE+NONSYMEDGEUPDATE, whalo=1, ehalo=1, shalo=1, nhalo=1)
     call mpp_do_group_update(group_update, domain, x(is,js,1))
-
+    !! TODO fails here
     call compare_checksums( x,  x2, type//' CGRID_NE X' )
     call compare_checksums( y,  y2, type//' CGRID_NE Y' )
 
@@ -6322,7 +6362,8 @@ end subroutine test_halosize_update
     integer, dimension(:), allocatable :: pelist1 , pelist2
     logical :: group1, group2
     character(len=128)  :: mesg
-
+    !!
+    !!
     npes = mpp_npes()
     allocate(pelist1(npes-mpes), pelist2(mpes))
     pelist1 = (/(i, i = 0, npes-mpes -1)/)
@@ -6341,38 +6382,41 @@ end subroutine test_halosize_update
        call mpp_set_current_pelist(pelist2)
        call mpp_define_layout( (/1,nx,1,ny/), mpes, layout )
     endif
+
     call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo)
 
     call mpp_set_current_pelist()
 
-     call mpp_get_compute_domain(domain, is, ie, js, je)
-     call mpp_get_data_domain(domain, isd, ied, jsd, jed)
-     allocate(lfield(is:ie,js:je),field(isd:ied,jsd:jed))
-     allocate(lfield3d(is:ie,js:je,nz),field3d(isd:ied,jsd:jed,nz))
+    call mpp_get_compute_domain(domain, is, ie, js, je)
+    call mpp_get_data_domain(domain, isd, ied, jsd, jed)
+    allocate(lfield(is:ie,js:je),field(isd:ied,jsd:jed))
+    allocate(lfield3d(is:ie,js:je,nz),field3d(isd:ied,jsd:jed,nz))
 
-     do i = is, ie
-     do j = js, je
+    do i = is, ie
+      do j = js, je
         lfield(i,j) = real(i)+real(j)*0.001
-     enddo
-     enddo
-     do i = is, ie
-     do j = js, je
-     do k = 1, nz
-        lfield3d(i,j,k) = real(i)+real(j)*0.001+real(k)*0.00001
-     enddo
-     enddo
-     enddo
-     field = 0.0
-     field3d = 0.0
-     field(is:ie,js:je)= lfield(is:ie,js:je)
-     field3d(is:ie,js:je,:) = lfield3d(is:ie,js:je,:)
-     call mpp_update_domains(field,domain)
-     call mpp_update_domains(field3d,domain)
+      enddo
+    enddo
 
+    do i = is, ie
+      do j = js, je
+        do k = 1, nz
+          lfield3d(i,j,k) = real(i)+real(j)*0.001+real(k)*0.00001
+        enddo
+      enddo
+    enddo
+
+    field = 0.0
+    field(is:ie,js:je)= lfield(is:ie,js:je)
+    call mpp_update_domains(field,domain)
     call mpp_check_field(field, pelist1, pelist2,domain, '2D '//mesg, w_halo = whalo, &
-                            s_halo = shalo, e_halo = ehalo, n_halo = nhalo)
+                           s_halo = shalo, e_halo = ehalo, n_halo = nhalo)
+
+    field3d = 0.0
+    field3d(is:ie,js:je,:) = lfield3d(is:ie,js:je,:)
+    call mpp_update_domains(field3d,domain)
     call mpp_check_field(field3d, pelist1, pelist2,domain, '3D '//mesg, w_halo = whalo, &
-                            s_halo = shalo, e_halo = ehalo, n_halo = nhalo)
+                           s_halo = shalo, e_halo = ehalo, n_halo = nhalo)
 
   end subroutine test_parallel
 
@@ -6737,7 +6781,112 @@ end subroutine test_halosize_update
     deallocate(global1, global2, x, y)
 
   end subroutine test_nest_halo_update
+!!!!!!!!!!!!!!!!!11
 
+  subroutine test_single_face_nest_halo_update( domain )
+    type(domain2D), intent(inout) :: domain
+    integer        :: i, j, k, shift
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+
+    real,    allocatable, dimension(:,:,:) :: x, y
+    real,    allocatable, dimension(:,:,:) :: global1, global2, global
+    character(len=128) :: type
+    integer :: nx, ny
+
+    call mpp_get_global_domain(domain, xsize=nx, ysize=ny)
+    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+
+    !--- setup data
+    allocate(global(1-whalo:nx+ehalo,1-shalo:ny+nhalo,nz) )
+    global = 0
+    do k = 1, nz
+       do j = 1, ny
+          do i = 1, nx
+             global(i,j,k) = i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+          end do
+       end do
+    end do
+
+    allocate( x (isd:ied,jsd:jed,nz) )
+    x = 0.
+    x(isc:iec,jsc:jec,:) = global(isc:iec,jsc:jec,:)
+
+    type = 'nest grid scalar'
+    !type = 'nest grid scalar single face'
+    !! TODO fails here, pe list only set for top level nest???
+    call mpp_update_domains( x, domain, name=trim(type) )
+
+    call compare_checksums( x(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), trim(type) )
+
+    deallocate(global, x)
+    !------------------------------------------------------------------
+    !              vector update : BGRID_NE, one extra point in each direction
+    !------------------------------------------------------------------
+    !--- setup data
+    shift = 1
+
+    allocate(global1(1-whalo:nx+ehalo+shift,1-shalo:ny+nhalo+shift,nz) )
+    allocate(global2(1-whalo:nx+ehalo+shift,1-shalo:ny+nhalo+shift,nz) )
+    global1 = 0; global2 = 0
+    do k = 1, nz
+       do j = 1, ny+shift
+          do i = 1, nx+shift
+             global1(i,j,k) = 1.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+             global2(i,j,k) = 2.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+          end do
+       end do
+    end do
+
+    allocate( x (isd:ied+shift,jsd:jed+shift,nz) )
+    allocate( y (isd:ied+shift,jsd:jed+shift,nz) )
+
+    x = 0.; y = 0
+    x (isc:iec+shift,jsc:jec+shift,:) = global1(isc:iec+shift,jsc:jec+shift,:)
+    y (isc:iec+shift,jsc:jec+shift,:) = global2(isc:iec+shift,jsc:jec+shift,:)
+
+    type = 'nest grid BGRID_NE'
+    call mpp_update_domains( x,  y,  domain, gridtype=BGRID_NE, name=trim(type))
+
+    call compare_checksums( x (isd:ied+shift,jsd:jed+shift,:),  global1(isd:ied+shift,jsd:jed+shift,:), trim(type)//' X' )
+    call compare_checksums( y (isd:ied+shift,jsd:jed+shift,:),  global2(isd:ied+shift,jsd:jed+shift,:), trim(type)//' Y' )
+
+    !------------------------------------------------------------------
+    !              vector update : CGRID_NE
+    !------------------------------------------------------------------
+    deallocate(global1, global2, x, y)
+    allocate(global1(1-whalo:nx+shift+ehalo,1-shalo:ny+nhalo,nz) )
+    allocate(global2(1-whalo:nx+ehalo,1-shalo:ny+shift+nhalo,nz) )
+    allocate( x (isd:ied+shift,jsd:jed  ,nz) )
+    allocate( y (isd:ied  ,jsd:jed+shift,nz) )
+    global1 = 0; global2 = 0
+    do k = 1, nz
+       do j = 1, ny
+          do i = 1, nx+shift
+             global1(i,j,k) = 1.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+          end do
+       end do
+       do j = 1, ny+shift
+          do i = 1, nx
+             global2(i,j,k) = 2.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
+          end do
+       end do
+    end do
+
+    x = 0.; y = 0
+    x (isc:iec+shift,jsc:jec,:) = global1(isc:iec+shift,jsc:jec,:)
+    y (isc:iec,jsc:jec+shift,:) = global2(isc:iec,jsc:jec+shift,:)
+
+    type = "nest grid CGRID_NE"
+    call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, name=trim(type))
+
+    call compare_checksums( x(isd:ied+shift,jsd:jed,:), global1(isd:ied+shift,jsd:jed,:), trim(type)//' X' )
+    call compare_checksums( y(isd:ied,jsd:jed+shift,:), global2(isd:ied,jsd:jed+shift,:), trim(type)//' Y' )
+
+    deallocate(global1, global2, x, y)
+
+  end subroutine test_single_face_nest_halo_update
+!!!!!!!!!!!!!!!!!!!
   subroutine get_nnest(domain, num_nest, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
                        nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
     type(domain2D), intent(inout) :: domain
@@ -6979,7 +7128,6 @@ end subroutine test_halosize_update
   end subroutine get_nnest2
 
 !###############################################################################
-
   subroutine test_update_nest_domain_r8( type )
     character(len=*), intent(in) :: type
     logical                      :: cubic_grid
@@ -7068,6 +7216,7 @@ end subroutine test_halosize_update
     integer                      :: ntiles_nest_top, npes_nest_top, num_nest_level, my_npes, l
     integer                      :: npes_my_fine, npes_my_level
     integer, allocatable         :: my_pelist(:)
+    integer, dimension(1)        :: dummy
 
     x_cyclic = .false.
     y_cyclic = .false.
@@ -7088,23 +7237,39 @@ end subroutine test_halosize_update
     iadd_coarse = 0; jadd_coarse = 0
 
     select case(type)
-    case ( 'Cubic-Grid' )
-       if( nx_cubic == 0 ) then
+      case ( 'Cubic-Grid' )
+        if( nx_cubic == 0 ) then
           call mpp_error(NOTE,'test_update_nest_domain: for Cubic_grid mosaic, nx_cubic is zero, '//&
                   'No test is done for Cubic-Grid mosaic. ' )
           return
-       endif
-       if( nx_cubic .NE. ny_cubic ) then
+        endif
+        if( nx_cubic .NE. ny_cubic ) then
           call mpp_error(NOTE,'test_update_nest_domain: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
                   'No test is done for Cubic-Grid mosaic. ' )
           return
-       endif
-       nx = nx_cubic
-       ny = ny_cubic
-       ntiles_nest_top = 6
-       cubic_grid = .true.
-    case default
-       call mpp_error(FATAL, 'test_update_nest_domain: no such test: '//type)
+        endif
+        nx = nx_cubic
+        ny = ny_cubic
+        ntiles_nest_top = 6
+        cubic_grid = .true.
+      case ( 'Cubed-sphere, single face' )
+        if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_update_nest_domain: for Cubic_grid mosaic, nx_cubic is zero, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+        endif
+        if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_update_nest_domain: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+        endif
+        nx = nx_cubic
+        ny = ny_cubic
+        ntiles_nest_top = 1
+        cubic_grid = .false.
+
+      case default
+        call mpp_error(FATAL, 'test_update_nest_domain: no such test: '//type)
     end select
 
     if(ntiles_nest_all > MAX_NTILE) call mpp_error(FATAL, 'test_update_nest_domain: ntiles_nest_all > MAX_NTILE')
@@ -7164,22 +7329,47 @@ end subroutine test_halosize_update
     if(ANY(my_pelist==mpp_pe())) then
        call mpp_set_current_pelist(my_pelist)
 
-       allocate(layout2D(2,ntiles_nest_top), global_indices(4,ntiles_nest_top), pe_start(ntiles_nest_top), pe_end(ntiles_nest_top) )
-       npes_per_tile = npes_nest_tile(1)
-
-       call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
-       do n = 1, ntiles_nest_top
-          global_indices(:,n) = (/1,nx,1,ny/)
-          layout2D(:,n)         = layout
-       end do
-       do n = 1, ntiles_nest_top
-          pe_start(n) = (n-1)*npes_per_tile
-          pe_end(n)   = n*npes_per_tile-1
-       end do
 
        if( cubic_grid ) then
-          call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+
+         allocate(layout2D(2,ntiles_nest_top), global_indices(4,ntiles_nest_top), pe_start(ntiles_nest_top), pe_end(ntiles_nest_top) )
+         npes_per_tile = npes_nest_tile(1)
+
+         call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+         do n = 1, ntiles_nest_top
+            global_indices(:,n) = (/1,nx,1,ny/)
+            layout2D(:,n)         = layout
+         end do
+         do n = 1, ntiles_nest_top
+            pe_start(n) = (n-1)*npes_per_tile
+            pe_end(n)   = n*npes_per_tile-1
+         end do
+
+         print *, "pe_start:", pe_start
+         print *, "pe_end:", pe_end
+         call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
                                    global_indices, layout2D, pe_start, pe_end )
+       else
+
+         allocate(layout2D(2,ntiles_nest_top), global_indices(4,ntiles_nest_top), pe_start(ntiles_nest_top), pe_end(ntiles_nest_top) )
+
+         npes_per_tile = npes_nest_tile(1)
+
+         call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+         do n = 1, ntiles_nest_top
+            global_indices(:,n) = (/1,nx,1,ny/)
+            layout2D(:,n)         = layout
+         end do
+         pe_start(1) = 0
+         pe_end(1)   = 1
+
+         print *, "pe_start:", pe_start
+         print *, "pe_end:", pe_end
+         print *, npes_nest_tile, npes_per_tile, ntiles_nest_top
+         call mpp_define_mosaic(global_indices(:,1:1),layout2D(:,1:1),domain,1,0, dummy, dummy, &
+                 dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, &
+                 pe_start=pe_start, pe_end=pe_end, symmetry=.true., &
+                 shalo = 0, nhalo = 0, whalo = 0, ehalo = 0, tile_id=(/1/), name = type)
        endif
        call mpp_get_compute_domain(domain, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
        call mpp_get_data_domain(domain, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -7188,7 +7378,7 @@ end subroutine test_halosize_update
 
     call mpp_set_current_pelist()
     deallocate(my_pelist)
-    !--- define domain for all the nest regoin.
+    !--- define domain for all the nest region.
     pos = npes_nest_top
     do n = 1, num_nest
        my_npes = npes_nest_tile(tile_fine(n))
@@ -7206,7 +7396,12 @@ end subroutine test_halosize_update
           call mpp_get_compute_domain(domain, isc_fine, iec_fine, jsc_fine, jec_fine)
           call mpp_get_data_domain(domain, isd_fine, ied_fine, jsd_fine, jed_fine)
           !--- test halo update for nested region.
-          call test_nest_halo_update(domain)
+          print *, "pe", mpp_pe(), "pelist" ,my_pelist, "level", n
+          if( cubic_grid ) then
+            call test_nest_halo_update(domain)
+          !else
+           ! call test_single_face_nest_halo_update(domain)
+          endif
        endif
        pos = pos+my_npes
        deallocate(my_pelist)
@@ -7226,16 +7421,19 @@ end subroutine test_halosize_update
 
     !--- loop over nest level
     do l = 1, num_nest_level
+
        npes_my_level = mpp_get_nest_npes(nest_domain, l)
        npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
        allocate(my_pelist(npes_my_level))
        allocate(my_pelist_fine(npes_my_fine))
        call mpp_get_nest_pelist(nest_domain, l, my_pelist)
-       call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
 
        call mpp_declare_pelist(my_pelist(:))
        write(type2, '(a,I2)')trim(type)//" nest_level = ",l
        if(ANY(my_pelist(:)==mpp_pe())) then
+
+          call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
+
           call mpp_set_current_pelist(my_pelist)
           my_tile_id = mpp_get_tile_id(domain)
           domain_coarse => mpp_get_nest_coarse_domain(nest_domain, nest_level=l)
@@ -8792,6 +8990,10 @@ end subroutine test_halosize_update
           call compare_checksums(nbufferx, nbufferx2, trim(type2)//' north buffer coarse to fine DGRID vector X')
           call compare_checksums(nbuffery, nbuffery2, trim(type2)//' north buffer coarse to fine DGRID vector Y')
        endif
+
+
+       !print *, mpp_pe(), "about to deallocate"
+
        if(allocated(x)) deallocate(x)
        if(allocated(y)) deallocate(y)
        if(is_fine_pe) then
@@ -8803,14 +9005,235 @@ end subroutine test_halosize_update
        endif
        deallocate(my_pelist, my_pelist_fine)
        call mpp_set_current_pelist()
+
     enddo
 
     call mpp_set_current_pelist()
     deallocate(pelist)
 
   end subroutine test_update_nest_domain_r8
-  !###########################################################################
-  !# MZ
+
+  !############################################################################
+  !--- this routine will get number of nest.
+  subroutine convert_index_up(domain, rotate, ncross, is_coarse, ie_coarse, js_coarse, je_coarse, &
+                                is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out)
+    type(domain2D), intent(in) :: domain
+    integer, intent(in)  :: is_coarse, ie_coarse, js_coarse, je_coarse
+    integer, intent(in)  :: is_in, ie_in, js_in, je_in, rotate, ncross
+    integer, intent(out) :: is_out, ie_out, js_out, je_out
+    integer :: isg, ieg, jsg, jeg
+
+    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
+
+    if( je_coarse > jeg .and. ie_coarse > ieg ) then
+       call mpp_error(FATAL,"convert_index_up:  je_coarse > jeg .and. ie_convert > ieg")
+    else if (je_coarse > jeg) then
+       select case(rotate)
+       case(0)
+          is_out = is_in
+          ie_out = ie_in
+          js_out = js_in + ncross*jeg
+          je_out = je_in + ncross*jeg
+       case(90)
+          is_out = js_in + ncross*jeg
+          ie_out = je_in + ncross*jeg
+          js_out = jeg - ie_in
+          je_out = jeg - is_in
+       case default
+          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or 90 when je_in>jeg")
+       end select
+    else if (ie_coarse > ieg) then
+       select case(rotate)
+       case(0)
+          is_out = is_in + ncross*ieg
+          ie_out = ie_in + ncross*ieg
+          js_out = js_in
+          je_out = je_in
+       case(-90)
+          js_out = is_in + ncross*ieg
+          je_out = ie_in + ncross*ieg
+          is_out = ieg - je_in
+          ie_out = ieg - js_in
+       case default
+          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or -90 when ie_in>ieg")
+       end select
+    else
+       is_out = is_in
+       ie_out = ie_in
+       js_out = js_in
+       je_out = je_in
+    endif
+
+  end subroutine convert_index_up
+
+  !############################################################################
+
+  subroutine test_get_boundary_ad(type)
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
+  use mpp_domains_mod, only : CGRID_NE
+  use mpp_domains_mod, only : mpp_get_boundary
+  use mpp_domains_mod, only : mpp_get_boundary_ad
+
+     character(len=*), intent(in)  :: type
+
+     type(domain2D)       :: domain
+     integer              :: ntiles, num_contact, npes_per_tile, ntile_per_pe, layout(2)
+     integer              :: n, l, isc, iec, jsc, jec, ism, iem, jsm, jem
+     integer, allocatable, dimension(:)       :: tile, ni, nj, pe_start, pe_end
+     integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+
+     real*8,  allocatable, dimension(:,:,:) :: x_ad, y_ad, x_fd, y_fd, x_save, y_save
+     real*8,  allocatable, dimension(:,:) :: ebufferx2_ad, wbufferx2_ad
+     real*8,  allocatable, dimension(:,:) :: sbuffery2_ad, nbuffery2_ad
+     real*8 :: ad_sum, fd_sum
+     integer :: shift,i,j,k,pe
+
+    !--- check the type
+    ntiles = 4
+    num_contact = 8
+
+    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+    allocate(ni(ntiles), nj(ntiles))
+    ni(:) = nx; nj(:) = ny
+    if( mod(npes, ntiles) == 0 ) then
+       npes_per_tile = npes/ntiles
+       write(outunit,*)'NOTE from test_uniform_mosaic ==> For Mosaic "', trim(type), &
+                       '", each tile will be distributed over ', npes_per_tile, ' processors.'
+       ntile_per_pe = 1
+       allocate(tile(ntile_per_pe))
+       tile = pe/npes_per_tile+1
+       call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       do n = 1, ntiles
+          pe_start(n) = (n-1)*npes_per_tile
+          pe_end(n)   = n*npes_per_tile-1
+       end do
+    else
+       call mpp_error(NOTE,'TEST_MPP_DOMAINS: npes should be multiple of ntiles or ' // &
+            'ntiles should be multiple of npes. No test is done for '//trim(type) )
+       return
+    end if
+
+    do n = 1, ntiles
+       global_indices(:,n) = (/1,nx,1,ny/)
+       layout2D(:,n)         = layout
+    end do
+
+    call define_fourtile_mosaic(type, domain, (/nx,nx,nx,nx/), (/ny,ny,ny,ny/), global_indices, &
+                                layout2D, pe_start, pe_end, .true. )
+
+    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+    call mpp_get_memory_domain( domain, ism, iem, jsm, jem )
+
+    deallocate(layout2D, global_indices, pe_start, pe_end )
+    deallocate(ni, nj)
+
+    shift = 1
+    allocate( x_ad  (ism:iem+shift,jsm:jem  ,nz) )
+    allocate( x_fd  (ism:iem+shift,jsm:jem  ,nz) )
+    allocate( x_save(ism:iem+shift,jsm:jem  ,nz) )
+    allocate( y_ad  (ism:iem  ,jsm:jem+shift,nz) )
+    allocate( y_fd  (ism:iem  ,jsm:jem+shift,nz) )
+    allocate( y_save(ism:iem  ,jsm:jem+shift,nz) )
+    allocate(ebufferx2_ad(jec-jsc+1, nz), wbufferx2_ad(jec-jsc+1, nz))
+    allocate(sbuffery2_ad(iec-isc+1, nz), nbuffery2_ad(iec-isc+1, nz))
+
+    pe = mpp_pe()
+
+    x_fd=0; y_fd=0
+    do k = 1,nz
+      do j = jsc,jec
+        do i = isc,iec
+            x_fd(i,j,k)= i*j
+            y_fd(i,j,k)= i*j
+        end do
+      end do
+    end do
+
+    x_save=x_fd
+    y_save=y_fd
+
+    ebufferx2_ad = 0
+    wbufferx2_ad = 0
+    sbuffery2_ad = 0
+    nbuffery2_ad = 0
+
+    call mpp_get_boundary(x_fd, y_fd, domain, ebufferx=ebufferx2_ad(:,:), wbufferx=wbufferx2_ad(:,:), &
+                             sbuffery=sbuffery2_ad(:,:), nbuffery=nbuffery2_ad(:,:), gridtype=CGRID_NE,  &
+                             complete = .true.  )
+    fd_sum = 0.
+    do k = 1,nz
+      do j = jsc,jec
+        do i = isc,iec
+           fd_sum = fd_sum + x_fd(i,j,k)*x_fd(i,j,k)
+        end do
+      end do
+    end do
+    do k = 1,nz
+      do j = jsc,jec
+        do i = isc,iec
+           fd_sum = fd_sum + y_fd(i,j,k)*y_fd(i,j,k)
+        end do
+      end do
+    end do
+    do k = 1,nz
+        do i = 1,jec-jsc+1
+           fd_sum = fd_sum + ebufferx2_ad(i,k)*ebufferx2_ad(i,k)
+        end do
+    end do
+    do k = 1,nz
+        do i = 1,jec-jsc+1
+           fd_sum = fd_sum + wbufferx2_ad(i,k)*wbufferx2_ad(i,k)
+        end do
+    end do
+    do k = 1,nz
+        do i = 1,iec-isc+1
+           fd_sum = fd_sum + sbuffery2_ad(i,k)*sbuffery2_ad(i,k)
+        end do
+    end do
+    do k = 1,nz
+        do i = 1,iec-isc+1
+           fd_sum = fd_sum + nbuffery2_ad(i,k)*nbuffery2_ad(i,k)
+        end do
+    end do
+    call mpp_sum( fd_sum )
+
+    x_ad = x_fd
+    y_ad = y_fd
+
+    call mpp_get_boundary_ad(x_ad, y_ad, domain, ebufferx=ebufferx2_ad(:,:), wbufferx=wbufferx2_ad(:,:), &
+                             sbuffery=sbuffery2_ad(:,:), nbuffery=nbuffery2_ad(:,:), gridtype=CGRID_NE,  &
+                             complete = .true.  )
+
+    ad_sum = 0.
+    do k = 1,nz
+      do j = jsc,jec
+        do i = isc,iec
+           ad_sum = ad_sum + x_ad(i,j,k)*x_save(i,j,k)
+        end do
+      end do
+    end do
+    do k = 1,nz
+      do j = jsc,jec
+        do i = isc,iec
+           ad_sum = ad_sum + y_ad(i,j,k)*y_save(i,j,k)
+        end do
+      end do
+    end do
+    call mpp_sum( ad_sum )
+
+    if( pe.EQ.mpp_root_pe() ) then
+       if (abs(ad_sum-fd_sum)/fd_sum.lt.1E-7) then
+           print*, "Passed Adjoint Dot Test: mpp_get_boundary_ad"
+       endif
+    endif
+
+    deallocate (x_ad, y_ad, x_fd, y_fd, x_save, y_save)
+    deallocate (ebufferx2_ad, wbufferx2_ad)
+    deallocate (sbuffery2_ad, nbuffery2_ad)
+
+  end subroutine test_get_boundary_ad
+
+!###############################################################################
   subroutine test_update_nest_domain_r4( type )
     character(len=*), intent(in) :: type
     logical                      :: cubic_grid
@@ -8899,6 +9322,7 @@ end subroutine test_halosize_update
     integer                      :: ntiles_nest_top, npes_nest_top, num_nest_level, my_npes, l
     integer                      :: npes_my_fine, npes_my_level
     integer, allocatable         :: my_pelist(:)
+    integer, dimension(1)        :: dummy
 
     x_cyclic = .false.
     y_cyclic = .false.
@@ -9009,8 +9433,13 @@ end subroutine test_halosize_update
        end do
 
        if( cubic_grid ) then
-          call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+         call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
                                    global_indices, layout2D, pe_start, pe_end )
+       else
+         call mpp_define_mosaic(global_indices(:,1:1),layout2D(:,1:1),domain, 1, 0, dummy, dummy, &
+                 dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, &
+                 pe_start=pe_start, pe_end=pe_end, symmetry=.true., &
+                 shalo = 0, nhalo = 0, whalo = 0, ehalo = 0, tile_id=(/1/), name = type)
        endif
        call mpp_get_compute_domain(domain, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
        call mpp_get_data_domain(domain, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -9062,11 +9491,13 @@ end subroutine test_halosize_update
        allocate(my_pelist(npes_my_level))
        allocate(my_pelist_fine(npes_my_fine))
        call mpp_get_nest_pelist(nest_domain, l, my_pelist)
-       call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
 
        call mpp_declare_pelist(my_pelist(:))
        write(type2, '(a,I2)')trim(type)//" nest_level = ",l
-       if(ANY(my_pelist(:)==mpp_pe())) then
+       if(ANY(my_pelist(:) == mpp_pe())) then
+
+          call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
+
           call mpp_set_current_pelist(my_pelist)
           my_tile_id = mpp_get_tile_id(domain)
           domain_coarse => mpp_get_nest_coarse_domain(nest_domain, nest_level=l)
@@ -9151,11 +9582,12 @@ end subroutine test_halosize_update
              enddo
           endif
 
+
           call mpp_update_nest_coarse(x, nest_domain, x1, nest_level=l, position=CENTER)
 
           !--- compare with assumed value
           if( is_coarse_pe) then
-             call compare_checksums(x1, x2, trim(type2)//' fine to coarse scalar')
+             call compare_checksums(x1, x2, trim(type2)//' fine to coarse scalar', skip_chksum=.true.)
           endif
           if(allocated(x))       deallocate(x)
           if(allocated(x1))      deallocate(x1)
@@ -9257,8 +9689,8 @@ end subroutine test_halosize_update
 
        !--- compare with assumed value
        if( is_coarse_pe) then
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair X')
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair Y')
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair X', skip_chksum=.true.)
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair Y', skip_chksum=.true.)
        endif
        if(allocated(x))       deallocate(x)
        if(allocated(x1))      deallocate(x1)
@@ -9283,7 +9715,7 @@ end subroutine test_halosize_update
           y = 0
           do k = 1, nz
              do j = js_cx, je_cx
-                Do i = is_cx, ie_cx
+                do i = is_cx, ie_cx
                    x(i,j,k) = i*1.e+6 + j*1.e+3 + k + 1.0E-6
                 enddo
              enddo
@@ -9344,8 +9776,8 @@ end subroutine test_halosize_update
 
        !--- compare with assumed value
        if( is_coarse_pe) then
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector X')
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector Y')
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector X', skip_chksum=.true.)
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector Y', skip_chksum=.true.)
        endif
        if(allocated(x))       deallocate(x)
        if(allocated(x1))      deallocate(x1)
@@ -9431,8 +9863,8 @@ end subroutine test_halosize_update
 
        !--- compare with assumed value
        if( is_coarse_pe) then
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector X')
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector Y')
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector X', skip_chksum=.true.)
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector Y', skip_chksum=.true.)
        endif
        if(allocated(x))       deallocate(x)
        if(allocated(x1))      deallocate(x1)
@@ -9889,33 +10321,33 @@ end subroutine test_halosize_update
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1.e3_r4_kind, 2.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2.e3_r4_kind, 1.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
           if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1.e3_r4_kind, 2.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2.e3_r4_kind, 1.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
           if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(ebufferx2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1.e3_r4_kind, 2.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(ebuffery2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 2.e3_r4_kind, 1.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
           if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 1.e3_r4_kind, 2.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, shift, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2.e3_r4_kind, 1.e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
 
           call compare_checksums(wbufferx, wbufferx2, trim(type2)//' west buffer coarse to fine BGRID scalar pair X')
@@ -10308,33 +10740,33 @@ end subroutine test_halosize_update
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
           if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
           if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(ebufferx2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(ebuffery2, ise_c, iee_c, jse_c, jee_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
           if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c, jen_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, 1, nx, ny)
              call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2e3_r4_kind, 1e3_r4_kind, 1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2E3_r4_kind, 1E3_r4_kind, 1, 1, nx, ny)
           endif
 
           call compare_checksums(wbufferx, wbufferx2, trim(type2)//' west buffer coarse to fine CGRID scalar pair X')
@@ -10412,33 +10844,33 @@ end subroutine test_halosize_update
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
           if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
           if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(ebufferx2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(ebuffery2, ise_c, iee_c, jse_c, jee_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
           if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c, jen_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
 
           call compare_checksums(wbufferx, wbufferx2, trim(type2)//' west buffer coarse to fine CGRID vector X')
@@ -10585,33 +11017,33 @@ end subroutine test_halosize_update
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isw_c/), (/iew_c/), (/jsw_c/), (/jew_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(wbufferx2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(wbuffery2, isw_c, iew_c, jsw_c, jew_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
           if( ies_c .GE. iss_c .AND. jes_c .GE. jss_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/iss_c/), (/ies_c/), (/jss_c/), (/jes_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
           if( iee_c .GE. ise_c .AND. jee_c .GE. jse_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/ise_c/), (/iee_c/), (/jse_c/), (/jee_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(ebufferx2, ise_c, iee_c, jse_c, jee_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(ebuffery2, ise_c+shift, iee_c, jse_c, jee_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse+shift, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
           if( ien_c .GE. isn_c .AND. jen_c .GE. jsn_c ) then
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/isn_c/), (/ien_c/), (/jsn_c/), (/jen_c/), &
                   nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
              call fill_nest_data(nbufferx2, isn_c, ien_c, jsn_c+shift, jen_c, nnest, t_coarse, 0, shift, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 1e3_r4_kind, 2e3_r4_kind, 1, -1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse+shift, je_coarse, 1E3_r4_kind, 2E3_r4_kind, 1, -1, nx, ny)
              call fill_nest_data(nbuffery2, isn_c, ien_c, jsn_c, jen_c, nnest, t_coarse, shift, 0, iadd_coarse, jadd_coarse, &
-                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2e3_r4_kind, 1e3_r4_kind, -1, 1, nx, ny)
+                  rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 2E3_r4_kind, 1E3_r4_kind, -1, 1, nx, ny)
           endif
 
           call compare_checksums(wbufferx, wbufferx2, trim(type2)//' west buffer coarse to fine DGRID vector X')
@@ -10624,6 +11056,8 @@ end subroutine test_halosize_update
           call compare_checksums(nbuffery, nbuffery2, trim(type2)//' north buffer coarse to fine DGRID vector Y')
        endif
 
+
+
        if(allocated(x)) deallocate(x)
        if(allocated(y)) deallocate(y)
        if(is_fine_pe) then
@@ -10633,236 +11067,14 @@ end subroutine test_halosize_update
           deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
        endif
        endif
+
        deallocate(my_pelist, my_pelist_fine)
        call mpp_set_current_pelist()
+
     enddo
 
     call mpp_set_current_pelist()
     deallocate(pelist)
 
   end subroutine test_update_nest_domain_r4
-
-
-  !############################################################################
-  !--- this routine will get number of nest.
-  subroutine convert_index_up(domain, rotate, ncross, is_coarse, ie_coarse, js_coarse, je_coarse, &
-                                is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out)
-    type(domain2D), intent(in) :: domain
-    integer, intent(in)  :: is_coarse, ie_coarse, js_coarse, je_coarse
-    integer, intent(in)  :: is_in, ie_in, js_in, je_in, rotate, ncross
-    integer, intent(out) :: is_out, ie_out, js_out, je_out
-    integer :: isg, ieg, jsg, jeg
-
-    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
-
-    if( je_coarse > jeg .and. ie_coarse > ieg ) then
-       call mpp_error(FATAL,"convert_index_up:  je_coarse > jeg .and. ie_convert > ieg")
-    else if (je_coarse > jeg) then
-       select case(rotate)
-       case(0)
-          is_out = is_in
-          ie_out = ie_in
-          js_out = js_in + ncross*jeg
-          je_out = je_in + ncross*jeg
-       case(90)
-          is_out = js_in + ncross*jeg
-          ie_out = je_in + ncross*jeg
-          js_out = jeg - ie_in
-          je_out = jeg - is_in
-       case default
-          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or 90 when je_in>jeg")
-       end select
-    else if (ie_coarse > ieg) then
-       select case(rotate)
-       case(0)
-          is_out = is_in + ncross*ieg
-          ie_out = ie_in + ncross*ieg
-          js_out = js_in
-          je_out = je_in
-       case(-90)
-          js_out = is_in + ncross*ieg
-          je_out = ie_in + ncross*ieg
-          is_out = ieg - je_in
-          ie_out = ieg - js_in
-       case default
-          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or -90 when ie_in>ieg")
-       end select
-    else
-       is_out = is_in
-       ie_out = ie_in
-       js_out = js_in
-       je_out = je_in
-    endif
-
-  end subroutine convert_index_up
-
-  !############################################################################
-
-  subroutine test_get_boundary_ad(type)
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
-  use mpp_domains_mod, only : CGRID_NE
-  use mpp_domains_mod, only : mpp_get_boundary
-  use mpp_domains_mod, only : mpp_get_boundary_ad
-
-     character(len=*), intent(in)  :: type
-
-     type(domain2D)       :: domain
-     integer              :: ntiles, num_contact, npes_per_tile, ntile_per_pe, layout(2)
-     integer              :: n, l, isc, iec, jsc, jec, ism, iem, jsm, jem
-     integer, allocatable, dimension(:)       :: tile, ni, nj, pe_start, pe_end
-     integer, allocatable, dimension(:,:)     :: layout2D, global_indices
-
-     real*8,  allocatable, dimension(:,:,:) :: x_ad, y_ad, x_fd, y_fd, x_save, y_save
-     real*8,  allocatable, dimension(:,:) :: ebufferx2_ad, wbufferx2_ad
-     real*8,  allocatable, dimension(:,:) :: sbuffery2_ad, nbuffery2_ad
-     real*8 :: ad_sum, fd_sum
-     integer :: shift,i,j,k,pe
-
-    !--- check the type
-    ntiles = 4
-    num_contact = 8
-
-    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
-    allocate(ni(ntiles), nj(ntiles))
-    ni(:) = nx; nj(:) = ny
-    if( mod(npes, ntiles) == 0 ) then
-       npes_per_tile = npes/ntiles
-       write(outunit,*)'NOTE from test_uniform_mosaic ==> For Mosaic "', trim(type), &
-                       '", each tile will be distributed over ', npes_per_tile, ' processors.'
-       ntile_per_pe = 1
-       allocate(tile(ntile_per_pe))
-       tile = pe/npes_per_tile+1
-       call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
-       do n = 1, ntiles
-          pe_start(n) = (n-1)*npes_per_tile
-          pe_end(n)   = n*npes_per_tile-1
-       end do
-    else
-       call mpp_error(NOTE,'TEST_MPP_DOMAINS: npes should be multiple of ntiles or ' // &
-            'ntiles should be multiple of npes. No test is done for '//trim(type) )
-       return
-    end if
-
-    do n = 1, ntiles
-       global_indices(:,n) = (/1,nx,1,ny/)
-       layout2D(:,n)         = layout
-    end do
-
-    call define_fourtile_mosaic(type, domain, (/nx,nx,nx,nx/), (/ny,ny,ny,ny/), global_indices, &
-                                layout2D, pe_start, pe_end, .true. )
-
-    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
-    call mpp_get_memory_domain( domain, ism, iem, jsm, jem )
-
-    deallocate(layout2D, global_indices, pe_start, pe_end )
-    deallocate(ni, nj)
-
-    shift = 1
-    allocate( x_ad  (ism:iem+shift,jsm:jem  ,nz) )
-    allocate( x_fd  (ism:iem+shift,jsm:jem  ,nz) )
-    allocate( x_save(ism:iem+shift,jsm:jem  ,nz) )
-    allocate( y_ad  (ism:iem  ,jsm:jem+shift,nz) )
-    allocate( y_fd  (ism:iem  ,jsm:jem+shift,nz) )
-    allocate( y_save(ism:iem  ,jsm:jem+shift,nz) )
-    allocate(ebufferx2_ad(jec-jsc+1, nz), wbufferx2_ad(jec-jsc+1, nz))
-    allocate(sbuffery2_ad(iec-isc+1, nz), nbuffery2_ad(iec-isc+1, nz))
-
-    pe = mpp_pe()
-
-    x_fd=0; y_fd=0
-    do k = 1,nz
-      do j = jsc,jec
-        do i = isc,iec
-            x_fd(i,j,k)= i*j
-            y_fd(i,j,k)= i*j
-        end do
-      end do
-    end do
-
-    x_save=x_fd
-    y_save=y_fd
-
-    ebufferx2_ad = 0
-    wbufferx2_ad = 0
-    sbuffery2_ad = 0
-    nbuffery2_ad = 0
-
-    call mpp_get_boundary(x_fd, y_fd, domain, ebufferx=ebufferx2_ad(:,:), wbufferx=wbufferx2_ad(:,:), &
-                             sbuffery=sbuffery2_ad(:,:), nbuffery=nbuffery2_ad(:,:), gridtype=CGRID_NE,  &
-                             complete = .true.  )
-    fd_sum = 0.
-    do k = 1,nz
-      do j = jsc,jec
-        do i = isc,iec
-           fd_sum = fd_sum + x_fd(i,j,k)*x_fd(i,j,k)
-        end do
-      end do
-    end do
-    do k = 1,nz
-      do j = jsc,jec
-        do i = isc,iec
-           fd_sum = fd_sum + y_fd(i,j,k)*y_fd(i,j,k)
-        end do
-      end do
-    end do
-    do k = 1,nz
-        do i = 1,jec-jsc+1
-           fd_sum = fd_sum + ebufferx2_ad(i,k)*ebufferx2_ad(i,k)
-        end do
-    end do
-    do k = 1,nz
-        do i = 1,jec-jsc+1
-           fd_sum = fd_sum + wbufferx2_ad(i,k)*wbufferx2_ad(i,k)
-        end do
-    end do
-    do k = 1,nz
-        do i = 1,iec-isc+1
-           fd_sum = fd_sum + sbuffery2_ad(i,k)*sbuffery2_ad(i,k)
-        end do
-    end do
-    do k = 1,nz
-        do i = 1,iec-isc+1
-           fd_sum = fd_sum + nbuffery2_ad(i,k)*nbuffery2_ad(i,k)
-        end do
-    end do
-    call mpp_sum( fd_sum )
-
-    x_ad = x_fd
-    y_ad = y_fd
-
-    call mpp_get_boundary_ad(x_ad, y_ad, domain, ebufferx=ebufferx2_ad(:,:), wbufferx=wbufferx2_ad(:,:), &
-                             sbuffery=sbuffery2_ad(:,:), nbuffery=nbuffery2_ad(:,:), gridtype=CGRID_NE,  &
-                             complete = .true.  )
-
-    ad_sum = 0.
-    do k = 1,nz
-      do j = jsc,jec
-        do i = isc,iec
-           ad_sum = ad_sum + x_ad(i,j,k)*x_save(i,j,k)
-        end do
-      end do
-    end do
-    do k = 1,nz
-      do j = jsc,jec
-        do i = isc,iec
-           ad_sum = ad_sum + y_ad(i,j,k)*y_save(i,j,k)
-        end do
-      end do
-    end do
-    call mpp_sum( ad_sum )
-
-    if( pe.EQ.mpp_root_pe() ) then
-       if (abs(ad_sum-fd_sum)/fd_sum.lt.1E-7) then
-           print*, "Passed Adjoint Dot Test: mpp_get_boundary_ad"
-       endif
-    endif
-
-    deallocate (x_ad, y_ad, x_fd, y_fd, x_save, y_save)
-    deallocate (ebufferx2_ad, wbufferx2_ad)
-    deallocate (sbuffery2_ad, nbuffery2_ad)
-
-  end subroutine test_get_boundary_ad
-
-
 end program test_mpp_domains
-

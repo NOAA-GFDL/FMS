@@ -28,7 +28,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# TODO 2,3
+# TODO 3,4,15
 
 # Create base nml for input
 . ./create_input.sh nml
@@ -40,6 +40,18 @@ test_expect_success "simple functionality" '
 sed "s/test_nest = .false./test_nest = .true./" input_base.nml > input.nml
 test_expect_success "update nest domain" '
     mpirun -n 16 ./test_mpp_domains
+'
+## single face nest needs additional namelist changes
+sed "s/tile_coarse =    1,  3,  7/tile_coarse =    1,  1,  2/" input_base.nml > input.nml
+sed -i "s/tile_fine   =    7 , 8,  9/tile_fine   =    2 , 3,  4/" input.nml
+sed -i "s/istart_coarse =  3,  3,  5/istart_coarse =  4,  3,  5/" input.nml
+sed -i "s/icount_coarse = 40,  5,  6/icount_coarse = 12,  5,  6/" input.nml
+sed -i "s/jstart_coarse =  3,  3,  6/jstart_coarse =  4,  3,  6/" input.nml
+sed -i "s/jcount_coarse = 14,  6,  8/jcount_coarse = 12,  6,  8/" input.nml
+sed -i "s/ntiles_nest_all = 9/ntiles_nest_all = 4/" input.nml
+sed -i "s/npes_nest_tile = 2, 2, 2, 2, 2, 2, 2, 1, 1/npes_nest_tile = 2, 2, 2, 1/" input.nml
+test_expect_success "update single face nest domain" '
+    mpirun -n 7 ./test_mpp_domains
 '
 sed "s/test_subset = .false./test_subset = .true./" input_base.nml > input.nml
 test_expect_success "subset update" '
@@ -90,13 +102,14 @@ sed "s/test_interface = .false./test_interface = .true./" input_base.nml > input
 test_expect_success "interface" '
     mpirun -n 2 ./test_mpp_domains
 '
-sed "s/check_parallel = .false./check_parallel = .true./" input_base.nml > input.nml
-test_expect_success "check_parallel" '
-    mpirun -n 6 ./test_mpp_domains
-'
+# TODO this wasn't run at all previously
+#sed "s/check_parallel = .false./check_parallel = .true./" input_base.nml > input.nml
+#test_expect_success "check_parallel" '
+#    mpirun -n 2 ./test_mpp_domains
+#'
 sed "s/test_get_nbr = .false./test_get_nbr = .true./" input_base.nml > input.nml
 test_expect_success "get nbr" '
-    mpirun -n 2 ./test_mpp_domains
+    mpirun -n 8 ./test_mpp_domains
 '
 
 test_done

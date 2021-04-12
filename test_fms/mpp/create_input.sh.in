@@ -1,12 +1,14 @@
 #!/bin/sh
-# Ryan Mulhall 1/2020
-# Creates input files for mpp unit testing
+# Ryan Mulhall
+# Creates input files(nml or ascii) for mpp unit testing
 
 if [[ "$1" = "nml" ]] && [[ ! -f input_base.nml ]]; then
 cat <<_EOF > input_base.nml
-'&test_mpp_get_ascii_lines_nml
+&test_mpp_get_ascii_lines_nml
 test_number = <test_num>
 /
+
+
 &test_mpp_domains_nml
 nx=64
 ny=64
@@ -64,7 +66,13 @@ test_nonsym_edge = .false.
 test_halosize_performance = .false.
 test_adjoint = .false.
 wide_halo = .false.
-/'
+/
+
+
+&fms_affinity_nml
+strict = .false.
+/
+
 _EOF
 shift
 fi

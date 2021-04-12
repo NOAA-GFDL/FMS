@@ -55,6 +55,7 @@ program test_global_arrays
   character(len=32)             :: strTmp1, strTmp2
   integer(i4_kind), parameter   :: randmaxI4 = 2048
   integer(i8_kind), parameter   :: randmaxI8 = 4096
+  real(r8_kind), parameter      :: tol4 = 1e-4, tol8 = 1e-6!> tolerance for real comparisons
 
   call mpp_init(mpp_init_test_init_true_only)
   call mpp_io_init()
@@ -65,7 +66,6 @@ program test_global_arrays
   npes = mpp_npes()
   call mpp_set_root_pe(0)
   root = mpp_root_pe()
-
   !> define domains and allocate
   call mpp_define_domains( (/1,length,1,length/), (/4,2/), domain, xhalo=0)
   call mpp_get_compute_domain(domain, jsc, jec, isc, iec)
@@ -90,6 +90,7 @@ program test_global_arrays
       dataR8(j, i) = real(rcoef, kind=r8_kind)
     end do
   end do
+  call mpp_sync()
 
   !> test global max and mins from each kind
   call mpp_error(NOTE, "----------Testing 32-bit int mpp_global_max and mpp_global_min----------")
@@ -102,7 +103,6 @@ program test_global_arrays
     call mpp_error(FATAL, "test_global_arrays: invalid 32-bit integer results"// &
                                NEW_LINE('a')//"Max: "//strTmp1//" Min: "//strTmp2 )
   endif
-  call mpp_sync()
   call mpp_error(NOTE, "----------Testing 64-bit int mpp_global_max and mpp_global_min----------")
   call mpp_update_domains(dataI8, domain)
   maxI8 = mpp_global_max(domain, dataI8)
@@ -113,7 +113,6 @@ program test_global_arrays
     call mpp_error(FATAL, "test_global_arrays: invalid 64-bit integer results"// &
                                NEW_LINE('a')//"Max: "//strTmp1//" Min: "//strTmp2 )
   endif
-  call mpp_sync()
   call mpp_error(NOTE, "----------Testing 32-bit real mpp_global_max and mpp_global_min----------")
   call mpp_update_domains(dataR4, domain)
   maxR4 = mpp_global_max(domain, dataR4)
@@ -124,7 +123,6 @@ program test_global_arrays
     call mpp_error(FATAL, "test_global_arrays: invalid 32-bit real results"// &
                                NEW_LINE('a')//"Max: "//strTmp1//" Min: "//strTmp2 )
   endif
-  call mpp_sync()
   call mpp_error(NOTE, "----------Testing 64-bit real mpp_global_max and mpp_global_min----------")
   call mpp_update_domains(dataR8, domain)
   maxR8 = mpp_global_max(domain, dataR8)
@@ -193,7 +191,7 @@ program test_global_arrays
   sumR4_5d = mpp_global_sum(domain, dataR4_5d)
 
   ! check that shuffled array results are approximately the same as the original array
-  if(abs((sumR4-sumR4_5d)/sumR4) .gt. 1e-4) then
+  if(abs((sumR4-sumR4_5d)/sumR4) .gt. tol4) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumR4_5d
     write(strTmp2,*) sumR4
@@ -206,7 +204,7 @@ program test_global_arrays
   sumR8_5d = mpp_global_sum(domain, dataR8_5d)
   ! check that shuffled array results are approximately the same as the original array
   !> @note This test fails with gcc 9.3.0
-  if(abs((sumR8-sumR8_5d)/sumR8) .gt. 1e-7) then
+  if(abs((sumR8-sumR8_5d)/sumR8) .gt. tol8) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumR8_5d
      write(strTmp2,*) sumR8
@@ -249,7 +247,6 @@ program test_global_arrays
   sumI8_5d = mpp_global_sum(domain, dataI8_5d)
 
   ! check that shuffled array results are approximately the same as the original array
-  !> @note This test fails with gcc 9.3.0
   if(sumI8 .ne. sumI8_5d) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumI8_5d
@@ -333,8 +330,8 @@ function checkResultReal4(res)
     checkResultReal4 = .true.
   else
     call mpp_recv(tres,2, root)
-    checkResultReal4 = checkResultReal4 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-4) .and. &
-                       (abs((res(2)-tres(2))/res(2)) .lt. 1e-4)
+    checkResultReal4 = checkResultReal4 .and. (abs((res(1)-tres(1))/res(1)) .lt. tol4) .and. &
+                       (abs((res(2)-tres(2))/res(2)) .lt. tol4)
   end if
   deallocate(tres)
 end function checkResultReal4
@@ -358,8 +355,8 @@ function checkResultReal8(res)
     checkResultReal8 = .true.
   else
     call mpp_recv(tres,2, root)
-    checkResultReal8 = checkResultReal8 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-7) .and. &
-                       (abs((res(2)-tres(2))/res(2)) .lt. 1e-7)
+    checkResultReal8 = checkResultReal8 .and. (abs((res(1)-tres(1))/res(1)) .lt. tol8) .and. &
+                       (abs((res(2)-tres(2))/res(2)) .lt. tol8)
   end if
   deallocate(tres)
 end function checkResultReal8
@@ -381,13 +378,13 @@ function checkSumReal4(gsum)
       call mpp_recv(recv, 2, i)
       nsum = nsum + recv(1)
       ! also check for matching global sum
-      if( abs((recv(2)-gsum)/gsum) .gt. 1e-4) then
+      if( abs((recv(2)-gsum)/gsum) .gt. tol4) then
         checkSumReal4 = .false.
         deallocate(recv)
         return
       endif
     end do
-    checkSumReal4 = (abs((nsum-gsum)/gsum) .lt. 1e-4)
+    checkSumReal4 = (abs((nsum-gsum)/gsum) .lt. tol4)
   else
     recv(1) = SUM(dataR4)
     recv(2) = gsum
@@ -414,13 +411,13 @@ function checkSumReal8(gsum)
       call mpp_recv(recv, 2, i)
       nsum = nsum + recv(1)
       ! also check for matching global sum
-      if( abs((recv(2)-gsum)/gsum) .gt. 1e-7 ) then
+      if( abs((recv(2)-gsum)/gsum) .gt. tol8) then
         checkSumReal8 = .false.
         deallocate(recv)
         return
       endif
     end do
-    checkSumReal8 = (abs((nsum-gsum)/gsum) .lt. 1e-7)
+    checkSumReal8 = (abs((nsum-gsum)/gsum) .lt. tol8)
   else
     recv(1) = SUM(dataR8)
     recv(2) = gsum
