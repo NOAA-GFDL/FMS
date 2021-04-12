@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,15 +19,42 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the fms2_io/include directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/mpp directory.
 
-include_HEADERS = array_utils_char.inc array_utils.inc compressed_read.inc \
-                  compressed_write.inc compute_global_checksum.inc domain_read.inc \
-                  domain_write.inc get_checksum.inc get_data_type_string.inc \
-                  get_global_attribute.inc get_variable_attribute.inc \
-                  netcdf_add_restart_variable.inc netcdf_read_data.inc \
-                  netcdf_write_data.inc register_domain_restart_variable.inc \
-                  register_global_attribute.inc register_unstructured_domain_restart_variable.inc \
-                  register_variable_attribute.inc unstructured_domain_read.inc \
-                  unstructured_domain_write.inc
+# Ryan Mulhall
+
+# Set common test settings.
+. ../test_common.sh
+
+skip_test="no"
+
+# Copy file for test.
+touch input.nml
+cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
+
+
+# Get the number of available CPUs on the system
+if [ $(command -v nproc) ]
+then
+   # Looks like a linux system
+   nProc=$(nproc)
+elif [ $(command -v sysctl) ]
+then
+   # Looks like a Mac OS X system
+   nProc=$(sysctl -n hw.physicalcpu)
+else
+   nProc=-1
+fi
+
+if [ $nProc -lt 0 ]
+then
+   # Couldn't get the number of CPUs, skip the test.
+   skip_test="skip"
+elif [ $nProc -lt 12 ]
+then
+   # Need to oversubscribe the MPI
+   run_test test_io_mosaic_R4_R8 12 $skip_test "true"
+fi
+
+run_test test_io_mosaic_R4_R8 12 $skip_test

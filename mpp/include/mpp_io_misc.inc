@@ -49,7 +49,7 @@
       integer                       :: unit_nml, io_status, iunit
       integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
-      real(DOUBLE_KIND)             :: doubledata = 0
+      real(r8_kind)             :: doubledata = 0
       real                          :: realarray(4)
 
       if( module_is_initialized )return
@@ -223,7 +223,7 @@
       end if
 !close all open fortran units
       do unit = unit_begin,unit_end
-         if( mpp_file(unit)%opened )call FLUSH(unit)
+         if( mpp_file(unit)%opened )FLUSH(unit)
       end do
       if( dosync )call mpp_sync()
       do unit = unit_begin,unit_end
@@ -286,7 +286,7 @@
           error = NF_SYNC(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
 #endif
       else
-          call FLUSH(unit)
+          FLUSH(unit)
       end if
       return
     end subroutine mpp_flush

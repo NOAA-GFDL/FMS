@@ -50,7 +50,7 @@
 
       integer :: i, outunit
       MPP_TYPE_, allocatable, save :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
-      integer(LONG_KIND),     save :: get_data_addr=-9999
+      integer(i8_kind),     save :: get_data_addr=-9999
       MPP_TYPE_                    :: get_data_local(get_len_nocomm)
       pointer(ptr_get_data, get_data_local)
 

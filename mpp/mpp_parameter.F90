@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module mpp_parameter_mod
-#include <fms_platform.h>
+  use platform_mod
 
   implicit none
   private
@@ -73,10 +73,10 @@ module mpp_parameter_mod
   integer, parameter :: MPP_CLOCK_SYNC=1, MPP_CLOCK_DETAILED=2
   integer            :: DEFAULT_TAG = 1
   !--- implimented to centralize _FILL_ values for land_model.F90 into mpp_mod
-  !------- instead of netcdf definitions, use manual assignments
-  integer(INT_KIND) , parameter :: MPP_FILL_INT    = -2147483647            !NF_FILL_INT
-  real(DOUBLE_KIND) , parameter :: MPP_FILL_DOUBLE = 9.9692099683868690e+36 !NF_FILL_DOUBLE
-  real(FLOAT_KIND)  , parameter :: MPP_FILL_FLOAT  = 9.9692099683868690e+36 !NF_FILL_DOUBLE
+  !------- instead of multiple includes of netcdf.inc and manual assignments
+  integer(i4_kind) , parameter :: MPP_FILL_INT    = -2147483647            !NF_FILL_INT
+  real(r8_kind) , parameter :: MPP_FILL_DOUBLE = 9.9692099683868690e+36 !NF_FILL_DOUBLE
+  real(r4_kind)  , parameter :: MPP_FILL_FLOAT  = 9.9692099683868690e+36 !NF_FILL_DOUBLE
   !--- predefined clock granularities, but you can use any integer
   !--- using CLOCK_LOOP and above may distort coarser-grain measurements
   integer, parameter :: CLOCK_COMPONENT=1      !component level, e.g model, exchange
@@ -88,7 +88,7 @@ module mpp_parameter_mod
   integer, parameter :: CLOCK_LOOP=51          !loops or blocks within a routine
   integer, parameter :: CLOCK_INFRA=61         !infrastructure level, e.g halo update
   integer, parameter :: MAX_BINS=20
-  integer(LONG_KIND), parameter :: MPP_WAIT=-1, MPP_READY=-2
+  integer(i8_kind), parameter :: MPP_WAIT=-1, MPP_READY=-2
 
   !--- The following paramters are used by mpp_domains_mod and its components.
   integer, parameter :: GLOBAL=0, CYCLIC=1
@@ -116,8 +116,8 @@ module mpp_parameter_mod
 ! DOMAIN_ID_BASE acts as a counter increment for domains as they are defined. It's used in
 ! combination with the flag parameter defined above to create a unique identifier for
 ! each Domain+flags combination. Therefore, the value of any flag must not exceed DOMAIN_ID_BASE.
-! integer(LONG_KIND), parameter :: DOMAIN_ID_BASE=INT( 2**(4*LONG_KIND),KIND=LONG_KIND )
-  integer(LONG_KIND), parameter :: DOMAIN_ID_BASE = int(Z'0000000100000000', kind=LONG_KIND)
+! integer(i8_kind), parameter :: DOMAIN_ID_BASE=INT( 2**(4*i8_kind),KIND=i8_kind )
+  integer(i8_kind), parameter :: DOMAIN_ID_BASE = int(Z'0000000100000000', kind=i8_kind)
   integer, parameter :: NON_BITWISE_EXACT_SUM=0
   integer, parameter :: BITWISE_EXACT_SUM=1
   integer, parameter :: BITWISE_EFP_SUM=2
@@ -143,11 +143,11 @@ module mpp_parameter_mod
 
   integer, parameter :: ROOT_GLOBAL = 9
   integer, parameter :: GLOBAL_ROOT_ONLY = 2**ROOT_GLOBAL
-  real(DOUBLE_KIND), parameter :: NULLTIME=-1.
+  real(r8_kind), parameter :: NULLTIME=-1.
 #ifdef LARGE_FILE
-  integer(LONG_KIND), parameter :: MAX_FILE_SIZE = 4294967295
+  integer(i8_kind), parameter :: MAX_FILE_SIZE = 4294967295
 #else
-  integer(LONG_KIND), parameter :: MAX_FILE_SIZE = 2147483647
+  integer(i8_kind), parameter :: MAX_FILE_SIZE = 2147483647
 #endif
 
   !#####################################################################

@@ -46,9 +46,9 @@ program xgrid_test
   use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
   use ensemble_manager_mod, only : get_ensemble_size
+  use platform_mod
 
 implicit none
-#include <fms_platform.h>
 
   real, parameter :: EPSLN = 1.0e-10
   character(len=256) :: atm_input_file  = "INPUT/atmos_input.nc"
@@ -965,7 +965,7 @@ contains
   subroutine compare_chksum_2D( a, b, string )
     real, intent(in), dimension(:,:) :: a, b
     character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
+    integer(i8_kind) :: sum1, sum2
     integer :: i, j
 
     call mpp_sync_self()
@@ -1002,7 +1002,7 @@ contains
   subroutine compare_chksum( a, b, string )
     real, intent(in), dimension(:,:,:) :: a, b
     character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
+    integer(i8_kind) :: sum1, sum2
     integer :: i, j, k
 
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.

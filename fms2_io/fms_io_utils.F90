@@ -18,14 +18,15 @@
 !***********************************************************************
 
 !> @file
-
-!> @brief Utility routines.
+!! @brief Utility routines.
+!! @email gfdl.climate.model.info@noaa.gov
 module fms_io_utils_mod
-use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
+use, intrinsic :: iso_fortran_env, only: error_unit
 #ifdef _OPENMP
 use omp_lib
 #endif
 use mpp_mod
+use platform_mod
 implicit none
 private
 
@@ -56,26 +57,26 @@ endtype char_linked_list
 
 
 interface allocate_array
-  module procedure allocate_array_int32_1d
-  module procedure allocate_array_int32_2d
-  module procedure allocate_array_int32_3d
-  module procedure allocate_array_int32_4d
-  module procedure allocate_array_int32_5d
-  module procedure allocate_array_int64_1d
-  module procedure allocate_array_int64_2d
-  module procedure allocate_array_int64_3d
-  module procedure allocate_array_int64_4d
-  module procedure allocate_array_int64_5d
-  module procedure allocate_array_real32_1d
-  module procedure allocate_array_real32_2d
-  module procedure allocate_array_real32_3d
-  module procedure allocate_array_real32_4d
-  module procedure allocate_array_real32_5d
-  module procedure allocate_array_real64_1d
-  module procedure allocate_array_real64_2d
-  module procedure allocate_array_real64_3d
-  module procedure allocate_array_real64_4d
-  module procedure allocate_array_real64_5d
+  module procedure allocate_array_i4_kind_1d
+  module procedure allocate_array_i4_kind_2d
+  module procedure allocate_array_i4_kind_3d
+  module procedure allocate_array_i4_kind_4d
+  module procedure allocate_array_i4_kind_5d
+  module procedure allocate_array_i8_kind_1d
+  module procedure allocate_array_i8_kind_2d
+  module procedure allocate_array_i8_kind_3d
+  module procedure allocate_array_i8_kind_4d
+  module procedure allocate_array_i8_kind_5d
+  module procedure allocate_array_r4_kind_1d
+  module procedure allocate_array_r4_kind_2d
+  module procedure allocate_array_r4_kind_3d
+  module procedure allocate_array_r4_kind_4d
+  module procedure allocate_array_r4_kind_5d
+  module procedure allocate_array_r8_kind_1d
+  module procedure allocate_array_r8_kind_2d
+  module procedure allocate_array_r8_kind_3d
+  module procedure allocate_array_r8_kind_4d
+  module procedure allocate_array_r8_kind_5d
   module procedure allocate_array_char_1d
   module procedure allocate_array_char_2d
   module procedure allocate_array_char_3d
@@ -86,50 +87,50 @@ end interface allocate_array
 
 
 interface put_array_section
-  module procedure put_array_section_int32_1d
-  module procedure put_array_section_int32_2d
-  module procedure put_array_section_int32_3d
-  module procedure put_array_section_int32_4d
-  module procedure put_array_section_int32_5d
-  module procedure put_array_section_int64_1d
-  module procedure put_array_section_int64_2d
-  module procedure put_array_section_int64_3d
-  module procedure put_array_section_int64_4d
-  module procedure put_array_section_int64_5d
-  module procedure put_array_section_real32_1d
-  module procedure put_array_section_real32_2d
-  module procedure put_array_section_real32_3d
-  module procedure put_array_section_real32_4d
-  module procedure put_array_section_real32_5d
-  module procedure put_array_section_real64_1d
-  module procedure put_array_section_real64_2d
-  module procedure put_array_section_real64_3d
-  module procedure put_array_section_real64_4d
-  module procedure put_array_section_real64_5d
+  module procedure put_array_section_i4_kind_1d
+  module procedure put_array_section_i4_kind_2d
+  module procedure put_array_section_i4_kind_3d
+  module procedure put_array_section_i4_kind_4d
+  module procedure put_array_section_i4_kind_5d
+  module procedure put_array_section_i8_kind_1d
+  module procedure put_array_section_i8_kind_2d
+  module procedure put_array_section_i8_kind_3d
+  module procedure put_array_section_i8_kind_4d
+  module procedure put_array_section_i8_kind_5d
+  module procedure put_array_section_r4_kind_1d
+  module procedure put_array_section_r4_kind_2d
+  module procedure put_array_section_r4_kind_3d
+  module procedure put_array_section_r4_kind_4d
+  module procedure put_array_section_r4_kind_5d
+  module procedure put_array_section_r8_kind_1d
+  module procedure put_array_section_r8_kind_2d
+  module procedure put_array_section_r8_kind_3d
+  module procedure put_array_section_r8_kind_4d
+  module procedure put_array_section_r8_kind_5d
 end interface put_array_section
 
 
 interface get_array_section
-  module procedure get_array_section_int32_1d
-  module procedure get_array_section_int32_2d
-  module procedure get_array_section_int32_3d
-  module procedure get_array_section_int32_4d
-  module procedure get_array_section_int32_5d
-  module procedure get_array_section_int64_1d
-  module procedure get_array_section_int64_2d
-  module procedure get_array_section_int64_3d
-  module procedure get_array_section_int64_4d
-  module procedure get_array_section_int64_5d
-  module procedure get_array_section_real32_1d
-  module procedure get_array_section_real32_2d
-  module procedure get_array_section_real32_3d
-  module procedure get_array_section_real32_4d
-  module procedure get_array_section_real32_5d
-  module procedure get_array_section_real64_1d
-  module procedure get_array_section_real64_2d
-  module procedure get_array_section_real64_3d
-  module procedure get_array_section_real64_4d
-  module procedure get_array_section_real64_5d
+  module procedure get_array_section_i4_kind_1d
+  module procedure get_array_section_i4_kind_2d
+  module procedure get_array_section_i4_kind_3d
+  module procedure get_array_section_i4_kind_4d
+  module procedure get_array_section_i4_kind_5d
+  module procedure get_array_section_i8_kind_1d
+  module procedure get_array_section_i8_kind_2d
+  module procedure get_array_section_i8_kind_3d
+  module procedure get_array_section_i8_kind_4d
+  module procedure get_array_section_i8_kind_5d
+  module procedure get_array_section_r4_kind_1d
+  module procedure get_array_section_r4_kind_2d
+  module procedure get_array_section_r4_kind_3d
+  module procedure get_array_section_r4_kind_4d
+  module procedure get_array_section_r4_kind_5d
+  module procedure get_array_section_r8_kind_1d
+  module procedure get_array_section_r8_kind_2d
+  module procedure get_array_section_r8_kind_3d
+  module procedure get_array_section_r8_kind_4d
+  module procedure get_array_section_r8_kind_5d
 end interface get_array_section
 
 
@@ -360,7 +361,7 @@ subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
   if (i .eq. 0) then
     call error("file "//trim(source)//" does not contain .nc")
   endif
-  write(dest, '(a,i1,a)') source(1:i-1)//".tile", &
+  write(dest, '(a,i0,a)') source(1:i-1)//".tile", &
                           domain_tile_id, source(i:len_trim(source))
 end subroutine domain_tile_filepath_mangle
 
@@ -393,7 +394,6 @@ end function has_io_domain_tile_string
 
 
 !> @brief Add the I/O domain tile id to an input filepath.
-!!
 subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
 
   character(len=*), intent(inout) :: dest !< Output filepath.
@@ -420,7 +420,6 @@ end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
-!!
 subroutine restart_filepath_mangle(dest, source)
 
   character(len=*), intent(inout) :: dest

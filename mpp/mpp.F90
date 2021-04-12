@@ -159,7 +159,6 @@ module mpp_mod
 #define rank(X) size(shape(X))
 #endif
 
-#include <fms_platform.h>
 
 #if defined(use_libMPI)
   use mpi
@@ -186,6 +185,7 @@ module mpp_mod
   use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
   use mpp_data_mod,      only : mpp_data_version=>version
+  use platform_mod
 
 implicit none
 private
@@ -243,7 +243,7 @@ private
   type :: event
      private
      character(len=16)                         :: name
-     integer(LONG_KIND), dimension(MAX_EVENTS) :: ticks, bytes
+     integer(i8_kind), dimension(MAX_EVENTS)   :: ticks, bytes
      integer                                   :: calls
   end type event
 
@@ -251,8 +251,9 @@ private
   type :: clock
      private
      character(len=32)    :: name
-     integer(LONG_KIND)   :: tick
-     integer(LONG_KIND)   :: total_ticks
+     integer(i8_kind)     :: hits
+     integer(i8_kind)     :: tick
+     integer(i8_kind)     :: total_ticks
      integer              :: peset_num
      logical              :: sync_on_begin, detailed
      integer              :: grain
@@ -264,12 +265,12 @@ private
   type :: Clock_Data_Summary
      private
      character(len=16)  :: name
-     real(DOUBLE_KIND)  :: msg_size_sums(MAX_BINS)
-     real(DOUBLE_KIND)  :: msg_time_sums(MAX_BINS)
-     real(DOUBLE_KIND)  :: total_data
-     real(DOUBLE_KIND)  :: total_time
-     integer(LONG_KIND) :: msg_size_cnts(MAX_BINS)
-     integer(LONG_KIND) :: total_cnts
+     real(r8_kind)      :: msg_size_sums(MAX_BINS)
+     real(r8_kind)      :: msg_time_sums(MAX_BINS)
+     real(r8_kind)      :: total_data
+     real(r8_kind)      :: total_time
+     integer(i8_kind)   :: msg_size_cnts(MAX_BINS)
+     integer(i8_kind)   :: total_cnts
   end type Clock_Data_Summary
 
   type :: Summary_Struct
@@ -540,14 +541,10 @@ private
   interface mpp_max
      module procedure mpp_max_real8_0d
      module procedure mpp_max_real8_1d
-#ifndef no_8byte_integers
      module procedure mpp_max_int8_0d
      module procedure mpp_max_int8_1d
-#endif
-#ifdef OVERLOAD_R4
      module procedure mpp_max_real4_0d
      module procedure mpp_max_real4_1d
-#endif
      module procedure mpp_max_int4_0d
      module procedure mpp_max_int4_1d
   end interface
@@ -555,14 +552,10 @@ private
   interface mpp_min
      module procedure mpp_min_real8_0d
      module procedure mpp_min_real8_1d
-#ifndef no_8byte_integers
      module procedure mpp_min_int8_0d
      module procedure mpp_min_int8_1d
-#endif
-#ifdef OVERLOAD_R4
      module procedure mpp_min_real4_0d
      module procedure mpp_min_real4_1d
-#endif
      module procedure mpp_min_int4_0d
      module procedure mpp_min_int4_1d
   end interface
@@ -602,14 +595,12 @@ private
   ! </INTERFACE>
 
   interface mpp_sum
-#ifndef no_8byte_integers
      module procedure mpp_sum_int8
      module procedure mpp_sum_int8_scalar
      module procedure mpp_sum_int8_2d
      module procedure mpp_sum_int8_3d
      module procedure mpp_sum_int8_4d
      module procedure mpp_sum_int8_5d
-#endif
      module procedure mpp_sum_real8
      module procedure mpp_sum_real8_scalar
      module procedure mpp_sum_real8_2d
@@ -630,14 +621,12 @@ private
      module procedure mpp_sum_int4_3d
      module procedure mpp_sum_int4_4d
      module procedure mpp_sum_int4_5d
-#ifdef OVERLOAD_R4
      module procedure mpp_sum_real4
      module procedure mpp_sum_real4_scalar
      module procedure mpp_sum_real4_2d
      module procedure mpp_sum_real4_3d
      module procedure mpp_sum_real4_4d
      module procedure mpp_sum_real4_5d
-#endif
 #ifdef OVERLOAD_C4
      module procedure mpp_sum_cmplx4
      module procedure mpp_sum_cmplx4_scalar
@@ -649,14 +638,12 @@ private
   end interface
 
   interface mpp_sum_ad
-#ifndef no_8byte_integers
      module procedure mpp_sum_int8_ad
      module procedure mpp_sum_int8_scalar_ad
      module procedure mpp_sum_int8_2d_ad
      module procedure mpp_sum_int8_3d_ad
      module procedure mpp_sum_int8_4d_ad
      module procedure mpp_sum_int8_5d_ad
-#endif
      module procedure mpp_sum_real8_ad
      module procedure mpp_sum_real8_scalar_ad
      module procedure mpp_sum_real8_2d_ad
@@ -677,14 +664,12 @@ private
      module procedure mpp_sum_int4_3d_ad
      module procedure mpp_sum_int4_4d_ad
      module procedure mpp_sum_int4_5d_ad
-#ifdef OVERLOAD_R4
      module procedure mpp_sum_real4_ad
      module procedure mpp_sum_real4_scalar_ad
      module procedure mpp_sum_real4_2d_ad
      module procedure mpp_sum_real4_3d_ad
      module procedure mpp_sum_real4_4d_ad
      module procedure mpp_sum_real4_5d_ad
-#endif
 #ifdef OVERLOAD_C4
      module procedure mpp_sum_cmplx4_ad
      module procedure mpp_sum_cmplx4_scalar_ad
@@ -747,24 +732,36 @@ private
      module procedure mpp_alltoall_int8
      module procedure mpp_alltoall_real4
      module procedure mpp_alltoall_real8
+#ifdef OVERLOAD_C4
      module procedure mpp_alltoall_cmplx4
+#endif
+#ifdef OVERLOAD_C8
      module procedure mpp_alltoall_cmplx8
+#endif
      module procedure mpp_alltoall_logical4
      module procedure mpp_alltoall_logical8
      module procedure mpp_alltoall_int4_v
      module procedure mpp_alltoall_int8_v
      module procedure mpp_alltoall_real4_v
      module procedure mpp_alltoall_real8_v
+#ifdef OVERLOAD_C4
      module procedure mpp_alltoall_cmplx4_v
+#endif
+#ifdef OVERLOAD_C8
      module procedure mpp_alltoall_cmplx8_v
+#endif
      module procedure mpp_alltoall_logical4_v
      module procedure mpp_alltoall_logical8_v
      module procedure mpp_alltoall_int4_w
      module procedure mpp_alltoall_int8_w
      module procedure mpp_alltoall_real4_w
      module procedure mpp_alltoall_real8_w
+#ifdef OVERLOAD_C4
      module procedure mpp_alltoall_cmplx4_w
+#endif
+#ifdef OVERLOAD_C8
      module procedure mpp_alltoall_cmplx8_w
+#endif
      module procedure mpp_alltoall_logical4_w
      module procedure mpp_alltoall_logical8_w
   end interface
@@ -859,7 +856,6 @@ private
      module procedure mpp_transmit_cmplx8_4d
      module procedure mpp_transmit_cmplx8_5d
 #endif
-#ifndef no_8byte_integers
      module procedure mpp_transmit_int8
      module procedure mpp_transmit_int8_scalar
      module procedure mpp_transmit_int8_2d
@@ -872,7 +868,6 @@ private
      module procedure mpp_transmit_logical8_3d
      module procedure mpp_transmit_logical8_4d
      module procedure mpp_transmit_logical8_5d
-#endif
 
      module procedure mpp_transmit_real4
      module procedure mpp_transmit_real4_scalar
@@ -917,7 +912,6 @@ private
      module procedure mpp_recv_cmplx8_4d
      module procedure mpp_recv_cmplx8_5d
 #endif
-#ifndef no_8byte_integers
      module procedure mpp_recv_int8
      module procedure mpp_recv_int8_scalar
      module procedure mpp_recv_int8_2d
@@ -930,7 +924,6 @@ private
      module procedure mpp_recv_logical8_3d
      module procedure mpp_recv_logical8_4d
      module procedure mpp_recv_logical8_5d
-#endif
 
      module procedure mpp_recv_real4
      module procedure mpp_recv_real4_scalar
@@ -975,7 +968,6 @@ private
      module procedure mpp_send_cmplx8_4d
      module procedure mpp_send_cmplx8_5d
 #endif
-#ifndef no_8byte_integers
      module procedure mpp_send_int8
      module procedure mpp_send_int8_scalar
      module procedure mpp_send_int8_2d
@@ -988,7 +980,6 @@ private
      module procedure mpp_send_logical8_3d
      module procedure mpp_send_logical8_4d
      module procedure mpp_send_logical8_5d
-#endif
 
      module procedure mpp_send_real4
      module procedure mpp_send_real4_scalar
@@ -1067,7 +1058,6 @@ private
      module procedure mpp_broadcast_cmplx8_4d
      module procedure mpp_broadcast_cmplx8_5d
 #endif
-#ifndef no_8byte_integers
      module procedure mpp_broadcast_int8
      module procedure mpp_broadcast_int8_scalar
      module procedure mpp_broadcast_int8_2d
@@ -1080,7 +1070,6 @@ private
      module procedure mpp_broadcast_logical8_3d
      module procedure mpp_broadcast_logical8_4d
      module procedure mpp_broadcast_logical8_5d
-#endif
 
      module procedure mpp_broadcast_real4
      module procedure mpp_broadcast_real4_scalar
@@ -1118,13 +1107,13 @@ private
   !     Parallel checksums.
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     <TT>mpp_chksum</TT> is a parallel checksum routine that returns an
+  !     \empp_chksum is a parallel checksum routine that returns an
   !     identical answer for the same array irrespective of how it has been
-  !     partitioned across processors. <TT>LONG_KIND</TT>is the <TT>KIND</TT>
+  !     partitioned across processors. \eint_kind is the KIND
   !     parameter corresponding to long integers (see discussion on
   !     OS-dependent preprocessor directives) defined in
-  !     the header file <TT>fms_platform.h</TT>. <TT>MPP_TYPE_</TT> corresponds to any
-  !     4-byte and 8-byte variant of <TT>integer, real, complex, logical</TT>
+  !     the file platform.F90. \eMPP_TYPE_ corresponds to any
+  !     4-byte and 8-byte variant of \einteger, \ereal, \ecomplex, \elogical
   !     variables, of rank 0 to 5.
   !
   !     Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
@@ -1160,7 +1149,6 @@ private
   !   <IN NAME="var" TYPE="MPP_TYPE_"> </IN>
   ! </INTERFACE>
   interface mpp_chksum
-#ifndef no_8byte_integers
      module procedure mpp_chksum_i8_1d
      module procedure mpp_chksum_i8_2d
      module procedure mpp_chksum_i8_3d
@@ -1172,7 +1160,6 @@ private
      module procedure mpp_chksum_i8_4d_rmask
      module procedure mpp_chksum_i8_5d_rmask
 
-#endif
      module procedure mpp_chksum_i4_1d
      module procedure mpp_chksum_i4_2d
      module procedure mpp_chksum_i4_3d
@@ -1183,12 +1170,20 @@ private
      module procedure mpp_chksum_i4_3d_rmask
      module procedure mpp_chksum_i4_4d_rmask
      module procedure mpp_chksum_i4_5d_rmask
+
      module procedure mpp_chksum_r8_0d
      module procedure mpp_chksum_r8_1d
      module procedure mpp_chksum_r8_2d
      module procedure mpp_chksum_r8_3d
      module procedure mpp_chksum_r8_4d
      module procedure mpp_chksum_r8_5d
+
+     module procedure mpp_chksum_r4_0d
+     module procedure mpp_chksum_r4_1d
+     module procedure mpp_chksum_r4_2d
+     module procedure mpp_chksum_r4_3d
+     module procedure mpp_chksum_r4_4d
+     module procedure mpp_chksum_r4_5d
 #ifdef OVERLOAD_C8
      module procedure mpp_chksum_c8_0d
      module procedure mpp_chksum_c8_1d
@@ -1196,14 +1191,6 @@ private
      module procedure mpp_chksum_c8_3d
      module procedure mpp_chksum_c8_4d
      module procedure mpp_chksum_c8_5d
-#endif
-#ifdef OVERLOAD_R4
-     module procedure mpp_chksum_r4_0d
-     module procedure mpp_chksum_r4_1d
-     module procedure mpp_chksum_r4_2d
-     module procedure mpp_chksum_r4_3d
-     module procedure mpp_chksum_r4_4d
-     module procedure mpp_chksum_r4_5d
 #endif
 #ifdef OVERLOAD_C4
      module procedure mpp_chksum_c4_0d
@@ -1226,11 +1213,11 @@ private
   logical              :: module_is_initialized = .false.
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0
-  integer(LONG_KIND)   :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
+  integer(i8_kind)     :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
   integer              :: mpp_comm_private
   logical              :: first_call_system_clock_mpi=.TRUE.
-  real(DOUBLE_KIND)    :: mpi_count0=0  ! use to prevent integer overflow
-  real(DOUBLE_KIND)    :: mpi_tick_rate=0.d0  ! clock rate for mpi_wtick()
+  real(r8_kind)        :: mpi_count0=0  ! use to prevent integer overflow
+  real(r8_kind)        :: mpi_tick_rate=0.d0  ! clock rate for mpi_wtick()
   logical              :: mpp_record_timing_data=.TRUE.
   type(clock),save     :: clocks(MAX_CLOCKS)
   integer              :: log_unit, etc_unit

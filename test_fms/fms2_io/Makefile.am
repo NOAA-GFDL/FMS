@@ -23,10 +23,10 @@
 # J.Liptak, R.Menzel, U.Ramirez
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \

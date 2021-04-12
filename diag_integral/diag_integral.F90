@@ -17,11 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \file
-!! \brief Contains the \ref diag_integral_mod module
-
+!> @file
+!! @brief This module computes and outputs global and / or hemispheric physics
+!!        integrals.
+!! @author Fei Liu
+!! @email gfdl.climate.model.info@noaa.gov
                      module diag_integral_mod
-#include <fms_platform.h>
 
 
 
@@ -95,6 +96,7 @@
 !! - format_data_init
 !!
 
+use platform_mod,     only:  i8_kind
 use time_manager_mod, only:  time_type, get_time, set_time,  &
                              time_manager_init, &
                              operator(+),  operator(-),      &
@@ -199,22 +201,22 @@ private         &
 !------ namelist -------
 
 integer, parameter  ::    &
-                      mxch = 64    ! maximum number of characters in
-                                   ! the optional output file name
+                      mxch = 64    !< maximum number of characters in
+                                   !! the optional output file name
 real                ::    &
-         output_interval = -1.0    ! time interval at which integrals
-                                   ! are to be output
+         output_interval = -1.0    !< time interval at which integrals
+                                   !! are to be output
 character(len=8)    ::    &
-            time_units = 'hours'   ! time units associated with
-                                   ! output_interval
+            time_units = 'hours'   !< time units associated with
+                                   !! output_interval
 character(len=mxch) ::    &
-                 file_name = ' '   ! optional integrals output file name
+                 file_name = ' '   !< optional integrals output file name
 logical             ::    &
-           print_header = .true.   ! print a header for the integrals
-                                   ! file ?
+           print_header = .true.   !< print a header for the integrals
+                                   !! file ?
 integer             ::    &
-       fields_per_print_line = 4   ! number of fields to write per line
-                                   ! of output
+       fields_per_print_line = 4   !< number of fields to write per line
+                                   !! of output
 
 namelist / diag_integral_nml /      &
                                 output_interval, time_units,  &
@@ -240,8 +242,12 @@ namelist / diag_integral_nml /      &
 !         Time_init_save   initial time associated with experiment;
 !                          used as a base for defining time
 !-------------------------------------------------------------------------------
-type (time_type) :: Next_alarm_time, Alarm_interval, Zero_time
-type (time_type) :: Time_init_save
+type (time_type) :: Next_alarm_time !< next time at which integrals are to be written
+type (time_type) :: Alarm_interval !< time interval between writing integrals
+type (time_type) :: Zero_time !< time_type variable set to (0,0); used as
+                              !! flag to indicate integrals are not being output
+type (time_type) :: Time_init_save !< initial time associated with experiment;
+                                   !! used as a base for defining time
 
 !-------------------------------------------------------------------------------
 !    variables used in determining weights associated with each
@@ -252,9 +258,11 @@ type (time_type) :: Time_init_save
 !        field_size   number of columns on global domain
 !        sum_area     surface area of globe
 !-------------------------------------------------------------------------------
-real, allocatable, dimension(:,:) :: area
-integer                           :: idim, jdim, field_size
-real                              :: sum_area
+real, allocatable, dimension(:,:) :: area !< area of each grid box
+integer                           :: idim !< x dimension of grid on local processor
+integer                           :: jdim !< y dimension of grid on local processor
+integer                           :: field_size !< number of columns on global domain
+real                              :: sum_area !< surface area of globe
 
 !-------------------------------------------------------------------------------
 !    variables used to define the integral fields:
@@ -266,13 +274,13 @@ real                              :: sum_area
 !      field_sum(i)     integrand for integral i
 !      field_count(i)   number of values in integrand i
 !-------------------------------------------------------------------------------
-integer, parameter          :: max_len_name   = 12
-integer, parameter          :: max_num_field = 32
-integer                     :: num_field = 0
-character(len=max_len_name) :: field_name   (max_num_field)
-character(len=16)           :: field_format (max_num_field)
-real                        :: field_sum    (max_num_field)
-integer                     :: field_count  (max_num_field)
+integer, parameter          :: max_len_name   = 12 !< maximum length of name associated with integral
+integer, parameter          :: max_num_field = 32 !< maximum number of integrals allowed
+integer                     :: num_field = 0 !< number of integrals that have been activated
+character(len=max_len_name) :: field_name   (max_num_field) !< name associated with integral i
+character(len=16)           :: field_format (max_num_field) !< output format for integral i
+real                        :: field_sum    (max_num_field) !< integrand for integral i
+integer                     :: field_count  (max_num_field) !< number of values in integrand i
 
 !-------------------------------------------------------------------------------
 !    variables defining output formats.
@@ -282,16 +290,17 @@ integer                     :: field_count  (max_num_field)
 !       nd                number of characters in data format statement
 !       nt                number of characters in text format statement
 !-------------------------------------------------------------------------------
-character(len=160) :: format_text, format_data
-logical            :: do_format_data = .true.
-integer            :: nd, nt
+character(len=160) :: format_text !< format statement for header
+character(len=160) :: format_data !< format statement for data output
+logical            :: do_format_data = .true. !< a data format needs to be generated ?
+integer            :: nd !< number of characters in data format statement
+integer            :: nt !< number of characters in text format statement
 
 !-------------------------------------------------------------------------------
 !    miscellaneous variables.
 !-------------------------------------------------------------------------------
-integer :: diag_unit = 0             ! unit number for output file
-logical :: module_is_initialized = .false.
-                                     ! module is initialized ?
+integer :: diag_unit = 0             !< unit number for output file
+logical :: module_is_initialized = .false. !< module is initialized ?
 
 
 
@@ -332,8 +341,11 @@ logical :: module_is_initialized = .false.
 !!
 subroutine diag_integral_init (Time_init, Time, blon, blat, area_in)
 
-type (time_type),  intent(in), optional :: Time_init, Time
-real,dimension(:,:), intent(in), optional :: blon, blat, area_in
+type (time_type),  intent(in), optional :: Time_init !< Initial time to start the integral
+type (time_type),  intent(in), optional :: Time !< current time
+real,dimension(:,:), intent(in), optional :: blon !< array of model latitudes at cell boundaries [radians]
+real,dimension(:,:), intent(in), optional :: blat !< array of model longitudes at cell boundaries [radians]
+real,dimension(:,:), intent(in), optional :: area_in
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -481,12 +493,13 @@ end subroutine diag_integral_init
 !!
 subroutine diag_integral_field_init (name, format)
 
-character(len=*), intent(in) :: name, format
+character(len=*), intent(in) :: name !< Name of the field to be integrated
+character(len=*), intent(in) :: format !< Output format of the field to be integrated
 
 !-------------------------------------------------------------------------------
 ! local variables:
 !-------------------------------------------------------------------------------
-      integer :: field   ! index assigned to the current integral
+      integer :: field   !< index assigned to the current integral
 
 !-------------------------------------------------------------------------------
 !    note: no initialization is required for this interface. all needed
@@ -561,16 +574,24 @@ end subroutine diag_integral_field_init
 !!
 subroutine sum_field_2d (name, data, is, js)
 
-character(len=*),  intent(in) :: name
-real,              intent(in) :: data(:,:)
-integer, optional, intent(in) :: is, js
+character(len=*),  intent(in) :: name !< Name of the field to be integrated
+real,              intent(in) :: data(:,:) !< field of integrands to be summed over
+integer, optional, intent(in) :: is !< starting i indices over which summation is to occur
+integer, optional, intent(in) :: js !< starting j indices over which summation is to occur
 
 !-------------------------------------------------------------------------------
 ! local variables:
 !-------------------------------------------------------------------------------
-      integer :: field           ! index of desired integral
-      integer :: i1, j1, i2, j2  ! location indices of current data in
-                                 ! processor-global coordinates
+      integer :: field           !< index of desired integral
+      integer :: i1  !< location indices of current data in
+                                 !! processor-global coordinates
+      integer :: j1  !< location indices of current data in
+                                 !! processor-global coordinates
+      integer :: i2  !< location indices of current data in
+                                 !! processor-global coordinates
+      integer :: j2  !< location indices of current data in
+                                 !! processor-global coordinates
+
 
 !-------------------------------------------------------------------------------
 !    be sure module has been initialized.
@@ -640,9 +661,10 @@ end subroutine sum_field_2d
 !!
 subroutine sum_field_3d (name, data, is, js)
 
-character(len=*),  intent(in) :: name
-real,              intent(in) :: data(:,:,:)
-integer, optional, intent(in) :: is, js
+character(len=*),  intent(in) :: name !< Name of the field to be integrated
+real,              intent(in) :: data(:,:,:) !< field of integrands to be summed over
+integer, optional, intent(in) :: is !< starting i,j indices over which summation is to occur
+integer, optional, intent(in) :: js !< starting i,j indices over which summation is to occur
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -654,8 +676,15 @@ integer, optional, intent(in) :: is, js
       real, dimension (size(data,1),  &
                        size(data,2)) :: data2
 
-      integer :: field
-      integer :: i1, j1, i2, j2
+      integer :: field !< index of desired integral
+      integer :: i1 !< location indices of current data in
+                                !! processor-global coordinates
+      integer :: j1 !< location indices of current data in
+                                !! processor-global coordinates
+      integer :: i2 !< location indices of current data in
+                                !! processor-global coordinates
+      integer :: j2 !< location indices of current data in
+                                !! processor-global coordinates
 
 
 !-------------------------------------------------------------------------------
@@ -729,9 +758,11 @@ end subroutine sum_field_3d
 !!
 subroutine sum_field_wght_3d (name, data, wt, is, js)
 
-character(len=*),  intent(in) :: name
-real,              intent(in) :: data(:,:,:), wt(:,:,:)
-integer, optional, intent(in) :: is, js
+character(len=*),  intent(in) :: name !< Name of the field to be integrated
+real,              intent(in) :: data(:,:,:) !< field of integrands to be summed over
+real,              intent(in) :: wt(:,:,:) !< the weight function to be evaluated at summation
+integer, optional, intent(in) :: is !< starting i indices over which summation is to occur
+integer, optional, intent(in) :: js !< starting j indices over which summation is to occur
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -741,7 +772,15 @@ integer, optional, intent(in) :: is, js
 !                       processor-global coordinates
 !-------------------------------------------------------------------------------
       real, dimension (size(data,1),size(data,2)) :: data2
-      integer :: field, i1, j1, i2, j2
+      integer :: field !< index of desired integral
+      integer :: i1 !< location indices of current data in
+                                       !! processor-global coordinates
+      integer :: j1 !< location indices of current data in
+                                       !! processor-global coordinates
+      integer :: i2 !< location indices of current data in
+                                       !! processor-global coordinates
+      integer :: j2 !< location indices of current data in
+                                       !! processor-global coordinates
 
 !-------------------------------------------------------------------------------
 !    be sure module has been initialized.
@@ -815,9 +854,16 @@ end subroutine sum_field_wght_3d
 !!
 subroutine sum_field_2d_hemi (name, data, is, ie, js, je)
 
-character(len=*),  intent(in) :: name
-real,              intent(in) :: data(:,:)
-integer,           intent(in) :: is, js, ie, je
+character(len=*),  intent(in) :: name !< Name of the field to be integrated
+real,              intent(in) :: data(:,:) !< field of integrands to be summed over
+integer,           intent(in) :: is !< starting/ending i,j indices over which summation
+                                                !! is to occur
+integer,           intent(in) :: js !< starting/ending i,j indices over which summation
+                                                !! is to occur
+integer,           intent(in) :: ie !< starting/ending i,j indices over which summation
+                                                !! is to occur
+integer,           intent(in) :: je !< starting/ending i,j indices over which summation
+                                                !! is to occur
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -825,7 +871,15 @@ integer,           intent(in) :: is, js, ie, je
 !     i1, j1, i2, j2  ! location indices of current data in
 !                       processor-global coordinates
 !-------------------------------------------------------------------------------
-   integer :: field, i1, j1, i2, j2
+   integer :: field !< index of desired integral
+   integer :: i1 !< location indices of current data in
+                             !! processor-global coordinates
+   integer :: j1 !< location indices of current data in
+                             !! processor-global coordinates
+   integer :: i2 !< location indices of current data in
+                             !! processor-global coordinates
+   integer :: j2 !< location indices of current data in
+                             !! processor-global coordinates
 
 !-------------------------------------------------------------------------------
 !    be sure module has been initialized.
@@ -1015,16 +1069,16 @@ end subroutine diag_integral_end
 !!
 function set_axis_time (atime, units) result (Time)
 
-real,             intent(in) :: atime
-character(len=*), intent(in) :: units
+real,             intent(in) :: atime !< integral time stamp at the current time
+character(len=*), intent(in) :: units !< input units, not used
 type(time_type)  :: Time
 
 !-------------------------------------------------------------------------------
 ! local variables:
 !-------------------------------------------------------------------------------
-      integer          :: sec     ! seconds corresponding to the input
-                                  ! variable atime
-      integer          :: day = 0 ! day component of time_type variable
+      integer          :: sec     !< seconds corresponding to the input
+                                  !! variable atime
+      integer          :: day = 0 !< day component of time_type variable
 
 !-------------------------------------------------------------------------------
 !    convert the input time to seconds, regardless of input units.
@@ -1075,7 +1129,7 @@ end function set_axis_time
 !!
 function get_field_index (name) result (index)
 
-character(len=*),  intent(in) :: name
+character(len=*),  intent(in) :: name !< Name associated with an integral
 integer                       :: index
 
 !-------------------------------------------------------------------------------
@@ -1130,7 +1184,7 @@ end function get_field_index
 !!
 subroutine write_field_averages (Time)
 
-type (time_type), intent(in) :: Time
+type (time_type), intent(in) :: Time !< integral time stamp at the current time
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1149,7 +1203,7 @@ type (time_type), intent(in) :: Time
       real    :: xtime, rcount
       integer :: nn, ninc, nst, nend, fields_to_print
       integer :: i, kount
-      integer(LONG_KIND) :: icount
+      integer(i8_kind) :: icount
 
 !-------------------------------------------------------------------------------
 !    each header and data format may be different and must be generated
@@ -1250,7 +1304,10 @@ end subroutine write_field_averages
 !!
 subroutine format_text_init (nst_in, nend_in)
 
-integer, intent(in), optional :: nst_in, nend_in
+integer, intent(in), optional :: nst_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
+integer, intent(in), optional :: nend_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1338,7 +1395,10 @@ end subroutine format_text_init
 !!
 subroutine format_data_init (nst_in, nend_in)
 
-integer, intent(in), optional :: nst_in, nend_in
+integer, intent(in), optional :: nst_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
+integer, intent(in), optional :: nend_in !< starting/ending integral index which will be
+                                                 !! included in this format statement
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1412,10 +1472,11 @@ end subroutine format_data_init
 !! \param [in] <units> input units of time_type
 !! \param [out] <atime>
 !!
+!! @return real atime
 function get_axis_time (Time, units) result (atime)
 
-type(time_type),  intent(in) :: Time
-character(len=*), intent(in) :: units
+type(time_type),  intent(in) :: Time !< integral time stamp
+character(len=*), intent(in) :: units !< input units of time_type
 real                         :: atime
 
 !-------------------------------------------------------------------------------
@@ -1460,9 +1521,10 @@ end function get_axis_time
 !! \param [in] <Time> current time
 !! \param [out] <answer>
 !!
+!! @return logical answer
 function diag_integral_alarm (Time) result (answer)
 
-type (time_type), intent(in) :: Time
+type (time_type), intent(in) :: Time !< current time
 logical                      :: answer
 
       answer = .false.
@@ -1495,9 +1557,11 @@ end function diag_integral_alarm
 !! \param [in] <data> integral field data arrays
 !! \param [in] <wt> integral field weighting functions
 !! \param [out] <data2>
+!! @return real array data2
 function vert_diag_integral (data, wt) result (data2)
 
-real, dimension (:,:,:),         intent(in) :: data, wt
+real, dimension (:,:,:),         intent(in) :: data !< integral field data arrays
+real, dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
 real, dimension (size(data,1),size(data,2)) :: data2
 
 !-------------------------------------------------------------------------------
@@ -1516,7 +1580,8 @@ real, dimension (size(data,1),size(data,2)) :: data2
 
 end function vert_diag_integral
 
-!> \brief Adds .ens_## to the diag_integral.out file name
+!> @brief Adds .ens_## to the diag_integral.out file name
+!! @return character array updated_file_name
 function ensemble_file_name(fname) result(updated_file_name)
      character (len=mxch), intent(inout) :: fname
      character (len=mxch) :: updated_file_name

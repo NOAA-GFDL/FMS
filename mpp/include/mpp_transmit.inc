@@ -25,7 +25,8 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine MPP_TRANSMIT_SCALAR_( put_data, to_pe, get_data, from_pe, plen, glen, block, tag, recv_request, send_request)
+    subroutine MPP_TRANSMIT_SCALAR_( put_data, to_pe, get_data, from_pe, plen, glen, block, tag, &
+                                    recv_request, send_request)
       integer, intent(in) :: to_pe, from_pe
       MPP_TYPE_, intent(in)  :: put_data
       MPP_TYPE_, intent(out) :: get_data
@@ -48,7 +49,8 @@
       return
     end subroutine MPP_TRANSMIT_SCALAR_
 
-    subroutine MPP_TRANSMIT_2D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
+    subroutine MPP_TRANSMIT_2D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
+                                recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(:,:)
       MPP_TYPE_, intent(out) :: get_data(:,:)
@@ -67,7 +69,8 @@
       return
     end subroutine MPP_TRANSMIT_2D_
 
-    subroutine MPP_TRANSMIT_3D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
+    subroutine MPP_TRANSMIT_3D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
+                                recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(:,:,:)
       MPP_TYPE_, intent(out) :: get_data(:,:,:)
@@ -86,7 +89,8 @@
       return
     end subroutine MPP_TRANSMIT_3D_
 
-    subroutine MPP_TRANSMIT_4D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
+    subroutine MPP_TRANSMIT_4D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
+                                recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(:,:,:,:)
       MPP_TYPE_, intent(out) :: get_data(:,:,:,:)
@@ -105,7 +109,8 @@
       return
     end subroutine MPP_TRANSMIT_4D_
 
-    subroutine MPP_TRANSMIT_5D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
+    subroutine MPP_TRANSMIT_5D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
+                                recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(:,:,:,:,:)
       MPP_TYPE_, intent(out) :: get_data(:,:,:,:,:)
@@ -167,7 +172,7 @@
       pointer( ptr, get_data1D )
       ptr = LOC(get_data)
       get_len=1; if(PRESENT(glen))get_len=glen
-      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request)
+      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request )
 
     end subroutine MPP_RECV_SCALAR_
 
@@ -220,7 +225,7 @@
       integer, intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1,1)
-      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request  )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
     end subroutine MPP_RECV_3D_
 
     subroutine MPP_SEND_3D_( put_data, put_len, to_pe, tag, request )
@@ -242,7 +247,7 @@
       integer, intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1,1,1)
-      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request  )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
     end subroutine MPP_RECV_4D_
 
     subroutine MPP_SEND_4D_( put_data, put_len, to_pe, tag, request )
@@ -255,7 +260,7 @@
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
     end subroutine MPP_SEND_4D_
 
-    subroutine MPP_RECV_5D_( get_data, get_len, from_pe, block, tag, request )
+    subroutine MPP_RECV_5D_( get_data, get_len, from_pe, block, tag, request)
 !a mpp_transmit with null arguments on the put side
       integer, intent(in) :: get_len, from_pe
       MPP_TYPE_, intent(out) :: get_data(:,:,:,:,:)
@@ -264,7 +269,7 @@
       integer, intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1,1,1,1)
-      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request  )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
     end subroutine MPP_RECV_5D_
 
     subroutine MPP_SEND_5D_( put_data, put_len, to_pe, tag, request )

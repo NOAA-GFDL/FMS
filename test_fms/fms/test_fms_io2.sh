@@ -27,6 +27,17 @@
 # Set common test settings.
 . ../test_common.sh
 
-# These tests are skipped in bats files.
-run_test test_fms_io 2 skip
-run_test test_unstructured_fms_io 2 skip
+# Create the base input.nml file needed for the tests
+cat <<_EOF > input.nml
+&test_fms_io_nml
+  io_layout = 1,1
+/
+_EOF
+
+# Test the structured grid
+rm -rf RESTART && mkdir RESTART
+run_test test_fms_io 6
+
+# Ensure the restart directory is empty
+rm -rf RESTART && mkdir RESTART
+run_test test_unstructured_fms_io 6

@@ -20,7 +20,7 @@
 subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, update_x, update_y,     &
                                      d_type, ke_max, ke_list, gridtype, flags, reuse_id_update, name)
   integer,             intent(in) :: id_update
-  integer(LONG_KIND),  intent(in) :: f_addrsx(:,:), f_addrsy(:,:)
+  integer(i8_kind),  intent(in) :: f_addrsx(:,:), f_addrsy(:,:)
   type(domain2d),      intent(in) :: domain
   type(overlapSpec),   intent(in) :: update_x, update_y
   integer,             intent(in) :: ke_max
@@ -537,7 +537,7 @@ end subroutine MPP_START_DO_UPDATE_3D_V_
 subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, update_x, update_y,     &
                                         d_type, ke_max, ke_list, gridtype, flags)
   integer,             intent(in) :: id_update
-  integer(LONG_KIND),  intent(in) :: f_addrsx(:,:), f_addrsy(:,:)
+  integer(i8_kind),  intent(in) :: f_addrsx(:,:), f_addrsy(:,:)
   type(domain2d),      intent(in) :: domain
   type(overlapSpec),   intent(in) :: update_x, update_y
   integer,             intent(in) :: ke_max

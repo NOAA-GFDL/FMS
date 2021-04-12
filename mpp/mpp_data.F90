@@ -17,13 +17,13 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module mpp_data_mod
-#include <fms_platform.h>
 
 #if defined(use_libMPI)
   use mpi
 #endif
 
   use mpp_parameter_mod, only : MAXPES
+  use platform_mod
 
   implicit none
   private
