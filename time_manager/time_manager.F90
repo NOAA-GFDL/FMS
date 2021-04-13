@@ -1677,9 +1677,10 @@ end function get_ticks_per_second
  integer, intent(out)           :: second, minute, hour, day, month, year
  integer, intent(out), optional :: tick
  character(len=*), intent(out), optional :: err_msg
- logical, intent(inout), optional :: choose0
+ logical, intent(in), optional  :: choose0
  character(len=128) :: err_msg_local
  integer :: tick1
+ logical :: choose0_local
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
@@ -1688,8 +1689,9 @@ end function get_ticks_per_second
  case(THIRTY_DAY_MONTHS)
    call get_date_thirty   (time, year, month, day, hour, minute, second, tick1)
  case(GREGORIAN)
-   if (.not.present(choose0) ) choose0=.false.
-   if( choose0 ) then
+   choose0_local=.false.
+   if(present(choose0)) choose0_local=choose0
+   if(choose0_local) then
      call get_date_gregorian0(time, year, month, day, hour, minute, second, tick1)
    else
      call get_date_gregorian(time, year, month, day, hour, minute, second, tick1)
@@ -2039,7 +2041,8 @@ end function get_ticks_per_second
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
  character(len=*), intent(out) :: err_msg
- logical, intent(inout), optional ::choose0
+ logical, intent(in), optional ::choose0
+ logical :: choose0_local
 
  if(.not.module_is_initialized) call time_manager_init
 
@@ -2049,8 +2052,9 @@ end function get_ticks_per_second
  case(THIRTY_DAY_MONTHS)
    set_date_private = set_date_thirty   (year, month, day, hour, minute, second, tick, Time_out, err_msg)
  case(GREGORIAN)
-   if( .not.present(choose0) ) choose0=.false.
-   if( choose0 ) then
+    choose0_local = .false.
+   if( present(choose0) ) choose0_local=choose0
+   if( choose0_local ) then
      set_date_private = set_date_gregorian0(year, month, day, hour, minute, second, tick, Time_out, err_msg)
    else
      set_date_private = set_date_gregorian(year, month, day, hour, minute, second, tick, Time_out, err_msg)
@@ -2075,10 +2079,11 @@ end function get_ticks_per_second
  type(time_type) :: set_date_i
  integer, intent(in) :: day, month, year
  integer, intent(in), optional :: second, minute, hour, tick
- logical, intent(inout), optional :: choose0
+ logical, intent(in), optional :: choose0
  character(len=*), intent(out), optional :: err_msg
  integer :: osecond, ominute, ohour, otick
  character(len=128) :: err_msg_local
+ logical :: choose0_local
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
@@ -2089,8 +2094,9 @@ end function get_ticks_per_second
  ohour   = 0; if(present(hour))   ohour   = hour
  otick   = 0; if(present(tick))   otick   = tick
 
- if( .not.present(choose0) ) choose0 = .false.
- if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local, choose0=choose0)) then
+ choose0_local = .false.
+ if( present(choose0) ) choose0_local=choose0
+ if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local, choose0=choose0_local)) then
    if(error_handler('function set_date_i', err_msg_local, err_msg)) return
  end if
 
@@ -2125,7 +2131,7 @@ end function get_ticks_per_second
  logical,          intent(in),  optional :: allow_rounding
  logical,          intent(inout),  optional :: choose0
  character(len=4) :: formt='(i )'
- logical :: correct_form, zero_year_warning_local, allow_rounding_local
+ logical :: correct_form, zero_year_warning_local, allow_rounding_local, choose0_local
  integer :: i1, i2, i3, i4, i5, i6, i7
  character(len=32) :: string_sifted_left
  integer :: year, month, day, hour, minute, second, tick
@@ -2212,8 +2218,9 @@ end function get_ticks_per_second
    endif
  endif
 
- if( .not.present(choose0) ) choose0=.false.
- if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local,choose0=choose0)) then
+ choose0_local = .false.
+ if( present(choose0) ) choose0_local = choose0
+ if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local,choose0=choose0_local)) then
    if(error_handler('function set_date_c', err_msg_local, err_msg)) return
  end if
 
