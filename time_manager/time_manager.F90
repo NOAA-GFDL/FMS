@@ -1677,7 +1677,7 @@ end function get_ticks_per_second
  integer, intent(out)           :: second, minute, hour, day, month, year
  integer, intent(out), optional :: tick
  character(len=*), intent(out), optional :: err_msg
- logical, intent(in), optional :: choose0
+ logical, intent(inout), optional :: choose0
  character(len=128) :: err_msg_local
  integer :: tick1
 
@@ -2039,7 +2039,7 @@ end function get_ticks_per_second
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
  character(len=*), intent(out) :: err_msg
- logical, intent(in), optional ::choose0
+ logical, intent(inout), optional ::choose0
 
  if(.not.module_is_initialized) call time_manager_init
 
@@ -2075,7 +2075,7 @@ end function get_ticks_per_second
  type(time_type) :: set_date_i
  integer, intent(in) :: day, month, year
  integer, intent(in), optional :: second, minute, hour, tick
- logical, intent(in), optional :: choose0
+ logical, intent(inout), optional :: choose0
  character(len=*), intent(out), optional :: err_msg
  integer :: osecond, ominute, ohour, otick
  character(len=128) :: err_msg_local
@@ -2123,7 +2123,7 @@ end function get_ticks_per_second
  logical,          intent(in),  optional :: zero_year_warning
  character(len=*), intent(out), optional :: err_msg
  logical,          intent(in),  optional :: allow_rounding
- logical,          intent(in),  optional :: choose0
+ logical,          intent(inout),  optional :: choose0
  character(len=4) :: formt='(i )'
  logical :: correct_form, zero_year_warning_local, allow_rounding_local
  integer :: i1, i2, i3, i4, i5, i6, i7
