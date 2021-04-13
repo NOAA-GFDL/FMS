@@ -560,7 +560,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.,test21=.true.
     write(errunit,'(a)')   '  It can be turned off with: &test_nml test17=.false./'
     write(errunit,'(a,/)') ' ====================================================='
     call set_calendar_type(GREGORIAN)
-    do year=16801,2200
+    do year=1801,2200
       leap = mod(year,4) == 0
       leap = leap .and. .not.mod(year,100) == 0
       leap = leap .or. mod(year,400) == 0
