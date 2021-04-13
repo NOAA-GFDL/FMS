@@ -127,7 +127,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.,test21=.true.
     call print_time(set_time(seconds=0, days=2, ticks=5) + set_time(seconds=0, days=2, ticks=6), 'test3.1:', unit=outunit)
 
  !  Test of function time_minus
- !  The minus operator test for time ensures a positive result. In effect is does this: abs(time1-time2)
+ !  The minus operator for time ensures a positive result. In effect is does this: abs(time1-time2)
     call print_time(set_time(seconds=0, days=2, ticks=5) - set_time(seconds=0, days=2, ticks=6), 'test3.2:', unit=outunit)
 
  !  Test of function time_scalar_mult.  Note that 25000*86399 is greater than huge = 2**31 - 1
