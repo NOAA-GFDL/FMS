@@ -603,6 +603,9 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
       write(outunit,'(a)') 'test successful: '//trim(err_msg)
     endif
   endif
+ !==============================================================================================
+  write(outunit,'(/,a)') '############################################################################'
+  write(outunit,'(a,i6)') ' ticks_per_second=',get_ticks_per_second()
 
  !==============================================================================================
  !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian invoked with choose0=.true.
