@@ -1688,7 +1688,8 @@ end function get_ticks_per_second
  case(THIRTY_DAY_MONTHS)
    call get_date_thirty   (time, year, month, day, hour, minute, second, tick1)
  case(GREGORIAN)
-   if( present(choose0) ) then
+   if (.not.present(choose0) ) choose0=.false.
+   if( choose0 ) then
      call get_date_gregorian0(time, year, month, day, hour, minute, second, tick1)
    else
      call get_date_gregorian(time, year, month, day, hour, minute, second, tick1)
@@ -2048,7 +2049,8 @@ end function get_ticks_per_second
  case(THIRTY_DAY_MONTHS)
    set_date_private = set_date_thirty   (year, month, day, hour, minute, second, tick, Time_out, err_msg)
  case(GREGORIAN)
-   if( present(choose0) ) then
+   if( .not.present(choose0) ) choose0=.false.
+   if( choose0 ) then
      set_date_private = set_date_gregorian0(year, month, day, hour, minute, second, tick, Time_out, err_msg)
    else
      set_date_private = set_date_gregorian(year, month, day, hour, minute, second, tick, Time_out, err_msg)
@@ -2087,15 +2089,10 @@ end function get_ticks_per_second
  ohour   = 0; if(present(hour))   ohour   = hour
  otick   = 0; if(present(tick))   otick   = tick
 
- if( present(choose0) ) then
-   if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local, choose0=.true.)) then
-     if(error_handler('function set_date_i', err_msg_local, err_msg)) return
-   end if
- else
-   if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local)) then
-     if(error_handler('function set_date_i', err_msg_local, err_msg)) return
-   end if
- endif
+ if( .not.present(choose0) ) choose0 = .false.
+ if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local, choose0=choose0)) then
+   if(error_handler('function set_date_i', err_msg_local, err_msg)) return
+ end if
 
  end function set_date_i
 !------------------------------------------------------------------------
@@ -2215,15 +2212,10 @@ end function get_ticks_per_second
    endif
  endif
 
- if( present(choose0) ) then
-   if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local,choose0=choose0)) then
-     if(error_handler('function set_date_c', err_msg_local, err_msg)) return
-   end if
- else
-   if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local)) then
-     if(error_handler('function set_date_c', err_msg_local, err_msg)) return
-   end if
- endif
+ if( .not.present(choose0) ) choose0=.false.
+ if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local,choose0=choose0)) then
+   if(error_handler('function set_date_c', err_msg_local, err_msg)) return
+ end if
 
  end function set_date_c
 
