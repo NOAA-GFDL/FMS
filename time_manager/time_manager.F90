@@ -2129,7 +2129,7 @@ end function get_ticks_per_second
  logical,          intent(in),  optional :: zero_year_warning
  character(len=*), intent(out), optional :: err_msg
  logical,          intent(in),  optional :: allow_rounding
- logical,          intent(inout),  optional :: choose0
+ logical,          intent(in),  optional :: choose0
  character(len=4) :: formt='(i )'
  logical :: correct_form, zero_year_warning_local, allow_rounding_local, choose0_local
  integer :: i1, i2, i3, i4, i5, i6, i7
