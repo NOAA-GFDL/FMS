@@ -23,29 +23,22 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(MODDIR) -I${top_srcdir}/include
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_time_manager test_time_manager_greg
+check_PROGRAMS = test_time_manager
 
 # This is the source code for the test.
-test_time_manager_SOURCES = test_time_manager.F90 time_manager0.F90
-test_time_manager_greg_SOURCES = test_time_manager_greg.F90 time_manager2.F90
-
-time_manager0_mod.mod : time_manager0.$(OBJEXT)
-test_time_manager.$(OBJEXT): time_manager0_mod.mod
-
-time_manager2_mod.mod : time_manager2.$(OBJEXT)
-test_time_manager_greg.$(OBJEXT): time_manager2_mod.mod
+test_time_manager_SOURCES = test_time_manager.F90
 
 # Run the test program.
-TESTS = test_time_manager2.sh test_time_manager_greg.sh
+TESTS = test_time_manager2.sh
 
 # These files will be included in the distribution.
-EXTRA_DIST = test_time_manager2.sh test_time_manager_greg.sh input_base.nml
+EXTRA_DIST = test_time_manager2.sh input_base.nml
 
 # Clean up
 CLEANFILES = input.nml *.out*

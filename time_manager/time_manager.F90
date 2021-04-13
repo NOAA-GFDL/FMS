@@ -157,6 +157,8 @@ integer, parameter :: max_type = 4
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
 integer, parameter :: seconds_per_day = rseconds_per_day  ! This should automatically cast real to integer
 integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregorian
+integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian
+integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian
 integer, parameter :: invalid_date=-1                     ! Used only for gregorian
 integer,parameter :: do_floor = 0
 integer,parameter :: do_nearest = 1
@@ -1546,6 +1548,23 @@ endif
 
 calendar_type = type
 
+if(type == GREGORIAN) then
+  date_to_day = invalid_date
+  iday = 0
+  do year=1,400
+    leap = leap_year_gregorian_int(year)
+    do month=1,12
+      days_this_month = days_per_month(month)
+      if(leap .and. month ==2) days_this_month = 29
+      do day=1,days_this_month
+        date_to_day(year,month,day) = iday
+        iday = iday+1
+        coded_date(iday) = day + 32*(month + 16*year)
+      enddo ! do day
+    enddo ! do month
+  enddo ! do year
+endif
+
 end subroutine set_calendar_type
 ! </SUBROUTINE>
 
@@ -1650,7 +1669,7 @@ end function get_ticks_per_second
 !     similar to this:
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
- subroutine get_date(time, year, month, day, hour, minute, second, tick, err_msg)
+ subroutine get_date(time, year, month, day, hour, minute, second, tick, err_msg, choose0)
 
 ! Given a time, computes the corresponding date given the selected calendar
 
@@ -1658,6 +1677,7 @@ end function get_ticks_per_second
  integer, intent(out)           :: second, minute, hour, day, month, year
  integer, intent(out), optional :: tick
  character(len=*), intent(out), optional :: err_msg
+ logical, intent(in), optional :: choose0
  character(len=128) :: err_msg_local
  integer :: tick1
 
@@ -1668,7 +1688,11 @@ end function get_ticks_per_second
  case(THIRTY_DAY_MONTHS)
    call get_date_thirty   (time, year, month, day, hour, minute, second, tick1)
  case(GREGORIAN)
-   call get_date_gregorian(time, year, month, day, hour, minute, second, tick1)
+   if( present(choose0) ) then
+     call get_date_gregorian0(time, year, month, day, hour, minute, second, tick1)
+   else
+     call get_date_gregorian(time, year, month, day, hour, minute, second, tick1)
+   end if
  case(JULIAN)
    call get_date_julian_private   (time, year, month, day, hour, minute, second, tick1)
  case(NOLEAP)
@@ -1691,9 +1715,9 @@ end function get_ticks_per_second
  endif
 
  end subroutine get_date
-
 ! </SUBROUTINE>
 !------------------------------------------------------------------------
+
  subroutine get_date_gregorian(time, year, month, day, hour, minute, second, tick)
 
 ! Computes date corresponding to time for gregorian calendar
@@ -1766,7 +1790,37 @@ end function get_ticks_per_second
  tick   = time%ticks
 
  end subroutine get_date_gregorian
+!------------------------------------------------------------------------
 
+ subroutine get_date_gregorian0(time, year, month, day, hour, minute, second, tick)
+
+! Computes date corresponding to time for gregorian calendar
+
+ type(time_type), intent(in) :: time
+ integer, intent(out) :: year, month, day, hour, minute, second
+ integer, intent(out) :: tick
+ integer :: iday, isec
+
+ if(Time%seconds >= 86400) then ! This check appears to be unecessary.
+   call error_mesg('get_date','Time%seconds .ge. 86400 in subroutine get_date_gregorian',FATAL)
+ endif
+
+ iday = mod(Time%days+1,days_in_400_year_period)
+ if(iday == 0) iday = days_in_400_year_period
+
+ year = coded_date(iday)/512
+ day = mod(coded_date(iday),32)
+ month = coded_date(iday)/32 - 16*year
+
+ year = year + 400*((Time%days)/days_in_400_year_period)
+
+ hour = Time%seconds / 3600
+ isec  = Time%seconds - 3600*hour
+ minute = isec / 60
+ second = isec - 60*minute
+ tick = time%ticks
+
+ end subroutine get_date_gregorian0
 !------------------------------------------------------------------------
  function cut0(string)
  character(len=256) :: cut0
@@ -1973,7 +2027,7 @@ end function get_ticks_per_second
 !   </OUT>
 !   <OUT NAME="set_date" TYPE="time_type"> A time interval.</OUT>
 
- function set_date_private(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+ function set_date_private(year, month, day, hour, minute, second, tick, Time_out, err_msg, choose0)
 
 ! Given a date, computes the corresponding time given the selected
 ! date time mapping algorithm.  Note that it is possible to specify
@@ -1984,6 +2038,7 @@ end function get_ticks_per_second
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
  character(len=*), intent(out) :: err_msg
+ logical, intent(in), optional ::choose0
 
  if(.not.module_is_initialized) call time_manager_init
 
@@ -1993,7 +2048,11 @@ end function get_ticks_per_second
  case(THIRTY_DAY_MONTHS)
    set_date_private = set_date_thirty   (year, month, day, hour, minute, second, tick, Time_out, err_msg)
  case(GREGORIAN)
-   set_date_private = set_date_gregorian(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+   if( present(choose0) ) then
+     set_date_private = set_date_gregorian0(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+   else
+     set_date_private = set_date_gregorian(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+   end if
  case(JULIAN)
    set_date_private = set_date_julian_private   (year, month, day, hour, minute, second, tick, Time_out, err_msg)
  case(NOLEAP)
@@ -2008,11 +2067,13 @@ end function get_ticks_per_second
 
  end function set_date_private
 ! </FUNCTION>
+
 !------------------------------------------------------------------------
- function set_date_i(year, month, day, hour, minute, second, tick, err_msg)
+ function set_date_i(year, month, day, hour, minute, second, tick, err_msg, choose0)
  type(time_type) :: set_date_i
  integer, intent(in) :: day, month, year
  integer, intent(in), optional :: second, minute, hour, tick
+ logical, intent(in), optional :: choose0
  character(len=*), intent(out), optional :: err_msg
  integer :: osecond, ominute, ohour, otick
  character(len=128) :: err_msg_local
@@ -2026,14 +2087,20 @@ end function get_ticks_per_second
  ohour   = 0; if(present(hour))   ohour   = hour
  otick   = 0; if(present(tick))   otick   = tick
 
- if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local)) then
-   if(error_handler('function set_date_i', err_msg_local, err_msg)) return
+ if( present(choose0) ) then
+   if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local, choose0=.true.)) then
+     if(error_handler('function set_date_i', err_msg_local, err_msg)) return
+   end if
+ else
+   if(.not.set_date_private(year, month, day, ohour, ominute, osecond, otick, set_date_i, err_msg_local)) then
+     if(error_handler('function set_date_i', err_msg_local, err_msg)) return
+   end if
  endif
 
  end function set_date_i
 !------------------------------------------------------------------------
 
- function set_date_c(string, zero_year_warning, err_msg, allow_rounding)
+ function set_date_c(string, zero_year_warning, err_msg, allow_rounding, choose0)
 
  ! Examples of acceptable forms of string:
 
@@ -2059,6 +2126,7 @@ end function get_ticks_per_second
  logical,          intent(in),  optional :: zero_year_warning
  character(len=*), intent(out), optional :: err_msg
  logical,          intent(in),  optional :: allow_rounding
+ logical,          intent(in),  optional :: choose0
  character(len=4) :: formt='(i )'
  logical :: correct_form, zero_year_warning_local, allow_rounding_local
  integer :: i1, i2, i3, i4, i5, i6, i7
@@ -2147,11 +2215,18 @@ end function get_ticks_per_second
    endif
  endif
 
- if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local)) then
-   if(error_handler('function set_date_c', err_msg_local, err_msg)) return
+ if( present(choose0) ) then
+   if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local,choose0=choose0)) then
+     if(error_handler('function set_date_c', err_msg_local, err_msg)) return
+   end if
+ else
+   if(.not.set_date_private(year, month, day, hour, minute, second, tick, set_date_c, err_msg_local)) then
+     if(error_handler('function set_date_c', err_msg_local, err_msg)) return
+   end if
  endif
 
  end function set_date_c
+
 !------------------------------------------------------------------------
  function set_date_gregorian(year, month, day, hour, minute, second, tick, Time_out, err_msg)
  logical :: set_date_gregorian
@@ -2185,7 +2260,7 @@ end function get_ticks_per_second
    end if
  end if
 
- Time_out%seconds = second + 60*(minute + 60*hour)
+Time_out%seconds = second + 60*(minute + 60*hour)
 
  yearx = mod(year-1,400)
  dayx  = 0
@@ -2233,6 +2308,40 @@ end function get_ticks_per_second
  end if
 
  end function set_date_gregorian
+
+!------------------------------------------------------------------------
+ function set_date_gregorian0(year, month, day, hour, minute, second, tick, Time_out, err_msg)
+ logical :: set_date_gregorian0
+
+! Computes time corresponding to date for gregorian calendar.
+
+ integer,          intent(in)  :: year, month, day, hour, minute, second, tick
+ type(time_type),  intent(out) :: Time_out
+ character(len=*), intent(out) :: err_msg
+ integer :: yr1, day1
+
+ if( .not.valid_increments(year,month,day,hour,minute,second,tick,err_msg) ) then
+   set_date_gregorian0 = .false.
+   return
+ endif
+
+ Time_out%seconds = second + 60*(minute + 60*hour)
+
+ yr1 = mod(year,400)
+ if(yr1 == 0) yr1 = 400
+ day1 = date_to_day(yr1,month,day)
+  if(day1 == invalid_date) then
+   err_msg = 'Invalid_date. Date='//convert_integer_date_to_char(year,month,day,hour,minute,second)
+   set_date_gregorian0 = .false.
+   return
+ endif
+
+ Time_out%days = day1 + days_in_400_year_period*((year-1)/400)
+ Time_out%ticks = tick
+ err_msg = ''
+ set_date_gregorian0 = .true.
+
+ end function set_date_gregorian0
 
 !------------------------------------------------------------------------
  function set_date_julian_private(year, month, day, hour, minute, second, tick, Time_out, err_msg)

@@ -35,9 +35,10 @@ program test_time_manager
 
  implicit none
 
- type(time_type)  :: Time, time1, time2
+ type(time_type)  :: Time, Time0, time1, time2
  real    :: xx
  integer :: yr, mo, day, hr, min, sec, ticks
+ integer :: yr0, mo0, day0, hr0, min0, sec0, ticks0
  integer :: year, month, dday, days_this_month
  integer :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
  logical :: leap
@@ -50,11 +51,11 @@ program test_time_manager
 
 logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true.,test8 =.true.
 logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true.,test16=.true.
-logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.,test21=.true.
+logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.,test21=.true.,test22=.true.
 
  namelist / test_nml / test1 ,test2 ,test3 ,test4 ,test5 ,test6 ,test7 ,test8,  &
                        test9 ,test10,test11,test12,test13,test14,test15,test16, &
-                       test17,test18,test19,test20,test21
+                       test17,test18,test19,test20,test21,test22
 
  call fms_init
  call constants_init
@@ -126,7 +127,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.,test21=.true.
     call print_time(set_time(seconds=0, days=2, ticks=5) + set_time(seconds=0, days=2, ticks=6), 'test3.1:', unit=outunit)
 
  !  Test of function time_minus
- !  The minus operator for time ensures a positive result. In effect is does this: abs(time1-time2)
+ !  The minus operator test for time ensures a positive result. In effect is does this: abs(time1-time2)
     call print_time(set_time(seconds=0, days=2, ticks=5) - set_time(seconds=0, days=2, ticks=6), 'test3.2:', unit=outunit)
 
  !  Test of function time_scalar_mult.  Note that 25000*86399 is greater than huge = 2**31 - 1
@@ -602,59 +603,109 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.,test21=.true.
       write(outunit,'(a)') 'test successful: '//trim(err_msg)
     endif
   endif
+
  !==============================================================================================
+ !  Tests new set_date_gregorian
+ !  This test loops through every day up to year 3200
 
   if(test20) then
-     write(outunit,'(/,a)') '#################################  test20  #################################'
-     call test_new_gregorian(outunit)
-  end if
+    write(outunit,'(/,a)') '#################################  test20  #################################'
+    call set_calendar_type(GREGORIAN)
+    do year=1, 3200
+      leap = mod(year,4) == 0
+      leap = leap .and. .not.mod(year,100) == 0
+      leap = leap .or. mod(year,400) == 0
+      do month=1,12
+        days_this_month = days_per_month(month)
+        if(leap .and. month == 2) days_this_month = 29
+        do dday=1,days_this_month
+          Time  = set_date(year, month, dday, 0, 0, 0)
+          Time0 = set_date(year, month, dday, 0, 0, 0, choose0=.true.)
+          if( .not.(Time == Time0) ) call mpp_error(FATAl,'Error testing set_date_gregorian: Time != Time0')
+          call get_date(Time, yr, mo, day, hr, min, sec)
+          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0)
+          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
+            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
+            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
+            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
+            call mpp_error(FATAl,'Error testing set_date_gregorian')
+          end if
+        enddo
+      enddo
+    enddo
+    write(outunit,'(a)') 'test successful'
+  endif
+
+ !==============================================================================================
+ !  Tests new get_date_gregorian
+ !  This test loops through every day up to year 3200
+
+  if(test21) then
+    write(outunit,'(/,a)') '#################################  test21  #################################'
+    call set_calendar_type(GREGORIAN)
+    do year=1, 3200
+      leap = mod(year,4) == 0
+      leap = leap .and. .not.mod(year,100) == 0
+      leap = leap .or. mod(year,400) == 0
+      do month=1,12
+        days_this_month = days_per_month(month)
+        if(leap .and. month == 2) days_this_month = 29
+        do dday=1,days_this_month
+          Time  = set_date(year, month, dday, 0, 0, 0)
+          call get_date(Time, yr, mo, day, hr, min, sec)
+          call get_date(Time, yr0, mo0, day0, hr0, min0, sec0, choose0=.true.)
+          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
+            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
+            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
+            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
+            call mpp_error(FATAl,'Error testing set_date_gregorian')
+          end if
+        enddo
+      enddo
+    enddo
+    write(outunit,'(a)') 'test successful'
+  endif
+
+ !==============================================================================================
+ !  Tests new set_date_gregorian and get_date_gregorian
+ !  This test loops through every day up to year 3200
+
+  if(test22) then
+    write(outunit,'(/,a)') '#################################  test22  #################################'
+    call set_calendar_type(GREGORIAN)
+    do year=1, 3200
+      leap = mod(year,4) == 0
+      leap = leap .and. .not.mod(year,100) == 0
+      leap = leap .or. mod(year,400) == 0
+      do month=1,12
+        days_this_month = days_per_month(month)
+        if(leap .and. month == 2) days_this_month = 29
+        do dday=1,days_this_month
+          Time  = set_date(year, month, dday, 0, 0, 0)
+          Time0 = set_date(year, month, dday, 0, 0, 0, choose0=.true.)
+          call get_date(Time, yr, mo, day, hr, min, sec)
+          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0, choose0=.true.)
+          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
+            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
+            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
+            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
+            call mpp_error(FATAl,'Error testing set_date_gregorian')
+          end if
+          call get_date(Time0, yr, mo, day, hr, min, sec)
+          call get_date(Time, yr0, mo0, day0, hr0, min0, sec0, choose0=.true.)
+          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
+            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
+            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
+            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
+            call mpp_error(FATAl,'Error testing set_date_gregorian')
+          end if
+        enddo
+      enddo
+    enddo
+    write(outunit,'(a)') 'test successful'
+  endif
 
  call fms_io_exit
  call fms_end
-
-contains
-
-  subroutine test_new_gregorian(outunit)
-
-    use time_manager0_mod, only : &
-         time_type0 => time_type, &
-         set_date0 => set_date,   &
-         get_date0 => get_date,   &
-         set_time0 => set_time,   &
-         set_calendar_type0 => set_calendar_type, &
-         GREGORIAN0 => GREGORIAN
-
-    implicit none
-
-    integer, intent(in) :: outunit
-
-    type(time_type0) :: Time0
-    integer :: yr0, mo0, day0, hr0, min0, sec0, ticks0
-
-    call set_calendar_type(GREGORIAN)
-    call set_calendar_type0(GREGORIAN0)
-
-    do year=1,2200
-       leap = mod(year,4) == 0
-       leap = leap .and. .not.mod(year,100) == 0
-       leap = leap .or. mod(year,400) == 0
-       do month=1,12
-          days_this_month = days_per_month(month)
-          if(leap .and. month == 2) days_this_month = 29
-          do dday=1,days_this_month
-             Time  = set_date(year, month, dday, 0, 0, 0)
-             Time0 = set_date0(year, month, dday, 0, 0, 0)
-             call get_date(Time, yr, mo, day, hr, min, sec)
-             call get_date0(Time0, yr0, mo0, day0, hr0, min0, sec0)
-             if ( yr.ne.yr0 .or. mo.ne.mo0 .or. day.ne.day0 ) then
-                write(outunit,"('EXPECTED YEAR',i5,'MO',i3,'DAY',i3)") yr0, mo0, day0
-                write(outunit,"('BUT GOT  YEAR',i5,'MO',i3,'DAY',i3)") yr, mo, day
-                call mpp_error(FATAL, 'ERROR')
-             end if
-          enddo
-       enddo
-    enddo
-
-  end subroutine test_new_gregorian
 
  end program test_time_manager
