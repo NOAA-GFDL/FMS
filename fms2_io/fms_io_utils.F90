@@ -830,15 +830,20 @@ subroutine get_instance_filename(name_in,name_out)
   length = len_trim(name_in)
   name_out = name_in(1:length)
 
-  !< If the filename_appendix is set append it to name_out before the .nc or at
-  !! the end
   if(len_trim(filename_appendix) > 0) then
+     !< If .tileXX is in the filename add the appendix before it
      if (has_domain_tile_string(name_in)) then
          i = index(trim(name_in), ".tile", back=.true.)
          name_out = name_in(1:i-1)    //'.'//trim(filename_appendix)//name_in(i:length)
-     else if(name_in(length-2:length) == '.nc') then
-        name_out = name_in(1:length-3)//'.'//trim(filename_appendix)//'.nc'
+         return
+     endif
+
+     !< If .nc is in the filename add the appendix before it
+     i = index(trim(name_in), ".nc", back=.true.)
+     if ( i .ne. 0 ) then
+        name_out = name_in(1:i-1)//'.'//trim(filename_appendix)//name_in(i:length)
      else
+     !< If .nc is not in the name, add the appendix at the end of the file
         name_out = name_in(1:length)  //'.'//trim(filename_appendix)
      end if
   end if
