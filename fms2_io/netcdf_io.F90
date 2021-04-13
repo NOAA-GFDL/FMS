@@ -113,6 +113,7 @@ type, public :: FmsNetcdfFile_t
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
   character(len=256) :: nc_format !< Netcdf file format.
+  logical :: allow_int8 !< Flag indicating if int8 variables are allowed
   integer, dimension(:), allocatable :: pelist !< List of ranks who will
                                                !! communicate.
   integer :: io_root !< I/O root rank of the pelist.
@@ -558,6 +559,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%io_root = fileobj%pelist(1)
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
+  fileobj%allow_int8 = .false.
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
     if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set.")
@@ -569,6 +571,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       elseif (string_compare(nc_format, "classic", .true.)) then
         nc_format_param = nf90_classic_model
       elseif (string_compare(nc_format, "netcdf4", .true.)) then
+        fileobj%allow_int8 = .true.
         nc_format_param = nf90_netcdf4
       else
         call error("unrecognized netcdf file format "//trim(nc_format)//".")
@@ -819,6 +822,9 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     if (string_compare(variable_type, "int", .true.)) then
       vtype = nf90_int
     elseif (string_compare(variable_type, "int64", .true.)) then
+      if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//": 64 bit integers are only supported with 'netcdf4' file format"//&
+                                               &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
+                                               &"add nc_format='netcdf4' to your open_file call")
       vtype = nf90_int64
     elseif (string_compare(variable_type, "float", .true.)) then
       vtype = nf90_float
