@@ -144,8 +144,13 @@ program test_mpp_domains
   integer :: omp_get_num_threads, omp_get_thread_num
   integer :: ierr
 
-  call mpp_memuse_begin()
-  call mpp_init()
+!!----------------------------------------
+
+  call mpp_init(test_level=mpp_init_test_requests_allocated)
+  call mpp_domains_init(MPP_DEBUG)
+  call mpp_io_init()
+  call mpp_domains_set_stack_size(stackmax)
+
   outunit = stdout()
   errunit = stderr()
 #ifdef INTERNAL_FILE_NML
@@ -157,41 +162,18 @@ program test_mpp_domains
      unit = unit + 1
      if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
   end do
+
   open( unit=unit, file='input.nml', iostat=io_status )
   read( unit,test_mpp_domains_nml, iostat=io_status )
   close(unit)
 #endif
+
   if (io_status > 0) then
      call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
   endif
-  select case(trim(warn_level))
-  case("fatal")
-     call mpp_set_warn_level(FATAL)
-  case("warning")
-     call mpp_set_warn_level(WARNING)
-  case default
-     call mpp_error(FATAL, "test_mpp_domains: warn_level should be fatal or warning")
-  end select
 
   pe = mpp_pe()
   npes = mpp_npes()
-
-!--- initialize mpp domains
-  if( (.not.debug) .and. test_nest ) then
-      call mpp_domains_init()
-  elseif( debug )then
-      call mpp_domains_init(MPP_DEBUG)
-  else
-      call mpp_domains_init(MPP_DOMAIN_TIME)
-  end if
-  call mpp_domains_set_stack_size(stackmax)
-
-  call fms_affinity_init()
-!$  call omp_set_num_threads(nthreads)
-!$OMP PARALLEL
-!$  call fms_affinity_set("test_mpp_domains", .FALSE., omp_get_num_threads())
-!$OMP END PARALLEL
-
 
   if( pe.EQ.mpp_root_pe() ) then
      print '(a,9i6)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
@@ -239,7 +221,7 @@ program test_mpp_domains
      if(ANY(refine_ratio(:).LT.1)) call  mpp_error(FATAL, &
         "test_mpp_domain: check the setting of namelist variable refine_ratio")
      call test_update_nest_domain_r8('Cubed-sphere, single face')
-     !call test_update_nest_domain_r4('Cubed-sphere, single face')
+     call test_update_nest_domain_r4('Cubed-sphere, single face')
     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_update_nest_domain <-------------------'
   endif
   !> re-added after mixed prec
@@ -5615,7 +5597,6 @@ end subroutine test_halosize_update
             &, yhalo=1, xflags=CYCLIC_GLOBAL_DOMAIN, yflags&
             &=CYCLIC_GLOBAL_DOMAIN, name='subset domain')
        call mpp_get_compute_domain(domain, is, ie, js, je)
-       print*, "pe=", mpp_pe(), is, ie, js, je
 
        allocate(global(0:ni+1,0:nj+1,nz) )
 
@@ -5726,8 +5707,6 @@ end subroutine test_halosize_update
 
     id_update = mpp_start_update_domains( a, domain, flags=EDGEUPDATE)
     call mpp_complete_update_domains(id_update, a, domain, flags=EDGEUPDATE)
-    !call mpp_update_domains( a, domain, flags=EDGEUPDATE)
-    !! TODO fails here
     call compare_checksums( x, a, type//" nonblock")
 
         !--- test vector update for FOLDED and MASKED case.
@@ -7328,44 +7307,23 @@ end subroutine test_halosize_update
     call mpp_declare_pelist(my_pelist)
     if(ANY(my_pelist==mpp_pe())) then
        call mpp_set_current_pelist(my_pelist)
+       allocate(layout2D(2,ntiles_nest_top), global_indices(4,ntiles_nest_top), pe_start(ntiles_nest_top), pe_end(ntiles_nest_top) )
+       npes_per_tile = npes_nest_tile(1)
 
+       call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       do n = 1, ntiles_nest_top
+         global_indices(:,n) = (/1,nx,1,ny/)
+         layout2D(:,n)         = layout
+       end do
+       do n = 1, ntiles_nest_top
+          pe_start(n) = (n-1)*npes_per_tile
+          pe_end(n)   = n*npes_per_tile-1
+       end do
 
        if( cubic_grid ) then
-
-         allocate(layout2D(2,ntiles_nest_top), global_indices(4,ntiles_nest_top), pe_start(ntiles_nest_top), pe_end(ntiles_nest_top) )
-         npes_per_tile = npes_nest_tile(1)
-
-         call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
-         do n = 1, ntiles_nest_top
-            global_indices(:,n) = (/1,nx,1,ny/)
-            layout2D(:,n)         = layout
-         end do
-         do n = 1, ntiles_nest_top
-            pe_start(n) = (n-1)*npes_per_tile
-            pe_end(n)   = n*npes_per_tile-1
-         end do
-
-         print *, "pe_start:", pe_start
-         print *, "pe_end:", pe_end
          call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
                                    global_indices, layout2D, pe_start, pe_end )
        else
-
-         allocate(layout2D(2,ntiles_nest_top), global_indices(4,ntiles_nest_top), pe_start(ntiles_nest_top), pe_end(ntiles_nest_top) )
-
-         npes_per_tile = npes_nest_tile(1)
-
-         call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
-         do n = 1, ntiles_nest_top
-            global_indices(:,n) = (/1,nx,1,ny/)
-            layout2D(:,n)         = layout
-         end do
-         pe_start(1) = 0
-         pe_end(1)   = 1
-
-         print *, "pe_start:", pe_start
-         print *, "pe_end:", pe_end
-         print *, npes_nest_tile, npes_per_tile, ntiles_nest_top
          call mpp_define_mosaic(global_indices(:,1:1),layout2D(:,1:1),domain,1,0, dummy, dummy, &
                  dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, &
                  pe_start=pe_start, pe_end=pe_end, symmetry=.true., &
@@ -7396,12 +7354,7 @@ end subroutine test_halosize_update
           call mpp_get_compute_domain(domain, isc_fine, iec_fine, jsc_fine, jec_fine)
           call mpp_get_data_domain(domain, isd_fine, ied_fine, jsd_fine, jed_fine)
           !--- test halo update for nested region.
-          print *, "pe", mpp_pe(), "pelist" ,my_pelist, "level", n
-          if( cubic_grid ) then
-            call test_nest_halo_update(domain)
-          !else
-           ! call test_single_face_nest_halo_update(domain)
-          endif
+          call test_nest_halo_update(domain)
        endif
        pos = pos+my_npes
        deallocate(my_pelist)
@@ -7421,7 +7374,6 @@ end subroutine test_halosize_update
 
     !--- loop over nest level
     do l = 1, num_nest_level
-
        npes_my_level = mpp_get_nest_npes(nest_domain, l)
        npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
        allocate(my_pelist(npes_my_level))
@@ -8991,9 +8943,6 @@ end subroutine test_halosize_update
           call compare_checksums(nbuffery, nbuffery2, trim(type2)//' north buffer coarse to fine DGRID vector Y')
        endif
 
-
-       !print *, mpp_pe(), "about to deallocate"
-
        if(allocated(x)) deallocate(x)
        if(allocated(y)) deallocate(y)
        if(is_fine_pe) then
@@ -9358,6 +9307,23 @@ end subroutine test_halosize_update
        ny = ny_cubic
        ntiles_nest_top = 6
        cubic_grid = .true.
+
+    case ( 'Cubed-sphere, single face' )
+      if( nx_cubic == 0 ) then
+        call mpp_error(NOTE,'test_update_nest_domain: for Cubic_grid mosaic, nx_cubic is zero, '//&
+                'No test is done for Cubic-Grid mosaic. ' )
+        return
+      endif
+      if( nx_cubic .NE. ny_cubic ) then
+        call mpp_error(NOTE,'test_update_nest_domain: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+                'No test is done for Cubic-Grid mosaic. ' )
+        return
+      endif
+      nx = nx_cubic
+      ny = ny_cubic
+      ntiles_nest_top = 1
+      cubic_grid = .false.
+
     case default
        call mpp_error(FATAL, 'test_update_nest_domain: no such test: '//type)
     end select
