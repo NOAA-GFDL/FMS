@@ -133,7 +133,8 @@ module fms
                            diag_field_add_cell_measures, get_diag_field_id, &
                            diag_axis_add_attribute, diag_grid_init, diag_grid_end, &
                            diag_manager_set_time_end, diag_send_complete, &
-                           diag_send_complete_instant, DIAG_FIELD_NOT_FOUND, CMOR_MISSING_VALUE
+                           diag_send_complete_instant, DIAG_FIELD_NOT_FOUND, &
+                           CMOR_MISSING_VALUE, null_axis_id
 
   !> exchange
   use xgrid_mod, only: xmap_type, setup_xmap, set_frac_area, put_to_xgrid, &
