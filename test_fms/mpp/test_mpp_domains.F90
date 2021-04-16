@@ -334,8 +334,8 @@ program test_mpp_domains
       endif
 
       call test_redistribute( 'Complete pelist' )
-!      call test_redistribute( 'Overlap  pelist' )
-!      call test_redistribute( 'Disjoint pelist' )
+      call test_redistribute( 'Overlap  pelist' )
+      call test_redistribute( 'Disjoint pelist' )
       if(.not. wide_halo) then
          call test_define_mosaic_pelist('One tile', 1)
          call test_define_mosaic_pelist('Two uniform tile', 2)
@@ -5950,7 +5950,6 @@ end subroutine test_halosize_update
     !redundant points must be equal and opposite
     global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
     global2(1-whalo:0,     ny+shift,:) = -global2(nx-whalo+1:nx, ny+shift,:)
-    global2(nx+1:nx+ehalo, ny+shift,:) = -global2(1:ehalo,       ny+shift,:)
 
     x2 = 0.0; y2 = 0.0
     if(is_symmetry) then
@@ -5966,12 +5965,12 @@ end subroutine test_halosize_update
     y(is:ie      ,js:je+shift,:) = global2(is:ie,      js:je+shift,:)
 
     call mpp_create_group_update(group_update, x, y, domain, gridtype=CGRID_NE, &
-                                 flags=WUPDATE+SUPDATE+NONSYMEDGEUPDATE, whalo=1, ehalo=1, shalo=1, nhalo=1)
+                                 flags=WUPDATE+SUPDATE+NONSYMEDGEUPDATE, &
+                                 whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo)
     call mpp_do_group_update(group_update, domain, x(is,js,1))
-    !! TODO fails here
+
     call compare_checksums( x,  x2, type//' CGRID_NE X' )
     call compare_checksums( y,  y2, type//' CGRID_NE Y' )
-
     call mpp_sync()
 
     x = 0.; y = 0.
@@ -6760,112 +6759,7 @@ end subroutine test_halosize_update
     deallocate(global1, global2, x, y)
 
   end subroutine test_nest_halo_update
-!!!!!!!!!!!!!!!!!11
 
-  subroutine test_single_face_nest_halo_update( domain )
-    type(domain2D), intent(inout) :: domain
-    integer        :: i, j, k, shift
-    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
-
-    real,    allocatable, dimension(:,:,:) :: x, y
-    real,    allocatable, dimension(:,:,:) :: global1, global2, global
-    character(len=128) :: type
-    integer :: nx, ny
-
-    call mpp_get_global_domain(domain, xsize=nx, ysize=ny)
-    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !--- setup data
-    allocate(global(1-whalo:nx+ehalo,1-shalo:ny+nhalo,nz) )
-    global = 0
-    do k = 1, nz
-       do j = 1, ny
-          do i = 1, nx
-             global(i,j,k) = i*1.0e-3 + j*1.0e-6 + k*1.0e-9
-          end do
-       end do
-    end do
-
-    allocate( x (isd:ied,jsd:jed,nz) )
-    x = 0.
-    x(isc:iec,jsc:jec,:) = global(isc:iec,jsc:jec,:)
-
-    type = 'nest grid scalar'
-    !type = 'nest grid scalar single face'
-    !! TODO fails here, pe list only set for top level nest???
-    call mpp_update_domains( x, domain, name=trim(type) )
-
-    call compare_checksums( x(isd:ied,jsd:jed,:), global(isd:ied,jsd:jed,:), trim(type) )
-
-    deallocate(global, x)
-    !------------------------------------------------------------------
-    !              vector update : BGRID_NE, one extra point in each direction
-    !------------------------------------------------------------------
-    !--- setup data
-    shift = 1
-
-    allocate(global1(1-whalo:nx+ehalo+shift,1-shalo:ny+nhalo+shift,nz) )
-    allocate(global2(1-whalo:nx+ehalo+shift,1-shalo:ny+nhalo+shift,nz) )
-    global1 = 0; global2 = 0
-    do k = 1, nz
-       do j = 1, ny+shift
-          do i = 1, nx+shift
-             global1(i,j,k) = 1.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
-             global2(i,j,k) = 2.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
-          end do
-       end do
-    end do
-
-    allocate( x (isd:ied+shift,jsd:jed+shift,nz) )
-    allocate( y (isd:ied+shift,jsd:jed+shift,nz) )
-
-    x = 0.; y = 0
-    x (isc:iec+shift,jsc:jec+shift,:) = global1(isc:iec+shift,jsc:jec+shift,:)
-    y (isc:iec+shift,jsc:jec+shift,:) = global2(isc:iec+shift,jsc:jec+shift,:)
-
-    type = 'nest grid BGRID_NE'
-    call mpp_update_domains( x,  y,  domain, gridtype=BGRID_NE, name=trim(type))
-
-    call compare_checksums( x (isd:ied+shift,jsd:jed+shift,:),  global1(isd:ied+shift,jsd:jed+shift,:), trim(type)//' X' )
-    call compare_checksums( y (isd:ied+shift,jsd:jed+shift,:),  global2(isd:ied+shift,jsd:jed+shift,:), trim(type)//' Y' )
-
-    !------------------------------------------------------------------
-    !              vector update : CGRID_NE
-    !------------------------------------------------------------------
-    deallocate(global1, global2, x, y)
-    allocate(global1(1-whalo:nx+shift+ehalo,1-shalo:ny+nhalo,nz) )
-    allocate(global2(1-whalo:nx+ehalo,1-shalo:ny+shift+nhalo,nz) )
-    allocate( x (isd:ied+shift,jsd:jed  ,nz) )
-    allocate( y (isd:ied  ,jsd:jed+shift,nz) )
-    global1 = 0; global2 = 0
-    do k = 1, nz
-       do j = 1, ny
-          do i = 1, nx+shift
-             global1(i,j,k) = 1.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
-          end do
-       end do
-       do j = 1, ny+shift
-          do i = 1, nx
-             global2(i,j,k) = 2.0 + i*1.0e-3 + j*1.0e-6 + k*1.0e-9
-          end do
-       end do
-    end do
-
-    x = 0.; y = 0
-    x (isc:iec+shift,jsc:jec,:) = global1(isc:iec+shift,jsc:jec,:)
-    y (isc:iec,jsc:jec+shift,:) = global2(isc:iec,jsc:jec+shift,:)
-
-    type = "nest grid CGRID_NE"
-    call mpp_update_domains( x,  y,  domain, gridtype=CGRID_NE, name=trim(type))
-
-    call compare_checksums( x(isd:ied+shift,jsd:jed,:), global1(isd:ied+shift,jsd:jed,:), trim(type)//' X' )
-    call compare_checksums( y(isd:ied,jsd:jed+shift,:), global2(isd:ied,jsd:jed+shift,:), trim(type)//' Y' )
-
-    deallocate(global1, global2, x, y)
-
-  end subroutine test_single_face_nest_halo_update
-!!!!!!!!!!!!!!!!!!!
   subroutine get_nnest(domain, num_nest, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
                        nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse)
     type(domain2D), intent(inout) :: domain
