@@ -28,9 +28,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# TODO 3,4,15
+# TODO 15
 
-# Create base nml for input
+# Create input_base.nml for test input
 . ./create_input.sh nml
 
 cat input_base.nml > input.nml
