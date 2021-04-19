@@ -3166,13 +3166,11 @@ contains
 
       do m = 1, var%bc(n)%num_fields
          if (file_is_open(f)) then
-            if( to_read ) then
+            if( to_read .and. variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
                 !< If reading get the dimension names from the file
-                if (variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
-                    allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
-                    call get_variable_dimension_names(bc_rest_files(f), &
-                    & var%bc(n)%field(m)%name, dim_names)
-                endif !< If variable_exists
+                allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                call get_variable_dimension_names(bc_rest_files(f), &
+                & var%bc(n)%field(m)%name, dim_names)
             else
                 !< If writing use dummy dimension names
                 allocate(dim_names(3))
@@ -3272,10 +3270,10 @@ contains
 
     !< Add the dimension names as variable so that the combiner can work correctly
     call register_field(fileobj, dim_names(1), "double", (/dim_names(1)/))
-    call register_variable_attribute(fileobj, dim_names(1), "axis", "x", str_len=1)
+    call register_variable_attribute(fileobj, dim_names(1), "axis", "X", str_len=1)
 
     call register_field(fileobj, dim_names(2), "double", (/dim_names(2)/))
-    call register_variable_attribute(fileobj, dim_names(2), "axis", "y", str_len=1)
+    call register_variable_attribute(fileobj, dim_names(2), "axis", "Y", str_len=1)
 
   end subroutine register_axis_wrapper_write
 
@@ -3464,13 +3462,11 @@ contains
 
       do m = 1, var%bc(n)%num_fields
          if (file_is_open(f)) then
-            if( to_read ) then
+            if( to_read .and. variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
                 !< If reading get the dimension names from the file
-                if (variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
-                    allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
-                    call get_variable_dimension_names(bc_rest_files(f), &
-                    & var%bc(n)%field(m)%name, dim_names)
-                endif !< If variable_exists
+                allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                call get_variable_dimension_names(bc_rest_files(f), &
+                & var%bc(n)%field(m)%name, dim_names)
             else
                 !< If writing use dummy dimension names
                 allocate(dim_names(4))
