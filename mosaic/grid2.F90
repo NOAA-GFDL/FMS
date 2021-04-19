@@ -109,6 +109,7 @@ type(FmsNetcdfFile_t), dimension(3) :: mosaic_fileobj
 
 contains
 
+!> @brief Initialize the grid2 module
 subroutine grid_init
    if (module_is_initialized) return
    if (.not. file_exists(grid_file)) then
@@ -123,6 +124,7 @@ subroutine grid_init
    module_is_initialized = .TRUE.
 end subroutine grid_init
 
+!> @brief Shutdown the grid2 module
 subroutine grid_end
    if (grid_spec_exists) then
        if (grid_version == Version_2) call close_component_mosaics
@@ -130,6 +132,8 @@ subroutine grid_end
    endif
 end subroutine grid_end
 
+!> @brief Determine if we are using the great circle algorithm
+!! @return Logical flag describing if we are using the great circlealgorithm
 function get_great_circle_algorithm
    character(len=128)     :: attvalue
    logical :: get_great_circle_algorithm
@@ -146,27 +150,31 @@ function get_great_circle_algorithm
    endif
 end function get_great_circle_algorithm
 
+!> @brief Open a grid file
 subroutine open_grid_file(myfileobj, myfilename)
-  type(FmsNetcdfFile_t), intent(out)  :: myfileobj
-  character(len=*), intent(in) :: myfilename
+  type(FmsNetcdfFile_t), intent(out)  :: myfileobj !< File object of grid file
+  character(len=*), intent(in) :: myfilename!< Name of the grid file
    if(.not. open_file(myfileobj, myfilename, 'read')) then
       call mpp_error(FATAL, 'grid2_mod(open_grid_file):Error in opening file '//trim(myfilename))
    endif
 end subroutine open_grid_file
 
+!> @brief Open a mosaic file
 subroutine open_mosaic_file(mymosaicfileobj, component)
-  type(FmsNetcdfFile_t), intent(out)  :: mymosaicfileobj
-  character(len=3), intent(in)        :: component
+  type(FmsNetcdfFile_t), intent(out)  :: mymosaicfileobj !< File object returned
+  character(len=3), intent(in)        :: component !< Component (atm, lnd, etc.)
 
   character(len=MAX_FILE) :: mosaicfilename
   call read_data(gridfileobj,trim(lowercase(component))//'_mosaic_file', mosaicfilename)
   call open_grid_file(mymosaicfileobj, grid_dir//trim(mosaicfilename))
 end subroutine open_mosaic_file
 
+!> @brief Read a tile file name from a netcdf file
+!! @return Name of the file as a string
 function read_file_name(thisfileobj, filevar, level)
-  type(FmsNetcdfFile_t), intent(in)  :: thisfileobj
-  character(len=*), intent(in) :: filevar
-  integer, intent(in) :: level
+  type(FmsNetcdfFile_t), intent(in)  :: thisfileobj !< File object of file
+  character(len=*), intent(in) :: filevar!< Variable containing file names
+  integer, intent(in) :: level !< Level of tile file
   integer, dimension(2) :: file_list_size
   character(len=MAX_FILE) :: read_file_name
   character(len=MAX_FILE), dimension(:), allocatable :: file_names
@@ -178,8 +186,10 @@ function read_file_name(thisfileobj, filevar, level)
   deallocate(file_names)
 end function read_file_name
 
+!> @brief Get the grid version from a file object
+!! @return An integer representation of the grid version
 function get_grid_version(fileobj)
-  type(FmsNetcdfFile_t), intent(in) :: fileobj
+  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object of grid file
   integer :: get_grid_version
 
   if(grid_version<0) then
@@ -196,20 +206,24 @@ function get_grid_version(fileobj)
   endif
 end function get_grid_version
 
+!> @brief Open the component mosaic files for atm, lnd, and ocn
 subroutine open_component_mosaics
     call open_mosaic_file(mosaic_fileobj(1), 'atm')
     call open_mosaic_file(mosaic_fileobj(2), 'ocn')
     call open_mosaic_file(mosaic_fileobj(3), 'lnd')
 end subroutine open_component_mosaics
 
+!> @brief Close the component mosaic files for atm, lnd, and ocn
 subroutine close_component_mosaics
     call close_file(mosaic_fileobj(1))
     call close_file(mosaic_fileobj(2))
     call close_file(mosaic_fileobj(3))
 end subroutine close_component_mosaics
 
+!> @brief Get the component number of a model component (atm, lnd, ocn) 
+!! @return Integer component number
 function get_component_number(component)
-  character(len=*), intent(in) :: component
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
   integer :: get_component_number
     select case(lowercase(component))
     case('atm')
@@ -221,12 +235,10 @@ function get_component_number(component)
     end select
 end function get_component_number
 
-! ============================================================================
-! returns number of tiles for a given component
-! ============================================================================
+!> @brief returns number of tiles for a given component
 subroutine get_grid_ntiles(component,ntiles)
-  character(len=*)     :: component
-  integer, intent(out) :: ntiles
+  character(len=*)     :: component !< Component model (atm, lnd, ocn)
+  integer, intent(out) :: ntiles !< Number of tiles
 
   select case (grid_version)
   case(VERSION_0,VERSION_1)
@@ -236,13 +248,10 @@ subroutine get_grid_ntiles(component,ntiles)
   end select
 end subroutine get_grid_ntiles
 
-
-! ============================================================================
-! returns size of the grid for each of the tiles
-! ============================================================================
+!> @brief returns size of the grid for each of the tiles
 subroutine get_grid_size_for_all_tiles(component,nx,ny)
-  character(len=*)     :: component
-  integer, intent(inout) :: nx(:),ny(:)
+  character(len=*)     :: component !< Component model (atm, lnd, ocn)
+  integer, intent(inout) :: nx(:),ny(:) !< Grid size in x and y
 
   ! local vars
   integer :: siz(2) ! for the size of external fields
@@ -259,14 +268,11 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
   end select
 end subroutine get_grid_size_for_all_tiles
 
-
-! ============================================================================
-! returns size of the grid for one of the tiles
-! ============================================================================
+!> @brief returns size of the grid for one of the tiles
 subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
-  character(len=*)       :: component
-  integer, intent(in)    :: tile
-  integer, intent(inout) :: nx,ny
+  character(len=*)       :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in)    :: tile !< Tile number
+  integer, intent(inout) :: nx,ny !< Grid size in x and y
 
   ! local vars
   integer, allocatable :: nnx(:), nny(:)
@@ -284,14 +290,12 @@ subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
   endif
 end subroutine get_grid_size_for_one_tile
 
-! ============================================================================
-! return grid cell area for the specified model component and tile
-! ============================================================================
+!> @brief return grid cell area for the specified model component and tile
 subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
-  character(len=*), intent(in)    :: component
-  integer         , intent(in)    :: tile
-  real            , intent(inout) :: cellarea(:,:)
-  type(domain2d)  , intent(in), optional :: domain
+  character(len=*), intent(in)    :: component !< Component model (atm, lnd, ocn)
+  integer         , intent(in)    :: tile !< Tile number
+  real            , intent(inout) :: cellarea(:,:) !< Cell area
+  type(domain2d)  , intent(in), optional :: domain !< Domain
 
   ! local vars
   integer :: nlon, nlat
@@ -328,14 +332,12 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
 
 end subroutine get_grid_cell_area_SG
 
-! ============================================================================
-! get the area of the component per grid cell
-! ============================================================================
+!> @brief get the area of the component per grid cell
 subroutine get_grid_comp_area_SG(component,tile,area,domain)
-  character(len=*) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: area(:,:)
-  type(domain2d), intent(in), optional :: domain
+  character(len=*) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: area(:,:) !< Area of grid cell
+  type(domain2d), intent(in), optional :: domain !< Domain
   ! local vars
   integer :: n_xgrid_files ! number of exchange grid files in the mosaic
   integer :: siz(2), nxgrid
@@ -491,13 +493,14 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   area = area*4.*PI*radius**2
 end subroutine get_grid_comp_area_SG
 
-!======================================================================
+!> @brief return grid cell area for the specified model component and tile on an
+!! unstructured domain
 subroutine get_grid_cell_area_UG(component, tile, cellarea, SG_domain, UG_domain)
-  character(len=*),   intent(in)    :: component
-  integer         ,   intent(in)    :: tile
-  real            ,   intent(inout) :: cellarea(:)
-  type(domain2d)  ,   intent(in)    :: SG_domain
-  type(domainUG)  ,   intent(in)    :: UG_domain
+  character(len=*),   intent(in)    :: component !< Component model (atm, lnd, ocn)
+  integer         ,   intent(in)    :: tile !< Tile number
+  real            ,   intent(inout) :: cellarea(:) !< Cell area
+  type(domain2d)  ,   intent(in)    :: SG_domain !< Structured Domain
+  type(domainUG)  ,   intent(in)    :: UG_domain !< Unstructured Domain
   integer :: is, ie, js, je
   real, allocatable :: SG_area(:,:)
 
@@ -506,15 +509,15 @@ subroutine get_grid_cell_area_UG(component, tile, cellarea, SG_domain, UG_domain
   call get_grid_cell_area_SG(component, tile, SG_area, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_area, cellarea)
   deallocate(SG_area)
-
 end subroutine get_grid_cell_area_UG
 
+!> @brief get the area of the component per grid cell for an unstructured domain
 subroutine get_grid_comp_area_UG(component, tile, area, SG_domain, UG_domain)
-  character(len=*),   intent(in)    :: component
-  integer         ,   intent(in)    :: tile
-  real            ,   intent(inout) :: area(:)
-  type(domain2d)  ,   intent(in)    :: SG_domain
-  type(domainUG)  ,   intent(in)    :: UG_domain
+  character(len=*),   intent(in)    :: component !< Component model (atm, lnd, ocn)
+  integer         ,   intent(in)    :: tile !< Tile number
+  real            ,   intent(inout) :: area(:) !< Area of the component
+  type(domain2d)  ,   intent(in)    :: SG_domain !< Structured domain
+  type(domainUG)  ,   intent(in)    :: UG_domain !< Unstructured domain
   integer :: is, ie, js, je
   real, allocatable :: SG_area(:,:)
 
@@ -526,18 +529,12 @@ subroutine get_grid_comp_area_UG(component, tile, area, SG_domain, UG_domain)
 
 end subroutine get_grid_comp_area_UG
 
-
-! ============================================================================
-! returns arrays of global grid cell boundaries for given model component and
-! mosaic tile number.
-! NOTE that in case of non-lat-lon grid the returned coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
-! ============================================================================
+!> @brief returns arrays of global grid cell boundaries for given model component and
+!! mosaic tile number.
 subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
-  character(len=*), intent(in) :: component
-  integer,          intent(in) :: tile
-  real,          intent(inout) :: glonb(:),glatb(:)
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer,          intent(in) :: tile !< Tile number
+  real,          intent(inout) :: glonb(:),glatb(:) !< Grid cell vertices
 
   integer                      :: nlon, nlat
   integer                      :: start(4), nread(4)
@@ -610,17 +607,14 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
      deallocate(tmp)
      call close_file(tilefileobj)
   end select
-
 end subroutine get_grid_cell_vertices_1D
 
-! ============================================================================
-! returns cell vertices for the specified model component and mosaic tile number
-! ============================================================================
+!> @brief returns cell vertices for the specified model component and mosaic tile number
 subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
-  character(len=*),         intent(in) :: component
-  integer,                  intent(in) :: tile
-  real,                  intent(inout) :: lonb(:,:),latb(:,:)
-  type(domain2d), optional, intent(in) :: domain
+  character(len=*),         intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer,                  intent(in) :: tile !< Tile number
+  real,                  intent(inout) :: lonb(:,:),latb(:,:) !< Cell vertices
+  type(domain2d), optional, intent(in) :: domain !< Domain
 
   ! local vars
   integer :: nlon, nlat
@@ -761,16 +755,16 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
      deallocate(tmp)
      call close_file(tilefileobj)
   end select
-
 end subroutine get_grid_cell_vertices_2D
 
-
+!> @brief returns cell vertices for the specified model component and mosaic tile number for
+!! an unstructured domain
 subroutine get_grid_cell_vertices_UG(component, tile, lonb, latb, SG_domain, UG_domain)
-  character(len=*),         intent(in) :: component
-  integer,                  intent(in) :: tile
+  character(len=*),         intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer,                  intent(in) :: tile !< Tile number
   real,                  intent(inout) :: lonb(:,:),latb(:,:) ! The second dimension is 4
-  type(domain2d)  ,   intent(in)       :: SG_domain
-  type(domainUG)  ,   intent(in)       :: UG_domain
+  type(domain2d)  ,   intent(in)       :: SG_domain !< Structured domain
+  type(domainUG)  ,   intent(in)       :: UG_domain !< Unstructured domain
   integer :: is, ie, js, je, i, j
   real, allocatable :: SG_lonb(:,:), SG_latb(:,:), tmp(:,:,:)
 
@@ -800,19 +794,14 @@ subroutine get_grid_cell_vertices_UG(component, tile, lonb, latb, SG_domain, UG_
 
 
   deallocate(SG_lonb, SG_latb, tmp)
-
 end subroutine get_grid_cell_vertices_UG
 
-! ============================================================================
-! returns global coordinate arrays fro given model component and mosaic tile number
-! NOTE that in case of non-lat-lon grid those coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
-! ============================================================================
+!> @brief returns grid cell centers given model component and mosaic tile number
 subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
-  character(len=*), intent(in) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: glon(:),glat(:)
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: glon(:),glat(:) !< Grid cell centers
+
   integer                      :: nlon, nlat
   integer                      :: start(4), nread(4)
   real, allocatable            :: tmp(:,:)
@@ -870,18 +859,14 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
      deallocate(tmp)
      call close_file(tilefileobj)
   end select
-
-
 end subroutine get_grid_cell_centers_1D
 
-! ============================================================================
-! returns grid cell centers for specified model component and mosaic tile number
-! ============================================================================
+!> @brief returns grid cell centers given model component and mosaic tile number
 subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
-  character(len=*), intent(in) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: lon(:,:),lat(:,:)
-  type(domain2d), intent(in), optional :: domain
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: lon(:,:),lat(:,:) !< Grid cell centers
+  type(domain2d), intent(in), optional :: domain !< Domain
   ! local vars
   integer :: nlon, nlat
   integer :: i,j
@@ -1003,15 +988,16 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
      endif
      call close_file(tilefileobj)
   end select
-
 end subroutine get_grid_cell_centers_2D
 
+!> @brief returns grid cell centers given model component and mosaic tile number
+!! for unstructured domain
 subroutine get_grid_cell_centers_UG(component, tile, lon, lat, SG_domain, UG_domain)
-  character(len=*), intent(in) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: lon(:),lat(:)
-  type(domain2d)  ,   intent(in) :: SG_domain
-  type(domainUG)  ,   intent(in) :: UG_domain
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: lon(:),lat(:) !< Grid cell centers
+  type(domain2d)  ,   intent(in) :: SG_domain !< Structured domain
+  type(domainUG)  ,   intent(in) :: UG_domain !< Unstructured domain
   integer :: is, ie, js, je
   real, allocatable :: SG_lon(:,:), SG_lat(:,:)
 
@@ -1022,22 +1008,16 @@ subroutine get_grid_cell_centers_UG(component, tile, lon, lat, SG_domain, UG_dom
   call mpp_pass_SG_to_UG(UG_domain, SG_lon, lon)
   call mpp_pass_SG_to_UG(UG_domain, SG_lat, lat)
   deallocate(SG_lon, SG_lat)
-
 end subroutine get_grid_cell_centers_UG
 
-! ============================================================================
-! given a model component, a layout, and (optionally) a halo size, returns a
-! domain for current processor
-! ============================================================================
-! this subroutine probably does not belong in the grid_mod
-subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
-  character(len=*) , intent(in)    :: component
-  type(domain2d)   , intent(inout) :: domain
-  integer          , intent(in)    :: layout(2)
-  integer, optional, intent(in)    :: halo
-  logical, optional, intent(in)    :: maskmap(:,:,:)
-
-  ! ---- local constants
+!> @brief given a model component, a layout, and (optionally) a halo size, returns a
+!! domain for current processor
+subroutine define_cube_mosaic(component, domain, layout, halo, maskmap)
+  character(len=*) , intent(in)    :: component !< Component model (atm, lnd, ocn)
+  type(domain2d)   , intent(inout) :: domain !< Domain
+  integer          , intent(in)    :: layout(2) !< Layout
+  integer, optional, intent(in)    :: halo !< Halo
+  logical, optional, intent(in)    :: maskmap(:,:,:) !< Maskmap
 
   ! ---- local vars
   integer :: ntiles     ! number of tiles
@@ -1095,7 +1075,6 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   deallocate(tile1,tile2)
   deallocate(is1,ie1,js1,je1)
   deallocate(is2,ie2,js2,je2)
-
 end subroutine define_cube_mosaic
 
 end module grid2_mod
