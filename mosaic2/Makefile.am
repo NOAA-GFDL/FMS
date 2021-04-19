@@ -36,12 +36,3 @@ grid2.F90
 
 # Some mods are dependant on other mods in this dir.
 grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
-
-# Mod files are built and then installed as headers.
-MODFILES = \
-  mosaic2_mod.$(FC_MODEXT) \
-  grid2_mod.$(FC_MODEXT)
-nodist_include_HEADERS = $(MODFILES)
-BUILT_SOURCES = $(MODFILES)
-
-include $(top_srcdir)/mkmods.mk
