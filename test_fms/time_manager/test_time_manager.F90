@@ -608,7 +608,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
   write(outunit,'(a,i6)') ' ticks_per_second=',get_ticks_per_second()
 
  !==============================================================================================
- !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian invoked with choose0=.true.
+ !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian invoked with old_method=.true.
  !  This test loops through every day up to year 3200
 
   if(test20) then
@@ -624,10 +624,10 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
         do dday=1,days_this_month
           !: test new set_date_gregorian
           Time  = set_date(year, month, dday, 0, 0, 0)
-          Time0 = set_date(year, month, dday, 0, 0, 0, choose0=.true.)
+          Time0 = set_date(year, month, dday, 0, 0, 0, old_method=.true.)
           if( .not.(Time == Time0) ) call mpp_error(FATAl,'Error testing set_date_gregorian: Time != Time0')
-          call get_date(Time, yr, mo, day, hr, min, sec, choose0=.true.)
-          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0, choose0=.true.)
+          call get_date(Time, yr, mo, day, hr, min, sec, old_method=.true.)
+          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0, old_method=.true.)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
             write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
             write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
@@ -636,7 +636,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
           end if
           ! test new get_date_gregorian
           call get_date(Time0, yr, mo, day, hr, min, sec)
-          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0, choose0=.true.)
+          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0, old_method=.true.)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
             write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
             write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
@@ -644,7 +644,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
             call mpp_error(FATAl,'Error testing get_date_gregorian 1')
           end if
           call get_date(Time, yr, mo, day, hr, min, sec)
-          call get_date(Time, yr0, mo0, day0, hr0, min0, sec0, choose0=.true.)
+          call get_date(Time, yr0, mo0, day0, hr0, min0, sec0, old_method=.true.)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
             write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
             write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
@@ -652,7 +652,7 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
             call mpp_error(FATAl,'Error testing set_date_gregorian 2')
           end if
           call get_date(Time, yr, mo, day, hr, min, sec)
-          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0, choose0=.true.)
+          call get_date(Time0, yr0, mo0, day0, hr0, min0, sec0, old_method=.true.)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
             write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
             write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
