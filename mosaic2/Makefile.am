@@ -30,7 +30,7 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 noinst_LTLIBRARIES = libmosaic2.la
 
-libmosaic_la_SOURCES = \
+libmosaic2_la_SOURCES = \
 mosaic2.F90 \
 grid2.F90
 
