@@ -1669,6 +1669,10 @@ end function get_ticks_per_second
 !     similar to this:
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
+
+!> @brief Gets the date for different calendar types.
+!! The added optional argument old_method allows user to choose either the new or old version
+!! of get_date_gregorian
  subroutine get_date(time, year, month, day, hour, minute, second, tick, err_msg, old_method)
 
 ! Given a time, computes the corresponding date given the selected calendar
@@ -1677,10 +1681,13 @@ end function get_ticks_per_second
  integer, intent(out)           :: second, minute, hour, day, month, year
  integer, intent(out), optional :: tick
  character(len=*), intent(out), optional :: err_msg
- logical, intent(in), optional  :: old_method
+ logical, intent(in), optional  :: old_method !< option to choose betw the new and old ver of get_date_gregorian subroutine.
+                                              !! When .true., call get_date_gregorian_old to retrieve the date
+                                              !! from the array coded_date.  When .false., call get_date_gregorian to
+                                              !! compute the date on the fly.
  character(len=128) :: err_msg_local
  integer :: tick1
- logical :: old_method_local
+ logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
@@ -1721,18 +1728,24 @@ end function get_ticks_per_second
 ! </SUBROUTINE>
 !------------------------------------------------------------------------
 
+!> @brief Gets the date on a Gregorian calendar.
+!! Computes the year, month, day on the fly from the quantity time%days
  subroutine get_date_gregorian(time, year, month, day, hour, minute, second, tick)
-
-! Computes date corresponding to time for gregorian calendar
 
  type(time_type), intent(in) :: time
  integer, intent(out) :: year, month, day, hour, minute, second
  integer, intent(out) :: tick
  integer :: iday, isec
 
- integer :: l, ncenturies, nlpyrs
- integer :: i, yearx, monthx, dayx, idayx
+ integer :: l                          !< value of 1 if leap year; value of 0 otherwise
+ integer :: ncenturies                 !< number of centuries passed in the current 400 year period
+ integer :: nlpyrs                     !< number of leap years in the current century
+ integer :: yearx, monthx, dayx, idayx !< temporary values for year, month, day
+ integer :: i                          !< counter, dummy variable
 
+ ! Computes date corresponding to time for gregorian calendar
+
+ !Carried over from the old subroutine
  if(Time%seconds >= 86400) then ! This check appears to be unecessary.
    call error_mesg('get_date','Time%seconds .ge. 86400 in subroutine get_date_gregorian',FATAL)
  endif
@@ -1741,17 +1754,17 @@ end function get_ticks_per_second
 
  yearx = 1
  idayx = 0
- if( iday.eq.0 ) then ! year 400
+ if( iday.eq.0 ) then !year 400
    yearx = 0
    idayx = -366
  else if( iday.gt.365 ) then
-   yearx      = int(iday/365) - 1 ! approximation off by -1 year by most
+   yearx      = int(iday/365) - 1 !approximation off by -1 year at most
    ncenturies = int(yearx/100)
    nlpyrs     = int((yearx-ncenturies*100)/4)
-   idayx      = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs ! 36524 days in a century
-   if( ncenturies.eq.4 ) idayx = idayx + 1                             ! year 400 is a leap year
+   idayx      = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs !36524 days in a century
+   if( ncenturies.eq.4 ) idayx = idayx + 1                             !year 400 is a leap year
    l = 0 ; if ( leap_year_gregorian_int(yearx+1) ) l = 1
-   if ( (iday-idayx).gt.365+l ) then ! off by -1 year
+   if ( (iday-idayx).gt.365+l ) then !off by -1 year
      yearx = yearx + 1
      idayx = idayx + 365 + l
    end if
@@ -1795,6 +1808,9 @@ end function get_ticks_per_second
  end subroutine get_date_gregorian
 !------------------------------------------------------------------------
 
+!> @brief Gets the date on a Gregorian calendar.  This is the original/old subroutine.
+!! Looks up the year, month, day from the coded_date array
+!! This subroutine is kept in order to test the new get_date_gregorian
  subroutine get_date_gregorian_old(time, year, month, day, hour, minute, second, tick)
 
 ! Computes date corresponding to time for gregorian calendar
@@ -2030,6 +2046,9 @@ end function get_ticks_per_second
 !   </OUT>
 !   <OUT NAME="set_date" TYPE="time_type"> A time interval.</OUT>
 
+!> @brief Sets days for different calendar types.
+!! The added optional argument old_method allows user to choose either the new or old version
+!! of set_date_gregorian
  function set_date_private(year, month, day, hour, minute, second, tick, Time_out, err_msg, old_method)
 
 ! Given a date, computes the corresponding time given the selected
@@ -2041,8 +2060,11 @@ end function get_ticks_per_second
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
  character(len=*), intent(out) :: err_msg
- logical, intent(in), optional ::old_method
- logical :: old_method_local
+ logical, intent(in), optional ::old_method !< option to choose betw the new and old ver of get_date_gregorian subroutine.
+                                            !! When .true., call set_date_gregorian_old to retrieve the time%days
+                                            !! from the array date_to_day.  When .false., call set_date_gregorian to
+                                            !! compute the time%days on the fly.
+ logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
 
  if(.not.module_is_initialized) call time_manager_init
 
@@ -2103,6 +2125,9 @@ end function get_ticks_per_second
  end function set_date_i
 !------------------------------------------------------------------------
 
+!> @brief Sets days for different calendar types when given a string input.
+!! The added optional argument old_method allows user to choose either the new or old version
+!! of set_date_gregorian
  function set_date_c(string, zero_year_warning, err_msg, allow_rounding, old_method)
 
  ! Examples of acceptable forms of string:
@@ -2129,9 +2154,13 @@ end function get_ticks_per_second
  logical,          intent(in),  optional :: zero_year_warning
  character(len=*), intent(out), optional :: err_msg
  logical,          intent(in),  optional :: allow_rounding
- logical,          intent(in),  optional :: old_method
+ logical,          intent(in),  optional :: old_method  !< option to choose betw the new and old ver of set_date_gregorian.
+                                                        !! When .true., call set_date_gregorian_old to retrieve the days
+                                                        !! from the array date_to_day.  When .false., call set_date_gregorian to
+                                                        !! compute the days on the fly.
  character(len=4) :: formt='(i )'
- logical :: correct_form, zero_year_warning_local, allow_rounding_local, old_method_local
+ logical :: correct_form, zero_year_warning_local, allow_rounding_local
+ logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
  integer :: i1, i2, i3, i4, i5, i6, i7
  character(len=32) :: string_sifted_left
  integer :: year, month, day, hour, minute, second, tick
@@ -2227,6 +2256,9 @@ end function get_ticks_per_second
  end function set_date_c
 
 !------------------------------------------------------------------------
+
+!> Sets Time_out%days on a Gregorian calendar
+!! Computes the total number of days between 1/1/0001 to the current month/day/year
  function set_date_gregorian(year, month, day, hour, minute, second, tick, Time_out, err_msg)
  logical :: set_date_gregorian
 
@@ -2309,6 +2341,10 @@ Time_out%seconds = second + 60*(minute + 60*hour)
  end function set_date_gregorian
 
 !------------------------------------------------------------------------
+
+!> Sets Time_out%days on a Gregorian calendar.  This is the original/old subroutine.
+!! Look up the total number of days between 1/1/0001 to the current month/day/year in the array date_to_day
+!! This function is kept in order to test the new set_date_gregorian
  function set_date_gregorian_old(year, month, day, hour, minute, second, tick, Time_out, err_msg)
  logical :: set_date_gregorian_old
 
