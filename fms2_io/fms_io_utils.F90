@@ -855,7 +855,7 @@ function string_from_integer2(n)
     integer, intent(in) :: n
     character(len=16) :: string_from_integer2
     if(n<0) then
-       call mpp_error(FATAL, 'fms_io_mod: n should be non-negative integer, contact developer')
+       call mpp_error(FATAL, 'fms2_io_mod: n should be non-negative integer, contact developer')
     else if( n<10 ) then
        write(string_from_integer2,'(i1)') n
     else if( n<100 ) then
@@ -873,7 +873,7 @@ function string_from_integer2(n)
     else if( n<100000000 ) then
        write(string_from_integer2,'(i8)') n
     else
-       call mpp_error(FATAL, 'fms_io_mod: n is too big, contact developer')
+       call mpp_error(FATAL, 'fms2_io_mod: n is greater than 1e8, contact developer')
     end if
 
     return
