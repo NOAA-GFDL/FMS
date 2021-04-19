@@ -18,11 +18,10 @@
 !***********************************************************************
 module grid_mod
 
-use mpp_mod, only : mpp_root_pe
+use mpp_mod, only : mpp_root_pe, uppercase, lowercase, FATAL, NOTE, mpp_error
 use constants_mod, only : PI, radius
-use fms_mod, only : uppercase, lowercase, field_exist, field_size, read_data, &
-     error_mesg, string, FATAL, NOTE
-use fms_io_mod, only : get_great_circle_algorithm, get_global_att_value
+use fms_io_mod, only : get_great_circle_algorithm, get_global_att_value, string, &
+                       field_exist, field_size, read_data
 use mosaic_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
      get_mosaic_xgrid, calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area
 
@@ -120,9 +119,7 @@ function get_grid_version()
     else if(field_exist(grid_file, 'ocn_mosaic_file') ) then
        grid_version = VERSION_2
     else
-       call error_mesg(module_name//'/get_grid_version',&
-            'Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"', &
-            FATAL )
+       call mpp_error(FATAL, module_name//'/get_grid_version: Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
     endif
   endif
   get_grid_version = grid_version
@@ -194,9 +191,7 @@ subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
      nx = nnx(tile); ny = nny(tile)
      deallocate(nnx,nny)
   else
-     call error_mesg('get_grid_size',&
-          'requested tile index '//trim(string(tile))//' is out of bounds (1:'//trim(string(ntiles))//')',&
-          FATAL)
+     call mpp_error(FATAL, 'get_grid_size: requested tile index '//trim(string(tile))//' is out of bounds (1:'//trim(string(ntiles))//')')
   endif
 end subroutine get_grid_size_for_one_tile
 
@@ -223,9 +218,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
         call read_data(grid_file, 'AREA_'//trim(uppercase(component)),cellarea,&
             no_domain=.not.present(domain),domain=domain)
      case default
-        call error_mesg(module_name//'/get_grid_cell_area',&
-             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-             FATAL)
+        call mpp_error(FATAL, module_name//'/get_grid_cell_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! convert area to m2
      cellarea = cellarea*4.*PI*radius**2
@@ -293,9 +286,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
      case('LND')
         call read_data(grid_file,'AREA_LND',area,no_domain=.not.present(domain),domain=domain)
      case default
-        call error_mesg(module_name//'/get_grid_comp_area',&
-             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-             FATAL)
+        call mpp_error(FATAL, module_name//'/get_grid_comp_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
   case(VERSION_2) ! mosaic gridspec
      select case (component)
@@ -312,9 +303,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         call read_data(grid_file, 'ocn_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case default
-        call error_mesg(module_name//'/get_grid_comp_area',&
-             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-             FATAL)
+        call mpp_error(FATAL, module_name//'/get_grid_comp_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! get the boundaries of the requested domain
      if(present(domain)) then
@@ -326,8 +315,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         js = 1 ; j0 = 0
      endif
      if (size(area,1)/=ie-is+1.or.size(area,2)/=je-js+1) &
-        call error_mesg(module_name//'/get_grid_comp_area',&
-        'size of the output argument "area" is not consistent with the domain',FATAL)
+        call mpp_error(FATAL, module_name//'/get_grid_comp_area: size of the output argument "area" is not consistent with the domain')
 
      ! find the nest tile
      call read_data(grid_file, 'atm_mosaic', mosaic_name)
@@ -344,8 +332,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
               num_nest_tile = num_nest_tile + 1
               nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
            else if(trim(attvalue) .NE. "FALSE") then
-              call error_mesg(module_name//'/get_grid_comp_area', 'value of global attribute nest_grid in file'// &
-                   trim(tilefile)//' should be TRUE of FALSE', FATAL)
+              call mpp_error(FATAL, module_name//'/get_grid_comp_area: value of global attribute nest_grid in file'// trim(tilefile)//' should be TRUE of FALSE')
            endif
         end if
      end do
@@ -400,8 +387,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            deallocate(i1, j1, i2, j2, xgrid_area)
         enddo
         if (found_xgrid_files == 0) &
-           call error_mesg('get_grid_comp_area', 'no xgrid files were found for component '&
-                 //trim(component)//' (mosaic name is '//trim(mosaic_name)//')', FATAL)
+           call mpp_error(FATAL, 'get_grid_comp_area: no xgrid files were found for component '//trim(component)//' (mosaic name is '//trim(mosaic_name)//')')
 
      endif
      deallocate(nest_tile_name)
@@ -465,15 +451,11 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glonb(:))/=nlon+1) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices_1D',&
-       'Size of argument "glonb" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL,  module_name//'/get_grid_cell_vertices_1D: Size of argument "glonb" is not consistent with the grid size')
   if (size(glatb(:))/=nlat+1) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices_1D',&
-       'Size of argument "glatb" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices_1D: Size of argument "glatb" is not consistent with the grid size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_vertices_1D',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices_1D: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
@@ -560,22 +542,17 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
     is = 1 ; ie = nlon
     js = 1 ; je = nlat
     !--- domain normally should be present
-    call error_mesg ( module_name//'/get_grid_cell_vertices',&
-       'domain is not present, global data will be read', NOTE)
+    call mpp_error (NOTE, module_name//'/get_grid_cell_vertices: domain is not present, global data will be read')
   endif
   i0 = -is+1; j0 = -js+1
 
   ! verify that lonb and latb sizes are consistent with the size of domain
   if (size(lonb,1)/=ie-is+2.or.size(lonb,2)/=je-js+2) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices',&
-       'Size of argument "lonb" is not consistent with the domain size',FATAL)
+       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices: Size of argument "lonb" is not consistent with the domain size')
   if (size(latb,1)/=ie-is+2.or.size(latb,2)/=je-js+2) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices',&
-       'Size of argument "latb" is not consistent with the domain size',FATAL)
+       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices: Size of argument "latb" is not consistent with the domain size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_vertices',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
@@ -743,15 +720,11 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glon(:))/=nlon) &
-       call error_mesg ( module_name//'/get_grid_cell_centers_1D',&
-       'Size of argument "glon" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL,  module_name//'/get_grid_cell_centers_1D: Size of argument "glon" is not consistent with the grid size')
   if (size(glat(:))/=nlat) &
-       call error_mesg ( module_name//'/get_grid_cell_centers_1D',&
-       'Size of argument "glat" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL,  module_name//'/get_grid_cell_centers_1D: Size of argument "glat" is not consistent with the grid size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_centers_1D',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_centers_1D: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
@@ -825,24 +798,17 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
     is = 1 ; ie = nlon
     js = 1 ; je = nlat
     !--- domain normally should be present
-    call error_mesg ( module_name//'/get_grid_cell_centers',&
-       'domain is not present, global data will be read', NOTE)
+    call mpp_error (NOTE, module_name//'/get_grid_cell_centers: domain is not present, global data will be read')
   endif
   i0 = -is+1; j0 = -js+1
 
   ! verify that lon and lat sizes are consistent with the size of domain
   if (size(lon,1)/=ie-is+1.or.size(lon,2)/=je-js+1) &
-       call error_mesg ( module_name//'/get_grid_cell_centers',&
-       'Size of array "lon" is not consistent with the domain size',&
-       FATAL )
+       call mpp_error (FATAL, module_name//'/get_grid_cell_centers: Size of array "lon" is not consistent with the domain size')
   if (size(lat,1)/=ie-is+1.or.size(lat,2)/=je-js+1) &
-       call error_mesg ( module_name//'/get_grid_cell_centers',&
-       'Size of array "lat" is not consistent with the domain size',&
-       FATAL )
+       call mpp_error (FATAL, module_name//'/get_grid_cell_centers: Size of array "lat" is not consistent with the domain size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_vertices',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
