@@ -2097,15 +2097,22 @@ end function get_ticks_per_second
 ! </FUNCTION>
 
 !------------------------------------------------------------------------
+
+!> @brief Calls set_date_private to set days for different calendar types.
+!! The added optional argument old_method allows user to choose either the new or old version
+!! of set_date_gregorian
  function set_date_i(year, month, day, hour, minute, second, tick, err_msg, old_method)
  type(time_type) :: set_date_i
  integer, intent(in) :: day, month, year
  integer, intent(in), optional :: second, minute, hour, tick
- logical, intent(in), optional :: old_method
+ logical, intent(in), optional :: old_method !< option to choose betw the new and old ver of get_date_gregorian subroutine.
+                                             !! When .true., call set_date_gregorian_old to retrieve the time%days
+                                             !! from the array date_to_day.  When .false., call set_date_gregorian to
+                                             !! compute the time%days on the fly.
  character(len=*), intent(out), optional :: err_msg
  integer :: osecond, ominute, ohour, otick
  character(len=128) :: err_msg_local
- logical :: old_method_local
+ logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
@@ -2125,7 +2132,7 @@ end function get_ticks_per_second
  end function set_date_i
 !------------------------------------------------------------------------
 
-!> @brief Sets days for different calendar types when given a string input.
+!> @brief Calls set_date_private for different calendar types when given a string input.
 !! The added optional argument old_method allows user to choose either the new or old version
 !! of set_date_gregorian
  function set_date_c(string, zero_year_warning, err_msg, allow_rounding, old_method)
