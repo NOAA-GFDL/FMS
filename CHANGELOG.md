@@ -5,6 +5,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0),
 and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is released,
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
+
+## [2021.01] - 2021-03-08
+### Added
+- MPP: A counter for timers to report how many times a timer section is run
+- MPP: Adds missing interfaces to be consistent with interfaces that use the OVERLOAD and no_8byte_integer macros in order to allow building without MPI
+- MPP: Extends interfaces for read and write routines to include 32-bit and 64-bit real data arrays
+- MPP: Adds unit tests for mpp and mpp_io for all public routines with mixed-precision interfaces and expands on existing tests for mixed-precision
+- Adds an .editorconfig file with the project's preferred editor configuration
+- A variable MODDIR in configure.ac for use in Makefiles to find required Fortran module files
+- Adds FMS description web page as a markdown file
+### Changed
+- DOCS: Updates various modules to doxygen style comments and makes adjustments to correctly generate doxygen documentation through the build system
+- PLATFORM: changes usage of platform.h to platform_mod and it's associated data types
+- Changes all previous uses of flush subroutine calls to function calls
+- Changes travis CI to Github actions CI and removed all trailing whitespace
+### Removed
+### Fixed
+- MPP: Fixed a bug causing mpp_get_UG_domain_tile_pe_inf to seg fault from the incorrect assignment of an optional argument
+- FMS: Fixes issues with FMS unit tests failing from pointer allocations by reworking deallocate_unstruct_pass_type 
+- MPP_IO: Fixes unintentional printing of file attributes
+- An issue with the automake build system causing unnecessary rebuilds of source files
+- Fixes CMake build of the FMS library to install configuration files in the appropriate directories; and for OpenMP dependencies to the private
+### Tag Commit Hashes
+- 2021.01-alpha1 (dbe8a1060fb33167c2d12239484226b40fb01fd0)
+- 2021.01-alpha2 (b94eb18fe8e686c5958cbbacc4cf9130873afc85)
+- 2021.01-beta1  (4dcc9a795d9ba0cc959ebd93dda5be5f8473545c)
+
+
 ## [2020.04] - 2020-12-07
 ### Added
 - DIAG_MANAGER: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io. The default is .false. and will use fms2_io.
@@ -22,6 +50,7 @@ A unit test was added to test the functionality of `get_grid_version_1`
 - The autotools build has been changed to copy each subdirectory module (.mod) files to a common .mod directory located at the top of the source directory.  This change simplifies the include path specifications.
 - Use F90 module files for external libraries (MPI and NetCDF) for improved interface checking, thereby removing the reliance on library header include files.
 - FMS2_IO: Changed how nest file names are created to be consistent with mpp_io
+- CMAKE: Changed visibility of FMS OpenMP libraries to private in order to avoid conflicts with model libraries
 ### Removed
 - LIBFMS: The flag -Duse_mpp_io should not be used and will cause a crash
 - LIBFMS: Macros and logic for interfacing to the Flexible File I/O library

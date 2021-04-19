@@ -29,9 +29,9 @@ use   mpp_domains_mod, only: mpp_domains_set_stack_size, mpp_define_domains, mpp
                              mpp_get_compute_domain,domain2d
 use   mpp_mod,         only: mpp_pe, mpp_root_pe, mpp_error, FATAL
 use   fms2_io_mod,     only: open_file, register_axis, register_variable_attribute, close_file, &
-                             FmsNetcdfDomainFile_t, write_data, register_field, read_data
+                             FmsNetcdfDomainFile_t, write_data, register_field, read_data, &
+                             parse_mask_table
 use   fms_mod,         only: fms_init, fms_end
-use   fms_io_mod,      only: parse_mask_table
 use   netcdf,          only: nf90_open, nf90_get_var, nf90_nowrite, NF90_NOERR, nf90_get_var, &
                              nf90_close
 use   mpi,             only: mpi_barrier, mpi_comm_world

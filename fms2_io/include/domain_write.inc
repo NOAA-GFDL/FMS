@@ -35,13 +35,9 @@ subroutine domain_write_0d(fileobj, variable_name, vdata, unlim_dim_level, corne
                                           !! where the data
                                           !! will be written to.
 
-  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true.)) then
-    call compressed_write(fileobj, variable_name, vdata, &
+  call compressed_write(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner)
-    return
-  else
-    call error("this branch should never be reached.")
-  endif
+
 end subroutine domain_write_0d
 
 
@@ -68,14 +64,10 @@ subroutine domain_write_1d(fileobj, variable_name, vdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true.)) then
-    call compressed_write(fileobj, variable_name, vdata, &
+  call compressed_write(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths)
-    return
-  else
-    call error("this branch should never be reached.")
-  endif
+
 end subroutine domain_write_1d
 
 

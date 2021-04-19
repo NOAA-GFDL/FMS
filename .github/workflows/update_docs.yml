@@ -1,0 +1,27 @@
+name: Generate and deploy documentation on GH pages
+
+# update on releases or when triggered manually(must have write access)
+on: [release, workflow_dispatch]
+
+jobs:
+  update_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup repo 
+        run: | # do autotool's job of setting input/output paths since we don't need a full build environement
+          mkdir gen_docs
+          sed 's/@abs_top_builddir@\/docs/gen_docs/' docs/Doxyfile.in > gen_docs/Doxyfile
+          sed -i 's/@abs_top_srcdir@/./' gen_docs/Doxyfile
+      - name: Run Doxygen
+        uses: mattnotmitt/doxygen-action@v1
+        with:
+          doxyfile-path: 'gen_docs/Doxyfile'
+      - name: Copy readme
+        run: sudo cp README.md gen_docs/html
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gen_docs/html
