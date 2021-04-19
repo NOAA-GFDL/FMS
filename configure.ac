@@ -317,6 +317,7 @@ AC_CONFIG_FILES([
   tracer_manager/Makefile
   topography/Makefile
   mosaic/Makefile
+  mosaic2/Makefile
   monin_obukhov/Makefile
   memutils/Makefile
   interpolator/Makefile
