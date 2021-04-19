@@ -23,136 +23,136 @@
 !         SGI/GFDL Princeton University
 !
 !-----------------------------------------------------------------------
+
+!> @file
+!! @author V. Balaji
+!! @brief a generalized communication package for use with shmem and MPI
+!! @description
+!! @htmlonly
+!! <CONTACT EMAIL="V.Balaji@noaa.gov">
+!!   V. Balaji
+!! </CONTACT>
+!! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
+!! <RCSLOG SRC="http://www.gfdl.noaa.gov/~vb/changes_mpp.html"/>
+!! <OVERVIEW>
+!!   <TT>mpp_mod</TT>, is a set of simple calls to provide a uniform interface
+!!   to different message-passing libraries. It currently can be
+!!   implemented either in the SGI/Cray native SHMEM library or in the MPI
+!!   standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
+!!   incorporated as the need arises.
+!! </OVERVIEW>
+!! <DESCRIPTION>
+!!   The data transfer between a processor and its own memory is based
+!!   on <TT>load</TT> and <TT>store</TT> operations upon
+!!   memory. Shared-memory systems (including distributed shared memory
+!!   systems) have a single address space and any processor can acquire any
+!!   data within the memory by <TT>load</TT> and
+!!   <TT>store</TT>. The situation is different for distributed
+!!   parallel systems. Specialized MPP systems such as the T3E can simulate
+!!   shared-memory by direct data acquisition from remote memory. But if
+!!   the parallel code is distributed across a cluster, or across the Net,
+!!   messages must be sent and received using the protocols for
+!!   long-distance communication, such as TCP/IP. This requires a
+!!   ``handshaking'' between nodes of the distributed system. One can think
+!!   of the two different methods as involving <TT>put</TT>s or
+!!   <TT>get</TT>s (e.g the SHMEM library), or in the case of
+!!   negotiated communication (e.g MPI), <TT>send</TT>s and
+!!   <TT>recv</TT>s.
+!!
+!!   The difference between SHMEM and MPI is that SHMEM uses one-sided
+!!   communication, which can have very low-latency high-bandwidth
+!!   implementations on tightly coupled systems. MPI is a standard
+!!   developed for distributed computing across loosely-coupled systems,
+!!   and therefore incurs a software penalty for negotiating the
+!!   communication. It is however an open industry standard whereas SHMEM
+!!   is a proprietary interface. Besides, the <TT>put</TT>s or
+!!   <TT>get</TT>s on which it is based cannot currently be implemented in
+!!   a cluster environment (there are recent announcements from Compaq that
+!!   occasion hope).
+!!
+!!   The message-passing requirements of climate and weather codes can be
+!!   reduced to a fairly simple minimal set, which is easily implemented in
+!!   any message-passing API. <TT>mpp_mod</TT> provides this API.
+!!
+!!    Features of <TT>mpp_mod</TT> include:
+!!    <ol>
+!!     <li> Simple, minimal API, with free access to underlying API for </li>
+!!       more complicated stuff.<BR/>
+!!     <li> Design toward typical use in climate/weather CFD codes. </li>
+!!     <li> Performance to be not significantly lower than any native API. </li>
+!!    </ol>
+!!
+!!   This module is used to develop higher-level calls for <LINK
+!!   SRC="mpp_domains.html">domain decomposition</LINK> and <LINK
+!!   SRC="mpp_io.html">parallel I/O</LINK>.
+!! <br/> 
+!!   Parallel computing is initially daunting, but it soon becomes
+!!   second nature, much the way many of us can now write vector code
+!!   without much effort. The key insight required while reading and
+!!   writing parallel code is in arriving at a mental grasp of several
+!!   independent parallel execution streams through the same code (the SPMD
+!!   model). Each variable you examine may have different values for each
+!!   stream, the processor ID being an obvious example. Subroutines and
+!!   function calls are particularly subtle, since it is not always obvious
+!!   from looking at a call what synchronization between execution streams
+!!   it implies. An example of erroneous code would be a global barrier
+!!   call (see <LINK SRC="#mpp_sync">mpp_sync</LINK> below) placed
+!!   within a code block that not all PEs will execute, e.g:
+!!
+!!   <PRE>
+!!   if( pe.EQ.0 )call mpp_sync()
+!!   </PRE>
+!!
+!!   Here only PE 0 reaches the barrier, where it will wait
+!!   indefinitely. While this is a particularly egregious example to
+!!   illustrate the coding flaw, more subtle versions of the same are
+!!   among the most common errors in parallel code.
+!!  <br/>
+!!   It is therefore important to be conscious of the context of a
+!!   subroutine or function call, and the implied synchronization. There
+!!   are certain calls here (e.g <TT>mpp_declare_pelist, mpp_init,
+!!   mpp_set_stack_size</TT>) which must be called by all
+!!   PEs. There are others which must be called by a subset of PEs (here
+!!   called a <TT>pelist</TT>) which must be called by all the PEs in the
+!!   <TT>pelist</TT> (e.g <TT>mpp_max, mpp_sum, mpp_sync</TT>). Still
+!!   others imply no synchronization at all. I will make every effort to
+!!   highlight the context of each call in the MPP modules, so that the
+!!   implicit synchronization is spelt out.
+!! <br/>
+!!   For performance it is necessary to keep synchronization as limited
+!!   as the algorithm being implemented will allow. For instance, a single
+!!   message between two PEs should only imply synchronization across the
+!!   PEs in question. A <I>global</I> synchronization (or <I>barrier</I>)
+!!   is likely to be slow, and is best avoided. But codes first
+!!   parallelized on a Cray T3E tend to have many global syncs, as very
+!!   fast barriers were implemented there in hardware.
+!! <br/>
+!!   Another reason to use pelists is to run a single program in MPMD
+!!   mode, where different PE subsets work on different portions of the
+!!   code. A typical example is to assign an ocean model and atmosphere
+!!   model to different PE subsets, and couple them concurrently instead of
+!!   running them serially. The MPP module provides the notion of a
+!!   <I>current pelist</I>, which is set when a group of PEs branch off
+!!   into a subset. Subsequent calls that omit the <TT>pelist</TT> optional
+!!   argument (seen below in many of the individual calls) assume that the
+!!   implied synchronization is across the current pelist. The calls
+!!   <TT>mpp_root_pe</TT> and <TT>mpp_npes</TT> also return the values
+!!   appropriate to the current pelist. The <TT>mpp_set_current_pelist</TT>
+!!   call is provided to set the current pelist.
+!! </DESCRIPTION>
+!! <br/>
+!! <PUBLIC>
+!!  F90 is a strictly-typed language, and the syntax pass of the
+!!  compiler requires matching of type, kind and rank (TKR). Most calls
+!!  listed here use a generic type, shown here as <TT>MPP_TYPE_</TT>. This
+!!  is resolved in the pre-processor stage to any of a variety of
+!!  types. In general the MPP operations work on 4-byte and 8-byte
+!!  variants of <TT>integer, real, complex, logical</TT> variables, of
+!!  rank 0 to 5, leading to 48 specific module procedures under the same
+!!  generic interface. Any of the variables below shown as
+!!  <TT>MPP_TYPE_</TT> is treated in this way.
+!! </PUBLIC>
 module mpp_mod
-!a generalized communication package for use with shmem and MPI
-!will add: co_array_fortran, MPI2
-!Balaji (V.Balaji@noaa.gov) 11 May 1998
-
-! <CONTACT EMAIL="V.Balaji@noaa.gov">
-!   V. Balaji
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-! <RCSLOG SRC="http://www.gfdl.noaa.gov/~vb/changes_mpp.html"/>
-
-! <OVERVIEW>
-!   <TT>mpp_mod</TT>, is a set of simple calls to provide a uniform interface
-!   to different message-passing libraries. It currently can be
-!   implemented either in the SGI/Cray native SHMEM library or in the MPI
-!   standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
-!   incorporated as the need arises.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   The data transfer between a processor and its own memory is based
-!   on <TT>load</TT> and <TT>store</TT> operations upon
-!   memory. Shared-memory systems (including distributed shared memory
-!   systems) have a single address space and any processor can acquire any
-!   data within the memory by <TT>load</TT> and
-!   <TT>store</TT>. The situation is different for distributed
-!   parallel systems. Specialized MPP systems such as the T3E can simulate
-!   shared-memory by direct data acquisition from remote memory. But if
-!   the parallel code is distributed across a cluster, or across the Net,
-!   messages must be sent and received using the protocols for
-!   long-distance communication, such as TCP/IP. This requires a
-!   ``handshaking'' between nodes of the distributed system. One can think
-!   of the two different methods as involving <TT>put</TT>s or
-!   <TT>get</TT>s (e.g the SHMEM library), or in the case of
-!   negotiated communication (e.g MPI), <TT>send</TT>s and
-!   <TT>recv</TT>s.
-!
-!   The difference between SHMEM and MPI is that SHMEM uses one-sided
-!   communication, which can have very low-latency high-bandwidth
-!   implementations on tightly coupled systems. MPI is a standard
-!   developed for distributed computing across loosely-coupled systems,
-!   and therefore incurs a software penalty for negotiating the
-!   communication. It is however an open industry standard whereas SHMEM
-!   is a proprietary interface. Besides, the <TT>put</TT>s or
-!   <TT>get</TT>s on which it is based cannot currently be implemented in
-!   a cluster environment (there are recent announcements from Compaq that
-!   occasion hope).
-!
-!   The message-passing requirements of climate and weather codes can be
-!   reduced to a fairly simple minimal set, which is easily implemented in
-!   any message-passing API. <TT>mpp_mod</TT> provides this API.
-!
-!    Features of <TT>mpp_mod</TT> include:
-!
-!    1) Simple, minimal API, with free access to underlying API for
-!       more complicated stuff.<BR/>
-!    2) Design toward typical use in climate/weather CFD codes.<BR/>
-!    3) Performance to be not significantly lower than any native API.
-!
-!   This module is used to develop higher-level calls for <LINK
-!   SRC="mpp_domains.html">domain decomposition</LINK> and <LINK
-!   SRC="mpp_io.html">parallel I/O</LINK>.
-!
-!   Parallel computing is initially daunting, but it soon becomes
-!   second nature, much the way many of us can now write vector code
-!   without much effort. The key insight required while reading and
-!   writing parallel code is in arriving at a mental grasp of several
-!   independent parallel execution streams through the same code (the SPMD
-!   model). Each variable you examine may have different values for each
-!   stream, the processor ID being an obvious example. Subroutines and
-!   function calls are particularly subtle, since it is not always obvious
-!   from looking at a call what synchronization between execution streams
-!   it implies. An example of erroneous code would be a global barrier
-!   call (see <LINK SRC="#mpp_sync">mpp_sync</LINK> below) placed
-!   within a code block that not all PEs will execute, e.g:
-!
-!   <PRE>
-!   if( pe.EQ.0 )call mpp_sync()
-!   </PRE>
-!
-!   Here only PE 0 reaches the barrier, where it will wait
-!   indefinitely. While this is a particularly egregious example to
-!   illustrate the coding flaw, more subtle versions of the same are
-!   among the most common errors in parallel code.
-!
-!   It is therefore important to be conscious of the context of a
-!   subroutine or function call, and the implied synchronization. There
-!   are certain calls here (e.g <TT>mpp_declare_pelist, mpp_init,
-!   mpp_set_stack_size</TT>) which must be called by all
-!   PEs. There are others which must be called by a subset of PEs (here
-!   called a <TT>pelist</TT>) which must be called by all the PEs in the
-!   <TT>pelist</TT> (e.g <TT>mpp_max, mpp_sum, mpp_sync</TT>). Still
-!   others imply no synchronization at all. I will make every effort to
-!   highlight the context of each call in the MPP modules, so that the
-!   implicit synchronization is spelt out.
-!
-!   For performance it is necessary to keep synchronization as limited
-!   as the algorithm being implemented will allow. For instance, a single
-!   message between two PEs should only imply synchronization across the
-!   PEs in question. A <I>global</I> synchronization (or <I>barrier</I>)
-!   is likely to be slow, and is best avoided. But codes first
-!   parallelized on a Cray T3E tend to have many global syncs, as very
-!   fast barriers were implemented there in hardware.
-!
-!   Another reason to use pelists is to run a single program in MPMD
-!   mode, where different PE subsets work on different portions of the
-!   code. A typical example is to assign an ocean model and atmosphere
-!   model to different PE subsets, and couple them concurrently instead of
-!   running them serially. The MPP module provides the notion of a
-!   <I>current pelist</I>, which is set when a group of PEs branch off
-!   into a subset. Subsequent calls that omit the <TT>pelist</TT> optional
-!   argument (seen below in many of the individual calls) assume that the
-!   implied synchronization is across the current pelist. The calls
-!   <TT>mpp_root_pe</TT> and <TT>mpp_npes</TT> also return the values
-!   appropriate to the current pelist. The <TT>mpp_set_current_pelist</TT>
-!   call is provided to set the current pelist.
-
-! </DESCRIPTION>
-! <PUBLIC>
-!  F90 is a strictly-typed language, and the syntax pass of the
-!  compiler requires matching of type, kind and rank (TKR). Most calls
-!  listed here use a generic type, shown here as <TT>MPP_TYPE_</TT>. This
-!  is resolved in the pre-processor stage to any of a variety of
-!  types. In general the MPP operations work on 4-byte and 8-byte
-!  variants of <TT>integer, real, complex, logical</TT> variables, of
-!  rank 0 to 5, leading to 48 specific module procedures under the same
-!  generic interface. Any of the variables below shown as
-!  <TT>MPP_TYPE_</TT> is treated in this way.
-! </PUBLIC>
 
 ! Define rank(X) for PGI compiler
 #if defined( __PGI) || defined (__FLANG)
@@ -230,7 +230,7 @@ private
   !    public data type
   !
   !*********************************************************************
-  !peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
+  !> peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
   type :: communicator
      private
      character(len=32) :: name
@@ -247,7 +247,7 @@ private
      integer                                   :: calls
   end type event
 
-  !a clock contains an array of event profiles for a region
+  !> a clock contains an array of event profiles for a region
   type :: clock
      private
      character(len=32)    :: name
@@ -257,9 +257,9 @@ private
      integer              :: peset_num
      logical              :: sync_on_begin, detailed
      integer              :: grain
-     type(event), pointer :: events(:) =>NULL() !if needed, allocate to MAX_EVENT_TYPES
-     logical              :: is_on              !initialize to false. set true when calling mpp_clock_begin
-                                                ! set false when calling mpp_clock_end
+     type(event), pointer :: events(:) =>NULL() !> if needed, allocate to MAX_EVENT_TYPES
+     logical              :: is_on              !> initialize to false. set true when calling mpp_clock_begin
+                                                !! set false when calling mpp_clock_end
   end type clock
 
   type :: Clock_Data_Summary
@@ -279,22 +279,22 @@ private
      type (Clock_Data_Summary) :: event(MAX_EVENT_TYPES)
   end type Summary_Struct
 
-  ! Data types for generalized data transfer (e.g. MPI_Type)
+  !> Data types for generalized data transfer (e.g. MPI_Type)
   type :: mpp_type
      private
-     integer :: counter ! Number of instances of this type
+     integer :: counter !> Number of instances of this type
      integer :: ndims
      integer, allocatable :: sizes(:)
      integer, allocatable :: subsizes(:)
      integer, allocatable :: starts(:)
-     integer :: etype   ! Elementary data type (e.g. MPI_BYTE)
-     integer :: id      ! Identifier within message passing library (e.g. MPI)
+     integer :: etype   !> Elementary data type (e.g. MPI_BYTE)
+     integer :: id      !> Identifier within message passing library (e.g. MPI)
 
      type(mpp_type), pointer :: prev => null()
      type(mpp_type), pointer :: next => null()
   end type mpp_type
 
-  ! Persisent elements for linked list interaction
+  !> Persisent elements for linked list interaction
   type :: mpp_type_list
       private
       type(mpp_type), pointer :: head => null()
@@ -307,73 +307,76 @@ private
 !     public interface from mpp_util.h
 !
 !***********************************************************************
-  ! <INTERFACE NAME="mpp_error">
-  !  <OVERVIEW>
-  !    Error handler.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    It is strongly recommended that all error exits pass through
-  !    <TT>mpp_error</TT> to assure the program fails cleanly. An individual
-  !    PE encountering a <TT>STOP</TT> statement, for instance, can cause the
-  !    program to hang. The use of the <TT>STOP</TT> statement is strongly
-  !    discouraged.
-  !
-  !    Calling mpp_error with no arguments produces an immediate error
-  !    exit, i.e:
-  !    <PRE>
-  !    call mpp_error
-  !    call mpp_error()
-  !    </PRE>
-  !    are equivalent.
-  !
-  !    The argument order
-  !    <PRE>
-  !    call mpp_error( routine, errormsg, errortype )
-  !    </PRE>
-  !    is also provided to support legacy code. In this version of the
-  !    call, none of the arguments may be omitted.
-  !
-  !    The behaviour of <TT>mpp_error</TT> for a <TT>WARNING</TT> can be
-  !    controlled with an additional call <TT>mpp_set_warn_level</TT>.
-  !    <PRE>
-  !    call mpp_set_warn_level(ERROR)
-  !    </PRE>
-  !    causes <TT>mpp_error</TT> to treat <TT>WARNING</TT>
-  !    exactly like <TT>FATAL</TT>.
-  !    <PRE>
-  !    call mpp_set_warn_level(WARNING)
-  !    </PRE>
-  !    resets to the default behaviour described above.
-  !
-  !    <TT>mpp_error</TT> also has an internal error state which
-  !    maintains knowledge of whether a warning has been issued. This can be
-  !    used at startup in a subroutine that checks if the model has been
-  !    properly configured. You can generate a series of warnings using
-  !    <TT>mpp_error</TT>, and then check at the end if any warnings has been
-  !    issued using the function <TT>mpp_error_state()</TT>. If the value of
-  !    this is <TT>WARNING</TT>, at least one warning has been issued, and
-  !    the user can take appropriate action:
-  !
-  !    <PRE>
-  !    if( ... )call mpp_error( WARNING, '...' )
-  !    if( ... )call mpp_error( WARNING, '...' )
-  !    if( ... )call mpp_error( WARNING, '...' )
-  !    ...
-  !    if( mpp_error_state().EQ.WARNING )call mpp_error( FATAL, '...' )
-  !    </PRE>
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_error( errortype, routine, errormsg )
-  !  </TEMPLATE>
-  !  <IN NAME="errortype">
-  !    One of <TT>NOTE</TT>, <TT>WARNING</TT> or <TT>FATAL</TT>
-  !    (these definitions are acquired by use association).
-  !    <TT>NOTE</TT> writes <TT>errormsg</TT> to <TT>STDOUT</TT>.
-  !    <TT>WARNING</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>.
-  !    <TT>FATAL</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>,
-  !    and induces a clean error exit with a call stack traceback.
-  !  </IN>
-  ! </INTERFACE>
+  !> @interface
+  !! @description
+  !! @htmlonly
+  !! <INTERFACE NAME="mpp_error">
+  !!  <OVERVIEW>
+  !!    Error handler.
+  !!  </OVERVIEW>
+  !!  <DESCRIPTION>
+  !!    It is strongly recommended that all error exits pass through
+  !!    <TT>mpp_error</TT> to assure the program fails cleanly. An individual
+  !!    PE encountering a <TT>STOP</TT> statement, for instance, can cause the
+  !!    program to hang. The use of the <TT>STOP</TT> statement is strongly
+  !!    discouraged.
+  !!
+  !!    Calling mpp_error with no arguments produces an immediate error
+  !!    exit, i.e:
+  !!    <PRE>
+  !!    call mpp_error
+  !!    call mpp_error()
+  !!    </PRE>
+  !!    are equivalent.
+  !!
+  !!    The argument order
+  !!    <PRE>
+  !!    call mpp_error( routine, errormsg, errortype )
+  !!    </PRE>
+  !!    is also provided to support legacy code. In this version of the
+  !!    call, none of the arguments may be omitted.
+  !!
+  !!    The behaviour of <TT>mpp_error</TT> for a <TT>WARNING</TT> can be
+  !!    controlled with an additional call <TT>mpp_set_warn_level</TT>.
+  !!    <PRE>
+  !!    call mpp_set_warn_level(ERROR)
+  !!    </PRE>
+  !!    causes <TT>mpp_error</TT> to treat <TT>WARNING</TT>
+  !!    exactly like <TT>FATAL</TT>.
+  !!    <PRE>
+  !!    call mpp_set_warn_level(WARNING)
+  !!    </PRE>
+  !!    resets to the default behaviour described above.
+  !!
+  !!    <TT>mpp_error</TT> also has an internal error state which
+  !!    maintains knowledge of whether a warning has been issued. This can be
+  !!    used at startup in a subroutine that checks if the model has been
+  !!    properly configured. You can generate a series of warnings using
+  !!    <TT>mpp_error</TT>, and then check at the end if any warnings has been
+  !!    issued using the function <TT>mpp_error_state()</TT>. If the value of
+  !!    this is <TT>WARNING</TT>, at least one warning has been issued, and
+  !!    the user can take appropriate action:
+  !!
+  !!    <PRE>
+  !!    if( ... )call mpp_error( WARNING, '...' )
+  !!    if( ... )call mpp_error( WARNING, '...' )
+  !!    if( ... )call mpp_error( WARNING, '...' )
+  !!    ...
+  !!    if( mpp_error_state().EQ.WARNING )call mpp_error( FATAL, '...' )
+  !!    </PRE>
+  !!  </DESCRIPTION>
+  !!  <TEMPLATE>
+  !!    call mpp_error( errortype, routine, errormsg )
+  !!  </TEMPLATE>
+  !!  <IN NAME="errortype">
+  !!    One of <TT>NOTE</TT>, <TT>WARNING</TT> or <TT>FATAL</TT>
+  !!    (these definitions are acquired by use association).
+  !!    <TT>NOTE</TT> writes <TT>errormsg</TT> to <TT>STDOUT</TT>.
+  !!    <TT>WARNING</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>.
+  !!    <TT>FATAL</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>,
+  !!    and induces a clean error exit with a call stack traceback.
+  !!  </IN>
+  !! </INTERFACE>
   interface mpp_error
      module procedure mpp_error_basic
      module procedure mpp_error_mesg
