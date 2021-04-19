@@ -1,7 +1,7 @@
 name: Generate and deploy documentation on GH pages
 
 # update on releases or when triggered manually(must have write access)
-on: [release, workflow_dispatch]
+on: [release, workflow_dispatch, push]
 
 jobs:
   update_docs:
