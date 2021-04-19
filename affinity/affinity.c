@@ -20,7 +20,7 @@
 /**
  * \file
  * \author @bensonr
- *
+ * \ingroup affinity
  * \section DESCRIPTION
  *
  * Routines to set and get thread CPU affinity
