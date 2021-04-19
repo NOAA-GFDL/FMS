@@ -2264,7 +2264,7 @@ end function get_ticks_per_second
 
 !------------------------------------------------------------------------
 
-!> Sets Time_out%days on a Gregorian calendar
+!> @brief Sets Time_out%days on a Gregorian calendar
 !! Computes the total number of days between 1/1/0001 to the current month/day/year
  function set_date_gregorian(year, month, day, hour, minute, second, tick, Time_out, err_msg)
  logical :: set_date_gregorian
@@ -2298,7 +2298,7 @@ end function get_ticks_per_second
    end if
  end if
 
-Time_out%seconds = second + 60*(minute + 60*hour)
+ Time_out%seconds = second + 60*(minute + 60*hour)
 
  yearx = mod(year-1,400)
  dayx  = 0
@@ -2349,7 +2349,7 @@ Time_out%seconds = second + 60*(minute + 60*hour)
 
 !------------------------------------------------------------------------
 
-!> Sets Time_out%days on a Gregorian calendar.  This is the original/old subroutine.
+!> @brief Sets Time_out%days on a Gregorian calendar.  This is the original/old subroutine.
 !! Look up the total number of days between 1/1/0001 to the current month/day/year in the array date_to_day
 !! This function is kept in order to test the new set_date_gregorian
  function set_date_gregorian_old(year, month, day, hour, minute, second, tick, Time_out, err_msg)
