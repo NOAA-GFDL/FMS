@@ -40,9 +40,9 @@ SUBDIRS = \
   mpp \
   memutils \
   fms2_io \
-  affinity \
   mosaic \
   fms \
+  affinity \
   time_manager \
   axis_utils \
   diag_manager \
