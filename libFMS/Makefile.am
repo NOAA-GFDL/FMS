@@ -40,6 +40,7 @@ libFMS_la_LIBADD += $(top_builddir)/fms/libfms.la
 libFMS_la_LIBADD += $(top_builddir)/fms2_io/libfms2_io.la
 libFMS_la_LIBADD += $(top_builddir)/affinity/libfms_affinity.la
 libFMS_la_LIBADD += $(top_builddir)/mosaic/libmosaic.la
+libFMS_la_LIBADD += $(top_builddir)/mosaic2/libmosaic2.la
 libFMS_la_LIBADD += $(top_builddir)/coupler/libcoupler.la
 libFMS_la_LIBADD += $(top_builddir)/drifters/libdrifters.la
 libFMS_la_LIBADD += $(top_builddir)/axis_utils/libaxis_utils.la
