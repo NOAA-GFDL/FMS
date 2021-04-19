@@ -1672,7 +1672,7 @@ end function get_ticks_per_second
 
 !> @brief Gets the date for different calendar types.
 !! The added optional argument old_method allows user to choose either the new or old version
-!! of get_date_gregorian
+!! of get_date_gregorian.  The variable old_method is only useful if the calendar type is Gregorian
  subroutine get_date(time, year, month, day, hour, minute, second, tick, err_msg, old_method)
 
 ! Given a time, computes the corresponding date given the selected calendar
@@ -2048,7 +2048,7 @@ end function get_ticks_per_second
 
 !> @brief Sets days for different calendar types.
 !! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian
+!! of set_date_gregorian.  The variable old_method is only useful if the calendar type is Gregorian
  function set_date_private(year, month, day, hour, minute, second, tick, Time_out, err_msg, old_method)
 
 ! Given a date, computes the corresponding time given the selected
@@ -2100,7 +2100,7 @@ end function get_ticks_per_second
 
 !> @brief Calls set_date_private to set days for different calendar types.
 !! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian
+!! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
  function set_date_i(year, month, day, hour, minute, second, tick, err_msg, old_method)
  type(time_type) :: set_date_i
  integer, intent(in) :: day, month, year
@@ -2134,7 +2134,7 @@ end function get_ticks_per_second
 
 !> @brief Calls set_date_private for different calendar types when given a string input.
 !! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian
+!! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
  function set_date_c(string, zero_year_warning, err_msg, allow_rounding, old_method)
 
  ! Examples of acceptable forms of string:
