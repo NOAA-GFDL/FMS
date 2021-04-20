@@ -1520,6 +1520,13 @@ end function repeat_alarm
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
 
+!> @brief Sets calendar_type. The arrays coded_date and days_this_month used for the Gregorian calendar
+!! are assigned in this subroutine.  The arrays and this component of the subroutine has been kept in order to be used by the original/old
+!! get_date_gregorian and set_date_gregorian which are now called get_date_gregorian_old and set_date_gregorian_old.  The
+!! get/set_date_gregorian_old subroutines have been kept in order to test the new get/set_date_gregorian. The new get/set_date_gregorian
+!! do not utilize the coded_date and days_this_month arrays.  As done in the get/set_date_gregorian_old, in the new routines,
+!! negative years and the proleptic Gregorian calendar are not used; and the discontinuity of days in October 1582
+!! (when the Gregorian calendar was adopted by select groups in Europe) is not taken into account.
 subroutine set_calendar_type(type, err_msg)
 
 ! Selects calendar for default mapping from time to date.
