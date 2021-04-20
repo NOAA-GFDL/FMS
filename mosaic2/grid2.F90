@@ -134,7 +134,7 @@ end subroutine grid_end
 
 !> @brief Determine if we are using the great circle algorithm
 !! @return Logical flag describing if we are using the great circlealgorithm
-function get_great_circle_algorithm
+function get_great_circle_algorithm()
    character(len=128)     :: attvalue
    logical :: get_great_circle_algorithm
 
