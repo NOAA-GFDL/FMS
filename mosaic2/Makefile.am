@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/mosaic
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -36,3 +36,5 @@ grid2.F90
 
 # Some mods are dependant on other mods in this dir.
 grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
+
+include $(top_srcdir)/mkmods.mk
