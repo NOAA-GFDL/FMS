@@ -37,4 +37,8 @@ grid2.F90
 # Some mods are dependant on other mods in this dir.
 grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
 
+MODFILES = \
+  mosaic2_mod.$(FC_MODEXT) \
+  grid2_mod.$(FC_MODEXT)
+
 include $(top_srcdir)/mkmods.mk
