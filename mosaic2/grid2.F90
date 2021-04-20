@@ -208,16 +208,16 @@ end function get_grid_version
 
 !> @brief Open the component mosaic files for atm, lnd, and ocn
 subroutine open_component_mosaics
-    call open_mosaic_file(mosaic_fileobj(1), 'atm')
-    call open_mosaic_file(mosaic_fileobj(2), 'ocn')
-    call open_mosaic_file(mosaic_fileobj(3), 'lnd')
+    if (variable_exists(gridfileobj, 'atm_mosaic_file')) call open_mosaic_file(mosaic_fileobj(1), 'atm')
+    if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call open_mosaic_file(mosaic_fileobj(2), 'ocn')
+    if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call open_mosaic_file(mosaic_fileobj(3), 'lnd')
 end subroutine open_component_mosaics
 
 !> @brief Close the component mosaic files for atm, lnd, and ocn
 subroutine close_component_mosaics
-    call close_file(mosaic_fileobj(1))
-    call close_file(mosaic_fileobj(2))
-    call close_file(mosaic_fileobj(3))
+    if (variable_exists(gridfileobj, 'atm_mosaic_file')) call close_file(mosaic_fileobj(1))
+    if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call close_file(mosaic_fileobj(2))
+    if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call close_file(mosaic_fileobj(3))
 end subroutine close_component_mosaics
 
 !> @brief Get the component number of a model component (atm, lnd, ocn) 
