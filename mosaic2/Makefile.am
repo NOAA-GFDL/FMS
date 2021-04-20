@@ -40,5 +40,7 @@ grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
 MODFILES = \
   mosaic2_mod.$(FC_MODEXT) \
   grid2_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
 
 include $(top_srcdir)/mkmods.mk
