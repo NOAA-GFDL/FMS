@@ -19,15 +19,15 @@
 ! setup group for this directory
 !> @defgroup axis_util Axis Utilities 
 !
-!> @file
-!
 !> @ingroup axis_util
+!
+!> @file
 !
 !> @brief A set of utilities for manipulating axes and extracting axis attributes
 !
 !> @author M.J. Harrison
 !
-!> @email gfdl.climate.model.info@noaa.gov
+!> @link gfdl.climate.model.info@noaa.gov
 !
 !> FMS2_IO equivalent version of axis_utils.F90
 !!

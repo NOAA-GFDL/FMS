@@ -190,6 +190,6 @@ contains
 !$OMP END PARALLEL
 
   end subroutine fms_affinity_set
-  !> @}
-  ! closes documentation grouping
 end module fms_affinity_mod
+!> @}
+! closes documentation grouping

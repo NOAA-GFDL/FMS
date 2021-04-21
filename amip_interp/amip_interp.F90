@@ -18,11 +18,12 @@
 !***********************************************************************
 ! setup group for this directory
 !> @defgroup amip_interp AMIP Interpolator
-!> @brief
+!> @brief Interpolates SST and ice mask data sets over a model grid
+!
+!> @addtogroup amip_interp
+!> @{
 !
 !> @file
-!
-!> @ingroup amip_interp
 !
 !> @brief Provides observed SST and ice mask data sets that have been interpolated onto your model's grid.
 !
@@ -30,7 +31,7 @@
 !
 !> @email gfdl.climate.model.info@noaa.gov
 !
-!> Three possible data sets are available:
+!> When using these routines three possible data sets are available:
 !!
 !!     1)  AMIP \link http://www-pcmdi.llnl.gov/amip \endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
 !!     2)  Reynolds OI \link amip_interp.rey_oi.txt \endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
@@ -1682,3 +1683,4 @@ end module amip_interp_mod
 !   </FUTURE>
 
 ! </INFO>
+!> @}

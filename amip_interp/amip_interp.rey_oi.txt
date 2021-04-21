@@ -1,8 +1,5 @@
-/// @file
+/// \ingroup amip_interp
 (This file was edited for the Flexible Modeling System on July 26, 1999)
-
-/// @addtogroup amip_interp
-/// @{
 
 Information for the use of the monthly NMC SST analyzed fields
 
@@ -82,4 +79,3 @@ PHONE:    (301) 763-8396
 FAX:      (301) 763-8125
 
 UPDATED: 29 November 1995
-/// @}

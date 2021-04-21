@@ -18,51 +18,22 @@
 !***********************************************************************
 ! setup group for this directory
 !> @defgroup astronomy Astronomy
-!
-!> @file
+!> @brief Astronomy related variables and routines
 !
 !> @addtogroup astronomy
 !> @{
 !
-!> @brief astronomy_mod provides astronomical variables for use
+!> @file
+!
+!> @brief Provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
 !!        for determination of astronomical values needed by the shortwave
 !!        radiation packages.
 !
 !> @author Fei Liu
 !
-!> @email gfdl.climate.model.info@noaa.gov
+!> @link gfdl.climate.model.info@noaa.gov
 !
-!> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ @endlink
-!
-!> Modules Included:
-!!
-!! <table>
-!!   <tr>
-!!     <th>Module Name</th>
-!!     <th>Functions Included</th>
-!!   </tr>
-!!   <tr>
-!!     <td>fms_mod</td>
-!!     <td>fms_init, mpp_pe, mpp_root_pe, stdlog,
-!!         write_version_number, check_nml_error, error_mesg,
-!!         FATAL, NOTE, WARNING</td>
-!!   </tr>
-!!   <tr>
-!!     <td>time_manager_mod</td>
-!!     <td>time_type, set_time, get_time, get_date_julian, set_date_julian,
-!!         set_date, length_of_year, time_manager_init, operator(-),
-!!         operator(+), operator( // ), operator(<)</td>
-!!   </tr>
-!!   <tr>
-!!     <td>constants_mod</td>
-!!     <td>constants_init, PI</td>
-!!   </tr>
-!!   <tr>
-!!     <td>mpp_mod</td>
-!!     <td>input_nml_file</td>
-!!   </tr>
-!! </table>
                       module astronomy_mod
 
 
@@ -104,7 +75,6 @@ public       &
 
 !> @page diurnal_solar diurnal_solar Interface
 !!
-!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
 !! call diurnal_solar (lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, dt)
@@ -180,7 +150,6 @@ end interface
 
 !> @page daily_mean_solar daily_mean_solar Interface
 !!
-!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call daily_mean_solar (lat, time, cosz, fracday, rrsun)
 !! call daily_mean_solar (lat, time_since_ae, cosz, fracday, rrsun)
@@ -238,7 +207,6 @@ end interface
 
 !! @page annual_mean_solar annual_mean_solar Interface
 !!
-!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call annual_mean_solar (js, je, lat, cosz, solar, fracday, rrsun)
 !! call annual_mean_solar (lat, cosz, solar)
@@ -280,7 +248,6 @@ end interface
 
 !> @page get_period get_period Interface
 !!
-!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call get_period (period)
 !! ~~~~~~~~~~
@@ -300,7 +267,6 @@ end interface
 
 !> @page set_period set_period Interface
 !!
-!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call set_period (period_in)
 !! ~~~~~~~~~~
@@ -328,7 +294,6 @@ private &
 
 !> @page half_day half_day Interface
 !!
-!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! half_day (latitude, dec) result (h)
 !! ~~~~~~~~~~
@@ -2269,6 +2234,7 @@ real                        :: t
       t = twopi*real(seconds)/seconds_per_day
 
 end function universal_time
+
+end module astronomy_mod
 !> @}
 ! close documentation grouping
-end module astronomy_mod

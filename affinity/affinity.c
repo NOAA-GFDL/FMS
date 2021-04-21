@@ -22,8 +22,12 @@
  * \author @bensonr
  * \ingroup affinity
  *
- * Routines to set and get thread CPU affinity
+ * \brief Routines to set and get thread CPU affinity
+ * 
+ * Get, set, and helper functions for thread CPU affinity to be interfaced
+ * in fortran via fms_affinity.F90
  */
+
 #define _GNU_SOURCE
 
 #include <stdio.h>

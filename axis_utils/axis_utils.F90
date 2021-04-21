@@ -16,9 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @file
-!
 !> @ingroup axis_utils
+!
+!> @file
 !
 !> @brief A set of utilities for manipulating axes and extracting axis attributes,
 !
