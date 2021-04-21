@@ -17,17 +17,6 @@
  * License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
 
-/**
- * \file
- * \author @bensonr
- * \ingroup affinity
- *
- * \brief Routines to set and get thread CPU affinity
- *
- * Get, set, and helper functions for thread CPU affinity to be interfaced
- * in fortran via fms_affinity_mod
- *
- */
 
 #define _GNU_SOURCE
 
@@ -42,6 +31,16 @@
 #ifdef __APPLE__
 #include <pthread.h>
 #endif
+
+/**
+ * \file
+ * \author @bensonr
+ * \ingroup affinity
+ * \brief Routines to set and get thread CPU affinity
+ * Get, set, and helper functions for thread CPU affinity to be interfaced
+ * in fortran via fms_affinity_mod
+ *
+ */
 
 /**
  * gettid function for systems that do not have this function (e.g. on Mac OS.)

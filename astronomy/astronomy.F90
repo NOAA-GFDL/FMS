@@ -16,22 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! setup group for this directory
-!> @defgroup astronomy Astronomy
-!> @brief Astronomy related variables and routines
-!
 !> @addtogroup astronomy
 !> @{
 !
 !> @file
-!
 !> @brief Provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
 !!        for determination of astronomical values needed by the shortwave
 !!        radiation packages.
-!
 !> @author Fei Liu
-!
+!!
 !> @link gfdl.climate.model.info@noaa.gov
 !
                       module astronomy_mod

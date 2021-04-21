@@ -16,30 +16,22 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! setup doxygen group for this directory
-!> @defgroup affinity Affinity
-!> @brief API interfaces to allow setting and getting thread affinity
-!> Uses fms_affinity_mod to interface between affinity.c for manipulating 
-!! CPU affinity.
+
+
+!> @file
+!> File for fms_affinity_mod
 !
 !> @addtogroup affinity
 !> @{
 !
-!> @file
-!
-!> @author Rusty Benson
-!
-!> @link gfdl.climate.model.info@noaa.gov
-!
 !> @brief Fortran API interfaces to set the thread affinity.
-!
-!> API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
+!! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
 !! are managed in the C routines in affinity.c.
-!
-!> @page Modules
-!! fms_affinity_mod
+!!
+!! @author Rusty Benson
+!!
+!! @link gfdl.climate.model.info@noaa.gov
 module fms_affinity_mod
-  !> @ingroup affinity
   !--- standard system modules
   use, intrinsic :: iso_c_binding, only: c_int, c_bool
   use omp_lib

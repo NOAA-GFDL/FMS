@@ -16,74 +16,14 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup interpolator
+
+!> @file
+!> File for interpolator_mod
 !
 !> @addtogroup interpolator
 !> @{
-!
-!> @file
-!
-!> @author William Cooke <William.Cooke@noaa.gov>
-!
 !> @brief interpolator_mod is a module to interpolate climatology data to model the grid.
-!!
-!! Modules Included:
-!!
-!! <table>
-!!   <tr>
-!!     <th>Module Name</th>
-!!     <th>Functions Included</th>
-!!   </tr>
-!!      <tr>
-!!     <td>mpp_mod</td>
-!!     <td>mpp_error, FATAL, mpp_pe, mpp_init, mpp_exit, mpp_npes,
-!!         WARNING, NOTE, input_nml_file</td>
-!!   </tr>
-!!      <tr>
-!!     <td>mpp_io_mod</td>
-!!     <td>mpp_open, mpp_close, mpp_get_times, mpp_get_atts, mpp_get_info,
-!!             mpp_read, mpp_get_axes, mpp_get_axis_data, mpp_get_fields,
-!!                fieldtype, atttype, axistype, MPP_RDONLY, MPP_NETCDF, MPP_MULTI,
-!!             MPP_APPEND, MPP_SINGLE</td>
-!!   </tr>
-!!      <tr>
-!!     <td>mpp_domains_mod</td>
-!!     <td>mpp_update_domains, mpp_define_domains, mpp_global_field,
-!!             domain2d, mpp_define_layout, mpp_get_compute_domain</td>
-!!   </tr>
-!!      <tr>
-!!     <td>diag_manager_mod</td>
-!!     <td>diag_manager_init, get_base_time, register_diag_field,
-!!             send_data, diag_axis_init</td>
-!!   </tr>
-!!   <tr>
-!!     <td>fms_mod</td>
-!!     <td>open_namelist_file, fms_init, mpp_pe, mpp_root_pe, stdlog,
-!!         file_exist, write_version_number, check_nml_error, error_mesg,
-!!         FATAL, NOTE, WARNING, close_file</td>
-!!   </tr>
-!!      <tr>
-!!     <td>horiz_interp_mod</td>
-!!     <td>horiz_interp_type, horiz_interp_new, horiz_interp_init,
-!!             horiz_interp, horiz_interp_del</td>
-!!   </tr>
-!!   <tr>
-!!     <td>time_manager_mod</td>
-!!     <td>time_type, set_time, set_date, get_date, get_calendar_type,
-!!             JULIAN, NOLEAP, get_date_julian, set_date_no_leap,
-!!             set_date_julian, get_date_no_leap, print_date,
-!!             operator(+), operator(-), operator(*), operator(>),
-!!             operator(<), decrement_time</td>
-!!   </tr>
-!!      <tr>
-!!     <td>time_interp_mod</td>
-!!     <td>time_interp, YEAR</td>
-!!   </tr>
-!!      <tr>
-!!     <td>constants_mod</td>
-!!     <td>grav, PI, SECONDS_PER_DAY</td>
-!!   </tr>
-!! </table>
+!> @author William Cooke <William.Cooke@noaa.gov>
 module interpolator_mod
 
 use mpp_mod,           only : mpp_error, &
@@ -4972,9 +4912,10 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
 end subroutine interp_read_data_mppio_no_time_axis
 
-!> @}
-! close documentation grouping
 
 end module interpolator_mod
+
+!> @}
+! close documentation grouping
 !
 !#######################################################################
