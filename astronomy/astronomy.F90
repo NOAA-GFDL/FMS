@@ -16,18 +16,25 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
+! setup group for this directory
+!> @defgroup astronomy Astronomy
+!
 !> @file
-!! @brief astronomy_mod provides astronomical variables for use
+!
+!> @ingroup astronomy Astronomy
+!
+!> @brief astronomy_mod provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
 !!        for determination of astronomical values needed by the shortwave
 !!        radiation packages.
-!! @author Fei Liu
-!! @email gfdl.climate.model.info@noaa.gov
-!!
-!! \link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ \endlink
-!!
-!! Modules Included:
+!
+!> @author Fei Liu
+!
+!> @email gfdl.climate.model.info@noaa.gov
+!
+!> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ \endlink
+!
+!> Modules Included:
 !!
 !! <table>
 !!   <tr>
@@ -96,6 +103,7 @@ public       &
 
 !> \page diurnal_solar diurnal_solar Interface
 !!
+!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
 !! call diurnal_solar (lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, dt)
@@ -171,6 +179,7 @@ end interface
 
 !> \page daily_mean_solar daily_mean_solar Interface
 !!
+!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call daily_mean_solar (lat, time, cosz, fracday, rrsun)
 !! call daily_mean_solar (lat, time_since_ae, cosz, fracday, rrsun)
@@ -228,6 +237,7 @@ end interface
 
 !! \page annual_mean_solar annual_mean_solar Interface
 !!
+!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call annual_mean_solar (js, je, lat, cosz, solar, fracday, rrsun)
 !! call annual_mean_solar (lat, cosz, solar)
@@ -269,6 +279,7 @@ end interface
 
 !> \page get_period get_period Interface
 !!
+!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call get_period (period)
 !! ~~~~~~~~~~
@@ -288,6 +299,7 @@ end interface
 
 !> \page set_period set_period Interface
 !!
+!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! call set_period (period_in)
 !! ~~~~~~~~~~
@@ -315,6 +327,7 @@ private &
 
 !> \page half_day half_day Interface
 !!
+!> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
 !! half_day (latitude, dec) result (h)
 !! ~~~~~~~~~~

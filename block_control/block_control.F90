@@ -16,10 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
+!> @defgroup block_control Block Control
+!
 !> @file
-!! @brief Contains the \ref block_control_mod module
-!! @email gfdl.climate.model.info@noaa.gov
+!
+!> @ingroup block_control
+!
+!> @brief Contains the \ref block_control_mod module
+!
+!> @email gfdl.climate.model.info@noaa.gov
 
 module block_control_mod
 

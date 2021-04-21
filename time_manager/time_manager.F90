@@ -18,76 +18,73 @@
 !***********************************************************************
 module time_manager_mod
 
-! <CONTACT EMAIL="fms@gfdl.noaa.gov">
-!   fms
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   A software package that provides a set of simple interfaces for
-!   modelers to perform computations related to time and dates.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!    The changes between the lima revision and this revision are more
-!    extensive that all those between antwerp and lima.
-!    A brief description of these changes follows.
+!> @defgroup time_manager Time Manager
+!> @file
 !
-!    1) Added option to set the smallest time increment to something less than one second.
-!       This is controlled by calling the pubic subroutine set_ticks_per_second.
+!> @email fms@gfdl.noaa.gov
 !
-!    2) Gregorian calendar fixed.
+!> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/
 !
-!    3) Optional error flag added to calling arguments of public routines.
-!       This allows the using routine to terminate the program. It is likely that more
-!       diagnostic information is available from the user than from time_manager alone.
-!       If the error flag is present then it is the responsibility of the using
-!       routine to test it and add additional information to the error message.
+!> @brief A software package that provides a set of simple interfaces for
+!!   modelers to perform computations related to time and dates.
 !
-!    4) Removed the restriction that time increments be positive in routines that increment or decrement
-!       time and date. The option to prohibit negative increments can be turned on via optional argument.
+!> The changes between the lima revision and this revision are more
+!!    extensive that all those between antwerp and lima.
+!!    A brief description of these changes follows.
+!!
+!!    1) Added option to set the smallest time increment to something less than one second.
+!!       This is controlled by calling the pubic subroutine set_ticks_per_second.
+!!
+!!    2) Gregorian calendar fixed.
+!!
+!!    3) Optional error flag added to calling arguments of public routines.
+!!       This allows the using routine to terminate the program. It is likely that more
+!!       diagnostic information is available from the user than from time_manager alone.
+!!       If the error flag is present then it is the responsibility of the using
+!!       routine to test it and add additional information to the error message.
+!!
+!!    4) Removed the restriction that time increments be positive in routines that increment or decrement
+!!       time and date. The option to prohibit negative increments can be turned on via optional argument.
+!!
+!!    5) subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
+!!       This complies with CF convensions.
+!!
+!!    6) Made calendar specific routines private.
+!!       They are not used, and should not be used, by any using code.
+!!
+!!    7) Error messages made more informative.
+!!
+!!    The module defines a type that can be used to represent discrete
+!!    times (accurate to one second) and to map these times into dates
+!!    using a variety of calendars. A time is mapped to a date by
+!!    representing the time with respect to an arbitrary base date (refer
+!!    to <B>NOTES</B> section for the <LINK SRC="#base date">base date</LINK> setting).
+!!
+!!    The time_manager provides a single defined type, time_type, which is
+!!    used to store time and date quantities. A time_type is a positive
+!!    definite quantity that represents an interval of time. It can be
+!!    most easily thought of as representing the number of seconds in some
+!!    time interval. A time interval can be mapped to a date under a given
+!!    calendar definition by using it to represent the time that has passed
+!!    since some base date. A number of interfaces are provided to operate
+!!    on time_type variables and their associated calendars. Time intervals
+!!    can be as large as n days where n is the largest number represented by
+!!    the default integer type on a compiler. This is typically considerably
+!!    greater than 10 million years (assuming 32 bit integer representation)
+!!    which is likely to be adequate for most applications. The description
+!!    of the interfaces is separated into two sections. The first deals with
+!!    operations on time intervals while the second deals with operations
+!!    that convert time intervals to dates for a given calendar.
 !
-!    5) subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
-!       This complies with CF convensions.
+!!    The smallest increment of time is referred to as a tick.
+!!    A tick cannot be larger than 1 second, which also is the default.
+!!    The number of ticks per second is set via pubic subroutine set_ticks_per_second.
+!!    For example, ticks_per_second = 1000  will set the tick to one millisecond.
 !
-!    6) Made calendar specific routines private.
-!       They are not used, and should not be used, by any using code.
-!
-!    7) Error messages made more informative.
-!
-!    The module defines a type that can be used to represent discrete
-!    times (accurate to one second) and to map these times into dates
-!    using a variety of calendars. A time is mapped to a date by
-!    representing the time with respect to an arbitrary base date (refer
-!    to <B>NOTES</B> section for the <LINK SRC="#base date">base date</LINK> setting).
-!
-!    The time_manager provides a single defined type, time_type, which is
-!    used to store time and date quantities. A time_type is a positive
-!    definite quantity that represents an interval of time. It can be
-!    most easily thought of as representing the number of seconds in some
-!    time interval. A time interval can be mapped to a date under a given
-!    calendar definition by using it to represent the time that has passed
-!    since some base date. A number of interfaces are provided to operate
-!    on time_type variables and their associated calendars. Time intervals
-!    can be as large as n days where n is the largest number represented by
-!    the default integer type on a compiler. This is typically considerably
-!    greater than 10 million years (assuming 32 bit integer representation)
-!    which is likely to be adequate for most applications. The description
-!    of the interfaces is separated into two sections. The first deals with
-!    operations on time intervals while the second deals with operations
-!    that convert time intervals to dates for a given calendar.
-
-!    The smallest increment of time is referred to as a tick.
-!    A tick cannot be larger than 1 second, which also is the default.
-!    The number of ticks per second is set via pubic subroutine set_ticks_per_second.
-!    For example, ticks_per_second = 1000  will set the tick to one millisecond.
-! </DESCRIPTION>
-
-! <DATA NAME="time_type" TYPE="derived type">
-!    Derived-type data variable used to store time and date quantities. It
-!    contains three PRIVATE variables: days, seconds and ticks.
-! </DATA>
+!! <DATA NAME="time_type" TYPE="derived type">
+!!    Derived-type data variable used to store time and date quantities. It
+!!    contains three PRIVATE variables: days, seconds and ticks.
+!! </DATA>
 
 use platform_mod, only: r8_kind
 use constants_mod, only: rseconds_per_day=>seconds_per_day
