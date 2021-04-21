@@ -20,9 +20,7 @@
 
 !> @file
 !> File for fms_affinity_mod
-!
-!> @addtogroup affinity
-!> @{
+!> @ingroup affinity
 !
 !> @brief Fortran API interfaces to set the thread affinity.
 !! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
@@ -31,6 +29,7 @@
 !! @author Rusty Benson
 !!
 !! @link gfdl.climate.model.info@noaa.gov
+!! @ingroup affinity
 module fms_affinity_mod
   !--- standard system modules
   use, intrinsic :: iso_c_binding, only: c_int, c_bool
@@ -188,5 +187,3 @@ contains
 
   end subroutine fms_affinity_set
 end module fms_affinity_mod
-!> @}
-! closes documentation grouping

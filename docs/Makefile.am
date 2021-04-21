@@ -32,4 +32,4 @@ all:
 
 check: all
 
-EXTRA_DIST = Doxyfile.in groupings.h
+EXTRA_DIST = Doxyfile.in grouping.h
