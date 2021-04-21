@@ -16,10 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> \author William Cooke <William.Cooke@noaa.gov>
-!!
-!! \brief interpolator_mod is a module to interpolate climatology data to model the grid.
+!> @defgroup interpolator
+!
+!> @addtogroup interpolator
+!> @{
+!
+!> @file
+!
+!> @author William Cooke <William.Cooke@noaa.gov>
+!
+!> @brief interpolator_mod is a module to interpolate climatology data to model the grid.
 !!
 !! Modules Included:
 !!
@@ -172,7 +178,7 @@ public interpolator_init, &
        query_interpolator,&
        read_data
 
-!> \page interpolator interpolator Interface
+!> @page interpolator interpolator Interface
 !!
 !! ~~~~~~~~~~{.f90}
 !! call interpolator (sulfate, model_time, p_half, model_data, name, is, js, clim_units)
@@ -213,14 +219,14 @@ public interpolator_init, &
 !! real, intent(in), dimension(:,:,:) :: p_half
 !! ~~~~~~~~~~
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
-!! \param [in] <field_name> The name of a field that you wish to interpolate
-!! \param [in] <Time> The model time that you wish to interpolate to
-!! \param [in] <phalf> The half level model pressure field
-!! \param [in] <is> Index for the physics window
-!! \param [in] <js> Index for the physics window
-!! \param [out] <interp_data> The model fields with the interpolated climatology data
-!! \param [out] <clim_units> The units of field_name
+!! @param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! @param [in] <field_name> The name of a field that you wish to interpolate
+!! @param [in] <Time> The model time that you wish to interpolate to
+!! @param [in] <phalf> The half level model pressure field
+!! @param [in] <is> Index for the physics window
+!! @param [in] <js> Index for the physics window
+!! @param [out] <interp_data> The model fields with the interpolated climatology data
+!! @param [out] <clim_units> The units of field_name
 interface interpolator
    module procedure interpolator_4D
    module procedure interpolator_3D
@@ -230,25 +236,25 @@ interface interpolator
    module procedure interpolator_2D_no_time_axis
 end interface
 
-!> \page assignment assignment Interface
+!> @page assignment assignment Interface
 !!
-!! \param [in] <In> No description
-!! \param [inout] <Out> No description
+!! @param [in] <In> No description
+!! @param [inout] <Out> No description
 interface assignment(=)
    module procedure interpolate_type_eq
 end interface
 
-!> \page interp_weighted_scalar interp_weighted_scalar Interface
+!> @page interp_weighted_scalar interp_weighted_scalar Interface
 !!
 !! ~~~~~~~~~~{.f90}
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_data(ilon,j,:,:))
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
 !! ~~~~~~~~~~
 !!
-!! \param [in] <grdin> No description
-!! \param [in] <grdout> No description
-!! \param [in] <datin> No description
-!! \param [out] <datout> No description
+!! @param [in] <grdin> No description
+!! @param [in] <grdout> No description
+!! @param [in] <datin> No description
+!! @param [out] <datout> No description
 interface interp_weighted_scalar
    module procedure interp_weighted_scalar_1D
    module procedure interp_weighted_scalar_2D
@@ -402,11 +408,11 @@ contains
 !#####################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_type_eq receives the variable In and Out as
+!> @brief interpolator_type_eq receives the variable In and Out as
 !!        input and returns Out.
 !!
-!! \param [in] <In> No description
-!! \param [inout] <Out> No description
+!! @param [in] <In> No description
+!! @param [inout] <Out> No description
 subroutine interpolate_type_eq (Out, In)
 
 type(interpolate_type), intent(in) :: In
@@ -466,22 +472,22 @@ end subroutine interpolate_type_eq
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_init receives various data as input in order
+!> @brief interpolator_init receives various data as input in order
 !!        to initialize interpolating.
 !!
-!! \param [inout] <clim_type> An interpolate type containing the necessary file and field
+!! @param [inout] <clim_type> An interpolate type containing the necessary file and field
 !!                                     data to be passed to the interpolator routine
-!! \param [in] <file_name> Climatology filename
-!! \param [in] <lonb_mod> The corners of the model grid-box longitudes
-!! \param [in] <latb_mod> The corners of the model grid_box latitudes
-!! \param [in] <data_names> OPTIONAL: A list of the names of components within the climatology
+!! @param [in] <file_name> Climatology filename
+!! @param [in] <lonb_mod> The corners of the model grid-box longitudes
+!! @param [in] <latb_mod> The corners of the model grid_box latitudes
+!! @param [in] <data_names> OPTIONAL: A list of the names of components within the climatology
 !!                                               file which you wish to read
-!! \param [in] <data_out_of_bounds> A list of the flags that are to be used in determining
+!! @param [in] <data_out_of_bounds> A list of the flags that are to be used in determining
 !!                                             what to do if the pressure levels in the model go out of
 !!                                      bounds from those of the climatology
-!! \param [in] <vert_interp> OPTIONAL: Flag to determine type of vertical interpolation
-!! \param [out] <clim_units> OPTIONAL: A list of the units for the components listed in data_names
-!! \param [out] <single_year_file> OPTIONAL: No description
+!! @param [in] <vert_interp> OPTIONAL: Flag to determine type of vertical interpolation
+!! @param [out] <clim_units> OPTIONAL: A list of the units for the components listed in data_names
+!! @param [out] <single_year_file> OPTIONAL: No description
 subroutine interpolator_init( clim_type, file_name, lonb_mod, latb_mod, &
                               data_names, data_out_of_bounds,           &
                               vert_interp, clim_units, single_year_file)
@@ -1310,14 +1316,14 @@ end subroutine get_axis_level_data
 !
 !---------------------------------------------------------------------
 !
-!> \brief cell_center2 receives the variables q1, q2, q3, and q4
+!> @brief cell_center2 receives the variables q1, q2, q3, and q4
 !!        as inputs and returns e2.
 !!
-!! \param [in] <q1> No description
-!! \param [in] <q2> No description
-!! \param [in] <q3> No description
-!! \param [in] <q4> No description
-!! \param [out] <e2> No description
+!! @param [in] <q1> No description
+!! @param [in] <q2> No description
+!! @param [in] <q3> No description
+!! @param [in] <q4> No description
+!! @param [out] <e2> No description
  subroutine cell_center2(q1, q2, q3, q4, e2)
       real , intent(in ) :: q1(2), q2(2), q3(2), q4(2)
       real , intent(out) :: e2(2)
@@ -1346,13 +1352,13 @@ end subroutine get_axis_level_data
  end subroutine cell_center2
 !
 !---------------------------------------------------------------------
-!> \brief car_to_latlon receives the variables np, q, xs, and ys
+!> @brief car_to_latlon receives the variables np, q, xs, and ys
 !!        as inputs and returns q, xs, and ys.
 !!
-!! \param [in] <np> No description
-!! \param [inout] <q> No description
-!! \param [inout] <xs> No description
-!! \param [inout] <ys> No description
+!! @param [in] <np> No description
+!! @param [inout] <q> No description
+!! @param [inout] <xs> No description
+!! @param [inout] <ys> No description
  subroutine cart_to_latlon(np, q, xs, ys)
 ! vector version of cart_to_latlon1
   integer, intent(in):: np
@@ -1393,11 +1399,11 @@ end subroutine get_axis_level_data
  end  subroutine cart_to_latlon
 !
 !---------------------------------------------------------------------
-!> \brief latlon2xyz receives the variable p as input and returns e
+!> @brief latlon2xyz receives the variable p as input and returns e
 !!        as output in order to map (lon, lat) to (x,y,z).
 !!
-!! \param [in] <p> No description
-!! \param [out] <e> No description
+!! @param [in] <p> No description
+!! @param [out] <e> No description
  subroutine latlon2xyz(p, e)
 !
 ! Routine to map (lon, lat) to (x,y,z)
@@ -1429,14 +1435,14 @@ end subroutine get_axis_level_data
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief check_climo_units checks the units that the climatology
+!> @brief check_climo_units checks the units that the climatology
 !!        data is using. This is needed to allow for conversion of
 !!        datasets to mixing ratios which is what the vertical
 !!        interpolation scheme requires. The default is to assume no
 !!        conversion is needed. If the units are those of a column
 !!        burden (kg/m2) then conversion to mixing ratio is flagged.
 !!
-!! \param [in] <units> The units which you will be checking
+!! @param [in] <units> The units which you will be checking
 function check_climo_units(units)
 ! Function to check the units that the climatology data is using.
 ! This is needed to allow for conversion of datasets to mixing ratios which is what the
@@ -1463,20 +1469,20 @@ end function check_climo_units
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief init_clim_diag is a routine to register diagnostic fields
+!> @brief init_clim_diag is a routine to register diagnostic fields
 !!        for the climatology file. This routine calculates the domain
 !!        decompostion of the climatology fields for later export
 !!        through send_data. The ids created here are for column
 !!        burdens that will diagnose the vertical interpolation
 !!        routine.
 !!
-!! \param [inout] <clim_type> The interpolate type containing the
+!! @param [inout] <clim_type> The interpolate type containing the
 !!                      names of the fields in the climatology file
-!! \param [in] <mod_axes> The axes of the model
-!! \param [in] <init_time> The model initialization time
+!! @param [in] <mod_axes> The axes of the model
+!! @param [in] <init_time> The model initialization time
 !!
-!! \throw FATAL, "init_clim_diag : You must call interpolator_init before calling init_clim_diag"
-!! \throw FATAL, "init_clim_diag : Trying to set up too many diagnostic fields for the climatology data"
+!! @throw FATAL, "init_clim_diag : You must call interpolator_init before calling init_clim_diag"
+!! @throw FATAL, "init_clim_diag : Trying to set up too many diagnostic fields for the climatology data"
 subroutine init_clim_diag(clim_type, mod_axes, init_time)
 !
 ! Routine to register diagnostic fields for the climatology file.
@@ -1544,20 +1550,20 @@ end subroutine init_clim_diag
 
 !
 !---------------------------------------------------------------------
-!> \brief obtain_interpolator_time_slices makes sure that the
+!> @brief obtain_interpolator_time_slices makes sure that the
 !!        appropriate time slices are available for interpolation on
 !!        this time step.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined
+!! @param [inout] <clim_type> The interpolate type previously defined
 !!                      by a call to interpolator_init
-!! \param [in] <Time> The model time that you wish to interpolate to
+!! @param [in] <Time> The model time that you wish to interpolate to
 !!
-!! \throw FATAL "interpolator_timeslice 1:  file="
-!! \throw FATAL "interpolator_timeslice 2:  file="
-!! \throw FATAL "interpolator_timeslice 3:  file="
-!! \throw FATAL "interpolator_timeslice 4:  file="
-!! \throw FATAL "interpolator_timeslice 5:  file="
-!! \throw FATAL "interpolator_timeslice : No data from the previous
+!! @throw FATAL "interpolator_timeslice 1:  file="
+!! @throw FATAL "interpolator_timeslice 2:  file="
+!! @throw FATAL "interpolator_timeslice 3:  file="
+!! @throw FATAL "interpolator_timeslice 4:  file="
+!! @throw FATAL "interpolator_timeslice 5:  file="
+!! @throw FATAL "interpolator_timeslice : No data from the previous
 !!                    climatology time but we have the next time. How did
 !!                    this happen?"
 subroutine obtain_interpolator_time_slices (clim_type, Time)
@@ -1857,10 +1863,10 @@ end subroutine obtain_interpolator_time_slices
 !#####################################################################
 !
 !---------------------------------------------------------------------
-!> \brief unset_interpolator_time_flag sets a flag in clim_type to
+!> @brief unset_interpolator_time_flag sets a flag in clim_type to
 !!        false.
 !!
-!! \param [inout] <clim_type> The interpolate type containing the names of the fields in the climatology file
+!! @param [inout] <clim_type> The interpolate type containing the names of the fields in the climatology file
 subroutine unset_interpolator_time_flag (clim_type)
 
 type(interpolate_type), intent(inout) :: clim_type
@@ -1876,33 +1882,33 @@ end subroutine unset_interpolator_time_flag
 !#####################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_4D receives a field name as input and
+!> @brief interpolator_4D receives a field name as input and
 !!        interpolates the field to model a 4D grid and time axis.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
-!! \param [in] <field_name> The name of a field that you wish to interpolate
-!! \param [in] <Time> The model time that you wish to interpolate to
-!! \param [in] <phalf> The half level model pressure field
-!! \param [in] <is> OPTIONAL: Index for the physics window
-!! \param [in] <js> OPTIONAL: Index for the physics window
-!! \param [out] <interp_data> The model fields with the interpolated climatology data
-!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! @param [in] <field_name> The name of a field that you wish to interpolate
+!! @param [in] <Time> The model time that you wish to interpolate to
+!! @param [in] <phalf> The half level model pressure field
+!! @param [in] <is> OPTIONAL: Index for the physics window
+!! @param [in] <js> OPTIONAL: Index for the physics window
+!! @param [out] <interp_data> The model fields with the interpolated climatology data
+!! @param [out] <clim_units> OPTIONAL: The units of field_name
 !!
-!! \throw FATAL "interpolator_4D : You must call interpolator_init
+!! @throw FATAL "interpolator_4D : You must call interpolator_init
 !!                    before calling interpolator"
-!! \throw FATAL "interpolator_mod: cannot use 4D interface to interpolator for this file"
-!! \throw FATAL "interpolator_4D 1:  file="
-!! \throw FATAL "interpolator_4D 2:  file="
-!! \throw FATAL "interpolator_4D 3:  file="
-!! \throw FATAL "interpolator_4D 4:  file="
-!! \throw FATAL "interpolator_4D 5:  file="
-!! \throw FATAL "interpolator_3D : No data from the previous climatology
+!! @throw FATAL "interpolator_mod: cannot use 4D interface to interpolator for this file"
+!! @throw FATAL "interpolator_4D 1:  file="
+!! @throw FATAL "interpolator_4D 2:  file="
+!! @throw FATAL "interpolator_4D 3:  file="
+!! @throw FATAL "interpolator_4D 4:  file="
+!! @throw FATAL "interpolator_4D 5:  file="
+!! @throw FATAL "interpolator_3D : No data from the previous climatology
 !!                    time but we have the next time. How did this happen?"
-!! \throw NOTE "Interpolator: model surface pressure is greater than
+!! @throw NOTE "Interpolator: model surface pressure is greater than
 !!              climatology surface pressure for "
-!! \throw NOTE "Interpolator: model top pressure is less than
+!! @throw NOTE "Interpolator: model top pressure is less than
 !!                    climatology top pressure for "
-!! \throw FATAL "Interpolator: the field name is not contained in this
+!! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
 subroutine interpolator_4D(clim_type, Time, phalf, interp_data,  &
                            field_name, is,js, clim_units)
@@ -2405,32 +2411,32 @@ end subroutine interpolator_4D
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_3D receives a field name as input and
+!> @brief interpolator_3D receives a field name as input and
 !!        interpolates the field to model a 3D grid and time axis.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
-!! \param [in] <field_name> The name of a field that you wish to interpolate
-!! \param [in] <Time> The model time that you wish to interpolate to
-!! \param [in] <phalf> The half level model pressure field
-!! \param [in] <is> OPTIONAL: Index for the physics window
-!! \param [in] <js> OPTIONAL: Index for the physics window
-!! \param [out] <interp_data> The model fields with the interpolated climatology data
-!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! @param [in] <field_name> The name of a field that you wish to interpolate
+!! @param [in] <Time> The model time that you wish to interpolate to
+!! @param [in] <phalf> The half level model pressure field
+!! @param [in] <is> OPTIONAL: Index for the physics window
+!! @param [in] <js> OPTIONAL: Index for the physics window
+!! @param [out] <interp_data> The model fields with the interpolated climatology data
+!! @param [out] <clim_units> OPTIONAL: The units of field_name
 !!
-!! \throw FATAL "interpolator_3D : You must call interpolator_init
+!! @throw FATAL "interpolator_3D : You must call interpolator_init
 !!                    before calling interpolator"
-!! \throw FATAL "interpolator_3D 1:  file="
-!! \throw FATAL "interpolator_3D 2:  file="
-!! \throw FATAL "interpolator_3D 3:  file="
-!! \throw FATAL "interpolator_3D 4:  file="
-!! \throw FATAL "interpolator_3D 5:  file="
-!! \throw FATAL "interpolator_3D : No data from the previous climatology
+!! @throw FATAL "interpolator_3D 1:  file="
+!! @throw FATAL "interpolator_3D 2:  file="
+!! @throw FATAL "interpolator_3D 3:  file="
+!! @throw FATAL "interpolator_3D 4:  file="
+!! @throw FATAL "interpolator_3D 5:  file="
+!! @throw FATAL "interpolator_3D : No data from the previous climatology
 !!                    time but we have the next time. How did this happen?"
-!! \throw NOTE "Interpolator: model surface pressure is greater than
+!! @throw NOTE "Interpolator: model surface pressure is greater than
 !!              climatology surface pressure for "
-!! \throw NOTE "Interpolator: model top pressure is less than
+!! @throw NOTE "Interpolator: model top pressure is less than
 !!                    climatology top pressure for "
-!! \throw FATAL "Interpolator: the field name is not contained in this
+!! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
 subroutine interpolator_3D(clim_type, Time, phalf, interp_data,field_name, is,js, clim_units)
 !
@@ -2868,27 +2874,27 @@ end subroutine interpolator_3D
 !
 !++lwh
 !---------------------------------------------------------------------
-!> \brief interpolator_2D receives a field name as input and
+!> @brief interpolator_2D receives a field name as input and
 !!        interpolates the field to model a 2D grid and time axis.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
-!! \param [in] <field_name> The name of a field that you wish to interpolate
-!! \param [in] <Time> The model time that you wish to interpolate to
-!! \param [in] <is> OPTIONAL: Index for the physics window
-!! \param [in] <js> OPTIONAL: Index for the physics window
-!! \param [out] <interp_data> The model fields with the interpolated climatology data
-!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! @param [in] <field_name> The name of a field that you wish to interpolate
+!! @param [in] <Time> The model time that you wish to interpolate to
+!! @param [in] <is> OPTIONAL: Index for the physics window
+!! @param [in] <js> OPTIONAL: Index for the physics window
+!! @param [out] <interp_data> The model fields with the interpolated climatology data
+!! @param [out] <clim_units> OPTIONAL: The units of field_name
 !!
-!! \throw FATAL "interpolator_2D : You must call interpolator_init
+!! @throw FATAL "interpolator_2D : You must call interpolator_init
 !!                    before calling interpolator"
-!! \throw FATAL "interpolator_2D 1:  file="
-!! \throw FATAL "interpolator_2D 2:  file="
-!! \throw FATAL "interpolator_2D 3:  file="
-!! \throw FATAL "interpolator_2D 4:  file="
-!! \throw FATAL "interpolator_2D 5:  file="
-!! \throw FATAL "interpolator_2D : No data from the previous climatology
+!! @throw FATAL "interpolator_2D 1:  file="
+!! @throw FATAL "interpolator_2D 2:  file="
+!! @throw FATAL "interpolator_2D 3:  file="
+!! @throw FATAL "interpolator_2D 4:  file="
+!! @throw FATAL "interpolator_2D 5:  file="
+!! @throw FATAL "interpolator_2D : No data from the previous climatology
 !!                    time but we have the next time. How did this happen?"
-!! \throw FATAL "Interpolator: the field name is not contained in this
+!! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
 subroutine interpolator_2D(clim_type, Time, interp_data, field_name, is, js, clim_units)
 !
@@ -3276,26 +3282,26 @@ end subroutine interpolator_2D
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_4D_no_time_axis receives a field name as input and
+!> @brief interpolator_4D_no_time_axis receives a field name as input and
 !!        interpolates the field to model a 4D grid.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
-!! \param [in] <field_name> The name of a field that you wish to interpolate
-!! \param [in] <phalf> The half level model pressure field
-!! \param [in] <is> OPTIONAL: Index for the physics window
-!! \param [in] <js> OPTIONAL: Index for the physics window
-!! \param [out] <interp_data> The model fields with the interpolated climatology data
-!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! @param [in] <field_name> The name of a field that you wish to interpolate
+!! @param [in] <phalf> The half level model pressure field
+!! @param [in] <is> OPTIONAL: Index for the physics window
+!! @param [in] <js> OPTIONAL: Index for the physics window
+!! @param [out] <interp_data> The model fields with the interpolated climatology data
+!! @param [out] <clim_units> OPTIONAL: The units of field_name
 !!
-!! \throw FATAL "interpolator_4D_no_time_axis : You must call
+!! @throw FATAL "interpolator_4D_no_time_axis : You must call
 !!                    interpolator_init before calling interpolator"
-!! \throw FATAL "interpolator_mod: cannot use 4D interface to
+!! @throw FATAL "interpolator_mod: cannot use 4D interface to
 !!                    interpolator for this file"
-!! \throw NOTE "Interpolator: model surface pressure is greater than
+!! @throw NOTE "Interpolator: model surface pressure is greater than
 !!                    surface pressure of input data for "
-!! \throw NOTE "Interpolator: model top pressure is less than surface
+!! @throw NOTE "Interpolator: model top pressure is less than surface
 !!                    pressure of input data for "
-!! \throw FATAL "Interpolator: the field name is not contained in this
+!! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
 subroutine interpolator_4D_no_time_axis(clim_type, phalf, interp_data, field_name, is,js, clim_units)
 
@@ -3443,26 +3449,26 @@ end subroutine interpolator_4D_no_time_axis
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_3D_no_time_axis receives a field name as input and
+!> @brief interpolator_3D_no_time_axis receives a field name as input and
 !!        interpolates the field to model a 3D grid.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
-!! \param [in] <field_name> The name of a field that you wish to interpolate
-!! \param [in] <phalf> The half level model pressure field
-!! \param [in] <is> OPTIONAL: Index for the physics window
-!! \param [in] <js> OPTIONAL: Index for the physics window
-!! \param [out] <interp_data> The model fields with the interpolated climatology data
-!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! @param [in] <field_name> The name of a field that you wish to interpolate
+!! @param [in] <phalf> The half level model pressure field
+!! @param [in] <is> OPTIONAL: Index for the physics window
+!! @param [in] <js> OPTIONAL: Index for the physics window
+!! @param [out] <interp_data> The model fields with the interpolated climatology data
+!! @param [out] <clim_units> OPTIONAL: The units of field_name
 !!
-!! \throw FATAL "interpolator_3D_no_time_axis : You must call
+!! @throw FATAL "interpolator_3D_no_time_axis : You must call
 !!                    interpolator_init before calling interpolator"
-!! \throw FATAL "interpolator_mod: cannot use 4D interface to
+!! @throw FATAL "interpolator_mod: cannot use 4D interface to
 !!                    interpolator for this file"
-!! \throw NOTE "Interpolator: model surface pressure is greater than
+!! @throw NOTE "Interpolator: model surface pressure is greater than
 !!                    climatology surface pressure for "
-!! \throw NOTE "Interpolator: model top pressure is less than
+!! @throw NOTE "Interpolator: model top pressure is less than
 !!                    climatology top pressure for "
-!! \throw FATAL "Interpolator: the field name is not contained in this
+!! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
 subroutine interpolator_3D_no_time_axis(clim_type, phalf, interp_data, field_name, is,js, clim_units)
 
@@ -3581,19 +3587,19 @@ end subroutine interpolator_3D_no_time_axis
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_2D_no_time_axis receives a field name as input and
+!> @brief interpolator_2D_no_time_axis receives a field name as input and
 !!        interpolates the field to model a 2D grid.
 !!
-!! \param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
-!! \param [in] <field_name> The name of a field that you wish to interpolate
-!! \param [in] <is> OPTIONAL: Index for the physics window
-!! \param [in] <js> OPTIONAL: Index for the physics window
-!! \param [out] <interp_data> The model fields with the interpolated climatology data
-!! \param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [inout] <clim_type> The interpolate type previously defined by a call to interpolator_init
+!! @param [in] <field_name> The name of a field that you wish to interpolate
+!! @param [in] <is> OPTIONAL: Index for the physics window
+!! @param [in] <js> OPTIONAL: Index for the physics window
+!! @param [out] <interp_data> The model fields with the interpolated climatology data
+!! @param [out] <clim_units> OPTIONAL: The units of field_name
 !!
-!! \throw FATAL "interpolator_2D_no_time_axis : You must call
+!! @throw FATAL "interpolator_2D_no_time_axis : You must call
 !!                    interpolator_init before calling interpolator"
-!! \throw FATAL "Interpolator: the field name is not contained in this
+!! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
 subroutine interpolator_2D_no_time_axis(clim_type, interp_data, field_name, is, js, clim_units)
 
@@ -3658,10 +3664,10 @@ end subroutine interpolator_2D_no_time_axis
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interpolator_end receives interpolate data as input
+!> @brief interpolator_end receives interpolate data as input
 !!        and deallocates its memory.
 !!
-!! \param [inout] <clim_type> The interpolate type whose components will be deallocated
+!! @param [inout] <clim_type> The interpolate type whose components will be deallocated
 subroutine interpolator_end(clim_type)
 ! Subroutine to deallocate the interpolate type clim_type.
 !
@@ -3720,15 +3726,15 @@ end subroutine interpolator_end
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief read_data receives various climate data as inputs and
+!> @brief read_data receives various climate data as inputs and
 !!        returns a horizontally interpolated climatology field.
 !!
-!! \param [in] <clim_type> The interpolate type which contains the data
-!! \param [in] <src_field> The field type
-!! \param [in] <nt> The index of the time slice of the climatology that you wish to read
-!! \param [in] <i> OPTIONAL: The index of the field name that you are trying to read
-!! \param [in] <Time> OPTIONAL: The model time. Used for diagnostic purposes only
-!! \param [out] <hdata> The horizontally interpolated climatology field. This
+!! @param [in] <clim_type> The interpolate type which contains the data
+!! @param [in] <src_field> The field type
+!! @param [in] <nt> The index of the time slice of the climatology that you wish to read
+!! @param [in] <i> OPTIONAL: The index of the field name that you are trying to read
+!! @param [in] <Time> OPTIONAL: The model time. Used for diagnostic purposes only
+!! @param [out] <hdata> The horizontally interpolated climatology field. This
 !                       field will still be on the climatology vertical grid
 subroutine read_data(clim_type,field_name, hdata, nt,i, Time)
 !
@@ -3788,14 +3794,14 @@ end subroutine read_data
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief read_data_no_time_axis receives various climate data as inputs and
+!> @brief read_data_no_time_axis receives various climate data as inputs and
 !!        returns a horizontally interpolated climatology field without the
 !!            time axis.
 !!
-!! \param [in] <clim_type> The interpolate type which contains the data
-!! \param [in] <src_field> The field type
-!! \param [in] <i> OPTIONAL: The index of the field name that you are trying to read
-!! \param [out] <hdata> The horizontally interpolated climatology field. This
+!! @param [in] <clim_type> The interpolate type which contains the data
+!! @param [in] <src_field> The field type
+!! @param [in] <i> OPTIONAL: The index of the field name that you are trying to read
+!! @param [out] <hdata> The horizontally interpolated climatology field. This
 !                       field will still be on the climatology vertical grid
 subroutine read_data_no_time_axis(clim_type,field_name, hdata, i)
 
@@ -3848,13 +3854,13 @@ end subroutine read_data_no_time_axis
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief diag_read_data receives the data read in by read_data as
+!> @brief diag_read_data receives the data read in by read_data as
 !!            inputs and runs a diagnosis.
 !!
-!! \param [in] <clim_type> The interpolate type which contains the data
-!! \param [in] <model_data> The data read in from file that is being diagnosed
-!! \param [in] <i> The index of the field name that you are diagnosing
-!! \param [in] <Time> The model time.
+!! @param [in] <clim_type> The interpolate type which contains the data
+!! @param [in] <model_data> The data read in from file that is being diagnosed
+!! @param [in] <i> The index of the field name that you are diagnosing
+!! @param [in] <Time> The model time.
 subroutine diag_read_data(clim_type,model_data, i, Time)
 !
 ! A routine to diagnose the data read in by read_data
@@ -3902,12 +3908,12 @@ end subroutine diag_read_data
 !++lwh
 !
 !---------------------------------------------------------------------
-!> \brief query_interpolator receives an interpolate type as input
+!> @brief query_interpolator receives an interpolate type as input
 !!        and returns the number of fields and field names.
 !!
-!! \param [in] <clim_type> The interpolate type which contains the data
-!! \param [out] <nfields> OPTIONAL: No description
-!! \param [out] <field_names> OPTIONAL: No description
+!! @param [in] <clim_type> The interpolate type which contains the data
+!! @param [out] <nfields> OPTIONAL: No description
+!! @param [out] <field_names> OPTIONAL: No description
 subroutine query_interpolator( clim_type, nfields, field_names )
 !
 ! Query an interpolate_type variable to find the number of fields and field names.
@@ -3925,10 +3931,10 @@ end subroutine query_interpolator
 !#######################################################################
 !
 !---------------------------------------------------------------------
-!> \brief chomp receives a string from NetCDF files and removes
+!> @brief chomp receives a string from NetCDF files and removes
 !!        CHAR(0) from the end of this string.
 !!
-!! \param [in] <string> The string from the NetCDF file
+!! @param [in] <string> The string from the NetCDF file
 function chomp(string)
 !
 ! A function to remove CHAR(0) from the end of strings read from NetCDF files.
@@ -3949,13 +3955,13 @@ end function chomp
 !
 !
 !---------------------------------------------------------------------
-!> \brief interp_weighted_scalar_2D receives the variables grdin,
+!> @brief interp_weighted_scalar_2D receives the variables grdin,
 !!            grdout, and datin as inputs and returns datout.
 !!
-!! \param [in] <grdin> No description
-!! \param [in] <grdout> No description
-!! \param [in] <datin> No description
-!! \param [out] <datout> No description
+!! @param [in] <grdin> No description
+!! @param [in] <grdout> No description
+!! @param [in] <datin> No description
+!! @param [out] <datout> No description
  subroutine interp_weighted_scalar_2D (grdin, grdout, datin, datout )
 real, intent(in),  dimension(:) :: grdin, grdout
 real, intent(in),  dimension(:,:) :: datin
@@ -4018,13 +4024,13 @@ end subroutine interp_weighted_scalar_2D
 
 !
 !---------------------------------------------------------------------
-!> \brief interp_weighted_scalar_1D receives the variables grdin,
+!> @brief interp_weighted_scalar_1D receives the variables grdin,
 !!        grdout, and datin as inputs and returns datout.
 !!
-!! \param [in] <grdin> No description
-!! \param [in] <grdout> No description
-!! \param [in] <datin> No description
-!! \param [out] <datout> No description
+!! @param [in] <grdin> No description
+!! @param [in] <grdout> No description
+!! @param [in] <datin> No description
+!! @param [out] <datout> No description
  subroutine interp_weighted_scalar_1D (grdin, grdout, datin, datout )
 real, intent(in),  dimension(:) :: grdin, grdout, datin
 real, intent(out), dimension(:) :: datout
@@ -4076,14 +4082,14 @@ end subroutine interp_weighted_scalar_1D
 !#################################################################
 !
 !---------------------------------------------------------------------
-!> \brief interp_linear receives the variables grdin,
+!> @brief interp_linear receives the variables grdin,
 !!            grdout, and datin as inputs and returns a linear
 !!            interpolation.
 !!
-!! \param [in] <grdin> No description
-!! \param [in] <grdout> No description
-!! \param [in] <datin> No description
-!! \param [out] <datout> No description
+!! @param [in] <grdin> No description
+!! @param [in] <grdout> No description
+!! @param [in] <datin> No description
+!! @param [out] <datout> No description
 subroutine interp_linear ( grdin, grdout, datin, datout )
 real, intent(in),  dimension(:) :: grdin, grdout, datin
 real, intent(out), dimension(:) :: datout
@@ -4841,18 +4847,18 @@ endif
 
 end subroutine mppio_interpolator_init
 
-!> \brief interp_read_data_mppio receives various climate data as inputs and
+!> @brief interp_read_data_mppio receives various climate data as inputs and
 !!        returns a horizontally interpolated climatology field.
 !!
-!! \param [in] <clim_type> The interpolate type which contains the data
-!! \param [in] <src_field> The field type
-!! \param [in] <nt> The index of the time slice of the climatology that you wish
+!! @param [in] <clim_type> The interpolate type which contains the data
+!! @param [in] <src_field> The field type
+!! @param [in] <nt> The index of the time slice of the climatology that you wish
 !to read
-!! \param [in] <i> OPTIONAL: The index of the field name that you are trying to
+!! @param [in] <i> OPTIONAL: The index of the field name that you are trying to
 !read
-!! \param [in] <Time> OPTIONAL: The model time. Used for diagnostic purposes
+!! @param [in] <Time> OPTIONAL: The model time. Used for diagnostic purposes
 !only
-!! \param [out] <hdata> The horizontally interpolated climatology field. This
+!! @param [out] <hdata> The horizontally interpolated climatology field. This
 !                       field will still be on the climatology vertical grid
 subroutine interp_read_data_mppio(clim_type,src_field, hdata, nt,i, Time)
 !
@@ -4909,16 +4915,16 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
 end subroutine interp_read_data_mppio
 
-!> \brief interp_read_data_mppio_no_time_axis receives various climate data as
+!> @brief interp_read_data_mppio_no_time_axis receives various climate data as
 !inputs and
 !!        returns a horizontally interpolated climatology field without the
 !!            time axis.
 !!
-!! \param [in] <clim_type> The interpolate type which contains the data
-!! \param [in] <src_field> The field type
-!! \param [in] <i> OPTIONAL: The index of the field name that you are trying to
+!! @param [in] <clim_type> The interpolate type which contains the data
+!! @param [in] <src_field> The field type
+!! @param [in] <i> OPTIONAL: The index of the field name that you are trying to
 !read
-!! \param [out] <hdata> The horizontally interpolated climatology field. This
+!! @param [out] <hdata> The horizontally interpolated climatology field. This
 !                       field will still be on the climatology vertical grid
 subroutine interp_read_data_mppio_no_time_axis(clim_type,src_field, hdata, i)
 
@@ -4966,6 +4972,8 @@ real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
 end subroutine interp_read_data_mppio_no_time_axis
 
+!> @}
+! close documentation grouping
 
 end module interpolator_mod
 !

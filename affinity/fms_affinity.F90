@@ -83,7 +83,7 @@ module fms_affinity_mod
 
 contains
 
-  !> @brief initialization routine for affinity handling
+  !> Initialization routine for affinity handling
   subroutine fms_affinity_init()
     !--- local variables
     integer:: io_stat
@@ -110,7 +110,7 @@ contains
   end subroutine fms_affinity_init
 
 
-  !> @brief routine to set affinity
+  !> Routine to set affinity for a component
   subroutine fms_affinity_set (component, use_hyper_thread, nthreads)
     !--- interface variables
     character(len=*),  intent(in):: component !< Component name

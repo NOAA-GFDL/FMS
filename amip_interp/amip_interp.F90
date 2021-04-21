@@ -18,6 +18,7 @@
 !***********************************************************************
 ! setup group for this directory
 !> @defgroup amip_interp AMIP Interpolator
+!> @brief
 !
 !> @file
 !
@@ -138,68 +139,30 @@ type date_type
    integer :: year, month, day
 end type
 
+!> assignment overload for amip_interp_type
 interface assignment(=)
   module procedure  amip_interp_type_eq
 end interface
 
+!> logical equality overload for amip_interp_type
 interface operator (==)
    module procedure date_equals
 end interface
 
+!> logical inequality overload for amip_interp_type
 interface operator (/=)
    module procedure date_not_equals
 end interface
 
+!> greater than overload for amip_interp_type
 interface operator (>)
    module procedure date_gt
 end interface
 
-! <INTERFACE NAME="amip_interp_new">
-!> @brief Function that initializes data needed for the horizontal
-!!         interpolation between the sst grid and model grid. The
-!!         returned variable of type amip_interp_type is needed when
-!!         calling get_amip_sst and get_amip_ice.
-!!
-!!      Function that initializes data needed for the horizontal
-!!         interpolation between the sst grid and model grid. The
-!!         returned variable of type amip_interp_type is needed when
-!!         calling get_amip_sst and get_amip_ice.
-!!
-!!   IN NAME="lon"
-!!     Longitude in radians of the model's grid box edges (1d lat/lon grid case)
-!!     or at grid box mid-point (2d case for arbitrary grids).
-!!
-!!   IN NAME="lat"
-!!     Latitude in radians of the model's grid box edges (1d lat/lon grid case)
-!!     or at grid box mid-point (2d case for arbitrary grids).
-!!
-!!   IN NAME="mask"
-!!     A mask for the model grid.
-!!
-!!   IN NAME="use_climo"
-!!     Flag the specifies that monthly mean climatological values will be used.
-!!
-!!   IN NAME="use_annual"
-!!     Flag the specifies that the annual mean climatological
-!!              will be used.  If both use_annual = use_climo = true,
-!!              then use_annual = true will be used.
-!!
-!!   IN NAME="interp_method"
-!!     specify the horiz_interp scheme. = "conservative" means conservative scheme,
-!!     = "bilinear" means  bilinear interpolation.
-!!
-!!   OUT NAME="Interp"
-!!     A defined data type variable needed when calling get_amip_sst and get_amip_ice.
-!!
-!!     Interp = amip_interp_new ( lon, lat, mask, use_climo, use_annual, interp_method )
-!!
-!!     This function may be called to initialize multiple variables
-!!     of type amip_interp_type.  However, there currently is no
-!!     call to release the storage used by this variable.
-!!
-!!     The size of input augment mask must be a function of the size
-!!     of input augments lon and lat. The first and second dimensions
-!!     of mask must equal (size(lon,1)-1, size(lat,2)-1).
+!> Function that initializes data needed for the horizontal
+!! interpolation between the sst grid and model grid. The
+!! returned variable of type amip_interp_type is needed when
+!! calling get_amip_sst and get_amip_ice.
 !!
 !!   ERROR MSG="the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL"
 !!     Check the value of namelist variable DATA_SET.
@@ -217,16 +180,53 @@ end interface
 !!   ERROR MSG="use_annual(climo) mismatch" STATUS="FATAL"
 !!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !!     argument use_annual = true.  This combination is not allowed.
+!
+!> @param lon
+!!     Longitude in radians of the model's grid box edges (1d lat/lon grid case)
+!!     or at grid box mid-point (2d case for arbitrary grids).
+!
+!> @param lat
+!!     Latitude in radians of the model's grid box edges (1d lat/lon grid case)
+!!     or at grid box mid-point (2d case for arbitrary grids).
+!
+!> @param mask
+!!     A mask for the model grid.
+!
+!> @param use_climo
+!!     Flag the specifies that monthly mean climatological values will be used.
+!
+!> @param use_annual
+!!     Flag the specifies that the annual mean climatological
+!!              will be used.  If both use_annual = use_climo = true,
+!!              then use_annual = true will be used.
+!
+!> @param interp_method
+!!     specify the horiz_interp scheme. = "conservative" means conservative scheme,
+!!     = "bilinear" means  bilinear interpolation.
+!!
+!> @return Interp
+!!     A defined data type variable needed when calling get_amip_sst and get_amip_ice.
+!!
+!!     Interp = amip_interp_new ( lon, lat, mask, use_climo, use_annual, interp_method )
+!!
+!!     This function may be called to initialize multiple variables
+!!     of type amip_interp_type.  However, there currently is no
+!!     call to release the storage used by this variable.
+!!
+!!     The size of input augment mask must be a function of the size
+!!     of input augments lon and lat. The first and second dimensions
+!!     of mask must equal (size(lon,1)-1, size(lat,2)-1).
+!!
 interface amip_interp_new
    module procedure amip_interp_new_1d
    module procedure amip_interp_new_2d
 end interface
 
 
-!-----------------------------------------------------------------------
 !----- public data type ------
-! DATA NAME="amip_interp_type"  TYPE="type (horiz_interp_type)"
-!> @brief All variables in this data type are PRIVATE. It contains information needed by the interpolation module (exchange_mod) and buffers data.
+!> @typedef amip_interp_type
+!
+!> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
 type amip_interp_type
    private
    type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
@@ -379,16 +379,9 @@ end type
 
 contains
 
-!#######################################################################
-! <SUBROUTINE NAME="get_amip_sst" INTERFACE="get_amip_sst">
-!   <IN NAME="Time" TYPE="time_type" ></IN>
-!   <OUT NAME="sst" TYPE="real" DIM="(:,:)"> </OUT>
-!   <INOUT NAME="Interp" TYPE="amip_interp_type"> </INOUT>
-! </SUBROUTINE>
-
 ! modified by JHC
+!> Retrieve sst data and amip interpolated data
 subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
-!subroutine get_amip_sst (Time, Interp, sst, err_msg)
 
    type (time_type),         intent(in)    :: Time
    type (amip_interp_type),  intent(inout) :: Interp
@@ -420,6 +413,7 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     type(FmsNetcdfFile_t) :: fileobj
     logical :: the_file_exists
 ! end add by JHC
+    logical, parameter :: DEBUG = .false. !< switch for debugging output
     !< These are fms_io specific
     integer :: unit
 
@@ -520,13 +514,14 @@ if ( .not.use_daily ) then
          call clip_data ('sst', sst)
     endif
 
-!!! DEBUG CODE
-!          call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
-!          if (mpp_pe() == 0) then
-!             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
-!             write (*,300) 'JHC: use_daily = F, interped SST: ', sst(1,1),sst(5,5),sst(10,10)
-!          endif
-!!! END DEBUG CODE
+!! DEBUG CODE
+    if (DEBUG)
+          call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
+          if (mpp_pe() == 0) then
+             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
+             write (*,300) 'JHC: use_daily = F, interped SST: ', sst(1,1),sst(5,5),sst(10,10)
+          endif
+    endif
 
 
   endif
@@ -588,11 +583,12 @@ else
             call fms2_io_read_data(fileobj, 'TIME', timeval)
         endif !if (use_mpp_io)
 !!! DEBUG CODE
-!          if (mpp_pe() == 0) then
-!             print *, 'JHC: nrecords = ', nrecords
-!             print *, 'JHC: TIME = ', timeval
-!          endif
-!!! END DEBUG CODE
+        if(DEBUG)
+          if (mpp_pe() == 0) then
+             print *, 'JHC: nrecords = ', nrecords
+             print *, 'JHC: TIME = ', timeval
+          endif
+        endif
 
         ierr = 1
         do k = 1, nrecords
@@ -605,13 +601,15 @@ else
           if (ierr==0) exit
 
         enddo
-!!! DEBUG CODE
-             if (mpp_pe() == 0) then
-             print *, 'JHC: k =', k
-             print *, 'JHC: ryr(k) rmo(k) rdy(k)',ryr(k), rmo(k), rdy(k)
-             print *, 'JHC:  yr     mo     dy   ',yr, mo, dy
+
+        if(DEBUG)
+          if (mpp_pe() == 0) then
+            print *, 'JHC: k =', k
+            print *, 'JHC: ryr(k) rmo(k) rdy(k)',ryr(k), rmo(k), rdy(k)
+            print *, 'JHC:  yr     mo     dy   ',yr, mo, dy
           endif
-!!! END DEBUG CODE
+        endif
+
         if (ierr .ne. 0) call mpp_error('amip_interp_mod', &
                          'Model time is out of range not in SST data: '//trim(ncfilename), FATAL)
     endif ! if(file_exist(ncfilename))
@@ -630,27 +628,28 @@ else
           tempamip = tempamip + TFREEZE
 
 !!! DEBUG CODE
-!          if (mpp_pe() == 0) then
-!             print*, 'JHC: TFREEZE = ', TFREEZE
-!             print*, lbound(sst)
-!             print*, ubound(sst)
-!             print*, lbound(tempamip)
-!             print*, ubound(tempamip)
-!             write(*,300) 'JHC: tempamip : ', tempamip(100,100), tempamip(200,200), tempamip(300,300)
-!          endif
-!!! END DEBUG CODE
+          if(DEBUG)
+            if (mpp_pe() == 0) then
+              print*, 'JHC: TFREEZE = ', TFREEZE
+              print*, lbound(sst)
+              print*, ubound(sst)
+              print*, lbound(tempamip)
+              print*, ubound(tempamip)
+              write(*,300) 'JHC: tempamip : ', tempamip(100,100), tempamip(200,200), tempamip(300,300)
+            endif
+          endif
 
           call horiz_interp ( Interp%Hintrp2, tempamip, sst )
           call clip_data ('sst', sst)
 
      endif
 
-!!! DEBUG CODE
-!          if (mpp_pe() == 400) then
-!             write(*,300)'JHC: use_daily = T, daily SST: ', sst(1,1),sst(5,5),sst(10,10)
-!             print *,'JHC: use_daily = T, daily SST: ', sst
-!          endif
-!!! END DEBUG CODE
+    if(DEBUG)
+      if (mpp_pe() == 400) then
+        write(*,300)'JHC: use_daily = T, daily SST: ', sst(1,1),sst(5,5),sst(10,10)
+        print *,'JHC: use_daily = T, daily SST: ', sst
+      endif
+    endif
 
 200 format(a35, 6(i5,1x))
 300 format(a35, 3(f7.3,2x))
@@ -667,14 +666,16 @@ endif
           sst = sst + sst_pert
       else if ( trim(sst_pert_type) == 'random' ) then
           call random_seed()
-!!! DEBUG CODE
-!       if (mpp_pe() == 0) then
-!             print*, 'mobs = ', mobs
-!             print*, 'nobs = ', nobs
-!             print*, lbound(sst)
-!             print*, ubound(sst)
-!          endif
-!!! END DEBUG CODE
+
+       if(DEBUG)
+         if (mpp_pe() == 0) then
+             print*, 'mobs = ', mobs
+             print*, 'nobs = ', nobs
+             print*, lbound(sst)
+             print*, ubound(sst)
+          endif
+       endif
+
           do i = 1, size(sst,1)
           do j = 1, size(sst,2)
              call random_number(pert)
@@ -698,6 +699,7 @@ endif
 !   <INOUT NAME="Interp" TYPE="amip_interp_type"> </INOUT>
 ! </SUBROUTINE>
 
+!> AMIP interpolation for ice
 subroutine get_amip_ice (Time, Interp, ice, err_msg)
 
    type (time_type),         intent(in)    :: Time
@@ -1076,10 +1078,12 @@ endif
 
 !#######################################################################
 
-!> @brief Call this routine for all amip_interp_type variables created by amip_interp_new.
+!> Frees data associated with a amip_interp_type variable. Should be used for any
+!! variables initialized via @ref amip_interp_new.
    subroutine amip_interp_del (Interp)
-   !> @brief A defined data type variable initialized by amip_interp_new and used when calling get_amip_sst and get_amip_ice.
-   type (amip_interp_type), intent(inout) :: Interp
+   type (amip_interp_type), intent(inout) :: Interp !> A defined data type variable
+                                                 !!initialized by amip_interp_new and used
+                                                 !!when calling get_amip_sst and get_amip_ice.
 
      if(associated(Interp%data1)) deallocate(Interp%data1)
      if(associated(Interp%data2)) deallocate(Interp%data2)

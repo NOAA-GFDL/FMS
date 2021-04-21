@@ -21,7 +21,8 @@
 !
 !> @file
 !
-!> @ingroup astronomy Astronomy
+!> @addtogroup astronomy
+!> @{
 !
 !> @brief astronomy_mod provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
@@ -32,7 +33,7 @@
 !
 !> @email gfdl.climate.model.info@noaa.gov
 !
-!> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ \endlink
+!> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ @endlink
 !
 !> Modules Included:
 !!
@@ -101,7 +102,7 @@ public       &
               diurnal_solar, daily_mean_solar, annual_mean_solar,  &
               astronomy_end, universal_time, orbital_time
 
-!> \page diurnal_solar diurnal_solar Interface
+!> @page diurnal_solar diurnal_solar Interface
 !!
 !> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
@@ -154,20 +155,20 @@ public       &
 !! ~~~~~~~~~~
 !! (see test.90 for examples of the use of these types)
 !!
-!! \param [in] <lat> Latitudes of model grid points [radians]
-!! \param [in] <lon> Longitudes of model grid points [radians]
-!! \param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi [radians]
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
-!! \param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
-!! \param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
-!! \param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! \param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
-!! \param [in] <dt> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
+!! @param [in] <lat> Latitudes of model grid points [radians]
+!! @param [in] <lon> Longitudes of model grid points [radians]
+!! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi [radians]
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
+!! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
+!! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
+!! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
+!! @param [in] <dt> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous. [radians], (1 day = 2 * pi)
-!! \param [in] <dt_time> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
+!! @param [in] <dt_time> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
 !!                       averaged. this produces averaged output rather than instantaneous. time_type, [days, seconds]
-!! \param [in] <allow_negative_cosz> Allow negative values for cosz?
-!! \param [out] <half_day_out> half_day_out
+!! @param [in] <allow_negative_cosz> Allow negative values for cosz?
+!! @param [out] <half_day_out> half_day_out
 interface diurnal_solar
    module procedure diurnal_solar_2d
    module procedure diurnal_solar_1d
@@ -177,7 +178,7 @@ interface diurnal_solar
    module procedure diurnal_solar_cal_0d
 end interface
 
-!> \page daily_mean_solar daily_mean_solar Interface
+!> @page daily_mean_solar daily_mean_solar Interface
 !!
 !> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
@@ -217,13 +218,13 @@ end interface
 !! real, intent(out)                 :: cosz, fracday
 !! ~~~~~~~~~~
 !!
-!! \param [in] <lat> Latitudes of model grid points [radians]
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
-!! \param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
-!! \param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
-!! \param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! \param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
-!! \param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared) [dimensionless]
+!! @param [in] <lat> Latitudes of model grid points [radians]
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
+!! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
+!! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
+!! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
+!! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared) [dimensionless]
 interface daily_mean_solar
    module procedure daily_mean_solar_2d
    module procedure daily_mean_solar_1d
@@ -235,7 +236,7 @@ interface daily_mean_solar
    module procedure daily_mean_solar_cal_0d
 end interface
 
-!! \page annual_mean_solar annual_mean_solar Interface
+!! @page annual_mean_solar annual_mean_solar Interface
 !!
 !> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
@@ -257,19 +258,19 @@ end interface
 !! real, intent(out), dimension(:)   :: cosz, solar, fracday
 !! ~~~~~~~~~~
 !!
-!! \param [in] <jst> Starting subdomain j indices of data in the physics wiondow being integrated
-!! \param [in] <jnd> Ending subdomain j indices of data in the physics wiondow being integrated
-!! \param [in] <lat> Latitudes of model grid points [radians]
-!! \param [out] <cosz> cosz is the average over the year of the cosine of an effective zenith angle
+!! @param [in] <jst> Starting subdomain j indices of data in the physics wiondow being integrated
+!! @param [in] <jnd> Ending subdomain j indices of data in the physics wiondow being integrated
+!! @param [in] <lat> Latitudes of model grid points [radians]
+!! @param [out] <cosz> cosz is the average over the year of the cosine of an effective zenith angle
 !!                     that would produce the correct daily solar flux if the sun were fixed at that
 !!                     single position for the period of daylight on the given day. in this average,
 !!                     the daily mean effective cosz is weighted by the daily mean solar flux. [dimensionless]
-!! \param [out] <solar> Normalized solar flux, averaged over the year, equal to the product of
+!! @param [out] <solar> Normalized solar flux, averaged over the year, equal to the product of
 !!                      fracday*cosz*rrsun [dimensionless]
-!! \param [out] <fracday> Daylight fraction calculated so as to make the average flux (solar) equal to the
+!! @param [out] <fracday> Daylight fraction calculated so as to make the average flux (solar) equal to the
 !!                        product of the flux-weighted avg cosz * this fracday * assumed annual mean avg
 !!                        Earth-Sun distance of 1.0. [dimensionless]
-!! \param [out] <rrsun> Annual mean Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+!! @param [out] <rrsun> Annual mean Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
 !!                      (a):(a/r)**2 [dimensionless]
 interface annual_mean_solar
    module procedure annual_mean_solar_2d
@@ -277,7 +278,7 @@ interface annual_mean_solar
    module procedure annual_mean_solar_2level
 end interface
 
-!> \page get_period get_period Interface
+!> @page get_period get_period Interface
 !!
 !> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
@@ -292,12 +293,12 @@ end interface
 !! type(time_type), intent(out) :: period
 !! ~~~~~~~~~~
 !!
-!! \param [out] <period_out> Length of year for calendar in use
+!! @param [out] <period_out> Length of year for calendar in use
 interface get_period
    module procedure get_period_time_type, get_period_integer
 end interface
 
-!> \page set_period set_period Interface
+!> @page set_period set_period Interface
 !!
 !> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
@@ -312,7 +313,7 @@ end interface
 !! type(time_type), intent(out) :: period_in
 !! ~~~~~~~~~~
 !!
-!! \param [in] <period_in> Length of year for calendar in use
+!! @param [in] <period_in> Length of year for calendar in use
 interface set_period
    module procedure set_period_time_type, set_period_integer
 end interface
@@ -325,7 +326,7 @@ private &
 !             half_day, orbital_time, & ! called from  diurnal_solar and daily_mean_solar
 !             universal_time ! called from  diurnal_solar:
 
-!> \page half_day half_day Interface
+!> @page half_day half_day Interface
 !!
 !> @ingroup astronomy
 !! ~~~~~~~~~~{.f90}
@@ -343,9 +344,9 @@ private &
 !! real                                                :: h
 !! ~~~~~~~~~~
 !!
-!! \param [in] <latitude> Latitudes of model grid points [radians]
-!! \param [in] <dec> Solar declination [radians]
-!! \param [out] <h> Half of the length of daylight at the given latitude and orbital position (dec); value
+!! @param [in] <latitude> Latitudes of model grid points [radians]
+!! @param [in] <dec> Solar declination [radians]
+!! @param [out] <h> Half of the length of daylight at the given latitude and orbital position (dec); value
 !!                  ranges between 0 (all darkness) and pi (all daylight) [dimensionless]
 interface half_day
    module procedure half_day_2d, half_day_0d
@@ -427,11 +428,11 @@ integer :: total_pts                !< number of grid boxes owned by the process
 !
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-!> \brief astronomy_init is the constructor for astronomy_mod.
+!> @brief astronomy_init is the constructor for astronomy_mod.
 !!
-!! \throw FATAL, "astronomy_mod ecc must be between 0 and 0.99"
-!! \throw FATAL, "astronomy_mod obliquity must be between -90 and 90 degrees"
-!! \throw FATAL, "astronomy_mod perihelion must be between 0 and 360 degrees"
+!! @throw FATAL, "astronomy_mod ecc must be between 0 and 0.99"
+!! @throw FATAL, "astronomy_mod obliquity must be between -90 and 90 degrees"
+!! @throw FATAL, "astronomy_mod perihelion must be between 0 and 360 degrees"
 subroutine astronomy_init (latb, lonb)
 
 real, dimension(:,:), intent(in), optional :: latb !< 2d array of model latitudes at cell corners [radians]
@@ -536,10 +537,10 @@ integer :: unit, ierr, io, seconds, days, jd, id
 end subroutine astronomy_init
 
 
-!> \brief get_period_integer returns the length of the year as an
+!> @brief get_period_integer returns the length of the year as an
 !!        integer number of seconds.
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
 subroutine get_period_integer (period_out)
 
 integer, intent(out) :: period_out !< Length of year [seconds]
@@ -565,10 +566,10 @@ integer, intent(out) :: period_out !< Length of year [seconds]
 
 end subroutine get_period_integer
 
-!> \brief get_period_time_type returns the length of the year as a time_type
+!> @brief get_period_time_type returns the length of the year as a time_type
 !!        variable.
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
 subroutine get_period_time_type (period_out)
 
 type(time_type), intent(inout) :: period_out !< Length of year as time_type variable
@@ -587,10 +588,10 @@ type(time_type), intent(inout) :: period_out !< Length of year as time_type vari
 
 end subroutine get_period_time_type
 
-!> \brief set_period_integer saves as the input length of the year (an
+!> @brief set_period_integer saves as the input length of the year (an
 !!        integer) in a time_type module variable.
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
 subroutine set_period_integer (period_in)
 
 integer, intent(in) :: period_in !< Length of year as a time_type
@@ -611,10 +612,10 @@ integer, intent(in) :: period_in !< Length of year as a time_type
 end subroutine set_period_integer
 
 
-!> \brief Set_period_time_type saves the length of the year (input as a
+!> @brief Set_period_time_type saves the length of the year (input as a
 !!        time_type variable) into a time_type module variable.
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
 subroutine set_period_time_type(period_in)
 
 type(time_type), intent(in) :: period_in
@@ -635,14 +636,14 @@ type(time_type), intent(in) :: period_in
 
 end subroutine set_period_time_type
 
-!> \brief set_orbital_parameters saves the input values of eccentricity,
+!> @brief set_orbital_parameters saves the input values of eccentricity,
 !!        obliquity and perihelion time as module variables for use by
 !!        astronomy_mod.
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
-!! \throw FATAL, "astronomy_mod ecc must be between 0 and 0.99"
-!! \throw FATAL, "astronomy_mod obliquity must be between -90. and 90. degrees"
-!! \throw FATAL, "astronomy_mod perihelion must be between 0.0 and 360. degrees"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod ecc must be between 0 and 0.99"
+!! @throw FATAL, "astronomy_mod obliquity must be between -90. and 90. degrees"
+!! @throw FATAL, "astronomy_mod perihelion must be between 0.0 and 360. degrees"
 subroutine set_orbital_parameters (ecc_in, obliq_in, per_in)
 
 real, intent(in) :: ecc_in !< Eccentricity of orbital ellipse [dimensionless]
@@ -688,10 +689,10 @@ real, intent(in) :: per_in !< Longitude of perihelion with respect to autumnal
 
 end subroutine set_orbital_parameters
 
-!> \brief get_orbital_parameters retrieves the orbital parameters for use
+!> @brief get_orbital_parameters retrieves the orbital parameters for use
 !!        by another module.
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
 subroutine get_orbital_parameters (ecc_out, obliq_out, per_out)
 
 !-------------------------------------------------------------------
@@ -723,10 +724,10 @@ real, intent(out) :: per_out !< Longitude of perihelion with respect to autumnal
 end subroutine get_orbital_parameters
 
 
-!> \brief set_ref_date_of_ae provides a means of specifying the reference
+!> @brief set_ref_date_of_ae provides a means of specifying the reference
 !!        date of the NH autumnal equinox for a particular year.
 !!
-!! \details set_ref_date_of_ae provides a means of specifying the reference
+!! @details set_ref_date_of_ae provides a means of specifying the reference
 !!          date of the NH autumnal equinox for a particular year.  It is only
 !!          used if calls are made to the calandar versions of the routines
 !!          diurnal_solar and daily_mean_solar. If the NOLEAP calendar is
@@ -734,14 +735,14 @@ end subroutine get_orbital_parameters
 !!          year. If JULIAN is used, then the date of autumnal equinox will
 !!          return to the same value every 4th year.
 !!
-!! \param [in] <day_in> Day of reference autumnal equinox
-!! \param [in] <month_in> Month of reference autumnal equinox
-!! \param [in] <year_in> Year of reference autumnal equinox
-!! \param [out] <second_in> OPTIONAL: Second of reference autumnal equinox
-!! \param [out] <minute_in> OPTIONAL: Minute of reference autumnal equinox
-!! \param [out] <hour_in> OPTIONAL: Hour of reference autumnal equinox
+!! @param [in] <day_in> Day of reference autumnal equinox
+!! @param [in] <month_in> Month of reference autumnal equinox
+!! @param [in] <year_in> Year of reference autumnal equinox
+!! @param [out] <second_in> OPTIONAL: Second of reference autumnal equinox
+!! @param [out] <minute_in> OPTIONAL: Minute of reference autumnal equinox
+!! @param [out] <hour_in> OPTIONAL: Hour of reference autumnal equinox
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
 subroutine set_ref_date_of_ae (day_in,month_in,year_in, &
                                second_in,minute_in,hour_in)
 
@@ -782,17 +783,17 @@ integer, intent(in), optional :: second_in, minute_in, hour_in
 end subroutine set_ref_date_of_ae
 
 
-!> \brief get_ref_date_of_ae retrieves the reference date of the autumnal
+!> @brief get_ref_date_of_ae retrieves the reference date of the autumnal
 !!        equinox as integer variables.
 !!
-!! \throw FATAL, "astronomy_mod module has not been initialized"
+!! @throw FATAL, "astronomy_mod module has not been initialized"
 !!
-!! \param [out] <day_out> Day of reference autumnal equinox
-!! \param [out] <month_out> Month of reference autumnal equinox
-!! \param [out] <year_out> Year of reference autumnal equinox
-!! \param [out] <second_out> Second of reference autumnal equinox
-!! \param [out] <minute_out> Minute of reference autumnal equinox
-!! \param [out] <hour_out> Hour of reference autumnal equinox
+!! @param [out] <day_out> Day of reference autumnal equinox
+!! @param [out] <month_out> Month of reference autumnal equinox
+!! @param [out] <year_out> Year of reference autumnal equinox
+!! @param [out] <second_out> Second of reference autumnal equinox
+!! @param [out] <minute_out> Minute of reference autumnal equinox
+!! @param [out] <hour_out> Hour of reference autumnal equinox
 subroutine get_ref_date_of_ae (day_out,month_out,year_out,&
                                second_out,minute_out,hour_out)
 
@@ -820,25 +821,25 @@ integer, intent(out) :: day_out, month_out, year_out,  &
 end subroutine get_ref_date_of_ae
 
 
-!> \brief diurnal_solar_2d returns 2d fields of cosine of zenith angle,
+!> @brief diurnal_solar_2d returns 2d fields of cosine of zenith angle,
 !!        daylight fraction and earth-sun distance at the specified latitudes,
 !!        longitudes and time. These values may be instantaneous or averaged
 !!        over a specified time interval.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <lon> Longitudes of model grid points
-!! \param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
-!! \param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <lon> Longitudes of model grid points
+!! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous.
-!! \param [in] <allow_negative_cosz> Allow negative values for cosz?
-!! \param [out] <half_day_out> half_day_out
+!! @param [in] <allow_negative_cosz> Allow negative values for cosz?
+!! @param [out] <half_day_out> half_day_out
 !!
-!! \throw FATAL, "astronomy_mod time_since_ae not between 0 and 2pi"
-!! \throw FATAL, "astronomy_mod gmt not between 0 and 2pi"
+!! @throw FATAL, "astronomy_mod time_since_ae not between 0 and 2pi"
+!! @throw FATAL, "astronomy_mod gmt not between 0 and 2pi"
 subroutine diurnal_solar_2d (lat, lon, gmt, time_since_ae, cosz, &
                              fracday, rrsun, dt, allow_negative_cosz, &
                              half_day_out)
@@ -1047,21 +1048,21 @@ real, dimension(:,:), intent(out), optional :: half_day_out
 end subroutine diurnal_solar_2d
 
 
-!> \brief diurnal_solar_1d takes 1-d input fields, adds a second dimension
+!> @brief diurnal_solar_1d takes 1-d input fields, adds a second dimension
 !!        and calls diurnal_solar_2d. on return, the 2d fields are returned
 !!        to the original 1d fields.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <lon> Longitudes of model grid points
-!! \param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
-!! \param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <lon> Longitudes of model grid points
+!! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous.
-!! \param [in] <allow_negative_cosz> Allow negative values for cosz?
-!! \param [out] <half_day_out> half_day_out
+!! @param [in] <allow_negative_cosz> Allow negative values for cosz?
+!! @param [out] <half_day_out> half_day_out
 subroutine diurnal_solar_1d (lat, lon, gmt, time_since_ae, cosz, &
                              fracday, rrsun, dt, allow_negative_cosz, &
                              half_day_out)
@@ -1113,21 +1114,21 @@ real, dimension(:),  intent(out), optional :: half_day_out
 end subroutine diurnal_solar_1d
 
 
-!> \brief diurnal_solar_0d takes scalar input fields, makes them into 2d
+!> @brief diurnal_solar_0d takes scalar input fields, makes them into 2d
 !!        arrays dimensioned (1,1), and calls diurnal_solar_2d. on return,
 !!        the 2d fields are converted back to the desired scalar output.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <lon> Longitudes of model grid points
-!! \param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
-!! \param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <lon> Longitudes of model grid points
+!! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous.
-!! \param [in] <allow_negative_cosz> Allow negative values for cosz?
-!! \param [out] <half_day_out> half_day_out
+!! @param [in] <allow_negative_cosz> Allow negative values for cosz?
+!! @param [out] <half_day_out> half_day_out
 subroutine diurnal_solar_0d (lat, lon, gmt, time_since_ae, cosz,  &
                              fracday, rrsun, dt, allow_negative_cosz, &
                              half_day_out)
@@ -1174,24 +1175,24 @@ real, intent(out), optional :: half_day_out
 end subroutine diurnal_solar_0d
 
 
-!> \brief diurnal_solar_cal_2d receives time_type inputs, converts
+!> @brief diurnal_solar_cal_2d receives time_type inputs, converts
 !!        them to real variables and then calls diurnal_solar_2d to
 !!        compute desired astronomical variables.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <lon> Longitudes of model grid points
-!! \param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
-!! \param [in] <time> Time of year (time_type)
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
-!! \param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <lon> Longitudes of model grid points
+!! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
+!! @param [in] <time> Time of year (time_type)
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous.
-!! \param [in] <allow_negative_cosz> Allow negative values for cosz?
-!! \param [out] <half_day_out> half_day_out
+!! @param [in] <allow_negative_cosz> Allow negative values for cosz?
+!! @param [out] <half_day_out> half_day_out
 !!
-!! \throw FATAL, "astronomy_mod radiation time step must be no longer than 12 hrs"
-!! \throw FATAL, "astronomy_mod radiation time step must not be an integral number of days"
+!! @throw FATAL, "astronomy_mod radiation time step must be no longer than 12 hrs"
+!! @throw FATAL, "astronomy_mod radiation time step must not be an integral number of days"
 subroutine diurnal_solar_cal_2d (lat, lon, time, cosz, fracday,   &
                                  rrsun, dt_time, allow_negative_cosz, &
                                  half_day_out)
@@ -1259,21 +1260,21 @@ real, dimension(:,:), intent(out), optional  :: half_day_out
 end subroutine diurnal_solar_cal_2d
 
 
-!> \brief diurnal_solar_cal_1d receives time_type inputs, converts
+!> @brief diurnal_solar_cal_1d receives time_type inputs, converts
 !!        them to real variables and then calls diurnal_solar_2d to
 !!        compute desired astronomical variables.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <lon> Longitudes of model grid points
-!! \param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
-!! \param [in] <time> Time of year (time_type)
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
-!! \param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <lon> Longitudes of model grid points
+!! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi
+!! @param [in] <time> Time of year (time_type)
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> earth-sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <dt> OPTIONAL: time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous.
-!! \param [in] <allow_negative_cosz> Allow negative values for cosz?
-!! \param [out] <half_day_out> half_day_out
+!! @param [in] <allow_negative_cosz> Allow negative values for cosz?
+!! @param [out] <half_day_out> half_day_out
 subroutine diurnal_solar_cal_1d (lat, lon, time, cosz, fracday,   &
                                  rrsun, dt_time, allow_negative_cosz, &
                                  half_day_out)
@@ -1329,19 +1330,19 @@ real, dimension(:), intent(out), optional :: half_day_out
 end subroutine diurnal_solar_cal_1d
 
 
-!> \brief diurnal_solar_cal_0d receives time_type inputs, converts them to real variables
+!> @brief diurnal_solar_cal_0d receives time_type inputs, converts them to real variables
 !!        and then calls diurnal_solar_2d to compute desired astronomical variables.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <lon> Longitudes of model grid points
-!! \param [in] <time> Time of year (time_type)
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a) : (a/r)**2
-!! \param [out] <dt_time> OPTIONAL: time interval after gmt over which the astronomical variables are
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <lon> Longitudes of model grid points
+!! @param [in] <time> Time of year (time_type)
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a) : (a/r)**2
+!! @param [out] <dt_time> OPTIONAL: time interval after gmt over which the astronomical variables are
 !!                        to be averaged. this produces averaged output rather than instantaneous.
-!! \param [in] <allow_negative_cosz> allow_negative_cosz
-!! \param [out] <half_day_out> half_day_out
+!! @param [in] <allow_negative_cosz> allow_negative_cosz
+!! @param [out] <half_day_out> half_day_out
 subroutine diurnal_solar_cal_0d (lat, lon, time, cosz, fracday,   &
                                  rrsun, dt_time, allow_negative_cosz, &
                                  half_day_out)
@@ -1395,17 +1396,17 @@ real,            intent(out), optional :: half_day_out
 end subroutine diurnal_solar_cal_0d
 
 
-!> \brief daily_mean_solar_2d computes the daily mean astronomical parameters for
+!> @brief daily_mean_solar_2d computes the daily mean astronomical parameters for
 !!        the input points at latitude lat and time of year time_since_ae.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <h_out> 2-d array of half-day lengths at the latitudes
-!! \param [out] <rr_out> the inverse of the square of the earth-sun distance relative
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <h_out> 2-d array of half-day lengths at the latitudes
+!! @param [out] <rr_out> the inverse of the square of the earth-sun distance relative
 !!                       to the mean distance at angle ang in the earth's orbit.
 !!
-!! \throw FATAL, "astronomy_mod time_since_ae not between 0 and 2pi"
+!! @throw FATAL, "astronomy_mod time_since_ae not between 0 and 2pi"
 subroutine daily_mean_solar_2d (lat, time_since_ae, cosz, h_out, rr_out)
 
 !----------------------------------------------------------------------
@@ -1454,15 +1455,15 @@ real,                 intent(out)  :: rr_out
 end subroutine daily_mean_solar_2d
 
 
-!> \brief daily_mean_solar_1d takes 1-d input fields, adds a second dimension
+!> @brief daily_mean_solar_1d takes 1-d input fields, adds a second dimension
 !!        and calls daily_mean_solar_2d. on return, the 2d fields are
 !!        returned to the original 1d fields.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <h_out> 2-d array of half-day lengths at the latitudes
-!! \param [out] <rr_out> the inverse of the square of the earth-sun distance relative
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <h_out> 2-d array of half-day lengths at the latitudes
+!! @param [out] <rr_out> the inverse of the square of the earth-sun distance relative
 !!                       to the mean distance at angle ang in the earth's orbit.
 subroutine daily_mean_solar_1d (lat, time_since_ae, cosz, h_out, rr_out)
 
@@ -1500,14 +1501,14 @@ real, intent(out)           :: rr_out
 end subroutine daily_mean_solar_1d
 
 
-!> \brief daily_mean_solar_2level takes 1-d input fields, adds a second
+!> @brief daily_mean_solar_2level takes 1-d input fields, adds a second
 !!        dimension and calls daily_mean_solar_2d. on return, the 2d fields
 !!        are returned to the original 1d fields.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
 subroutine daily_mean_solar_2level (lat, time_since_ae, cosz, solar)
 
 !----------------------------------------------------------------------
@@ -1543,15 +1544,15 @@ real, intent(out), dimension(size(lat(:))) :: cosz, solar
 end subroutine daily_mean_solar_2level
 
 
-!> \brief daily_mean_solar_1d takes 1-d input fields, adds a second dimension
+!> @brief daily_mean_solar_1d takes 1-d input fields, adds a second dimension
 !!        and calls daily_mean_solar_2d. on return, the 2d fields are
 !!        returned to the original 1d fields.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <h_out> 2-d array of half-day lengths at the latitudes
-!! \param [out] <rr_out> the inverse of the square of the earth-sun distance relative to
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <h_out> 2-d array of half-day lengths at the latitudes
+!! @param [out] <rr_out> the inverse of the square of the earth-sun distance relative to
 !!                       the mean distance at angle ang in the earth's orbit.
 subroutine daily_mean_solar_0d (lat, time_since_ae, cosz, h_out, rr_out)
 
@@ -1583,17 +1584,17 @@ real, intent(out)        :: cosz, h_out, rr_out
 end subroutine daily_mean_solar_0d
 
 
-!> \brief daily_mean_solar_cal_2d receives time_type inputs, converts
+!> @brief daily_mean_solar_cal_2d receives time_type inputs, converts
 !!        them to real variables and then calls daily_mean_solar_2d to
 !!        compute desired astronomical variables.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time> Time of year (time_type)
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time> Time of year (time_type)
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 !!
-!! \throw FATAL, "astronomy_mod time_since_ae not between 0 and 2pi"
+!! @throw FATAL, "astronomy_mod time_since_ae not between 0 and 2pi"
 subroutine daily_mean_solar_cal_2d (lat, time, cosz, fracday, rrsun)
 
 !-------------------------------------------------------------------
@@ -1625,15 +1626,15 @@ real,                 intent(out) :: rrsun
 end subroutine daily_mean_solar_cal_2d
 
 
-!> \brief daily_mean_solar_cal_1d receives time_type inputs, converts
+!> @brief daily_mean_solar_cal_1d receives time_type inputs, converts
 !!        them to real, 2d variables and then calls daily_mean_solar_2d to
 !!        compute desired astronomical variables.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time> Time of year (time_type)
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time> Time of year (time_type)
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine daily_mean_solar_cal_1d (lat, time, cosz, fracday, rrsun)
 
 real, dimension(:),  intent(in)   :: lat
@@ -1669,14 +1670,14 @@ real,                intent(out)  :: rrsun
 end subroutine daily_mean_solar_cal_1d
 
 
-!> \brief daily_mean_solar_cal_2level receives 1d arrays and time_type input,
+!> @brief daily_mean_solar_cal_2level receives 1d arrays and time_type input,
 !!        converts them to real, 2d variables and then calls
 !!        daily_mean_solar_2d to compute desired astronomical variables.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time> Time of year (time_type)
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time> Time of year (time_type)
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
 subroutine daily_mean_solar_cal_2level (lat, time, cosz, solar)
 
 real, dimension(:),  intent(in)   :: lat
@@ -1712,14 +1713,14 @@ real, dimension(:),  intent(out)  :: cosz, solar
 end subroutine daily_mean_solar_cal_2level
 
 
-!> \brief daily_mean_solar_cal_0d converts scalar input fields to real, 2d variables and
+!> @brief daily_mean_solar_cal_0d converts scalar input fields to real, 2d variables and
 !!        then calls daily_mean_solar_2d to compute desired astronomical variables.
 !!
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [in] <time> Time of year (time_type)
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [in] <time> Time of year (time_type)
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine daily_mean_solar_cal_0d (lat, time, cosz, fracday, rrsun)
 
 !--------------------------------------------------------------------
@@ -1755,16 +1756,16 @@ real,             intent(out) :: cosz, fracday, rrsun
 end subroutine daily_mean_solar_cal_0d
 
 
-!> \brief annual_mean_solar_2d returns 2d fields of annual mean values of the cosine of
+!> @brief annual_mean_solar_2d returns 2d fields of annual mean values of the cosine of
 !!        zenith angle, daylight fraction and earth-sun distance at the specified latitude.
 !!
-!! \param [in] <jst> Starting index of latitude window
-!! \param [in] <jnd> Ending index of latitude window
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <jst> Starting index of latitude window
+!! @param [in] <jnd> Ending index of latitude window
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine annual_mean_solar_2d (js, je, lat, cosz, solar, fracday,  &
                                  rrsun)
 
@@ -1861,17 +1862,17 @@ real,                    intent(out)   :: rrsun
 end subroutine annual_mean_solar_2d
 
 
-!> \brief annual_mean_solar_1d creates 2-d input fields from 1-d input fields and then calls
+!> @brief annual_mean_solar_1d creates 2-d input fields from 1-d input fields and then calls
 !!        annual_mean_solar_2d to obtain 2-d output fields which are then stored into 1-d
 !!        fields for return to the calling subroutine.
 !!
-!! \param [in] <jst> Starting index of latitude window
-!! \param [in] <jnd> Ending index of latitude window
-!! \param [in] <lat> Latitudes of model grid points
-!! \param [out] <cosz> Cosine of solar zenith angle
-!! \param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
-!! \param [out] <fracday> Daylight fraction of time interval
-!! \param [out] <rrsun_out> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
+!! @param [in] <jst> Starting index of latitude window
+!! @param [in] <jnd> Ending index of latitude window
+!! @param [in] <lat> Latitudes of model grid points
+!! @param [out] <cosz> Cosine of solar zenith angle
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <fracday> Daylight fraction of time interval
+!! @param [out] <rrsun_out> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine annual_mean_solar_1d (jst, jnd, lat, cosz, solar,  &
                                  fracday, rrsun_out)
 
@@ -1927,12 +1928,12 @@ real,               intent(out)    :: rrsun_out
 end subroutine annual_mean_solar_1d
 
 
-!> \brief annual_mean_solar_2level creates 2-d input fields from 1-d input fields
+!> @brief annual_mean_solar_2level creates 2-d input fields from 1-d input fields
 !!        and then calls annual_mean_solar_2d to obtain 2-d output fields which are
 !!        then stored into 1-d fields for return to the calling subroutine. This
 !!        subroutine will be called during model initialization.
 !!
-!! \throw FATAL, "astronomy_mod annual_mean_solar_2level should be called only once"
+!! @throw FATAL, "astronomy_mod annual_mean_solar_2level should be called only once"
 subroutine annual_mean_solar_2level (lat, cosz, solar)
 
 !---------------------------------------------------------------------
@@ -1988,7 +1989,7 @@ real, dimension(:), intent(out)    :: solar !< shortwave flux factor: cosine of 
 end subroutine annual_mean_solar_2level
 
 
-!> \brief astronomy_end is the destructor for astronomy_mod.
+!> @brief astronomy_end is the destructor for astronomy_mod.
 subroutine astronomy_end
 
 !----------------------------------------------------------------------
@@ -2022,7 +2023,7 @@ end subroutine astronomy_end
 !
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-!> \brief Orbit computes and stores a table of value of orbital angles as a
+!> @brief Orbit computes and stores a table of value of orbital angles as a
 !!        function of orbital time (both the angle and time are zero at
 !!        autumnal equinox in the NH, and range from 0 to 2*pi).
 subroutine orbit
@@ -2061,7 +2062,7 @@ subroutine orbit
 end subroutine orbit
 
 
-!> \brief r_inv_squared returns the inverse of the square of the earth-sun
+!> @brief r_inv_squared returns the inverse of the square of the earth-sun
 !!        distance relative to the mean distance at angle ang in the Earth's orbit.
 function r_inv_squared (ang)
 
@@ -2091,7 +2092,7 @@ real :: rad_per       !< Angular position of perihelion [radians]
 end function r_inv_squared
 
 
-!> \brief angle determines the position within the earth's orbit at time t
+!> @brief angle determines the position within the earth's orbit at time t
 !!        in the year (t = 0 at NH autumnal equinox) by interpolating
 !!        into the orbital position table.
 function angle (t)
@@ -2127,7 +2128,7 @@ real, intent(in) :: t !< time of year (between 0 and 2*pi; t=0 at NH autumnal eq
 end function angle
 
 
-!> \brief Declination returns the solar declination angle at orbital
+!> @brief Declination returns the solar declination angle at orbital
 !!        position ang in earth's orbit.
 function declination (ang)
 
@@ -2152,7 +2153,7 @@ real, intent(in) :: ang !< solar orbital position ang in earth's orbit
 end function declination
 
 
-!> \brief half_day_2d returns a 2-d array of half-day lengths at the
+!> @brief half_day_2d returns a 2-d array of half-day lengths at the
 !!        latitudes and declination provided.
 !!
 function half_day_2d (latitude, dec) result(h)
@@ -2197,12 +2198,12 @@ real, dimension(size(latitude,1),size(latitude,2))   :: h
 end function half_day_2d
 
 
-!> \brief half_day_0d takes scalar input fields, makes them into 2-d fields
+!> @brief half_day_0d takes scalar input fields, makes them into 2-d fields
 !!        dimensioned (1,1), and calls half_day_2d. On return, the 2-d
 !!        fields are converted to the desired scalar output.
 !!
-!! \param [in] <latitude> Latitutde of view point
-!! \param [in] <dec> Solar declination angle at view point
+!! @param [in] <latitude> Latitutde of view point
+!! @param [in] <dec> Solar declination angle at view point
 function half_day_0d(latitude, dec) result(h)
 
 real, intent(in) :: latitude, dec
@@ -2231,10 +2232,10 @@ real             :: h
 end function half_day_0d
 
 
-!> \brief Orbital time returns the time (1 year = 2*pi) since autumnal
+!> @brief Orbital time returns the time (1 year = 2*pi) since autumnal
 !!        equinox
 !!
-!! \details Orbital time returns the time (1 year = 2*pi) since autumnal
+!! @details Orbital time returns the time (1 year = 2*pi) since autumnal
 !!          equinox; autumnal_eq_ref is a module variable of time_type and
 !!          will have been defined by default or by a call to
 !!          set_ref_date_of_ae; length_of_year is available through the time
@@ -2252,8 +2253,8 @@ real                        :: t
 end function orbital_time
 
 
-!> \brief universal_time returns the time of day at longitude = 0.0
-!!        (1 day = 2*pi)
+!> @brief universal_time returns the time of day at longitude = 0.0
+!!       (1 day = 2*pi)
 function universal_time(time) result(t)
 
 type(time_type), intent(in) :: time !< Time (1 year = 2*pi) since autumnal equinox
@@ -2268,6 +2269,6 @@ real                        :: t
       t = twopi*real(seconds)/seconds_per_day
 
 end function universal_time
-
-
-                   end module astronomy_mod
+!> @}
+! close documentation grouping
+end module astronomy_mod
