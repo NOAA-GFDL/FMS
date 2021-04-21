@@ -18,13 +18,15 @@
  **********************************************************************/
 
 /**
+ * \file
  * \author @bensonr
  * \ingroup affinity
  *
  * \brief Routines to set and get thread CPU affinity
- * 
+ *
  * Get, set, and helper functions for thread CPU affinity to be interfaced
  * in fortran via fms_affinity_mod
+ *
  */
 
 #define _GNU_SOURCE

@@ -516,7 +516,7 @@ if ( .not.use_daily ) then
     endif
 
 !! DEBUG CODE
-    if (DEBUG)
+    if (DEBUG) then
           call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
           if (mpp_pe() == 0) then
              write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
