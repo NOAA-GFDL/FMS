@@ -21,16 +21,16 @@
 !> @file
 !> File for fms_affinity_mod
 !> @ingroup affinity
-!
-!! @addtogroup affinity
-!! @{
+
 !> @brief Fortran API interfaces to set the thread affinity.
 !! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
 !! are managed in the C routines in affinity.c.
 !!
 !! @author Rusty Benson
-!!
+!! Contact:
 !! @link gfdl.climate.model.info@noaa.gov
+!!
+!! @ingroup affinity
 module fms_affinity_mod
   !--- standard system modules
   use, intrinsic :: iso_c_binding, only: c_int, c_bool
@@ -46,6 +46,8 @@ module fms_affinity_mod
   private
 
   interface
+    !> Function to get affinity from a component
+    !> @return integer for component's affinity
     integer(KIND=c_int) function fms_affinity_get() bind(c, name="get_cpu_affinity")
       import c_int
     end function fms_affinity_get
@@ -188,5 +190,3 @@ contains
 
   end subroutine fms_affinity_set
 end module fms_affinity_mod
-!> @}
-!! close documentation grouping
