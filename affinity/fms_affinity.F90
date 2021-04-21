@@ -18,10 +18,12 @@
 !***********************************************************************
 ! setup doxygen group for this directory
 !> @defgroup affinity Affinity
-
-!> @file
+!> @brief API interfaces to allow setting and getting thread affinity
 !
-!> @ingroup affinity
+!> @addtogroup affinity
+!> @{
+!
+!> @file
 !
 !> @brief Fortran API interfaces to set the thread affinity.
 !
@@ -188,4 +190,6 @@ contains
 !$OMP END PARALLEL
 
   end subroutine fms_affinity_set
+  !> @}
+  ! closes documentation grouping
 end module fms_affinity_mod
