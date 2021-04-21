@@ -584,7 +584,7 @@ else
             call fms2_io_read_data(fileobj, 'TIME', timeval)
         endif !if (use_mpp_io)
 !!! DEBUG CODE
-        if(DEBUG)
+        if(DEBUG) then
           if (mpp_pe() == 0) then
              print *, 'JHC: nrecords = ', nrecords
              print *, 'JHC: TIME = ', timeval
@@ -603,7 +603,7 @@ else
 
         enddo
 
-        if(DEBUG)
+        if(DEBUG) then
           if (mpp_pe() == 0) then
             print *, 'JHC: k =', k
             print *, 'JHC: ryr(k) rmo(k) rdy(k)',ryr(k), rmo(k), rdy(k)
@@ -629,7 +629,7 @@ else
           tempamip = tempamip + TFREEZE
 
 !!! DEBUG CODE
-          if(DEBUG)
+          if(DEBUG) then
             if (mpp_pe() == 0) then
               print*, 'JHC: TFREEZE = ', TFREEZE
               print*, lbound(sst)
@@ -645,7 +645,7 @@ else
 
      endif
 
-    if(DEBUG)
+    if(DEBUG) then
       if (mpp_pe() == 400) then
         write(*,300)'JHC: use_daily = T, daily SST: ', sst(1,1),sst(5,5),sst(10,10)
         print *,'JHC: use_daily = T, daily SST: ', sst
@@ -668,7 +668,7 @@ endif
       else if ( trim(sst_pert_type) == 'random' ) then
           call random_seed()
 
-       if(DEBUG)
+       if(DEBUG) then
          if (mpp_pe() == 0) then
              print*, 'mobs = ', mobs
              print*, 'nobs = ', nobs

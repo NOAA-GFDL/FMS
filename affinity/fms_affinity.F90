@@ -23,8 +23,6 @@
 !> @addtogroup affinity
 !> @{
 !
-!> @file
-!
 !> @brief Fortran API interfaces to set the thread affinity.
 !
 !> @author Rusty Benson
