@@ -16,12 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-
-!> @file
-!> File for fms_affinity_mod
-!> @ingroup affinity
-
+!> @defgroup fms_affinity_mod
+!> @ingroup affinity 
 !> @brief Fortran API interfaces to set the thread affinity.
 !! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
 !! are managed in the C routines in affinity.c.
@@ -29,8 +25,12 @@
 !! @author Rusty Benson
 !! Contact:
 !! @link gfdl.climate.model.info@noaa.gov
-!!
-!! @ingroup affinity
+
+!> @file
+!> File for fms_affinity_mod
+
+!> @addtogroup fms_affinity_mod
+!> @{
 module fms_affinity_mod
   !--- standard system modules
   use, intrinsic :: iso_c_binding, only: c_int, c_bool
