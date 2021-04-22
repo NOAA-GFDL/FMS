@@ -16,16 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup block_control Block Control
-!
-!> @file
-!
+!> @defgroup block_control_mod block_control_mod
+!> @brief Routines for "blocks" used for  OpenMP threading of column-based
+!!        calculations
+!> @link gfdl.climate.model.info@noaa.gov
 !> @ingroup block_control
 !
-!> @brief Contains the \ref block_control_mod module
-!
-!> @email gfdl.climate.model.info@noaa.gov
+!> @file
+!> @brief File for block_control_mod
 
+!> @addtogroup block_control_mod
+!> @{
 module block_control_mod
 
 use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL
@@ -297,3 +298,5 @@ contains
   end subroutine define_blocks_packed
 
 end module block_control_mod
+!> @}
+! close documentation grouping

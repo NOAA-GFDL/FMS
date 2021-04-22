@@ -28,6 +28,7 @@
 
 !> @file
 !> File for fms_affinity_mod
+!> @ingroup affinity
 
 !> @addtogroup fms_affinity_mod
 !> @{

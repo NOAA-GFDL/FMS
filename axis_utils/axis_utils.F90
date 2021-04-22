@@ -16,16 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup axis_utils_mod axis_utils_mod
+!> @brief A set of utilities for manipulating axes and extracting axis attributes,
+!> @author M.J. Harrison
+!> @link gfdl.climate.model.info@noaa.gov
 !> @ingroup axis_utils
 !
 !> @file
-!
-!> @brief A set of utilities for manipulating axes and extracting axis attributes,
-!
-!> @author M.J. Harrison
-!
-!> @email gfdl.climate.model.info@noaa.gov
+!> @brief File for axis_utils_mod
 
+!> @addtogroup axis_utils_mod
+!> @{
 module axis_utils_mod
   use netcdf
   use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
@@ -778,3 +779,5 @@ contains
   end subroutine find_index
 
 end module axis_utils_mod
+!> @}
+! close documentation grouping

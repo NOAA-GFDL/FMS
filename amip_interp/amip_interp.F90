@@ -16,21 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! setup group for this directory
-!> @defgroup amip_interp AMIP Interpolator
-!> @brief Interpolates SST and ice mask data sets over a model grid
 !
-!> @addtogroup amip_interp
-!> @{
-!
-!> @file
-!
+!> @defgroup amip_interp_mod amip_interp_mod
 !> @brief Provides observed SST and ice mask data sets that have been interpolated onto your model's grid.
-!
-!> @author Bruce Wyman
-!
-!> @email gfdl.climate.model.info@noaa.gov
-!
 !> When using these routines three possible data sets are available:
 !!
 !!     1)  AMIP \link http://www-pcmdi.llnl.gov/amip \endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
@@ -68,7 +56,16 @@
 !!         amip1           INPUT/amip1_sst.data
 !!         reynolds_io     INPUT/reyoi_sst.data
 !!         reynolds_eof    INPUT/reynolds_sst.data
+!> @author Bruce Wyman
+!> @email gfdl.climate.model.info@noaa.gov
+!> @ingroup amip_interp
 
+!> @file
+!> File for amip_interp_mod
+!> @ingroup amip_interp
+
+!> @addtogroup amip_interp_mod
+!> @{
 module amip_interp_mod
 
 use  time_interp_mod, only: time_interp, fraction_of_year

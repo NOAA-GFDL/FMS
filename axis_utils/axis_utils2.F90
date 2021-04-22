@@ -16,21 +16,18 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! setup group for this directory
-!> @defgroup axis_util Axis Utilities 
-!
-!> @ingroup axis_util
+!> @defgroup axis_utils2_mod axis_utils2_mod
+!> @brief A set of utilities for manipulating axes and extracting axis attributes
+!> FMS2_IO equivalent version of axis_utils.F90
+!> @author M.J. Harrison
+!> @link gfdl.climate.model.info@noaa.gov
+!> @ingroup axis_utils
 !
 !> @file
-!
-!> @brief A set of utilities for manipulating axes and extracting axis attributes
-!
-!> @author M.J. Harrison
-!
-!> @link gfdl.climate.model.info@noaa.gov
-!
-!> FMS2_IO equivalent version of axis_utils.F90
-!!
+!> @brief File for axis_utils2_mod
+
+!> @addtogroup axis_utils2_mod
+!> @{
 module axis_utils2_mod
   use, intrinsic :: iso_fortran_env
   use mpp_mod,    only: mpp_error, FATAL, stdout
@@ -804,3 +801,5 @@ end subroutine axis_edges
   end subroutine find_index
 
 end module axis_utils2_mod
+!> @}
+! close documentation grouping
