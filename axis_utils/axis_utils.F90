@@ -17,10 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup axis_utils_mod axis_utils_mod
+!> @ingroup axis_utils
 !> @brief A set of utilities for manipulating axes and extracting axis attributes,
 !> @author M.J. Harrison
 !> @link gfdl.climate.model.info@noaa.gov
-!> @ingroup axis_utils
 !
 !> @file
 !> @brief File for axis_utils_mod

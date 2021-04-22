@@ -17,10 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup block_control_mod block_control_mod
+!> @ingroup block_control
 !> @brief Routines for "blocks" used for  OpenMP threading of column-based
 !!        calculations
 !> @link gfdl.climate.model.info@noaa.gov
-!> @ingroup block_control
+
 !
 !> @file
 !> @brief File for block_control_mod

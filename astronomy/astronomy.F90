@@ -17,13 +17,14 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup astronomy_mod astronomy_mod
+!> @ingroup astronomy
 !> @brief Provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
 !!        for determination of astronomical values needed by the shortwave
 !!        radiation packages.
 !> @author Fei Liu
 !> @link gfdl.climate.model.info@noaa.gov
-!> @ingroup astronomy
+
 
 !> @file
 !> @brief File for astronomy_mod
