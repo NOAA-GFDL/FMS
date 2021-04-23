@@ -10,16 +10,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup repo 
-        run: | # do autotool's job of setting input/output paths since we don't need a full build environement
+        run: | # do autotool's job for substitutes since we don't need a full build environement
           mkdir gen_docs
           sed 's/@abs_top_builddir@\/docs/gen_docs/' docs/Doxyfile.in > gen_docs/Doxyfile
           sed -i 's/@abs_top_srcdir@/./' gen_docs/Doxyfile
+          # grab version number from configure.ac
+          export ver=`awk '/AC_INIT/{getline;print}' configure.ac | cut -d "[" -f2 | cut -d "]" -f1`
+          sed -i 's/@PACKAGE_VERSION@/"$ver"' gen_docs/Doxyfile
       - name: Run Doxygen
         uses: mattnotmitt/doxygen-action@v1
         with:
           doxyfile-path: 'gen_docs/Doxyfile'
-      - name: Copy readme
-        run: sudo cp README.md gen_docs/html
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:

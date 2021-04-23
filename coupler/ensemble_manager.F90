@@ -16,10 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup ensemble_manager_mod ensemble_manager_mod
+!> @ingroup coupler
+!! @brief Routines for setting up and managing ensembles and ensemble pe lists
 
 !> @file
-!! @brief ensemble_manager_mod
-!! @email gfdl.climate.model.info@noaa.gov
+!> @ingroup coupler
+!> @brief File for @ref ensemble_manager_mod
+
+!> @addtogroup ensemble_manager_mod
+!> @{
 module ensemble_manager_mod
 
 
@@ -411,3 +417,5 @@ contains
 
 
 end module ensemble_manager_mod
+!> @}
+! close documentation grouping

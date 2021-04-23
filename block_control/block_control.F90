@@ -20,11 +20,9 @@
 !> @ingroup block_control
 !> @brief Routines for "blocks" used for  OpenMP threading of column-based
 !!        calculations
-!> @link gfdl.climate.model.info@noaa.gov
 
-!
 !> @file
-!> @brief File for block_control_mod
+!> @brief File for @ref block_control_mod
 
 !> @addtogroup block_control_mod
 !> @{

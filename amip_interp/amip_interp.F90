@@ -20,6 +20,7 @@
 !> @defgroup amip_interp_mod amip_interp_mod
 !> @ingroup amip_interp
 !> @brief Provides observed SST and ice mask data sets that have been interpolated onto your model's grid.
+!!
 !> When using these routines three possible data sets are available:
 !!
 !!     1)  AMIP \link http://www-pcmdi.llnl.gov/amip \endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
@@ -58,7 +59,8 @@
 !!         reynolds_io     INPUT/reyoi_sst.data
 !!         reynolds_eof    INPUT/reynolds_sst.data
 !> @author Bruce Wyman
-!> @email gfdl.climate.model.info@noaa.gov
+!!
+!> @link gfdl.climate.model.info@noaa.gov
 
 
 !> @file

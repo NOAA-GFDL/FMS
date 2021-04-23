@@ -19,12 +19,12 @@
 !> @defgroup axis_utils2_mod axis_utils2_mod
 !> @ingroup axis_utils
 !> @brief A set of utilities for manipulating axes and extracting axis attributes
-!> FMS2_IO equivalent version of axis_utils.F90
+!> FMS2_IO equivalent version of @ref axis_utils_mod
 !> @author M.J. Harrison
-!> @link gfdl.climate.model.info@noaa.gov
-!
+
 !> @file
-!> @brief File for axis_utils2_mod
+!> @brief File for @ref axis_utils2_mod
+!> @ingroup axis_utils
 
 !> @addtogroup axis_utils2_mod
 !> @{

@@ -23,11 +23,10 @@
 !!        for determination of astronomical values needed by the shortwave
 !!        radiation packages.
 !> @author Fei Liu
-!> @link gfdl.climate.model.info@noaa.gov
 
 
 !> @file
-!> @brief File for astronomy_mod
+!> @brief File for @ref astronomy_mod
 !> @ingroup astronomy
 
 !> @addtogroup astronomy_mod

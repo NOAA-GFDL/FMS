@@ -16,15 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup atmos_ocean_fluxes_mod atmos_ocean_fluxes_mod
+!> @ingroup coupler
 !! @brief Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
 !! Implementation of routines to solve the gas fluxes at the
 !! ocean surface for a coupled model as outlined in the Biotic-HOWTO
 !! documentation, revision 1.7, 1999/10/05.
+!!
 !! @author Richard Slater, John Dunne
-!! @email gfdl.climate.model.info@noaa.gov
-!! @description This module will take fields from an atmospheric and an
+!!
+!> This module will take fields from an atmospheric and an
 !! oceanic model and calculate ocean surface fluxes for
 !! CO2, O2, CFC-11 or CFC-12 as outlined in the various
 !! HOWTO documents at the OCMIP2 website. Multiple instances
@@ -32,7 +33,14 @@
 !! surface fluxes. Additionally, data may be overridden at
 !! the individual fields, or fluxes. This could be used in
 !! the absence of an atmospheric or oceanic model.
-!! http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
+!! @link http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
+
+!> @file
+!> @brief File for @ref atmos_ocean_fluxes_mod
+!> @ingroup coupler
+
+!> @addtogroup atmos_ocean_fluxes_mod
+!> @{
 module  atmos_ocean_fluxes_mod
   use mpp_mod,           only: stdout, mpp_error, FATAL, mpp_sum, mpp_npes
   use fms_mod,           only: write_version_number
@@ -1207,3 +1215,5 @@ contains
     return
   end subroutine atmos_ocean_type_fluxes_init
 end module  atmos_ocean_fluxes_mod
+!> @}
+! close documentation grouping

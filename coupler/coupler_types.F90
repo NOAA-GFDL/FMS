@@ -16,11 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup coupler_types_mod coupler_types_mod
+!> @ingroup coupler
+!> @brief This module contains type declarations for the coupler.
+!> @author Richard Slater, John Dunne
 
 !> @file
-!! @brief This module contains type declarations for the coupler.
-!! @author Richard Slater, John Dunne
-!! @email gfdl.climate.model.info@noaa.gov
+!> @ingroup coupler
+!> @brief File for @ref coupler_types_mod 
+
+!> @addtogroup coupler_types_mod
+!> @{
 module coupler_types_mod
   use fms_mod,           only: write_version_number, lowercase
   use fms2_io_mod,       only: FmsNetcdfDomainFile_t, open_file, register_restart_field
@@ -4004,3 +4010,5 @@ contains
     var%set = .false.
   end subroutine CT_destructor_3d
 end module coupler_types_mod
+!> @}
+! close documentation grouping

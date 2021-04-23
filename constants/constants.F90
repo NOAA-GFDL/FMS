@@ -16,13 +16,38 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup constants_mod constants_mod
+!> @ingroup constants
 !! @brief Defines useful constants for Earth. Constants are defined as real
 !!   parameters. Constants are accessed through the "use" statement.
 !! @author Bruce Wyman
-!! @email gfdl.climate.model.info@noaa.gov
+!!
+!!    Constants have been declared as type REAL, PARAMETER.
+!!
+!!    The value a constant can not be changed in a users program.
+!!    New constants can be defined in terms of values from the
+!!    constants module using a parameter statement.<br><br>
+!!
+!!    The name given to a particular constant may be changed.<br><br>
+!!
+!!    Constants can be used on the right side on an assignment statement
+!!    (their value can not be reassigned).
+!!
+!!    Example: 
+!!
+!! @verbatim
+!!    use constants_mod, only:  TFREEZE, grav_new => GRAV
+!!    real, parameter :: grav_inv = 1.0 / grav_new
+!!    tempc(:,:,:) = tempk(:,:,:) - TFREEZE
+!!    geopotential(:,:) = height(:,:) * grav_new
+!! @endverbatim
 
+!> @file
+!> @ingroup constants
+!> @brief File for @ref constants_mod
+
+!> @addtogroup constants_mod
+!> @{
 module constants_mod
 
 !---variable for strong typing grid parameters
@@ -148,6 +173,7 @@ subroutine constants_init
 end subroutine constants_init
 
 end module constants_mod
+!> 
 
 !   <FUTURE>
 !   1.  Renaming of constants.
@@ -156,24 +182,3 @@ end module constants_mod
 !   2.  Additional constants.
 !   </FUTURE>
 !   <NOTE>
-!    Constants have been declared as type REAL, PARAMETER.
-!
-!    The value a constant can not be changed in a users program.
-!    New constants can be defined in terms of values from the
-!    constants module using a parameter statement.<br><br>
-!
-!    The name given to a particular constant may be changed.<br><br>
-!
-!    Constants can be used on the right side on an assignment statement
-!    (their value can not be reassigned).
-!
-!
-!<TESTPROGRAM NAME="EXAMPLE">
-!<PRE>
-!    use constants_mod, only:  TFREEZE, grav_new => GRAV
-!    real, parameter :: grav_inv = 1.0 / grav_new
-!    tempc(:,:,:) = tempk(:,:,:) - TFREEZE
-!    geopotential(:,:) = height(:,:) * grav_new
-!</PRE>
-!</TESTPROGRAM>
-!   </NOTE>

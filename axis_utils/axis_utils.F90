@@ -20,10 +20,10 @@
 !> @ingroup axis_utils
 !> @brief A set of utilities for manipulating axes and extracting axis attributes,
 !> @author M.J. Harrison
-!> @link gfdl.climate.model.info@noaa.gov
-!
+
 !> @file
-!> @brief File for axis_utils_mod
+!> @brief File for @ref axis_utils_mod
+!> @ingroup axis_utils
 
 !> @addtogroup axis_utils_mod
 !> @{

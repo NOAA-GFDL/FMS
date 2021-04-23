@@ -23,11 +23,9 @@
 !! are managed in the C routines in affinity.c.
 !!
 !! @author Rusty Benson
-!! Contact:
-!! @link gfdl.climate.model.info@noaa.gov
 
 !> @file
-!> File for fms_affinity_mod
+!> File for @ref fms_affinity_mod
 !> @ingroup affinity
 
 !> @addtogroup fms_affinity_mod

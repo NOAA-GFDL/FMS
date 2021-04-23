@@ -16,11 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup column_diagnostics_mod column_diagnostics_mod 
+!> @ingroup column_diagnostics 
+!! @brief Module to locate and mark desired diagnostic columns
 
 !> @file
-!! @brief Module to locate and mark desired diagnostic columns
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref column_diagnostics_mod
+!> @ingroup column_diagnostics
 
+!> @addtogroup column_diagnostics_mod
+!> @{
                module column_diagnostics_mod
 
 
@@ -596,3 +601,5 @@ end subroutine close_column_diagnostics_units
 
 
                end module column_diagnostics_mod
+!@}
+! close documentation grouping
