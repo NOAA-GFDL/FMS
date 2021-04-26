@@ -17,11 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @file
+!> @defgroup diag_grid_mod diag_grid_mod
+!> @ingroup diag_manager
 !! @brief diag_grid_mod is a set of procedures to work with the
 !!   model's global grid to allow regional output.
-!! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
+!! @author Seth Underwood<"seth.underwood@noaa.gov">
 !! @description TT>diag_grid_mod</TT> contains useful utilities for dealing
 !!   with, mostly, regional output for grids other than the standard
 !!   lat/lon grid.  This module contains three public procedures <TT>
@@ -34,30 +34,16 @@
 !!   are registered that will output only regions.  <TT>get_local_indexes</TT>
 !!   is to be called by the <TT>diag_manager_mod</TT> to discover the
 !!   global indexes defining a subregion on the tile.
+
+!> @file
+!> @ingroup diag_manager
+!> @brief File for @ref diag_grid_mod
+
+!> @addtogroup diag_grid_mod
+!> @{
 MODULE diag_grid_mod
 use platform_mod
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/" />
-  ! <OVERVIEW>
-  !   <TT>diag_grid_mod</TT> is a set of procedures to work with the
-  !   model's global grid to allow regional output.
-  ! </OVERVIEW>
-  ! <DESCRIPTION>
-  !   <TT>diag_grid_mod</TT> contains useful utilities for dealing
-  !   with, mostly, regional output for grids other than the standard
-  !   lat/lon grid.  This module contains three public procedures <TT>
-  !   diag_grid_init</TT>, which is shared globably in the <TT>
-  !   diag_manager_mod</TT>, <TT>diag_grid_end</TT> which will free
-  !   up memory used during the register field calls, and
-  !   <TT>get_local_indexes</TT>.  The <TT>send_global_grid</TT>
-  !   procedure is called by the model that creates the global grid.
-  !   <TT>send_global_grid</TT> needs to be called before any fields
-  !   are registered that will output only regions.  <TT>get_local_indexes</TT>
-  !   is to be called by the <TT>diag_manager_mod</TT> to discover the
-  !   global indexes defining a subregion on the tile.
-  !
+
   !   <B>Change Log</B>
   !   <DL>
   !     <DT>September 2009</DT>
@@ -1123,3 +1109,5 @@ CONTAINS
   END SUBROUTINE find_nearest_agrid_index
 
 END MODULE diag_grid_mod
+!> @}
+! close documentation grouping

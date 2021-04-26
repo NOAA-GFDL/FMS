@@ -16,14 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!
-!                                    Michael Winton (Michael.Winton@noaa.gov) Oct 2001
-!
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!> @file
-!! @brief <TT>xgrid_mod</TT> implements exchange grids for coupled models running on
+!> @defgroup xgrid_mod xgrid_mod
+!> @ingroup exchange
+!> @brief <TT>xgrid_mod</TT> implements exchange grids for coupled models running on
 !!     multiple processors.  An exchange grid is formed from the union of
 !!     the bounding lines of the two (logically rectangular) participating
 !!     grids.  The exchange grid is therefore the coarsest grid that is a
@@ -36,8 +31,8 @@
 !!     the <LINK SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90">
 !!     <TT>mpp_domains</TT></LINK> domain decomposition information to determine
 !!     the grid and processor connectivities.
+!!
 !! @author Michael Winton, Zhi Liang
-!! @email gfdl.climate.model.info@noaa.gov
 !!
 !! xgrid_mod - implements exchange grids.  An exchange grid is the grid whose
 !!             boundary set is the union of the boundaries of the participating
@@ -77,48 +72,14 @@
 !!             PE.  For the make_exchange_reproduce option, a special side 1 get
 !!             is used.  This get communicates individual exchange cells.  The
 !!             cells are summed in the order they appear in the grid spec. file.
+
+!> @file
+!> @ingroup exchange
+!> @brief File for @ref xgrid_mod
+
+!> @addtogroup xgrid_mod
+!> @{
 module xgrid_mod
-! <CONTACT EMAIL="Michael.Winton@noaa.gov">
-!   Michael Winton
-! </CONTACT>
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-!   Zhi Liang
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!    <TT>xgrid_mod</TT> implements exchange grids for coupled models running on
-!     multiple processors.  An exchange grid is formed from the union of
-!     the bounding lines of the two (logically rectangular) participating
-!     grids.  The exchange grid is therefore the coarsest grid that is a
-!     refinement of both participating grids.  Exchange grids are used for
-!     two purposes by coupled models:  (1) conservative interpolation of fields
-!     between models uses the exchange grid cell areas as weights and
-!     (2) the surface flux calculation takes place on the exchange grid thereby
-!     using the finest scale data available.  <TT>xgrid_mod</TT> uses a NetCDF grid
-!     specification file containing the grid cell overlaps in combination with
-!     the <LINK SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90">
-!     <TT>mpp_domains</TT></LINK> domain decomposition information to determine
-!     the grid and processor connectivities.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     <TT>xgrid_mod</TT> is initialized with a list of model identifiers (three characters
-!     each), a list of <TT>mpp_domains</TT> domain data structures, and a grid specification
-!     file name.  The first element in the lists refers to the "side one" grid.
-!     The remaining elements are on "side two".  Thus, there may only be a single
-!     side one grid and it is further restricted to have no partitions (sub-grid
-!     areal divisions).  In standard usage, the atmosphere model is on side one
-!     and the land and sea ice models are on side two.  <TT>xgrid_mod</TT> performs
-!     interprocessor communication on the side one grid.  Exchange grid variables
-!     contain no data for zero sized partitions.  The size and format of exchange
-!     grid variables change every time the partition sizes or number of partitions
-!     are modified with a <TT>set_frac_area</TT> call on a participating side two grid.
-!     Existing exchange grid variables cannot be properly interpreted after
-!     that time; new ones must be allocated and assigned with the <TT>put_to_xgrid</TT>
-!     call.
-! </DESCRIPTION>
 
 ! <DATA NAME="xmap_type"  TYPE=""  >
 !   The fields of xmap_type are all private.
@@ -7153,3 +7114,5 @@ integer, allocatable, dimension(:) :: istart2, iend2, jstart2, jend2
 end function get_nest_contact_use_mpp_io
 
 end module xgrid_mod
+!> @}
+! close documentation grouping

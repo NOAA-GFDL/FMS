@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup data_override_mod data_override_mod
+!> @ingroup data_override 
 !! @brief Given a gridname, fieldname and model time this routine will get data in a file whose
 !!   path is described in a user-provided data_table, do spatial and temporal interpolation if
 !!   necessary to convert data to model's grid and time.
@@ -40,6 +40,13 @@
 !!
 !! A field can be overriden globally (by default) or users can specify one or two regions in which
 !! data_override will take place, field values outside the region will not be affected.
+
+!> @file
+!> @ingroup data_override
+!> @brief File for @ref data_override_mod
+
+!> @addtogroup
+!> @{
 module data_override_mod
 use constants_mod, only: PI
 use mpp_io_mod, only: axistype, mpp_close, mpp_open, mpp_get_axis_data, MPP_RDONLY
@@ -1453,3 +1460,5 @@ subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
 end subroutine data_override_UG_2d
 
 end module data_override_mod
+! @}
+! close documentation grouping

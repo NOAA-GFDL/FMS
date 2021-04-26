@@ -16,11 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup diag_data_mod diag_data_mod
+!> @ingroup diag_manager
 !! @brief Type descriptions and global variables for the diag_manager modules.
-!! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
+!! @author Seth Underwood<seth.underwood@noaa.gov>
 !!
 !!   Notation:
 !!   <DL>
@@ -43,39 +42,15 @@
 !!   indices output_fields; each output field points to the single "parent" input
 !!   field with the input_field index, and to the output file with the output_file
 !!   index.
+
+!> @file
+!> @ingroup diag_manager
+!> @brief File for @ref diag_data_mod
+
+!> @addtogroup diag_data_mod
+!> @{
 MODULE diag_data_mod
 use platform_mod
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-
-  ! <OVERVIEW>
-  !   Type descriptions and global variables for the diag_manager modules.
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !   Notation:
-  !   <DL>
-  !     <DT>input field</DT>
-  !     <DD>The data structure describing the field as
-  !       registered by the model code.</DD>
-  !
-  !     <DT>output field</DT>
-  !     <DD>The data structure describing the actual
-  !       diagnostic output with requested frequency and
-  !       other options.</DD>
-  !   </DL>
-  !
-  !   Input fields, output fields, and output files are gathered in arrays called
-  !   "input_fields", "output_fields", and "files", respectively. Indices in these
-  !   arrays are used as pointers to create associations between various data
-  !   structures.
-  !
-  !   Each input field associated with one or several output fields via array of
-  !   indices output_fields; each output field points to the single "parent" input
-  !   field with the input_field index, and to the output file with the output_file
-  !   index
-  ! </DESCRIPTION>
 
   USE time_manager_mod, ONLY: time_type
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
@@ -538,3 +513,5 @@ CONTAINS
   END SUBROUTINE diag_data_init
   ! </SUBROUTINE>
 END MODULE diag_data_mod
+!> @}
+! close documentation grouping

@@ -16,9 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup drifters_input_mod drifters_input_mod
+!> @ingroup drifters
+!> @brief TODO
 
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @ingroup drifters
+!> @brief File for @ref drifters_input_mod
+
+!> @addtogroup drifters_input_mod
+!> @{
 module drifters_input_mod
   implicit none
   private
@@ -435,3 +442,5 @@ module drifters_input_mod
   end subroutine drifters_input_save
 
 end module drifters_input_mod
+!> @}
+! close documentation grouping

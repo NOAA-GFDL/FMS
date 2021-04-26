@@ -16,13 +16,18 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup diag_output_mod diag_output_mod
+!> @ingroup diag_output
 !! @brief diag_output_mod is an integral part of
 !!   diag_manager_mod<. Its function is to write axis-meta-data,
 !!   field-meta-data and field data
 !! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
+
+!> @file
+!> @ingroup diag_output
+
+!> @addtogroup diag_output_mod
+!> @{
 MODULE diag_output_mod
 
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -2149,3 +2154,5 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   END SUBROUTINE set_diag_global_att
   ! </SUBROUTINE>
 END MODULE diag_output_mod
+!> @}
+! close documentation grouping

@@ -19,8 +19,19 @@
 #undef _TYP
 #define _TYP integer
 
-! Written by Magnus Lie Hetland
+!> @defgroup quicksort quicksort
+!> @ingroup drifters
+!> @brief Fortran implementation of quicksort 
+!> @author Magnus Lie Hetland
 
+!> @file
+!> @ingroup drifters
+!> @brief File for @ref quicksort 
+
+!> @addtogroup quicksort 
+!> @{
+
+!> Create array partitions for quicksort
 function qksrt_partition(n, list, start, end) result(top)
   implicit none
   integer, intent(in) :: n

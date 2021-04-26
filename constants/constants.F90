@@ -18,11 +18,11 @@
 !***********************************************************************
 !> @defgroup constants_mod constants_mod
 !> @ingroup constants
-!! @brief Defines useful constants for Earth. Constants are defined as real
+!> @brief Defines useful constants for Earth. Constants are defined as real
 !!   parameters. Constants are accessed through the "use" statement.
-!! @author Bruce Wyman
+!> @author Bruce Wyman
 !!
-!!    Constants have been declared as type REAL, PARAMETER.
+!>    Constants have been declared as type REAL, PARAMETER.
 !!
 !!    The value a constant can not be changed in a users program.
 !!    New constants can be defined in terms of values from the

@@ -18,14 +18,14 @@
 !***********************************************************************
 !> @defgroup atmos_ocean_fluxes_mod atmos_ocean_fluxes_mod
 !> @ingroup coupler
-!! @brief Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
-!! Implementation of routines to solve the gas fluxes at the
+!> @brief Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
+!> Implementation of routines to solve the gas fluxes at the
 !! ocean surface for a coupled model as outlined in the Biotic-HOWTO
 !! documentation, revision 1.7, 1999/10/05.
 !!
 !! @author Richard Slater, John Dunne
 !!
-!> This module will take fields from an atmospheric and an
+!! This module will take fields from an atmospheric and an
 !! oceanic model and calculate ocean surface fluxes for
 !! CO2, O2, CFC-11 or CFC-12 as outlined in the various
 !! HOWTO documents at the OCMIP2 website. Multiple instances
@@ -36,8 +36,8 @@
 !! @link http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
 
 !> @file
-!> @brief File for @ref atmos_ocean_fluxes_mod
 !> @ingroup coupler
+!> @brief File for @ref atmos_ocean_fluxes_mod
 
 !> @addtogroup atmos_ocean_fluxes_mod
 !> @{

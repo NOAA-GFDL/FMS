@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup diag_table_mod diag_table_mod
+!> @ingroup diag_manager
 !! @brief <TT>diag_table_mod</TT> is a set of subroutines use to parse out the data from a <TT>diag_table</TT>.  This module
 !!   will also setup the arrays required to store the information by counting the number of input fields, output files, and
 !!   files.
@@ -225,6 +225,13 @@
 !!
 !!   <H4>Useful Additional Utility</H4>
 !!   A simple utility has been created to help discover
+
+!> @file
+!> @ingroup diag_manager
+!> @brief File for @ref diag_table_mod
+
+!> @addtogroup diag_table_mod
+!> @{
 MODULE diag_table_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -1061,3 +1068,5 @@ CONTAINS
   END SUBROUTINE initialize_output_arrays
 
 END MODULE diag_table_mod
+!> @}
+! close documentation grouping

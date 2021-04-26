@@ -17,54 +17,13 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @file
+!> @defgroup diag_integral_mod diag_integral_mod
+!> @ingroup diag_integral
+!!
+!! @author Fei Liu <Fei.Liu@noaa.gov>
+!!
 !! @brief This module computes and outputs global and / or hemispheric physics
 !!        integrals.
-!! @author Fei Liu
-!! @email gfdl.climate.model.info@noaa.gov
-                     module diag_integral_mod
-
-
-
-!###############################################################################
-!> \defgroup diag_integral_mod diag_integral_mod
-!!
-!! \author Fei Liu <Fei.Liu@noaa.gov>
-!!
-!! \brief This module computes and outputs global and / or hemispheric physics
-!!        integrals.
-!!
-!! <b> Modules Included: </b>
-!!
-!! <table>
-!!   <tr>
-!!     <th> Module Name </th>
-!!     <th> Included Values </th>
-!!   </tr>
-!!   <tr>
-!!     <td> time_manager_mod </td>
-!!     <td> time_type, get_time, set_time, time_manager_init, operator(+),
-!!          operator(-), operator(==), operator(>=), operator(/=) </td>
-!!   </tr>
-!!   <tr>
-!!     <td> mpp_mod </td>
-!!     <td> input_nml_file <\td>
-!!   </tr>
-!!   <tr>
-!!     <td> fms_mod </td>
-!!     <td> open_file, file_exist, error_mesg, open_namelist_file,
-!!          check_nml_error, fms_init, mpp_pe, mpp_root_pe, FATAL,
-!!          write_version_number, stdlog </td>
-!!   </tr>
-!!   <tr>
-!!     <td> constants_mod </td>
-!!     <td> radius, constants_init </td>
-!!   </tr>
-!!   <tr>
-!!     <td> mpp_mod </td>
-!!     <td> mpp_sum, mpp_init </td>
-!!   </tr>
-!! </table>
 !!
 !! <b> Public Interfaces: </b>
 !!
@@ -95,6 +54,17 @@
 !! - format_text_init
 !! - format_data_init
 !!
+
+!> @file
+!> @ingroup diag_integral
+!! @brief File for @ref diag_integral_mod 
+
+!> @addtogroup diag_integral_mod
+!> @{ 
+                     module diag_integral_mod
+
+
+!###############################################################################
 
 use platform_mod,     only:  i8_kind
 use time_manager_mod, only:  time_type, get_time, set_time,  &
@@ -1620,3 +1590,5 @@ end function ensemble_file_name
 
 
                     end module diag_integral_mod
+!> @}
+! close documentation grouping

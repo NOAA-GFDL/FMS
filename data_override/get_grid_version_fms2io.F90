@@ -16,8 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms2_io_mod fms2_io_mod
+!> @ingroup fms2_io
+!> @brief fms2_io implementations of grid routines 
+
 !> @file
-!! @brief fms2_io implementations of grid routines 
+!> @ingroup fms2_io
+!> @brief File for @ref fms2_io_mod
+
+!> @addtogroup fms2_io_mod
+!> @{
 module get_grid_version_fms2io_mod
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,NOTE, mpp_min, mpp_max
@@ -302,4 +310,5 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
 end subroutine get_grid_version_2
 
 end module get_grid_version_fms2io_mod
-
+!> @}
+! close documentation grouping

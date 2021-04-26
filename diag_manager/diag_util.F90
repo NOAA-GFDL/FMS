@@ -16,12 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-
-!> @file
+!> @defgroup diag_util_mod diag_util_mod
+!> @ingroup diag_manager
 !! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
 !! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
+
+!> @file
+!> @ingroup diag_manager
+!> @brief File for @ref diag_util_mod
+
+!> @addtogroup diag_util_mod
+!> @{
 MODULE diag_util_mod
 
 use platform_mod
@@ -2845,3 +2850,5 @@ CONTAINS
   END SUBROUTINE prepend_attribute_file
   ! </SUBROUTINE>
 END MODULE diag_util_mod
+!> @}
+! close documentation grouping

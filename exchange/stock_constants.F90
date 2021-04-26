@@ -16,9 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup stock_constants_mod stock_constants_mod
+!> @ingroup exchange
+!> @brief TODO
 
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @ingroup exchange
+!> @brief File for @ref stock_constants_mod
+
+!> @addtogroup stock_constants_mod
+!> @{
 module stock_constants_mod
 
   use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_sum
@@ -328,3 +335,5 @@ contains
   end subroutine stocks_set_init_time
 
 end module stock_constants_mod
+!> @}
+! close documentation grouping

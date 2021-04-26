@@ -16,13 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup diag_manager_mod diag_manager_mod
+!> @ingroup diag_manager
 !! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
 !!   on distributed systems. It is geared toward the writing of data in netCDF
 !!   format.
 !! @author Matt Harrison, Giang Nong, Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
 !!
 !!   <TT>diag_manager_mod</TT> provides a convenient set of interfaces for
 !!   writing data to disk.  It is built upon the parallel I/O interface of FMS
@@ -131,6 +130,13 @@
 !!         corresponding fields (geolat/geolon) should also be written to the
 !!         same file.</LI>
 !!   </OL>
+
+!> @file
+!> @ingroup diag_manager
+!> @brief File for @ref diag_manager_mod
+
+!> @addtogroup diag_manager_mod
+!> @{
 MODULE diag_manager_mod
 use platform_mod
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
@@ -4345,3 +4351,5 @@ CONTAINS
   END SUBROUTINE diag_field_add_cell_measures
   ! </SUBROUTINE>
 END MODULE diag_manager_mod
+!> @}
+! close documentation grouping

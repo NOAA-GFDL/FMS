@@ -16,16 +16,22 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup diag_axis_mod
+!> @ingroup diag_manager
 !! @brief is an integral part
 !!   of diag_manager_mod. It helps to create axis IDs
 !!   that are used in register_diag_field.
 !! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
-!! @description Users first create axis ID by calling
+!> Users first create axis ID by calling
 !!   diag_axis_init, then use this axis ID in
 !!   register_diag_field.
+
+!> @file
+!> @ingroup diag_manager
+!> @brief File for @ref diag_axis_mod
+
+!> @addtogroup diag_axis_mod
+!> @{
 MODULE diag_axis_mod
 use platform_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
@@ -1301,3 +1307,5 @@ CONTAINS
     end associate ! axis
   end subroutine get_compressed_axes_ids
 END MODULE diag_axis_mod
+!> @}
+! close documentation grouping

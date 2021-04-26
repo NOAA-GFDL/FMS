@@ -18,8 +18,16 @@
 !***********************************************************************
 #include "fms_switches.h"
 
+!> @defgroup drifters_comm_mod drifters_comm_mod
+!> @ingroup drifters
+!> @brief TODO
+
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @ingroup drifters
+!> @brief File for @ref drifters_comm_mod
+
+!> @addtogroup drifters_comm_mod
+!> @{
 module drifters_comm_mod
 
 #ifdef _SERIAL

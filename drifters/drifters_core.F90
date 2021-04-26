@@ -19,8 +19,16 @@
 !
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
 
+!> @defgroup drifters_core_mod drifters_core_mod
+!> @ingroup drifters
+!> @brief TODO
+
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @ingroup drifters
+!> @brief File for @re drifters_core_mod
+
+!> @addtogroup drifters_core_mod
+!> @{
 module drifters_core_mod
   use platform_mod
   implicit none
@@ -272,3 +280,5 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 end module drifters_core_mod
 !###############################################################################
 !###############################################################################
+!> @}
+! close documentation grouping

@@ -20,10 +20,16 @@
 
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
+!> @defgroup cloud_interpolator_mod cloud_interpolator_mod
+!> @ingroup drifters
+!! @brief TODO 
+
 !> @file
-!! @brief cloud interpolator
-!! @author
-!! @email gfdl.climate.model.info@noaa.gov
+!> @ingroup drifters
+!> @brief File for @ref cloud_interpolator_mod
+
+!> @addtogroup cloud_interpolator_mod
+!> @{
 MODULE cloud_interpolator_mod
   implicit none
   private
@@ -274,3 +280,5 @@ pure subroutine cld_ntrp_get_cell_values(nsizes, fnodes, indices, fvals, ier)
 
 end MODULE cloud_interpolator_mod
 !===============================================================================
+!> @}
+! close documentation grouping

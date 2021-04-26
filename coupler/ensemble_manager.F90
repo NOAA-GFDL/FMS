@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @defgroup ensemble_manager_mod ensemble_manager_mod
 !> @ingroup coupler
-!! @brief Routines for setting up and managing ensembles and ensemble pe lists
+!> @brief Routines for setting up and managing ensembles and ensemble pe lists
 
 !> @file
 !> @ingroup coupler
