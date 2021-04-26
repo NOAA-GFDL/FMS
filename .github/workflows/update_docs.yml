@@ -16,7 +16,7 @@ jobs:
           sed -i 's/@abs_top_srcdir@/./' gen_docs/Doxyfile
           # grab version number from configure.ac
           export ver=`awk '/AC_INIT/{getline;print}' configure.ac | cut -d "[" -f2 | cut -d "]" -f1`
-          sed -i 's/@PACKAGE_VERSION@/"$ver"' gen_docs/Doxyfile
+          sed -i 's/@PACKAGE_VERSION@/"$ver"/' gen_docs/Doxyfile
       - name: Run Doxygen
         uses: mattnotmitt/doxygen-action@v1
         with:
