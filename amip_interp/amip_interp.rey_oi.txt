@@ -1,6 +1,6 @@
 /** @file
- *  @brief Information about optimum interpolation through amip_interp
  *  @ingroup amip_interp
+ *  @brief Information about optimum interpolation through amip_interp
  */ 
 (This file was edited for the Flexible Modeling System on July 26, 1999)
 

@@ -131,3 +131,6 @@
  *
  */
 
+/** @defgroup misc General Project Documents 
+ *  @brief Documentation files not pertaining to specific modules
+ */

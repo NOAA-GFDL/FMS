@@ -1,3 +1,4 @@
+@ingroup misc
 # Contributing To libFMS
 
 Thank you for taking time to contribute.

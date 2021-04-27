@@ -1,3 +1,4 @@
+@ingroup misc
 # libFMS Installation
 
 ## External Requirements

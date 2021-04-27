@@ -1,3 +1,4 @@
+@ingroup misc
 # Coding Style
 
 ## General

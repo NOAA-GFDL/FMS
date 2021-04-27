@@ -16,17 +16,13 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @file
+!> @defgroup FMS FMS
+!> @ingroup libfms
+!> @brief A convenience module to use any FMS routines, functions, values
+!> @author Ryan Mulhall
 !
-!> @author
-!> Ryan Mulhall
-!>
-!> @date
-!> 2/2021
-!>
-!> @brief
-!> A convenience file to use any FMS routines, functions, values
-!>
+!> @date 2/2021
+!
 !> Imports all supported FMS modules so that any public interfaces,
 !! variables or routines can be used via this module. Excludes mpp_io modules
 !! and routines. Overloaded type operators/assignments cannot be imported individually
@@ -50,6 +46,12 @@
 !! this module is provided in the [supported_interfaces.md](../../supported_interfaces.md)
 !! file.
 
+!> @file
+!> @ingroup libfms
+!> @brief File for @ref FMS Global Module
+
+!> @addtogroup FMS
+!> @{
 module fms
 
   !> import each FMS module's public routines/functions, interfaces, and variables
@@ -421,3 +423,5 @@ module fms
   implicit none
 
 end module fms
+!> @}
+! close documentation grouping

@@ -1,3 +1,4 @@
+@ingroup misc
 # Instructions for building FMS with cmake
 
 ## 1. Environment Variables

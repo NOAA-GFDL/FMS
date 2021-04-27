@@ -1,3 +1,4 @@
+@ingroup misc
 # Modeling Framework: Flexible Modeling System (FMS)
 
 Today’s climate models simulate highly complex systems. In response to

@@ -71,6 +71,7 @@ public       &
               astronomy_end, universal_time, orbital_time
 
 !> @page diurnal_solar diurnal_solar Interface
+!> @ingroup astronomy_mod
 !!
 !! ~~~~~~~~~~{.f90}
 !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
@@ -244,7 +245,7 @@ interface annual_mean_solar
 end interface
 
 !> @page get_period get_period Interface
-!!
+!! Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call get_period (period)
 !! ~~~~~~~~~~
@@ -263,7 +264,7 @@ interface get_period
 end interface
 
 !> @page set_period set_period Interface
-!!
+!! Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call set_period (period_in)
 !! ~~~~~~~~~~
@@ -290,7 +291,7 @@ private &
 !             universal_time ! called from  diurnal_solar:
 
 !> @page half_day half_day Interface
-!!
+!! Example usage:
 !! ~~~~~~~~~~{.f90}
 !! half_day (latitude, dec) result (h)
 !! ~~~~~~~~~~
@@ -411,6 +412,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
       if (module_is_initialized) return
 
 !-------------------------------------------------------------------
+!>    This routine will:
 !>    Verify that modules used by this module have been initialized.
 !-------------------------------------------------------------------
       call fms_init
