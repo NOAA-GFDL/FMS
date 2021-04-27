@@ -555,7 +555,7 @@ integer            :: pack_size  ! = 1 for double = 2 for float
 #include<file_version.h>
 
 ! make version public so it can be written in fms_init()
-public :: fms_io_version = version
+character(len=*), parameter, public :: fms_io_version = version
 
 !----------
 !ug support
