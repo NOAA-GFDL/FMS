@@ -1,3 +1,4 @@
+@ingroup misc
 # Autotools Build System Documentation
 
 This document describes the autotools-based build system for FMS.

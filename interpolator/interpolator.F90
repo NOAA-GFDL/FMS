@@ -16,14 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
-!> File for interpolator_mod
-!
-!> @addtogroup interpolator
-!> @{
+!> @defgroup interpolator_mod interpolator_mod
+!> @ingroup interpolator
 !> @brief interpolator_mod is a module to interpolate climatology data to model the grid.
 !> @author William Cooke <William.Cooke@noaa.gov>
+
+!> @file
+!> @ingroup interpolator
+!> File for @ref interpolator_mod
+!
+!> @addtogroup interpolator_mod
+!> @{
 module interpolator_mod
 
 use mpp_mod,           only : mpp_error, &
