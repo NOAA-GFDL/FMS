@@ -211,7 +211,7 @@ module fms
   !> fms
   !! routines that don't conflict with fms2_io
   use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, check_nml_error, &
-                     monotonic_array, string_array_index
+                     monotonic_array, string_array_index, write_version_number
 
   !> horiz_interp
   use horiz_interp_mod, only: horiz_interp, horiz_interp_new, horiz_interp_del, &
