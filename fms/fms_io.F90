@@ -554,6 +554,9 @@ integer            :: pack_size  ! = 1 for double = 2 for float
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+! make version public so it can be written in fms_init()
+public :: fms_io_version = version
+
 !----------
 !ug support
 public :: fms_io_unstructured_register_restart_axis

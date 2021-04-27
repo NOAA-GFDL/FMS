@@ -391,6 +391,7 @@ subroutine fms_init (localcomm )
 
 !--- needed to output the version number of constants_mod to the logfile ---
  use constants_mod, only: constants_version=>version !pjp: PI not computed
+ use fms_io_mod,    only: fms_io_version
 
  integer, intent(in), optional :: localcomm
  integer :: unit, ierr, io
@@ -408,7 +409,7 @@ subroutine fms_init (localcomm )
     call fms_io_init()
     !! write_version_number is inaccesible from fms_io_mod so write it from here if not written
     if(.not.fms_io_initialized) then
-      call write_version_number("FMS_IO_MOD", version)
+      call write_version_number("FMS_IO_MOD", fms_io_version)
       fms_io_initialized = .true.
     endif
     call fms2_io_init()
