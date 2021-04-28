@@ -89,7 +89,7 @@ module fms
                                     close_column_diagnostics_units
 
   !> constants
-  use constants_mod
+  use constants_mod, version_constants=>version
 
   !> coupler
   use coupler_types_mod, only: coupler_types_init, coupler_type_copy, &
@@ -422,7 +422,7 @@ module fms
 
   implicit none
 
-  #include <file_version.h>
+#include <file_version.h>
   character(len=*), parameter, public :: version_FMS = version
 
 end module fms
