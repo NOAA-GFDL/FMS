@@ -40,6 +40,8 @@
 !!
 !!           ZERO from interpolator_mod(mpp_parameter)  => INTERPOLATOR_ZERO
 !!
+!!           version from fms_mod                       => version_FMS
+!!
 !! Not in this module:
 !!
 !!                     axis_utils_mod, fms_io_mod, time_interp_external_mod
@@ -419,5 +421,8 @@ module fms
   use tridiagonal_mod, only: tri_invert, close_tridiagonal
 
   implicit none
+
+  #include <file_version.h>
+  character(len=*), parameter, public :: version_FMS = version
 
 end module fms
