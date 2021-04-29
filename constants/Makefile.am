@@ -31,7 +31,7 @@ noinst_LTLIBRARIES = libconstants.la
 
 # The convenience library depends on its source.
 libconstants_la_SOURCES = \
-  FMSconstants.F90 \
+  fmsconstants.F90 \
   constants.F90
 
 fmsconstants.$(FC_MODEXT): constants_mod.$(FC_MODEXT)
