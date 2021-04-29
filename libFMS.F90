@@ -425,5 +425,6 @@ module fms
 
 #include <file_version.h>
   character(len=*), parameter, public :: version_FMS = version
+  private :: version
 
 end module fms
