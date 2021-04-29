@@ -185,7 +185,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        get_domain_decomp, &
                        open_file, open_direct_file, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
-                       write_version_number, set_domain, nullify_domain
+                       set_domain, nullify_domain
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
@@ -213,7 +213,7 @@ public :: get_mosaic_tile_grid, get_mosaic_tile_file
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error, field_exist,     &
           error_mesg, fms_error_handler
-! i/o routines from fms_io
+! version logging routine (originally from fms_io)
 public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
@@ -335,7 +335,10 @@ integer, public :: clock_flag_default
 
   logical :: module_is_initialized = .FALSE.
 
-!> Converts a number to a string 
+  logical, private :: fms_io_initialized = .FALSE.!> used to make sure fms_io version is only
+                                                  !! written to log once
+
+!> Converts a number to a string
 interface string
    module procedure string_from_integer
    module procedure string_from_real
@@ -389,6 +392,7 @@ subroutine fms_init (localcomm )
 
 !--- needed to output the version number of constants_mod to the logfile ---
  use constants_mod, only: constants_version=>version !pjp: PI not computed
+ use fms_io_mod,    only: fms_io_version
 
  integer, intent(in), optional :: localcomm
  integer :: unit, ierr, io
@@ -402,13 +406,18 @@ subroutine fms_init (localcomm )
     else
        call mpp_init()
     endif
-    call mpp_domains_init
-    call fms_io_init
-    call fms2_io_init ()
+    call mpp_domains_init()
+    call fms_io_init()
+    !! write_version_number is inaccesible from fms_io_mod so write it from here if not written
+    if(.not.fms_io_initialized) then
+      call write_version_number("FMS_IO_MOD", fms_io_version)
+      fms_io_initialized = .true.
+    endif
+    call fms2_io_init()
     logunitnum = stdlog()
 !---- read namelist input ----
 
-    call nml_error_init  ! first initialize namelist iostat error codes
+    call nml_error_init()  ! first initialize namelist iostat error codes
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, fms_nml, iostat=io)
@@ -1034,6 +1043,36 @@ end function monotonic_array
     return
 
   end function string_from_real
+
+!#######################################################################
+!> @brief Prints to the log file (or a specified unit) the version id string and
+!!  tag name.
+subroutine write_version_number (version, tag, unit)
+  character(len=*), intent(in) :: version !> string that contains routine name
+  character(len=*), intent(in), optional :: tag !> tag name that code was checked out with
+  integer,          intent(in), optional :: unit !> alternate unit number to direct output,
+                                                 !! defaults to stdlog
+  integer :: logunit
+
+  if (.not.module_is_initialized) call fms_init ( )
+
+  logunit = stdlog()
+
+  if (present(unit)) then
+    logunit = unit
+  else
+    ! only allow stdlog messages on root pe
+    if ( mpp_pe() /= mpp_root_pe() ) return
+  endif
+
+  if (present(tag)) then
+    write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
+  else
+    write (logunit,'(/,80("="),/(a))') trim(version)
+  endif
+
+end subroutine write_version_number
+
 end module fms_mod
 ! <INFO>
 !   <BUG>
