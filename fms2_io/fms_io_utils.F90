@@ -51,6 +51,7 @@ public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
 public :: get_checksum
+public :: string2
 public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
@@ -68,6 +69,11 @@ type :: char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
+
+interface string2
+  module procedure string_from_integer2
+  module procedure string_from_real2
+end interface string2
 
 interface parse_mask_table
   module procedure parse_mask_table_2d
@@ -844,6 +850,45 @@ subroutine get_instance_filename(name_in,name_out)
   end if
 
 end subroutine get_instance_filename
+
+function string_from_integer2(n)
+    integer, intent(in) :: n
+    character(len=16) :: string_from_integer2
+    if(n<0) then
+       call mpp_error(FATAL, 'fms2_io_mod: n should be non-negative integer, contact developer')
+    else if( n<10 ) then
+       write(string_from_integer2,'(i1)') n
+    else if( n<100 ) then
+       write(string_from_integer2,'(i2)') n
+    else if( n<1000 ) then
+       write(string_from_integer2,'(i3)') n
+    else if( n<10000 ) then
+       write(string_from_integer2,'(i4)') n
+    else if( n<100000 ) then
+       write(string_from_integer2,'(i5)') n
+    else if( n<1000000 ) then
+       write(string_from_integer2,'(i6)') n
+    else if( n<10000000 ) then
+       write(string_from_integer2,'(i7)') n
+    else if( n<100000000 ) then
+       write(string_from_integer2,'(i8)') n
+    else
+       call mpp_error(FATAL, 'fms2_io_mod: n is greater than 1e8, contact developer')
+    end if
+
+    return
+
+end function string_from_integer2
+
+function string_from_real2(a)
+    real, intent(in) :: a
+    character(len=32) :: string_from_real2
+
+    write(string_from_real2,*) a
+
+    return
+
+end function string_from_real2
 
 include "array_utils.inc"
 include "array_utils_char.inc"

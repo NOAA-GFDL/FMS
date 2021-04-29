@@ -46,7 +46,7 @@ module horiz_interp_conserve_mod
   use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self
   use mpp_mod,               only: COMM_TAG_1, COMM_TAG_2
   use fms_mod,               only: write_version_number
-  use fms_io_mod,            only: get_great_circle_algorithm
+  use grid2_mod,             only: get_great_circle_algorithm
   use constants_mod,         only: PI
   use horiz_interp_type_mod, only: horiz_interp_type
 
