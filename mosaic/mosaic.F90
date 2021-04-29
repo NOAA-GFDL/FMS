@@ -35,7 +35,6 @@ module mosaic_mod
 !    grid information. Each routine will call a C-version routine to get these information.
 ! </DESCRIPTION>
 
-use fms_mod,    only : write_version_number
 use mpp_mod,    only : mpp_error, FATAL, mpp_pe, mpp_root_pe
 use mpp_io_mod, only : MPP_MULTI
 use fms_io_mod, only : dimension_size, field_exist, read_data, read_compressed
@@ -91,7 +90,6 @@ subroutine mosaic_init()
   module_is_initialized = .TRUE.
 
 !--------- write version number and namelist ------------------
-  call write_version_number("MOSAIC_MOD", version)
 
 end subroutine mosaic_init
 ! </SUBROUTINE>

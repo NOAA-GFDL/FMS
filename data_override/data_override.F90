@@ -97,7 +97,7 @@ type override_type
    character(len=3)                 :: gridname
    character(len=128)               :: fieldname
    integer                          :: t_index                 !< index for time interp
-   type(horiz_interp_type), pointer :: horz_interp(:) =>NULL() !< index for horizontal spatial interp
+   type(horiz_interp_type), allocatable :: horz_interp(:) !< index for horizontal spatial interp
    integer                          :: dims(4)                 !< dimensions(x,y,z,t) of the field in filename
    integer                          :: comp_domain(4)          !< istart,iend,jstart,jend for compute domain
    integer                          :: numthreads

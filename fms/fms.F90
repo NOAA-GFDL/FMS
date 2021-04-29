@@ -188,6 +188,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        set_domain, nullify_domain
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
+use grid2_mod, only: grid_init, grid_end
 
 
 implicit none
@@ -499,6 +500,7 @@ subroutine fms_init (localcomm )
 
 !--- output version information constants to the logfile
     call write_version_number("CONSTANTS_MOD", constants_version)
+    call grid_init
 
 end subroutine fms_init
 ! </SUBROUTINE>
@@ -531,6 +533,7 @@ subroutine fms_end ( )
 
     if (.not.module_is_initialized) return  ! return silently
 !    call fms_io_exit  ! now called from coupler_end
+    call grid_end
     call mpp_io_exit
     call mpp_domains_exit
     call mpp_exit
