@@ -30,9 +30,17 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 noinst_LTLIBRARIES = libconstants.la
 
 # The convenience library depends on its source.
-libconstants_la_SOURCES = constants.F90
+libconstants_la_SOURCES = \
+  FMSconstants.F90 \
+  constants.F90
 
-BUILT_SOURCES = constants_mod.$(FC_MODEXT)
-nodist_include_HEADERS = constants_mod.$(FC_MODEXT)
+fmsconstants.$(FC_MODEXT): constants_mod.$(FC_MODEXT)
+
+MODFILES = \
+  constants_mod.$(FC_MODEXT) \
+  fmsconstants.$(FC_MODEXT)
+
+nodist_include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
 
 include $(top_srcdir)/mkmods.mk

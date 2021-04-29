@@ -47,6 +47,7 @@
 !!                     axis_utils_mod, fms_io_mod, time_interp_external_mod
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
 !!                     fms_mod(partial, old io excluded), drifters modules
+!!                     constants_mod (FMSconstants should be used externally)
 !!
 !! A full list of supported interfaces and public types intended for use via
 !! this module is provided in the [supported_interfaces.md](../../supported_interfaces.md)
@@ -87,9 +88,6 @@ module fms
                                     initialize_diagnostic_columns, &
                                     column_diagnostics_header, &
                                     close_column_diagnostics_units
-
-  !> constants
-  use constants_mod, version_constants=>version
 
   !> coupler
   use coupler_types_mod, only: coupler_types_init, coupler_type_copy, &
