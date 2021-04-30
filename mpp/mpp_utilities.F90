@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup mpp_utilities_mod
+!> @defgroup mpp_utilities_mod mpp_utilities_mod
 !> @ingroup mpp
 !> @brief Module for utiltity routines to be used in @ref mpp modules
 !> Currently only holds one routine for finding global min and max

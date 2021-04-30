@@ -16,6 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_bicubic_mod horiz_interp_bicubic_mod
+!> @ingroup horiz_interp
+!> @brief Delivers methods for bicubic interpolation from a coarse regular grid 
+!! on a fine regular grid
+
+!> @file
+!> @brief File for @ref horiz_interp_bicubic_mod
+
+!> @addtogroup horiz_interp_bicubic_mod
+!> @{
 module horiz_interp_bicubic_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
@@ -769,3 +779,5 @@ module horiz_interp_bicubic_mod
   end subroutine horiz_interp_bicubic_del
 
 end module horiz_interp_bicubic_mod
+!> @}
+! close documentation

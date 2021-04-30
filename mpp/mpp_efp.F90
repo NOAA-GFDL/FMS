@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup mpp_efp_mod
+!> @defgroup mpp_efp_mod mpp_efp_mod
 !> @ingroup mpp
 !> @brief This module provides interfaces to the non-domain-oriented communication
 !! subroutines.

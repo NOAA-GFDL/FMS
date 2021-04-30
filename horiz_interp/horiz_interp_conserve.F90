@@ -16,31 +16,30 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_conserve_mod horiz_interp_conserve_mod
+!> @ingroup horiz_interp
+!> @brief Performs spatial interpolation between grids using conservative interpolation
+!> @author Bruce Wyman, Zhi Liang
+!> This module can conservatively interpolate data from any logically rectangular grid
+!! to any rectangular grid. The interpolation scheme is area-averaging
+!! conservative scheme. There is an optional mask field for missing input data in both
+!! horiz_interp__conserveinit and horiz_interp_conserve. For efficiency purpose, mask should only be
+!! kept in horiz_interp_init (will remove the mask in horiz_interp in the future).
+!! There are 1-D and 2-D version of horiz_interp_conserve_init for 1-D and 2-D grid.
+!! There is a optional argument mask in horiz_interp_conserve_init_2d and no mask should
+!! to passed into horiz_interp_conserv. optional argument mask will not be passed into
+!! horiz_interp_conserve_init_1d and optional argument mask may be passed into
+!! horiz_interp_conserve (For the purpose of reproduce Memphis??? results).
+!! An optional output mask field may be used in conjunction with the input mask to show
+!! where output data exists.
+
+!> @file
+!> @brief File for @ref horiz_interp_conserve_mod
+
+!> @addtogroup
+!> @{
 module horiz_interp_conserve_mod
 
-  ! <CONTACT EMAIL="Bruce.Wyman@noaa.gov"> Bruce Wyman </CONTACT>
-  ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
-
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-  ! <OVERVIEW>
-  !   Performs spatial interpolation between grids using conservative interpolation
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !     This module can conservatively interpolate data from any logically rectangular grid
-  !     to any rectangular grid. The interpolation scheme is area-averaging
-  !     conservative scheme. There is an optional mask field for missing input data in both
-  !     horiz_interp__conserveinit and horiz_interp_conserve. For efficiency purpose, mask should only be
-  !     kept in horiz_interp_init (will remove the mask in horiz_interp in the future).
-  !     There are 1-D and 2-D version of horiz_interp_conserve_init for 1-D and 2-D grid.
-  !     There is a optional argument mask in horiz_interp_conserve_init_2d and no mask should
-  !     to passed into horiz_interp_conserv. optional argument mask will not be passed into
-  !     horiz_interp_conserve_init_1d and optional argument mask may be passed into
-  !     horiz_interp_conserve (For the purpose of reproduce Memphis??? results).
-  !     An optional output mask field may be used in conjunction with the input mask to show
-  !     where output data exists.
-  ! </DESCRIPTION>
 #include <fms_platform.h>
   use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe, mpp_npes
   use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self
@@ -1117,3 +1116,5 @@ contains
   !#######################################################################
 
 end module horiz_interp_conserve_mod
+!> @}
+! close documentation grouping

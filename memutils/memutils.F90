@@ -1,10 +1,3 @@
-!> \file
-!! \brief Module to expose the memory printing API
-!! \author V. Balaji
-!! \email gfdl.climate.model.info@noaa.gov
-!!
-!! \section LICENSE
-!!
 !***********************************************************************
 !!                   GNU Lesser General Public License
 !!
@@ -23,6 +16,13 @@
 !! You should have received a copy of the GNU Lesser General Public
 !! License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup memutils_mod mem 
+!! \brief Module to expose the memory printing API
+!! \author V. Balaji
+!! \email gfdl.climate.model.info@noaa.gov
+!!
+!! \section LICENSE
+!!
 !!
 !! \section DESCRIPTION
 !!

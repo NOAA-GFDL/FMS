@@ -16,31 +16,29 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_mod horiz_interp_mod
+!> @ingroup horiz_interp
+!> @brief Performs spatial interpolation between grids.
+!> @author Zhi Liang, Bruce Wyman
+!> This module can interpolate data from any logically rectangular grid
+!! to any logically rectangular grid. Four interpolation schems are used here:
+!! conservative, bilinear, bicubic and inverse of square distance weighted.
+!! The four interpolation schemes are implemented seperately in
+!! horiz_interp_conserver_mod, horiz_interp_blinear_mod, horiz_interp_bicubic_mod
+!! and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
+!! is regular lon/lat grid. User can choose the interpolation method in the
+!! public interface horiz_interp_new through optional argument interp_method,
+!! with acceptable value "conservative", "bilinear", "bicubic" and "spherical".
+!! The default value is "conservative". There is an optional mask field for
+!! missing input data. An optional output mask field may be used in conjunction with
+!! the input mask to show where output data exists.
+
+!> @file
+!> @brief File for @ref horiz_interp_mod
+
+!> @addtogroup
+!> @{
 module horiz_interp_mod
-
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov"> Bruce Wyman </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Performs spatial interpolation between grids.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     This module can interpolate data from any logically rectangular grid
-!     to any logically rectangular grid. Four interpolation schems are used here:
-!     conservative, bilinear, bicubic and inverse of square distance weighted.
-!     The four interpolation schemes are implemented seperately in
-!     horiz_interp_conserver_mod, horiz_interp_blinear_mod, horiz_interp_bicubic_mod
-!     and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
-!     is regular lon/lat grid. User can choose the interpolation method in the
-!     public interface horiz_interp_new through optional argument interp_method,
-!     with acceptable value "conservative", "bilinear", "bicubic" and "spherical".
-!     The default value is "conservative". There is an optional mask field for
-!     missing input data. An optional output mask field may be used in conjunction with
-!     the input mask to show where output data exists.
-! </DESCRIPTION>
 
 !-----------------------------------------------------------------------
 !
@@ -1209,3 +1207,5 @@ contains
 !#####################################################################
 
 end module horiz_interp_mod
+!> @}
+! close documentation grouping

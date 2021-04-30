@@ -24,7 +24,7 @@
 !
 !-----------------------------------------------------------------------
 
-!> @defgroup mpp_mod 
+!> @defgroup mpp_mod mpp_mod 
 !> @ingroup mpp
 !! @author V. Balaji
 !! @brief a generalized communication package for use with shmem and MPI

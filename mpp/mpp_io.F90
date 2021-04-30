@@ -24,7 +24,7 @@
 !
 !-----------------------------------------------------------------------
 
-!> @defgroup mpp_io_mod 
+!> @defgroup mpp_io_mod mpp_io_mod
 !> @ingroup mpp
 !> @brief Routines for parallel I/O on distributed systems. Will be deprecated
 !! in the future for @ref fms2_io

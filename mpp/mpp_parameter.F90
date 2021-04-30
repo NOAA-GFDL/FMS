@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup mpp_parameter_mod
+!> @defgroup mpp_parameter_mod mpp_parameter_mod
 !> @ingroup mpp
 !> @brief Parameters values for use in various @ref mpp modules
 !> If needed, these values should be imported from their corresponding mpp module 

@@ -1,5 +1,5 @@
-@file Supported Interfaces
-@ingroup libfms
+/*! \page supported_interfaces Supported Interfaces
+*/
 # Supported Public Interfaces for FMS
 
 List of supported public interfaces and associated types meant for external use through the 'fms' module.

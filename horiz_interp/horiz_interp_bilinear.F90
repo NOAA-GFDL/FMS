@@ -16,23 +16,26 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_bilinear_mod horiz_interp_bilinear_mod
+!> @ingroup horiz_interp
+!> @brief Performs spatial interpolation between grids using bilinear interpolation
+!> @author Zhi Liang <Zhi.Liang@noaa.gov>
+!> This module can interpolate data from regular rectangular grid
+!! to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
+!! There is an optional mask field for missing input data.
+!! An optional output mask field may be used in conjunction with
+!! the input mask to show where output data exists.
+
+!> @file
+!> @brief File for @ref horiz_interp_bilinear_mod
+
+!> @addtogroup
+!> @{
 module horiz_interp_bilinear_mod
 
   ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
 
   ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-  ! <OVERVIEW>
-  !   Performs spatial interpolation between grids using bilinear interpolation
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !     This module can interpolate data from regular rectangular grid
-  !     to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
-  !     There is an optional mask field for missing input data.
-  !     An optional output mask field may be used in conjunction with
-  !     the input mask to show where output data exists.
-  ! </DESCRIPTION>
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
   use fms_mod,               only: write_version_number
@@ -1406,3 +1409,5 @@ contains
   !######################################################################
 
 end module horiz_interp_bilinear_mod
+!> @}
+! close documentation grouping

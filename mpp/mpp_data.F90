@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup mpp_data_mod
+!> @defgroup mpp_data_mod mpp_data_mod
 !> @ingroup mpp
 !> @brief Module to hold public data types and data for use in mpp
 

@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup mpp_memutils_mod
+!> @defgroup mpp_memutils_mod mpp_memutils_mod
 !> @ingroup mpp
 !> @brief Routines to initialize and report on memory usage during the model run.
 

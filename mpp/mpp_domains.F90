@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !-----------------------------------------------------------------------
-!> @defgroup mpp_domains_mod
+!> @defgroup mpp_domains_mod mpp_domains_mod
 !> @ingroup mpp
 !> @brief Domain decomposition and domain update for message-passing codes
 !> @author V. Balaji SGI/GFDL Princeton University

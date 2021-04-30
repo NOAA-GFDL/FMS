@@ -16,24 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_spherical_mod horiz_interp_spherical_mod
+!> @ingroup horiz_interp_sphereical_mod
+!> @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
+!> This module can interpolate data from rectangular/tripolar grid
+!! to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
+!! scheme.    There is an optional mask field for missing input data.
+!! An optional output mask field may be used in conjunction with
+!! the input mask to show where output data exists.
+
+!> @file
+!> @brief File for @ref horiz_interp_spherical_mod
+
+!> @addtogroup
+!> @{
 module horiz_interp_spherical_mod
-
-  ! <CONTACT EMAIL="Matthew.Harrison@noaa.gov"> Matthew Harrison </CONTACT>
-  ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
-
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-  ! <OVERVIEW>
-  !   Performs spatial interpolation between grids using inverse-distance-weighted scheme.
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !     This module can interpolate data from rectangular/tripolar grid
-  !     to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
-  !     scheme.    There is an optional mask field for missing input data.
-  !     An optional output mask field may be used in conjunction with
-  !     the input mask to show where output data exists.
-  ! </DESCRIPTION>
 
   use mpp_mod,               only : mpp_error, FATAL, WARNING, stdout
   use mpp_mod,               only : mpp_root_pe, mpp_pe
@@ -1001,3 +998,5 @@ end subroutine horiz_interp_spherical_init
 
 
 end module horiz_interp_spherical_mod
+!> @}
+! close documentation grouping
