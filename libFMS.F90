@@ -40,11 +40,14 @@
 !!
 !!           ZERO from interpolator_mod(mpp_parameter)  => INTERPOLATOR_ZERO
 !!
+!!           version from fms_mod                       => version_FMS
+!!
 !! Not in this module:
 !!
 !!                     axis_utils_mod, fms_io_mod, time_interp_external_mod
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
 !!                     fms_mod(partial, old io excluded), drifters modules
+!!                     constants_mod (FMSconstants should be used externally)
 !!
 !! A full list of supported interfaces and public types intended for use via
 !! this module is provided in the [supported_interfaces.md](../../supported_interfaces.md)
@@ -85,9 +88,6 @@ module fms
                                     initialize_diagnostic_columns, &
                                     column_diagnostics_header, &
                                     close_column_diagnostics_units
-
-  !> constants
-  use constants_mod
 
   !> coupler
   use coupler_types_mod, only: coupler_types_init, coupler_type_copy, &
@@ -133,7 +133,8 @@ module fms
                            diag_field_add_cell_measures, get_diag_field_id, &
                            diag_axis_add_attribute, diag_grid_init, diag_grid_end, &
                            diag_manager_set_time_end, diag_send_complete, &
-                           diag_send_complete_instant, DIAG_FIELD_NOT_FOUND
+                           diag_send_complete_instant, DIAG_FIELD_NOT_FOUND, &
+                           CMOR_MISSING_VALUE, null_axis_id
 
   !> exchange
   use xgrid_mod, only: xmap_type, setup_xmap, set_frac_area, put_to_xgrid, &
@@ -146,7 +147,8 @@ module fms
                        stock_integrate_2d
   use stock_constants_mod, only: NELEMS, ISTOCK_WATER, ISTOCK_HEAT, ISTOCK_SALT, &
                        ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, stocks_file, &
-                       stocks_report, stocks_report_init, stocks_set_init_time
+                       stocks_report, stocks_report_init, stocks_set_init_time, &
+                       atm_stock, ocn_stock, lnd_stock, ice_stock
 
   !> field manager
   use field_manager_mod, only: field_manager_init, field_manager_end, find_field_index, &
@@ -211,7 +213,8 @@ module fms
   !> fms
   !! routines that don't conflict with fms2_io
   use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, check_nml_error, &
-                     monotonic_array, string_array_index
+                     monotonic_array, string_array_index, clock_flag_default, &
+                     print_memory_usage, write_version_number
 
   !> horiz_interp
   use horiz_interp_mod, only: horiz_interp, horiz_interp_new, horiz_interp_del, &
@@ -419,5 +422,9 @@ module fms
   use tridiagonal_mod, only: tri_invert, close_tridiagonal
 
   implicit none
+
+#include <file_version.h>
+  character(len=*), parameter, public :: version_FMS = version
+  private :: version
 
 end module fms

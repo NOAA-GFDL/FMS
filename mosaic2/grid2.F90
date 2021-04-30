@@ -16,24 +16,26 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-module grid_mod
+module grid2_mod
 
-use mpp_mod, only : mpp_root_pe, uppercase, lowercase, FATAL, NOTE, mpp_error
+use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE
 use constants_mod, only : PI, radius
-use fms_io_mod, only : get_great_circle_algorithm, get_global_att_value, string, &
-                       field_exist, field_size, read_data
-use mosaic_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
+use fms2_io_mod, only : get_global_attribute, read_data, global_att_exists, &
+                        variable_exists, file_exists,  open_file, close_file, get_variable_size, &
+                        FmsNetcdfFile_t, string => string2
+use mosaic2_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
      get_mosaic_xgrid, calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area
 
 ! the following two use statement are only needed for define_cube_mosaic
 use mpp_domains_mod, only : domain2d, mpp_define_mosaic, mpp_get_compute_domain, &
                             mpp_get_global_domain, domainUG, mpp_pass_SG_to_UG
-use mosaic_mod, only : get_mosaic_ncontacts, get_mosaic_contact
+use mosaic2_mod, only : get_mosaic_ncontacts, get_mosaic_contact
 
 implicit none;private
 
 ! ==== public interfaces =====================================================
 ! grid dimension inquiry subroutines
+public :: get_great_circle_algorithm ! returns great_circle_algorithm
 public :: get_grid_ntiles ! returns number of tiles
 public :: get_grid_size   ! returns horizontal sizes of the grid
 ! grid geometry inquiry subroutines
@@ -45,6 +47,8 @@ public :: get_grid_comp_area
 ! decompose cubed sphere domains -- probably does not belong here, but it should
 ! be in some place available for component models
 public :: define_cube_mosaic
+public :: grid_init
+public :: grid_end
 ! ==== end of public interfaces ==============================================
 
 interface get_grid_size
@@ -76,7 +80,7 @@ end interface get_grid_comp_area
 
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
-     module_name = 'grid_mod'
+     module_name = 'grid2_mod'
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -98,87 +102,177 @@ integer, parameter :: BUFSIZE = 1048576  ! This is used to control memory usage 
 ! ==== module variables ======================================================
 integer :: grid_version = -1
 logical :: great_circle_algorithm = .FALSE.
-logical :: first_call = .TRUE.
-
+logical :: module_is_initialized = .FALSE.
+logical :: grid_spec_exists = .TRUE.
+type(FmsNetcdfFile_t) :: gridfileobj
+type(FmsNetcdfFile_t), dimension(3) :: mosaic_fileobj
 
 contains
 
-function get_grid_version()
+!> @brief Initialize the grid2 module
+subroutine grid_init
+   if (module_is_initialized) return
+   if (.not. file_exists(grid_file)) then
+       module_is_initialized = .TRUE.
+       grid_spec_exists = .FALSE.
+       return
+   endif
+   call open_grid_file(gridfileobj, grid_file)
+   great_circle_algorithm = get_great_circle_algorithm()
+   grid_version = get_grid_version(gridfileobj)
+   if (grid_version == VERSION_2) call open_component_mosaics
+   module_is_initialized = .TRUE.
+end subroutine grid_init
+
+!> @brief Shutdown the grid2 module
+subroutine grid_end
+   if (grid_spec_exists) then
+       if (grid_version == Version_2) call close_component_mosaics
+       call close_file(gridfileobj)
+   endif
+end subroutine grid_end
+
+!> @brief Determine if we are using the great circle algorithm
+!! @return Logical flag describing if we are using the great circlealgorithm
+function get_great_circle_algorithm()
+   character(len=128)     :: attvalue
+   logical :: get_great_circle_algorithm
+
+   get_great_circle_algorithm = .false.
+   if (global_att_exists(gridfileobj, "great_circle_algorithm")) then
+      call get_global_attribute(gridfileobj, "great_circle_algorithm", attvalue)
+      if(trim(attvalue) == "TRUE") then
+         get_great_circle_algorithm = .true. 
+      else if(trim(attvalue) .NE. "FALSE") then
+         call mpp_error(FATAL, module_name//'/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
+                   trim(grid_file)//' should be TRUE or FALSE')
+      endif
+   endif
+end function get_great_circle_algorithm
+
+!> @brief Open a grid file
+subroutine open_grid_file(myfileobj, myfilename)
+  type(FmsNetcdfFile_t), intent(out)  :: myfileobj !< File object of grid file
+  character(len=*), intent(in) :: myfilename!< Name of the grid file
+   if(.not. open_file(myfileobj, myfilename, 'read')) then
+      call mpp_error(FATAL, 'grid2_mod(open_grid_file):Error in opening file '//trim(myfilename))
+   endif
+end subroutine open_grid_file
+
+!> @brief Open a mosaic file
+subroutine open_mosaic_file(mymosaicfileobj, component)
+  type(FmsNetcdfFile_t), intent(out)  :: mymosaicfileobj !< File object returned
+  character(len=3), intent(in)        :: component !< Component (atm, lnd, etc.)
+
+  character(len=MAX_FILE) :: mosaicfilename
+  call read_data(gridfileobj,trim(lowercase(component))//'_mosaic_file', mosaicfilename)
+  call open_grid_file(mymosaicfileobj, grid_dir//trim(mosaicfilename))
+end subroutine open_mosaic_file
+
+!> @brief Read a tile file name from a netcdf file
+!! @return Name of the file as a string
+function read_file_name(thisfileobj, filevar, level)
+  type(FmsNetcdfFile_t), intent(in)  :: thisfileobj !< File object of file
+  character(len=*), intent(in) :: filevar!< Variable containing file names
+  integer, intent(in) :: level !< Level of tile file
+  integer, dimension(2) :: file_list_size
+  character(len=MAX_FILE) :: read_file_name
+  character(len=MAX_FILE), dimension(:), allocatable :: file_names
+
+  call get_variable_size(thisfileobj, filevar, file_list_size)
+  allocate(file_names(file_list_size(2)))
+  call read_data(thisfileobj, filevar, file_names)
+  read_file_name = file_names(level)
+  deallocate(file_names)
+end function read_file_name
+
+!> @brief Get the grid version from a file object
+!! @return An integer representation of the grid version
+function get_grid_version(fileobj)
+  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object of grid file
   integer :: get_grid_version
 
-  if(first_call) then
-     great_circle_algorithm = get_great_circle_algorithm()
-     first_call = .FALSE.
-  endif
-
   if(grid_version<0) then
-    if(field_exist(grid_file, 'geolon_t')) then
-       grid_version = VERSION_0
-    else if(field_exist(grid_file, 'x_T')) then
-       grid_version = VERSION_1
-    else if(field_exist(grid_file, 'ocn_mosaic_file') ) then
-       grid_version = VERSION_2
+    if(variable_exists(fileobj, 'geolon_t')) then
+       get_grid_version = VERSION_0
+    else if(variable_exists(fileobj, 'x_T')) then
+       get_grid_version = VERSION_1
+    else if(variable_exists(fileobj, 'ocn_mosaic_file') ) then
+       get_grid_version = VERSION_2
     else
-       call mpp_error(FATAL, module_name//'/get_grid_version: Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
+       call mpp_error(FATAL, module_name//'/get_grid_version '//&
+            'Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
     endif
   endif
-  get_grid_version = grid_version
 end function get_grid_version
 
+!> @brief Open the component mosaic files for atm, lnd, and ocn
+subroutine open_component_mosaics
+    if (variable_exists(gridfileobj, 'atm_mosaic_file')) call open_mosaic_file(mosaic_fileobj(1), 'atm')
+    if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call open_mosaic_file(mosaic_fileobj(2), 'ocn')
+    if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call open_mosaic_file(mosaic_fileobj(3), 'lnd')
+end subroutine open_component_mosaics
 
-! ============================================================================
-! returns number of tiles for a given component
-! ============================================================================
+!> @brief Close the component mosaic files for atm, lnd, and ocn
+subroutine close_component_mosaics
+    if (variable_exists(gridfileobj, 'atm_mosaic_file')) call close_file(mosaic_fileobj(1))
+    if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call close_file(mosaic_fileobj(2))
+    if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call close_file(mosaic_fileobj(3))
+end subroutine close_component_mosaics
+
+!> @brief Get the component number of a model component (atm, lnd, ocn) 
+!! @return Integer component number
+function get_component_number(component)
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer :: get_component_number
+    select case(lowercase(component))
+    case('atm')
+        get_component_number = 1
+    case('ocn')
+        get_component_number = 2
+    case('lnd')
+        get_component_number = 3
+    end select
+end function get_component_number
+
+!> @brief returns number of tiles for a given component
 subroutine get_grid_ntiles(component,ntiles)
-  character(len=*)     :: component
-  integer, intent(out) :: ntiles
+  character(len=*)     :: component !< Component model (atm, lnd, ocn)
+  integer, intent(out) :: ntiles !< Number of tiles
 
-  ! local vars
-  character(len=MAX_FILE) :: component_mosaic
-
-  select case (get_grid_version())
+  select case (grid_version)
   case(VERSION_0,VERSION_1)
      ntiles = 1
   case(VERSION_2)
-     call read_data(grid_file,trim(lowercase(component))//'_mosaic_file',component_mosaic)
-     ntiles = get_mosaic_ntiles(grid_dir//trim(component_mosaic))
+     ntiles = get_mosaic_ntiles(mosaic_fileobj(get_component_number(trim(component))))
   end select
 end subroutine get_grid_ntiles
 
-
-! ============================================================================
-! returns size of the grid for each of the tiles
-! ============================================================================
+!> @brief returns size of the grid for each of the tiles
 subroutine get_grid_size_for_all_tiles(component,nx,ny)
-  character(len=*)     :: component
-  integer, intent(inout) :: nx(:),ny(:)
+  character(len=*)     :: component !< Component model (atm, lnd, ocn)
+  integer, intent(inout) :: nx(:),ny(:) !< Grid size in x and y
 
   ! local vars
-  integer :: siz(4) ! for the size of external fields
+  integer :: siz(2) ! for the size of external fields
   character(len=MAX_NAME) :: varname1, varname2
-  character(len=MAX_FILE) :: component_mosaic
 
   varname1 = 'AREA_'//trim(uppercase(component))
-  varname2 = trim(lowercase(component))//'_mosaic_file'
 
-  select case (get_grid_version())
+  select case (grid_version)
   case(VERSION_0,VERSION_1)
-     call field_size(grid_file, varname1, siz)
+     call get_variable_size(gridfileobj, varname1, siz)
      nx(1) = siz(1); ny(1)=siz(2)
   case(VERSION_2) ! mosaic file
-     call read_data(grid_file,varname2, component_mosaic)
-     call get_mosaic_grid_sizes(grid_dir//trim(component_mosaic),nx,ny)
+     call get_mosaic_grid_sizes(mosaic_fileobj(get_component_number(trim(component))),nx,ny)
   end select
 end subroutine get_grid_size_for_all_tiles
 
-
-! ============================================================================
-! returns size of the grid for one of the tiles
-! ============================================================================
+!> @brief returns size of the grid for one of the tiles
 subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
-  character(len=*)       :: component
-  integer, intent(in)    :: tile
-  integer, intent(inout) :: nx,ny
+  character(len=*)       :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in)    :: tile !< Tile number
+  integer, intent(inout) :: nx,ny !< Grid size in x and y
 
   ! local vars
   integer, allocatable :: nnx(:), nny(:)
@@ -191,34 +285,32 @@ subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
      nx = nnx(tile); ny = nny(tile)
      deallocate(nnx,nny)
   else
-     call mpp_error(FATAL, 'get_grid_size: requested tile index '//trim(string(tile))//' is out of bounds (1:'//trim(string(ntiles))//')')
+     call mpp_error(FATAL, 'get_grid_size'//&
+          'requested tile index '//trim(string(tile))//' is out of bounds (1:'//trim(string(ntiles))//')')
   endif
 end subroutine get_grid_size_for_one_tile
 
-! ============================================================================
-! return grid cell area for the specified model component and tile
-! ============================================================================
+!> @brief return grid cell area for the specified model component and tile
 subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
-  character(len=*), intent(in)    :: component
-  integer         , intent(in)    :: tile
-  real            , intent(inout) :: cellarea(:,:)
-  type(domain2d)  , intent(in), optional :: domain
+  character(len=*), intent(in)    :: component !< Component model (atm, lnd, ocn)
+  integer         , intent(in)    :: tile !< Tile number
+  real            , intent(inout) :: cellarea(:,:) !< Cell area
+  type(domain2d)  , intent(in), optional :: domain !< Domain
 
   ! local vars
   integer :: nlon, nlat
   real, allocatable :: glonb(:,:), glatb(:,:)
 
-  select case(get_grid_version())
+  select case(grid_version)
   case(VERSION_0,VERSION_1)
      select case(trim(component))
      case('LND')
-        call read_data(grid_file, 'AREA_LND_CELL', cellarea, &
-            no_domain=.not.present(domain), domain=domain)
+        call read_data(gridfileobj, 'AREA_LND_CELL', cellarea)
      case('ATM','OCN')
-        call read_data(grid_file, 'AREA_'//trim(uppercase(component)),cellarea,&
-            no_domain=.not.present(domain),domain=domain)
+        call read_data(gridfileobj, 'AREA_'//trim(uppercase(component)),cellarea)
      case default
-        call mpp_error(FATAL, module_name//'/get_grid_cell_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
+        call mpp_error(FATAL, module_name//'/get_grid_cell_area'//&
+             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! convert area to m2
      cellarea = cellarea*4.*PI*radius**2
@@ -240,17 +332,15 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
 
 end subroutine get_grid_cell_area_SG
 
-! ============================================================================
-! get the area of the component per grid cell
-! ============================================================================
+!> @brief get the area of the component per grid cell
 subroutine get_grid_comp_area_SG(component,tile,area,domain)
-  character(len=*) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: area(:,:)
-  type(domain2d), intent(in), optional :: domain
+  character(len=*) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: area(:,:) !< Area of grid cell
+  type(domain2d), intent(in), optional :: domain !< Domain
   ! local vars
   integer :: n_xgrid_files ! number of exchange grid files in the mosaic
-  integer :: siz(4), nxgrid
+  integer :: siz(2), nxgrid
   integer :: i,j,m,n
   integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
   real, allocatable :: xgrid_area(:)
@@ -260,7 +350,6 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
      tile_name,  & ! name of the tile
      xgrid_file, & ! name of the current xgrid file
      mosaic_name,& ! name of the mosaic
-     mosaic_file,&
      tilefile
   character(len=4096)     :: attvalue
   character(len=MAX_NAME), allocatable :: nest_tile_name(:)
@@ -271,22 +360,24 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   logical :: is_nest
   integer :: found_xgrid_files ! how many xgrid files we actually found in the grid spec
   integer :: ibegin, iend, bsize, l
+  type(FmsNetcdfFile_t) :: tilefileobj, xgrid_fileobj
 
-  select case (get_grid_version())
+  select case (grid_version)
   case(VERSION_0,VERSION_1)
      select case(component)
      case('ATM')
-        call read_data(grid_file,'AREA_ATM',area, no_domain=.not.present(domain),domain=domain)
+        call read_data(gridfileobj,'AREA_ATM',area)
      case('OCN')
         allocate(rmask(size(area,1),size(area,2)))
-        call read_data(grid_file,'AREA_OCN',area, no_domain=.not.present(domain),domain=domain)
-        call read_data(grid_file,'wet',     rmask,no_domain=.not.present(domain),domain=domain)
+        call read_data(gridfileobj,'AREA_OCN',area)
+        call read_data(gridfileobj,'wet',     rmask)
         area = area*rmask
         deallocate(rmask)
      case('LND')
-        call read_data(grid_file,'AREA_LND',area,no_domain=.not.present(domain),domain=domain)
+        call read_data(gridfileobj,'AREA_LND',area)
      case default
-        call mpp_error(FATAL, module_name//'/get_grid_comp_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
+        call mpp_error(FATAL, module_name//'/get_grid_comp_area'//&
+             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
   case(VERSION_2) ! mosaic gridspec
      select case (component)
@@ -296,14 +387,15 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         return
      case ('LND')
         xgrid_name = 'aXl_file'
-        call read_data(grid_file, 'lnd_mosaic', mosaic_name)
+        call read_data(gridfileobj, 'lnd_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case ('OCN')
         xgrid_name = 'aXo_file'
-        call read_data(grid_file, 'ocn_mosaic', mosaic_name)
+        call read_data(gridfileobj, 'ocn_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case default
-        call mpp_error(FATAL, module_name//'/get_grid_comp_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
+        call mpp_error(FATAL, module_name//'/get_grid_comp_area'//&
+             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! get the boundaries of the requested domain
      if(present(domain)) then
@@ -315,37 +407,40 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         js = 1 ; j0 = 0
      endif
      if (size(area,1)/=ie-is+1.or.size(area,2)/=je-js+1) &
-        call mpp_error(FATAL, module_name//'/get_grid_comp_area: size of the output argument "area" is not consistent with the domain')
+        call mpp_error(FATAL, module_name//'/get_grid_comp_area '//&
+        'size of the output argument "area" is not consistent with the domain')
 
      ! find the nest tile
-     call read_data(grid_file, 'atm_mosaic', mosaic_name)
-     call read_data(grid_file,'atm_mosaic_file',mosaic_file)
-     mosaic_file = grid_dir//trim(mosaic_file)
-     ntiles = get_mosaic_ntiles(trim(mosaic_file))
+     call read_data(gridfileobj, 'atm_mosaic', mosaic_name)
+     call get_grid_ntiles('atm', ntiles)
      allocate(nest_tile_name(ntiles))
      num_nest_tile = 0
      do n = 1, ntiles
-        call read_data(mosaic_file, 'gridfiles', tilefile, level=n)
-        tilefile = grid_dir//trim(tilefile)
-        if( get_global_att_value(tilefile, "nest_grid", attvalue) ) then
+        tilefile = read_file_name(mosaic_fileobj(1), 'gridfiles', n)
+        call open_grid_file(tilefileobj, grid_dir//tilefile)
+        if (global_att_exists(tilefileobj, "nest_grid")) then
+           call get_global_attribute(tilefileobj, "nest_grid", attvalue)
            if(trim(attvalue) == "TRUE") then
               num_nest_tile = num_nest_tile + 1
               nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
            else if(trim(attvalue) .NE. "FALSE") then
-              call mpp_error(FATAL, module_name//'/get_grid_comp_area: value of global attribute nest_grid in file'// trim(tilefile)//' should be TRUE of FALSE')
+              call mpp_error(FATAL, module_name//'/get_grid_comp_area value of global attribute nest_grid in file'// &
+                   trim(tilefile)//' should be TRUE or FALSE')
            endif
         end if
+        call close_file(tilefileobj)
      end do
      area(:,:) = 0.
-     if(field_exist(grid_file,xgrid_name)) then
+     if(variable_exists(gridfileobj,xgrid_name)) then
         ! get the number of the exchange-grid files
-        call field_size(grid_file,xgrid_name,siz)
+        call get_variable_size(gridfileobj,xgrid_name,siz)
         n_xgrid_files = siz(2)
         found_xgrid_files = 0
         ! loop through all exchange grid files
         do n = 1, n_xgrid_files
            ! get the name of the current exchange grid file
-           call read_data(grid_file,xgrid_name,xgrid_file,level=n)
+           xgrid_file = read_file_name(gridfileobj,xgrid_name,n)
+           call open_grid_file(xgrid_fileobj, grid_dir//xgrid_file)
            ! skip the rest of the loop if the name of the current tile isn't found
            ! in the file name, but check this only if there is more than 1 tile
            if(n_xgrid_files>1) then
@@ -363,7 +458,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            if(is_nest) cycle
 
            ! finally read the exchange grid
-           nxgrid = get_mosaic_xgrid_size(grid_dir//xgrid_file)
+           nxgrid = get_mosaic_xgrid_size(xgrid_fileobj)
            if(nxgrid < BUFSIZE) then
               allocate(i1(nxgrid), j1(nxgrid), i2(nxgrid), j2(nxgrid), xgrid_area(nxgrid))
            else
@@ -373,7 +468,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            do l = 1,nxgrid,BUFSIZE
               bsize = min(BUFSIZE, nxgrid-l+1)
               iend = ibegin + bsize - 1
-              call get_mosaic_xgrid(grid_dir//xgrid_file, i1(1:bsize), j1(1:bsize), i2(1:bsize), j2(1:bsize), &
+              call get_mosaic_xgrid(xgrid_fileobj, i1(1:bsize), j1(1:bsize), i2(1:bsize), j2(1:bsize), &
                                     xgrid_area(1:bsize), ibegin, iend)
               ! and sum the exchange grid areas
               do m = 1, bsize
@@ -385,9 +480,11 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
               ibegin = iend + 1
            enddo
            deallocate(i1, j1, i2, j2, xgrid_area)
+           call close_file(xgrid_fileobj)
         enddo
         if (found_xgrid_files == 0) &
-           call mpp_error(FATAL, 'get_grid_comp_area: no xgrid files were found for component '//trim(component)//' (mosaic name is '//trim(mosaic_name)//')')
+           call mpp_error(FATAL, 'get_grid_comp_area no xgrid files were found for component '&
+                 //trim(component)//' (mosaic name is '//trim(mosaic_name)//')')
 
      endif
      deallocate(nest_tile_name)
@@ -396,13 +493,14 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   area = area*4.*PI*radius**2
 end subroutine get_grid_comp_area_SG
 
-!======================================================================
+!> @brief return grid cell area for the specified model component and tile on an
+!! unstructured domain
 subroutine get_grid_cell_area_UG(component, tile, cellarea, SG_domain, UG_domain)
-  character(len=*),   intent(in)    :: component
-  integer         ,   intent(in)    :: tile
-  real            ,   intent(inout) :: cellarea(:)
-  type(domain2d)  ,   intent(in)    :: SG_domain
-  type(domainUG)  ,   intent(in)    :: UG_domain
+  character(len=*),   intent(in)    :: component !< Component model (atm, lnd, ocn)
+  integer         ,   intent(in)    :: tile !< Tile number
+  real            ,   intent(inout) :: cellarea(:) !< Cell area
+  type(domain2d)  ,   intent(in)    :: SG_domain !< Structured Domain
+  type(domainUG)  ,   intent(in)    :: UG_domain !< Unstructured Domain
   integer :: is, ie, js, je
   real, allocatable :: SG_area(:,:)
 
@@ -411,15 +509,15 @@ subroutine get_grid_cell_area_UG(component, tile, cellarea, SG_domain, UG_domain
   call get_grid_cell_area_SG(component, tile, SG_area, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_area, cellarea)
   deallocate(SG_area)
-
 end subroutine get_grid_cell_area_UG
 
+!> @brief get the area of the component per grid cell for an unstructured domain
 subroutine get_grid_comp_area_UG(component, tile, area, SG_domain, UG_domain)
-  character(len=*),   intent(in)    :: component
-  integer         ,   intent(in)    :: tile
-  real            ,   intent(inout) :: area(:)
-  type(domain2d)  ,   intent(in)    :: SG_domain
-  type(domainUG)  ,   intent(in)    :: UG_domain
+  character(len=*),   intent(in)    :: component !< Component model (atm, lnd, ocn)
+  integer         ,   intent(in)    :: tile !< Tile number
+  real            ,   intent(inout) :: area(:) !< Area of the component
+  type(domain2d)  ,   intent(in)    :: SG_domain !< Structured domain
+  type(domainUG)  ,   intent(in)    :: UG_domain !< Unstructured domain
   integer :: is, ie, js, je
   real, allocatable :: SG_area(:,:)
 
@@ -431,60 +529,58 @@ subroutine get_grid_comp_area_UG(component, tile, area, SG_domain, UG_domain)
 
 end subroutine get_grid_comp_area_UG
 
-
-! ============================================================================
-! returns arrays of global grid cell boundaries for given model component and
-! mosaic tile number.
-! NOTE that in case of non-lat-lon grid the returned coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
-! ============================================================================
+!> @brief returns arrays of global grid cell boundaries for given model component and
+!! mosaic tile number.
 subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
-  character(len=*), intent(in) :: component
-  integer,          intent(in) :: tile
-  real,          intent(inout) :: glonb(:),glatb(:)
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer,          intent(in) :: tile !< Tile number
+  real,          intent(inout) :: glonb(:),glatb(:) !< Grid cell vertices
 
   integer                      :: nlon, nlat
   integer                      :: start(4), nread(4)
   real, allocatable            :: tmp(:,:), x_vert_t(:,:,:), y_vert_t(:,:,:)
-  character(len=MAX_FILE)      :: filename1, filename2
+  character(len=MAX_FILE)      :: tilefile
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glonb(:))/=nlon+1) &
-       call mpp_error (FATAL,  module_name//'/get_grid_cell_vertices_1D: Size of argument "glonb" is not consistent with the grid size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices_1D '//&
+       'Size of argument "glonb" is not consistent with the grid size')
   if (size(glatb(:))/=nlat+1) &
-       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices_1D: Size of argument "glatb" is not consistent with the grid size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices_1D '//&
+       'Size of argument "glatb" is not consistent with the grid size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices_1D: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices_1D '//&
+          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
-  select case(get_grid_version())
+  select case(grid_version)
   case(VERSION_0)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(grid_file, 'xb'//lowercase(component(1:1)), glonb, no_domain=.true.)
-        call read_data(grid_file, 'yb'//lowercase(component(1:1)), glatb, no_domain=.true.)
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), glatb)
      case('OCN')
-        call read_data(grid_file, "gridlon_vert_t", glonb, no_domain=.true.)
-        call read_data(grid_file, "gridlat_vert_t", glatb, no_domain=.true.)
+        call read_data(gridfileobj, "gridlon_vert_t", glonb)
+        call read_data(gridfileobj, "gridlat_vert_t", glatb)
      end select
   case(VERSION_1)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(grid_file, 'xb'//lowercase(component(1:1)), glonb, no_domain=.true.)
-        call read_data(grid_file, 'yb'//lowercase(component(1:1)), glatb, no_domain=.true.)
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), glatb)
      case('OCN')
         allocate (x_vert_t(nlon,1,2), y_vert_t(1,nlat,2) )
         start = 1; nread = 1
         nread(1) = nlon; nread(2) = 1; start(3) = 1
-        call read_data(grid_file, "x_vert_T", x_vert_t(:,:,1), start, nread, no_domain=.TRUE.)
+        call read_data(gridfileobj, "x_vert_T", x_vert_t(:,:,1), corner=start, edge_lengths=nread)
         nread(1) = nlon; nread(2) = 1; start(3) = 2
-        call read_data(grid_file, "x_vert_T", x_vert_t(:,:,2), start, nread, no_domain=.TRUE.)
+        call read_data(gridfileobj, "x_vert_T", x_vert_t(:,:,2), corner=start, edge_lengths=nread)
 
         nread(1) = 1; nread(2) = nlat; start(3) = 1
-        call read_data(grid_file, "y_vert_T", y_vert_t(:,:,1), start, nread, no_domain=.TRUE.)
+        call read_data(gridfileobj, "y_vert_T", y_vert_t(:,:,1), corner=start, edge_lengths=nread)
         nread(1) = 1; nread(2) = nlat; start(3) = 4
-        call read_data(grid_file, "y_vert_T", y_vert_t(:,:,2), start, nread, no_domain=.TRUE.)
+        call read_data(gridfileobj, "y_vert_T", y_vert_t(:,:,2), corner=start, edge_lengths=nread)
         glonb(1:nlon) = x_vert_t(1:nlon,1,1)
         glonb(nlon+1) = x_vert_t(nlon,1,2)
         glatb(1:nlat) = y_vert_t(1,1:nlat,1)
@@ -492,41 +588,35 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
         deallocate(x_vert_t, y_vert_t)
      end select
   case(VERSION_2)
-     ! get the name of the mosaic file for the component
-     call read_data(grid_file, trim(lowercase(component))//'_mosaic_file', filename1)
-     filename1=grid_dir//trim(filename1)
      ! get the name of the grid file for the component and tile
-     call read_data(filename1, 'gridfiles', filename2, level=tile)
-     filename2 = grid_dir//trim(filename2)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
 
      start = 1; nread = 1
      nread(1) = 2*nlon+1
      allocate( tmp(2*nlon+1,1) )
-     call read_data(filename2, "x", tmp, start, nread, no_domain=.TRUE.)
+     call read_data(tilefileobj, "x", tmp, corner=start, edge_lengths=nread)
      glonb(1:nlon+1) = tmp(1:2*nlon+1:2,1)
      deallocate(tmp)
      allocate(tmp(1,2*nlat+1))
 
      start = 1; nread = 1
      nread(2) = 2*nlat+1
-     call read_data(filename2, "y", tmp, start, nread, no_domain=.TRUE.)
+     call read_data(tilefileobj, "y", tmp, corner=start, edge_lengths=nread)
      glatb(1:nlat+1) = tmp(1,1:2*nlat+1:2)
      deallocate(tmp)
+     call close_file(tilefileobj)
   end select
-
 end subroutine get_grid_cell_vertices_1D
 
-! ============================================================================
-! returns cell vertices for the specified model component and mosaic tile number
-! ============================================================================
+!> @brief returns cell vertices for the specified model component and mosaic tile number
 subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
-  character(len=*),         intent(in) :: component
-  integer,                  intent(in) :: tile
-  real,                  intent(inout) :: lonb(:,:),latb(:,:)
-  type(domain2d), optional, intent(in) :: domain
+  character(len=*),         intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer,                  intent(in) :: tile !< Tile number
+  real,                  intent(inout) :: lonb(:,:),latb(:,:) !< Cell vertices
+  type(domain2d), optional, intent(in) :: domain !< Domain
 
   ! local vars
-  character(len=MAX_FILE) :: filename1, filename2
   integer :: nlon, nlat
   integer :: i,j
   real, allocatable :: buffer(:), tmp(:,:), x_vert_t(:,:,:), y_vert_t(:,:,:)
@@ -534,6 +624,8 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
   integer :: i0,j0 ! offsets for coordinates
   integer :: isg, jsg
   integer :: start(4), nread(4)
+  character(len=MAX_FILE)      :: tilefile
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (present(domain)) then
@@ -542,32 +634,36 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
     is = 1 ; ie = nlon
     js = 1 ; je = nlat
     !--- domain normally should be present
-    call mpp_error (NOTE, module_name//'/get_grid_cell_vertices: domain is not present, global data will be read')
+    call mpp_error (NOTE, module_name//'/get_grid_cell_vertices '//&
+       'domain is not present, global data will be read')
   endif
   i0 = -is+1; j0 = -js+1
 
   ! verify that lonb and latb sizes are consistent with the size of domain
   if (size(lonb,1)/=ie-is+2.or.size(lonb,2)/=je-js+2) &
-       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices: Size of argument "lonb" is not consistent with the domain size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices '//&
+       'Size of argument "lonb" is not consistent with the domain size')
   if (size(latb,1)/=ie-is+2.or.size(latb,2)/=je-js+2) &
-       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices: Size of argument "latb" is not consistent with the domain size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_vertices '//&
+       'Size of argument "latb" is not consistent with the domain size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices '//&
+          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
-  select case(get_grid_version())
+  select case(grid_version)
   case(VERSION_0)
      select case(component)
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)+1))
         ! read coordinates of grid cell vertices
-        call read_data(grid_file, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1), no_domain=.true.)
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1))
         do j = js, je+1
            do i = is, ie+1
               lonb(i+i0,j+j0) = buffer(i)
            enddo
         enddo
-        call read_data(grid_file, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1), no_domain=.true.)
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1))
         do j = js, je+1
            do i = is, ie+1
               latb(i+i0,j+j0) = buffer(j)
@@ -579,11 +675,11 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
            start = 1; nread = 1
            start(1) = is; start(2) = js
            nread(1) = ie-is+2; nread(2) = je-js+2
-           call read_data(grid_file, 'geolon_vert_t', lonb, start, nread, no_domain=.true. )
-           call read_data(grid_file, 'geolat_vert_t', latb, start, nread, no_domain=.true. )
+           call read_data(gridfileobj, "geolon_vert_t", lonb, corner=start, edge_lengths=nread)
+           call read_data(gridfileobj, "geolat_vert_t", latb, corner=start, edge_lengths=nread)
          else
-           call read_data(grid_file, 'geolon_vert_t', lonb, no_domain=.TRUE. )
-           call read_data(grid_file, 'geolat_vert_t', latb, no_domain=.TRUE. )
+           call read_data(gridfileobj, "geolon_vert_t", lonb)
+           call read_data(gridfileobj, "geolat_vert_t", latb)
          endif
      end select
   case(VERSION_1)
@@ -591,13 +687,13 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)+1))
         ! read coordinates of grid cell vertices
-        call read_data(grid_file, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1), no_domain=.true.)
+        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer(1:nlon+1))
         do j = js, je+1
            do i = is, ie+1
               lonb(i+i0,j+j0) = buffer(i)
            enddo
         enddo
-        call read_data(grid_file, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1), no_domain=.true.)
+        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer(1:nlat+1))
         do j = js, je+1
            do i = is, ie+1
               latb(i+i0,j+j0) = buffer(j)
@@ -607,8 +703,8 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
      case('OCN')
         nlon=ie-is+1; nlat=je-js+1
         allocate (x_vert_t(nlon,nlat,4), y_vert_t(nlon,nlat,4) )
-        call read_data(grid_file, 'x_vert_T', x_vert_t, no_domain=.not.present(domain), domain=domain )
-        call read_data(grid_file, 'y_vert_T', y_vert_t, no_domain=.not.present(domain), domain=domain )
+        call read_data(gridfileobj, 'x_vert_T', x_vert_t)
+        call read_data(gridfileobj, 'y_vert_T', y_vert_t)
         lonb(1:nlon,1:nlat) = x_vert_t(1:nlon,1:nlat,1)
         lonb(nlon+1,1:nlat) = x_vert_t(nlon,1:nlat,2)
         lonb(1:nlon,nlat+1) = x_vert_t(1:nlon,nlat,4)
@@ -620,25 +716,22 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
         deallocate(x_vert_t, y_vert_t)
      end select
   case(VERSION_2)
-     ! get the name of the mosaic file for the component
-     call read_data(grid_file, trim(lowercase(component))//'_mosaic_file', filename1)
-     filename1=grid_dir//trim(filename1)
      ! get the name of the grid file for the component and tile
-     call read_data(filename1, 'gridfiles', filename2, level=tile)
-     filename2 = grid_dir//trim(filename2)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
      if(PRESENT(domain)) then
         call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
         start = 1; nread = 1
         start(1) = 2*(is-isg+1) - 1; nread(1) = 2*(ie-is)+3
         start(2) = 2*(js-jsg+1) - 1; nread(2) = 2*(je-js)+3
         allocate(tmp(nread(1), nread(2)) )
-        call read_data(filename2, 'x', tmp, start, nread, no_domain=.TRUE.)
+        call read_data(tilefileobj, "x", tmp, corner=start, edge_lengths=nread)
         do j = 1, je-js+2
            do i = 1, ie-is+2
               lonb(i,j) = tmp(2*i-1,2*j-1)
            enddo
         enddo
-        call read_data(filename2, 'y', tmp, start, nread, no_domain=.TRUE.)
+        call read_data(tilefileobj, "y", tmp, corner=start, edge_lengths=nread)
         do j = 1, je-js+2
            do i = 1, ie-is+2
               latb(i,j) = tmp(2*i-1,2*j-1)
@@ -646,13 +739,13 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
         enddo
      else
         allocate(tmp(2*nlon+1,2*nlat+1))
-        call read_data(filename2, 'x', tmp, no_domain=.TRUE.)
+        call read_data(tilefileobj, "x", tmp)
         do j = js, je+1
            do i = is, ie+1
               lonb(i+i0,j+j0) = tmp(2*i-1,2*j-1)
            end do
         end do
-        call read_data(filename2, 'y', tmp, no_domain=.TRUE.)
+        call read_data(tilefileobj, "y", tmp)
         do j = js, je+1
            do i = is, ie+1
               latb(i+i0,j+j0) = tmp(2*i-1,2*j-1)
@@ -660,17 +753,18 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
         end do
      endif
      deallocate(tmp)
+     call close_file(tilefileobj)
   end select
-
 end subroutine get_grid_cell_vertices_2D
 
-
+!> @brief returns cell vertices for the specified model component and mosaic tile number for
+!! an unstructured domain
 subroutine get_grid_cell_vertices_UG(component, tile, lonb, latb, SG_domain, UG_domain)
-  character(len=*),         intent(in) :: component
-  integer,                  intent(in) :: tile
+  character(len=*),         intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer,                  intent(in) :: tile !< Tile number
   real,                  intent(inout) :: lonb(:,:),latb(:,:) ! The second dimension is 4
-  type(domain2d)  ,   intent(in)       :: SG_domain
-  type(domainUG)  ,   intent(in)       :: UG_domain
+  type(domain2d)  ,   intent(in)       :: SG_domain !< Structured domain
+  type(domainUG)  ,   intent(in)       :: UG_domain !< Unstructured domain
   integer :: is, ie, js, je, i, j
   real, allocatable :: SG_lonb(:,:), SG_latb(:,:), tmp(:,:,:)
 
@@ -700,89 +794,80 @@ subroutine get_grid_cell_vertices_UG(component, tile, lonb, latb, SG_domain, UG_
 
 
   deallocate(SG_lonb, SG_latb, tmp)
-
 end subroutine get_grid_cell_vertices_UG
 
-! ============================================================================
-! returns global coordinate arrays fro given model component and mosaic tile number
-! NOTE that in case of non-lat-lon grid those coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
-! ============================================================================
+!> @brief returns grid cell centers given model component and mosaic tile number
 subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
-  character(len=*), intent(in) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: glon(:),glat(:)
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: glon(:),glat(:) !< Grid cell centers
+
   integer                      :: nlon, nlat
   integer                      :: start(4), nread(4)
   real, allocatable            :: tmp(:,:)
-  character(len=MAX_FILE)      :: filename1, filename2
+  character(len=MAX_FILE)      :: tilefile
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glon(:))/=nlon) &
-       call mpp_error (FATAL,  module_name//'/get_grid_cell_centers_1D: Size of argument "glon" is not consistent with the grid size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_centers_1D '//&
+       'Size of argument "glon" is not consistent with the grid size')
   if (size(glat(:))/=nlat) &
-       call mpp_error (FATAL,  module_name//'/get_grid_cell_centers_1D: Size of argument "glat" is not consistent with the grid size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_centers_1D '//&
+       'Size of argument "glat" is not consistent with the grid size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call mpp_error(FATAL, module_name//'/get_grid_cell_centers_1D: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
+     call mpp_error(FATAL, module_name//'/get_grid_cell_centers_1D '//&
+          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
-  select case(get_grid_version())
+  select case(grid_version)
   case(VERSION_0)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(grid_file, 'xt'//lowercase(component(1:1)), glon, no_domain=.true.)
-        call read_data(grid_file, 'yt'//lowercase(component(1:1)), glat, no_domain=.true.)
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), glat)
      case('OCN')
-        call read_data(grid_file, "gridlon_t", glon, no_domain=.true.)
-        call read_data(grid_file, "gridlat_t", glat, no_domain=.true.)
+        call read_data(gridfileobj, "gridlon_t", glon)
+        call read_data(gridfileobj, "gridlat_t", glat)
      end select
   case(VERSION_1)
      select case(trim(component))
      case('ATM','LND')
-        call read_data(grid_file, 'xt'//lowercase(component(1:1)), glon, no_domain=.true.)
-        call read_data(grid_file, 'yt'//lowercase(component(1:1)), glat, no_domain=.true.)
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), glat)
      case('OCN')
-        call read_data(grid_file, "grid_x_T", glon, no_domain=.true.)
-        call read_data(grid_file, "grid_y_T", glat, no_domain=.true.)
+        call read_data(gridfileobj, "grid_x_T", glon)
+        call read_data(gridfileobj, "grid_y_T", glat)
      end select
   case(VERSION_2)
-     ! get the name of the mosaic file for the component
-     call read_data(grid_file, trim(lowercase(component))//'_mosaic_file', filename1)
-     filename1=grid_dir//trim(filename1)
      ! get the name of the grid file for the component and tile
-     call read_data(filename1, 'gridfiles', filename2, level=tile)
-     filename2 = grid_dir//trim(filename2)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
 
      start = 1; nread = 1
      nread(1) = 2*nlon+1; start(2) = 2
      allocate( tmp(2*nlon+1,1) )
-     call read_data(filename2, "x", tmp, start, nread, no_domain=.TRUE.)
+     call read_data(tilefileobj, "x", tmp, corner=start, edge_lengths=nread)
      glon(1:nlon) = tmp(2:2*nlon:2,1)
      deallocate(tmp)
      allocate(tmp(1, 2*nlat+1))
 
      start = 1; nread = 1
      nread(2) = 2*nlat+1; start(1) = 2
-     call read_data(filename2, "y", tmp, start, nread, no_domain=.TRUE.)
+     call read_data(tilefileobj, "y", tmp, corner=start, edge_lengths=nread)
      glat(1:nlat) = tmp(1,2:2*nlat:2)
      deallocate(tmp)
+     call close_file(tilefileobj)
   end select
-
-
 end subroutine get_grid_cell_centers_1D
 
-! ============================================================================
-! returns grid cell centers for specified model component and mosaic tile number
-! ============================================================================
+!> @brief returns grid cell centers given model component and mosaic tile number
 subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
-  character(len=*), intent(in) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: lon(:,:),lat(:,:)
-  type(domain2d), intent(in), optional :: domain
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: lon(:,:),lat(:,:) !< Grid cell centers
+  type(domain2d), intent(in), optional :: domain !< Domain
   ! local vars
-  character(len=MAX_NAME) :: varname
-  character(len=MAX_FILE) :: filename1, filename2
   integer :: nlon, nlat
   integer :: i,j
   real, allocatable :: buffer(:),tmp(:,:)
@@ -790,6 +875,8 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
   integer :: i0,j0 ! offsets for coordinates
   integer :: isg, jsg
   integer :: start(4), nread(4)
+  character(len=MAX_FILE)      :: tilefile
+  type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (present(domain)) then
@@ -798,32 +885,36 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
     is = 1 ; ie = nlon
     js = 1 ; je = nlat
     !--- domain normally should be present
-    call mpp_error (NOTE, module_name//'/get_grid_cell_centers: domain is not present, global data will be read')
+    call mpp_error (NOTE, module_name//'/get_grid_cell_centers '//&
+       'domain is not present, global data will be read')
   endif
   i0 = -is+1; j0 = -js+1
 
   ! verify that lon and lat sizes are consistent with the size of domain
   if (size(lon,1)/=ie-is+1.or.size(lon,2)/=je-js+1) &
-       call mpp_error (FATAL, module_name//'/get_grid_cell_centers: Size of array "lon" is not consistent with the domain size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_centers '//&
+       'Size of array "lon" is not consistent with the domain size')
   if (size(lat,1)/=ie-is+1.or.size(lat,2)/=je-js+1) &
-       call mpp_error (FATAL, module_name//'/get_grid_cell_centers: Size of array "lat" is not consistent with the domain size')
+       call mpp_error (FATAL, module_name//'/get_grid_cell_centers '//&
+       'Size of array "lat" is not consistent with the domain size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices '//&
+          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
-  select case(get_grid_version())
+  select case(grid_version)
   case(VERSION_0)
      select case (trim(component))
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
         ! read coordinates of grid cell vertices
-        call read_data(grid_file, 'xt'//lowercase(component(1:1)), buffer(1:nlon), no_domain=.true.)
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), buffer(1:nlon))
         do j = js,je
         do i = is,ie
            lon(i+i0,j+j0) = buffer(i)
         enddo
         enddo
-        call read_data(grid_file, 'yt'//lowercase(component(1:1)), buffer(1:nlat), no_domain=.true.)
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), buffer(1:nlat))
         do j = js,je
         do i = is,ie
            lat(i+i0,j+j0) = buffer(j)
@@ -831,21 +922,21 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         enddo
         deallocate(buffer)
      case('OCN')
-        call read_data(grid_file, 'geolon_t', lon, no_domain=.not.present(domain), domain=domain )
-        call read_data(grid_file, 'geolat_t', lat, no_domain=.not.present(domain), domain=domain )
+        call read_data(gridfileobj, 'geolon_t', lon)
+        call read_data(gridfileobj, 'geolat_t', lat)
      end select
   case(VERSION_1)
      select case(trim(component))
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
         ! read coordinates of grid cell vertices
-        call read_data(grid_file, 'xt'//lowercase(component(1:1)), buffer(1:nlon), no_domain=.true.)
+        call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), buffer(1:nlon))
         do j = js,je
         do i = is,ie
            lon(i+i0,j+j0) = buffer(i)
         enddo
         enddo
-        call read_data(grid_file, 'yt'//lowercase(component(1:1)), buffer(1:nlat), no_domain=.true.)
+        call read_data(gridfileobj, 'yt'//lowercase(component(1:1)), buffer(1:nlat))
         do j = js,je
         do i = is,ie
            lat(i+i0,j+j0) = buffer(j)
@@ -853,29 +944,27 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         enddo
         deallocate(buffer)
      case('OCN')
-        call read_data(grid_file, 'x_T', lon, no_domain=.not.present(domain), domain=domain )
-        call read_data(grid_file, 'y_T', lat, no_domain=.not.present(domain), domain=domain )
+        call read_data(gridfileobj, 'x_T', lon)
+        call read_data(gridfileobj, 'y_T', lat)
      end select
   case(VERSION_2) ! mosaic grid file
-     ! get the name of the mosaic file for the component
-     call read_data(grid_file, trim(lowercase(component))//'_mosaic_file', filename1)
-     filename1=grid_dir//trim(filename1)
      ! get the name of the grid file for the component and tile
-     call read_data(filename1, 'gridfiles', filename2, level=tile)
-     filename2 = grid_dir//trim(filename2)
+     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+     call open_grid_file(tilefileobj, grid_dir//tilefile)
+
      if(PRESENT(domain)) then
         call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
         start = 1; nread = 1
         start(1) = 2*(is-isg+1) - 1; nread(1) = 2*(ie-is)+3
         start(2) = 2*(js-jsg+1) - 1; nread(2) = 2*(je-js)+3
         allocate(tmp(nread(1), nread(2)))
-        call read_data(filename2, 'x', tmp, start, nread, no_domain=.TRUE.)
+        call read_data(tilefileobj, "x", tmp, corner=start, edge_lengths=nread)
         do j = 1, je-js+1
            do i = 1, ie-is+1
               lon(i,j) = tmp(2*i,2*j)
            enddo
         enddo
-        call read_data(filename2, 'y', tmp, start, nread, no_domain=.TRUE.)
+        call read_data(tilefileobj, "y", tmp, corner=start, edge_lengths=nread)
         do j = 1, je-js+1
            do i = 1, ie-is+1
               lat(i,j) = tmp(2*i,2*j)
@@ -883,13 +972,13 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         enddo
      else
         allocate(tmp(2*nlon+1,2*nlat+1))
-        call read_data(filename2, 'x', tmp, no_domain=.TRUE.)
+        call read_data(tilefileobj, 'x', tmp)
         do j = js,je
            do i = is,ie
               lon(i+i0,j+j0) = tmp(2*i,2*j)
            end do
         end do
-        call read_data(filename2, 'y', tmp, no_domain=.TRUE.)
+        call read_data(tilefileobj, 'y', tmp)
         do j = js,je
            do i = is,ie
               lat(i+i0,j+j0) = tmp(2*i,2*j)
@@ -897,16 +986,18 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         end do
         deallocate(tmp)
      endif
+     call close_file(tilefileobj)
   end select
-
 end subroutine get_grid_cell_centers_2D
 
+!> @brief returns grid cell centers given model component and mosaic tile number
+!! for unstructured domain
 subroutine get_grid_cell_centers_UG(component, tile, lon, lat, SG_domain, UG_domain)
-  character(len=*), intent(in) :: component
-  integer, intent(in) :: tile
-  real, intent(inout) :: lon(:),lat(:)
-  type(domain2d)  ,   intent(in) :: SG_domain
-  type(domainUG)  ,   intent(in) :: UG_domain
+  character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
+  integer, intent(in) :: tile !< Tile number
+  real, intent(inout) :: lon(:),lat(:) !< Grid cell centers
+  type(domain2d)  ,   intent(in) :: SG_domain !< Structured domain
+  type(domainUG)  ,   intent(in) :: UG_domain !< Unstructured domain
   integer :: is, ie, js, je
   real, allocatable :: SG_lon(:,:), SG_lat(:,:)
 
@@ -917,26 +1008,18 @@ subroutine get_grid_cell_centers_UG(component, tile, lon, lat, SG_domain, UG_dom
   call mpp_pass_SG_to_UG(UG_domain, SG_lon, lon)
   call mpp_pass_SG_to_UG(UG_domain, SG_lat, lat)
   deallocate(SG_lon, SG_lat)
-
 end subroutine get_grid_cell_centers_UG
 
-! ============================================================================
-! given a model component, a layout, and (optionally) a halo size, returns a
-! domain for current processor
-! ============================================================================
-! this subroutine probably does not belong in the grid_mod
-subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
-  character(len=*) , intent(in)    :: component
-  type(domain2d)   , intent(inout) :: domain
-  integer          , intent(in)    :: layout(2)
-  integer, optional, intent(in)    :: halo
-  logical, optional, intent(in)    :: maskmap(:,:,:)
-
-  ! ---- local constants
+!> @brief given a model component, a layout, and (optionally) a halo size, returns a
+!! domain for current processor
+subroutine define_cube_mosaic(component, domain, layout, halo, maskmap)
+  character(len=*) , intent(in)    :: component !< Component model (atm, lnd, ocn)
+  type(domain2d)   , intent(inout) :: domain !< Domain
+  integer          , intent(in)    :: layout(2) !< Layout
+  integer, optional, intent(in)    :: halo !< Halo
+  logical, optional, intent(in)    :: maskmap(:,:,:) !< Maskmap
 
   ! ---- local vars
-  character(len=MAX_NAME) :: varname
-  character(len=MAX_FILE) :: mosaic_file
   integer :: ntiles     ! number of tiles
   integer :: ncontacts  ! number of contacts between mosaic tiles
   integer :: n
@@ -968,16 +1051,12 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
      pe_pos      = pe_end(n) + 1
   enddo
 
-  varname=trim(lowercase(component))//'_mosaic_file'
-  call read_data(grid_file,varname,mosaic_file)
-  mosaic_file = grid_dir//mosaic_file
-
   ! get the contact information from mosaic file
-  ncontacts = get_mosaic_ncontacts(mosaic_file)
+  ncontacts = get_mosaic_ncontacts(mosaic_fileobj(get_component_number(trim(component))))
   allocate(tile1(ncontacts),tile2(ncontacts))
   allocate(is1(ncontacts),ie1(ncontacts),js1(ncontacts),je1(ncontacts))
   allocate(is2(ncontacts),ie2(ncontacts),js2(ncontacts),je2(ncontacts))
-  call get_mosaic_contact(mosaic_file, tile1, tile2, &
+  call get_mosaic_contact(mosaic_fileobj(get_component_number(trim(component))), tile1, tile2, &
        is1, ie1, js1, je1, is2, ie2, js2, je2)
 
   ng = 0
@@ -996,7 +1075,6 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   deallocate(tile1,tile2)
   deallocate(is1,ie1,js1,je1)
   deallocate(is2,ie2,js2,je2)
-
 end subroutine define_cube_mosaic
 
-end module grid_mod
+end module grid2_mod

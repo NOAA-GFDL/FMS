@@ -17,29 +17,29 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the constants directory of the FMS
+# This is an automake file for the mosaic directory of the FMS
 # package.
 
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/mosaic
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-# Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libconstants.la
+# Build these uninstalled convenience libraries.
 
-# The convenience library depends on its source.
-libconstants_la_SOURCES = \
-  fmsconstants.F90 \
-  constants.F90
+noinst_LTLIBRARIES = libmosaic2.la
 
-fmsconstants.$(FC_MODEXT): constants_mod.$(FC_MODEXT)
+libmosaic2_la_SOURCES = \
+mosaic2.F90 \
+grid2.F90
+
+# Some mods are dependant on other mods in this dir.
+grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
 
 MODFILES = \
-  constants_mod.$(FC_MODEXT) \
-  fmsconstants.$(FC_MODEXT)
-
+  mosaic2_mod.$(FC_MODEXT) \
+  grid2_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

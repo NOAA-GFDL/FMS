@@ -80,9 +80,9 @@ contains
     cart = "N"
     if (variable_exists(fileobj, axisname)) then
       if (variable_att_exists(fileobj, axisname, "cartesian_axis")) then
-        call get_variable_attribute(fileobj, axisname, "cartesian_axis", cart)
+        call get_variable_attribute(fileobj, axisname, "cartesian_axis", cart(1:1))
       elseif (variable_att_exists(fileobj, axisname, "axis")) then
-        call get_variable_attribute(fileobj, axisname, "axis", cart)
+        call get_variable_attribute(fileobj, axisname, "axis", cart(1:1))
       endif
       axis_cart = uppercase(cart)
       if (axis_cart .eq. 'X' .or. axis_cart .eq. 'Y' .or. axis_cart .eq. 'Z' &
@@ -188,14 +188,7 @@ contains
       if (dim_sizes(1) .ne. n+1) then
         call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
       endif
-      select type (edge_data)
-        type is (real(kind=r4_kind))
-          call read_data(fileobj, buffer, edge_data)
-        type is (real(kind=r8_kind))
-          call read_data(fileobj, buffer, edge_data)
-        class default
-          call mpp_error(FATAL, "axis_edges: unsupported kind.")
-      end select
+      call read_data(fileobj, buffer, edge_data)
     elseif (size(dim_sizes) .eq. 2) then
       if (dim_sizes(1) .ne. 2) then
         call mpp_error(FATAL, "axis_edges: first dimension of edge must be of size 2")

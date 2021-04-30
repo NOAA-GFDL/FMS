@@ -292,6 +292,12 @@ interface gather_data_bc
   module procedure gather_data_bc_3d
 end interface gather_data_bc
 
+!< The interface is needed to accomodate pgi because it can't handle class * and there was no other way around it
+interface is_valid
+  module procedure is_valid_r8
+  module procedure is_valid_r4
+end interface is_valid
+
 contains
 
 !> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
@@ -1728,28 +1734,44 @@ function get_valid(fileobj, variable_name) &
 
 end function get_valid
 
-
-!> @brief Determine if a piece of data is "valid" (in the correct range.)
+!> @brief Determine if a piece of (r4) data is "valid" (in the correct range.)
 !! @return A flag telling if the data element is "valid."
-elemental function is_valid(datum, validobj) &
+elemental function is_valid_r8(datum, validobj) &
   result(valid_data)
 
-  class(*), intent(in) :: datum !< Unpacked data element.
+  real(kind=r8_kind), intent(in) :: datum !< Unpacked data element.
+  type(Valid_t), intent(in) :: validobj !< Valid object.
+  logical :: valid_data
+
+  valid_data = check_if_valid(datum, validobj)
+
+end function is_valid_r8
+
+!> @brief Determine if a piece of (r8) data is "valid" (in the correct range.)
+!! @return A flag telling if the data element is "valid."
+elemental function is_valid_r4(datum, validobj) &
+  result(valid_data)
+
+  real(kind=r4_kind), intent(in) :: datum !< Unpacked data element.
   type(Valid_t), intent(in) :: validobj !< Valid object.
   logical :: valid_data
 
   real(kind=r8_kind) :: rdatum
 
-  select type (datum)
-    type is (integer(kind=i4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r8_kind))
-      rdatum = real(datum, kind=r8_kind)
- !  class default
- !    call error("unsupported type.")
-  end select
+  !< Convert the data to r8 so it can be compared correctly since validobj%*_val are defined as r8
+  rdatum = real(datum, kind=r8_kind)
+  valid_data = check_if_valid(rdatum, validobj)
+
+end function is_valid_r4
+
+!> @brief Determine if a piece of data is "valid" (in the correct range.)
+!! @return A flag telling if the data element is "valid."
+elemental function check_if_valid(rdatum, validobj) &
+  result(valid_data)
+
+  real(kind=r8_kind), intent(in) :: rdatum !< packed data element.
+  type(Valid_t), intent(in) :: validobj !< Valid object.
+  logical :: valid_data
 
   valid_data = .true.
   ! If the variable has a range (open or closed), valid values must be in that
@@ -1774,7 +1796,7 @@ elemental function is_valid(datum, validobj) &
       valid_data = .not. (rdatum .eq. validobj%missing_val .or. rdatum .eq. validobj%fill_val)
     endif
   endif
-end function is_valid
+end function check_if_valid
 
 
 !> @brief Gathers a compressed arrays size and offset for each pe.
@@ -1951,15 +1973,20 @@ function get_variable_missing(fileobj, variable_name) &
   character(len=*), intent(in) :: variable_name
   real(kind=r8_kind) :: variable_missing
 
+  real(kind=r8_kind) :: variable_missing_1d(1) !< Workaround for pgi
+
   if (variable_att_exists(fileobj, variable_name, "_FillValue")) then
-    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing_value")) then
-    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing")) then
-    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing_1d)
   else
-    variable_missing = MPP_FILL_DOUBLE
+    variable_missing_1d = MPP_FILL_DOUBLE
   endif
+
+  variable_missing = variable_missing_1d(1)
+
 end function get_variable_missing
 
 
