@@ -1,3 +1,4 @@
+@file Supported Interfaces
 @ingroup libfms
 # Supported Public Interfaces for FMS
 

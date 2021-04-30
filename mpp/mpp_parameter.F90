@@ -16,6 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_parameter_mod
+!> @ingroup mpp
+!> @brief Parameters values for use in various @ref mpp modules
+!> If needed, these values should be imported from their corresponding mpp module 
+
+!> @file
+!> @brief File for @ref mpp_parameter_mod
+
+!> @addtogroup mpp_parameter_mod
+!> @{
 module mpp_parameter_mod
   use platform_mod
 
@@ -153,3 +163,5 @@ module mpp_parameter_mod
   !#####################################################################
 
 end module mpp_parameter_mod
+!> @}
+! close documentation grouping

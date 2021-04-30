@@ -8,4 +8,4 @@ description page [here](README.md).
 For documentation on the FMS codebase, a top level view of all modules by subdirectory can be
 found in the 'Modules' section in the sidebar, or linked [**here**](modules.html).
 
-All project code and contributing information can be found at <https://github.com/NOAA-GFDL/FMS>
+All project code and contributing information can be found at **<https://github.com/NOAA-GFDL/FMS>**

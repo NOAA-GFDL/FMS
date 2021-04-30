@@ -27,7 +27,6 @@
 
 !> @file
 !> @brief File for @ref astronomy_mod
-!> @ingroup astronomy
 
 !> @addtogroup astronomy_mod
 !> @{

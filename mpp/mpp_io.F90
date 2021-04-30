@@ -24,8 +24,11 @@
 !
 !-----------------------------------------------------------------------
 
-!> @file
-!! @htmlonly  
+!> @defgroup mpp_io_mod 
+!> @ingroup mpp
+!> @brief Routines for parallel I/O on distributed systems. Will be deprecated
+!! in the future for @ref fms2_io
+!> @htmlonly  
 !! <CONTACT EMAIL="vb@gfdl.noaa.gov">
 !!   V. Balaji
 !! </CONTACT>
@@ -313,6 +316,12 @@
 !!
 !! </DESCRIPTION>
 !! @endhtmlonly
+
+!> @file
+!> @brief File for @ref mpp_io_mod
+
+!> @addtogroup mpp_io_mod
+!> @{
 module mpp_io_mod
 
 #define _MAX_FILE_UNITS 1024
@@ -1121,3 +1130,5 @@ contains
 !----------
 
 end module mpp_io_mod
+!> @}
+! close documentation grouping

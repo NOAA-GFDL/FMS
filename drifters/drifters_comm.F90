@@ -20,10 +20,9 @@
 
 !> @defgroup drifters_comm_mod drifters_comm_mod
 !> @ingroup drifters
-!> @brief TODO
+!> @brief Routines and types to update drifter positions across processor domains
 
 !> @file
-!> @ingroup drifters
 !> @brief File for @ref drifters_comm_mod
 
 !> @addtogroup drifters_comm_mod

@@ -44,7 +44,6 @@
 !!   index.
 
 !> @file
-!> @ingroup diag_manager
 !> @brief File for @ref diag_data_mod
 
 !> @addtogroup diag_data_mod

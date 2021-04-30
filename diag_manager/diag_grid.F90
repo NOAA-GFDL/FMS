@@ -36,7 +36,6 @@
 !!   global indexes defining a subregion on the tile.
 
 !> @file
-!> @ingroup diag_manager
 !> @brief File for @ref diag_grid_mod
 
 !> @addtogroup diag_grid_mod

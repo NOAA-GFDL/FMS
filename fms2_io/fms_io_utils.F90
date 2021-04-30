@@ -16,10 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_io_utils_mod fms_io_utils_mod
+!> @addtogroup fms2_io 
+!> @brief Misc. utility routines for use in @ref fms2_io
 
 !> @file
-!! @brief Utility routines.
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref fms_io_utils_mod
+
+!> @addtogroup fms_io_utils_mod
+!> @{
 module fms_io_utils_mod
 use, intrinsic :: iso_fortran_env, only: error_unit
 !use mpp_mod, only : get_ascii_file_num_lines_and_length, read_ascii_file
@@ -852,3 +857,5 @@ include "get_checksum.inc"
 
 
 end module fms_io_utils_mod
+!> @}
+! close documentation grouping

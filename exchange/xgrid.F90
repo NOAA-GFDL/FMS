@@ -74,7 +74,6 @@
 !!             cells are summed in the order they appear in the grid spec. file.
 
 !> @file
-!> @ingroup exchange
 !> @brief File for @ref xgrid_mod
 
 !> @addtogroup xgrid_mod

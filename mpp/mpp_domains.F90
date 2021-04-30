@@ -17,13 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !-----------------------------------------------------------------------
+!> @defgroup mpp_domains_mod
+!> @ingroup mpp
 !> @brief Domain decomposition and domain update for message-passing codes
 !> @author V. Balaji SGI/GFDL Princeton University
-!
-!-----------------------------------------------------------------------
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-! <RCSLOG SRC="http://www.gfdl.noaa.gov/~vb/changes_mpp_domains.html"/>
-!> @detailed mpp_domains_mod is a set of simple calls for domain
+!!
+!>  A set of simple calls for domain
 !!  decomposition and domain updates on rectilinear grids. It requires the
 !!  module mpp.F90, upon which it is built.
 !!  Scalable implementations of finite-difference codes are generally
@@ -85,6 +84,11 @@
 !!           type(domain1D), public :: NULL_DOMAIN1D\n
 !!           type(domain2D), public :: NULL_DOMAIN2D\n
 
+!> @file
+!> @brief File for @ref mpp_domains_mod
+
+!> @addtogroup mpp_domains_mod
+!> @{
 module mpp_domains_mod
 
 #if defined(use_libMPI)
@@ -2188,4 +2192,5 @@ contains
 #include <mpp_unstruct_domain.inc>
 
 end module mpp_domains_mod
-
+!> @}
+! close documentation grouping

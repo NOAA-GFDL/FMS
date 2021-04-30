@@ -21,7 +21,6 @@
 !> @brief fms2_io implementations of grid routines 
 
 !> @file
-!> @ingroup fms2_io
 !> @brief File for @ref fms2_io_mod
 
 !> @addtogroup fms2_io_mod

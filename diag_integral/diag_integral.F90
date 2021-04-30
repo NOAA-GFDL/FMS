@@ -56,7 +56,6 @@
 !!
 
 !> @file
-!> @ingroup diag_integral
 !! @brief File for @ref diag_integral_mod 
 
 !> @addtogroup diag_integral_mod

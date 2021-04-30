@@ -21,7 +21,6 @@
 !! @brief mpp_io implementations of grid routines 
 
 !> @file
-!> @ingroup fms2_io
 !> @brief File for @ref get_grid_version_mpp_mod
 
 !> @addtogroup get_grid_version_mpp_mod

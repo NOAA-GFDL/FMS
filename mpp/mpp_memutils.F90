@@ -16,9 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_memutils_mod
+!> @ingroup mpp
+!> @brief Routines to initialize and report on memory usage during the model run.
 
 !> @file
-!! @brief Routines to initialize and report on memory usage during the model run.
+!> @brief File for mpp_memutils_mod
+
+!> @addtogroup mpp_memutils_mod
+!> @{
 module mpp_memutils_mod
 
   use mpp_mod, only: mpp_min, mpp_max, mpp_sum, mpp_pe, mpp_root_pe
@@ -122,3 +128,5 @@ contains
     return
   end subroutine mpp_mem_dump
 end module mpp_memutils_mod
+!> @}
+! close documentation grouping

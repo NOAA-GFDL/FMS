@@ -22,9 +22,8 @@
 !!   will also setup the arrays required to store the information by counting the number of input fields, output files, and
 !!   files.
 !! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
 !!
-!! @details <TT>diag_table_mod</TT> parses the <TT>diag_table</TT> file, and sets up the required arrays to hold the information
+!! <TT>diag_table_mod</TT> parses the <TT>diag_table</TT> file, and sets up the required arrays to hold the information
 !!   needed for the <TT>diag_manager_mod</TT> to correctly write out the model history files.
 !!
 !!   The <I>diagnostics table</I> allows users to specify sampling rates and the choice of fields at run time.  The
@@ -227,7 +226,6 @@
 !!   A simple utility has been created to help discover
 
 !> @file
-!> @ingroup diag_manager
 !> @brief File for @ref diag_table_mod
 
 !> @addtogroup diag_table_mod

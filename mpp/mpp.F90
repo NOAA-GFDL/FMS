@@ -24,7 +24,8 @@
 !
 !-----------------------------------------------------------------------
 
-!> @file
+!> @defgroup mpp_mod 
+!> @ingroup mpp
 !! @author V. Balaji
 !! @brief a generalized communication package for use with shmem and MPI
 !! @description
@@ -152,6 +153,12 @@
 !!  generic interface. Any of the variables below shown as
 !!  <TT>MPP_TYPE_</TT> is treated in this way.
 !! </PUBLIC>
+
+!> @file
+!> @brief File for @ref mpp_mod
+
+!> @addtogroup
+!> @{
 module mpp_mod
 
 ! Define rank(X) for PGI compiler
@@ -1305,3 +1312,5 @@ private
 #include <mpp_comm.inc>
 
   end module mpp_mod
+!> @}
+! close documentation grouping

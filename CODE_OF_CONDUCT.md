@@ -1,4 +1,3 @@
-@ingroup misc
 # Code of Conduct
 
 ## Our Pledge

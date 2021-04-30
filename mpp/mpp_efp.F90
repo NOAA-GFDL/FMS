@@ -16,8 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> This module provides interfaces to the non-domain-oriented communication
+!> @defgroup mpp_efp_mod
+!> @ingroup mpp
+!> @brief This module provides interfaces to the non-domain-oriented communication
 !! subroutines.
+
+!> @file
+!> @brief file for @ref mpp_efp_mod
+
+!> @addtogroup mpp_efp_mod
+!> @{
 module mpp_efp_mod
 
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE
@@ -679,3 +687,5 @@ subroutine mpp_efp_list_sum_across_PEs(EFPs, nval, errors)
 end subroutine mpp_efp_list_sum_across_PEs
 
 end module mpp_efp_mod
+!> @}
+! close documentation grouping

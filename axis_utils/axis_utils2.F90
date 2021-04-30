@@ -23,7 +23,6 @@
 !> @author M.J. Harrison
 
 !> @file
-!> @ingroup axis_utils
 !> @brief File for @ref axis_utils2_mod
 
 !> @addtogroup axis_utils2_mod

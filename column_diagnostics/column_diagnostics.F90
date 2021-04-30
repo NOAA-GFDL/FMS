@@ -21,7 +21,6 @@
 !! @brief Module to locate and mark desired diagnostic columns
 
 !> @file
-!> @ingroup column_diagnostics
 !> @brief File for @ref column_diagnostics_mod
 
 !> @addtogroup column_diagnostics_mod

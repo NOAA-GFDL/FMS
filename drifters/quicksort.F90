@@ -19,14 +19,10 @@
 #undef _TYP
 #define _TYP integer
 
-!> @defgroup quicksort quicksort
+!> @file
 !> @ingroup drifters
 !> @brief Fortran implementation of quicksort 
 !> @author Magnus Lie Hetland
-
-!> @file
-!> @ingroup drifters
-!> @brief File for @ref quicksort 
 
 !> @addtogroup quicksort 
 !> @{

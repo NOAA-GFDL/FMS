@@ -16,7 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup blackboxio blackboxio
+!> @ingroup fms2_io
+!> @brief File utility functions for use within @ref fms2_io
 
+!> @file
+!> @brief File for @ref blackboxio
+
+!> @addtogroup blackboxio
+!> @{
 module blackboxio
 use netcdf
 use mpp_domains_mod
@@ -664,3 +672,5 @@ end subroutine unstructured_write_restart_wrap
 
 
 end module blackboxio
+!> @}
+! close documentation grouping

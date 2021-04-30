@@ -21,11 +21,10 @@
 
 !> @defgroup drifters_core_mod drifters_core_mod
 !> @ingroup drifters
-!> @brief TODO
+!> @brief Handles the mechanics for adding and removing drifters 
 
 !> @file
-!> @ingroup drifters
-!> @brief File for @re drifters_core_mod
+!> @brief File for @ref drifters_core_mod
 
 !> @addtogroup drifters_core_mod
 !> @{

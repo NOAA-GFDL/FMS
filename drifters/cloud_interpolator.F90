@@ -22,10 +22,9 @@
 
 !> @defgroup cloud_interpolator_mod cloud_interpolator_mod
 !> @ingroup drifters
-!! @brief TODO 
+!! @brief Cloud interpolation routines for use in @ref drifters_mod
 
 !> @file
-!> @ingroup drifters
 !> @brief File for @ref cloud_interpolator_mod
 
 !> @addtogroup cloud_interpolator_mod

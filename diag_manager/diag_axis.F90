@@ -27,7 +27,6 @@
 !!   register_diag_field.
 
 !> @file
-!> @ingroup diag_manager
 !> @brief File for @ref diag_axis_mod
 
 !> @addtogroup diag_axis_mod

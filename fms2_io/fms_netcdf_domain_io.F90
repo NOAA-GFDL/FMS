@@ -16,10 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_netcdf_domain_io_mod fms_netcdf_domain_io_mod
+!> @ingroup fms2_io
+!> @brief Domain-specific I/O wrappers.
 
 !> @file
+!> @brief File for @ref fms_netcdf_domain_io_mod
 
-!> @brief Domain-specific I/O wrappers.
+!> @addtogroup fms_netcdf_domain_io_mod
+!> @{
 module fms_netcdf_domain_io_mod
 use, intrinsic :: iso_fortran_env
 use netcdf
@@ -866,4 +871,5 @@ include "domain_write.inc"
 
 
 end module fms_netcdf_domain_io_mod
-
+!> @}
+! close documentation grouping

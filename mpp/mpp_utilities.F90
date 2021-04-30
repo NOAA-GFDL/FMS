@@ -16,6 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_utilities_mod
+!> @ingroup mpp
+!> @brief Module for utiltity routines to be used in @ref mpp modules
+!> Currently only holds one routine for finding global min and max
+
+!> @file
+!> @brief File for @ref mpp_utilities_mod
+
+!> @addtogroup mpp_utilities_mod
+!> @{
 module mpp_utilities_mod
 
 !-----------------------------------------------------------------------
@@ -153,3 +163,5 @@ end subroutine mpp_array_global_min_max
 
 
 end module mpp_utilities_mod
+!> @}
+! close documentation grouping

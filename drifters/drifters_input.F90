@@ -18,10 +18,9 @@
 !***********************************************************************
 !> @defgroup drifters_input_mod drifters_input_mod
 !> @ingroup drifters
-!> @brief TODO
+!> @brief Imports initial drifter positions from a netCDF file
 
 !> @file
-!> @ingroup drifters
 !> @brief File for @ref drifters_input_mod
 
 !> @addtogroup drifters_input_mod

@@ -16,7 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fm_util_mod fm_util_mod
+!> @ingroup field_manager
+!> @brief This module provides utility routines for the field manager.
+!> Provides for error catching, reporting and
+!! termination while interfacing with the field manager.
 
+!> @file
+!> @brief File for @ref fm_util_mod
+
+!> @addtogroup fm_util_mod
+!> @{
 module fm_util_mod  !{
 !
 !<CONTACT EMAIL="Richard.Slater@noaa.gov"> Richard D. Slater
@@ -30,9 +40,6 @@ module fm_util_mod  !{
 !</OVERVIEW>
 !
 !<DESCRIPTION>
-! This module provides utility routines for the field manager.
-! Basically, it provides for error catching, reporting and
-! termination while interfacing with the field manager.
 !</DESCRIPTION>
 !
 ! <INFO>
@@ -3379,3 +3386,5 @@ end subroutine fm_util_end_namelist  !}
 
 
 end module fm_util_mod  !}
+!> @}
+! close documentation grouping

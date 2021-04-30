@@ -36,7 +36,6 @@
 !! @link http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
 
 !> @file
-!> @ingroup coupler
 !> @brief File for @ref atmos_ocean_fluxes_mod
 
 !> @addtogroup atmos_ocean_fluxes_mod

@@ -42,7 +42,6 @@
 !! data_override will take place, field values outside the region will not be affected.
 
 !> @file
-!> @ingroup data_override
 !> @brief File for @ref data_override_mod
 
 !> @addtogroup

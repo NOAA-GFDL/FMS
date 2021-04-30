@@ -22,7 +22,6 @@
 !> @author William Cooke <William.Cooke@noaa.gov>
 
 !> @file
-!> @ingroup interpolator
 !> File for @ref interpolator_mod
 !
 !> @addtogroup interpolator_mod
@@ -122,7 +121,8 @@ public interpolator_init, &
        read_data
 
 !> @page interpolator interpolator Interface
-!!
+!> @ingroup interpolator_mod
+!> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call interpolator (sulfate, model_time, p_half, model_data, name, is, js, clim_units)
 !! call interpolator (o3, model_time, p_half, model_data, "ozone", is, js)
@@ -180,24 +180,23 @@ interface interpolator
 end interface
 
 !> @page assignment assignment Interface
-!!
-!! @param [in] <In> No description
-!! @param [inout] <Out> No description
+!> Assignment override interface for interpolate type
 interface assignment(=)
    module procedure interpolate_type_eq
 end interface
 
 !> @page interp_weighted_scalar interp_weighted_scalar Interface
 !!
+!! Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_data(ilon,j,:,:))
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
 !! ~~~~~~~~~~
 !!
-!! @param [in] <grdin> No description
-!! @param [in] <grdout> No description
-!! @param [in] <datin> No description
-!! @param [out] <datout> No description
+!! @param [in] <grdin> Input grid 
+!! @param [in] <grdout> Output grid 
+!! @param [in] <datin> Input data 
+!! @param [out] <datout> Output data 
 interface interp_weighted_scalar
    module procedure interp_weighted_scalar_1D
    module procedure interp_weighted_scalar_2D
@@ -348,14 +347,8 @@ namelist /interpolator_nml/    &
 
 contains
 
-!#####################################################################
-!
-!---------------------------------------------------------------------
-!> @brief interpolator_type_eq receives the variable In and Out as
-!!        input and returns Out.
-!!
-!! @param [in] <In> No description
-!! @param [inout] <Out> No description
+!> @brief Assignment overload routine for interpolate_type, to be used
+!! through the assignment interface
 subroutine interpolate_type_eq (Out, In)
 
 type(interpolate_type), intent(in) :: In

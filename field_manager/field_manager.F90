@@ -16,7 +16,144 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup field_manager_mod
+!> @ingroup field_manager
+!> @brief Reads entries from a field table and stores this
+!! information along with the type  of field it belongs to. This allows
+!! the component models to query the field manager to see if  non-default
+!! methods of operation are desired. In essence the field table is a
+!! powerful type of namelist. Default values can be provided for all the
+!! fields through a namelist, individual fields can be modified  through
+!! the field table however.
+!> @author William Cooke
+!> An example of field table entries could be
+!! <PRE>
+!!"tracer","atmos_mod","sphum"/
+!!
+!!"tracer","atmos_mod","sf6"
+!!"longname","sulf_hex"
+!!"advection_scheme_horiz","2nd_order"
+!!"Profile_type","Fixed","surface_value = 0.0E+00"/
+!!
+!!"prog_tracers","ocean_mod","age_global"
+!!horizontal-advection-scheme = mdfl_sweby
+!!vertical-advection-scheme = mdfl_sweby
+!!restart_file = ocean_age.res.nc
+!! </PRE>
+!!
+!! The field table consists of entries in the following format.
+!!
+!! The first line of an entry should consist of three quoted strings.
+!!
+!! The first quoted string will tell the field manager what type of
+!! field it is.
+!!
+!! The second quoted string will tell the field manager which model the
+!! field is being applied to.
+!! The supported types at present are
+!!<PRE>
+!!      "coupler_mod" for the coupler,
+!!      "atmos_mod" for the atmosphere model,
+!!      "ocean_mod" for the ocean model,
+!!      "land_mod" for the land model, and,
+!!      "ice_mod" for the ice model.
+!!</PRE>
+!! The third quoted string should be a unique name that can be used as a
+!! query.
+!!
+!! The second and following lines of each entry are called methods in
+!! this context. Methods can be developed within any module and these
+!! modules can query the field manager to find any methods that are
+!! supplied in the field table.
+!!
+!! These lines can be coded quite flexibly.
+!!
+!! The line can consist of two or three quoted strings or a simple unquoted
+!! string.
+!!
+!! If the line consists two or three quoted strings, then the first string will
+!! be an identifier that the querying module will ask for.
+!!
+!! The second string will be a name that the querying module can use to
+!! set up values for the module.
+!!
+!! The third string, if present, can supply parameters to the calling module that can be
+!! parsed and used to further modify values.
+!!
+!! If the line consists of a simple unquoted string then quotes are not allowed
+!! in any part of the line.
+!!
+!! An entry is ended with a backslash (/) as the final character in a
+!! row.
+!!
+!! Comments can be inserted in the field table by having a # as the
+!! first character in the line.
+!!
+!! In the example above we have three field entries.
+!!
+!! The first is a simple declaration of a tracer called "sphum".
+!!
+!! The second is for a tracer called "sf6". In this case a field named
+!! "longname" will be given the value "sulf_hex". A field named
+!! "advection_scheme_horiz" will be given the value "2nd_order". Finally a field
+!! name "Profile_type" will be given a child field called "Fixed", and that field
+!! will be given a field called "surface_value" with a real value of 0.0E+00.
+!!
+!! The third entry is an example of a oceanic age tracer. Note that the
+!! method lines are formatted differently here. This is the flexibility mentioned
+!! above.
+!!
+!! With these formats, a number of restrictions are required.
+!!
+!! The following formats are equally valid.
+!!<PRE>
+!!      "longname","sulf_hex"
+!!      "longname = sulf_hex"
+!!      longname = sulf_hex
+!!</PRE>
+!! However the following is not valid.
+!!<PRE>
+!!      longname = "sulf_hex"
+!!</PRE>
+!!
+!! In the SF6 example above the last line of the entry could be written in the
+!! following ways.
+!!<PRE>
+!!      "Profile_type","Fixed","surface_value = 0.0E+00"/
+!!      Profile_type/Fixed/surface_value = 0.0E+00/
+!!</PRE>
+!!
+!! Values supplied with fields are converted to the various types with the
+!! following assumptions.
+!!<PRE>
+!! Real values : These values contain a decimal point or are in exponential format.
+!!    These values only support e or E format for exponentials.
+!!    e.g. 10.0, 1e10 and 1E10 are considered to be real numbers.
+!!
+!! Integer values : These values only contain numbers.
+!!    e.g 10 is an integer. 10.0 and 1e10 are not.
+!!
+!! Logical values : These values are supplied as one of the following formats.
+!!    T, .T., TRUE, .TRUE.
+!!    t, .t., true, .true.
+!!    F, .F., FALSE, .FALSE.
+!!    f, .f., false, .false.
+!!    These will be converted to T or F in a dump of the field.
+!!
+!! Character strings : These values are assumed to be strings if a character
+!!    other than an e (or E) is in the value. Numbers can be suppled in the value.
+!!    If the value does not meet the criteria for a real, integer or logical type,
+!!    it is assumed to be a character type.
+!!</PRE>
+!! The entries within the field table can be designed by the individual
+!! authors of code to allow modification of their routines.
+!!
 
+!> @file
+!> @brief File for @ref field_manager_mod
+
+!> @addtogroup field_manager
+!> @{
 module field_manager_mod
 #ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
@@ -41,144 +178,6 @@ module field_manager_mod
 !
 ! <HISTORY
 !  SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/field_manager/field_manager.F90"/>
-
-! <OVERVIEW>
-
-! The field manager reads entries from a field table and stores this
-! information along with the type  of field it belongs to. This allows
-! the component models to query the field manager to see if  non-default
-! methods of operation are desired. In essence the field table is a
-! powerful type of namelist. Default values can be provided for all the
-! fields through a namelist, individual fields can be modified  through
-! the field table however.
-
-!</OVERVIEW>
-
-! <DESCRIPTION>
-!
-! An example of field table entries could be
-! <PRE>
-!"tracer","atmos_mod","sphum"/
-!
-!"tracer","atmos_mod","sf6"
-!"longname","sulf_hex"
-!"advection_scheme_horiz","2nd_order"
-!"Profile_type","Fixed","surface_value = 0.0E+00"/
-!
-!"prog_tracers","ocean_mod","age_global"
-!horizontal-advection-scheme = mdfl_sweby
-!vertical-advection-scheme = mdfl_sweby
-!restart_file = ocean_age.res.nc
-! </PRE>
-!
-! The field table consists of entries in the following format.
-!
-! The first line of an entry should consist of three quoted strings.
-!
-! The first quoted string will tell the field manager what type of
-! field it is.
-!
-! The second quoted string will tell the field manager which model the
-! field is being applied to.
-! The supported types at present are
-!<PRE>
-!      "coupler_mod" for the coupler,
-!      "atmos_mod" for the atmosphere model,
-!      "ocean_mod" for the ocean model,
-!      "land_mod" for the land model, and,
-!      "ice_mod" for the ice model.
-!</PRE>
-! The third quoted string should be a unique name that can be used as a
-! query.
-!
-! The second and following lines of each entry are called methods in
-! this context. Methods can be developed within any module and these
-! modules can query the field manager to find any methods that are
-! supplied in the field table.
-!
-! These lines can be coded quite flexibly.
-!
-! The line can consist of two or three quoted strings or a simple unquoted
-! string.
-!
-! If the line consists two or three quoted strings, then the first string will
-! be an identifier that the querying module will ask for.
-!
-! The second string will be a name that the querying module can use to
-! set up values for the module.
-!
-! The third string, if present, can supply parameters to the calling module that can be
-! parsed and used to further modify values.
-!
-! If the line consists of a simple unquoted string then quotes are not allowed
-! in any part of the line.
-!
-! An entry is ended with a backslash (/) as the final character in a
-! row.
-!
-! Comments can be inserted in the field table by having a # as the
-! first character in the line.
-!
-! In the example above we have three field entries.
-!
-! The first is a simple declaration of a tracer called "sphum".
-!
-! The second is for a tracer called "sf6". In this case a field named
-! "longname" will be given the value "sulf_hex". A field named
-! "advection_scheme_horiz" will be given the value "2nd_order". Finally a field
-! name "Profile_type" will be given a child field called "Fixed", and that field
-! will be given a field called "surface_value" with a real value of 0.0E+00.
-!
-! The third entry is an example of a oceanic age tracer. Note that the
-! method lines are formatted differently here. This is the flexibility mentioned
-! above.
-!
-! With these formats, a number of restrictions are required.
-!
-! The following formats are equally valid.
-!<PRE>
-!      "longname","sulf_hex"
-!      "longname = sulf_hex"
-!      longname = sulf_hex
-!</PRE>
-! However the following is not valid.
-!<PRE>
-!      longname = "sulf_hex"
-!</PRE>
-!
-! In the SF6 example above the last line of the entry could be written in the
-! following ways.
-!<PRE>
-!      "Profile_type","Fixed","surface_value = 0.0E+00"/
-!      Profile_type/Fixed/surface_value = 0.0E+00/
-!</PRE>
-!
-! Values supplied with fields are converted to the various types with the
-! following assumptions.
-!<PRE>
-! Real values : These values contain a decimal point or are in exponential format.
-!    These values only support e or E format for exponentials.
-!    e.g. 10.0, 1e10 and 1E10 are considered to be real numbers.
-!
-! Integer values : These values only contain numbers.
-!    e.g 10 is an integer. 10.0 and 1e10 are not.
-!
-! Logical values : These values are supplied as one of the following formats.
-!    T, .T., TRUE, .TRUE.
-!    t, .t., true, .true.
-!    F, .F., FALSE, .FALSE.
-!    f, .f., false, .false.
-!    These will be converted to T or F in a dump of the field.
-!
-! Character strings : These values are assumed to be strings if a character
-!    other than an e (or E) is in the value. Numbers can be suppled in the value.
-!    If the value does not meet the criteria for a real, integer or logical type,
-!    it is assumed to be a character type.
-!</PRE>
-! The entries within the field table can be designed by the individual
-! authors of code to allow modification of their routines.
-!
-! </DESCRIPTION>
 
 use    mpp_mod, only : mpp_error,   &
                        FATAL,       &
@@ -6327,3 +6326,5 @@ end subroutine  fm_set_verbosity  !}
 ! </SUBROUTINE> NAME="fm_set_verbosity"
 
 end module field_manager_mod
+!> @}
+! close documentation grouping

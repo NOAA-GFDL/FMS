@@ -16,8 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_data_mod
+!> @ingroup mpp
+!> @brief Module to hold public data types and data for use in mpp
+
 !> @file
-!! @brief Module to hold public data types for use in mpp
+!> @brief File for @ref mpp_data_mod
+
+!> @addtogroup mpp_data_mod
+!> @{
 module mpp_data_mod
 
 #if defined(use_libMPI)
@@ -54,3 +61,5 @@ module mpp_data_mod
 #endif
 
 end module mpp_data_mod
+!> @}
+! close documentation grouping

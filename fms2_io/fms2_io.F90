@@ -16,10 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms2_io_mod fms2_io_mod
+!> @ingroup fms2_io
+!> @brief Public API for fms2 I/O.
 
 !> @file
-!! @brief Public API for fms I/O.
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref fms2_io_mod
+
+!> @addtogroup fms2_io_mod
+!> @{
 module fms2_io_mod
 use fms_io_utils_mod
 use netcdf_io_mod
@@ -263,3 +268,5 @@ subroutine fms2_io_init ()
 end subroutine fms2_io_init
 
 end module fms2_io_mod
+!> @}
+! close documentation grouping

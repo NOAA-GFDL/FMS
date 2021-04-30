@@ -16,7 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
+!> @defgroup fms_netcdf_unstructured_domain_io_mod fms_netcdf_unstructured_domain_io_mod
+!> @ingroup fms2_io
+!> @brief Routines for 
 !> @file
 !! @email gfdl.climate.model.info@noaa.gov
 module fms_netcdf_unstructured_domain_io_mod
