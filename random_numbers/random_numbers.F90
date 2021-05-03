@@ -16,14 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup random_numbers_mod random_numbers_mod
+!> @ingroup random_numbers
+!> @brief Generic module to wrap random number generators.
+!> The module defines a type that identifies the particular stream of random
+!  numbers, and has procedures for initializing it and getting real numbers
+!  in the range 0 to 1.
+!  This version uses the Mersenne Twister to generate random numbers on [0, 1].
 
+!> @file
+!> @brief File for @ref random_numbers_mod
+
+!> @addtogroup random_numbers_mod
+!> @{
 module random_numbers_mod
-  ! Generic module to wrap random number generators.
-  !   The module defines a type that identifies the particular stream of random
-  !   numbers, and has procedures for initializing it and getting real numbers
-  !   in the range 0 to 1.
-  ! This version uses the Mersenne Twister to generate random numbers on [0, 1].
-  !
+
   use MersenneTwister_mod, only: randomNumberSequence, & ! The random number engine.
                                  new_RandomNumberSequence, getRandomReal
   use time_manager_mod, only: time_type, get_date
@@ -121,3 +128,5 @@ contains
     if(present(perm)) seed = ishftc(seed, perm)
   end function constructSeed
 end module random_numbers_mod
+!> @}
+! close documentation grouping

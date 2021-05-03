@@ -16,33 +16,30 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup topography_mod topography_mod
+!> @ingroup topography
+!> @brief Routines for creating land surface topography fields and land-water masks
+!! for latitude-longitude grids.
+!> @author Bruce Wyman
+!> This module generates realistic mountains and land-water masks
+!! on a specified latitude-longitude grid by interpolating from the
+!! 1/6 degree Navy mean topography and percent water data sets.
+!! The fields that can be generated are mean and standard deviation
+!! of topography within the specified grid boxes; and land-ocean (or
+!! water) mask and land-ocean (or water) fractional area.
+!!
+!! The interpolation scheme conserves the area-weighted average
+!! of the input data by using module horiz_interp.
+!!
+!! The interfaces get_gaussian_topog and gaussian_topog_init are documented 
+!! in @ref gaussian_topog_mod
 
+!> @file
+!> @brief File for @ref topography_mod
+
+!> @addtogroup topography_mod
+!> @{
 module topography_mod
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Routines for creating land surface topography fields and land-water masks
-!   for latitude-longitude grids.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   This module generates realistic mountains and land-water masks
-!   on a specified latitude-longitude grid by interpolating from the
-!   1/6 degree Navy mean topography and percent water data sets.
-!   The fields that can be generated are mean and standard deviation
-!   of topography within the specified grid boxes; and land-ocean (or
-!   water) mask and land-ocean (or water) fractional area.
-!
-!   The interpolation scheme conserves the area-weighted average
-!   of the input data by using module horiz_interp.
-!
-!   The interfaces get_gaussian_topog and gaussian_topog_init are documented in <LINK SRC="gaussian_topog.html">gaussian_topog_mod</LINK>.
-! </DESCRIPTION>
 
 use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
 use   horiz_interp_mod, only: horiz_interp_type, horiz_interp_new, &
@@ -1243,3 +1240,5 @@ end module topography_mod
 !   <FUTURE>Incorporate other topography and ocean data sets. </FUTURE>
 !
 ! </INFO>
+!> @}
+! close documentation grouping

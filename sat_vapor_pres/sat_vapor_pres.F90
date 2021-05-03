@@ -16,43 +16,43 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup sat_vapor_pres_mod sat_vapor_pres_mod
+!> @ingroup 
+!> @brief Routines for computing the saturation vapor pressure (es),
+!! the specific humidity (qs) and vapor mixing ratio (mrs) 
+!> Given a specified relative humidity, calculates es, qs, and mrs, as well as their 
+!! derivatives with respect to temperature, and also includes routines
+!! to initialize the look-up table.
+!! 
+!! Example Usage:
+!!
+!!              call lookup_es  (temp, es, err_msg)
+!!
+!!              call lookup_des (temp, des, err_msg)
+!!
+!!              call lookup_es_des (temp, es, des, err_msg)
+!!
+!!              call lookup_es2 (temp, es, err_msg)
+!!
+!!              call lookup_des2 (temp, des, err_msg)
+!!
+!!              call lookup_es2_des2 (temp, es, des, err_msg)
+!!
+!!              call compute_qs (temp, press, qs, q, hc, dqsdT, esat,
+!!                               err_msg, es_over_liq)
+!!
+!!              call compute_mrs (temp, press, mrs, mr, hc, dmrsdT, esat,
+!!                                err_msg, es_over_liq)
 
+!> @file
+!> @brief File for @ref sat_vapor_pres_mod
+
+!> @addtogroup sat_vapor_pres_mod
+!> @{
 module sat_vapor_pres_mod
 
 !-----------------------------------------------------------------------
 !
-!                 saturation vapor pressure lookup
-!                 saturation vapor specific humidity calculation
-!                 saturation vapor mixing ratio calculation
-!
-!      routines for computing the saturation vapor pressure (es),
-!      the specific humidity (qs) and vapor mixing ratio (mrs) at
-!      a specified relative humidity, the derivatives of es, qs and mrs
-!      with respect to temperature, and initialization of the
-!      look-up table.
-!
-!-----------------------------------------------------------------------
-!
-!                               usage
-!                               -----
-!
-!              call lookup_es  (temp, es, err_msg)
-!
-!              call lookup_des (temp, des, err_msg)
-!
-!              call lookup_es_des (temp, es, des, err_msg)
-!
-!              call lookup_es2 (temp, es, err_msg)
-!
-!              call lookup_des2 (temp, des, err_msg)
-!
-!              call lookup_es2_des2 (temp, es, des, err_msg)
-!
-!              call compute_qs (temp, press, qs, q, hc, dqsdT, esat,
-!                               err_msg, es_over_liq)
-!
-!              call compute_mrs (temp, press, mrs, mr, hc, dmrsdT, esat,
-!                                err_msg, es_over_liq)
 !
 !    arguments
 !    ---------
@@ -2662,3 +2662,5 @@ end module sat_vapor_pres_mod
 !</PRE>
 !   </TESTPROGRAM>
 ! </INFO>
+!> @}
+! close documentation grouping

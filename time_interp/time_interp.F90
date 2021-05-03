@@ -16,32 +16,22 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup time_interp_mod time_interp_mod
+!> @ingroup time_interp
+!> @brief Computes a weight and dates/indices for linearly interpolating between two dates.
+!> @author Bruce Wyman
+!> A time type is converted into two consecutive dates plus
+!! a fraction representing the distance between the dates.
+!! This information can be used to interpolate between the dates.
+!! The dates may be expressed as years, months, or days or
+!! as indices in an array.
 
+!> @file
+!> @brief File for @ref time_interp_mod
+
+!> @addtogroup time_interp_mod
+!> @{
 module time_interp_mod
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Computes a weight and dates/indices for linearly interpolating between two dates.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     A time type is converted into two consecutive dates plus
-!     a fraction representing the distance between the dates.
-!     This information can be used to interpolate between the dates.
-!     The dates may be expressed as years, months, or days or
-!     as indices in an array.
-! </DESCRIPTION>
-
-! <PUBLIC>
-!   Description summarizing public interface.
-! </PUBLIC>
-
-!-----------------------------------------------------------------------
 
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             days_in_year, days_in_month, leap_year,  &
@@ -936,3 +926,5 @@ end module time_interp_mod
 !   </NOTE>
 
 ! </INFO>
+!> @}
+! close documentation grouping

@@ -16,24 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mosaic_mod mosaic_mod
+!> @ingroup mosaic
+!> @brief Implements some utility routines to read mosaic information.
+!> @author Zhi Liang
+!> Implements some utility routines to read mosaic information.
+!!    The information includes number of tiles and contacts in the mosaic,
+!!    mosaic grid resolution of each tile, mosaic contact information, mosaic exchange
+!!    grid information. Each routine will call a C-version routine to get these information.
+
+!> @file
+!> @brief File for @ref mosaic_mod
+
+!> @addtogroup mosaic_mod
+!> @{
 module mosaic_mod
-
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-!   Zhi Liang
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!    <TT>mosaic_mod</TT> implements some utility routines to read mosaic information.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!    <TT>mosaic_mod</TT> implements some utility routines to read mosaic information.
-!    The information includes number of tiles and contacts in the mosaic,
-!    mosaic grid resolution of each tile, mosaic contact information, mosaic exchange
-!    grid information. Each routine will call a C-version routine to get these information.
-! </DESCRIPTION>
 
 use fms_mod,    only : write_version_number
 use mpp_mod,    only : mpp_error, FATAL, mpp_pe, mpp_root_pe
@@ -642,3 +639,5 @@ end function transfer_to_model_index
 end module mosaic_mod
 
 
+!> @}
+! close documentation grouping

@@ -16,26 +16,22 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup gaussian_topog_mod gaussian_topog_mod
+!> @ingroup topography 
+!> @brief Routines for creating Gaussian-shaped land surface topography
+!! for latitude-longitude grids.
+!> @author Bruce Wyman
+!> Interfaces generate simple Gaussian-shaped mountains from
+!! parameters specified by either argument list or namelist input.
+!! The mountain shapes are controlled by the height, half-width,
+!! and ridge-width parameters.
 
+!> @file
+!> @brief File for @ref gaussian_topog_mod
+
+!> @addtogroup gaussian_topog_mod
+!> @{
 module gaussian_topog_mod
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Routines for creating Gaussian-shaped land surface topography
-!   for latitude-longitude grids.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   Interfaces generate simple Gaussian-shaped mountains from
-!   parameters specified by either argument list or namelist input.
-!   The mountain shapes are controlled by the height, half-width,
-!   and ridge-width parameters.
-! </DESCRIPTION>
 
 use  fms_mod, only: check_nml_error,                 &
                     stdlog, write_version_number,    &
@@ -318,3 +314,5 @@ end module gaussian_topog_mod
 !See the <LINK SRC="topography.html#TEST PROGRAM">topography </LINK>module documentation for a test program.
 !   </NOTE>
 ! </INFO>
+!> @}
+! close documentation grouping

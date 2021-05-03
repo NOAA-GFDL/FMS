@@ -16,14 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup fms_mod fms_mod
+!> @ingroup fms
 !! @brief The fms module provides routines that are commonly used
 !!   by most FMS modules.
-!! @author Bruce Wyman
-!! @email gfdl.climate.model.info@noaa.gov
-!!
-!! Here is a summary of the functions performed by routines
+!> @author Bruce Wyman
+!> Here is a summary of the functions performed by routines
 !!     in the fms module.
 !!
 !!   1. Output module version numbers to a common (<TT>log</TT>) file
@@ -39,37 +37,13 @@
 !!    4. For convenience there are several routines published from
 !!     the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">mpp</LINK> module. These are routines for getting processor
 !!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
+
+!> @file
+!> @brief File for @ref fms_mod
+
+!> @addtogroup fms_mod
+!> @{
 module fms_mod
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   The fms module provides routines that are commonly used
-!   by most FMS modules.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   Here is a summary of the functions performed by routines
-!     in the fms module.
-!
-!   1. Output module version numbers to a common (<TT>log</TT>) file
-!     using a common format.<BR/>
-!   2. Open specific types of files common to many FMS modules.
-!     These include namelist files, restart files, and 32-bit IEEE
-!     data files. There also is a matching interface to close the files.
-!     If other file types are needed the <TT>mpp_open</TT> and <TT>mpp_close</TT>
-!     interfaces in module <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html">mpp_io</LINK> must be used.<BR/>
-!    3. Read and write distributed data to simple native unformatted files.
-!     This type of file (called a restart file) is used to checkpoint
-!     model integrations for a subsequent restart of the run.<BR/>
-!    4. For convenience there are several routines published from
-!     the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">mpp</LINK> module. These are routines for getting processor
-!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
-! </DESCRIPTION>
 
 !-----------------------------------------------------------------------
 !
@@ -1095,3 +1069,5 @@ end module fms_mod
 !     ii.I/O utilities (FMS_IO_MOD)
 !    </FUTURE>
 ! </INFO>
+!> @}
+! close documentation grouping

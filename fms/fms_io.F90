@@ -16,91 +16,78 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_io_mod fms_io_mod
+!> @ingroup fms
+!> @brief Module for writing and reading restart data via NetCDF files
+!> @author M.J. Harrison, Zhi Liang
+!> This module is for writing and reading restart data in NetCDF format.
+!! fms_io_init must be called before the first write_data/read_data call
+!! For writing, fms_io_exit must be called after ALL write calls have
+!! been made. Typically, fms_io_init and fms_io_exit are placed in the
+!! main (driver) program while read_data and write_data can be called where needed.
+!! Presently, two combinations of threading and fileset are supported, users can choose
+!! one line of the following by setting namelist:
+!!
+!! With the introduction of netCDF restart files, there is a need for a global
+!! switch to turn on/off netCDF restart options in all of the modules that deal with
+!! restart files. Here two more namelist variables (logical type) are introduced to fms_io
+!!
+!! fms_netcdf_override
+!! fms_netcdf_restart
+!!
+!! because default values of both flags are .true., the default behavior of the entire model is
+!! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
+!! <NAMELIST NAME="fms_io_nml">
+!! <DATA NAME="threading_read" TYPE="character">
+!! threading_read can be 'single' or 'multi'
+!! </DATA>
+!! <DATA NAME="fms_netcdf_override" TYPE="logical">
+!!   .true. : fms_netcdf_restart overrides individual do_netcdf_restart value (default behavior)
+!!   .false.: individual module settings has a precedence over the global setting, therefore fms_netcdf_restart is ignored
+!! </DATA>
+!! <DATA NAME="fms_netcdf_restart" TYPE="logical">
+!!   .true. : all modules deal with restart files will operate under netCDF mode (default behavior)
+!!   .false.: all modules deal with restart files will operate under binary mode
+!!   This flag is effective only when fms_netcdf_override is .true. When fms_netcdf_override is .false., individual
+!!   module setting takes over.
+!! </DATA>
+!! <DATA NAME="time_stamped_restart" TYPE="logical">
+!!   .true. : time_stamp will be added to the restart file name as a prefix when
+!!            optional argument time_stamp is passed into routine save_restart.
+!!   .false.: time_stmp will not be added to the restart file name even though
+!!            time_stamp is passed into save_restart.
+!!    default is true.
+!! </DATA>
+!! <DATA NAME="print_chksum" TYPE="logical">
+!!    set print_chksum (default is false) to true to print out chksum of fields that are
+!!    read and written through save_restart/restore_state. The chksum is accross all the
+!!    processors, so there will be only one chksum even there are multiple-tiles in the
+!!    grid. For the multiple case, the filename appeared in the message will contain
+!!    tile1 because the message is print out from root pe and on root pe the tile id is tile1.
+!! </DATA>
+!! <DATA NAME="debug_mask_list" TYPE="logical">
+!!    set debug_mask_list (default is false) to true to print out mask_list reading from mask_table.
+!! </DATA>
+!! <DATA NAME="checksum_required" TYPE="logical">
+!!    Set checksum_required (default is true) to true to compare checksums stored in the attribute of a
+!!    field against the checksum after reading in the data. This check mitigates the possibility of data
+!!    that gets corrupted on write or read from being used in a n ongoing fashion. The checksum is across
+!!    all the  processors, so there will be only one checksum even if there are multiple-tiles in the
+!!    grid. For the decomposed file case, the filename appearing in the message will contain tile1
+!!    because the message is printed out from the root pe and on root pe the tile id is tile1.
+!!
+!!    Set checksum_required to false if you do not want to compare checksums.
+!! </DATA>
+!!</NAMELIST>
 
+!> @file
+!> @brief File for @ref fms_io_mod
+
+!> @addtogroup fms_io_mod
+!> @{
 module fms_io_mod
+
 #include <fms_platform.h>
-
-!
-!
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-! Zhi Liang
-! </CONTACT>
-
-! <CONTACT EMAIL="Matthew.Harrison@noaa.gov">
-! M.J. Harrison
-! </CONTACT>
-!
-! <REVIEWER EMAIL="Matthew.Harrison@noaa.gov">
-! M.J. Harrison
-! </REVIEWER>
-
-! <REVIEWER EMAIL="Bruce.Wyman@noaa.gov">
-! B. Wyman
-! </REVIEWER>
-
-!<DESCRIPTION>
-! This module is for writing and reading restart data in NetCDF format.
-! fms_io_init must be called before the first write_data/read_data call
-! For writing, fms_io_exit must be called after ALL write calls have
-! been made. Typically, fms_io_init and fms_io_exit are placed in the
-! main (driver) program while read_data and write_data can be called where needed.
-! Presently, two combinations of threading and fileset are supported, users can choose
-! one line of the following by setting namelist:
-!
-! With the introduction of netCDF restart files, there is a need for a global
-! switch to turn on/off netCDF restart options in all of the modules that deal with
-! restart files. Here two more namelist variables (logical type) are introduced to fms_io
-!
-! fms_netcdf_override
-! fms_netcdf_restart
-!
-! because default values of both flags are .true., the default behavior of the entire model is
-! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
-!
-!</DESCRIPTION>
-! <NAMELIST NAME="fms_io_nml">
-! <DATA NAME="threading_read" TYPE="character">
-! threading_read can be 'single' or 'multi'
-! </DATA>
-! <DATA NAME="fms_netcdf_override" TYPE="logical">
-!   .true. : fms_netcdf_restart overrides individual do_netcdf_restart value (default behavior)
-!   .false.: individual module settings has a precedence over the global setting, therefore fms_netcdf_restart is ignored
-! </DATA>
-! <DATA NAME="fms_netcdf_restart" TYPE="logical">
-!   .true. : all modules deal with restart files will operate under netCDF mode (default behavior)
-!   .false.: all modules deal with restart files will operate under binary mode
-!   This flag is effective only when fms_netcdf_override is .true. When fms_netcdf_override is .false., individual
-!   module setting takes over.
-! </DATA>
-! <DATA NAME="time_stamped_restart" TYPE="logical">
-!   .true. : time_stamp will be added to the restart file name as a prefix when
-!            optional argument time_stamp is passed into routine save_restart.
-!   .false.: time_stmp will not be added to the restart file name even though
-!            time_stamp is passed into save_restart.
-!    default is true.
-! </DATA>
-! <DATA NAME="print_chksum" TYPE="logical">
-!    set print_chksum (default is false) to true to print out chksum of fields that are
-!    read and written through save_restart/restore_state. The chksum is accross all the
-!    processors, so there will be only one chksum even there are multiple-tiles in the
-!    grid. For the multiple case, the filename appeared in the message will contain
-!    tile1 because the message is print out from root pe and on root pe the tile id is tile1.
-! </DATA>
-! <DATA NAME="debug_mask_list" TYPE="logical">
-!    set debug_mask_list (default is false) to true to print out mask_list reading from mask_table.
-! </DATA>
-! <DATA NAME="checksum_required" TYPE="logical">
-!    Set checksum_required (default is true) to true to compare checksums stored in the attribute of a
-!    field against the checksum after reading in the data. This check mitigates the possibility of data
-!    that gets corrupted on write or read from being used in a n ongoing fashion. The checksum is across
-!    all the  processors, so there will be only one checksum even if there are multiple-tiles in the
-!    grid. For the decomposed file case, the filename appearing in the message will contain tile1
-!    because the message is printed out from the root pe and on root pe the tile id is tile1.
-!
-!    Set checksum_required to false if you do not want to compare checksums.
-! </DATA>
-
-!</NAMELIST>
 
 use mpp_io_mod,      only: mpp_open, mpp_close, mpp_io_init, mpp_io_exit, mpp_read, mpp_write
 use mpp_io_mod,      only: mpp_write_meta, mpp_get_info, mpp_get_atts, mpp_get_fields
@@ -8677,3 +8664,5 @@ end subroutine write_version_number
 !----------
 
 end module fms_io_mod
+!> @}
+! close documentation grouping

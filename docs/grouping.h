@@ -130,3 +130,10 @@
 /** @defgroup libfms FMS Global Module
  *
  */
+
+/** @page build Building and Installation
+ *  @brief Information about the build systems and how to build and install
+ *  @subpage build Building with Autotools 
+ *  @subpage cmake Building with CMake
+ *  @subpage install libFMS Installation
+ */

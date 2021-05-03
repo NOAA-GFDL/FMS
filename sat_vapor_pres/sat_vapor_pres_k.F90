@@ -16,7 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup sat_vapor_pres_k_mod sat_vapor_pres_k_mod
+!> @ingroup sat_vapor_pres
+!> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
+!! table lookups and calculations
 
+!> @file
+!> @brief File for @ref sat_vapor_pres_k_mod
+
+!> @addtogroup sat_vapor_pres_k_mod
+!> @{
  module sat_vapor_pres_k_mod
 
 ! This module is what I (pjp) think a kernel should be.
@@ -1999,3 +2008,5 @@
  end subroutine lookup_es3_k_0d
 !#######################################################################
  end module sat_vapor_pres_k_mod
+!> @}
+! close documentation grouping

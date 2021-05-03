@@ -16,50 +16,33 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup tracer_manager_mod tracer_manager_mod
+!> @ingroup tracer_manager 
+!> @brief Code to manage the simple addition of tracers to the FMS code.
+!! This code keeps track of the numbers and names of tracers included
+!! in a tracer table.
+!> @author William Cooke
+!> This code is a grouping of calls which will allow the simple
+!! introduction of tracers into the FMS framework. It is designed to
+!! allow users of a variety of component models interact easily with
+!! the dynamical core of the model.
+!!
+!! In calling the tracer manager routines the user must provide a
+!! parameter identifying the model that the user is working with. This
+!! parameter is defined within field_manager as MODEL_X
+!! where X is one of [ATMOS, OCEAN, LAND, ICE].
+!!
+!! In many of these calls the argument list includes model and tracer_index. These
+!! are the parameter corresponding to the component model and the tracer_index N is
+!! the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5
+!! is different from a call with MODEL_OCEAN and 5.
 
+!> @file
+!> @brief File for @ref tracer_manager_mod
+
+!> @addtogroup tracer_manager_mod
+!> @{
 module tracer_manager_mod
-! <CONTACT EMAIL="William.Cooke@noaa.gov">
-!   William Cooke
-! </CONTACT>
-
-! <REVIEWER EMAIL="Matthew.Harrison@noaa.gov">
-!   Matt Harrison
-! </REVIEWER>
-
-! <REVIEWER EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </REVIEWER>
-
-! <REVIEWER EMAIL="Peter.Phillipps@noaa.gov">
-!   Peter Phillipps
-! </REVIEWER>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Code to manage the simple addition of tracers to the FMS code.
-!     This code keeps track of the numbers and names of tracers included
-!     in a tracer table.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     This code is a grouping of calls which will allow the simple
-!     introduction of tracers into the FMS framework. It is designed to
-!     allow users of a variety of component models interact easily with
-!     the dynamical core of the model.
-!
-!     In calling the tracer manager routines the user must provide a
-!     parameter identifying the model that the user is working with. This
-!     parameter is defined within field_manager as MODEL_X
-!     where X is one of [ATMOS, OCEAN, LAND, ICE].
-!
-!     In many of these calls the argument list includes model and tracer_index. These
-!     are the parameter corresponding to the component model and the tracer_index N is
-!     the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5
-!     is different from a call with MODEL_OCEAN and 5.
-!
-! </DESCRIPTION>
-
 
 !----------------------------------------------------------------------
 
@@ -1579,3 +1562,5 @@ endif
 end function error_handler
 
 end module tracer_manager_mod
+!> @}
+! close documentation grouping

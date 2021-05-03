@@ -16,15 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-module get_cal_time_mod
+!> @defgroup get_cal_time_mod get_cal_time_mod
+!> @ingroup time_manager  
+!> @brief Given a time increment as a real number, and base time and calendar
+!!  as a character strings, returns time as a time_type variable.
 
-!   <CONTACT EMAIL="fms@gfdl.noaa.gov">
-!     fms
-!   </CONTACT>
-!   <OVERVIEW>
-!      Given a time increment as a real number, and base time and calendar
-!      as a character strings, returns time as a time_type variable.
-!   </OVERVIEW>
+!> @file
+!> @brief File for @ref get_cal_time_mod
+
+!> @addtogroup get_cal_time_mod
+!> @{
+module get_cal_time_mod
 
 use          fms_mod, only: error_mesg, FATAL, write_version_number, lowercase, &
                             open_namelist_file, check_nml_error, stdlog, close_file, &
@@ -381,3 +383,5 @@ return
 end function cut0
 !------------------------------------------------------------------------
 end module get_cal_time_mod
+!> @}
+! close documentation grouping

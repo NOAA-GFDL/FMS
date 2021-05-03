@@ -16,15 +16,12 @@
 !! You should have received a copy of the GNU Lesser General Public
 !! License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup memutils_mod mem 
-!! \brief Module to expose the memory printing API
-!! \author V. Balaji
-!! \email gfdl.climate.model.info@noaa.gov
+!> @defgroup memutils_mod memutils_mod
+!> @ingroup  
+!! @brief Module to expose the memory printing API
+!! @author V. Balaji
 !!
-!! \section LICENSE
-!!
-!!
-!! \section DESCRIPTION
+!! @section DESCRIPTION
 !!
 !! Module to expose the memory printing API
 !!
@@ -47,7 +44,7 @@ module memutils_mod
 
 contains
 
-  !> \brief Initialize the memutils module
+  !> @brief Initialize the memutils module
   !!
   !! memutils_init initializes the print_memory_usage and memutils_initialized
   !! module variables when called.  This configures if print_memuse_stats() should
@@ -61,7 +58,7 @@ contains
     return
   end subroutine memutils_init
 
-!> \brief Print memory usage stats to stdout, or a particular file
+!> @brief Print memory usage stats to stdout, or a particular file
 !!
 !! API to allow external user code to print memory statistics to stderr, or an
 !! optional file (Fortran file unit).  The module variable `print_memory_usage`

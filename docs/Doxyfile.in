@@ -839,7 +839,7 @@ RECURSIVE              = YES
 # run.
 
 # leave contributing info on github, keep build instructions and readme
-EXCLUDE                = CHANGELOG.md LICENSE.md CONTRIBUTING.md CODE_STYLE.md
+EXCLUDE                = CHANGELOG.md LICENSE.md CONTRIBUTING.md CODE_STYLE.md CODE_OF_CONDUCT.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

@@ -16,29 +16,25 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup time_interp_external2_mod time_interp_external2_mod
+!> @ingroup time_interp
+!> @brief Perform I/O and time interpolation of external fields (contained in a file).
+!> @author M.J. Harrison
+!> Perform I/O and time interpolation for external fields.
+!! Uses udunits library to calculate calendar dates and
+!! convert units.  Allows for reading data decomposed across
+!! model horizontal grid using optional domain2d argument
+!!
+!! data are defined over data domain for domain2d data
+!! (halo values are NOT updated by this module)
 
+!> @file
+!> @brief File for @ref time_interp_external2_mod
 
+!> @addtogroup time_interp_external2_mod
+!> @{
 module time_interp_external2_mod
-!
-!<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
-!
-!<REVIEWER EMAIL="hsimmons@iarc.uaf.edu">Harper Simmons</REVIEWER>
-!
-!<OVERVIEW>
-! Perform I/O and time interpolation of external fields (contained in a file).
-!</OVERVIEW>
 
-!<DESCRIPTION>
-! Perform I/O and time interpolation for external fields.
-! Uses udunits library to calculate calendar dates and
-! convert units.  Allows for reading data decomposed across
-! model horizontal grid using optional domain2d argument
-!
-! data are defined over data domain for domain2d data
-! (halo values are NOT updated by this module)
-!
-!</DESCRIPTION>
-!
 !<NAMELIST NAME="time_interp_external_nml">
 ! <DATA NAME="num_io_buffers" TYPE="integer">
 ! size of record dimension for internal buffer.  This is useful for tuning i/o performance
@@ -1370,3 +1366,5 @@ end subroutine
 !</SUBROUTINE> NAME="time_interp_external_exit"
 
 end module time_interp_external2_mod
+!> @}
+! close documentation grouping

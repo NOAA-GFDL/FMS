@@ -16,59 +16,50 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup tridiagonal_mod tridiagonal_mod
+!> @ingroup tridiagonal 
+!> @brief Solves the tridiagonal system of equations.
+!> The following schematic represents the system of equations solved,
+!! where X is the solution.
+!! <PRE>
+!!     | B(1)  A(1)   0     0                .......            0    |  |X(1)|   |D(1)|
+!!     | C(2)  B(2)  A(2)   0                .......            0    |  |X(2)|   |D(2)|
+!!     |  0    C(3)  B(3)  A(3)  0           .......            0    |  | .. |   | .. |
+!!     |  ..........................................                 |  | .. | = | .. |
+!!     |  ..........................................                 |  | .. |   | .. |
+!!     |                                  C(N-2) B(N-2) A(N-2)  0    |  | .. |   | .. |
+!!     |                                    0    C(N-1) B(N-1) A(N-1)|  | .. |   | .. |
+!!     |                                    0      0    C(N)   B(N)  |  |X(N)|   |D(N)|
+!!
+!! </PRE>
+!!  To solve this system
+!! <PRE>
+!!   call tri_invert(X,D,A,B,C)
+!!
+!!       real, intent(out), dimension(:,:,:) :: X
+!!       real, intent(in),  dimension(:,:,:) :: D
+!!       real, optional,    dimension(:,:,:) :: A,B,C
+!! </PRE>
+!! For simplicity (?), A and C are assumed to be dimensioned the same size
+!! as B, D, and X, although any input values for A(N) and C(1) are ignored.
+!! (some checks are needed here)
+!!
+!! If A is not present, it is assumed that the matrix (A,B.C) has not been changed
+!! since the last call to tri_invert.
+!!
+!! To release memory,
+!! <PRE>
+!!    call close_tridiagonal
+!! </PRE>
+!! The following module variables are used to retain the relevant information
+!! if one recalls tri_invert without changing (A,B,C)
 
+!> @file
+!> @brief File for @ref tridiagonal_mod
+
+!> @addtogroup tridiagonal_mod
+!> @{
 module tridiagonal_mod
-
-! <CONTACT EMAIL="Isaac.Held@noaa.gov">
-!    Isaac Held
-! </CONTACT>
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!    Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Solves the tridiagonal system of equations.
-! </OVERVIEW>
-! <DESCRIPTION>
-!     The following schematic represents the system of equations solved,
-!     where X is the solution.
-! <PRE>
-!     | B(1)  A(1)   0     0                .......            0    |  |X(1)|   |D(1)|
-!     | C(2)  B(2)  A(2)   0                .......            0    |  |X(2)|   |D(2)|
-!     |  0    C(3)  B(3)  A(3)  0           .......            0    |  | .. |   | .. |
-!     |  ..........................................                 |  | .. | = | .. |
-!     |  ..........................................                 |  | .. |   | .. |
-!     |                                  C(N-2) B(N-2) A(N-2)  0    |  | .. |   | .. |
-!     |                                    0    C(N-1) B(N-1) A(N-1)|  | .. |   | .. |
-!     |                                    0      0    C(N)   B(N)  |  |X(N)|   |D(N)|
-!
-! </PRE>
-!  To solve this system
-! <PRE>
-!   call tri_invert(X,D,A,B,C)
-!
-!       real, intent(out), dimension(:,:,:) :: X
-!       real, intent(in),  dimension(:,:,:) :: D
-!       real, optional,    dimension(:,:,:) :: A,B,C
-! </PRE>
-! For simplicity (?), A and C are assumed to be dimensioned the same size
-! as B, D, and X, although any input values for A(N) and C(1) are ignored.
-! (some checks are needed here)
-!
-! If A is not present, it is assumed that the matrix (A,B.C) has not been changed
-! since the last call to tri_invert.
-!
-! To release memory,
-! <PRE>
-!    call close_tridiagonal
-! </PRE>
-! The following module variables are used to retain the relevant information
-! if one recalls tri_invert without changing (A,B,C)
-
-
-! </DESCRIPTION>
 
 !--------------------------------------------------------------------------
 real,    private, allocatable, dimension(:,:,:) :: e,g,cc
@@ -224,3 +215,5 @@ end module tridiagonal_mod
 !   </FUTURE>
 
 ! </INFO>
+!> @}
+! close documentation grouping

@@ -16,22 +16,20 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup monin_obukhov_mod monin_obukhov_mod
+!> @ingroup monin_obukhov
+!> @brief Routines for computing surface drag coefficients
+!! from data at the lowest model level
+!! and for computing the profile of fields
+!! between the lowest model level and the ground
+!! using Monin-Obukhov scaling
 
+!> @file
+!> @brief File for @ref monin_obukhov_mod
+
+!> @addtogroup monin_obukhov_mod
+!> @{
 module monin_obukhov_mod
-
-
-!=======================================================================
-!
-!                         MONIN-OBUKHOV MODULE
-!
-!          Routines for computing surface drag coefficients
-!                 from data at the lowest model level
-!              and for computing the profile of fields
-!           between the lowest model level and the ground
-!                  using Monin-Obukhov scaling
-!
-!=======================================================================
-
 
 use constants_mod, only: grav, vonkarm
 use mpp_mod,       only: input_nml_file
@@ -993,3 +991,5 @@ end subroutine stable_mix_0d
 !=======================================================================
 
 end module monin_obukhov_mod
+!> @}
+! close documentation grouping

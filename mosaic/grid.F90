@@ -16,6 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup grid_mod grid_mod
+!> @ingroup mosaic
+!> @brief Routines for grid calculations
+
+!> @file
+!> @brief File for @ref grid_mod
+
+!> @addtogroup grid_mod
+!> @{
 module grid_mod
 
 use mpp_mod, only : mpp_root_pe
@@ -1034,3 +1043,5 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
 end subroutine define_cube_mosaic
 
 end module grid_mod
+!> @}
+! close documentation grouping

@@ -16,21 +16,19 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup gradient_mod gradient_mod
+!> @ingroup mosaic
+!> @brief Implements some utility routines to calculate gradient.
+!> @author Zhi Liang
+!> Currently only gradient on cubic grid is implemented. Also a public interface
+!! is provided to calculate grid information needed to calculate gradient.
+
+!> @file
+!> @brief File for @ref gradient_mod
+
+!> @addtogroup gradient_mod
+!> @{
 module gradient_mod
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-!   Zhi Liang
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!    <TT>gradient_mod</TT> implements some utility routines to calculate gradient.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!    <TT>gradient_mod</TT> implements some utility routines to calculate gradient.
-!    Currently only gradient on cubic grid is implemented. Also a public interface
-!    is provided to calculate grid information needed to calculate gradient.
 
 use mpp_mod,       only : mpp_error, FATAL
 use constants_mod, only : RADIUS
@@ -150,3 +148,5 @@ subroutine calc_cubic_grid_info(xt, yt, xc, yc, dx, dy, area, edge_w, edge_e, ed
 end subroutine calc_cubic_grid_info
 
 end module gradient_mod
+!> @}
+! close documentation grouping

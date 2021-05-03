@@ -1,5 +1,4 @@
-/*! \page readme General Project Information
-*/
+\page readme General Project Information
 # Modeling Framework: Flexible Modeling System (FMS)
 
 Today’s climate models simulate highly complex systems. In response to

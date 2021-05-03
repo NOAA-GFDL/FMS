@@ -16,18 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-module time_manager_mod
-
-!> @defgroup time_manager Time Manager
-!> @file
-!
-!> @email fms@gfdl.noaa.gov
-!
+!> @defgroup time_manager_mod time_manager_mod
+!> @ingroup time_manager
 !> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/
-!
 !> @brief A software package that provides a set of simple interfaces for
 !!   modelers to perform computations related to time and dates.
-!
 !> The changes between the lima revision and this revision are more
 !!    extensive that all those between antwerp and lima.
 !!    A brief description of these changes follows.
@@ -85,6 +78,14 @@ module time_manager_mod
 !!    Derived-type data variable used to store time and date quantities. It
 !!    contains three PRIVATE variables: days, seconds and ticks.
 !! </DATA>
+
+!> @file
+!> @brief File for @ref time_manager_mod
+
+!> @addtogroup time_manager_mod
+!> @{
+module time_manager_mod
+
 
 use platform_mod, only: r8_kind
 use constants_mod, only: rseconds_per_day=>seconds_per_day
@@ -3425,3 +3426,5 @@ end module time_manager_mod
 !     that shows some of the capabilities of the time manager.
 !   </NOTE>
 ! </INFO>
+!> @}
+! close documentation grouping
