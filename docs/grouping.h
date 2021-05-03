@@ -1,139 +1,156 @@
-//This header file is used exclusively for doxygen documentation
-//Creates groupings for each directory with descriptions so that
-//files and their contents can be added to their corresponding group
-// any 'directory level' comments can be added here
+!!*********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and!or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http:!!www.gnu.org/licenses/>.
+!!*********************************************************************
+!!This header file is used exclusively for doxygen documentation
+!!Creates groupings for each directory with descriptions so that
+!!files and their contents can be added to their corresponding group
+!! any 'directory level' comments can be added here
 
-/** @defgroup affinity Affinity
- *  @brief API interfaces to allow setting and getting thread affinity.
- *
- *  Uses fms_affinity.F90 to interface between affinity.c for manipulating 
- *  CPU affinity.
- *
- */
+!> @defgroup affinity Affinity
+!> @brief API interfaces to allow setting and getting thread affinity.
+!!
+!>  Uses fms_affinity.F90 to interface between affinity.c for manipulating 
+!!  CPU affinity.
+!!
 
-/** @defgroup astronomy Astronomy
- *  @brief Astronomy related variables and routines
- */
+!> @defgroup astronomy Astronomy
+!> @brief Astronomy related variables and routines
+!!
 
-/** @defgroup axis_utils Axis Utilities
- *  @brief Utilities for manipulating axis data
- */
+!> @defgroup axis_utils Axis Utilities
+!> @brief Utilities for manipulating axis data
+!!
 
-/** @defgroup amip_interp AMIP Interpolator
- *  @brief Routines for interpolating SST and ice mask data sets over a model grid
- */
+!> @defgroup amip_interp AMIP Interpolator
+!> @brief Routines for interpolating SST and ice mask data sets over a model grid
+!!
 
-/** @defgroup block_control Block Control
- *  
- */
+!> @defgroup block_control Block Control
+!!  
+!!
 
-/** @defgroup column_diagnostics Column Diagnostics 
- *  
- */
+!> @defgroup column_diagnostics Column Diagnostics 
+!!  
+!!
 
-/** @defgroup constants Constants
- *  
- */
+!> @defgroup constants Constants
+!!  
+!!
 
-/** @defgroup coupler Coupler
- *  
- */
+!> @defgroup coupler Coupler
+!!  
+!!
 
-/** @defgroup data_override Data Override
- *  
- */
+!> @defgroup data_override Data Override
+!!  
+!!
 
-/** @defgroup diag_integral Diag Integral
- *  
- */
+!> @defgroup diag_integral Diag Integral
+!!  
+!!
 
-/** @defgroup diag_manager Diag Manager
- *  
- */
+!> @defgroup diag_manager Diag Manager
+!!  
+!!
 
-/** @defgroup drifters Drifters
- *  
- */
+!> @defgroup drifters Drifters
+!!  
+!!
 
-/** @defgroup exchange Exchange 
- *  
- */
+!> @defgroup exchange Exchange 
+!!  
+!!
 
-/** @defgroup field_manager Field Manager 
- *  
- */
+!> @defgroup field_manager Field Manager 
+!!  
+!!
 
-/** @defgroup fms FMS utilities
- *
- */
+!> @defgroup fms FMS utilities
+!!
+!!
 
-/** @defgroup fms2_io FMS2 IO
- *
- */
+!> @defgroup fms2_io FMS2 IO
+!!
+!!
 
-/** @defgroup horiz_interp Horizontal Interpolator
- *
- */
+!> @defgroup horiz_interp Horizontal Interpolator
+!!
+!!
 
-/** @defgroup interpolator Interpolator
- *
- */ 
+!> @defgroup interpolator Interpolator
+!!
+!! 
 
-/** @defgroup memutils Memory Utilities 
- *
- */
+!> @defgroup memutils Memory Utilities 
+!!
+!!
 
-/** @defgroup monin_obukhov Monin Obukhov
- *
- */
+!> @defgroup monin_obukhov Monin Obukhov
+!!
+!!
 
-/** @defgroup mosaic Mosaic
- *
- */
+!> @defgroup mosaic Mosaic
+!!
+!!
 
-/** @defgroup mpp MPP
- *
- */
+!> @defgroup mpp MPP
+!!
+!!
 
-/** @defgroup platform Platform
- *
- */
+!> @defgroup platform Platform
+!!
+!!
 
-/** @defgroup random_numbers Random Numbers
- *
- */
+!> @defgroup random_numbers Random Numbers
+!!
+!!
 
-/** @defgroup sat_vapor_pres Saturation Vapor Pressure
- *
- */
+!> @defgroup sat_vapor_pres Saturation Vapor Pressure
+!!
+!!
 
-/** @defgroup time_interp Time Interpolator
- *
- */
+!> @defgroup time_interp Time Interpolator
+!!
+!!
 
-/** @defgroup time_manager Time Manager
- *
- */
+!> @defgroup time_manager Time Manager
+!!
+!!
 
-/** @defgroup topography Topography
- *
- */
+!> @defgroup topography Topography
+!!
+!!
 
-/** @defgroup tracer_manager Tracer Manager
- *
- */
+!> @defgroup tracer_manager Tracer Manager
+!!
+!!
 
-/** @defgroup tridiagonal Tridiagonal
- *
- */
+!> @defgroup tridiagonal Tridiagonal
+!!
+!!
 
-/** @defgroup libfms FMS Global Module
- *
- */
+!> @defgroup libfms FMS Global Module
+!!
+!!
 
-/** @page build Building and Installation
- *  @brief Information about the build systems and how to build and install
- *  @subpage build Building with Autotools 
- *  @subpage cmake Building with CMake
- *  @subpage install libFMS Installation
- */
+!> @page build Building and Installation
+!> @brief Information about the build systems and how to build and install
+!!   @ref build Building with Autotools 
+!!   @ref cmake Building with CMake
+!!   @ref install libFMS Installation
+!!
