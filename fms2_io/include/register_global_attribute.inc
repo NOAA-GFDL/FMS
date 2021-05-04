@@ -60,7 +60,7 @@ subroutine register_global_attribute_0d(fileobj, &
                 call error("register_global_attribute_0d: unsupported type for "//&
                 trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, "register_global_attribute_0d: file:"//trim(fileobj%path)//"- attribute:"//trim(attribute_name))
     endif
 end subroutine register_global_attribute_0d
 !> @brief Add a global attribute.
@@ -101,6 +101,6 @@ subroutine register_global_attribute_1d(fileobj, &
                 call error("register_global_attribute_1d: unsupported type for "//&
                 trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, "register_global_attribute_1d: file:"//trim(fileobj%path)//"- attribute:"//trim(attribute_name))
     endif
 end subroutine register_global_attribute_1d

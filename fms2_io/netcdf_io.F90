@@ -326,15 +326,20 @@ end subroutine netcdf_io_init
 
 !> @brief Check for errors returned by netcdf.
 !! @internal
-subroutine check_netcdf_code(err)
+subroutine check_netcdf_code(err, msg)
 
   integer, intent(in) :: err !< Code returned by netcdf.
+  character(len=*), intent(in), optional :: msg
 
   character(len=80) :: buf
 
   if (err .ne. nf90_noerr) then
     buf = nf90_strerror(err)
-    call error(trim(buf))
+    if (present(msg)) then
+       call error(trim(buf)//": "//trim(msg))
+    else
+       call error(trim(buf))
+    endif
   endif
 end subroutine check_netcdf_code
 

@@ -66,7 +66,7 @@ subroutine get_global_attribute_0d(fileobj, &
                 call error("get_global_attribute_0d: unsupported type for "//&
                 &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, "get_global_attribute_0d: file:"//trim(fileobj%path)//"- attribute:"//trim(attribute_name))
     endif
     if (present(broadcast)) then
         if (.not. broadcast) then
@@ -145,7 +145,7 @@ subroutine get_global_attribute_1d(fileobj, &
                 call error("get_global_attribute_1d: unsupported type for "//&
                 &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, "get_global_attribute_1d: file:"//trim(fileobj%path)//"- attribute:"//trim(attribute_name))
     endif
     if (present(broadcast)) then
         if (.not. broadcast) then
