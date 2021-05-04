@@ -19,6 +19,8 @@
 !> @defgroup mpp_data_mod mpp_data_mod
 !> @ingroup mpp
 !> @brief Module to hold public data types and data for use in mpp
+!> Makes stack and pointer data publicly available from @ref mpp_data_mpi.inc and @ref
+!! mpp_data_nocomm.inc for use in @ref mpp modules
 
 !> @file
 !> @brief File for @ref mpp_data_mod

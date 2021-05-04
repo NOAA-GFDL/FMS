@@ -217,7 +217,7 @@ private
 
   !--- public interface from mpp_util.h ------------------------------
   public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
-  public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_set_stack_size, mpp_pe
+  public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_pe
   public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
@@ -269,6 +269,7 @@ private
                                                 !! set false when calling mpp_clock_end
   end type clock
 
+  !> Summary of information from a clock run
   type :: Clock_Data_Summary
      private
      character(len=16)  :: name
@@ -280,6 +281,7 @@ private
      integer(i8_kind)   :: total_cnts
   end type Clock_Data_Summary
 
+  !> holds name and clock data for use in @ref mpp_util.h
   type :: Summary_Struct
      private
      character(len=16)         :: name
@@ -409,7 +411,7 @@ private
      module procedure mpp_error_rs_is
      module procedure mpp_error_rs_rs
   end interface
-
+  !> Takes a given integer or real array and returns it as a string
   interface array_to_char
      module procedure iarray_to_char
      module procedure rarray_to_char
@@ -427,36 +429,32 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! <SUBROUTINE NAME="mpp_init">
-  !  <OVERVIEW>
-  !   Initialize <TT>mpp_mod</TT>.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !   Called to initialize the <TT>mpp_mod</TT> package. It is recommended
-  !   that this call be the first executed line in your program. It sets the
-  !   number of PEs assigned to this run (acquired from the command line, or
-  !   through the environment variable <TT>NPES</TT>), and associates an ID
-  !   number to each PE. These can be accessed by calling <LINK
-  !   SRC="#mpp_npes"><TT>mpp_npes</TT></LINK> and <LINK
-  !   SRC="#mpp_pe"><TT>mpp_pe</TT></LINK>.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   call mpp_init( flags )
-  !  </TEMPLATE>
-  !  <IN NAME="flags" TYPE="integer">
-  !   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
-  !   have <TT>mpp_mod</TT> keep you informed of what it's up to.
-  !  </IN>
-  ! </SUBROUTINE>
+  !> @function mpp_init
+  !> @brief Initialize @ref mpp_mod
+  !> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
+  !! that this call be the first executed line in your program. It sets the
+  !! number of PEs assigned to this run (acquired from the command line, or
+  !! through the environment variable <TT>NPES</TT>), and associates an ID
+  !! number to each PE. These can be accessed by calling @ref mpp_npes and
+  !! @ref mpp_pe
+  !!  <TEMPLATE>
+  !!   call mpp_init( flags )
+  !!  </TEMPLATE>
+  !!  <IN NAME="flags" TYPE="integer">
+  !!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
+  !!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
+  !!  </IN>
+  !! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="mpp_exit">
-  !  <OVERVIEW>
-  !   Exit <TT>mpp_mod</TT>.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !   Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
-  !   should you require that for some odd reason.
-  !
+
+  !! <SUBROUTINE NAME="mpp_exit">
+  !!  <OVERVIEW>
+  !!   Exit <TT>mpp_mod</TT>.
+  !!  </OVERVIEW>
+  !!  <DESCRIPTION>
+  !!   Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
+  !!   should you require that for some odd reason.
+  !!
   !   This call implies synchronization across all PEs.
   !  </DESCRIPTION>
   !  <TEMPLATE>
@@ -466,43 +464,38 @@ private
 
   !#####################################################################
 
-  ! <SUBROUTINE NAME="mpp_set_stack_size">
-  !  <OVERVIEW>
-  !    Allocate module internal workspace.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    <TT>mpp_mod</TT> maintains a private internal array called
-  !    <TT>mpp_stack</TT> for private workspace. This call sets the length,
-  !    in words, of this array.
-  !
-  !    The <TT>mpp_init</TT> call sets this
-  !    workspace length to a default of 32768, and this call may be used if a
-  !    longer workspace is needed.
-  !
-  !    This call implies synchronization across all PEs.
-  !
-  !    This workspace is symmetrically allocated, as required for
-  !    efficient communication on SGI and Cray MPP systems. Since symmetric
-  !    allocation must be performed by <I>all</I> PEs in a job, this call
-  !    must also be called by all PEs, using the same value of
-  !    <TT>n</TT>. Calling <TT>mpp_set_stack_size</TT> from a subset of PEs,
-  !    or with unequal argument <TT>n</TT>, may cause the program to hang.
-  !
-  !    If any MPP call using <TT>mpp_stack</TT> overflows the declared
-  !    stack array, the program will abort with a message specifying the
-  !    stack length that is required. Many users wonder why, if the required
-  !    stack length can be computed, it cannot also be specified at that
-  !    point. This cannot be automated because there is no way for the
-  !    program to know if all PEs are present at that call, and with equal
-  !    values of <TT>n</TT>. The program must be rerun by the user with the
-  !    correct argument to <TT>mpp_set_stack_size</TT>, called at an
-  !    appropriate point in the code where all PEs are known to be present.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_set_stack_size(n)
-  !  </TEMPLATE>
-  !  <IN NAME="n" TYPE="integer"></IN>
-  ! </SUBROUTINE>
+  !> @brief Allocate module internal workspace.
+  !> @param Integer to set stack size to(in words)
+  !> <TT>mpp_mod</TT> maintains a private internal array called
+  !! <TT>mpp_stack</TT> for private workspace. This call sets the length,
+  !! in words, of this array.
+  !!
+  !! The <TT>mpp_init</TT> call sets this
+  !! workspace length to a default of 32768, and this call may be used if a
+  !! longer workspace is needed.
+  !!
+  !! This call implies synchronization across all PEs.
+  !!
+  !! This workspace is symmetrically allocated, as required for
+  !! efficient communication on SGI and Cray MPP systems. Since symmetric
+  !! allocation must be performed by <I>all</I> PEs in a job, this call
+  !! must also be called by all PEs, using the same value of
+  !! <TT>n</TT>. Calling <TT>mpp_set_stack_size</TT> from a subset of PEs,
+  !! or with unequal argument <TT>n</TT>, may cause the program to hang.
+  !!
+  !! If any MPP call using <TT>mpp_stack</TT> overflows the declared
+  !! stack array, the program will abort with a message specifying the
+  !! stack length that is required. Many users wonder why, if the required
+  !! stack length can be computed, it cannot also be specified at that
+  !! point. This cannot be automated because there is no way for the
+  !! program to know if all PEs are present at that call, and with equal
+  !! values of <TT>n</TT>. The program must be rerun by the user with the
+  !! correct argument to <TT>mpp_set_stack_size</TT>, called at an
+  !! appropriate point in the code where all PEs are known to be present.
+  !!        @verbose call mpp_set_stack_size(n)
+  !!
+  public :: mpp_set_stack_size 
+  ! from mpp_util.h
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -510,6 +503,11 @@ private
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  !> @brief Create a mpp_type variable
+  !> @param[in] field A field of any numerical or logical type
+  !> @param[in] array_of_subsizes Integer array of subsizes
+  !> @param[in] array_of_starts Integer array of starts
+  !> @param[out] dtype_out Output variable for created @ref mpp_type 
   interface mpp_type_create
       module procedure mpp_type_create_int4
       module procedure mpp_type_create_int8
@@ -527,27 +525,26 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! <INTERFACE NAME="mpp_max">
-  !  <OVERVIEW>
-  !    Reduction operations.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    Find the max of scalar a the PEs in pelist
-  !    result is also automatically broadcast to all PEs
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call  mpp_max( a, pelist )
-  !  </TEMPLATE>
-  !  <IN NAME="a">
-  !    <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
-  !  </IN>
-  !  <IN NAME="pelist">
-  !    If <TT>pelist</TT> is omitted, the context is assumed to be the
-  !    current pelist. This call implies synchronization across the PEs in
-  !    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
-  !  </IN>
-  ! </INTERFACE>
-
+  !> <INTERFACE NAME="mpp_max">
+  !!  <OVERVIEW>
+  !!    Reduction operations.
+  !!  </OVERVIEW>
+  !!  <DESCRIPTION>
+  !!    Find the max of scalar a the PEs in pelist
+  !!    result is also automatically broadcast to all PEs
+  !!  </DESCRIPTION>
+  !!  <TEMPLATE>
+  !!    call  mpp_max( a, pelist )
+  !!  </TEMPLATE>
+  !!  <IN NAME="a">
+  !!    <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
+  !!  </IN>
+  !!  <IN NAME="pelist">
+  !!    If <TT>pelist</TT> is omitted, the context is assumed to be the
+  !!    current pelist. This call implies synchronization across the PEs in
+  !!    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+  !!  </IN>
+  !! </INTERFACE>
   interface mpp_max
      module procedure mpp_max_real8_0d
      module procedure mpp_max_real8_1d
@@ -559,6 +556,8 @@ private
      module procedure mpp_max_int4_1d
   end interface
 
+  !> @brief Get minimum value out of the PEs in pelist
+  !> Result is also broadcast to all PEs
   interface mpp_min
      module procedure mpp_min_real8_0d
      module procedure mpp_min_real8_1d
@@ -571,39 +570,29 @@ private
   end interface
 
 
-  ! <INTERFACE NAME="mpp_sum">
-  !  <OVERVIEW>
-  !    Reduction operation.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
-  !    <TT>integer, real, complex</TT> variables, of rank 0 or 1. A
-  !    contiguous block from a multi-dimensional array may be passed by its
-  !    starting address and its length, as in <TT>f77</TT>.
-  !
-  !    Library reduction operators are not required or guaranteed to be
-  !    bit-reproducible. In any case, changing the processor count changes
-  !    the data layout, and thus very likely the order of operations. For
-  !    bit-reproducible sums of distributed arrays, consider using the
-  !    <TT>mpp_global_sum</TT> routine provided by the <LINK
-  !    SRC="mpp_domains.html"><TT>mpp_domains</TT></LINK> module.
-  !
-  !    The <TT>bit_reproducible</TT> flag provided in earlier versions of
-  !    this routine has been removed.
-  !
-  !
-  !    If <TT>pelist</TT> is omitted, the context is assumed to be the
-  !    current pelist. This call implies synchronization across the PEs in
-  !    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_sum( a, length, pelist )
-  !  </TEMPLATE>
-  !  <IN NAME="length"></IN>
-  !  <IN NAME="pelist"></IN>
-  !  <INOUT NAME="a"></INOUT>
-  ! </INTERFACE>
-
+  !> @brief Reduction operation.
+  !> <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
+  !! <TT>integer, real, complex</TT> variables, of rank 0 or 1. A
+  !! contiguous block from a multi-dimensional array may be passed by its
+  !! starting address and its length, as in <TT>f77</TT>.
+  !!
+  !! Library reduction operators are not required or guaranteed to be
+  !! bit-reproducible. In any case, changing the processor count changes
+  !! the data layout, and thus very likely the order of operations. For
+  !! bit-reproducible sums of distributed arrays, consider using the
+  !! <TT>mpp_global_sum</TT> routine provided by the <LINK
+  !! SRC="mpp_domains.html"><TT>mpp_domains</TT></LINK> module.
+  !!
+  !! The <TT>bit_reproducible</TT> flag provided in earlier versions of
+  !! this routine has been removed.
+  !!
+  !!
+  !! If <TT>pelist</TT> is omitted, the context is assumed to be the
+  !! current pelist. This call implies synchronization across the PEs in
+  !! <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+  !! Example usage:
+  !!            call mpp_sum( a, length, pelist )
+  !!
   interface mpp_sum
      module procedure mpp_sum_int8
      module procedure mpp_sum_int8_scalar
@@ -647,6 +636,7 @@ private
 #endif
   end interface
 
+  !> Calculates sum of a given numerical array across pe's for adjoint domains
   interface mpp_sum_ad
      module procedure mpp_sum_int8_ad
      module procedure mpp_sum_int8_scalar_ad
@@ -690,12 +680,7 @@ private
 #endif
   end interface
 
-  !#####################################################################
-  ! <INTERFACE NAME="mpp_gather">
-  !  <OVERVIEW>
-  !    gather information onto root pe.
-  !  </OVERVIEW>
-  ! </INTERFACE>
+  !> @brief Gather information onto root pe
   interface mpp_gather
      module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4_1d
@@ -715,12 +700,7 @@ private
      module procedure mpp_gather_pelist_real8_3d
   end interface
 
-  !#####################################################################
-  ! <INTERFACE NAME="mpp_scatter">
-  !  <OVERVIEW>
-  !    gather information onto root pe.
-  !  </OVERVIEW>
-  ! </INTERFACE>
+  !> @brief Scatter information to the given pelist 
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
@@ -731,12 +711,8 @@ private
   end interface
 
   !#####################################################################
-  ! <interface name="mpp_alltoall">
-  !   <overview>
-  !     scatter a vector across all PEs
-  !     (e.g. transpose the vector and PE index)
-  !   </overview>
-  ! </interface>
+  !> @brief Scatter a vector across all PEs
+  !> Transpose the vector and PE index
   interface mpp_alltoall
      module procedure mpp_alltoall_int4
      module procedure mpp_alltoall_int8
@@ -779,78 +755,78 @@ private
 
   !#####################################################################
 
-  ! <INTERFACE NAME="mpp_transmit">
-  !  <OVERVIEW>
-  !    Basic message-passing call.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
-  !    <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
-  !    contiguous block from a multi-dimensional array may be passed by its
-  !    starting address and its length, as in <TT>f77</TT>.
-  !
-  !    <TT>mpp_transmit</TT> is currently implemented as asynchronous
-  !    outward transmission and synchronous inward transmission. This follows
-  !    the behaviour of <TT>shmem_put</TT> and <TT>shmem_get</TT>. In MPI, it
-  !    is implemented as <TT>mpi_isend</TT> and <TT>mpi_recv</TT>. For most
-  !    applications, transmissions occur in pairs, and are here accomplished
-  !    in a single call.
-  !
-  !    The special PE designations <TT>NULL_PE</TT>,
-  !    <TT>ANY_PE</TT> and <TT>ALL_PES</TT> are provided by use
-  !    association.
-  !
-  !    <TT>NULL_PE</TT>: is used to disable one of the pair of
-  !    transmissions.<BR/>
-  !    <TT>ANY_PE</TT>: is used for unspecific remote
-  !    destination. (Please note that <TT>put_pe=ANY_PE</TT> has no meaning
-  !    in the MPI context, though it is available in the SHMEM invocation. If
-  !    portability is a concern, it is best avoided).<BR/>
-  !    <TT>ALL_PES</TT>: is used for broadcast operations.
-  !
-  !    It is recommended that <LINK
-  !    SRC="#mpp_broadcast"><TT>mpp_broadcast</TT></LINK> be used for
-  !    broadcasts.
-  !
-  !    The following example illustrates the use of
-  !    <TT>NULL_PE</TT> and <TT>ALL_PES</TT>:
-  !
-  !    <PRE>
-  !    real, dimension(n) :: a
-  !    if( pe.EQ.0 )then
-  !        do p = 1,npes-1
-  !           call mpp_transmit( a, n, p, a, n, NULL_PE )
-  !        end do
-  !    else
-  !        call mpp_transmit( a, n, NULL_PE, a, n, 0 )
-  !    end if
-  !
-  !    call mpp_transmit( a, n, ALL_PES, a, n, 0 )
-  !    </PRE>
-  !
-  !    The do loop and the broadcast operation above are equivalent.
-  !
-  !    Two overloaded calls <TT>mpp_send</TT> and
-  !     <TT>mpp_recv</TT> have also been
-  !    provided. <TT>mpp_send</TT> calls <TT>mpp_transmit</TT>
-  !    with <TT>get_pe=NULL_PE</TT>. <TT>mpp_recv</TT> calls
-  !    <TT>mpp_transmit</TT> with <TT>put_pe=NULL_PE</TT>. Thus
-  !    the do loop above could be written more succinctly:
-  !
-  !    <PRE>
-  !    if( pe.EQ.0 )then
-  !        do p = 1,npes-1
-  !           call mpp_send( a, n, p )
-  !        end do
-  !    else
-  !        call mpp_recv( a, n, 0 )
-  !    end if
-  !    </PRE>
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_transmit( put_data, put_len, put_pe, get_data, get_len, get_pe )
-  !  </TEMPLATE>
-  ! </INTERFACE>
+  !! <INTERFACE NAME="mpp_transmit">
+  !!  <OVERVIEW>
+  !!    Basic message-passing call.
+  !!  </OVERVIEW>
+  !!  <DESCRIPTION>
+  !!    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
+  !!    <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
+  !!    contiguous block from a multi-dimensional array may be passed by its
+  !!    starting address and its length, as in <TT>f77</TT>.
+  !!
+  !!    <TT>mpp_transmit</TT> is currently implemented as asynchronous
+  !!    outward transmission and synchronous inward transmission. This follows
+  !!    the behaviour of <TT>shmem_put</TT> and <TT>shmem_get</TT>. In MPI, it
+  !!    is implemented as <TT>mpi_isend</TT> and <TT>mpi_recv</TT>. For most
+  !!    applications, transmissions occur in pairs, and are here accomplished
+  !!    in a single call.
+  !!
+  !!    The special PE designations <TT>NULL_PE</TT>,
+  !!    <TT>ANY_PE</TT> and <TT>ALL_PES</TT> are provided by use
+  !!    association.
+  !!
+  !!    <TT>NULL_PE</TT>: is used to disable one of the pair of
+  !!    transmissions.<BR/>
+  !!    <TT>ANY_PE</TT>: is used for unspecific remote
+  !!    destination. (Please note that <TT>put_pe=ANY_PE</TT> has no meaning
+  !!    in the MPI context, though it is available in the SHMEM invocation. If
+  !!    portability is a concern, it is best avoided).<BR/>
+  !!    <TT>ALL_PES</TT>: is used for broadcast operations.
+  !!
+  !!    It is recommended that <LINK
+  !!    SRC="#mpp_broadcast"><TT>mpp_broadcast</TT></LINK> be used for
+  !!    broadcasts.
+  !!
+  !!    The following example illustrates the use of
+  !!    <TT>NULL_PE</TT> and <TT>ALL_PES</TT>:
+  !!
+  !!    <PRE>
+  !!    real, dimension(n) :: a
+  !!    if( pe.EQ.0 )then
+  !!        do p = 1,npes-1
+  !!           call mpp_transmit( a, n, p, a, n, NULL_PE )
+  !!        end do
+  !!    else
+  !!        call mpp_transmit( a, n, NULL_PE, a, n, 0 )
+  !!    end if
+  !!
+  !!    call mpp_transmit( a, n, ALL_PES, a, n, 0 )
+  !!    </PRE>
+  !!
+  !!    The do loop and the broadcast operation above are equivalent.
+  !!
+  !!    Two overloaded calls <TT>mpp_send</TT> and
+  !!     <TT>mpp_recv</TT> have also been
+  !!    provided. <TT>mpp_send</TT> calls <TT>mpp_transmit</TT>
+  !!    with <TT>get_pe=NULL_PE</TT>. <TT>mpp_recv</TT> calls
+  !!    <TT>mpp_transmit</TT> with <TT>put_pe=NULL_PE</TT>. Thus
+  !!    the do loop above could be written more succinctly:
+  !!
+  !!    <PRE>
+  !!    if( pe.EQ.0 )then
+  !!        do p = 1,npes-1
+  !!           call mpp_send( a, n, p )
+  !!        end do
+  !!    else
+  !!        call mpp_recv( a, n, 0 )
+  !!    end if
+  !!    </PRE>
+  !!  </DESCRIPTION>
+  !!  <TEMPLATE>
+  !!    call mpp_transmit( put_data, put_len, put_pe, get_data, get_len, get_pe )
+  !!  </TEMPLATE>
+  !! </INTERFACE>
   interface mpp_transmit
      module procedure mpp_transmit_real8
      module procedure mpp_transmit_real8_scalar
@@ -907,6 +883,13 @@ private
      module procedure mpp_transmit_logical4_4d
      module procedure mpp_transmit_logical4_5d
   end interface
+  !> @brief Recieve data to another PE
+  !> @param[out] get_data scalar or array to get written with received data
+  !> @param get_len size of array to recv from get_data
+  !> @param from_pe PE number to receive from
+  !> @param block true for blocking, false for non-blocking. Defaults to true
+  !> @param tag communication tag
+  !> @param[out] request MPI request handle
   interface mpp_recv
      module procedure mpp_recv_real8
      module procedure mpp_recv_real8_scalar
@@ -963,6 +946,13 @@ private
      module procedure mpp_recv_logical4_4d
      module procedure mpp_recv_logical4_5d
   end interface
+  !> @brief Send data to another PE
+  !> @param[out] put_data scalar or array to get written with received data
+  !> @param put_len size of array to recv from get_data
+  !> @param to_pe PE number to receive from
+  !> @param block true for blocking, false for non-blocking. Defaults to true
+  !> @param tag communication tag
+  !> @param[out] request MPI request handle
   interface mpp_send
      module procedure mpp_send_real8
      module procedure mpp_send_real8_scalar
@@ -1020,38 +1010,33 @@ private
      module procedure mpp_send_logical4_5d
   end interface
 
-  ! <INTERFACE NAME="mpp_broadcast">
 
-  !   <OVERVIEW>
-  !     Parallel broadcasts.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     The <TT>mpp_broadcast</TT> call has been added because the original
-  !     syntax (using <TT>ALL_PES</TT> in <TT>mpp_transmit</TT>) did not
-  !     support a broadcast across a pelist.
-  !
-  !     <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
-  !     <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
-  !     contiguous block from a multi-dimensional array may be passed by its
-  !     starting address and its length, as in <TT>f77</TT>.
-  !
-  !     Global broadcasts through the <TT>ALL_PES</TT> argument to <LINK
-  !     SRC="#mpp_transmit"><TT>mpp_transmit</TT></LINK> are still provided for
-  !     backward-compatibility.
-  !
-  !     If <TT>pelist</TT> is omitted, the context is assumed to be the
-  !     current pelist. <TT>from_pe</TT> must belong to the current
-  !     pelist. This call implies synchronization across the PEs in
-  !     <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call mpp_broadcast( data, length, from_pe, pelist )
-  !   </TEMPLATE>
-  !   <IN NAME="length"> </IN>
-  !   <IN NAME="from_pe"> </IN>
-  !   <IN NAME="pelist"> </IN>
-  !   <INOUT NAME="data(*)"> </INOUT>
-  ! </INTERFACE>
+  !> @brief Perform parallel broadcasts
+  !> The <TT>mpp_broadcast</TT> call has been added because the original
+  !! syntax (using <TT>ALL_PES</TT> in <TT>mpp_transmit</TT>) did not
+  !! support a broadcast across a pelist.
+  !!
+  !! <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
+  !! <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
+  !! contiguous block from a multi-dimensional array may be passed by its
+  !! starting address and its length, as in <TT>f77</TT>.
+  !!
+  !! Global broadcasts through the <TT>ALL_PES</TT> argument to <LINK
+  !! SRC="#mpp_transmit"><TT>mpp_transmit</TT></LINK> are still provided for
+  !! backward-compatibility.
+  !!
+  !! If <TT>pelist</TT> is omitted, the context is assumed to be the
+  !! current pelist. <TT>from_pe</TT> must belong to the current
+  !! pelist. This call implies synchronization across the PEs in
+  !! <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+  !!
+  !! Example usage
+  !!            call mpp_broadcast( data, length, from_pe, pelist )
+  !!
+  !> @param[inout] data Data to broadcast
+  !> @param length Length of data to broadcast
+  !> @param from_pe PE to send the data from
+  !> @param pelist List of PE's to broadcast across, if not provided uses current list
   interface mpp_broadcast
      module procedure mpp_broadcast_char
      module procedure mpp_broadcast_real8
@@ -1111,53 +1096,47 @@ private
   end interface
 
   !#####################################################################
-  ! <INTERFACE NAME="mpp_chksum">
 
-  !   <OVERVIEW>
-  !     Parallel checksums.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     \empp_chksum is a parallel checksum routine that returns an
-  !     identical answer for the same array irrespective of how it has been
-  !     partitioned across processors. \eint_kind is the KIND
-  !     parameter corresponding to long integers (see discussion on
-  !     OS-dependent preprocessor directives) defined in
-  !     the file platform.F90. \eMPP_TYPE_ corresponds to any
-  !     4-byte and 8-byte variant of \einteger, \ereal, \ecomplex, \elogical
-  !     variables, of rank 0 to 5.
-  !
-  !     Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
-  !     intrinsic.
-  !
-  !     The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial checksum module</LINK> is superseded
-  !     by this function, and is no longer being actively maintained. This
-  !     provides identical results on a single-processor job, and to perform
-  !     serial checksums on a single processor of a parallel job, you only
-  !     need to use the optional <TT>pelist</TT> argument.
-  !     <PRE>
-  !     use mpp_mod
-  !     integer :: pe, chksum
-  !     real :: a(:)
-  !     pe = mpp_pe()
-  !     chksum = mpp_chksum( a, (/pe/) )
-  !     </PRE>
-  !
-  !     The additional functionality of <TT>mpp_chksum</TT> over
-  !     serial checksums is to compute the checksum across the PEs in
-  !     <TT>pelist</TT>. The answer is guaranteed to be the same for
-  !     the same distributed array irrespective of how it has been
-  !     partitioned.
-  !
-  !     If <TT>pelist</TT> is omitted, the context is assumed to be the
-  !     current pelist. This call implies synchronization across the PEs in
-  !     <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     mpp_chksum( var, pelist )
-  !   </TEMPLATE>
-  !   <IN NAME="pelist" TYPE="integer" DIM="(:)"> </IN>
-  !   <IN NAME="var" TYPE="MPP_TYPE_"> </IN>
-  ! </INTERFACE>
+  !> @brief Calculate parallel checksums
+  !> \empp_chksum is a parallel checksum routine that returns an
+  !! identical answer for the same array irrespective of how it has been
+  !! partitioned across processors. \eint_kind is the KIND
+  !! parameter corresponding to long integers (see discussion on
+  !! OS-dependent preprocessor directives) defined in
+  !! the file platform.F90. \eMPP_TYPE_ corresponds to any
+  !! 4-byte and 8-byte variant of \einteger, \ereal, \ecomplex, \elogical
+  !! variables, of rank 0 to 5.
+  !!
+  !! Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
+  !! intrinsic.
+  !!
+  !! The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial checksum module</LINK> is superseded
+  !! by this function, and is no longer being actively maintained. This
+  !! provides identical results on a single-processor job, and to perform
+  !! serial checksums on a single processor of a parallel job, you only
+  !! need to use the optional <TT>pelist</TT> argument.
+  !! <PRE>
+  !! use mpp_mod
+  !! integer :: pe, chksum
+  !! real :: a(:)
+  !! pe = mpp_pe()
+  !! chksum = mpp_chksum( a, (/pe/) )
+  !! </PRE>
+  !!
+  !! The additional functionality of <TT>mpp_chksum</TT> over
+  !! serial checksums is to compute the checksum across the PEs in
+  !! <TT>pelist</TT>. The answer is guaranteed to be the same for
+  !! the same distributed array irrespective of how it has been
+  !! partitioned.
+  !!
+  !! If <TT>pelist</TT> is omitted, the context is assumed to be the
+  !! current pelist. This call implies synchronization across the PEs in
+  !! <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+  !! @example            mpp_chksum( var, pelist )
+  !! @param var Data to calculate checksum of
+  !! @param pelist Optional list of PE's to include in checksum calculation if not using 
+  !! current pelist
+  !! @return Parallel checksum of var across given or implicit pelist
   interface mpp_chksum
      module procedure mpp_chksum_i8_1d
      module procedure mpp_chksum_i8_2d

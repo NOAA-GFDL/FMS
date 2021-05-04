@@ -220,6 +220,7 @@ module mpp_domains_mod
 
 
   ! data types used by mpp_domains_mod
+
   type unstruct_axis_spec
      private
      integer :: begin, end, size, max_size
@@ -268,23 +269,24 @@ module mpp_domains_mod
      integer(i4_kind) :: io_layout
   end type domainUG
 
-!> type used to specify index limits along an axis of a domain
+  !> type used to specify index limits along an axis of a domain
   type domain_axis_spec
      private
      integer :: begin, end, size, max_size !< start, end of domain axis, size, max size in set
      logical :: is_global !< .true. if domain axis extent covers global domain
   end type domain_axis_spec
-
+  !> One dimensional domain used to manage shared data access between pes
   type domain1D
      private
-     type(domain_axis_spec) :: compute, data, global, memory
+     type(domain_axis_spec) :: compute, data, global, memory !> index limits for different domains
      logical :: cyclic
-     type(domain1D), pointer :: list(:) =>NULL()
+     type(domain1D), pointer :: list(:) =>NULL() !> list of each pe's domains
      integer :: pe !<PE to which this domain is assigned
      integer :: pos !< position of this PE within link list, i.e domain%list(pos)%pe = pe
      integer :: goffset, loffset !< needed for global sum
   end type domain1D
 
+  !> Used to specify index limits for a domain decomposition
   type domain1D_spec
      private
      type(domain_axis_spec) :: compute
@@ -292,10 +294,11 @@ module mpp_domains_mod
      integer                :: pos
   end type domain1D_spec
 
+  !> Specify multiple index limits and pe information for a 2D domain
   type domain2D_spec
      private
      type(domain1D_spec), pointer :: x(:)       => NULL() !< x-direction domain decomposition
-     type(domain1D_spec), pointer :: y(:)       => NULL() !< x-direction domain decomposition
+     type(domain1D_spec), pointer :: y(:)       => NULL() !< y-direction domain decomposition
      integer,        pointer :: tile_id(:) => NULL() !< tile id of each tile
      integer                 :: pe                   !< PE to which this domain is assigned
      integer                 :: pos                  !< position of this PE within link list
@@ -332,6 +335,7 @@ module mpp_domains_mod
      type(overlapSpec),  pointer :: next => NULL()
   end type overlapSpec
 
+  !> Upper and lower x and y bounds for a tile
   type tile_type
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
@@ -395,12 +399,13 @@ module mpp_domains_mod
      integer, pointer :: js2(:)=>NULL(), je2(:)=>NULL()         !< j-index of neighbor tile repsenting contact
   end type contact_type
 
-
+  !> index bounds for use in @ref nestSpec
   type index_type
      integer :: is_me, ie_me, js_me, je_me
      integer :: is_you, ie_you, js_you, je_you
   end type index_type
 
+ !> Used to specify bounds and index information for nested tiles as a linked list
   type nestSpec
      private
      integer                     :: xbegin, xend, ybegin, yend
@@ -416,6 +421,7 @@ module mpp_domains_mod
 
   end type nestSpec
 
+ !> domain with nested fine and course tiles
   type nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
@@ -426,6 +432,7 @@ module mpp_domains_mod
      integer,               pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
   end type nest_domain_type
 
+  !> type to hold data for each level of nesting
   type nest_level_type
      private
      logical                    :: on_level
@@ -454,7 +461,7 @@ module mpp_domains_mod
   end type nest_level_type
 
 
-
+  !> Used for sending domain data between pe's
   type DomainCommunicator2D
      private
      logical            :: initialized=.false.
@@ -503,6 +510,7 @@ module mpp_domains_mod
 
   integer, parameter :: MAX_REQUEST = 100
 
+  !> Used for nonblocking data transfer 
   type nonblock_type
      integer                         :: recv_pos
      integer                         :: send_pos
@@ -528,6 +536,7 @@ module mpp_domains_mod
      integer                         :: nfields
   end type nonblock_type
 
+  !> used for updates on a group
   type mpp_group_update_type
      private
      logical            :: initialized = .FALSE.
@@ -719,52 +728,52 @@ module mpp_domains_mod
   !> @example call mpp_define_domains( global_indices, layout, domain, pelist, &
   !!                                   xflags, yflags, xhalo, yhalo,           &
   !!                                   xextent, yextent, maskmap, name )
-  !   <IN NAME="global_indices" >
-  !     Defines the global domain.
-  !   </IN>
-  !   <IN NAME="ndivs">
-  !     Is the number of domain divisions required.
-  !   </IN>
-  !   <INOUT NAME="domain">
-  !     Holds the resulting domain decomposition.
-  !   </INOUT>
-  !   <IN NAME="pelist">
-  !     List of PEs to which the domains are to be assigned.
-  !   </IN>
-  !   <IN NAME="flags">
-  !      An optional flag to pass additional information
-  !      about the desired domain topology. Useful flags in a 1D decomposition
-  !      include <TT>GLOBAL_DATA_DOMAIN</TT> and
-  !      <TT>CYCLIC_GLOBAL_DOMAIN</TT>. Flags are integers: multiple flags may
-  !      be added together. The flag values are public parameters available by
-  !      use association.
-  !   </IN>
-  !   <IN NAME="halo">
-  !     Width of the halo.
-  !   </IN>
-  !   <IN NAME="extent">
-  !      Normally <TT>mpp_define_domains</TT> attempts
-  !      an even division of the global domain across <TT>ndivs</TT>
-  !      domains. The <TT>extent</TT> array can be used by the user to pass a
-  !      custom domain division. The <TT>extent</TT> array has <TT>ndivs</TT>
-  !      elements and holds the compute domain widths, which should add up to
-  !      cover the global domain exactly.
-  !   </IN>
-  !   <IN NAME="maskmap">
-  !     Some divisions may be masked
-  !     (<TT>maskmap=.FALSE.</TT>) to exclude them from the computation (e.g
-  !     for ocean model domains that are all land). The <TT>maskmap</TT> array
-  !     is dimensioned <TT>ndivs</TT> and contains <TT>.TRUE.</TT> values for
-  !     any domain that must be <I>included</I> in the computation (default
-  !     all). The <TT>pelist</TT> array length should match the number of
-  !     domains included in the computation.
-  !    </IN>
-
-  !  <IN NAME="layout"></IN>
-  !  <IN NAME="xflags, yflags"></IN>
-  !  <IN NAME="xhalo, yhalo"></IN>
-  !  <IN NAME="xextent, yextent"></IN>
-  !  <IN NAME="name" ></IN>
+  !!   <IN NAME="global_indices" >
+  !!     Defines the global domain.
+  !!   </IN>
+  !!   <IN NAME="ndivs">
+  !!     Is the number of domain divisions required.
+  !!   </IN>
+  !!   <INOUT NAME="domain">
+  !!     Holds the resulting domain decomposition.
+  !!   </INOUT>
+  !!   <IN NAME="pelist">
+  !!     List of PEs to which the domains are to be assigned.
+  !!   </IN>
+  !!   <IN NAME="flags">
+  !!      An optional flag to pass additional information
+  !!      about the desired domain topology. Useful flags in a 1D decomposition
+  !!      include <TT>GLOBAL_DATA_DOMAIN</TT> and
+  !!      <TT>CYCLIC_GLOBAL_DOMAIN</TT>. Flags are integers: multiple flags may
+  !!      be added together. The flag values are public parameters available by
+  !!      use association.
+  !!   </IN>
+  !!   <IN NAME="halo">
+  !!     Width of the halo.
+  !!   </IN>
+  !!   <IN NAME="extent">
+  !!      Normally <TT>mpp_define_domains</TT> attempts
+  !!      an even division of the global domain across <TT>ndivs</TT>
+  !!      domains. The <TT>extent</TT> array can be used by the user to pass a
+  !!      custom domain division. The <TT>extent</TT> array has <TT>ndivs</TT>
+  !!      elements and holds the compute domain widths, which should add up to
+  !!      cover the global domain exactly.
+  !!   </IN>
+  !!   <IN NAME="maskmap">
+  !!     Some divisions may be masked
+  !!     (<TT>maskmap=.FALSE.</TT>) to exclude them from the computation (e.g
+  !!     for ocean model domains that are all land). The <TT>maskmap</TT> array
+  !!     is dimensioned <TT>ndivs</TT> and contains <TT>.TRUE.</TT> values for
+  !!     any domain that must be <I>included</I> in the computation (default
+  !!     all). The <TT>pelist</TT> array length should match the number of
+  !!     domains included in the computation.
+  !!    </IN>
+  !!
+  !!  <IN NAME="layout"></IN>
+  !!  <IN NAME="xflags, yflags"></IN>
+  !!  <IN NAME="xhalo, yhalo"></IN>
+  !!  <IN NAME="xextent, yextent"></IN>
+  !!  <IN NAME="name" ></IN>
   !> @example call mpp_define_domains( (/1,100/), 10, domain, &
   !!         flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
   !!
@@ -805,14 +814,14 @@ module mpp_domains_mod
   !! crossing the fold. This parity reversal is performed only in the vector version of
   !! mpp_update_domains. In addition, shift operations may need to be applied to vector fields on
   !! staggered grids, also described in the vector interface to mpp_update_domains.
-  !
-  !    <TT>name</TT> is the name associated with the decomposition,
-  !    e.g <TT>'Ocean model'</TT>. If this argument is present,
-  !    <TT>mpp_define_domains</TT> will print the domain decomposition
-  !    generated to <TT>stdlog</TT>.
-  !
-  !    Examples:
-  !
+  !!
+  !!    <TT>name</TT> is the name associated with the decomposition,
+  !!    e.g <TT>'Ocean model'</TT>. If this argument is present,
+  !!    <TT>mpp_define_domains</TT> will print the domain decomposition
+  !!    generated to <TT>stdlog</TT>.
+  !!
+  !!    Examples:
+  !!
   !> @example call mpp_define_domains( (/1,100,1,100/), (/2,2/), domain, xhalo=1 )
   !! will create the following domain layout:\n
   !!\n
@@ -839,22 +848,24 @@ module mpp_domains_mod
   !!    |--------------|----------|-----------|-----------|------------|
   !!    |Data domain   |0,101,1,25|0,101,26,50|0,101,51,75|1,101,76,100|
   !!    |--------------|----------|-----------|-----------|------------|
-
   interface mpp_define_domains
      module procedure mpp_define_domains1D
      module procedure mpp_define_domains2D
   end interface
 
+  !> define nullified 1D or 2D domain
   interface mpp_define_null_domain
      module procedure mpp_define_null_domain1D
      module procedure mpp_define_null_domain2D
   end interface
-
+  !> copy 1D or 2D domain 
+  !> @param domain_in Input domain to get read
+  !> @param domain_out Output domain to get written to
   interface mpp_copy_domain
      module procedure mpp_copy_domain1D
      module procedure mpp_copy_domain2D
   end interface mpp_copy_domain
-
+  !> Deallocate given 1D or 2D domain
   interface mpp_deallocate_domain
      module procedure mpp_deallocate_domain1D
      module procedure mpp_deallocate_domain2D
@@ -982,7 +993,7 @@ module mpp_domains_mod
   end interface
 
 !> @brief Interface to start halo updates
-!> @detailed \empp_start_update_domains is used to start a halo update of a
+!> \empp_start_update_domains is used to start a halo update of a
 !!    domain-decomposed array on each PE. \eMPP_TYPE_ can be of type
 !!    \ecomplex, \einteger, \elogical or \ereal;
 !!    of 4-byte or 8-byte kind; of rank up to 5. The vector version (with
@@ -1121,8 +1132,6 @@ module mpp_domains_mod
 !
 !> @example call mpp_start_update_domains( field, domain, flags )
 !> @example  call mpp_complete_update_domains( field, domain, flags )
-
-
   interface mpp_start_update_domains
      module procedure mpp_start_update_domain2D_r8_2d
      module procedure mpp_start_update_domain2D_r8_3d
@@ -1162,6 +1171,9 @@ module mpp_domains_mod
      module procedure mpp_start_update_domain2D_i4_5d
   end interface
 
+  !> Must be used after a call to @ref mpp_start_update_domains
+  !! in order to complete a nonblocking domain update. See @ref mpp_start_update_domains
+  !! for more info.
   interface mpp_complete_update_domains
      module procedure mpp_complete_update_domain2D_r8_2d
      module procedure mpp_complete_update_domain2D_r8_3d

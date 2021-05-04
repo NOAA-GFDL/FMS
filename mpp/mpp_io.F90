@@ -24,114 +24,101 @@
 !
 !-----------------------------------------------------------------------
 
+!!!!  TODO move type descriptions to where they need to be for doxygen
+
 !> @defgroup mpp_io_mod mpp_io_mod
 !> @ingroup mpp
-!> @brief Routines for parallel I/O on distributed systems. Will be deprecated
-!! in the future for @ref fms2_io
-!> @htmlonly  
-!! <CONTACT EMAIL="vb@gfdl.noaa.gov">
-!!   V. Balaji
-!! </CONTACT>
-
-!! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-!! <RCSLOG SRC="http://www.gfdl.noaa.gov/~vb/changes_mpp_io.html"/>
-
-!! <OVERVIEW>
-!!   <TT>mpp_io_mod</TT>, is a set of simple calls for parallel I/O on
+!> @brief a set of simple calls for parallel I/O on
 !!   distributed systems. It is geared toward the writing of data in netCDF
-!!   format. It requires the modules <LINK
-!!   SRC="mpp_domains.html">mpp_domains_mod</LINK> and <LINK
-!!   SRC="mpp.html">mpp_mod</LINK>, upon which it is built.
-!! </OVERVIEW>
-
-!! <DESCRIPTION>
-!!   In massively parallel environments, an often difficult problem is
-!!   the reading and writing of data to files on disk. MPI-IO and MPI-2 IO
-!!   are moving toward providing this capability, but are currently not
-!!   widely implemented. Further, it is a rather abstruse
-!!   API. <TT>mpp_io_mod</TT> is an attempt at a simple API encompassing a
-!!   certain variety of the I/O tasks that will be required. It does not
-!!   attempt to be an all-encompassing standard such as MPI, however, it
-!!   can be implemented in MPI if so desired. It is equally simple to add
-!!   parallel I/O capability to <TT>mpp_io_mod</TT> based on vendor-specific
-!!   APIs while providing a layer of insulation for user codes.
+!!   format
+!> @author V. Balaji <"vb@gfdl.noaa.gov">
+!> In massively parallel environments, an often difficult problem is
+!! the reading and writing of data to files on disk. MPI-IO and MPI-2 IO
+!! are moving toward providing this capability, but are currently not
+!! widely implemented. Further, it is a rather abstruse
+!! API. @ref mpp_io_mod is an attempt at a simple API encompassing a
+!! certain variety of the I/O tasks that will be required. It does not
+!! attempt to be an all-encompassing standard such as MPI, however, it
+!! can be implemented in MPI if so desired. It is equally simple to add
+!! parallel I/O capability to @ref mpp_io_mod based on vendor-specific
+!! APIs while providing a layer of insulation for user codes.
 !!
-!!   The <TT>mpp_io_mod</TT> parallel I/O API built on top of the <LINK
-!!   SRC="mpp_domains.html">mpp_domains_mod</LINK> and <LINK
-!!   SRC="mpp.html">mpp_mod</LINK> API for domain decomposition and
-!!   message passing. Features of <TT>mpp_io_mod</TT> include:
+!! The @ref mpp_io_mod parallel I/O API built on top of the <LINK
+!! SRC="mpp_domains.html">mpp_domains_mod</LINK> and <LINK
+!! SRC="mpp.html">mpp_mod</LINK> API for domain decomposition and
+!! message passing. Features of @ref mpp_io_mod include:
 !!
-!!    1) Simple, minimal API, with free access to underlying API for more
-!!   complicated stuff.<BR/>
-!!    2) Self-describing files: comprehensive header information
-!!   (metadata) in the file itself.<BR/>
-!!    3) Strong focus on performance of parallel write: the climate models
-!!   for which it is designed typically read a minimal amount of data
-!!   (typically at the beginning of the run); but on the other hand, tend
-!!   to write copious amounts of data during the run. An interface for
-!!   reading is also supplied, but its performance has not yet been optimized.<BR/>
-!!    4) Integrated netCDF capability: <LINK SRC
-!!   ="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</LINK> is a
-!!   data format widely used in the climate/weather modeling
-!!   community. netCDF is considered the principal medium of data storage
-!!   for <TT>mpp_io_mod</TT>. But I provide a raw unformatted
-!!   fortran I/O capability in case netCDF is not an option, either due to
-!!   unavailability, inappropriateness, or poor performance.<BR/>
-!!    5) May require off-line post-processing: a tool for this purpose,
-!!   <TT>mppnccombine</TT>, is available. GFDL users may use
-!!   <TT>~hnv/pub/mppnccombine</TT>. Outside users may obtain the
-!!   source <LINK SRC
-!!   ="ftp://ftp.gfdl.gov/perm/hnv/mpp/mppnccombine.c">here</LINK>.  It
-!!   can be compiled on any C compiler and linked with the netCDF
-!!   library. The program is free and is covered by the <LINK SRC
-!!   ="ftp://ftp.gfdl.gov/perm/hnv/mpp/LICENSE">GPL license</LINK>.
+!! 1) Simple, minimal API, with free access to underlying API for more
+!! complicated stuff.<BR/>
+!! 2) Self-describing files: comprehensive header information
+!! (metadata) in the file itself.<BR/>
+!! 3) Strong focus on performance of parallel write: the climate models
+!! for which it is designed typically read a minimal amount of data
+!! (typically at the beginning of the run); but on the other hand, tend
+!! to write copious amounts of data during the run. An interface for
+!! reading is also supplied, but its performance has not yet been optimized.<BR/>
+!! 4) Integrated netCDF capability: <LINK SRC
+!! ="http://www.unidata.ucar.edu/packages/netcdf/">netCDF</LINK> is a
+!! data format widely used in the climate/weather modeling
+!! community. netCDF is considered the principal medium of data storage
+!! for @ref mpp_io_mod. But I provide a raw unformatted
+!! fortran I/O capability in case netCDF is not an option, either due to
+!! unavailability, inappropriateness, or poor performance.<BR/>
+!! 5) May require off-line post-processing: a tool for this purpose,
+!! <TT>mppnccombine</TT>, is available. GFDL users may use
+!! <TT>~hnv/pub/mppnccombine</TT>. Outside users may obtain the
+!! source <LINK SRC
+!! ="ftp://ftp.gfdl.gov/perm/hnv/mpp/mppnccombine.c">here</LINK>.  It
+!! can be compiled on any C compiler and linked with the netCDF
+!! library. The program is free and is covered by the <LINK SRC
+!! ="ftp://ftp.gfdl.gov/perm/hnv/mpp/LICENSE">GPL license</LINK>.
 !!
-!!   The internal representation of the data being written out is
-!!   assumed be the default real type, which can be 4 or 8-byte. Time data
-!!   is always written as 8-bytes to avoid overflow on climatic time scales
-!!   in units of seconds.
+!! The internal representation of the data being written out is
+!! assumed be the default real type, which can be 4 or 8-byte. Time data
+!! is always written as 8-bytes to avoid overflow on climatic time scales
+!! in units of seconds.
 !!
-!!   <LINK SRC="modes"></LINK><H4>I/O modes in <TT>mpp_io_mod</TT></H4>
+!! <LINK SRC="modes"></LINK><H4>I/O modes in @ref mpp_io_mod</H4>
 !!
-!!   The I/O activity critical to performance in the models for which
-!!   <TT>mpp_io_mod</TT> is designed is typically the writing of large
-!!   datasets on a model grid volume produced at intervals during
-!!   a run. Consider a 3D grid volume, where model arrays are stored as
-!!   <TT>(i,j,k)</TT>. The domain decomposition is typically along
-!!   <TT>i</TT> or <TT>j</TT>: thus to store data to disk as a global
-!!   volume, the distributed chunks of data have to be seen as
-!!   non-contiguous. If we attempt to have all PEs write this data into a
-!!   single file, performance can be seriously compromised because of the
-!!   data reordering that will be required. Possible options are to have
-!!   one PE acquire all the data and write it out, or to have all the PEs
-!!   write independent files, which are recombined offline. These three
-!!   modes of operation are described in the <TT>mpp_io_mod</TT> terminology
-!!   in terms of two parameters, <I>threading</I> and <I>fileset</I>,
-!!   as follows:
+!! The I/O activity critical to performance in the models for which
+!! @ref mpp_io_mod is designed is typically the writing of large
+!! datasets on a model grid volume produced at intervals during
+!! a run. Consider a 3D grid volume, where model arrays are stored as
+!! <TT>(i,j,k)</TT>. The domain decomposition is typically along
+!! <TT>i</TT> or <TT>j</TT>: thus to store data to disk as a global
+!! volume, the distributed chunks of data have to be seen as
+!! non-contiguous. If we attempt to have all PEs write this data into a
+!! single file, performance can be seriously compromised because of the
+!! data reordering that will be required. Possible options are to have
+!! one PE acquire all the data and write it out, or to have all the PEs
+!! write independent files, which are recombined offline. These three
+!! modes of operation are described in the @ref mpp_io_mod terminology
+!! in terms of two parameters, <I>threading</I> and <I>fileset</I>,
+!! as follows:
 !!
-!!   <I>Single-threaded I/O:</I> a single PE acquires all the data
-!!   and writes it out.<BR/>
-!!   <I>Multi-threaded, single-fileset I/O:</I> many PEs write to a
-!!   single file.<BR/>
-!!    <I>Multi-threaded, multi-fileset I/O:</I> many PEs write to
-!!   independent files. This is also called <I>distributed I/O</I>.
+!! <I>Single-threaded I/O:</I> a single PE acquires all the data
+!! and writes it out.<BR/>
+!! <I>Multi-threaded, single-fileset I/O:</I> many PEs write to a
+!! single file.<BR/>
+!! <I>Multi-threaded, multi-fileset I/O:</I> many PEs write to
+!! independent files. This is also called <I>distributed I/O</I>.
 !!
-!!   The middle option is the most difficult to achieve performance. The
-!!   choice of one of these modes is made when a file is opened for I/O, in
-!!   <LINK SRC="#mpp_open">mpp_open</LINK>.
+!! The middle option is the most difficult to achieve performance. The
+!! choice of one of these modes is made when a file is opened for I/O, in
+!! <LINK SRC="#mpp_open">mpp_open</LINK>.
 !!
-!!   <LINK name="metadata"></LINK><H4>Metadata in <TT>mpp_io_mod</TT></H4>
+!! <LINK name="metadata"></LINK><H4>Metadata in @ref mpp_io_mod</H4>
 !!
-!!   A requirement of the design of <TT>mpp_io_mod</TT> is that the file must
-!!   be entirely self-describing: comprehensive header information
-!!   describing its contents is present in the header of every file. The
-!!   header information follows the model of netCDF. Variables in the file
-!!   are divided into <I>axes</I> and <I>fields</I>. An axis describes a
-!!   co-ordinate variable, e.g <TT>x,y,z,t</TT>. A field consists of data in
-!!   the space described by the axes. An axis is described in
-!!   <TT>mpp_io_mod</TT> using the defined type <TT>axistype</TT>:
+!! A requirement of the design of @ref mpp_io_mod is that the file must
+!! be entirely self-describing: comprehensive header information
+!! describing its contents is present in the header of every file. The
+!! header information follows the model of netCDF. Variables in the file
+!! are divided into <I>axes</I> and <I>fields</I>. An axis describes a
+!! co-ordinate variable, e.g <TT>x,y,z,t</TT>. A field consists of data in
+!! the space described by the axes. An axis is described in
+!! @ref mpp_io_mod using the defined type <TT>axistype</TT>:
 !!
-!!   <PRE>
+!! <PRE>
 !!   type, public :: axistype
 !!      sequence
 !!      character(len=128) :: name

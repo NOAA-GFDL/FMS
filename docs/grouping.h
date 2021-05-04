@@ -1,156 +1,159 @@
-!!*********************************************************************
-!*                   GNU Lesser General Public License
-!*
-!* This file is part of the GFDL Flexible Modeling System (FMS).
-!*
-!* FMS is free software: you can redistribute it and!or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
-!*
-!* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http:!!www.gnu.org/licenses/>.
-!!*********************************************************************
-!!This header file is used exclusively for doxygen documentation
-!!Creates groupings for each directory with descriptions so that
-!!files and their contents can be added to their corresponding group
-!! any 'directory level' comments can be added here
+/**
+ *                   GNU Lesser General Public License
+ *
+ * This file is part of the GFDL Flexible Modeling System (FMS).
+ *
+ * FMS is free software: you can redistribute it and!or modify it under
+ * the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at
+ * your option) any later version.
+ *
+ * FMS is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FMS.  If not, see <http:!!www.gnu.org/licenses/>.
+ *********************************************************************
+ */
 
-!> @defgroup affinity Affinity
-!> @brief API interfaces to allow setting and getting thread affinity.
-!!
-!>  Uses fms_affinity.F90 to interface between affinity.c for manipulating 
-!!  CPU affinity.
-!!
+//This header file is used exclusively for doxygen documentation
+//Creates groupings for each directory with descriptions so that
+//files and their contents can be added to their corresponding group
+// any 'directory level' comments can be added here
 
-!> @defgroup astronomy Astronomy
-!> @brief Astronomy related variables and routines
-!!
+/** @defgroup affinity Affinity
+ *  @brief API interfaces to allow setting and getting thread affinity.
+ *
+ *  Uses fms_affinity.F90 to interface between affinity.c for manipulating 
+ *  CPU affinity.
+ *
+ */
 
-!> @defgroup axis_utils Axis Utilities
-!> @brief Utilities for manipulating axis data
-!!
+/** @defgroup astronomy Astronomy
+ *  @brief Astronomy related variables and routines
+ */
 
-!> @defgroup amip_interp AMIP Interpolator
-!> @brief Routines for interpolating SST and ice mask data sets over a model grid
-!!
+/** @defgroup axis_utils Axis Utilities
+ *  @brief Utilities for manipulating axis data
+ */
 
-!> @defgroup block_control Block Control
-!!  
-!!
+/** @defgroup amip_interp AMIP Interpolator
+ *  @brief Routines for interpolating SST and ice mask data sets over a model grid
+ */
 
-!> @defgroup column_diagnostics Column Diagnostics 
-!!  
-!!
+/** @defgroup block_control Block Control
+ *  
+ */
 
-!> @defgroup constants Constants
-!!  
-!!
+/** @defgroup column_diagnostics Column Diagnostics 
+ *  
+ */
 
-!> @defgroup coupler Coupler
-!!  
-!!
+/** @defgroup constants Constants
+ *  
+ */
 
-!> @defgroup data_override Data Override
-!!  
-!!
+/** @defgroup coupler Coupler
+ *  
+ */
 
-!> @defgroup diag_integral Diag Integral
-!!  
-!!
+/** @defgroup data_override Data Override
+ *  
+ */
 
-!> @defgroup diag_manager Diag Manager
-!!  
-!!
+/** @defgroup diag_integral Diag Integral
+ *  
+ */
 
-!> @defgroup drifters Drifters
-!!  
-!!
+/** @defgroup diag_manager Diag Manager
+ *  
+ */
 
-!> @defgroup exchange Exchange 
-!!  
-!!
+/** @defgroup drifters Drifters
+ *  
+ */
 
-!> @defgroup field_manager Field Manager 
-!!  
-!!
+/** @defgroup exchange Exchange 
+ *  
+ */
 
-!> @defgroup fms FMS utilities
-!!
-!!
+/** @defgroup field_manager Field Manager 
+ *  
+ */
 
-!> @defgroup fms2_io FMS2 IO
-!!
-!!
+/** @defgroup fms FMS utilities
+ *
+ */
 
-!> @defgroup horiz_interp Horizontal Interpolator
-!!
-!!
+/** @defgroup fms2_io FMS2 IO
+ *
+ */
 
-!> @defgroup interpolator Interpolator
-!!
-!! 
+/** @defgroup horiz_interp Horizontal Interpolator
+ *
+ */
 
-!> @defgroup memutils Memory Utilities 
-!!
-!!
+/** @defgroup interpolator Interpolator
+ *
+ */ 
 
-!> @defgroup monin_obukhov Monin Obukhov
-!!
-!!
+/** @defgroup memutils Memory Utilities 
+ *
+ */
 
-!> @defgroup mosaic Mosaic
-!!
-!!
+/** @defgroup monin_obukhov Monin Obukhov
+ *
+ */
 
-!> @defgroup mpp MPP
-!!
-!!
+/** @defgroup mosaic Mosaic
+ *
+ */
 
-!> @defgroup platform Platform
-!!
-!!
+/** @defgroup mpp MPP
+ *
+ */
 
-!> @defgroup random_numbers Random Numbers
-!!
-!!
+/** @defgroup platform Platform
+ *
+ */
 
-!> @defgroup sat_vapor_pres Saturation Vapor Pressure
-!!
-!!
+/** @defgroup random_numbers Random Numbers
+ *
+ */
 
-!> @defgroup time_interp Time Interpolator
-!!
-!!
+/** @defgroup sat_vapor_pres Saturation Vapor Pressure
+ *
+ */
 
-!> @defgroup time_manager Time Manager
-!!
-!!
+/** @defgroup time_interp Time Interpolator
+ *
+ */
 
-!> @defgroup topography Topography
-!!
-!!
+/** @defgroup time_manager Time Manager
+ *
+ */
 
-!> @defgroup tracer_manager Tracer Manager
-!!
-!!
+/** @defgroup topography Topography
+ *
+ */
 
-!> @defgroup tridiagonal Tridiagonal
-!!
-!!
+/** @defgroup tracer_manager Tracer Manager
+ *
+ */
 
-!> @defgroup libfms FMS Global Module
-!!
-!!
+/** @defgroup tridiagonal Tridiagonal
+ *
+ */
 
-!> @page build Building and Installation
-!> @brief Information about the build systems and how to build and install
-!!   @ref build Building with Autotools 
-!!   @ref cmake Building with CMake
-!!   @ref install libFMS Installation
-!!
+/** @defgroup libfms FMS Global Module
+ *
+ */
+
+/** @page build Building and Installation
+ * @brief Information about the build systems and how to build and install
+ * @ref build 
+ * @ref cmake
+ * @ref install
+ */  
