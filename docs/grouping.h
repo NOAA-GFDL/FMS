@@ -153,7 +153,11 @@
 
 /** @page build Building and Installation
  * @brief Information about the build systems and how to build and install
- * @ref build 
- * @ref cmake
- * @ref install
+ *
+ * @subpage install
+ *
+ * @subpage autotools
+ *
+ * @subpage cmake 
+ *
  */  

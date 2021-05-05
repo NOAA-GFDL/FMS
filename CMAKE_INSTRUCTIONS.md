@@ -1,4 +1,4 @@
-<!-- \page cmake Building with CMake -->
+\page cmake Building with CMake
 # Instructions for building FMS with cmake
 
 ## 1. Environment Variables

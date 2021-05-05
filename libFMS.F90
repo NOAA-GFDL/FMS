@@ -20,9 +20,7 @@
 !> @ingroup libfms
 !> @brief A convenience module to use any FMS routines, functions, values
 !> @author Ryan Mulhall
-!
 !> @date 2/2021
-!
 !> Imports all supported FMS modules so that any public interfaces,
 !! variables or routines can be used via this module. Excludes mpp_io modules
 !! and routines. Overloaded type operators/assignments cannot be imported individually
@@ -47,8 +45,7 @@
 !! file.
 
 !> @file
-!> @ingroup libfms
-!> @brief File for @ref FMS Global Module
+!> @brief File for @ref FMS
 
 !> @addtogroup FMS
 !> @{

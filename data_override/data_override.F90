@@ -18,16 +18,11 @@
 !***********************************************************************
 !> @defgroup data_override_mod data_override_mod
 !> @ingroup data_override 
-!! @brief Given a gridname, fieldname and model time this routine will get data in a file whose
-!!   path is described in a user-provided data_table, do spatial and temporal interpolation if
-!!   necessary to convert data to model's grid and time.
+!! @brief Routines to get data in a file whose path is described in a user-provided data_table
+!! and do spatial and temporal interpolation if necessary to convert data to model's grid and time.
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!
-!! Given a gridname, fieldname and model time this routine will get data in a file whose
-!! path is described in a user-provided data_table, do spatial and temporal interpolation if
-!! necessary to convert data to model's grid and time.
-!!
-!! Before using data_override a data_table must be created with the following entries:
+!! Before using @ref data_override a data_table must be created with the following entries:
 !! gridname, fieldname_code, fieldname_file, file_name, ongrid, factor.
 !!
 !! More explainations about data_table entries can be found in the source code (defining data_type)
@@ -87,6 +82,7 @@ private
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!> @brief Holds field and grid data
 type data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code !< fieldname used in user's code (model)
@@ -148,12 +144,14 @@ logical                                         :: reproduce_null_char_bug = .fa
 
 namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug, reproduce_null_char_bug
 
+!> @brief 
 interface data_override
      module procedure data_override_0d
      module procedure data_override_2d
      module procedure data_override_3d
 end interface
 
+!> @brief
 interface data_override_UG
      module procedure data_override_UG_1d
      module procedure data_override_UG_2d
@@ -169,16 +167,6 @@ function count_ne_1(in_1, in_2, in_3)
 
   count_ne_1 = .not.(in_1.NEQV.in_2.NEQV.in_3) .OR. (in_1.AND.in_2.AND.in_3)
 end function count_ne_1
-!===============================================================================================
-! <SUBROUTINE NAME="data_override_init">
-!   <DESCRIPTION>
-! Assign default values for default_table, get domain of component models,
-! get global grids of component models.
-! Users should call data_override_init before calling data_override
-!   </DESCRIPTION>
-!   <TEMPLATE>
-! call data_override_init
-!   </TEMPLATE>
 
 !> @brief Assign default values for default_table, get domain of component models,
 !! get global grids of component models.
@@ -553,17 +541,6 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  end if
 
 end subroutine data_override_init
-! </SUBROUTINE>
-!===============================================================================================
-
-!===============================================================================================
-! <SUBROUTINE NAME="data_override_unset_domain">
-!   <DESCRIPTION>
-! Unset domains that had previously been set for use by data_override.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-! call data_override_unset_domain
-!   </TEMPLATE>
 
 !> @brief Unset domains that had previously been set for use by data_override.
 !!
@@ -617,10 +594,6 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
   endif ; endif
 
 end subroutine data_override_unset_domains
-! </SUBROUTINE>
-!===============================================================================================
-
-!===============================================================================================
 
 !> @brief Given a gridname, this routine returns the working domain associated with this gridname
 subroutine get_domain(gridname, domain, comp_domain)
@@ -669,11 +642,6 @@ subroutine get_domainUG(gridname, UGdomain, comp_domain)
 end subroutine get_domainUG
 !===============================================================================================
 
-! <SUBROUTINE NAME="data_override_2d">
-!   <DESCRIPTION>
-! This routine performs data override for 2D fields; for usage, see data_override_3d.
-!   </DESCRIPTION>
-
 !> @brief This routine performs data override for 2D fields; for usage, see data_override_3d.
 subroutine data_override_2d(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
   character(len=3), intent(in) :: gridname !< model grid ID
@@ -706,8 +674,6 @@ subroutine data_override_2d(gridname,fieldname,data_2D,time,override, is_in, ie_
   data_2D(:,:) = data_3D(:,:,1)
   deallocate(data_3D)
 end subroutine data_override_2d
-! </SUBROUTINE>
-!===============================================================================================
 
 ! <SUBROUTINE NAME="data_override_3d">
 !   <DESCRIPTION>
@@ -1288,18 +1254,18 @@ end subroutine data_override_3d
 
 !> @brief This routine performs data override for scalar fields
 subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_index)
-  character(len=3), intent(in) :: gridname !< model grid ID
-  character(len=*), intent(in) :: fieldname_code !< field name as used in the model
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
-  type(time_type), intent(in) :: time !< (target) model time
-  real,             intent(out) :: data !< data returned by this call
+  character(len=3), intent(in) :: gridname !> model grid ID
+  character(len=*), intent(in) :: fieldname_code !> field name as used in the model
+  logical, intent(out), optional :: override !> true if the field has been overriden succesfully
+  type(time_type), intent(in) :: time !> (target) model time
+  real,             intent(out) :: data !> data returned by this call
   integer, intent(in), optional :: data_index
 
-  character(len=512) :: filename !< file containing source data
-  character(len=128) :: fieldname !< fieldname used in the data file
-  integer :: index1 !< field index in data_table
-  integer :: id_time !< index for time interp in override array
-  integer :: curr_position !< position of the field currently processed in override_array
+  character(len=512) :: filename !> file containing source data
+  character(len=128) :: fieldname !> fieldname used in the data file
+  integer :: index1 !> field index in data_table
+  integer :: id_time !> index for time interp in override array
+  integer :: curr_position !> position of the field currently processed in override_array
   integer :: i
   real :: factor
 
@@ -1381,6 +1347,7 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
 end subroutine data_override_0d
 ! </SUBROUTINE>
 
+!> @brief 
 subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
   character(len=3),   intent(in) :: gridname !< model grid ID
   character(len=*),   intent(in) :: fieldname !< field to override

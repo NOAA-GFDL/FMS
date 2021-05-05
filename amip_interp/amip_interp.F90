@@ -159,47 +159,42 @@ interface operator (>)
    module procedure date_gt
 end interface
 
-!> Function that initializes data needed for the horizontal
+!> @page amip_interp_new amip_interp_new Interface        
+!> @brief Function that initializes data needed for the horizontal
 !! interpolation between the sst grid and model grid. The
 !! returned variable of type amip_interp_type is needed when
 !! calling get_amip_sst and get_amip_ice.
 !!
-!!   ERROR MSG="the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL"
-!!     Check the value of namelist variable DATA_SET.
+!> @throws"the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL"
+!! Check the value of namelist variable DATA_SET.
 !!
-!!   ERROR MSG="requested input data set does not exist" STATUS="FATAL"
-!!     The data set requested is valid but the data does not exist in
-!!      the INPUT subdirectory. You may have requested amip2 data which
-!!      has not been officially set up.
-!!      See the section on DATA SETS to properly set the data up.
+!> @throws"requested input data set does not exist" STATUS="FATAL"
+!! The data set requested is valid but the data does not exist in
+!! the INPUT subdirectory. You may have requested amip2 data which
+!! has not been officially set up.
+!! See the section on DATA SETS to properly set the data up.
 !!
-!!   ERROR MSG="use_climo mismatch" STATUS="FATAL"
-!!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
-!!     argument use_climo = true.  This combination is not allowed.
+!> @throws"use_climo mismatch" STATUS="FATAL"
+!! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
+!! argument use_climo = true.  This combination is not allowed.
 !!
-!!   ERROR MSG="use_annual(climo) mismatch" STATUS="FATAL"
-!!     The namelist variable date_out_of_range = 'fail' and the amip_interp_new
-!!     argument use_annual = true.  This combination is not allowed.
-!
+!> @throws"use_annual(climo) mismatch" STATUS="FATAL"
+!! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
+!! argument use_annual = true.  This combination is not allowed.
 !> @param lon
 !!     Longitude in radians of the model's grid box edges (1d lat/lon grid case)
 !!     or at grid box mid-point (2d case for arbitrary grids).
-!
 !> @param lat
 !!     Latitude in radians of the model's grid box edges (1d lat/lon grid case)
 !!     or at grid box mid-point (2d case for arbitrary grids).
-!
 !> @param mask
 !!     A mask for the model grid.
-!
 !> @param use_climo
 !!     Flag the specifies that monthly mean climatological values will be used.
-!
 !> @param use_annual
 !!     Flag the specifies that the annual mean climatological
 !!              will be used.  If both use_annual = use_climo = true,
 !!              then use_annual = true will be used.
-!
 !> @param interp_method
 !!     specify the horiz_interp scheme. = "conservative" means conservative scheme,
 !!     = "bilinear" means  bilinear interpolation.
@@ -261,70 +256,65 @@ end type
 !-----------------------------------------------------------------------
 !---- namelist ----
 
-! <NAMELIST NAME="amip_interp_nml">
-!   <DATA NAME="data_set" TYPE="character(len=24)" DEFAULT="data_set = 'amip1'">
-!     Name/type of SST data that will be used.
-!  <BR/>
-!        Possible values (case-insensitive) are: <BR/>
-!                          1) amip1<BR/>
-!                          2) reynolds_eof<BR/>
-!                          3) reynolds_oi<BR/>
-!        See the <LINK SRC="amip_interp.html#DATA SETS">data set </LINK>section for more on these data.
-!   </DATA>
-
-!   <DATA NAME="date_out_of_range" TYPE="character(len=16)" DEFAULT="date_out_of_range = 'fail'">
-!     Controls the use of climatological monthly mean data when
-!     the requested date falls outside the range of the data set.<BR/>
-!     Possible values are:
-!     <PRE>
-!   fail      - program will fail if requested date is prior
-!               to or after the data set period.
-!   initclimo - program uses climatological requested data is
-!               prior to data set period and will fail if
-!               requested date is after data set period.
-!   climo     - program uses climatological data anytime.
-!    </PRE>
-!   </DATA>
-
-!   <DATA NAME="tice_crit" TYPE="real" DEFAULT="tice_crit = -1.80">
-!     Freezing point of sea water in degC or degK.
-!   </DATA>
-!   <DATA NAME="verbose" TYPE="integer" DEFAULT="verbose = 0">
-!     Controls printed output, 0 <= verbose <= 3
-!   </DATA>
-
-!---- additional parameters for controlling zonal prescribed sst ----
-!---- these parameters only have an effect when use_zonal=.true. ----
-!   <DATA NAME="use_zonal" TYPE="logical" DEFAULT=".false.">
-!     Flag to selected zonal sst or data set.
-!   </DATA>
-!   <DATA NAME="teq" TYPE="real" DEFAULT="teq=305.">
-!     sst at the equator.
-!   </DATA>
-!   <DATA NAME="tdif" TYPE="real" DEFAULT="tdif=50.">
-!     Equator to pole sst difference.
-!   </DATA>
-!   <DATA NAME="tann" TYPE="real" DEFAULT="tann=20.">
-!     Amplitude of annual cycle.
-!   </DATA>
-!   <DATA NAME="tlag" TYPE="real" DEFAULT="tlag=0.875">
-!     Offset for time of year (for annual cycle).
-!   </DATA>
-
-!   <DATA NAME="amip_date" TYPE="integer(3)" DEFAULT="/-1,-1,-1/">
-!     Single calendar date in integer "(year,month,day)" format
-!     that is used only if set with year>0, month>0, day>0.
-!     If used, model calendar date is replaced by this date,
-!     but model time of day is still used to determine ice/sst.
-!     Used for repeating-single-day (rsd) experiments.
-!   </DATA>
-
-!   <DATA NAME="sst_pert" TYPE="real" DEFAULT="sst_pert=0.">
-!     Temperature perturbation in degrees Kelvin added onto the SST.
-!                The perturbation is globally-uniform (even near sea-ice).
-!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
-!                may be useful in accessing model sensitivities.
-!   </DATA>
+!> @page amip_interp_nml amip_interp_nml
+!!   <DATA NAME="data_set" TYPE="character(len=24)" DEFAULT="data_set = 'amip1'">
+!!     Name/type of SST data that will be used.
+!!  <BR/>
+!!        Possible values (case-insensitive) are: <BR/>
+!!                          1) amip1<BR/>
+!!                          2) reynolds_eof<BR/>
+!!                          3) reynolds_oi<BR/>
+!!        See the <LINK SRC="amip_interp.html#DATA SETS">data set </LINK>section for more on these data.
+!!   </DATA>
+!!   <DATA NAME="date_out_of_range" TYPE="character(len=16)" DEFAULT="date_out_of_range = 'fail'">
+!!     Controls the use of climatological monthly mean data when
+!!     the requested date falls outside the range of the data set.<BR/>
+!!     Possible values are:
+!!     <PRE>
+!!   fail      - program will fail if requested date is prior
+!!               to or after the data set period.
+!!   initclimo - program uses climatological requested data is
+!!               prior to data set period and will fail if
+!!               requested date is after data set period.
+!!   climo     - program uses climatological data anytime.
+!!    </PRE>
+!!   </DATA>
+!!   <DATA NAME="tice_crit" TYPE="real" DEFAULT="tice_crit = -1.80">
+!!     Freezing point of sea water in degC or degK.
+!!   </DATA>
+!!   <DATA NAME="verbose" TYPE="integer" DEFAULT="verbose = 0">
+!!     Controls printed output, 0 <= verbose <= 3
+!!   </DATA>
+!!---- additional parameters for controlling zonal prescribed sst ----
+!!---- these parameters only have an effect when use_zonal=.true. ----
+!!   <DATA NAME="use_zonal" TYPE="logical" DEFAULT=".false.">
+!!     Flag to selected zonal sst or data set.
+!!   </DATA>
+!!   <DATA NAME="teq" TYPE="real" DEFAULT="teq=305.">
+!!     sst at the equator.
+!!   </DATA>
+!!   <DATA NAME="tdif" TYPE="real" DEFAULT="tdif=50.">
+!!     Equator to pole sst difference.
+!!   </DATA>
+!!   <DATA NAME="tann" TYPE="real" DEFAULT="tann=20.">
+!!     Amplitude of annual cycle.
+!!   </DATA>
+!!   <DATA NAME="tlag" TYPE="real" DEFAULT="tlag=0.875">
+!!     Offset for time of year (for annual cycle).
+!!   </DATA>
+!!   <DATA NAME="amip_date" TYPE="integer(3)" DEFAULT="/-1,-1,-1/">
+!!     Single calendar date in integer "(year,month,day)" format
+!!     that is used only if set with year>0, month>0, day>0.
+!!     If used, model calendar date is replaced by this date,
+!!     but model time of day is still used to determine ice/sst.
+!!     Used for repeating-single-day (rsd) experiments.
+!!   </DATA>
+!!   <DATA NAME="sst_pert" TYPE="real" DEFAULT="sst_pert=0.">
+!!     Temperature perturbation in degrees Kelvin added onto the SST.
+!!                The perturbation is globally-uniform (even near sea-ice).
+!!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
+!!                may be useful in accessing model sensitivities.
+!!   </DATA>
  character(len=24) :: data_set = 'amip1'   !<  use 'amip1'
                                            !!      'amip2'
                                            !!      'reynolds_eof'
@@ -932,6 +922,7 @@ endif
 
 !#######################################################################
 
+ !> initialize @ref amip_interp_mod for use
  subroutine amip_interp_init()
 
    integer :: unit,io,ierr
@@ -1080,11 +1071,10 @@ endif
 
 !> Frees data associated with a amip_interp_type variable. Should be used for any
 !! variables initialized via @ref amip_interp_new.
+!> @param Interp A defined data type variable initialized by amip_interp_new and used
+!! when calling get_amip_sst and get_amip_ice.
    subroutine amip_interp_del (Interp)
-   type (amip_interp_type), intent(inout) :: Interp !> A defined data type variable
-                                                 !!initialized by amip_interp_new and used
-                                                 !!when calling get_amip_sst and get_amip_ice.
-
+   type (amip_interp_type), intent(inout) :: Interp 
      if(associated(Interp%data1)) deallocate(Interp%data1)
      if(associated(Interp%data2)) deallocate(Interp%data2)
      if(allocated(lon_bnd))       deallocate(lon_bnd)

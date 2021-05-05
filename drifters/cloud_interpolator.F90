@@ -43,10 +43,14 @@ real, parameter           :: tol = 10.0*epsilon(1.)
 CONTAINS
 
 !...............................................................................
+!> Get expanded list of indices from contracted index 
+!> @param Ic contracted index
+!> @param[out] ie(:) expanded list of indices
+!> @param[out] ier error flag, non zero if operation unsuccessful
 pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
-    integer, intent(in)  ::  Ic    !< contacted index
-    integer, intent(out) ::  ie(:) !< expanded list of indices
-    integer, intent(out) ::  ier   !< error flag (0=ok)
+    integer, intent(in)  ::  Ic
+    integer, intent(out) ::  ie(:)
+    integer, intent(out) ::  ier
 
     integer j, nd
 
@@ -66,11 +70,14 @@ pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
   end subroutine cld_ntrp_expand_index
 
 !...............................................................................
-!...............................................................................
+!> Contract list of indices to an single integer
+!> @param ie(:) expanded list of indices
+!> @param[out] Ic contracted index 
+!> @param[out] ier error flag, non zero if operation unsuccessful
 pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
-    integer, intent(in) ::  ie(:)  !< expanded list of indices
-    integer, intent(out)  ::  Ic   !< contacted index
-    integer, intent(out) ::  ier   !< error flag (0=ok)
+    integer, intent(in) ::  ie(:)
+    integer, intent(out)  ::  Ic
+    integer, intent(out) ::  ier
 
     integer j, nd
 
@@ -90,11 +97,16 @@ pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
 
 !...............................................................................
 !...............................................................................
+!> Cloud interpolation for linear cells 
+!> @param fvals values at the cell nodes
+!> @param ts normalized [0,1]^nd cell coordinates
+!> @param[out] interpolated value
+!> @param[out] error flag, non zero if unsucessful
 pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
-    real, intent(in) :: fvals(0:)  !< values at the cell nodes
-    real, intent(in) :: ts(:)      !< normalized [0,1]^nd cell coordinates
-    real, intent(out):: f          !< interpolated value
-    integer, intent(out) ::  ier   !< error flag (0=ok)
+    real, intent(in) :: fvals(0:)
+    real, intent(in) :: ts(:)
+    real, intent(out):: f
+    integer, intent(out) ::  ier
 
     integer j, nd, Ic, iflag
     integer ie(size(fvals))

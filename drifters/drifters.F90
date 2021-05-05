@@ -110,8 +110,7 @@ module drifters_mod
 #include<file_version.h>
   real :: DRFT_EMPTY_ARRAY(0)
 
-  !> @brief Be sure to update drifters_new, drifters_del and drifters_copy_new
-  !!   when adding members
+  !> @brief type to hold drifter data
   type drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
