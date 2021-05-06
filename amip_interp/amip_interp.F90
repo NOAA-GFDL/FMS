@@ -21,6 +21,8 @@
 !> @ingroup amip_interp
 !> @brief Provides observed SST and ice mask data sets that have been interpolated onto your model's grid.
 !!
+!> @author Bruce Wyman
+!!
 !> When using these routines three possible data sets are available:
 !!
 !!     1)  AMIP \link http://www-pcmdi.llnl.gov/amip \endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
@@ -58,9 +60,6 @@
 !!         amip1           INPUT/amip1_sst.data
 !!         reynolds_io     INPUT/reyoi_sst.data
 !!         reynolds_eof    INPUT/reynolds_sst.data
-!> @author Bruce Wyman
-!!
-!> @link gfdl.climate.model.info@noaa.gov
 
 
 !> @file
@@ -139,46 +138,50 @@ type date_type
    integer :: year, month, day
 end type
 
+!> @interface
 !> assignment overload for amip_interp_type
 interface assignment(=)
   module procedure  amip_interp_type_eq
 end interface
 
+!> @interface
 !> logical equality overload for amip_interp_type
 interface operator (==)
    module procedure date_equals
 end interface
 
+!> @interface
 !> logical inequality overload for amip_interp_type
 interface operator (/=)
    module procedure date_not_equals
 end interface
 
+!> @interface
 !> greater than overload for amip_interp_type
 interface operator (>)
    module procedure date_gt
 end interface
 
-!> @page amip_interp_new amip_interp_new Interface        
+!> @interface amip_interp_new amip_interp_new Interface
 !> @brief Function that initializes data needed for the horizontal
 !! interpolation between the sst grid and model grid. The
 !! returned variable of type amip_interp_type is needed when
 !! calling get_amip_sst and get_amip_ice.
 !!
-!> @throws"the value of the namelist parameter DATA_SET being used is not allowed" STATUS="FATAL"
+!> @throws "the value of the namelist parameter DATA_SET being used is not allowed"
 !! Check the value of namelist variable DATA_SET.
 !!
-!> @throws"requested input data set does not exist" STATUS="FATAL"
+!> @throws FATAL requested input data set does not exist
 !! The data set requested is valid but the data does not exist in
 !! the INPUT subdirectory. You may have requested amip2 data which
 !! has not been officially set up.
 !! See the section on DATA SETS to properly set the data up.
 !!
-!> @throws"use_climo mismatch" STATUS="FATAL"
+!> @throws FATAL use_climo mismatch
 !! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !! argument use_climo = true.  This combination is not allowed.
 !!
-!> @throws"use_annual(climo) mismatch" STATUS="FATAL"
+!> @throws FATAL use_annual(climo) mismatch
 !! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !! argument use_annual = true.  This combination is not allowed.
 !> @param lon
@@ -220,7 +223,6 @@ end interface
 
 !----- public data type ------
 !> @typedef amip_interp_type
-!
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
 type amip_interp_type
    private
@@ -256,17 +258,53 @@ end type
 !-----------------------------------------------------------------------
 !---- namelist ----
 
-!> @page amip_interp_nml amip_interp_nml
-!!   <DATA NAME="data_set" TYPE="character(len=24)" DEFAULT="data_set = 'amip1'">
-!!     Name/type of SST data that will be used.
-!!  <BR/>
-!!        Possible values (case-insensitive) are: <BR/>
-!!                          1) amip1<BR/>
-!!                          2) reynolds_eof<BR/>
-!!                          3) reynolds_oi<BR/>
-!!        See the <LINK SRC="amip_interp.html#DATA SETS">data set </LINK>section for more on these data.
-!!   </DATA>
-!!   <DATA NAME="date_out_of_range" TYPE="character(len=16)" DEFAULT="date_out_of_range = 'fail'">
+ character(len=24) :: data_set = 'amip1'   !>  use 'amip1'
+                                           !!      'amip2'
+                                           !!      'reynolds_eof'
+                                           !!      'reynolds_oi'
+                                           !!      'hurrell'
+                                           !!      'daily', when "use_daily=.T."
+                                           ! add by JHC
+
+ character(len=16) :: date_out_of_range = 'fail'  !>  use 'fail'
+                                                  !!      'initclimo'
+                                                  !!      'climo'
+
+ real    :: tice_crit    = -1.80       !>  in degC or degK
+ integer :: verbose      = 0           !>  0 <= verbose <= 3
+
+ logical :: use_zonal    = .false. !> parameters for prescribed zonal sst option
+ real :: teq  = 305. !> parameters for prescribed zonal sst option
+ real :: tdif = 50. !> parameters for prescribed zonal sst option
+ real :: tann = 20. !> parameters for prescribed zonal sst option
+ real :: tlag = 0.875 !> parameters for prescribed zonal sst option
+
+
+ integer :: amip_date(3)=(/-1,-1,-1/) !> amip date for repeating single day (rsd) option
+
+ real :: sst_pert = 0. !> global temperature perturbation used for sensitivity experiments
+
+ character(len=6) :: sst_pert_type = 'fixed'  !> use 'random' or 'fixed'
+ logical :: do_sst_pert = .false.
+ logical :: use_daily = .false. !> if '.true.', give 'data_set = 'daily''
+
+ logical :: use_ncep_sst = .false. !> SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
+                                   !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
+ logical ::  no_anom_sst = .true.  !> SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
+                                   !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
+ logical :: use_ncep_ice = .false. !> For seasonal forecast: use_ncep_ice = .F.
+ logical :: interp_oi_sst = .false. !> changed to false for regular runs
+ logical :: use_mpp_io = .false. !> Set to .true. to use mpp_io, otherwise fms2io is used
+
+!> @page amip_interp_nml amip_interp Namelist
+!> @var character(len=24) data_set
+!! Name/type of SST data that will be used.
+!!        Possible values (case-insensitive) are:
+!!                          1) amip1
+!!                          2) reynolds_eof
+!!                          3) reynolds_oi
+!!        See the @ref amip_interp_oi page for more information
+!> @var character(len=16) date_out_of_range
 !!     Controls the use of climatological monthly mean data when
 !!     the requested date falls outside the range of the data set.<BR/>
 !!     Possible values are:
@@ -278,81 +316,36 @@ end type
 !!               requested date is after data set period.
 !!   climo     - program uses climatological data anytime.
 !!    </PRE>
+!> @var real tice_crit
+!!     Freezing point of sea water in degC or degK. Defaults to -1.80
+!> @var integer verbose
+!!     Controls printed output, 0 <= verbose <= 3, default=0
+!!     additional parameters for controlling zonal prescribed sst ----
+!!     these parameters only have an effect when use_zonal=.true. ----
+!> @var logical use_zonal
+!!     Flag to selected zonal sst or data set. Default=.false.
+!> @var real teq
+!!     sst at the equator. Default=305
+!! @var real tdif
+!!     Equator to pole sst difference. Default=50
 !!   </DATA>
-!!   <DATA NAME="tice_crit" TYPE="real" DEFAULT="tice_crit = -1.80">
-!!     Freezing point of sea water in degC or degK.
-!!   </DATA>
-!!   <DATA NAME="verbose" TYPE="integer" DEFAULT="verbose = 0">
-!!     Controls printed output, 0 <= verbose <= 3
-!!   </DATA>
-!!---- additional parameters for controlling zonal prescribed sst ----
-!!---- these parameters only have an effect when use_zonal=.true. ----
-!!   <DATA NAME="use_zonal" TYPE="logical" DEFAULT=".false.">
-!!     Flag to selected zonal sst or data set.
-!!   </DATA>
-!!   <DATA NAME="teq" TYPE="real" DEFAULT="teq=305.">
-!!     sst at the equator.
-!!   </DATA>
-!!   <DATA NAME="tdif" TYPE="real" DEFAULT="tdif=50.">
-!!     Equator to pole sst difference.
-!!   </DATA>
-!!   <DATA NAME="tann" TYPE="real" DEFAULT="tann=20.">
-!!     Amplitude of annual cycle.
-!!   </DATA>
-!!   <DATA NAME="tlag" TYPE="real" DEFAULT="tlag=0.875">
-!!     Offset for time of year (for annual cycle).
-!!   </DATA>
-!!   <DATA NAME="amip_date" TYPE="integer(3)" DEFAULT="/-1,-1,-1/">
+!> @var real tann
+!!     Amplitude of annual cycle. Default=20
+!> @var real tlag
+!!     Offset for time of year (for annual cycle). Default=0.875
+!> @var integer amip_date
 !!     Single calendar date in integer "(year,month,day)" format
 !!     that is used only if set with year>0, month>0, day>0.
 !!     If used, model calendar date is replaced by this date,
 !!     but model time of day is still used to determine ice/sst.
 !!     Used for repeating-single-day (rsd) experiments.
-!!   </DATA>
-!!   <DATA NAME="sst_pert" TYPE="real" DEFAULT="sst_pert=0.">
+!!     Default=/-1,-1,-1/
+!> @var real sst_pert
 !!     Temperature perturbation in degrees Kelvin added onto the SST.
 !!                The perturbation is globally-uniform (even near sea-ice).
 !!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
 !!                may be useful in accessing model sensitivities.
-!!   </DATA>
- character(len=24) :: data_set = 'amip1'   !<  use 'amip1'
-                                           !!      'amip2'
-                                           !!      'reynolds_eof'
-                                           !!      'reynolds_oi'
-                                           !!      'hurrell'
-                                           !!      'daily', when "use_daily=.T."
-                                           ! add by JHC
-
- character(len=16) :: date_out_of_range = 'fail'  !<  use 'fail'
-                                                  !!      'initclimo'
-                                                  !!      'climo'
-
- real    :: tice_crit    = -1.80       !<  in degC or degK
- integer :: verbose      = 0           !<  0 <= verbose <= 3
-
- logical :: use_zonal    = .false. !< parameters for prescribed zonal sst option
- real :: teq  = 305. !< parameters for prescribed zonal sst option
- real :: tdif = 50. !< parameters for prescribed zonal sst option
- real :: tann = 20. !< parameters for prescribed zonal sst option
- real :: tlag = 0.875 !< parameters for prescribed zonal sst option
-
-
- integer :: amip_date(3)=(/-1,-1,-1/) !< amip date for repeating single day (rsd) option
-
- real :: sst_pert = 0. !< global temperature perturbation used for sensitivity experiments
-
- character(len=6) :: sst_pert_type = 'fixed'  !< use 'random' or 'fixed'
- logical :: do_sst_pert = .false.
- logical :: use_daily = .false. !< if '.true.', give 'data_set = 'daily''
-
- logical :: use_ncep_sst = .false. !< SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
-                                   !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
- logical ::  no_anom_sst = .true.  !< SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
-                                   !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
- logical :: use_ncep_ice = .false. !< For seasonal forecast: use_ncep_ice = .F.
- logical :: interp_oi_sst = .false. !< changed to false for regular runs
- logical :: use_mpp_io = .false. !< Set to .true. to use mpp_io, otherwise fms2io is used
-
+!!     Default=0.
  namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
                             interp_oi_sst, data_set, date_out_of_range,          &
                             use_zonal, teq, tdif, tann, tlag, amip_date,         &
@@ -403,8 +396,8 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     type(FmsNetcdfFile_t) :: fileobj
     logical :: the_file_exists
 ! end add by JHC
-    logical, parameter :: DEBUG = .false. !< switch for debugging output
-    !< These are fms_io specific
+    logical, parameter :: DEBUG = .false. !> switch for debugging output
+    !> These are fms_io specific
     integer :: unit
 
     if(present(err_msg)) err_msg = ''
@@ -1071,10 +1064,10 @@ endif
 
 !> Frees data associated with a amip_interp_type variable. Should be used for any
 !! variables initialized via @ref amip_interp_new.
-!> @param Interp A defined data type variable initialized by amip_interp_new and used
+!> @param[inout] Interp A defined data type variable initialized by amip_interp_new and used
 !! when calling get_amip_sst and get_amip_ice.
    subroutine amip_interp_del (Interp)
-   type (amip_interp_type), intent(inout) :: Interp 
+   type (amip_interp_type), intent(inout) :: Interp
      if(associated(Interp%data1)) deallocate(Interp%data1)
      if(associated(Interp%data2)) deallocate(Interp%data2)
      if(allocated(lon_bnd))       deallocate(lon_bnd)
@@ -1182,7 +1175,7 @@ endif
    integer, intent(in):: nx, ny
    integer, intent(in):: n1, n2
    real, intent(in) :: dat1(nx,ny)
-   real, intent(out):: dat2(n1,n2)      !< output interpolated data
+   real, intent(out):: dat2(n1,n2)      !> output interpolated data
 
 ! local:
   real:: lon1(nx), lat1(ny)
@@ -1200,8 +1193,8 @@ endif
 !                     lat: -89.5, -88.5, ... , 88.5, 89.5
 !-----------------------------------------------------------
 
-  dx1 = 360./real(nx) !< INput Grid
-  dy1 = 180./real(ny) !< INput Grid
+  dx1 = 360./real(nx) !> INput Grid
+  dy1 = 180./real(ny) !> INput Grid
 
   do i=1,nx
      lon1(i) = 0.5*dx1 + real(i-1)*dx1
@@ -1210,8 +1203,8 @@ endif
      lat1(j) = -90. + 0.5*dy1 + real(j-1)*dy1
   enddo
 
-  dx2 = 360./real(n1) !< OutPut Grid:
-  dy2 = 180./real(n2) !< OutPut Grid:
+  dx2 = 360./real(n1) !> OutPut Grid:
+  dy2 = 180./real(n2) !> OutPut Grid:
 
   do i=1,n1
      lon2(i) = 0.5*dx2 + real(i-1)*dx2
@@ -1285,18 +1278,15 @@ endif
 
 !#######################################################################
 
-! <SUBROUTINE NAME="get_sst_grid_size">
-
-!>   @brief Returns the size (i.e., number of longitude and latitude
+!> @brief Returns the size (i.e., number of longitude and latitude
 !!         points) of the observed data grid.
-!!
-!!   ERROR MSG="have not called amip_interp_new" STATUS="FATAL"
+!! @throws FATAL have not called amip_interp_new
 !!     Must call amip_interp_new before get_sst_grid_size.
    subroutine get_sst_grid_size (nlon, nlat)
 
-   integer, intent(out) :: nlon !< The number of longitude points (first dimension) in the
+   integer, intent(out) :: nlon !> The number of longitude points (first dimension) in the
                                 !! observed data grid.  For AMIP 1 nlon = 180, and the Reynolds nlon = 360.
-   integer, intent(out) :: nlat !< The number of latitude points (second dimension) in the
+   integer, intent(out) :: nlat !> The number of latitude points (second dimension) in the
                                 !! observed data grid.  For AMIP 1 nlon = 91, and the Reynolds nlon = 180.
 
       if ( .not.module_is_initialized ) call amip_interp_init
@@ -1322,9 +1312,9 @@ endif
 !!     interfaces get_sst_grid_size and get_sst_grid_boundary.
    subroutine get_sst_grid_boundary (blon, blat, mask)
 
-   real,    intent(out) :: blon(:) !< The grid box edges (in radians) for longitude points of the
+   real,    intent(out) :: blon(:) !> The grid box edges (in radians) for longitude points of the
                                    !! observed data grid. The size of this argument must be nlon+1.
-   real,    intent(out) :: blat(:) !< The grid box edges (in radians) for latitude points of the
+   real,    intent(out) :: blat(:) !> The grid box edges (in radians) for latitude points of the
                                    !! observed data grid. The size of this argument must be nlat+1.
    logical, intent(out) :: mask(:,:)
 

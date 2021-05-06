@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup diag_output_mod diag_output_mod
-!> @ingroup diag_output
+!> @ingroup diag_manager
 !! @brief diag_output_mod is an integral part of
 !!   diag_manager_mod<. Its function is to write axis-meta-data,
 !!   field-meta-data and field data
