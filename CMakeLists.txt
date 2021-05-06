@@ -139,7 +139,8 @@ list(APPEND fms_fortran_src_files
   mosaic/gradient.F90
   mosaic/grid.F90
   mosaic/mosaic.F90
-  mosaic/mosaic2.F90
+  mosaic2/grid2.F90
+  mosaic2/mosaic2.F90
   mpp/mpp.F90
   mpp/mpp_data.F90
   mpp/mpp_domains.F90

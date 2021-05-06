@@ -61,7 +61,7 @@ module stock_constants_mod
      real  :: dq_IN(NSIDES) = 0.0    !< stock increments at present time on the Ocean grid
   end type stock_type
 
-  type(stock_type), save, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
+  type(stock_type), save, public, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
   type(time_type), save :: init_time
 
   public stocks_report

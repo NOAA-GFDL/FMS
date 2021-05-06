@@ -508,7 +508,6 @@ public  :: set_filename_appendix, get_instance_filename
 public  :: get_filename_appendix, nullify_filename_appendix
 public  :: parse_mask_table
 public  :: get_great_circle_algorithm
-public  :: write_version_number
 character(len=32), save :: filename_appendix = ''
 
 !--- public interface ---
@@ -541,6 +540,9 @@ integer            :: pack_size  ! = 1 for double = 2 for float
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
+
+! make version public so it can be written in fms_init()
+character(len=*), parameter, public :: fms_io_version = version
 
 !----------
 !ug support
@@ -685,9 +687,6 @@ subroutine fms_io_init()
 
   !This is set here instead of at the end of the routine to prevent the read_data call below from stopping the model
   module_is_initialized = .TRUE.
-
-  ! Record the version number in the log file
-  call write_version_number("FMS_IO_MOD", version)
 
   !--- read INPUT/grid_spec.nc to decide the value of great_circle_algorithm
   !--- great_circle_algorithm could be true only for mosaic grid.
@@ -2497,9 +2496,7 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
         if(len_trim(restartname)+len_trim(time_stamp) > 79) call mpp_error(FATAL, "fms_io(save_restart): " // &
           "Length of restart file name + time_stamp is greater than allowed character length of 79")
            has_dot = .false.
-           do i=1,len(time_stamp)
-              if (time_stamp(i:i) == ".") has_dot = .true.
-           enddo
+           if (time_stamp(len(time_stamp):len(time_stamp)) == ".") has_dot = .true.
            if (has_dot) then
               restartname = trim(time_stamp)//trim(restartname)
            else
@@ -7698,7 +7695,7 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_integer(n)
     integer, intent(in) :: n
     character(len=16) :: string_from_integer
-    
+
     if (mpp_pe() == mpp_root_pe() .and. warn_string_function ) &
             call mpp_error(WARNING, "The function named string has been moved "// &
             "from fms_io_mod to fms_mod.  Please update your call.")
@@ -8587,66 +8584,6 @@ function get_great_circle_algorithm()
 
 end function get_great_circle_algorithm
 
-!#######################################################################
-! <SUBROUTINE NAME="write_version_number">
-
-!   <OVERVIEW>
-!     Prints to the log file (or a specified unit) the (cvs) version id string and
-!     (cvs) tag name.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Prints to the log file (stdlog) or a specified unit the (cvs) version id string
-!      and (cvs) tag name.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!    call write_version_number ( version [, tag, unit] )
-!   </TEMPLATE>
-
-!   <IN NAME="version" TYPE="character(len=*)">
-!    string that contains routine name and version number.
-!   </IN>
-!   <IN NAME="tag" TYPE="character(len=*)">
-!    The tag/name string, this is usually the Name string
-!    returned by CVS when checking out the code.
-!   </IN>
-!   <IN NAME="unit" TYPE="integer">
-!    The Fortran unit number of an open formatted file. If this unit number
-!    is not supplied the log file unit number is used (stdlog).
-!   </IN>
-! prints module version number to the log file of specified unit number
-
-subroutine write_version_number (version, tag, unit)
-
-!   in:  version = string that contains routine name and version number
-!
-!   optional in:
-!        tag = cvs tag name that code was checked out with
-!        unit    = alternate unit number to direct output
-!                  (default: unit=stdlog)
-
-   character(len=*), intent(in) :: version
-   character(len=*), intent(in), optional :: tag
-   integer,          intent(in), optional :: unit
-
-   integer :: logunit
-
-   if (.not.module_is_initialized) call fms_io_init ( )
-
-     logunit = stdlog()
-     if (present(unit)) then
-         logunit = unit
-     else
-       ! only allow stdlog messages on root pe
-         if ( mpp_pe() /= mpp_root_pe() ) return
-     endif
-
-     if (present(tag)) then
-         write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
-     else
-         write (logunit,'(/,80("="),/(a))') trim(version)
-     endif
-
-end subroutine write_version_number
 ! </SUBROUTINE>
 
 !----------

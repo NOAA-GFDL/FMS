@@ -58,6 +58,17 @@ call get_instance_filename("nestfile.tile1.nc", buf)
 if (trim(buf) .ne. "nestfile.nest01.tile1.nc") &
     call mpp_error(FATAL, "get_instance_filename does not add the filename appendix before the .tile")
 
+!< Call get_instance_filename where the string send in has the pe number in the end
+call get_instance_filename("nestfile.nc.0001", buf)
+if (trim(buf) .ne. "nestfile.nest01.nc.0001") &
+    call mpp_error(FATAL, trim(buf)//": get_instance_filename does not add the filename appendix before the .nc")
+
+!< Call get_instance_filename where the string send in has the pe number in the
+!end
+call get_instance_filename("nestfile.tile1.nc.0001", buf)
+if (trim(buf) .ne. "nestfile.nest01.tile1.nc.0001") &
+    call mpp_error(FATAL, trim(buf)//": get_instance_filename does not add the filename appendix before the tile")
+
 !< Call open_file to check if the filename_appendix was appended to the file created
 if (open_file(fileobj, "nestfile.nc", "overwrite", is_restart=.true.)) then
     call close_file(fileobj)

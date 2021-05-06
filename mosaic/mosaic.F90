@@ -32,7 +32,6 @@
 !> @{
 module mosaic_mod
 
-use fms_mod,    only : write_version_number
 use mpp_mod,    only : mpp_error, FATAL, mpp_pe, mpp_root_pe
 use mpp_io_mod, only : MPP_MULTI
 use fms_io_mod, only : dimension_size, field_exist, read_data, read_compressed
@@ -51,7 +50,6 @@ integer, parameter :: &
      Y_REFINE = 2       ! supergrid size/model grid size in y-direction
 
 ! --- public interface
-
 
 public :: get_mosaic_ntiles
 public :: get_mosaic_ncontacts
@@ -88,7 +86,6 @@ subroutine mosaic_init()
   module_is_initialized = .TRUE.
 
 !--------- write version number and namelist ------------------
-  call write_version_number("MOSAIC_MOD", version)
 
 end subroutine mosaic_init
 ! </SUBROUTINE>

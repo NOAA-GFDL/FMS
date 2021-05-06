@@ -40,6 +40,7 @@ SUBDIRS = \
   mpp \
   memutils \
   fms2_io \
+  mosaic2 \
   fms \
   affinity \
   mosaic \
