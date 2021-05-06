@@ -51,7 +51,7 @@ program test_stdout
       write(OUTPUT_UNIT,*) "root_pe.ne.pe case. stdout() should equal stdlog()."
     end if
   end if
-  
+
   call MPI_FINALIZE(ierr)
 
 end program test_stdout

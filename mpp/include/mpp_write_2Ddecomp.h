@@ -40,14 +40,14 @@
       type(domain2D),    intent(in), optional :: domain
       integer,           intent(in), optional :: tile_count
       integer, dimension(size(field%axes(:))) :: start, axsiz
-      real(DOUBLE_KIND) :: time
+      real(r8_kind) :: time
       integer :: time_level
       logical :: newtime
       integer :: subdomain(4)
       integer :: packed_data(nwords)
       integer :: i, is, ie, js, je
 
-      real(FLOAT_KIND) :: data_r4(nwords)
+      real(r4_kind) :: data_r4(nwords)
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
 
@@ -129,10 +129,10 @@
 #ifdef use_netCDF
 !write time information if new time
           if( newtime )then
-              if( KIND(time).EQ.DOUBLE_KIND )then
+              if( KIND(time).EQ.r8_kind )then
                   error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit:unit)%time_level, time )
-              else if( KIND(time).EQ.FLOAT_KIND )then
-                  error = NF90_PUT_VAR ( mpp_file(unit)%ncid, mpp_file(unit)%id, time)
+              else if( KIND(time).EQ.r4_kind )then
+                 error = NF90_PUT_VAR ( mpp_file(unit)%ncid, mpp_file(unit)%id, time)
               end if
           end if
           if( field%pack == 0 )then
@@ -427,3 +427,4 @@
 
       return
     end subroutine MPP_WRITE_2DDECOMP_4D_
+

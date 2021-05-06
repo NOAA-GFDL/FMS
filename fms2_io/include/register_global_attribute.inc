@@ -36,28 +36,29 @@ subroutine register_global_attribute_0d(fileobj, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    trim(attribute_value(1:str_len)))
-            type is (integer(kind=int32))
+            type is (integer(kind=i4_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=int64))
+            type is (integer(kind=i8_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real32))
+            type is (real(kind=r4_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real64))
+            type is (real(kind=r8_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
             class default
-                call error("register_global_attribute_0d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+                call error("register_global_attribute_0d: unsupported type for "//&
+                trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
         call check_netcdf_code(err)
     endif
@@ -76,28 +77,29 @@ subroutine register_global_attribute_1d(fileobj, &
                              define_mode)
         select type(attribute_value)
 
-            type is (integer(kind=int32))
+            type is (integer(kind=i4_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (integer(kind=int64))
+            type is (integer(kind=i8_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real32))
+            type is (real(kind=r4_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
-            type is (real(kind=real64))
+            type is (real(kind=r8_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
                                    attribute_value)
             class default
-                call error("register_global_attribute_1d: unsupported type for "//trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
+                call error("register_global_attribute_1d: unsupported type for "//&
+                trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
         call check_netcdf_code(err)
     endif

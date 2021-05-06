@@ -23,14 +23,14 @@
       MPP_TYPE_,        intent(inout) :: data(nwords)
       integer,         intent(in)    :: start(:), axsiz(:)
 
-      integer(SHORT_KIND) :: i2vals(nwords)
+      integer(i2_kind) :: i2vals(nwords)
 !rab used in conjunction with transfer intrinsic to determine size of a variable
       integer(KIND=1) :: one_byte(8)
       integer         :: word_sz
-      integer(INT_KIND) :: ivals(nwords)
-      real(FLOAT_KIND) :: rvals(nwords)
+      integer(i4_kind) :: ivals(nwords)
+      real(r4_kind) :: rvals(nwords)
 
-      real(DOUBLE_KIND) :: r8vals(nwords)
+      real(r8_kind) :: r8vals(nwords)
       pointer( ptr1, i2vals )
       pointer( ptr2, ivals )
       pointer( ptr3, rvals )

@@ -18,6 +18,7 @@
 !***********************************************************************
 
 !> @file
+!! @email gfdl.climate.model.info@noaa.gov
 module fms_netcdf_unstructured_domain_io_mod
 use,intrinsic :: iso_fortran_env
 use netcdf

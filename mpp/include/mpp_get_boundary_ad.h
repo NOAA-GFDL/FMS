@@ -36,8 +36,8 @@ subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
 
   integer                  :: ntile
   logical                  :: need_ebuffer, need_sbuffer, need_wbuffer, need_nbuffer
-  integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
-  integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
+  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
+  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
   integer, save    :: bsize(4)=0, isize=0, jsize=0, ksize=0, pos, list=0, l_size=0, upflags
   integer          :: buffer_size(4)
   integer          :: max_ntile, tile, update_position, ishift, jshift
@@ -177,8 +177,8 @@ subroutine MPP_GET_BOUNDARY_AD_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
 
   integer                  :: ntile
   logical                  :: need_ebuffer, need_sbuffer, need_wbuffer, need_nbuffer
-  integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
-  integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
+  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
+  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
   integer, save    :: bsize(4)=0, isize=0, jsize=0, ksize=0, pos, list=0, l_size=0, upflags
   integer          :: buffer_size(4)
   integer          :: max_ntile, tile, update_position, ishift, jshift
@@ -323,10 +323,10 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
   logical                 :: need_ebufferx, need_sbufferx, need_wbufferx, need_nbufferx
   logical                 :: need_ebuffery, need_sbuffery, need_wbuffery, need_nbuffery
 
-  integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=-9999
-  integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=-9999
-  integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999
-  integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=-9999
+  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=-9999
+  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=-9999
+  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999
+  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=-9999
   integer, save    :: bsizex(4)=0, bsizey(4)=0, isize(2)=0, jsize(2)=0, ksize=0, l_size=0, list=0
   integer, save    :: offset_type, upflags
   integer          :: bufferx_size(4), buffery_size(4)
@@ -545,10 +545,10 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
   logical                 :: need_ebufferx, need_sbufferx, need_wbufferx, need_nbufferx
   logical                 :: need_ebuffery, need_sbuffery, need_wbuffery, need_nbuffery
 
-  integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=-9999
-  integer(LONG_KIND),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=-9999
-  integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999
-  integer(LONG_KIND),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=-9999
+  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=-9999
+  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=-9999
+  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999
+  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=-9999
   integer, save    :: bsizex(4)=0, bsizey(4)=0, isize(2)=0, jsize(2)=0, ksize=0, l_size=0, list=0
   integer, save    :: offset_type, upflags
   integer          :: bufferx_size(4), buffery_size(4)

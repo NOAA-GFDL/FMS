@@ -17,8 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \brief ensemble_manager_mod
-!!
+!> @file
+!! @brief ensemble_manager_mod
+!! @email gfdl.climate.model.info@noaa.gov
 module ensemble_manager_mod
 
 
@@ -26,7 +27,8 @@ module ensemble_manager_mod
   use mpp_mod, only : mpp_npes, stdout, stdlog, mpp_error, FATAL
   use mpp_mod, only : mpp_pe, mpp_declare_pelist
   use mpp_mod, only : input_nml_file
-  use fms_io_mod, only       : set_filename_appendix
+  use fms2_io_mod, only : fms2_io_set_filename_appendix=>set_filename_appendix
+  use fms_io_mod, only  : fms_io_set_filename_appendix=>set_filename_appendix
 
   IMPLICIT NONE
 
@@ -55,18 +57,17 @@ module ensemble_manager_mod
   public :: get_ensemble_filter_pelist
 contains
 
-!> \brief ensemble_manager_init
-!!
-!! \throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer"
-!! \throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE"
-!! \throw FATAL, "ensemble_size must be divis by npes"
-!! \throw FATAL, "get_ensemble_pelist: size of pelist 1st index < ensemble_size"
-!! \throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < ocean_npes_pm"
-!! \throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < atmos_npes_pm"
-!! \throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < land_npes_pm"
-!! \throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < ice_npes_pm"
-!! \throw FATAL, "get_ensemble_pelist: unknown argument name=[name]"
-!! \throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < total_npes_pm"
+!> @brief ensemble_manager_init
+!! @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer"
+!! @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE"
+!! @throw FATAL, "ensemble_size must be divis by npes"
+!! @throw FATAL, "get_ensemble_pelist: size of pelist 1st index < ensemble_size"
+!! @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < ocean_npes_pm"
+!! @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < atmos_npes_pm"
+!! @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < land_npes_pm"
+!! @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < ice_npes_pm"
+!! @throw FATAL, "get_ensemble_pelist: unknown argument name=[name]"
+!! @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < total_npes_pm"
   subroutine ensemble_manager_init()
 
 
@@ -95,11 +96,15 @@ contains
 
   end subroutine ensemble_manager_init
 
+  !> @brief Getter function for ensemble_id
+  !! @return Integer
   function get_ensemble_id()
     integer :: get_ensemble_id
     get_ensemble_id = ensemble_id
   end function get_ensemble_id
 
+  !> @brief Returns ensemble size integer array
+  !! @return Integer array
   function get_ensemble_size()
 
     integer, dimension(6) :: get_ensemble_size
@@ -166,13 +171,13 @@ contains
     return
   end subroutine get_ensemble_pelist
 
-!> \brief get_ensemble_filter_pelist
+!> @brief get_ensemble_filter_pelist
 !!
-!! \throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * ocean_npes_pm"
-!! \throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * atmos_npes_pm"
-!! \throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * land_npes_pm"
-!! \throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * ice_npes_pm"
-!! \throw FATAL, "get_ensemble_filter_pelist: unknown argument name=[name]"
+!! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * ocean_npes_pm"
+!! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * atmos_npes_pm"
+!! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * land_npes_pm"
+!! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * ice_npes_pm"
+!! @throw FATAL, "get_ensemble_filter_pelist: unknown argument name=[name]"
   subroutine get_ensemble_filter_pelist(pelist, name)
 
     integer, intent(inout) :: pelist(:)
@@ -217,10 +222,10 @@ contains
 
 !nnz: I think the following block of code should be contained in a subroutine
 !     to consolidate and ensure the consistency of declaring the various pelists.
-!>\brief ensemble_pelist_setup
+!> @brief ensemble_pelist_setup
 !!
-!! \throw FATAL, "ensemble_manager_mod: land_npes > atmos_npes"
-!! \throw FATAL, "ensemble_manager_mod: ice_npes > atmos_npes"
+!! @throw FATAL, "ensemble_manager_mod: land_npes > atmos_npes"
+!! @throw FATAL, "ensemble_manager_mod: ice_npes > atmos_npes"
   subroutine ensemble_pelist_setup(concurrent, atmos_npes, ocean_npes, land_npes, ice_npes, &
                                    Atm_pelist, Ocean_pelist, Land_pelist, Ice_pelist)
     logical, intent(in)                  :: concurrent
@@ -396,7 +401,10 @@ contains
     if (ensemble_size > 1) then
        write( text,'(a,i2.2)' ) 'ens_', ensemble_id
        !Append ensemble_id to the restart filenames
-       call set_filename_appendix(trim(text))
+
+       !< Both calls are needed for cases where both fms2io/fmsio are used
+       call fms2_io_set_filename_appendix(trim(text))
+       call fms_io_set_filename_appendix(trim(text))
     endif
 
   end subroutine ensemble_pelist_setup

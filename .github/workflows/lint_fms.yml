@@ -1,0 +1,12 @@
+name: libFMS lint tests
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Run Lint
+        uses: NOAA-GFDL/simple_lint@v2

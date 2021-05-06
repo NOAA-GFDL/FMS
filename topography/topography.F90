@@ -163,6 +163,8 @@ end interface
      if ( use_mpp_io ) then
        call error_mesg('topography_init',"Using mpp_io in topography_mod",NOTE)
        if( mpp_pe() == mpp_root_pe()) write(std_log, '(a)')"Using mpp_io in topography_mod"
+       if( mpp_pe() == mpp_root_pe()) write(std_log, '(a)')&
+        'WARNING:: MPP_IO is no longer supported.  Please remove from namelist'
      else
        call error_mesg('topography_init',"Using fms2_io in topography_mod",NOTE)
        if( mpp_pe() == mpp_root_pe()) write(std_log, '(a)')"Using fms2_io in topography_mod"
@@ -291,7 +293,7 @@ end interface
 !     input topography data set was not readable.
 !   </OUT>
 
- function get_topog_stdev_1d (blon, blat, stdev) 
+ function get_topog_stdev_1d (blon, blat, stdev)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
@@ -383,7 +385,7 @@ end interface
    if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
-   
+
    if( use_mpp_io) then
      get_ocean_frac_1d = open_topog_file_mpp_io(water_file)
      if( get_ocean_frac_1d) call interp_water_1d_mpp_io ( blon, blat, &
@@ -680,7 +682,7 @@ end interface
        get_water_mask_2d = .true.
      else
        get_water_mask_2d = .false.
-     endif 
+     endif
    else
      if ( get_water_frac_2d(blon, blat, water_frac) ) then
        where (water_frac > 0.50)
@@ -772,7 +774,7 @@ end interface
 
    if(use_mpp_io) then
      call input_data_mpp_io( topog_file, xdat, ydat, zdat )
-   else 
+   else
      call input_data( TOPOG_INDEX, xdat, ydat, zdat)
    endif
 
@@ -807,11 +809,11 @@ end interface
  integer :: js, je
  type (horiz_interp_type) :: Interp
 
-    if( use_mpp_io) then 
+    if( use_mpp_io) then
       call input_data_mpp_io(topog_file, xdat, ydat, zdat)
     else
       call input_data( TOPOG_INDEX, xdat, ydat, zdat)
-    endif 
+    endif
 
     call find_indices ( minval(blat), maxval(blat), ydat, js, je )
 
@@ -992,7 +994,7 @@ subroutine read_namelist
 
 end subroutine read_namelist
 
-!!-------- functions added for mpp_io -------- 
+!!-------- functions added for mpp_io --------
 
  function get_water_frac_1d_mpp_io (blon, blat, water_frac)
 

@@ -20,8 +20,8 @@
 program test_io_with_mask
 !> @brief  This programs tests fms2io/include/domain_write ability to write
 !! data when the domain contains a mask table. For the points that are
-!! masked out, no data should be writen. 
-!! It also tests fms2io/include/domain_read ability to read the data when 
+!! masked out, no data should be writen.
+!! It also tests fms2io/include/domain_read ability to read the data when
 !! the domain contains a mask table. For this case the masked data should
 !! not be read.
 
@@ -29,13 +29,13 @@ use   mpp_domains_mod, only: mpp_domains_set_stack_size, mpp_define_domains, mpp
                              mpp_get_compute_domain,domain2d
 use   mpp_mod,         only: mpp_pe, mpp_root_pe, mpp_error, FATAL
 use   fms2_io_mod,     only: open_file, register_axis, register_variable_attribute, close_file, &
-                             FmsNetcdfDomainFile_t, write_data, register_field, read_data
+                             FmsNetcdfDomainFile_t, write_data, register_field, read_data, &
+                             parse_mask_table
 use   fms_mod,         only: fms_init, fms_end
-use   fms_io_mod,      only: parse_mask_table
 use   netcdf,          only: nf90_open, nf90_get_var, nf90_nowrite, NF90_NOERR, nf90_get_var, &
                              nf90_close
 use   mpi,             only: mpi_barrier, mpi_comm_world
-use,  intrinsic :: iso_fortran_env, only : real64
+use   platform_mod
 
 implicit none
 
@@ -45,9 +45,9 @@ integer                               :: nlat             !< Number of points in
 type(domain2d)                        :: Domain           !< Domain with mask table
 real, dimension(:), allocatable       :: x                !< x axis data
 real, dimension(:), allocatable       :: y                !< y axis data
-real(kind=real64), allocatable, dimension(:,:) :: sst     !< Data to be written
-real(kind=real64), allocatable, dimension(:,:) :: sst_in  !< Buffer where data will be read with netcdf
-real(kind=real64), allocatable, dimension(:,:) :: sst_in2 !< Buffer where data will be read with fms2io
+real(kind=r8_kind), allocatable, dimension(:,:) :: sst     !< Data to be written
+real(kind=r8_kind), allocatable, dimension(:,:) :: sst_in  !< Buffer where data will be read with netcdf
+real(kind=r8_kind), allocatable, dimension(:,:) :: sst_in2 !< Buffer where data will be read with fms2io
 logical, allocatable, dimension(:,:)  :: parsed_mask      !< Parsed masked
 character(len=6), dimension(2)        :: names            !< Dimensions names
 type(FmsNetcdfDomainFile_t)           :: fileobj          !< fms2io fileobj for domain decomposed
@@ -86,7 +86,7 @@ do j=1,nlat
   y(j) = j
 enddo
 
-sst = real(7., kind=real64)
+sst = real(7., kind=r8_kind)
 
 !< Open a netCDF file and initialize the file object.
 if (open_file(fileobj, "test_io_with_mask.nc", "overwrite", domain)) then
@@ -98,7 +98,7 @@ if (open_file(fileobj, "test_io_with_mask.nc", "overwrite", domain)) then
 
     !< Register the variable and Write out the data
     call register_field(fileobj, "sst", "double", names(1:2))
-    call register_variable_attribute(fileobj, "sst", "_FillValue", real(999., kind=real64))
+    call register_variable_attribute(fileobj, "sst", "_FillValue", real(999., kind=r8_kind))
     call write_data(fileobj, "sst", sst)
 
     !< Close the file
@@ -117,17 +117,17 @@ if (mpp_pe() .eq. mpp_root_pe()) then
    if (err .ne. NF90_NOERR) call mpp_error(FATAL, "test_io_with_mask: error reading from the file")
 
    !< x: 1-30 y: 1-20 are masked out, so sst_in for this values has to be equal to the fill value
-   !! For the other points the data should be equal to real(7., kind=real64)
+   !! For the other points the data should be equal to real(7., kind=r8_kind)
 
    do i=1,nlon
        do j=1,nlat
           if (i > 30 .or. j > 20) then
-             if (sst_in(i,j) .ne. real(7., kind=real64)) then
+             if (sst_in(i,j) .ne. real(7., kind=r8_kind)) then
                  print *, 'i=', i, ' j=', j, ' sst_in=', sst_in(i,j)
                  call mpp_error(FATAL, "test_io_with_mask: the unmasked data read in is not correct")
              endif
           else
-             if (sst_in(i,j) .ne. real(999., kind=real64)) then
+             if (sst_in(i,j) .ne. real(999., kind=r8_kind)) then
                  print *, 'i=', i, ' j=', j, ' sst_in=', sst_in(i,j)
                  call mpp_error(FATAL, "test_io_with_mask: the masked data read in is not correct")
              endif
@@ -158,7 +158,7 @@ if (open_file(fileobj, "test_io_with_mask.nc", "read", domain)) then
 
    do i=is,ie
        do j=js,je
-             if (sst_in2(i,j) .ne. real(7., kind=real64)) then
+             if (sst_in2(i,j) .ne. real(7., kind=r8_kind)) then
                  print *, 'i=', i, ' j=', j, ' sst_in=', sst_in2(i,j)
                  call mpp_error(FATAL, "test_io_with_mask: the unmasked data read in is not correct")
              endif

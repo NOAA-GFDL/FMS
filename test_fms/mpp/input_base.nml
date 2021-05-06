@@ -55,7 +55,6 @@ test_boundary = .false.
 layout_tripolar = 0,0
 test_group = .false.
 test_global_sum = .false.
-test_subset = .false.
 test_unstruct = .false.
 test_nonsym_edge = .false.
 test_halosize_performance = .false.

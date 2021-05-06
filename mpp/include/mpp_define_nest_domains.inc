@@ -21,20 +21,88 @@
 !***********************************************************************
 
 !#############################################################################
-! Currently the contact will be limited to overlap contact.
+!> @brief Set up a domain to pass data between aligned coarse and fine grid of nested model.
+!> @detailed Set up a domain to pass data between aligned coarse and fine grid of a nested
+!! model. Supports multiple and telescoping nests. A telescoping nest is defined as
+!! a nest within a nest. Nest domains may span multiple tiles, but cannot contain a
+!! coarse-grid, cube corner. Concurrent nesting is the only supported mechanism,
+!! i.e. coarse and fine grid are on individual, non-overlapping, processor lists.
+!! Coarse and fine grid domain need to be defined before calling mpp_define_nest_domains.
+!! An mpp_broadcast is needed to broadcast both fine and coarse grid domain onto all processors.\n
+!!\n
+!! mpp_update_nest_coarse is used to pass data from fine grid to coarse grid computing domain.
+!! mpp_update_nest_fine is used to pass data from coarse grid to fine grid halo.
+!! You may call mpp_get_C2F_index before calling mpp_update_nest_fine to get the index for
+!! passing data from coarse to fine. You may call mpp_get_F2C_index before calling
+!! mpp_update_nest_coarse to get the index for passing data from coarse to fine.
+!
+!> @note: The following tests for nesting of regular lat-lon grids upon a cubed-sphere
+!! grid are done in test_mpp_domains:\n
+!!   a) a first-level nest spanning multiple cubed-sphere faces (tiles 1, 2, & 4)\n
+!!   b) a first-level nest wholly contained within tile 3\n
+!!   c) a second-level nest contained within the nest mentioned in a)\n
+!! Tests are done for data at T, E, C, N-cell center.\n
+!
+!> @example Below is an example to pass data between fine and coarse grid (More details on how to
+!! use the nesting domain update are available in routine test_update_nest_domain of
+!! test_fms/mpp/test_mpp_domains.F90.\n
+!!\n
+!! if( concurrent ) then\n
+!!   call mpp_broadcast_domain(domain_fine)\n
+!!   call mpp_broadcast_domain(domain_coarse)\n
+!! endif \n
+!! \n
+!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level(1:num_nest),  &\n
+!!                              tile_fine(1:num_nest), tile_coarse(1:num_nest), &\n
+!!                              istart_coarse(1:num_nest), icount_coarse(1:num_nest), &\n
+!!                              jstart_coarse(1:num_nest), jcount_coarse(1:num_nest), &\n
+!!                              npes_nest_tile, x_refine(1:num_nest), y_refine(1:num_nest), &\n
+!!                              extra_halo=extra_halo, name="nest_domain")\n
+!!\n
+!! call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, level)\n
+!! call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, level)\n
+!! call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, level)\n
+!! call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, level)\n
+!!\n
+!!    allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))\n
+!!    allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))\n
+!!    allocate(sbuffer(iss_c:ies_c, jss_c:jes_c,nz))\n
+!!    allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))\n
+!!    call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer)\n
+!!\n
+!!    call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f, nest_level=level)\n
+!!    allocate(buffer (is_f:ie_f, js_f:je_f,nz))\n
+!!    call mpp_update_nest_coarse(x, nest_domain, buffer)
+!
+!> @example all mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &\n
+!!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &\n
+!!                                    npes_nest_tile, x_refine, y_refine, extra_halo, name)
+!
+!> @note Currently the contact will be limited to overlap contact.
+
 subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, npes_nest_tile, &
                                   x_refine, y_refine, extra_halo, name)
-  type(nest_domain_type),     intent(inout) :: nest_domain
-  type(domain2D), target,     intent(in   ) :: domain
-  integer,                    intent(in   ) :: num_nest
-  integer,                    intent(in   ) :: nest_level(:)
-  integer,                    intent(in   ) :: tile_fine(:), tile_coarse(:)
-  integer,                    intent(in   ) :: istart_coarse(:), icount_coarse(:), jstart_coarse(:), jcount_coarse(:)
-  integer,                    intent(in   ) :: npes_nest_tile(:)
-  integer,                    intent(in   ) :: x_refine(:), y_refine(:)
-  integer,          optional, intent(in   ) :: extra_halo
-  character(len=*), optional, intent(in   ) :: name
+  type(nest_domain_type),     intent(inout) :: nest_domain !< holds the information to pass data
+                                                           !! between nest and parent grids.
+  type(domain2D), target,     intent(in   ) :: domain !< domain for the grid defined in the current pelist
+  integer,                    intent(in   ) :: num_nest !<  number of nests
+  integer,                    intent(in   ) :: nest_level(:) !< array containing the nest level for each nest
+                                                             !!(>1 implies a telescoping nest)
+  integer,                    intent(in   ) :: tile_fine(:), tile_coarse(:) !< array containing tile number of the
+                                              !! nest grid (monotonically increasing starting with 7),
+                                              !! array containing tile number of the parent grid corresponding
+                                              !! to the lower left corner of a given nest
+  integer,                    intent(in   ) :: istart_coarse(:), icount_coarse(:), jstart_coarse(:), jcount_coarse(:) !<start
+                                   !! array containing index in the parent grid of the lower left corner of a given
+                                   !! nest, count: array containing span of the nest on the parent grid
+  integer,                    intent(in   ) :: npes_nest_tile(:) !< array containing number of pes to allocated
+                                               !! to each defined tile
+  integer,                    intent(in   ) :: x_refine(:), y_refine(:) !< array containing refinement ratio
+                                               !! for each nest
+  integer,          optional, intent(in   ) :: extra_halo !< extra halo for passing data from coarse grid to fine grid.
+                                               !! default is 0 and currently only support extra_halo = 0.
+  character(len=*), optional, intent(in   ) :: name !< name of the nest domain
 
   logical                                   :: concurrent
   integer                                   :: n, l, m, my_tile_coarse
@@ -94,7 +162,8 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   !---make sure tile_fine and tile_nest are monotone increasing.
   do n = 2, num_nest
      if(tile_fine(n) < tile_fine(n-1)) call  mpp_error(FATAL, "mpp_define_nest_domains.inc: tile_fine is not monotone increasing")
-     if(tile_coarse(n) < tile_coarse(n-1)) call  mpp_error(FATAL, "mpp_define_nest_domains.inc: tile_coarse is not monotone increasing")
+     if(tile_coarse(n) < tile_coarse(n-1)) call  mpp_error(FATAL, "mpp_define_nest_domains.inc: "// &
+                                                           "tile_coarse is not monotone increasing")
   enddo
 
   allocate( pes(mpp_npes()) )
@@ -151,7 +220,8 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
      Pe_end_pos(n) = npes_nest_tile(1)*ntiles_top
   enddo
   ntiles = tile_fine(num_nest)
-  if(ntiles .NE. ntiles_top + num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc:ntiles .NE. ntiles_top + num_nest")
+  if(ntiles .NE. ntiles_top + num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: "// &
+                                                       "ntiles .NE. ntiles_top + num_nest")
   do n = 1, num_nest
      pe_start_pos(ntiles_top+n) = pe_end_pos(ntiles_top+n-1) + 1
      pe_end_pos(ntiles_top+n)   = pe_end_pos(ntiles_top+n-1) + npes_nest_tile(tile_fine(n))
@@ -322,7 +392,8 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
      call mpp_error(FATAL, "mpp_define_nest_domains.inc: nest_domain%is_fine_pe .neqv. ANY(pes_fine(:) == mpp_pe())")
   endif
   if( nest_domain%is_coarse_pe .neqv. ANY(pes_coarse(:) == mpp_pe()) ) then
-     call mpp_error(FATAL, "mpp_define_nest_domains.inc: nest_domain%is_coarse_pe .neqv. ANY(pes_coarse(:) == mpp_pe())")
+     call mpp_error(FATAL, "mpp_define_nest_domains.inc: "// &
+                    "nest_domain%is_coarse_pe .neqv. ANY(pes_coarse(:) == mpp_pe())")
   endif
 
   !--- figure out the the corresponding nested region.
@@ -1333,7 +1404,7 @@ subroutine print_nest_overlap(overlap, msg)
      write(1000+mpp_pe(),*) trim(msg), ",index=", overlap%is(i), overlap%ie(i),overlap%js(i),overlap%je(i)
      write(1000+mpp_pe(),*) trim(msg), ",rotation=", overlap%dir(i), overlap%rotation(i), overlap%msgsize(i)
   enddo
-  call flush(1000+mpp_pe())
+  flush(1000+mpp_pe())
 
 end subroutine print_nest_overlap
 
@@ -1442,14 +1513,26 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end function search_F2C_nest_overlap
 
   !################################################################
+  !> @brief Get the index of the data passed from coarse grid to fine grid.
+  !> @detailed Get the index of the data passed from coarse grid to fine grid.
+  !> @example call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
+  !!                            is_coarse, ie_coarse, js_coarse, je_coarse, dir,
+  !!                            nest_level, position)
+  !
   subroutine mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine, &
                 is_coarse, ie_coarse, js_coarse, je_coarse, dir, nest_level, position)
 
-     type(nest_domain_type), intent(in ) :: nest_domain
-     integer,                intent(out) :: is_fine, ie_fine, js_fine, je_fine
-     integer,                intent(out) :: is_coarse, ie_coarse, js_coarse, je_coarse
-     integer,                intent(in ) :: dir, nest_level
-     integer, optional,      intent(in ) :: position
+     type(nest_domain_type), intent(in ) :: nest_domain !< holds the information to pass data
+                                                        !! between fine and coarse grids
+     integer,                intent(out) :: is_fine, ie_fine, js_fine, je_fine !< index in the fine
+                                            !! grid of the nested region
+     integer,                intent(out) :: is_coarse, ie_coarse, js_coarse, je_coarse !< index in the coarse
+                                            !!  grid of the nested region
+     integer,                intent(in ) :: dir, nest_level !<  direction of the halo update.
+                                                            !! Its value should be WEST, EAST, SOUTH or NORTH.;
+                                                            !! level of the nest (> 1 implies a telescoping nest)
+     integer, optional,      intent(in ) :: position !< Cell position. It value should be CENTER,
+                                                     !! EAST, CORNER, or NORTH.
 
      integer                             :: update_position
      type(nestSpec), pointer             :: update => NULL()
@@ -1517,15 +1600,18 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
   end subroutine mpp_get_C2F_index
 
-  !################################################################
   subroutine mpp_get_F2C_index_fine(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse, &
                 is_fine, ie_fine, js_fine, je_fine, nest_level, position)
 
-     type(nest_domain_type), intent(in ) :: nest_domain
-     integer,                intent(out) :: is_fine, ie_fine, js_fine, je_fine
-     integer,                intent(out) :: is_coarse, ie_coarse, js_coarse, je_coarse
-     integer,                intent(in)  :: nest_level
-     integer, optional,      intent(in ) :: position
+     type(nest_domain_type), intent(in ) :: nest_domain !< Holds the information to pass data
+                                                        !! between fine and coarse grid.
+     integer,                intent(out) :: is_fine, ie_fine, js_fine, je_fine !< index in the fine
+                                            !! grid of the nested region
+     integer,                intent(out) :: is_coarse, ie_coarse, js_coarse, je_coarse !< index in
+                                            !! the coarse grid of the nested region
+     integer,                intent(in)  :: nest_level !< level of the nest (> 1 implies a telescoping nest)
+     integer, optional,      intent(in ) :: position !< Cell position. It value should be CENTER,
+                                                     !! EAST, CORNER, or NORTH.
 
      integer                             :: update_position
      type(nestSpec), pointer             :: update => NULL()
@@ -1565,10 +1651,13 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   !################################################################
   subroutine mpp_get_F2C_index_coarse(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse, nest_level, position)
 
-     type(nest_domain_type), intent(in ) :: nest_domain
-     integer,                intent(out) :: is_coarse, ie_coarse, js_coarse, je_coarse
-     integer,                intent(in ) :: nest_level
-     integer, optional,      intent(in ) :: position
+     type(nest_domain_type), intent(in ) :: nest_domain !< Holds the information to pass data
+                                                        !! between fine and coarse grid.
+     integer,                intent(out) :: is_coarse, ie_coarse, js_coarse, je_coarse !< index in the fine
+                                            !! grid of the nested region
+     integer,                intent(in ) :: nest_level !< level of the nest (> 1 implies a telescoping nest)
+     integer, optional,      intent(in ) :: position !< Cell position. It value should be CENTER,
+                                                     !! EAST, CORNER, or NORTH.
 
      integer                             :: update_position
      type(nestSpec), pointer             :: update => NULL()
@@ -2302,7 +2391,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
        "mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): nest_level should be between 1 and nest_domain%num_level")
 
      if(size(pelist) .NE. size(nest_domain%nest(nest_level)%pelist_fine)) call mpp_error(FATAL, &
-       "mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): size(pelist) .NE. size(nest_domain%nest(nest_level)%pelist)")
+       "mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): size(pelist) "// &
+       ".NE. size(nest_domain%nest(nest_level)%pelist)")
 
      pelist = nest_domain%nest(nest_level)%pelist_fine
 

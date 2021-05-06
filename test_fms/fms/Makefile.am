@@ -23,20 +23,23 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/.mod
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_fms_io test_unstructured_fms_io
+check_PROGRAMS = test_fms
 
 # These are the sources for the tests.
-test_fms_io_SOURCES = test_fms_io.F90
-test_unstructured_fms_io_SOURCES = test_unstructured_fms_io.F90
-
+test_fms_SOURCES = test_fms.F90
 # Run the test programs.
-TESTS = test_fms_io2.sh
+TESTS = test_fms2.sh
 
 # These will also be included in the distribution.
-EXTRA_DIST = test_fms_io2.sh
+EXTRA_DIST = test_fms2.sh
+
+CLEANFILES = input.nml logfile.*.out
+
+clean-local:
+	rm -rf RESTART

@@ -18,8 +18,9 @@
 !***********************************************************************
 #include "fms_switches.h"
 
+!> @file
+!! @email gfdl.climate.model.info@noaa.gov
 module drifters_comm_mod
-#include <fms_platform.h>
 
 #ifdef _SERIAL
 
@@ -53,20 +54,35 @@ module drifters_comm_mod
 
   type drifters_comm_type
      ! compute domain
-     real           :: xcmin, xcmax
-     real           :: ycmin, ycmax
+     real           :: xcmin !< compute domain
+     real           :: xcmax !< compute domain
+     real           :: ycmin !< compute domain
+     real           :: ycmax !< compute domain
      ! data domain
-     real           :: xdmin, xdmax
-     real           :: ydmin, ydmax
+     real           :: xdmin !< data domain
+     real           :: xdmax !< data domain
+     real           :: ydmin !< data domain
+     real           :: ydmax !< data domain
      ! global valid min/max
-     real           :: xgmin, xgmax
-     real           :: ygmin, ygmax
+     real           :: xgmin !< global valid min/max
+     real           :: xgmax !< global valid min/max
+     real           :: ygmin !< global valid min/max
+     real           :: ygmax !< global valid min/max
      ! x/y period (can be be nearly infinite)
-     logical        :: xperiodic, yperiodic
+     logical        :: xperiodic !< x/y period (can be be nearly infinite)
+     logical        :: yperiodic !< x/y period (can be be nearly infinite)
      ! neighbor domains
-     integer        :: pe_N, pe_S, pe_E, pe_W, pe_NE, pe_SE, pe_SW, pe_NW
+     integer        :: pe_N !< neighbor domains
+     integer        :: pe_S !< neighbor domains
+     integer        :: pe_E !< neighbor domains
+     integer        :: pe_W !< neighbor domains
+     integer        :: pe_NE !< neighbor domains
+     integer        :: pe_SE !< neighbor domains
+     integer        :: pe_SW !< neighbor domains
+     integer        :: pe_NW !< neighbor domains
      ! starting/ending pe, set this to a value /= 0 if running concurrently
-     integer        :: pe_beg, pe_end
+     integer        :: pe_beg !< starting/ending pe, set this to a value /= 0 if running concurrently
+     integer        :: pe_end !< starting/ending pe, set this to a value /= 0 if running concurrently
   end type drifters_comm_type
 
 contains
@@ -111,6 +127,7 @@ contains
   end subroutine drifters_comm_del
 
 !===============================================================================
+  !> @brief Set data domain bounds.
   subroutine drifters_comm_set_data_bounds(self, xmin, ymin, xmax, ymax)
     ! Set data domain bounds.
     type(drifters_comm_type)   :: self
@@ -124,6 +141,7 @@ contains
   end subroutine drifters_comm_set_data_bounds
 
 !===============================================================================
+  !> @brief Set compute domain bounds.
   subroutine drifters_comm_set_comp_bounds(self, xmin, ymin, xmax, ymax)
     ! Set compute domain bounds.
     type(drifters_comm_type)   :: self
@@ -137,6 +155,7 @@ contains
   end subroutine drifters_comm_set_comp_bounds
 
 !===============================================================================
+  !> @brief Set neighboring pe numbers.
   subroutine drifters_comm_set_pe_neighbors(self, domain)
     ! Set neighboring pe numbers.
     type(drifters_comm_type)   :: self
@@ -203,18 +222,29 @@ contains
   end subroutine drifters_comm_set_pe_neighbors
 
 !===============================================================================
+  !> @brief Set boundaries of domain and compute neighbors. This method can be called
+  !!   multiple times; the data domain will just be the intersection (overlap) of
+  !!   all domains (e.g domain_u, domain_v, etc).
   subroutine drifters_comm_set_domain(self, domain, x, y, backoff_x, backoff_y)
     ! Set boundaries of domain and compute neighbors. This method can be called
     ! multiple times; the data domain will just be the intersection (overlap) of
     ! all domains (e.g domain_u, domain_v, etc).
     type(drifters_comm_type)   :: self
     _TYPE_DOMAIN2D, intent(inout) :: domain
-    real, intent(in)           :: x(:), y(:)           ! global axes
-    integer, intent(in)        :: backoff_x, backoff_y ! >=0, data domain is reduced by "backoff_x,y" indices in x, resp. y
+    real, intent(in)           :: x(:)           !< global axes
+    real, intent(in)           :: y(:)           !< global axes
+    integer, intent(in)        :: backoff_x !< >=0, data domain is reduced by "backoff_x,y" indices in x, resp. y
+    integer, intent(in)        :: backoff_y !< >=0, data domain is reduced by "backoff_x,y" indices in x, resp. y
 
     ! compute/data domain start/end indices
-    integer isc, iec, jsc, jec
-    integer isd, ied, jsd, jed
+    integer :: isc !< compute domain start/end indices
+    integer :: iec !< compute domain start/end indices
+    integer :: jsc !< compute domain start/end indices
+    integer :: jec !< compute domain start/end indices
+    integer :: isd !< data domain start/end indices
+    integer :: ied !< data domain start/end indices
+    integer :: jsd !< data domain start/end indices
+    integer :: jed !< data domain start/end indices
     integer nx, ny, hx, hy, bckf_x, bckf_y, halox, haloy
     real dx, dy, xdmin, xdmax, ydmin, ydmax
 
@@ -298,9 +328,9 @@ contains
     type(drifters_comm_type)   :: self
     type(drifters_core_type)   :: drfts
     real, intent(inout)           :: new_positions(:,:)
-    integer, intent(in), optional :: comm ! MPI communicator
-    logical, intent(in), optional :: remove(:) ! Set to True for particles that should be removed
-    integer, intent(in), optional :: max_add_remove ! max no of particles to add/remove
+    integer, intent(in), optional :: comm !< MPI communicator
+    logical, intent(in), optional :: remove(:) !< Set to True for particles that should be removed
+    integer, intent(in), optional :: max_add_remove !< max no of particles to add/remove
 
 #ifdef _SERIAL
 ! serial code
@@ -576,8 +606,8 @@ contains
     real, intent(in)           :: lons(:), lats(:)
     logical, intent(in)        :: do_save_lonlat
     character(len=*), intent(in)  :: filename
-    integer, intent(in), optional :: root    ! root pe
-    integer, intent(in), optional :: mycomm  ! MPI communicator
+    integer, intent(in), optional :: root    !< root pe
+    integer, intent(in), optional :: mycomm  !< MPI communicator
 
     character(len=128) :: ermesg
 

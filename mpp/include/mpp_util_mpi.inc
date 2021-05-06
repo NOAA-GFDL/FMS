@@ -62,7 +62,7 @@ subroutine mpp_error_basic( errortype, errormsg )
      write( errunit, '(/a/)' )trim(text)
      if(pe==root_pe)write( out_unit,'(/a/)' )trim(text)
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
-        call FLUSH(out_unit)
+        FLUSH(out_unit)
 #ifdef __INTEL_COMPILER
   ! Get traceback and return quietly for correct abort
         call TRACEBACKQQ(user_exit_code=-1)

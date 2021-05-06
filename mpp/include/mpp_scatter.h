@@ -16,6 +16,27 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+  ! <SUBROUTINE NAME="MPP_SCATTER_PELIST_2D_">
+  !   <OVERVIEW>
+  !     Scatter data from one pe to the specified pes.
+  !   </OVERVIEW>
+  !   <TEMPLATE>
+  !     SUBROUTINE MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_root_pe, &
+  !					  ishift, jshift)
+  !   </TEMPLATE>
+  !   <DESCRIPTION>
+  !		   Scatter (ie - is) * (je - js) contiguous elements of array data from the designated root pe
+  !		   into contigous members of array segment in each pe that is included in the pelist argument.
+  !   </DESCRIPTION>
+  !   <IN NAME="is, ie" TYPE="INTEGER">Start and end index of the first dimension of the segment array</IN>
+  !   <IN NAME="js, je" TYPE="INTEGER">Start and end index of the second dimension of the segment array</IN>
+  !   <IN NAME="pelist" TYPE="INTEGER()">The PE list of of target pes, Needs to be in monotonic increasing order.
+  !		The root pe is allowed to be included (see input is_root_pe). If a pe is absent in this list then
+  !             its segment array is not updated. </IN>
+  !   <IN NAME="array_seg" TYPE="REAL(:)">The 2D array that the data is to be copied into</IN>
+  !   <IN NAME="data" TYPE="REAL(:)">The source array.</IN>
+  !   <IN NAME="is_root_pe" TYPE="LOGICAL" > True if the calee is root pe, false otherwise. </IN>
+  !   <IN NAME="ishift, jshift" TYPE="INTEGER" > Offsets specifying the first element in data array.</IN>
 subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_root_pe, &
                                   ishift, jshift)
    integer,                           intent(in)    :: is, ie, js, je
