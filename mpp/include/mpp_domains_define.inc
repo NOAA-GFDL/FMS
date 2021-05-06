@@ -7611,6 +7611,10 @@ do i = 1, ntileMe
 enddo
 deallocate(domain%x, domain%y, domain%tile_id)
 
+! TODO: Check if these are always allocated
+if(ASSOCIATED(domain%tileList)) deallocate(domain%tileList)
+if(ASSOCIATED(domain%tile_id_all)) deallocate(domain%tile_id_all)
+
 if(ASSOCIATED(domain%list)) then
  do i = 0, size(domain%list(:))-1
     deallocate(domain%list(i)%x, domain%list(i)%y, domain%list(i)%tile_id)
@@ -7618,16 +7622,55 @@ if(ASSOCIATED(domain%list)) then
  deallocate(domain%list)
 endif
 
-if(ASSOCIATED(domain%check_C))  call deallocate_overlapSpec(domain%check_C)
-if(ASSOCIATED(domain%check_E))  call deallocate_overlapSpec(domain%check_E)
-if(ASSOCIATED(domain%check_N))  call deallocate_overlapSpec(domain%check_N)
-if(ASSOCIATED(domain%bound_C))  call deallocate_overlapSpec(domain%bound_C)
-if(ASSOCIATED(domain%bound_E))  call deallocate_overlapSpec(domain%bound_E)
-if(ASSOCIATED(domain%bound_N))  call deallocate_overlapSpec(domain%bound_N)
-if(ASSOCIATED(domain%update_T)) call deallocate_overlapSpec(domain%update_T)
-if(ASSOCIATED(domain%update_E)) call deallocate_overlapSpec(domain%update_E)
-if(ASSOCIATED(domain%update_C)) call deallocate_overlapSpec(domain%update_C)
-if(ASSOCIATED(domain%update_N)) call deallocate_overlapSpec(domain%update_N)
+if(ASSOCIATED(domain%check_C)) then
+  call deallocate_overlapSpec(domain%check_C)
+  deallocate(domain%check_C)
+endif
+
+if(ASSOCIATED(domain%check_E)) then
+  call deallocate_overlapSpec(domain%check_E)
+  deallocate(domain%check_E)
+endif
+
+if(ASSOCIATED(domain%check_N)) then
+  call deallocate_overlapSpec(domain%check_N)
+  deallocate(domain%check_N)
+endif
+
+if(ASSOCIATED(domain%bound_C)) then
+  call deallocate_overlapSpec(domain%bound_C)
+  deallocate(domain%bound_C)
+endif
+
+if(ASSOCIATED(domain%bound_E)) then
+  call deallocate_overlapSpec(domain%bound_E)
+  deallocate(domain%bound_E)
+endif
+
+if(ASSOCIATED(domain%bound_N)) then
+  call deallocate_overlapSpec(domain%bound_N)
+  deallocate(domain%bound_N)
+endif
+
+if(ASSOCIATED(domain%update_T)) then
+  call deallocate_overlapSpec(domain%update_T)
+  deallocate(domain%update_T)
+endif
+
+if(ASSOCIATED(domain%update_E)) then
+  call deallocate_overlapSpec(domain%update_E)
+  deallocate(domain%update_E)
+endif
+
+if(ASSOCIATED(domain%update_C)) then
+  call deallocate_overlapSpec(domain%update_C)
+  deallocate(domain%update_C)
+endif
+
+if(ASSOCIATED(domain%update_N)) then
+  call deallocate_overlapSpec(domain%update_N)
+  deallocate(domain%update_N)
+endif
 
 end subroutine deallocate_domain2D_local
 
@@ -7871,6 +7914,7 @@ subroutine deallocate_overlap_type( overlap)
   if(ASSOCIATED(overlap%js)) deallocate(overlap%js)
   if(ASSOCIATED(overlap%je)) deallocate(overlap%je)
   if(ASSOCIATED(overlap%dir)) deallocate(overlap%dir)
+  if(ASSOCIATED(overlap%index)) deallocate(overlap%index)
   if(ASSOCIATED(overlap%rotation)) deallocate(overlap%rotation)
   if(ASSOCIATED(overlap%from_contact)) deallocate(overlap%from_contact)
   if(ASSOCIATED(overlap%msgsize)) deallocate(overlap%msgsize)
