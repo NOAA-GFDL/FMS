@@ -68,31 +68,29 @@ public :: define_blocks, define_blocks_packed
 contains
 
 !###############################################################################
-!> \fn define_blocks
-!!
-!! \brief Sets up "blocks" used for OpenMP threading of column-based
+!> @brief Sets up "blocks" used for OpenMP threading of column-based
 !!        calculations using rad_n[x/y]xblock from coupler_nml
 !!
-!! <b> Parameters: </b>
+!> Parameters:
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),         intent(in)    :: component
 !! type(block_control_type), intent(inout) :: Block
 !! integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
 !! integer,                  intent(in)    :: nx_block, ny_block
 !! logical,                  intent(inout) :: message
-!! \endcode
+!! @endcode
 !!
-!! \param [in]    <component>
-!! \param [inout] <Block>
-!! \param [in]    <isc>
-!! \param [in]    <iec>
-!! \param [in]    <jsc>
-!! \param [in]    <jec>
-!! \param [in]    <kpts>
-!! \param [in]    <nx_block>
-!! \param [in]    <ny_block>
-!! \param [inout] <message>
+!! @param [in]    <component>
+!! @param [inout] <Block>
+!! @param [in]    <isc>
+!! @param [in]    <iec>
+!! @param [in]    <jsc>
+!! @param [in]    <jec>
+!! @param [in]    <kpts>
+!! @param [in]    <nx_block>
+!! @param [in]    <ny_block>
+!! @param [inout] <message>
 !!
   subroutine define_blocks (component, Block, isc, iec, jsc, jec, kpts, &
                             nx_block, ny_block, message)
@@ -185,31 +183,29 @@ contains
 
 
 !###############################################################################
-!> \fn define_blocks_packed
-!!
-!! \brief Creates and populates a data type which is used for defining the
+!> @brief Creates and populates a data type which is used for defining the
 !!        sub-blocks of the MPI-domain to enhance OpenMP and memory performance.
 !!        Uses a packed concept
 !!
-!! <b> Parameters: </b>
+!! Parameters:
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),         intent(in)    :: component
 !! type(block_control_type), intent(inout) :: Block
 !! integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
 !! integer,                  intent(inout) :: blksz
 !! logical,                  intent(inout) :: message
-!! \endcode
+!! @endcode
 !!
-!! \param [in]    <component>
-!! \param [inout] <Block>
-!! \param [in]    <isc>
-!! \param [in]    <iec>
-!! \param [in]    <jsc>
-!! \param [in]    <jec>
-!! \param [in]    <kpts>
-!! \param [inout] <blksz>
-!! \param [inout] <message>
+!! @param [in]    <component>
+!! @param [inout] <Block>
+!! @param [in]    <isc>
+!! @param [in]    <iec>
+!! @param [in]    <jsc>
+!! @param [in]    <jec>
+!! @param [in]    <kpts>
+!! @param [inout] <blksz>
+!! @param [inout] <message>
 !!
   subroutine define_blocks_packed (component, Block, isc, iec, jsc, jec, &
                                    kpts, blksz, message)

@@ -163,6 +163,7 @@ interface operator (>)
 end interface
 
 !> @interface amip_interp_new amip_interp_new Interface
+!> @ingroup amip_interp_mod
 !> @brief Function that initializes data needed for the horizontal
 !! interpolation between the sst grid and model grid. The
 !! returned variable of type amip_interp_type is needed when
@@ -297,6 +298,7 @@ end type
  logical :: use_mpp_io = .false. !> Set to .true. to use mpp_io, otherwise fms2io is used
 
 !> @page amip_interp_nml amip_interp Namelist
+!> @ingroup amip_interp_mod
 !> @var character(len=24) data_set
 !! Name/type of SST data that will be used.
 !!        Possible values (case-insensitive) are:

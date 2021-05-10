@@ -17,7 +17,7 @@
 !! License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup memutils_mod memutils_mod
-!> @ingroup  
+!> @ingroup memutils 
 !! @brief Module to expose the memory printing API
 !! @author V. Balaji
 !!
@@ -29,6 +29,12 @@
 !! or another file (e.g. the log file).  This can be useful in debugging.
 !! This module exposes the print_memuse_stat and memutils_init calls for
 !! use in external user code.
+
+!> @file
+!> @brief File for @ref memutils_mod
+
+!> @addtogroup memutils_mod
+!> @{
 module memutils_mod
 !Author: Balaji (V.Balaji@noaa.gov)
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_npes, mpp_min, mpp_max, mpp_sum, stderr
@@ -80,3 +86,5 @@ contains
     return
   end subroutine print_memuse_stats
 end module memutils_mod
+!> @}
+! close documentation grouping

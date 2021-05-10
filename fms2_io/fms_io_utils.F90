@@ -74,11 +74,14 @@ type :: char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
-
+!> @page string2 string2 Interface
+!> @brief Converts a given integer or real into a character string
 interface string2
+  !> @brief gets string from integer
   module procedure string_from_integer2
   module procedure string_from_real2
 end interface string2
+
 
 interface parse_mask_table
   module procedure parse_mask_table_2d

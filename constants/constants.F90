@@ -172,12 +172,5 @@ subroutine constants_init
 end subroutine constants_init
 
 end module constants_mod
-!> 
-
-!   <FUTURE>
-!   1.  Renaming of constants.
-!   </FUTURE>
-!   <FUTURE>
-!   2.  Additional constants.
-!   </FUTURE>
-!   <NOTE>
+!> @}
+! close documentation grouping 

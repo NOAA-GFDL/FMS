@@ -23,7 +23,7 @@
 !! ocean surface for a coupled model as outlined in the Biotic-HOWTO
 !! documentation, revision 1.7, 1999/10/05.
 !!
-!! @author Richard Slater, John Dunne
+!> @author Richard Slater, John Dunne
 !!
 !! This module will take fields from an atmospheric and an
 !! oceanic model and calculate ocean surface fluxes for
@@ -717,7 +717,7 @@ contains
   end subroutine  atmos_ocean_fluxes_init
 
   !> @brief Initialize the coupler type flux tracers
-  !! Initialize the /coupler_mod/types/ fields in the field manager.  These fields
+  !> Initialize the /coupler_mod/types/ fields in the field manager.  These fields
   !! include:
   !! @verbatim
   !! air_sea_gas_flux_generic/

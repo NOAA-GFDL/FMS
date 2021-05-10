@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup horiz_interp_spherical_mod horiz_interp_spherical_mod
-!> @ingroup horiz_interp_sphereical_mod
+!> @ingroup horiz_interp
 !> @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
 !> This module can interpolate data from rectangular/tripolar grid
 !! to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
@@ -28,7 +28,7 @@
 !> @file
 !> @brief File for @ref horiz_interp_spherical_mod
 
-!> @addtogroup
+!> @addtogroup horiz_interp_spherical_mod
 !> @{
 module horiz_interp_spherical_mod
 
