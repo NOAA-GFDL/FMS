@@ -103,10 +103,10 @@ test_expect_success "interface" '
     mpirun -n 2 ./test_mpp_domains
 '
 # TODO this wasn't run at all previously
-#sed "s/check_parallel = .false./check_parallel = .true./" input_base.nml > input.nml
-#test_expect_success "check_parallel" '
-#    mpirun -n 2 ./test_mpp_domains
-#'
+sed "s/check_parallel = .false./check_parallel = .true./" input_base.nml > input.nml
+test_expect_success "check_parallel" '
+    mpirun -n 6 ./test_mpp_domains
+'
 sed "s/test_get_nbr = .false./test_get_nbr = .true./" input_base.nml > input.nml
 test_expect_success "get nbr" '
     mpirun -n 8 ./test_mpp_domains

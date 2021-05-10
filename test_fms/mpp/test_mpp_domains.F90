@@ -51,14 +51,13 @@ program test_mpp_domains
   use mpp_domains_mod, only : mpp_group_update_type, mpp_create_group_update
   use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
   use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
-  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE, mpp_get_tile_id
-  !! added for old tests
+  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, &
+                              NONSYMEDGEUPDATE, mpp_get_tile_id
   use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
   use fms_mod,         only : check_nml_error
-  !!
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
   use fms_affinity_mod, only : fms_affinity_set, fms_affinity_init
   use mpp_io_mod,       only: mpp_io_init
@@ -81,6 +80,7 @@ program test_mpp_domains
   character(len=32) :: warn_level = "fatal"
   integer :: wide_halo_x = 0, wide_halo_y = 0
   integer :: nx_cubic = 0, ny_cubic = 0
+  ! namelist flags to run each test 
   logical :: test_nest = .false.
   logical :: test_performance = .false.
   logical :: test_interface = .false.
@@ -88,7 +88,7 @@ program test_mpp_domains
   logical :: test_nonsym_edge = .false.
   logical :: test_group = .false.
   logical :: test_cubic_grid_redistribute = .false.
-  logical :: check_parallel = .FALSE.  ! when check_parallel set to false,
+  logical :: check_parallel = .FALSE.
   logical :: test_get_nbr = .FALSE.
   logical :: test_boundary = .false.
   logical :: test_global_sum = .false.
@@ -5633,6 +5633,7 @@ end subroutine test_halosize_update
   end subroutine test_subset_update
   !##################################################################################
   subroutine test_update_edge( type )
+    use mpp_parameter_mod, only: EDGEONLY, NONSYMEDGEUPDATE, NONSYMEDGE
     character(len=*), intent(in) :: type
     real(r8_kind), allocatable, dimension(:,:,:) :: x, x2, a
     real(r8_kind), allocatable, dimension(:,:,:) :: y, y2, b
@@ -5690,25 +5691,39 @@ end subroutine test_halosize_update
     allocate( x2 (isd:ied,jsd:jed,nz) )
     x2 (isd:ied,jsd:jed,:) = global(isd:ied,jsd:jed,:)
     call set_corner_zero(x2, isd, ied, jsd, jed, is, ie, js, je)
-    x = 0.
+    x = 0
     x (is:ie,js:je,:) = global(is:ie,js:je,:)
 
 !full update
     id = mpp_clock_id( type, flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     call mpp_clock_begin(id)
+    !print *, "xs",x(isd,jsd,1)
     call mpp_update_domains( x, domain, flags=EDGEUPDATE)
-    call mpp_clock_end  (id)
+    !print *, "xe",x(isd,jsd,1)
+    call mpp_clock_end(id)
     call compare_checksums( x, x2, type )
     deallocate(x2)
 
-    a = 0.
+    a = 0
     a(is:ie,js:je,:) = global(is:ie,js:je,:)
-    call set_corner_zero(a, isd, ied, jsd, jed, is, ie, js, je)
-
+    !print *,"as", a(isd,jsd,1)
     id_update = mpp_start_update_domains( a, domain, flags=EDGEUPDATE)
+    !call set_corner_zero(a, isd, ied, jsd, jed, is, ie, js, je)
+    !!!#ifdef GCC
+     !call mpp_update_domains( a, domain, flags=EDGEUPDATE)
+    !!!#else
+    !print *, mpp_pe(), isd, ied, jsd, jed, nz
+    !print *, "before", mpp_pe(), a
+    !call sleep(2) 
     call mpp_complete_update_domains(id_update, a, domain, flags=EDGEUPDATE)
-    call compare_checksums( x, a, type//" nonblock")
+    !print *, "ae", a(isd,jsd,1)
+    !print *, "after", mpp_pe(), a
+    !!!#endif
+    !call compare_checksums( a, cpA, "did the update do anything")
+    !return
+    !call mpp_sync()
 
+    call compare_checksums( x, a, type//" nonblock")
         !--- test vector update for FOLDED and MASKED case.
     if( type == 'Cyclic' ) then
        deallocate(global, x, a)
@@ -6340,8 +6355,7 @@ end subroutine test_halosize_update
     integer, dimension(:), allocatable :: pelist1 , pelist2
     logical :: group1, group2
     character(len=128)  :: mesg
-    !!
-    !!
+
     npes = mpp_npes()
     allocate(pelist1(npes-mpes), pelist2(mpes))
     pelist1 = (/(i, i = 0, npes-mpes -1)/)

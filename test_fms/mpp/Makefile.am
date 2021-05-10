@@ -40,6 +40,7 @@ check_PROGRAMS = test_mpp \
   test_read_input_nml \
   test_stdout \
   test_stderr \
+  test_stdin \
   test_mpp_get_ascii_lines \
   test_system_clock \
   test_mpp_broadcast \
@@ -62,7 +63,9 @@ check_PROGRAMS = test_mpp \
   test_mpp_alltoall \
   test_mpp_global_field \
   test_mpp_global_field_ug \
-  test_mpp_global_sum_ad
+  test_mpp_global_sum_ad \
+  test_mpp_init_logfile \
+  test_mpp_clock_begin_end_id
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -120,6 +123,9 @@ test_mpp_global_field_ug_SOURCES = \
   compare_data_checksums_int.F90 \
   test_mpp_global_field_ug.F90
 test_mpp_global_sum_ad_SOURCES = test_mpp_global_sum_ad.F90
+test_stdin_SOURCES=test_stdin.F90
+test_mpp_init_logfile_SOURCES=test_mpp_init_logfile.F90
+test_mpp_clock_begin_end_id_SOURCES=test_mpp_clock_begin_end_id.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
@@ -133,6 +139,7 @@ TESTS = test_mpp_domains2.sh \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
+  test_stdin.sh \
   test_mpp_get_ascii_lines2.sh \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
@@ -153,7 +160,9 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_alltoall.sh \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
-  test_mpp_global_sum_ad.sh
+  test_mpp_global_sum_ad.sh \
+  test_mpp_init_logfile.sh \
+  test_mpp_clock_begin_end_id.sh
 
 # Define test file extensions and log driver
 TEST_EXTENSIONS = .sh
@@ -169,6 +178,7 @@ EXTRA_DIST = create_input.sh.in \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
+  test_stdin.sh \
   test_mpp_get_ascii_lines2.sh \
   base_ascii_5 \
   base_ascii_25 \
@@ -196,7 +206,9 @@ EXTRA_DIST = create_input.sh.in \
   test_mpp_alltoall.sh \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
-  test_mpp_global_sum_ad.sh
+  test_mpp_global_sum_ad.sh \
+  test_mpp_init_logfile.sh \
+  test_mpp_clock_begin_end_id.sh
 
 fill_halo.mod: fill_halo.$(OBJEXT)
 compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)
