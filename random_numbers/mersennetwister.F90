@@ -19,12 +19,12 @@
 
 !> @defgroup mersennetwister_mod MersenneTwister_mod
 !> @ingroup random_numbers
-!> @brief Fortran-95 implementation of the Mersenne Twister 19937, following
-!!   the C implementation described below
-!!   adapted cosmetically by making the names more general.
-!> Users must declare one or more variables of type randomNumberSequence in the calling
-!!   procedure which are then initialized using a required seed. If the
-!!   variable is not initialized the random numbers will all be 0.
+!> @brief Fortran-95 implementation of the Mersenne Twister 19937 algorithm
+!> @author Robert Pincus
+!!
+!! Users must declare one or more variables of type randomNumberSequence in the calling
+!! procedure which are then initialized using a required seed. If the
+!! variable is not initialized the random numbers will all be 0.
 !! For example:
 !! program testRandoms
 !!   use RandomNumbers

@@ -26,23 +26,14 @@
 
 !> @defgroup mpp_mod mpp_mod 
 !> @ingroup mpp
-!! @author V. Balaji
-!! @brief a generalized communication package for use with shmem and MPI
-!! @description
-!! @htmlonly
-!! <CONTACT EMAIL="V.Balaji@noaa.gov">
-!!   V. Balaji
-!! </CONTACT>
-!! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-!! <RCSLOG SRC="http://www.gfdl.noaa.gov/~vb/changes_mpp.html"/>
-!! <OVERVIEW>
-!!   <TT>mpp_mod</TT>, is a set of simple calls to provide a uniform interface
-!!   to different message-passing libraries. It currently can be
-!!   implemented either in the SGI/Cray native SHMEM library or in the MPI
-!!   standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
-!!   incorporated as the need arises.
-!! </OVERVIEW>
-!! <DESCRIPTION>
+!> @brief A set of simple calls to provide a uniform interface
+!! to different message-passing libraries. It currently can be
+!! implemented either in the SGI/Cray native SHMEM library or in the MPI
+!! standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
+!! incorporated as the need arises.
+!!
+!> @author V. Balaji <"V.Balaji@noaa.gov">
+!!
 !!   The data transfer between a processor and its own memory is based
 !!   on <TT>load</TT> and <TT>store</TT> operations upon
 !!   memory. Shared-memory systems (including distributed shared memory
@@ -157,7 +148,7 @@
 !> @file
 !> @brief File for @ref mpp_mod
 
-!> @addtogroup
+!> @addtogroup mpp_mod
 !> @{
 module mpp_mod
 

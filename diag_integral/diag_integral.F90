@@ -105,6 +105,7 @@ public      &
 
 !###############################################################################
 !> @page sum_diag_integral_field sum_diag_integral_field Interface
+!> @ingroup diag_integral_mod
 !!
 !! This interface can be called in any one of three ways:
 !!
