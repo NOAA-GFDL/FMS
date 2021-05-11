@@ -96,25 +96,17 @@ use platform_mod
   TYPE(diag_axis_type), ALLOCATABLE, SAVE :: Axes(:) !< ---- global storage for all defined axes ----
   LOGICAL :: module_is_initialized = .FALSE.
 
-  ! <INTERFACE NAME="diag_axis_add_attribute">
-  !   <OVERVIEW>
-  !     Add a attribute to the diag axis
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_axis_add_attribute(diag_axis_id, att_name, att_value)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Add an arbitrary attribute and value to the diagnostic axis.  Any number
-  !     of attributes can be added to a given axis.  All attribute addition must
-  !     be done before first <TT>send_data</TT> call.
-  !
-  !     If a real or integer attribute is already defined, a FATAL error will be called.
-  !     If a character attribute is already defined, then it will be prepended to the
-  !     existing attribute value.
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_axis_id" TYPE="INTEGER" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="REAL|INTEGER|CHARACTER(len=*)" />
+  !> @page diag_axis_add_attribute diag_axis_add_attribute Interface
+  !> Add a attribute to the diag axis
+  !! Add an arbitrary attribute and value to the diagnostic axis.  Any number
+  !! of attributes can be added to a given axis.  All attribute addition must
+  !! be done before first <TT>send_data</TT> call.
+  !!
+  !! If a real or integer attribute is already defined, a FATAL error will be called.
+  !! If a character attribute is already defined, then it will be prepended to the
+  !! existing attribute value.
+  !! Example usage:
+  !!            call diag_axis_add_attribute(diag_axis_id, att_name, att_value)
   INTERFACE diag_axis_add_attribute
      MODULE PROCEDURE diag_axis_add_attribute_scalar_r
      MODULE PROCEDURE diag_axis_add_attribute_scalar_i

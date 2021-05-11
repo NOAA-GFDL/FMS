@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup fms_io_utils_mod fms_io_utils_mod
-!> @addtogroup fms2_io 
+!> @ingroup fms2_io 
 !> @brief Misc. utility routines for use in @ref fms2_io
 
 !> @file

@@ -49,7 +49,13 @@ module axis_utils2_mod
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
-
+  !> @page interp_1d interp_1d Interface
+  !! 1D interpolation
+  !! @param grid1
+  !! @param grid2
+  !! @param data1 Data to interpolate 
+  !! @param [inout] data2 Interpolated data
+  !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
   interface interp_1d
      module procedure interp_1d_1d
      module procedure interp_1d_2d
@@ -131,6 +137,7 @@ contains
     end if
   end subroutine get_axis_cart
 
+  !> get axis edge data from a given file
   subroutine axis_edges(fileobj, name, edge_data, reproduce_null_char_bug_flag)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj

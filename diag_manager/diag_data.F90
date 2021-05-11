@@ -19,7 +19,7 @@
 !> @defgroup diag_data_mod diag_data_mod
 !> @ingroup diag_manager
 !! @brief Type descriptions and global variables for the diag_manager modules.
-!! @author Seth Underwood<seth.underwood@noaa.gov>
+!! @author Seth Underwood <seth.underwood@noaa.gov>
 !!
 !!   Notation:
 !!   <DL>

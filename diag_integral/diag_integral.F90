@@ -104,36 +104,35 @@ public      &
 
 
 !###############################################################################
-!> \defgroup sum_diag_integral_field sum_diag_integral_field
-!! \ingroup diag_integral_mod
+!> @page sum_diag_integral_field sum_diag_integral_field Interface
 !!
 !! This interface can be called in any one of three ways:
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call sum_diag_integral_field (name, data, is, js)
 !! call sum_diag_integral_field (name, data, wt, is, js)
 !! call sum_diag_integral_field (name, data, is, ie, js, je)
-!! \endcode
+!! @endcode
 !!
 !! in the first option above, `data` may be either
-!! \code{.f90}
+!! @code{.f90}
 !! real, intent(in) :: data(:,:)   ![ sum_field_2d ]
 !! real, intent(in) :: data(:,:,:) ![ sum_field_3d ]
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),  intent(in) :: name
 !! real,              intent(in) :: wt(:,:,:)
 !! integer, optional, intent(in) :: is, ie, js, je
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <name> name associated with integral
-!! \param [in] <data> field of integrands to be summed over
-!! \param [in] <wt> vertical weighting factor to be applied to integrands
+!! @param [in] <name> name associated with integral
+!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <wt> vertical weighting factor to be applied to integrands
 !!        when summing
-!! \param [in] <is, ie, js, je> starting/ending i,j indices over which summation
+!! @param [in] <is, ie, js, je> starting/ending i,j indices over which summation
 !!        is to occur
 !!
 interface sum_diag_integral_field
@@ -286,27 +285,25 @@ logical :: module_is_initialized = .false. !< module is initialized ?
 
 
 !###############################################################################
-!> \fn diag_integral_init
-!!
-!! \brief diag_integral_init is the constructor for diag_integral_mod.
+!> @brief diag_integral_init is the constructor for diag_integral_mod.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call diag_integral_init (Time_init, Time, blon, blat)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! type (time_type),  intent(in), optional :: Time_init, Time
 !! real,dimension(:,:), intent(in), optional :: blon, blat, area_in
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <Time_init> Initial time to start the integral
-!! \param [in] <Time> current time
-!! \param [in] <latb> array of model latitudes at cell boundaries [radians]
-!! \param [in] <lonb> array of model longitudes at cell boundaries [radians]
+!! @param [in] <Time_init> Initial time to start the integral
+!! @param [in] <Time> current time
+!! @param [in] <latb> array of model latitudes at cell boundaries [radians]
+!! @param [in] <lonb> array of model longitudes at cell boundaries [radians]
 !!
 subroutine diag_integral_init (Time_init, Time, blon, blat, area_in)
 
@@ -441,24 +438,22 @@ end subroutine diag_integral_init
 
 
 !###############################################################################
-!> \fn diag_integral_field_init
-!!
-!! \brief diag_integral_field_init registers and intializes an integral field
+!> @brief diag_integral_field_init registers and intializes an integral field
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call diag_integral_field_init (name, format)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*), intent(in) :: name, format
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <name> Name of the field to be integrated
-!! \param [in] <format> Output format of the field to be integrated
+!! @param [in] <name> Name of the field to be integrated
+!! @param [in] <format> Output format of the field to be integrated
 !!
 subroutine diag_integral_field_init (name, format)
 
@@ -518,28 +513,27 @@ end subroutine diag_integral_field_init
 
 
 !###############################################################################
-!> \fn sum_field_2d
-!! \implements sum_diag_integral_field
+!> @brief Perform a 2 dimensional summation of named field
 !!
-!! \brief Perform a 2 dimensional summation of named field
+!! @implements sum_diag_integral_field
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call sum_field_2d (name, data, is, js)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),  intent(in) :: name
 !! real,              intent(in) :: data(:,:)
 !! integer, optional, intent(in) :: is, js
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <name> Name of the field to be integrated
-!! \param [in] <data> field of integrands to be summed over
-!! \param [in] <is, js> starting i,j indices over which summation is to occur
+!! @param [in] <name> Name of the field to be integrated
+!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <is, js> starting i,j indices over which summation is to occur
 !!
 subroutine sum_field_2d (name, data, is, js)
 
@@ -605,28 +599,27 @@ end subroutine sum_field_2d
 
 
 !###############################################################################
-!> \fn sum_field_3d
-!! \implements sum_diag_integral_field
+!> @brief Perform a 3 dimensional summation of named field
 !!
-!! \brief Perform a 3 dimensional summation of named field
+!! @implements sum_diag_integral_field
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call sum_field_3d (name, data, is, js)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),  intent(in) :: name
 !! real,              intent(in) :: data(:,:,:)
 !! integer, optional, intent(in) :: is, js
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <name> Name of the field to be integrated
-!! \param [in] <data> field of integrands to be summed over
-!! \param [in] <is, js> starting i,j indices over which summation is to occur
+!! @param [in] <name> Name of the field to be integrated
+!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <is, js> starting i,j indices over which summation is to occur
 !!
 subroutine sum_field_3d (name, data, is, js)
 
@@ -701,29 +694,28 @@ end subroutine sum_field_3d
 
 
 !###############################################################################
-!> \fn sum_field_wght_3d
-!! \implements sum_diag_integral_field
+!> @brief Perform a 3 dimensional weighted summation of named field
 !!
-!! \brief Perform a 3 dimensional weighted summation of named field
+!! @implements sum_diag_integral_field
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call sum_field_wght_3d (name, data, wt, is, js)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),  intent(in) :: name
 !! real,              intent(in) :: data(:,:,:), wt(:,:,:)
 !! integer, optional, intent(in) :: is, js
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <name> Name of the field to be integrated
-!! \param [in] <data> field of integrands to be summed over
-!! \param [in] <wt> the weight function to be evaluated at summation
-!! \param [in] <is, js> starting i,j indices over which summation is to occur
+!! @param [in] <name> Name of the field to be integrated
+!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <wt> the weight function to be evaluated at summation
+!! @param [in] <is, js> starting i,j indices over which summation is to occur
 !!
 subroutine sum_field_wght_3d (name, data, wt, is, js)
 
@@ -797,28 +789,27 @@ end subroutine sum_field_wght_3d
 
 
 !###############################################################################
-!> \fn sum_field_2d_hemi
-!! \implements sum_diag_integral_field
+!> @brief Perform a 2 dimensional hemispherical summation of named field
 !!
-!! \brief Perform a 2 dimensional hemispherical summation of named field
+!! @implements sum_diag_integral_field
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call sum_field_2d_hemi (name, data, is, ie, js, je)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),  intent(in) :: name
 !! real,              intent(in) :: data(:,:)
 !! integer,           intent(in) :: is, js, ie, je
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <name> Name of the field to be integrated
-!! \param [in] <data> field of integrands to be summed over
-!! \param [in] <is, js, ie, je> starting/ending i,j indices over which summation
+!! @param [in] <name> Name of the field to be integrated
+!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <is, js, ie, je> starting/ending i,j indices over which summation
 !!        is to occur
 !!
 subroutine sum_field_2d_hemi (name, data, is, ie, js, je)
@@ -899,26 +890,23 @@ end subroutine sum_field_2d_hemi
 
 
 !###############################################################################
-!> \fn diag_integral_output
-!!
-!! \brief diag_integral_output determines if this is a timestep on which
-!!        integrals are to be written. if not, it returns; if so, it calls
-!!        write_field_averages.
-!!
+!> @brief diag_integral_output determines if this is a timestep on which
+!! integrals are to be written. if not, it returns; if so, it calls
+!! write_field_averages.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call diag_integral_output (Time)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! type (time_type), intent(in) :: Time
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <Time> integral time stamp at the current time
+!! @param [in] <Time> integral time stamp at the current time
 !!
 subroutine diag_integral_output (Time)
 
@@ -950,23 +938,21 @@ end subroutine diag_integral_output
 
 
 !###############################################################################
-!> \fn diag_integral_end
-!!
-!! \brief diag_integral_end is the destructor for diag_integral_mod.
+!> @brief diag_integral_end is the destructor for diag_integral_mod.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call diag_integral_end (Time)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! type (time_type), intent(in) :: Time
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <Time> integral time stamp at the current time
+!! @param [in] <Time> integral time stamp at the current time
 !!
 subroutine diag_integral_end (Time)
 
@@ -1014,27 +1000,25 @@ end subroutine diag_integral_end
 
 
 !###############################################################################
-!> \fn set_axis_time
-!!
-!! \brief Function to convert input time to a time_type
+!> @brief Function to convert input time to a time_type
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! time = set_axis_time (atime, units)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! real,             intent(in) :: atime
 !! character(len=*), intent(in) :: units
 !! type(time_type)  :: Time
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <atime> integral time stamp at the current time
-!! \param [in] <units> input units, not used
-!! \param [out] <Time>
+!! @param [in] <atime> integral time stamp at the current time
+!! @param [in] <units> input units, not used
+!! @param [out] <Time>
 !!
 function set_axis_time (atime, units) result (Time)
 
@@ -1075,26 +1059,24 @@ end function set_axis_time
 
 
 !###############################################################################
-!> \fn get_field_index
-!!
-!! \brief get_field_index returns returns the index associated with an
+!> @brief get_field_index returns returns the index associated with an
 !!   integral name.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! index = get_field_index (name)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! character(len=*),  intent(in) :: name
 !! integer                       :: index
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <name> Name associated with an integral
-!! \param [out] <index>
+!! @param [in] <name> Name associated with an integral
+!! @param [out] <index>
 !!
 function get_field_index (name) result (index)
 
@@ -1132,24 +1114,22 @@ end function get_field_index
 
 
 !###############################################################################
-!> \fn write_field_averages
-!!
-!! \brief Subroutine to sum multiple fields, average them and then write the
+!> @brief Subroutine to sum multiple fields, average them and then write the
 !!        result to an output file.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call  write_field_averages (Time)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! type (time_type), intent(in) :: Time
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <Time> integral time stamp at the current time
+!! @param [in] <Time> integral time stamp at the current time
 !!
 subroutine write_field_averages (Time)
 
@@ -1251,24 +1231,22 @@ end subroutine write_field_averages
 
 
 !###############################################################################
-!> \fn format_text_init
-!!
-!! \brief format_text_init generates the header records to be output in the
+!> @brief format_text_init generates the header records to be output in the
 !!    integrals file.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call  format_text_init (nst_in, nend_in)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! integer, intent(in), optional :: nst_in, nend_in
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <nst_in, nend_in> starting/ending integral index which will be
+!! @param [in] <nst_in, nend_in> starting/ending integral index which will be
 !!        included in this format statement
 !!
 subroutine format_text_init (nst_in, nend_in)
@@ -1342,24 +1320,22 @@ end subroutine format_text_init
 
 
 !###############################################################################
-!> \fn format_data_init
-!!
-!! \brief format_text_init generates the format to be output in the
+!> @brief format_text_init generates the format to be output in the
 !!    integrals file.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! call  format_data_init (nst_in, nend_in)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! integer, intent(in), optional :: nst_in, nend_in
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <nst_in, nend_in> starting/ending integral index which will be
+!! @param [in] <nst_in, nend_in> starting/ending integral index which will be
 !!        included in this format statement
 !!
 subroutine format_data_init (nst_in, nend_in)
@@ -1418,28 +1394,26 @@ end subroutine format_data_init
 
 
 !###############################################################################
-!> \fn get_axis_time
-!!
-!! \brief Function to convert the time_type input variable into units of
+!> @brief Function to convert the time_type input variable into units of
 !!    units and returns it in atime.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! atime = get_axis_time (Time, units)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! type(time_type),  intent(in) :: Time
 !! character(len=*), intent(in) :: units
 !! real                         :: atime
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <Time> integral time stamp
-!! \param [in] <units> input units of time_type
-!! \param [out] <atime>
+!! @param [in] <Time> integral time stamp
+!! @param [in] <units> input units of time_type
+!! @param [out] <atime>
 !!
 !! @return real atime
 function get_axis_time (Time, units) result (atime)
@@ -1469,26 +1443,24 @@ end function get_axis_time
 
 
 !###############################################################################
-!> \fn diag_integral_alarm
-!!
-!! \brief Function to check if it is time to write integrals.
+!> @brief Function to check if it is time to write integrals.
 !!   if not writing integrals, return.
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! result = diag_integral_alarm (Time)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! type (time_type), intent(in) :: Time
 !! logical                      :: answer
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <Time> current time
-!! \param [out] <answer>
+!! @param [in] <Time> current time
+!! @param [out] <answer>
 !!
 !! @return logical answer
 function diag_integral_alarm (Time) result (answer)
@@ -1505,27 +1477,25 @@ end function diag_integral_alarm
 
 
 !###############################################################################
-!> \fn vert_diag_integral
-!!
-!! \brief Function to perform a weighted integral in the vertical
+!> @brief Function to perform a weighted integral in the vertical
 !!        direction of a 3d data field
 !!
 !! <b> Template: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! data2 = vert_diag_integral (data, wt)
-!! \endcode
+!! @endcode
 !!
 !! <b> Parameters: </b>
 !!
-!! \code{.f90}
+!! @code{.f90}
 !! real, dimension (:,:,:),         intent(in) :: data, wt
 !! real, dimension (size(data,1),size(data,2)) :: data2
-!! \endcode
+!! @endcode
 !!
-!! \param [in] <data> integral field data arrays
-!! \param [in] <wt> integral field weighting functions
-!! \param [out] <data2>
+!! @param [in] <data> integral field data arrays
+!! @param [in] <wt> integral field weighting functions
+!! @param [out] <data2>
 !! @return real array data2
 function vert_diag_integral (data, wt) result (data2)
 

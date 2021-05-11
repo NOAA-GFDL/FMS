@@ -138,33 +138,28 @@ type date_type
    integer :: year, month, day
 end type
 
-!> @interface
 !> assignment overload for amip_interp_type
 interface assignment(=)
   module procedure  amip_interp_type_eq
 end interface
 
-!> @interface
 !> logical equality overload for amip_interp_type
 interface operator (==)
    module procedure date_equals
 end interface
 
-!> @interface
 !> logical inequality overload for amip_interp_type
 interface operator (/=)
    module procedure date_not_equals
 end interface
 
-!> @interface
 !> greater than overload for amip_interp_type
 interface operator (>)
    module procedure date_gt
 end interface
 
-!> @interface amip_interp_new amip_interp_new Interface
-!> @ingroup amip_interp_mod
-!> @brief Function that initializes data needed for the horizontal
+!> @page amip_interp_new amip_interp_new Interface
+!! Initializes data needed for the horizontal
 !! interpolation between the sst grid and model grid. The
 !! returned variable of type amip_interp_type is needed when
 !! calling get_amip_sst and get_amip_ice.
@@ -223,7 +218,6 @@ end interface
 
 
 !----- public data type ------
-!> @typedef amip_interp_type
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
 type amip_interp_type
    private
@@ -298,15 +292,14 @@ end type
  logical :: use_mpp_io = .false. !> Set to .true. to use mpp_io, otherwise fms2io is used
 
 !> @page amip_interp_nml amip_interp Namelist
-!> @ingroup amip_interp_mod
-!> @var character(len=24) data_set
+!! @var character(len=24) data_set
 !! Name/type of SST data that will be used.
 !!        Possible values (case-insensitive) are:
 !!                          1) amip1
 !!                          2) reynolds_eof
 !!                          3) reynolds_oi
 !!        See the @ref amip_interp_oi page for more information
-!> @var character(len=16) date_out_of_range
+!! @var character(len=16) date_out_of_range
 !!     Controls the use of climatological monthly mean data when
 !!     the requested date falls outside the range of the data set.<BR/>
 !!     Possible values are:
@@ -318,31 +311,31 @@ end type
 !!               requested date is after data set period.
 !!   climo     - program uses climatological data anytime.
 !!    </PRE>
-!> @var real tice_crit
+!! @var real tice_crit
 !!     Freezing point of sea water in degC or degK. Defaults to -1.80
-!> @var integer verbose
+!! @var integer verbose
 !!     Controls printed output, 0 <= verbose <= 3, default=0
 !!     additional parameters for controlling zonal prescribed sst ----
 !!     these parameters only have an effect when use_zonal=.true. ----
-!> @var logical use_zonal
+!! @var logical use_zonal
 !!     Flag to selected zonal sst or data set. Default=.false.
-!> @var real teq
+!! @var real teq
 !!     sst at the equator. Default=305
 !! @var real tdif
 !!     Equator to pole sst difference. Default=50
 !!   </DATA>
-!> @var real tann
+!! @var real tann
 !!     Amplitude of annual cycle. Default=20
-!> @var real tlag
+!! @var real tlag
 !!     Offset for time of year (for annual cycle). Default=0.875
-!> @var integer amip_date
+!! @var integer amip_date
 !!     Single calendar date in integer "(year,month,day)" format
 !!     that is used only if set with year>0, month>0, day>0.
 !!     If used, model calendar date is replaced by this date,
 !!     but model time of day is still used to determine ice/sst.
 !!     Used for repeating-single-day (rsd) experiments.
 !!     Default=/-1,-1,-1/
-!> @var real sst_pert
+!! @var real sst_pert
 !!     Temperature perturbation in degrees Kelvin added onto the SST.
 !!                The perturbation is globally-uniform (even near sea-ice).
 !!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs

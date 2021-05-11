@@ -16,10 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @file
-!! @brief Essentially a copy of constants.F90 for external usage
-!! @author Ryan Mulhall 
-
+!> @defgroup fmsconstants FMSconstants
+!> @brief Essentially a copy of @ref constants_mod for external usage alongside
+!! @ref libfms
+!> See @ref constants_mod for individual parameter information
 module FMSconstants 
 
   !> rename to not conflict with any other version vars

@@ -18,29 +18,24 @@
  *********************************************************************
  */
 
-//This header file is used exclusively for doxygen documentation
-//Creates groupings for each directory with descriptions so that
-//files and their contents can be added to their corresponding group
-// any 'directory level' comments can be added here
+// This header file is used exclusively for doxygen documentation
+// Defines groups for each subdirectory to add their modules into
+// Additional doxygen pages can be added here as well 
 
 /** @defgroup affinity Affinity
- *  @brief API interfaces to allow setting and getting thread affinity.
- *
- *  Uses fms_affinity.F90 to interface between affinity.c for manipulating 
- *  CPU affinity.
  *
  */
 
 /** @defgroup astronomy Astronomy
- *  @brief Astronomy related variables and routines
+ *  
  */
 
 /** @defgroup axis_utils Axis Utilities
- *  @brief Utilities for manipulating axis data
+ *
  */
 
 /** @defgroup amip_interp AMIP Interpolator
- *  @brief Routines for interpolating SST and ice mask data sets over a model grid
+ *
  */
 
 /** @defgroup block_control Block Control

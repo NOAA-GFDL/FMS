@@ -70,7 +70,6 @@ public       &
               astronomy_end, universal_time, orbital_time
 
 !> @page diurnal_solar diurnal_solar Interface
-!> @ingroup astronomy_mod
 !!
 !! ~~~~~~~~~~{.f90}
 !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
@@ -202,7 +201,7 @@ interface daily_mean_solar
    module procedure daily_mean_solar_cal_0d
 end interface
 
-!! @page annual_mean_solar annual_mean_solar Interface
+!> @page annual_mean_solar annual_mean_solar Interface
 !!
 !! ~~~~~~~~~~{.f90}
 !! call annual_mean_solar (js, je, lat, cosz, solar, fracday, rrsun)

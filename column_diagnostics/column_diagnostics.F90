@@ -25,7 +25,7 @@
 
 !> @addtogroup column_diagnostics_mod
 !> @{
-               module column_diagnostics_mod
+module column_diagnostics_mod
 
 
 

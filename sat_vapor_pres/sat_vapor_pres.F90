@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup sat_vapor_pres_mod sat_vapor_pres_mod
-!> @ingroup 
+!> @ingroup sat_vapor_pres 
 !> @brief Routines for computing the saturation vapor pressure (es),
 !! the specific humidity (qs) and vapor mixing ratio (mrs) 
 !> Given a specified relative humidity, calculates es, qs, and mrs, as well as their 
