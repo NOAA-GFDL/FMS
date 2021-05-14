@@ -20,6 +20,9 @@
 !> @ingroup mpp
 !> @brief This module provides interfaces to the non-domain-oriented communication
 !! subroutines.
+!!
+!> Mainly includes interfaces and type definitions for reproducing operations with extended
+!! fixed point data.
 
 !> @file
 !> @brief file for @ref mpp_efp_mod
@@ -77,10 +80,10 @@ interface assignment(=); module procedure mpp_efp_assign ; end interface
 
 contains
 
-!> This subroutine uses a conversion to an integer representation
+!> @brief This subroutine uses a conversion to an integer representation
 !! of real numbers to give order-invariant sums that will reproduce
 !! across PE count.
-!> @note This idea comes from R. Hallberg and A. Adcroft.
+!! This idea comes from R. Hallberg and A. Adcroft.
 function mpp_reproducing_sum_r8_2d(array, isr, ier, jsr, jer, EFP_sum, reproducing, &
                             overflow_check, err) result(sum)
   real(r8_kind), dimension(:,:), intent(in) :: array
@@ -243,7 +246,7 @@ function mpp_reproducing_sum_r4_2d(array, isr, ier, jsr, jer, EFP_sum, reproduci
 
 end function mpp_reproducing_sum_r4_2d
 
-!> This function uses a conversion to an integer representation
+!> @brief This function uses a conversion to an integer representation
 !! of real numbers to give order-invariant sums that will reproduce
 !! across PE count.  This idea comes from R. Hallberg and A. Adcroft.
 function mpp_reproducing_sum_r8_3d(array, isr, ier, jsr, jer, sums, EFP_sum, err) &

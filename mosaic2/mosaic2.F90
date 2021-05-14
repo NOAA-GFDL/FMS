@@ -20,7 +20,8 @@
 !> @ingroup mosaic
 !> @brief Implements some utility routines to read mosaic information.
 !> @author Zhi Liang
-!> Implements some utility routines to read mosaic information.
+!!
+!! Implements some utility routines to read mosaic information.
 !! The information includes number of tiles and contacts in the mosaic,
 !! mosaic grid resolution of each tile, mosaic contact information, mosaic exchange
 !! grid information. Each routine will call a C-version routine to get these information.
@@ -74,11 +75,10 @@ contains
 
 !#######################################################################
 
-!! @brief Initialize the mosaic_mod.
+!> @brief Initialize the mosaic_mod.
 !> Initialization routine for the mosaic module. It writes the
 !! version information to the log file.
-!!
-!> @example
+!! Example usage:
 !!     call mosaic_init ( )
 subroutine mosaic_init()
 
@@ -94,7 +94,6 @@ end subroutine mosaic_init
 !> @brief return exchange grid size of mosaic xgrid file.
 !! 
 !! Example usage:
-!> @example
 !!              nxgrid = get_mosaic_xgrid_size(xgrid_file)
   function get_mosaic_xgrid_size(fileobj)
     type(FmsNetcdfFile_t), intent(in) :: fileobj !> File that contains exchange grid information.

@@ -39,7 +39,7 @@
 !> @file
 !> @brief File for @ref data_override_mod
 
-!> @addtogroup
+!> @addtogroup data_override_mod
 !> @{
 module data_override_mod
 use constants_mod, only: PI
@@ -144,14 +144,26 @@ logical                                         :: reproduce_null_char_bug = .fa
 
 namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug, reproduce_null_char_bug
 
-!> @brief 
+!> @page data_override_interface data_override Interface
+!! Interface for inserting and interpolating data into a file
+!! for a model's grid and time. Data path must be described in
+!! a user-provided data_table, see @ref data_override_mod "module description" 
+!! for more information.\n
+!! Contains the following routines:\n
+!! @ref data_override_0d \n
+!! @ref data_override_2d \n
+!! @ref data_override_3d \n
 interface data_override
      module procedure data_override_0d
      module procedure data_override_2d
      module procedure data_override_3d
 end interface
 
-!> @brief
+!> @page data_override_ug data_override_UG Interface
+!! @ref data_override_interface for unstructured grids
+!! Contains the following routines:\n
+!! @ref data_override_UG_1d \n
+!! @ref data_override_UG_2d \n
 interface data_override_UG
      module procedure data_override_UG_1d
      module procedure data_override_UG_2d

@@ -18,9 +18,15 @@
 !***********************************************************************
 !> @defgroup fms_netcdf_unstructured_domain_io_mod fms_netcdf_unstructured_domain_io_mod
 !> @ingroup fms2_io
-!> @brief Routines for 
+!> @brief Handles netcdf I/O for unstructured domains
+!!
+!> Mainl
+
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref fms_netcdf_unstructured_domain_io_mod
+
+!> @addtogroup fms_netcdf_unstructured_domain_io_mod
+!> @{
 module fms_netcdf_unstructured_domain_io_mod
 use,intrinsic :: iso_fortran_env
 use netcdf

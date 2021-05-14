@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !> @brief I/O domain root reads in  a domain decomposed variable at a
 !!        specific unlimited dimension level and scatters the data to the

@@ -20,7 +20,8 @@
 !> @ingroup time_interp
 !> @brief Perform I/O and time interpolation of external fields (contained in a file).
 !> @author M.J. Harrison
-!> Perform I/O and time interpolation for external fields.
+!!
+!! Perform I/O and time interpolation for external fields.
 !! Uses udunits library to calculate calendar dates and
 !! convert units.  Allows for reading data decomposed across
 !! model horizontal grid using optional domain2d argument
@@ -133,6 +134,22 @@ module time_interp_external_mod
      integer :: unit = -1
   end type filetype
 
+  !> @page time_interp_external time_interp_external Interface
+  !! Provide data from external file interpolated to current model time.
+  !! Data may be local to current processor or global, depending on
+  !! "init_external_field" flags.
+  !!
+  !! @param index index of external field from previous call to init_external_field
+  !! @param time target time for data
+  !! @param [inout] data global or local data array
+  !! @param interp time_interp_external defined interpolation method (optional).  Currently 
+  !! this module only supports LINEAR_TIME_INTERP.
+  !! @param verbose verbose flag for debugging (optional).
+  !! 
+  !! Contains:
+  !! @ref time_interp_external_0d
+  !! @ref time_interp_external_2d
+  !! @ref time_interp_external_3d
   interface time_interp_external
      module procedure time_interp_external_0d
      module procedure time_interp_external_2d
@@ -660,6 +677,7 @@ module time_interp_external_mod
 !</FUNCTION> NAME="init_external_field"
 
 
+    !> @brief 2D time interpolation for @ref time_interp_external
     subroutine time_interp_external_2d(index, time, data_in, interp, verbose,horz_interp, mask_out, &
                is_in, ie_in, js_in, je_in, window_id)
 
@@ -710,6 +728,7 @@ module time_interp_external_mod
 ! verbose flag for debugging (optional).
 !</IN>
 
+    !> @brief 3D time interpolation for @ref time_interp_external
     subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)
 
       integer,                    intent(in)           :: index
@@ -870,6 +889,7 @@ module time_interp_external_mod
     end subroutine time_interp_external_3d
 !</SUBROUTINE> NAME="time_interp_external"
 
+    !> @brief Scalar time interpolation for @ref time_interp_external
     subroutine time_interp_external_0d(index, time, data, verbose)
 
       integer, intent(in) :: index

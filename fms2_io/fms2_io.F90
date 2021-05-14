@@ -19,6 +19,7 @@
 !> @defgroup fms2_io_mod fms2_io_mod
 !> @ingroup fms2_io
 !> @brief Public API for fms2 I/O interfaces and routines
+!!
 !> Provides public interfaces for routines within @ref fms2_io.
 !! Interfaces and example usages are listed below, see individual routine
 !! documentation for more specific argument information.
@@ -105,23 +106,24 @@ public :: string2
 
 !> @page open_file open_file Interface
 !> @ingroup fms2_io_mod
-!> @brief Opens a given netcdf or domain file
+!> @brief Opens a given netcdf or domain file.
+!!
 !> Example usage:
 !!
 !!              io_success = open_file(fileobj, "filename", "write")
 !!
-!! Opens a netcdf file of type @ref FmsNetcdfFile_t at the given file path string.
+!! Opens a netcdf file of type @ref fmsnetcdffile_t at the given file path string.
 !! File mode is set to one of "read"/"write"/"overwrite"/"append"
 !!
 !!              io_success = open_file(fileobj, "filename", "overwrite", domain)
 !!
-!! Opens a domain netcdf file of type @ref FmsNetcdfDomainFile_t or 
-!! @ref FmsNetcdfUnstructuredDomainFile_t at the given file path name and 2D or unstructured domain. 
+!! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or 
+!! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain. 
 !!
-!! Contains the following routines
-!! @ref netcdf_file_open_wrap
-!! @ref open_domain_file
-!! @ref open_unstructured_domain_file
+!! Contains the following routines: <br>
+!! netcdf_file_open_wrap
+!> @ref open_domain_file
+!> @ref open_unstructured_domain_file
 interface open_file
   module procedure netcdf_file_open_wrap
   module procedure open_domain_file
@@ -131,19 +133,21 @@ end interface open_file
 
 !> @page open_virtual_file open_virtual_file Interface
 !> @brief Creates a diskless netcdf or domain file
-!> Returns true if successful, false otherwise
-!! Example usage:
+!!
+!> @return true if successful, false otherwise
+!!
+!> Example usage:
 !!
 !!              io_success = open_virtual_file(fileobj, "filename", pelist)
 !!
-!! Opens a virtual file through @ref FmsNetcdfFile_t at an optional file path and pelist
+!! Opens a virtual file through @ref fmsnetcdffile_t at an optional file path and pelist
 !!
 !!              io_success = open_virtual_file(fileobj, domain, "filename")
 !!
-!! Opens a virtual domain file through @ref FmsNetcdfDomainFile_t or 
-!! @ref FmsNetcdfUnstructuredDomainFile_t for a given 2D domain at an optional path
+!! Opens a virtual domain file through @ref fmsnetcdfdomainfile_t or 
+!! @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
 !!
-!! Contains the following routines
+!! Contains the following routines <br>
 !! @ref create_diskless_netcdf_file_wrap
 !! @ref create_diskless_domain_file
 !! @ref create_diskless_unstructured_domain_file
@@ -156,14 +160,15 @@ end interface open_virtual_file
 !> @page close_file close_file Interface
 !> @brief Close a netcdf or domain file opened with @ref open_file or
 !! @ref open_virtual_file
+!!
 !> Example usage:
 !!
 !!              call close_file(fileobj)
 !!
-!! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file
+!! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file <br>
 !!
-!! Contains the following routines
-!! @ref netcdf_file_close_wrap
+!! Contains the following routines <br>
+!! @ref netcdf_file_close_wrap 
 !! @ref close_domain_file
 !! @ref close_unstructured_domain_file
 interface close_file
@@ -174,12 +179,13 @@ end interface close_file
 
 !> @page register_axis register_axis Interface
 !> @brief Add a dimension to a given file
+!!
 !> Example usage:
 !!
 !!              call register_axis(fileobj, "lon", "x")
 !!
 !! Adds a dimension named "lon" associated with the x axis of the 2D domain file. For unstructured
-!! domains no x or y axis is provided.
+!! domains no x or y axis character is provided.
 !!
 !!              call register_axis(fileobj, "lon", n)
 !!
@@ -321,19 +327,20 @@ end interface write_data
 
 !> @page read_data read_data Interface
 !> @brief Read data from a defined field in a file
-!!> Example usage:
+!!
+!> Example usage:
 !!
 !!              call read_data(fileobj, "lat", data) 
 !!
-!! Read the values for the field "lat" from the file and write them onto data
+!! Read the values for the field "lat" from the file and write them onto data <br>
 !!
 !! Contains the following routines
-!! @ref compressed_read_0d
-!! @ref compressed_read_1d
-!! @ref compressed_read_2d
-!! @ref compressed_read_3d
-!! @ref compressed_read_4d
-!! @ref compressed_read_5d
+!! @ref compressed_read_0d <br>
+!! @ref compressed_read_1d <br>
+!! @ref compressed_read_2d <br>
+!! @ref compressed_read_3d <br>
+!! @ref compressed_read_4d <br>
+!! @ref compressed_read_5d <br>
 !! @ref domain_read_0d
 !! @ref domain_read_1d
 !! @ref domain_read_2d

@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine unstructured_domain_write_0d(fileobj, variable_name, variable_data, &

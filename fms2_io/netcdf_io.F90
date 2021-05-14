@@ -16,11 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup netcdf_io_mod netcdf_io_mod
+!> @ingroup fms2_io
+!> @brief Creates a basic netcdf type and routines to extend for other uses
+!!
+!> Handles type definitions and interfaces for netcdf I/O.
 
 !> @file
+!> @brief File for @ref netcdf_io_mod
 
-!> @brief Create a netcdf type, which can be extended to meet
-!!        our various I/O needs.
+!> @addtogroup netcdf_io_mod
+!> @{
 module netcdf_io_mod
 use, intrinsic :: iso_fortran_env
 use netcdf
@@ -2174,3 +2180,5 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
 end subroutine write_restart_bc
 
 end module netcdf_io_mod
+!> @}
+! close documentation grouping

@@ -24,7 +24,7 @@
 !!
 !>  A set of simple calls for domain
 !!  decomposition and domain updates on rectilinear grids. It requires the
-!!  module mpp.F90, upon which it is built.
+!!  module mpp.F90, upon which it is built.\n
 !!  Scalable implementations of finite-difference codes are generally
 !!  based on decomposing the model domain into subdomains that are
 !!  distributed among processors. These domains will then be obliged to
@@ -58,31 +58,33 @@
 !! entire model (i.e, the same as the computational domain if run on a
 !! single processor). 2D domains are defined using a derived type domain2D,
 !! constructed as follows (see comments in code for more details).
-!
-!> @example  type, public :: domain_axis_spec\n
-!!             private\n
-!!             integer :: begin, end, size, max_size\n
-!!             logical :: is_global\n
-!!           end type domain_axis_spec\n
-!> @example  type, public :: domain1D\n
-!!             private\n
-!!             type(domain_axis_spec) :: compute, data, global, active\n
-!!             logical :: mustputb, mustgetb, mustputf, mustgetf, folded\n
-!!             type(domain1D), pointer, dimension(:) :: list\n
-!!             integer :: pe  ! pe to which the domain is assigned\n
-!!             integer :: pos\n
-!!           end type domain1D
-!
-!> @example  type, public :: domain2D\n
-!!              private\n
-!!              type(domain1D) :: x\n
-!!              type(domain1D) :: y\n
-!!              type(domain2D), pointer, dimension(:) :: list\n
-!!              integer :: pe ! PE to which this domain is assigned\n
-!!              integer :: pos\n
-!!            end type domain2D\n
-!!           type(domain1D), public :: NULL_DOMAIN1D\n
-!!           type(domain2D), public :: NULL_DOMAIN2D\n
+!!
+!!      type, public :: domain_axis_spec\n
+!!        private\n
+!!        integer :: begin, end, size, max_size\n
+!!        logical :: is_global\n
+!!      end type domain_axis_spec\n
+!!
+!!      type, public :: domain1D\n
+!!        private\n
+!!        type(domain_axis_spec) :: compute, data, global, active\n
+!!        logical :: mustputb, mustgetb, mustputf, mustgetf, folded\n
+!!        type(domain1D), pointer, dimension(:) :: list\n
+!!        integer :: pe  ! pe to which the domain is assigned\n
+!!        integer :: pos\n
+!!      end type domain1D
+!!
+!!      type, public :: domain2D\n
+!!        private\n
+!!        type(domain1D) :: x\n
+!!        type(domain1D) :: y\n
+!!        type(domain2D), pointer, dimension(:) :: list\n
+!!        integer :: pe ! PE to which this domain is assigned\n
+!!        integer :: pos\n
+!!      end type domain2D\n
+!!
+!! type(domain1D), public :: NULL_DOMAIN1D\n
+!! type(domain2D), public :: NULL_DOMAIN2D\n
 
 !> @file
 !> @brief File for @ref mpp_domains_mod
@@ -221,12 +223,14 @@ module mpp_domains_mod
 
   ! data types used by mpp_domains_mod
 
+  !> axis specification data for an unstructured grid
   type unstruct_axis_spec
      private
      integer :: begin, end, size, max_size
      integer :: begin_index, end_index
   end type unstruct_axis_spec
 
+  !> axis specification data for an unstructured domain 
   type unstruct_domain_spec
      private
      type(unstruct_axis_spec) :: compute
@@ -250,14 +254,15 @@ module mpp_domains_mod
      type(unstruct_overlap_type), pointer :: send(:)=>NULL()
   end type unstruct_pass_type
 
+  !> Domain information for managing data on unstructured grids
   type domainUG
      private
-     type(unstruct_axis_spec) :: compute, global
-     type(unstruct_domain_spec), pointer :: list(:)=>NULL()
-     type(domainUG), pointer :: io_domain=>NULL()
+     type(unstruct_axis_spec) :: compute, global !< axis specifications
+     type(unstruct_domain_spec), pointer :: list(:)=>NULL() !<
+     type(domainUG), pointer :: io_domain=>NULL() !< 
      type(unstruct_pass_type) :: SG2UG
      type(unstruct_pass_type) :: UG2SG
-     integer, pointer :: grid_index(:) => NULL()    ! on current pe
+     integer, pointer :: grid_index(:) => NULL() !< index of grid on current pe
      type(domain2d), pointer :: SG_domain => NULL()
      integer :: pe
      integer :: pos
@@ -275,6 +280,7 @@ module mpp_domains_mod
      integer :: begin, end, size, max_size !< start, end of domain axis, size, max size in set
      logical :: is_global !< .true. if domain axis extent covers global domain
   end type domain_axis_spec
+
   !> One dimensional domain used to manage shared data access between pes
   type domain1D
      private
@@ -307,7 +313,7 @@ module mpp_domains_mod
 
   type overlap_type
      private
-     integer                  :: count = 0                 !< number of ovrelapping
+     integer                  :: count = 0                 !< number of overlapping
      integer                  :: pe
      integer                  :: start_pos                 !< start position in the buffer
      integer                  :: totsize                   !< all message size
@@ -344,7 +350,8 @@ module mpp_domains_mod
 !! define the global, compute and data domains of each task, as well as the PE
 !! associated with the task. The PEs from which remote data may be
 !! acquired to update the data domain are also contained in a linked list of neighbours.
-!> @detailed domain types of higher rank can be constructed from type domain1D
+!!
+!> Domain types of higher rank can be constructed from type domain1D
 !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
 !! some elements are repeated below if they are needed once per domain, not once per axis
   type domain2D
@@ -707,6 +714,7 @@ module mpp_domains_mod
 !         public interface from mpp_domains_define.h
 !
 !***********************************************************************
+  !> @page mpp_define_layout mpp_define_layout Interface
   !> @brief Retrieve layout associated with a domain decomposition.
   !> @detailed Given a global 2D domain and the number of divisions in the
   !! decomposition ndivs (usually the PE count unless some
@@ -715,17 +723,21 @@ module mpp_domains_mod
   !! 2D index space into domains that maintain the aspect ratio of the
   !! global domain. If this cannot be done, the algorithm favours domains
   !! that are longer in \e x than \e y, a preference that could improve vector performance.
-  !> @example call mpp_define_layout( global_indices, ndivs, layout )
+  !! \nExample usage:
+  !!            call mpp_define_layout( global_indices, ndivs, layout )
   interface mpp_define_layout
      module procedure mpp_define_layout2D
   end interface
 
+  !> @page mpp_define_domains mpp_define_domains Interface
   !> @brief Set up a domain decomposition.
-  !> @detailed There are two forms for the \e mpp_define_domains call. The 2D version is generally
+  !! 
+  !> There are two forms for the \e mpp_define_domains call. The 2D version is generally
   !! to be used but is built by repeated calls to the 1D version, also provided.
-  !> @example call mpp_define_domains( global_indices, ndivs, domain, &
+  !! 
+  !!            call mpp_define_domains( global_indices, ndivs, domain, &
   !!                                   pelist, flags, halo, extent, maskmap )
-  !> @example call mpp_define_domains( global_indices, layout, domain, pelist, &
+  !!            call mpp_define_domains( global_indices, layout, domain, pelist, &
   !!                                   xflags, yflags, xhalo, yhalo,           &
   !!                                   xextent, yextent, maskmap, name )
   !!   <IN NAME="global_indices" >
@@ -853,25 +865,30 @@ module mpp_domains_mod
      module procedure mpp_define_domains2D
   end interface
 
-  !> define nullified 1D or 2D domain
+  !> @page mpp_define_null_domain mpp_define_null_domain Interface
+  !! Defines a nullified 1D or 2D domain
   interface mpp_define_null_domain
      module procedure mpp_define_null_domain1D
      module procedure mpp_define_null_domain2D
   end interface
-  !> copy 1D or 2D domain 
+
+  !> @page mpp_copy_domain mpp_copy_domain Interface
+  !! Copy 1D or 2D domain 
   !> @param domain_in Input domain to get read
   !> @param domain_out Output domain to get written to
   interface mpp_copy_domain
      module procedure mpp_copy_domain1D
      module procedure mpp_copy_domain2D
   end interface mpp_copy_domain
-  !> Deallocate given 1D or 2D domain
+  !> @page mpp_deallocate_domain mpp_deallocate_domain Interface
+  !! Deallocate given 1D or 2D domain
   interface mpp_deallocate_domain
      module procedure mpp_deallocate_domain1D
      module procedure mpp_deallocate_domain2D
   end interface
 
-!> @brief modifies the extents (compute, data and global) of domain
+  !> @page mpp_modify_domain mpp_modify_domain Interface
+  !! Modifies the extents (compute, data and global) of a given domain
   interface mpp_modify_domain
      module procedure mpp_modify_domain1D
      module procedure mpp_modify_domain2D
@@ -884,8 +901,10 @@ module mpp_domains_mod
 !
 !***********************************************************************
 
-!> @brief Halo updates.
-!> @detailed mpp_update_domains is used to perform a halo update of a
+!> @page mpp_update_domains mpp_update_domains Interface
+!! Performs halo updates for a given domain.\n
+!!
+!! Used to perform a halo update of a
 !! domain-decomposed array on each PE. \e MPP_TYPE can be of type
 !! complex, integer, logical or real of 4-byte or 8-byte kind; of rank up to 5.
 !! The vector version (with two input data fields) is only present for real types.
@@ -950,9 +969,12 @@ module mpp_domains_mod
 !!    \empp_domains_mod. The size of this buffer area can be set by
 !!   the user by calling mpp_domains
 !!   \empp_domains_set_stack_size.
-!
-!> @example call mpp_update_domains( field, domain, flags )
-!> @example call mpp_update_domains( fieldx, fieldy, domain, flags, gridtype )
+!!
+!!   Example usage:
+!!              call mpp_update_domains( field, domain, flags )
+!!   Update a 1D domain for the given field.
+!!              call mpp_update_domains( fieldx, fieldy, domain, flags, gridtype )
+!!   Update a 2D domain for the given fields.
   interface mpp_update_domains
      module procedure mpp_update_domain2D_r8_2d
      module procedure mpp_update_domain2D_r8_3d
@@ -992,8 +1014,9 @@ module mpp_domains_mod
      module procedure mpp_update_domain2D_i4_5d
   end interface
 
-!> @brief Interface to start halo updates
-!> \empp_start_update_domains is used to start a halo update of a
+!> @page mpp_start_update_domains mpp_start_update_domains Interface
+!! Interface to start halo updates
+!! \empp_start_update_domains is used to start a halo update of a
 !!    domain-decomposed array on each PE. \eMPP_TYPE_ can be of type
 !!    \ecomplex, \einteger, \elogical or \ereal;
 !!    of 4-byte or 8-byte kind; of rank up to 5. The vector version (with
@@ -1013,8 +1036,8 @@ module mpp_domains_mod
 !!    mpp_update_domains to be replaced except no optional argument "complete".
 !!    The following are examples on how to replace mpp_update_domains with
 !!    mpp_start_update_domains/mpp_complete_update_domains
-!
-!>@example Example 1: Replace one scalar mpp_update_domains.\n
+!!
+!> @par Example 1: Replace one scalar mpp_update_domains.\n
 !!\n
 !!    Replace\n
 !!\n
@@ -1025,8 +1048,8 @@ module mpp_domains_mod
 !!        id_update = mpp_start_update_domains(data, domain, flags=update_flags)\n
 !!        ...( doing some computation )\n
 !!        call mpp_complete_update_domains(id_update, data, domain, flags=update_flags)\n
-!
-!> @example Example 2: Replace group scalar mpp_update_domains\n
+!!
+!> @par Example 2: Replace group scalar mpp_update_domains\n
 !!\n
 !!    Replace\n
 !!\n
@@ -1045,8 +1068,8 @@ module mpp_domains_mod
 !!        call mpp_complete_update_domains(id_up_1, data_1, domain, flags=update_flags)\n
 !!        .... ( other n-2 call mpp_complete_update_domains  )\n
 !!        call mpp_complete_update_domains(id_up_n, data_n, domain, flags=update_flags)\n
-!
-!> @example    Example 3: Replace group CGRID_NE vector, mpp_update_domains\n
+!!
+!> @par Example 3: Replace group CGRID_NE vector, mpp_update_domains\n
 !!\n
 !!    Replace\n
 !!\n
@@ -1128,10 +1151,10 @@ module mpp_domains_mod
 !!    buffers the data being sent and received into single messages for efficiency.
 !!    A turnable internal buffer area in memory is provided for this purpose by
 !!    \empp_domains_mod. The size of this buffer area can be set by
-!!    the user by calling \empp_domains_set_stack_size.
-!
-!> @example call mpp_start_update_domains( field, domain, flags )
-!> @example  call mpp_complete_update_domains( field, domain, flags )
+!!    the user by calling \empp_domains_set_stack_size.\n
+!!    Example usage:
+!!              call mpp_start_update_domains( field, domain, flags )
+!!              call mpp_complete_update_domains( field, domain, flags )
   interface mpp_start_update_domains
      module procedure mpp_start_update_domain2D_r8_2d
      module procedure mpp_start_update_domain2D_r8_3d
@@ -1171,6 +1194,7 @@ module mpp_domains_mod
      module procedure mpp_start_update_domain2D_i4_5d
   end interface
 
+  !> @page mpp_complete_update_domains mpp_complete_mpp_domains Interface
   !> Must be used after a call to @ref mpp_start_update_domains
   !! in order to complete a nonblocking domain update. See @ref mpp_start_update_domains
   !! for more info.
@@ -1289,11 +1313,11 @@ module mpp_domains_mod
      module procedure mpp_reset_group_update_field_r8_4dv
   end interface mpp_reset_group_update_field
 
-  !> @brief Pass the data from coarse grid to fill the buffer to be ready to be interpolated
+  !> @page mpp_update_nest_fine mpp_update_nest_fine Interface
+  !! Pass the data from coarse grid to fill the buffer to be ready to be interpolated
   !! nto fine grid.
-  !> @detailed Pass the data from coarse grid to fill the buffer to be ready to be interpolated
-  !! onto fine grid.
-  !> @example call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer,
+  !! \nExample usage:
+  !!            call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer,
   !!                           nest_level, flags, complete, position, extra_halo, name,
   !!                           tile_count)
   interface mpp_update_nest_fine
@@ -1342,11 +1366,11 @@ module mpp_domains_mod
      module procedure mpp_do_update_nest_fine_i4_3d
   end interface
 
-  !> @brief Pass the data from fine grid to fill the buffer to be ready to be interpolated
+  !> @page mpp_update_nest_coarse mpp_update_nest_coarse Interface
+  !! Pass the data from fine grid to fill the buffer to be ready to be interpolated
   !! onto coarse grid.
-  !> @detailed Pass the data from fine grid to fill the buffer to be ready to be interpolated
-  !! onto coarse grid.
-  !> @example call mpp_update_nest_coarse(field, nest_domain, field_out, nest_level, complete,
+  !! \nExample usage:
+  !!            call mpp_update_nest_coarse(field, nest_domain, field_out, nest_level, complete,
   !!                                 position, name, tile_count)
   interface mpp_update_nest_coarse
      module procedure mpp_update_nest_coarse_r8_2d
@@ -1394,27 +1418,31 @@ module mpp_domains_mod
      module procedure mpp_do_update_nest_coarse_i4_3d
   end interface
 
-  !> @brief Get the index of the data passed from fine grid to coarse grid.
-  !> @detailed Get the index of the data passed from fine grid to coarse grid
-  !> @example call mpp_get_F2C_index(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse,
+  !> @page mpp_get_F2C_index mpp_get_F2C_index Interface
+  !! Get the index of the data passed from fine grid to coarse grid.
+  !! \nExample usage:
+  !!            call mpp_get_F2C_index(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse,
   !!                            is_fine, ie_fine, js_fine, je_fine, nest_level, position)
   interface mpp_get_F2C_index
     module procedure mpp_get_F2C_index_fine
     module procedure mpp_get_F2C_index_coarse
   end interface
 
-
-interface mpp_broadcast_domain
-  module procedure mpp_broadcast_domain_1
-  module procedure mpp_broadcast_domain_2
-  module procedure mpp_broadcast_domain_ug
-  module procedure mpp_broadcast_domain_nest_fine
-  module procedure mpp_broadcast_domain_nest_coarse
-end interface
+  !> @page mpp_broadcast_domain mpp_broadcast_domain Interface
+  !! Send domain to every pe
+  interface mpp_broadcast_domain
+    module procedure mpp_broadcast_domain_1
+    module procedure mpp_broadcast_domain_2
+    module procedure mpp_broadcast_domain_ug
+    module procedure mpp_broadcast_domain_nest_fine
+    module procedure mpp_broadcast_domain_nest_coarse
+  end interface
 
 !--------------------------------------------------------------
 ! for adjoint update
 !--------------------------------------------------------------
+  !> @page mpp_update_domains_ad mpp_update_domains_ad Interface
+  !! Similar to @ref mpp_update_domains , updates adjoint domains
   interface mpp_update_domains_ad
      module procedure mpp_update_domains_ad_2D_r8_2d
      module procedure mpp_update_domains_ad_2D_r8_3d
@@ -1465,7 +1493,10 @@ end interface
      module procedure mpp_do_check_i4_3d
   end interface
 
-
+  !> @page mpp_pass_SG_to_UG mpp_pass_SG_to_UG
+  !! Passes data from a structured grid to an unstructured grid
+  !! \nExample usage:
+  !!            call mpp_pass_SG_to_UG(domain, sg_data, ug_data)
   interface mpp_pass_SG_to_UG
      module procedure mpp_pass_SG_to_UG_r8_2d
      module procedure mpp_pass_SG_to_UG_r8_3d
@@ -1499,11 +1530,14 @@ end interface
      module procedure mpp_do_update_ad_r4_3dv
   end interface
 !
-!> @brief Get the boundary data for symmetric domain when the data is at C, E, or N-cell center
-!> @deteiled \e mpp_get_boundary is used to get the boundary data for symmetric domain
+!> @page mpp_get_boundary mpp_get_boundary Interface
+!! Get the boundary data for symmetric domain when the data is at C, E, or N-cell center.\n
+!! \empp_get_boundary is used to get the boundary data for symmetric domain
 !! when the data is at C, E, or N-cell center. For cubic grid, the data should always
 !! at C-cell center.
-!> @example   call mpp_get_boundary
+!! \nExample usage:
+!!              call mpp_get_boundary(domain, field, ebuffer, sbuffer, wbuffer, nbuffer)
+!! Get boundary information from domain and field and store in buffers 
   interface mpp_get_boundary
      module procedure mpp_get_boundary_r8_2d
      module procedure mpp_get_boundary_r8_3d
@@ -1548,17 +1582,13 @@ end interface
      module procedure mpp_do_get_boundary_ad_r4_3dv
   end interface
 
-!> @brief Reorganization of distributed global arrays.
-!> @detailed \e mpp_redistribute is used to reorganize a distributed array.
+!> @page mpp_redistribute mpp_redistribute Interface
+!! Reorganization of distributed global arrays.\n
+!! \empp_redistribute is used to reorganize a distributed array.
 !! \e MPP_TYPE_can be of type \e integer, \e complex, or \e real;
 !! of 4-byte or 8-byte kind; of rank up to 5.
-!> @example call mpp_redistribute( domain_in, field_in, domain_out, field_out )
-!  <IN NAME="field_in" TYPE="MPP_TYPE_">
-!    <TT>field_in</TT> is dimensioned on the data domain of <TT>domain_in</TT>.
-!  </IN>
-!  <OUT NAME="field_out" TYPE="MPP_TYPE_">
-!    <TT>field_out</TT> on the data domain of <TT>domain_out</TT>.
-!  </OUT>
+!! \nExample usage:
+!!              call mpp_redistribute( domain_in, field_in, domain_out, field_out )
   interface mpp_redistribute
      module procedure mpp_redistribute_r8_2D
      module procedure mpp_redistribute_r8_3D
@@ -1648,6 +1678,14 @@ end interface
 !   </IN>
 ! </INTERFACE>
 
+!> @page mpp_check_field mpp_check_field Interface
+!! Parallel checking between two ensembles which run on different set pes at the same time\n
+!! There are two forms for the <TT>mpp_check_field</TT> call. The 2D
+!! version is generally to be used and 3D version is  built by repeated calls to the
+!! 2D version.\n
+!! \nExample usage: 
+!!     call mpp_check_field(field_in, pelist1, pelist2, domain, mesg, &
+!!                                w_halo, s_halo, e_halo, n_halo, force_abort  )
   interface mpp_check_field
      module procedure mpp_check_field_2D
      module procedure mpp_check_field_3D
@@ -1690,6 +1728,19 @@ end interface
 !    <TT>YONLY</TT>, to specify a globalization on one axis only.
 !  </IN>
 ! </INTERFACE>
+
+!> @page mpp_global_field mpp_global_field Interface
+!! Fill in a global array from domain-decomposed arrays.\n
+!! 
+!! <TT>mpp_global_field</TT> is used to get an entire
+!! domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
+!! <TT>complex</TT>, <TT>integer</TT>, <TT>logical</TT> or <TT>real</TT>;
+!! of 4-byte or 8-byte kind; of rank up to 5.\n
+!! 
+!! All PEs in a domain decomposition must call
+!! <TT>mpp_global_field</TT>, and each will have a complete global field
+!! at the end. Please note that a global array of rank 3 or higher could
+!! occupy a lot of memory.
   interface mpp_global_field
      module procedure mpp_global_field2D_r8_2d
      module procedure mpp_global_field2D_r8_3d
@@ -1832,17 +1883,6 @@ end interface
      module procedure mpp_do_global_field2D_l4_3d_ad
   end interface
 
-!> @example Global max/min of domain-decomposed arrays.
-!> @detailed \e mpp_global_max is used to get the maximum value of a
-!! domain-decomposed array on each PE. \e MPP_TYPE_can be of type
-!! \e integer or \e real; of 4-byte or 8-byte kind; of rank
-!! up to 5. The dimension of \e locus must equal the rank of \e field.\n
-!!\n
-!! All PEs in a domain decomposition must call \e mpp_global_max,
-!! and each will have the result upon exit.
-!! The function \e mpp_global_min, with an identical syntax. is also available.
-!
-!> @example mpp_global_max( domain, field, locus )
 !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
 !  <IN NAME="field" TYPE="MPP_TYPE_">
 !    <TT>field</TT> is dimensioned on either the compute domain or the
@@ -1852,6 +1892,19 @@ end interface
 !    <TT>locus</TT>, if present, can be used to retrieve the location of
 !    the maximum (as in the <TT>MAXLOC</TT> intrinsic of f90).
 !  </OUT>
+!> @page mpp_global_max mpp_global_max Interface
+!! Global max/min of domain-decomposed arrays.\n
+!! \empp_global_max is used to get the maximum value of a
+!! domain-decomposed array on each PE. \e MPP_TYPE_can be of type
+!! \e integer or \e real; of 4-byte or 8-byte kind; of rank
+!! up to 5. The dimension of \e locus must equal the rank of \e field.\n
+!!\n
+!! All PEs in a domain decomposition must call \e mpp_global_max,
+!! and each will have the result upon exit.
+!! The function \e mpp_global_min, with an identical syntax. is also available.
+!!
+!! \nExample usage:
+!!              mpp_global_max( domain, field, locus )
   interface mpp_global_max
      module procedure mpp_global_max_r8_2d
      module procedure mpp_global_max_r8_3d
@@ -1890,11 +1943,6 @@ end interface
      module procedure mpp_global_min_i4_5d
   end interface
 
-!> @brief Global sum of domain-decomposed arrays.
-!> @detailed \e mpp_global_sum is used to get the sum of a domain-decomposed array
-!! on each PE. \e MPP_TYPE_ can be of type \e integer, \e complex, or \e real; of 4-byte or
-!! 8-byte kind; of rank up to 5.
-!> @example call mpp_global_sum( domain, field, flags )
 !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
 !  <IN NAME="field" TYPE="MPP_TYPE_">
 !    <TT>field</TT> is dimensioned on either the compute domain or the
@@ -1912,7 +1960,15 @@ end interface
 !    SRC="mpp.html#mpp_sum"><TT>mpp_sum</TT></LINK> across the domain
 !    decomposition.
 !  </IN>
-!> @note All PEs in a domain decomposition must call \e mpp_global_sum,
+
+!> @page mpp_global_sum mpp_global_sum Interface
+!! Global sum of domain-decomposed arrays.\n
+!! \empp_global_sum is used to get the sum of a domain-decomposed array
+!! on each PE. \e MPP_TYPE_ can be of type \e integer, \e complex, or \e real; of 4-byte or
+!! 8-byte kind; of rank up to 5.
+!! \nExample usage:
+!!              call mpp_global_sum( domain, field, flags )
+!! @note All PEs in a domain decomposition must call \e mpp_global_sum,
 !! and each will have the result upon exit.
   interface mpp_global_sum
      module procedure mpp_global_sum_r8_2d
@@ -2016,35 +2072,42 @@ end interface
 !            public interface from mpp_domain_util.h
 !
 !***********************************************************************
+  !> @page mpp_get_neighbor_pe mpp_get_neighbor_pe Interface
   !> @brief Retrieve PE number of a neighboring domain.
-  !> @detailed Given a 1-D or 2-D domain decomposition, this call allows users to retrieve
+  !!
+  !> Given a 1-D or 2-D domain decomposition, this call allows users to retrieve
   !! the PE number of an adjacent PE-domain while taking into account that the
   !! domain may have holes (masked) and/or have cyclic boundary conditions and/or a
   !! folded edge. Which PE-domain will be retrived will depend on "direction":
   !! +1 (right) or -1 (left) for a 1-D domain decomposition and either NORTH, SOUTH,
   !! EAST, WEST, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, or NORTH_WEST for a 2-D
   !! decomposition. If no neighboring domain exists (masked domain), then the
-  !! returned "pe" value will be set to NULL_PE.
-  !
-  !> @example call mpp_get_neighbor_pe( domain1d, direction=+1   , pe)
-  !> @example call mpp_get_neighbor_pe( domain2d, direction=NORTH, pe)
+  !! returned "pe" value will be set to NULL_PE.\n
+  !! \nExample usage:
+  !!            call mpp_get_neighbor_pe( domain1d, direction=+1   , pe)
+  !! Set pe to the neighbor pe number that is to the right of the current pe
+  !!            call mpp_get_neighbor_pe( domain2d, direction=NORTH, pe)
+  !! Get neighbor pe number that's above/north of the current pe
   interface mpp_get_neighbor_pe
      module procedure mpp_get_neighbor_pe_1d
      module procedure mpp_get_neighbor_pe_2d
   end interface
 
-  !> @brief Equality/inequality operators for domaintypes.
-  !> @detailed The module provides public operators to check for
+  !> @page operators_domains Operator Overrides for domain types
+  !! Equality/inequality operators for domaintypes. \n
+  !!
+  !! \nThe module provides public operators to check for
   !! equality/inequality of domaintypes, e.g:\n
-  !!    type(domain1D) :: a, b\n
-  !!    type(domain2D) :: c, d\n
-  !!    ...\n
-  !!    if( a.NE.b )then\n
-  !!        ...\n
-  !!    end if\n
-  !!    if( c==d )then\n
-  !!        ...\n
-  !!    end if\n
+  !!
+  !!            type(domain1D) :: a, b\n
+  !!            type(domain2D) :: c, d\n
+  !!            ...\n
+  !!            if( a.NE.b )then\n
+  !!            ...\n
+  !!            end if\n
+  !!            if( c==d )then\n
+  !!            ...\n
+  !!            end if\n
   !!\n
   !! Domains are considered equal if and only if the start and end
   !! indices of each of their component global, data and compute domains are equal.
@@ -2060,19 +2123,23 @@ end interface
      module procedure mpp_domainUG_ne
   end interface
 
-  !> @brief These routines retrieve the axis specifications associated with the compute domains.
-  !! @detailed The domain is a derived type with private elements. These routines
+  !> @page mpp_get_compute_domain mpp_get_compute_domain Interface 
+  !! These routines retrieve the axis specifications associated with the compute domains.
+  !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the compute domains
   !! The 2D version of these is a simple extension of 1D.
-  !> @example call mpp_get_compute_domain
+  !! \nExample usage:
+  !!            call mpp_get_compute_domain(domain_1D, is, ie)
+  !!            call mpp_get_compute_domain(domain_2D, is, ie, js, je)
   interface mpp_get_compute_domain
      module procedure mpp_get_compute_domain1D
      module procedure mpp_get_compute_domain2D
   end interface
 
-  !> @brief Retrieve the entire array of compute domain extents associated with a decomposition.
-  !> @detailed Retrieve the entire array of compute domain extents associated with a decomposition.
-  !> @examplecall mpp_get_compute_domains( domain, xbegin, xend, xsize, &\n
+  !> @page mpp_get_compute_domains mpp_get_compute_domains Interface
+  !! Retrieve the entire array of compute domain extents associated with a decomposition.
+  !! \nExample usage:
+  !!            call mpp_get_compute_domains( domain, xbegin, xend, xsize, &\n
   !!                                                ybegin, yend, ysize )
   !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
   !  <OUT NAME="xbegin,ybegin" TYPE="integer" DIM="(:)"></OUT>
@@ -2088,31 +2155,40 @@ end interface
      module procedure mpp_get_global_domains2D
   end interface
 
-  !> @brief These routines retrieve the axis specifications associated with the data domains.
-  !> @detailed The domain is a derived type with private elements. These routines
+  !> @page mpp_get_data_domain mpp_get_data_domain Interface
+  !! These routines retrieve the axis specifications associated with the data domains.
+  !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the data domains.
   !! The 2D version of these is a simple extension of 1D.
-  !> @example call mpp_get_data_domain
+  !! \nExample usage:
+  !!            call mpp_get_data_domain(domain_1d, isd, ied)
+  !!            call mpp_get_data_domain(domain_2d, isd, ied, jsd, jed)
   interface mpp_get_data_domain
      module procedure mpp_get_data_domain1D
      module procedure mpp_get_data_domain2D
   end interface
 
-  !> @brief These routines retrieve the axis specifications associated with the global domains.
-  !> @detailed  The domain is a derived type with private elements. These routines
+  !> @page mpp_get_global_domain mpp_get_global_domain Interface
+  !! These routines retrieve the axis specifications associated with the global domains.
+  !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the global domains.
   !! The 2D version of these is a simple extension of 1D.
-  !> @example call mpp_get_global_domain
+  !! \nExample usage:
+  !!            call mpp_get_global_domain(domain_1d, isg, ieg)
+  !!            call mpp_get_global_domain(domain_2d, isg, ieg, jsg, jeg)
   interface mpp_get_global_domain
      module procedure mpp_get_global_domain1D
      module procedure mpp_get_global_domain2D
   end interface
 
-  !> @brief These routines retrieve the axis specifications associated with the memory domains.
-  !> @detailed  The domain is a derived type with private elements. These routines
+  !> @page mpp_get_memory_domain mpp_get_memory_domain Interface
+  !! These routines retrieve the axis specifications associated with the memory domains.
+  !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the memory domains.
   !! The 2D version of these is a simple extension of 1D.
-  !> @example call mpp_get_memory_domain
+  !! \nExample usage:
+  !!            call mpp_get_memory_domain(domain_1d, ism, iem)
+  !!            call mpp_get_memory_domain(domain_2d, ism, iem, jsm, jem)
   interface mpp_get_memory_domain
      module procedure mpp_get_memory_domain1D
      module procedure mpp_get_memory_domain2D
@@ -2123,38 +2199,41 @@ end interface
      module procedure mpp_get_domain_extents2D
   end interface
 
-  !> @brief These routines set the axis specifications associated with the compute domains.
-  !> @detailed The domain is a derived type with private elements. These routines
+  !> @page mpp_set_compute_domain mpp_set_compute_domain Interface
+  !! These routines set the axis specifications associated with the compute domains.
+  !! The domain is a derived type with private elements. These routines
   !! set the axis specifications associated with the compute domains
   !! The 2D version of these is a simple extension of 1D.
-  !> @example  call mpp_set_compute_domain
+  !! \nExample usage:
+  !!            call mpp_set_compute_domain()
   interface mpp_set_compute_domain
      module procedure mpp_set_compute_domain1D
      module procedure mpp_set_compute_domain2D
   end interface
 
-  !> @brief These routines set the axis specifications associated with the data domains.
-  !> @detailed The domain is a derived type with private elements. These routines
+  !> @page mpp_set_data_domain mpp_set_data_domain Interface
+  !! These routines set the axis specifications associated with the data domains.
+  !! The domain is a derived type with private elements. These routines
   !! set the axis specifications associated with the data domains.
   !! The 2D version of these is a simple extension of 1D.
-  !> @example call mpp_set_data_domain
   interface mpp_set_data_domain
      module procedure mpp_set_data_domain1D
      module procedure mpp_set_data_domain2D
   end interface
 
-  !> @brief These routines set the axis specifications associated with the global domains.
-  !> @detailed The domain is a derived type with private elements. These routines
+  !> @page mpp_set_global_domain mpp_set_global_domain Interface
+  !! These routines set the axis specifications associated with the global domains.
+  !! The domain is a derived type with private elements. These routines
   !! set the axis specifications associated with the global domains.
   !! The 2D version of these is a simple extension of 1D.
-  !> @example call mpp_set_global_domain
   interface mpp_set_global_domain
      module procedure mpp_set_global_domain1D
      module procedure mpp_set_global_domain2D
   end interface
 
-  !> @brief Retrieve list of PEs associated with a domain decomposition.
-  !> @detailed The 1D version of this call returns an array of the PEs assigned to
+  !> @page mpp_get_pelist mpp_get_pelist Interface
+  !! Retrieve list of PEs associated with a domain decomposition.
+  !! The 1D version of this call returns an array of the PEs assigned to
   !! this 1D domain decomposition. In addition the optional argument pos may be
   !! used to retrieve the 0-based position of the domain local to the
   !! calling PE, i.e., \e domain%list(pos)%pe is the local PE,
@@ -2165,11 +2244,13 @@ end interface
      module procedure mpp_get_pelist2D
   end interface
 
-  !> @brief Retrieve layout associated with a domain decomposition
-  !> @detailed The 1D version of this call returns the number of divisions that was assigned to this
+  !> @page mpp_get_layout mpp_get_layout Interface
+  !! Retrieve layout associated with a domain decomposition
+  !! The 1D version of this call returns the number of divisions that was assigned to this
   !! decomposition axis. The 2D version of this call returns an array of dimension 2 holding the
   !! results on two axes.
-  !> @example call mpp_get_layout( domain, layout )
+  !! \nExample usage:
+  !!            call mpp_get_layout( domain, layout )
   interface mpp_get_layout
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
@@ -2180,10 +2261,11 @@ end interface
      module procedure check_data_size_2d
   end interface
 
-  !> @brief nullify domain list.
-  !> @detailed Nullify domain list. This interface is needed in mpp_domains_test.
+  !> @page mpp_nullify_domain_list mpp_nullify_domain_list Interface
+  !! Nullify domain list. This interface is needed in mpp_domains_test.
   !! 1-D case can be added in if needed.
-  !> @example call mpp_nullify_domain_list(domain)
+  !! Example usage:
+  !!            call mpp_nullify_domain_list(domain)
   interface mpp_nullify_domain_list
      module procedure nullify_domain2d_list
   end interface

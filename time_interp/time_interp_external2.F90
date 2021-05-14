@@ -124,6 +124,22 @@ module time_interp_external2_mod
      type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
   end type filetype
 
+  !> @page time_interp_external time_interp_external Interface
+  !! Provide data from external file interpolated to current model time.
+  !! Data may be local to current processor or global, depending on
+  !! "init_external_field" flags.
+  !!
+  !! @param index index of external field from previous call to init_external_field
+  !! @param time target time for data
+  !! @param [inout] data global or local data array
+  !! @param interp time_interp_external defined interpolation method (optional).  Currently 
+  !! this module only supports LINEAR_TIME_INTERP.
+  !! @param verbose verbose flag for debugging (optional).
+  !! 
+  !! Contains:
+  !! @ref time_interp_external_0d
+  !! @ref time_interp_external_2d
+  !! @ref time_interp_external_3d
   interface time_interp_external
      module procedure time_interp_external_0d
      module procedure time_interp_external_2d
@@ -146,6 +162,7 @@ module time_interp_external2_mod
 ! Initialize the time_interp_external module
 ! </DESCRIPTION>
 !
+    !> @brief Initialize the @ref time_interp_external_mod module
     subroutine time_interp_external_init()
 
       integer :: ioun, io_status, logunit, ierr
@@ -220,6 +237,22 @@ module time_interp_external2_mod
 !</INOUT>
 
 
+    !> Initialize an external field.  Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations.
+    !! distributed reads are supported using the optional "domain" flag.
+    !! Units conversion via the optional "desired_units" flag using udunits_mod.
+    !!
+    !> @return integer id of field for future calls to time_interp_external.
+    !> @param file filename
+    !> @param fieldname fieldname (in file)
+    !> @param format mpp_io flag for format of file(optional). Currently only "MPP_NETCDF" supported
+    !> @param threading mpp_io flag for threading (optional). "MPP_SINGLE" means root pe reads 
+    !! global field and distributes to other PEs. "MPP_MULTI" means all PEs read data
+    !> @param domain domain flag (optional)
+    !> @param desired_units Target units for data (optional), e.g. convert from deg_K to deg_C.
+    !! Failure to convert using udunits will result in failure of this module.
+    !> @param verbose verbose flag for debugging (optional).
+    !> @param [out] axis_names List of axis names (optional).
+    !> @param [inout] axis_sizes array of axis lengths ordered X-Y-Z-T (optional).
     function init_external_field(file,fieldname,domain,desired_units,&
          verbose,axis_names, axis_sizes,override,correct_leap_year_inconsistency,&
          permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts, ongrid )
@@ -662,6 +695,7 @@ module time_interp_external2_mod
 !</FUNCTION> NAME="init_external_field"
 
 
+    !> @brief 2D interpolation for @ref time_interp_external
     subroutine time_interp_external_2d(index, time, data_in, interp, verbose,horz_interp, mask_out, &
                is_in, ie_in, js_in, je_in, window_id)
 
@@ -671,7 +705,7 @@ module time_interp_external2_mod
       integer, intent(in), optional :: interp
       logical, intent(in), optional :: verbose
       type(horiz_interp_type),intent(in), optional :: horz_interp
-      logical, dimension(:,:), intent(out), optional :: mask_out ! set to true where output data is valid
+      logical, dimension(:,:), intent(out), optional :: mask_out !< set to true where output data is valid
       integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in
       integer,                  intent(in), optional :: window_id
 
@@ -731,6 +765,7 @@ module time_interp_external2_mod
 ! verbose flag for debugging (optional).
 !</IN>
 
+    !> @brief 3D interpolation for @ref time_interp_external
     subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)
 
       integer,                    intent(in)           :: index
@@ -890,7 +925,7 @@ module time_interp_external2_mod
 
     end subroutine time_interp_external_3d
 !</SUBROUTINE> NAME="time_interp_external"
-
+    !> @brief Scalar interpolation for @ref time_interp_external
     subroutine time_interp_external_0d(index, time, data, verbose)
 
       integer, intent(in) :: index

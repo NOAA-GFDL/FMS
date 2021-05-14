@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !> @brief Read in data from a variable in a netcdf file.
 subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &

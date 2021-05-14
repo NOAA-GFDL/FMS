@@ -21,9 +21,9 @@
 !> @brief fms2_io implementations of grid routines for @ref data_override_mod
 
 !> @file
-!> @brief File for @ref fms2_io_mod
+!> @brief File for @ref get_grid_version_fms2_io_mod
 
-!> @addtogroup fms2_io_mod
+!> @addtogroup get_grid_version_fms2_io_mod 
 !> @{
 module get_grid_version_fms2io_mod
 use constants_mod, only: PI
