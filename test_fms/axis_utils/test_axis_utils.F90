@@ -19,11 +19,11 @@
 
 program test_axis_utils
 
-use fms_mod,       only : fms_init, fms_end, file_exist, open_namelist_file, check_nml_error
+use fms_mod,       only : fms_init, fms_end, check_nml_error
 use fms_mod,       only : close_file
 use mpp_mod,       only : mpp_error, FATAL, stdout
 use mpp_mod,       only : input_nml_file
-use axis_utils_mod, only: interp_1d
+use axis_utils2_mod, only: interp_1d
 
 implicit none
 
@@ -99,20 +99,8 @@ integer           :: unit, ierr, io
                          418.287826652131, 427.884458370414, 437.110292105921, 446.150726850039 /)
 
   !---reading namelist
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, test_axis_utils_nml, iostat=io)
-      ierr = check_nml_error(io,'test_axis_utils_nml')
-#else
-  if(file_exist('input.nml')) then
-    unit =  open_namelist_file()
-       ierr=1
-    do while (ierr /= 0)
-          read  (unit, nml=test_axis_utils_nml, iostat=io, end=10)
-          ierr = check_nml_error(io,'test_axis_utils_nml')  ! also initializes nml error codes
-    enddo
- 10    call close_file(unit)
-  endif
-#endif
+  read (input_nml_file, test_axis_utils_nml, iostat=io)
+  ierr = check_nml_error(io,'test_axis_utils_nml')
 
   if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
   if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')
