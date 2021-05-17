@@ -39,3 +39,6 @@ TESTS = test_mosaic2.sh
 
 # These files are also included in the distribution.
 EXTRA_DIST = test_mosaic2.sh
+
+# Clean up
+CLEANFILES = input.nml *.nc *.out
