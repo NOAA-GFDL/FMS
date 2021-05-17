@@ -106,21 +106,26 @@ subroutine create_files(pes)
    integer, intent(in)  :: pes(:)         !< List of pes
 
    type(FmsNetcdfFile_t):: fileobj        !< Fileobj for the files written by the test
+   character(len=255)     :: str_array(2)   !< Array of strings because GNU
 
    if( open_file(fileobj, mosaic_file, 'overwrite', pelist=pes)) then
       call register_axis(fileobj, "ntiles", 1)
       call register_axis(fileobj, "ncontact", 2)
       call register_axis(fileobj, "string", 255)
 
-      call register_field(fileobj, "contacts", "char",  dimensions=(/"string", "ncontact"/))
-      call register_field(fileobj, "contact_index", "char",  dimensions=(/"string", "ncontact"/))
+      str_array(1) = "string"
+      str_array(2) = "ncontact"
+      call register_field(fileobj, "contacts", "char",  dimensions=str_array)
+      call register_field(fileobj, "contact_index", "char",  dimensions=str_array)
       call register_field(fileobj, "gridfiles", "char", dimensions=(/"string", "ntiles"/))
       call register_field(fileobj, "gridtiles", "char", dimensions=(/"string", "ntiles"/))
 
       call write_data(fileobj, "gridfiles", (/"ocean_hgrid.nc"/))
       call write_data(fileobj, "gridtiles", (/"tile1"/))
-      call write_data(fileobj, "contact_index", &
-         & (/"2880:2880,1:2160::1:1,1:2160", "1:1440,2160:2160::2880:1441,2160:2160"/))
+
+      str_array(1) = "2880:2880,1:2160::1:1,1:2160"
+      str_array(2) = "1:1440,2160:2160::2880:1441,2160:2160"
+      call write_data(fileobj, "contact_index", str_array)
       call write_data(fileobj, "contacts", &
          & (/"ocean_mosaic:tile1::ocean_mosaic:tile1", "ocean_mosaic:tile1::ocean_mosaic:tile1" /))
 
