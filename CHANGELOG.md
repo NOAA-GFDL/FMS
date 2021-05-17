@@ -6,6 +6,25 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2021.02] - 2021-05-17
+### Added
+- FMS2_IO: Added fms2_io support for boundary condition restarts. `register_restart_region_2d` and `register_restart_region_3d` were added to fms2_io’s `register_restart_field` interface and `read_restart_bc` and `write_restart_bc` subroutines were added to read and write boundary conditions restarts. See test_fms/fms2_io/test_bc_restart.F90 for sample usage.
+- FMS2_IO: Added fms2_io’s version of set_filename_appendix. The string sent in will be appended to the filename of a restart/history file before the *.nc or before *.tile if tile is in the filename.
+- FMS2_IO: Added workarounds to get fms2io code “working” with pgi
+- COUPLER_TYPES: Added fms2_io’s version of `register_restarts_2/3d` and `CT_restore_state_2/3d` to the `coupler_type_register_restarts` and `coupler_type_restore_state` interfaces in coupler_types. The fms_io’s versions were renamed as mpp_io_* and both versions may still be used. See test_fms/coupler/test_coupler_*d.F90 for sample usage.
+- MPP_DOMAINS: Added a subroutine `mpp_create_super_grid_domain`, which sets the indices of the input domain to match the supergrid domain.
+- TIME_MANAGER: New `set_date_gregorian` and `get_date_gregorian` function/subroutine that do not use coded_date and date_to_day arrays are added and set as default.  The original get_date_gregorian and set_date_gregorian have been renamed to `get_date_gregorian_old` and `set_date_gregorian_old` and can be used by adding `old_method=.true.` optional argument to set_date and get_date subroutine calls.  This is the first step out of three to remove the memory-consuming `coded_date` and `date_to_day` arrays from the time_manager_mod.
+- FMS GLOBAL MODULE: Adds a new module (libFMS.F90) to be used as a global import for all supported routines/types/variables within FMS. Also adds a separate module (fmsconstants.F90) to be used for constant values from `constants_mod`.
+- GRID2: Creates a new module, `grid2_mod` as a fms2_io alternative to `grid_mod`, and creates a new directory for it with the previously updated `mosaic2_mod`.
+### Changed
+- FMS2_IO: Adds logic so that the domain decomposition variable attribute is only added if the io_layout is not 1,1.
+###Removed
+- DIAG_MANAGER: Removed the variable attributes `_FillValue` and `missing_value` from the `time_bounds` variable to be cf compliant
+- FV3GFS: Removes the unused fv3gfs directory
+###Fixed
+- DIAG_MANAGER: Fixed a bug where the variable type of `Time` and `Time_bounds` were different (float vs double) when compiling with 32 bit reals
+- FMS2_IO: Fixed a bug where the code was crashing when you were trying to read/write scalar variables with the domain decomposed fileobj
+
 ## [2021.01] - 2021-03-08
 ### Added
 - MPP: A counter for timers to report how many times a timer section is run
