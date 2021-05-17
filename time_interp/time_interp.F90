@@ -20,7 +20,8 @@
 !> @ingroup time_interp
 !> @brief Computes a weight and dates/indices for linearly interpolating between two dates.
 !> @author Bruce Wyman
-!> A time type is converted into two consecutive dates plus
+!!
+!! \nA time type is converted into two consecutive dates plus
 !! a fraction representing the distance between the dates.
 !! This information can be used to interpolate between the dates.
 !! The dates may be expressed as years, months, or days or
@@ -185,9 +186,45 @@ public :: time_interp_init, time_interp, fraction_of_year
 !   </NOTE>
 
 !> @page time_interp time_interp Interface
+!> @ingroup time_interp_mod
 !> Returns a weight and dates or indices for interpolating between two dates. The
 !! interface fraction_of_year is provided for backward compatibility with the
-!! previous version.
+!! previous version.\n
+!!
+!! Returns weight by interpolating Time between Time1 and Time2.
+!! i.e. weight = (Time-Time1)/(Time2-Time1)
+!! Time1 and Time2 may be specified by any of several different ways,
+!! which is the reason for multiple interfaces.\n
+!!
+!! If Time1 and Time2 are the begining and end of the year in which
+!! Time falls, use first interface.\n
+!!
+!! If Time1 and Time2 fall on year boundaries, use second interface.\n
+!!
+!! If Time1 and Time2 fall on month boundaries, use third.\n
+!!
+!! If Time1 and Time2 fall on day boundaries, use fourth.\n
+!!
+!! If Time1 and Time2 are consecutive elements of an assending list, use fifth.
+!! The fifth also returns the indices of Timelist between which Time falls.\n
+!!
+!! The sixth interface is for cyclical data. Time_beg and Time_end specify the
+!! begining and end of a repeating period. In this case:
+!!              weight = (Time_adjusted - Time1) / (Time2 - Time1)
+!! \nWhere:
+!!              Time1 = Timelist(index1)
+!!              Time2 = Timelist(index2)
+!!              Time_adjusted = Time - N*Period
+!!              Period = Time_end-Time_beg
+!! N is between (Time-Time_end)/Period and (Time-Time_beg)/Period
+!! That is, N is the integer that results in Time_adjusted that is between Time_beg and Time_end.
+!! \n\nExample usages:
+!!              call time_interp( Time, weight )
+!!              call time_interp( Time, weight, year1, year2 )
+!!              call time_interp( Time, weight, year1, year2, month1, month2 )
+!!              call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
+!!              call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
+!!              call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
 interface time_interp
     module procedure time_interp_frac,  time_interp_year, &
                      time_interp_month, time_interp_day,  &
@@ -283,6 +320,9 @@ contains
 ! </OVERVIEW>
 ! </SUBROUTINE>
 
+!> @brief Wrapper function to return the fractional time into the current year
+!> @param Time time to calculate fraction with
+!> @return real fraction of time passed in current year
  function fraction_of_year (Time)
  type(time_type), intent(in)  :: Time
  real :: fraction_of_year

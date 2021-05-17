@@ -108,7 +108,7 @@ public :: string2
 !> @ingroup fms2_io_mod
 !> @brief Opens a given netcdf or domain file.
 !!
-!> Example usage:
+!> \nExample usage:
 !!
 !!              io_success = open_file(fileobj, "filename", "write")
 !!
@@ -136,7 +136,7 @@ end interface open_file
 !!
 !> @return true if successful, false otherwise
 !!
-!> Example usage:
+!> \nExample usage:
 !!
 !!              io_success = open_virtual_file(fileobj, "filename", pelist)
 !!
@@ -161,7 +161,7 @@ end interface open_virtual_file
 !> @brief Close a netcdf or domain file opened with @ref open_file or
 !! @ref open_virtual_file
 !!
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call close_file(fileobj)
 !!
@@ -180,7 +180,7 @@ end interface close_file
 !> @page register_axis register_axis Interface
 !> @brief Add a dimension to a given file
 !!
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call register_axis(fileobj, "lon", "x")
 !!
@@ -205,7 +205,7 @@ end interface register_axis
 
 !> @page register_field register_field Interface
 !> @brief Defines a new field within the given file
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call register_field(fileobj, "lon", "double", (/"lon"/) )
 !!
@@ -226,7 +226,7 @@ end interface register_field
 
 !> @page register_restart_field register_restart_field Interface
 !> @brief Similar to @ref register_field, but occupies the field with data for restarts
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call register_restart_field(fileobj, "temperature", data_ptr, (/"lon", "time"/) )
 !!
@@ -279,7 +279,7 @@ end interface register_restart_field
 
 !> @page write_data write_data Interface
 !> @brief Write data to a defined field within a file
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call write_data(fileobj, "lon", data)
 !!
@@ -328,7 +328,7 @@ end interface write_data
 !> @page read_data read_data Interface
 !> @brief Read data from a defined field in a file
 !!
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call read_data(fileobj, "lat", data) 
 !!
@@ -376,7 +376,7 @@ end interface read_data
 
 !> @page write_restart write_restart Interface
 !> @brief Writes all restart fields registered within a given restart file
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call write_restart(fileobj)
 !!
@@ -394,7 +394,7 @@ end interface write_restart
 
 !> @page write_new_restart write_new_restart Interface
 !> @brief Writes all restart fields in a given restart file to a new restart file 
-!> Example usage:
+!> \nExample usage:
 !!
 !!              call write_new_restart(fileobj, timestamp="tstring", filename="new_restartfilename")
 !!

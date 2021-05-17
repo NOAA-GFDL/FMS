@@ -69,7 +69,7 @@ public :: get_instance_filename
 public :: nullify_filename_appendix
 
 !> @brief A linked list of strings
-type :: char_linked_list
+public, type :: char_linked_list
   character(len=128) :: string
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list

@@ -25,32 +25,32 @@
 !!
 !> When using these routines three possible data sets are available:
 !!
-!!     1)  AMIP \link http://www-pcmdi.llnl.gov/amip \endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
-!!     2)  Reynolds OI \link amip_interp.rey_oi.txt \endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!!     3)  Reynolds EOF \link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html \endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!! 1)  AMIP @link http://www-pcmdi.llnl.gov/amip @endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
+!! 2)  Reynolds OI @link amip_interp.rey_oi.txt @endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+!! 3)  Reynolds EOF @link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
 !!
-!!     All original data are observed monthly means. This module
-!!     interpolates linearly in time between pairs of monthly means.
-!!     Horizontal interpolation is done using the horiz_interp module.
+!! All original data are observed monthly means. This module
+!! interpolates linearly in time between pairs of monthly means.
+!! Horizontal interpolation is done using the horiz_interp module.
 !!
-!!     When a requested date falls outside the range of dates available
-!!     a namelist option allows for use of the climatological monthly
-!!     mean values which are computed from all of the data in a particular
-!!     data set.
-!! Dataset Name = AMIP 1
-!!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).
-!! Dataset Name = Reynolds OI
-!!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!!             The analysis uses in situ and satellite SST's plus
-!!             SST's simulated by sea-ice cover.
-!! Dataset Name = Reynold's EOF
-!!   from Jan 1950 to Dec 1998 (2 deg x 2 deg)
-!!             NCEP Reynolds Historical Reconstructed Sea Surface Temperature
-!!             The analysis uses both in-situ SSTs and satellite derived SSTs
-!!             from the NOAA Advanced Very High Resolution Radiometer.
-!!             In-situ data is used from 1950 to 1981, while both AVHRR derived
-!!             satellite SSTs and in-situ data are used from 1981 to the
-!!             end of 1998.
+!! When a requested date falls outside the range of dates available
+!! a namelist option allows for use of the climatological monthly
+!! mean values which are computed from all of the data in a particular
+!! data set.
+!! AMIP 1:\n
+!!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).\n
+!! Reynolds OI:\n
+!!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)\n
+!!   The analysis uses in situ and satellite SST's plus
+!!   SST's simulated by sea-ice cover.
+!! Reynold's EOF:\n
+!!   from Jan 1950 to Dec 1998 (2 deg x 2 deg)\n
+!!   NCEP Reynolds Historical Reconstructed Sea Surface Temperature
+!!   The analysis uses both in-situ SSTs and satellite derived SSTs
+!!   from the NOAA Advanced Very High Resolution Radiometer.
+!!   In-situ data is used from 1950 to 1981, while both AVHRR derived
+!!   satellite SSTs and in-situ data are used from 1981 to the
+!!   end of 1998.
 !!
 !! Note: The data set used by this module have been reformatted as 32-bit IEEE.
 !!   The data values are packed into 16-bit integers.
@@ -164,22 +164,6 @@ end interface
 !! returned variable of type amip_interp_type is needed when
 !! calling get_amip_sst and get_amip_ice.
 !!
-!> @throws "the value of the namelist parameter DATA_SET being used is not allowed"
-!! Check the value of namelist variable DATA_SET.
-!!
-!> @throws FATAL requested input data set does not exist
-!! The data set requested is valid but the data does not exist in
-!! the INPUT subdirectory. You may have requested amip2 data which
-!! has not been officially set up.
-!! See the section on DATA SETS to properly set the data up.
-!!
-!> @throws FATAL use_climo mismatch
-!! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
-!! argument use_climo = true.  This combination is not allowed.
-!!
-!> @throws FATAL use_annual(climo) mismatch
-!! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
-!! argument use_annual = true.  This combination is not allowed.
 !> @param lon
 !!     Longitude in radians of the model's grid box edges (1d lat/lon grid case)
 !!     or at grid box mid-point (2d case for arbitrary grids).
@@ -211,6 +195,23 @@ end interface
 !!     of input augments lon and lat. The first and second dimensions
 !!     of mask must equal (size(lon,1)-1, size(lat,2)-1).
 !!
+!> @throws "FATAL: the value of the namelist parameter DATA_SET being used is not allowed"
+!! Check the value of namelist variable DATA_SET.
+!!
+!> @throws "FATAL: requested input data set does not exist"
+!! The data set requested is valid but the data does not exist in
+!! the INPUT subdirectory. You may have requested amip2 data which
+!! has not been officially set up.
+!! See the section on DATA SETS to properly set the data up.
+!!
+!> @throws "FATAL: use_climo mismatch"
+!! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
+!! argument use_climo = true.  This combination is not allowed.
+!!
+!> @throws "FATAL: use_annual(climo) mismatch"
+!! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
+!! argument use_annual = true.  This combination is not allowed.
+!!
 interface amip_interp_new
    module procedure amip_interp_new_1d
    module procedure amip_interp_new_2d
@@ -218,6 +219,7 @@ end interface
 
 
 !----- public data type ------
+
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
 type amip_interp_type
    private
@@ -292,6 +294,7 @@ end type
  logical :: use_mpp_io = .false. !> Set to .true. to use mpp_io, otherwise fms2io is used
 
 !> @page amip_interp_nml amip_interp Namelist
+!> @brief Namelist documentation for @ref amip_interp_mod
 !! @var character(len=24) data_set
 !! Name/type of SST data that will be used.
 !!        Possible values (case-insensitive) are:
@@ -323,7 +326,6 @@ end type
 !!     sst at the equator. Default=305
 !! @var real tdif
 !!     Equator to pole sst difference. Default=50
-!!   </DATA>
 !! @var real tann
 !!     Amplitude of annual cycle. Default=20
 !! @var real tlag
