@@ -45,7 +45,7 @@ program test
   ! /archive/pjp/unit_tests/test_data_override/lima/exp1
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, mpp_define_layout
- use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file
+ use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, check_nml_error
  use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
  use  fms_affinity_mod, only: fms_affinity_set
  use        fms_io_mod, only: read_data, fms_io_exit
@@ -126,20 +126,8 @@ program test
 
  rad_to_deg = 180./pi
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, test_data_override_nml, iostat=io)
-      ierr = check_nml_error(io, 'test_data_override_nml')
-#else
- if (file_exist('input.nml')) then
-   unit = open_namelist_file ( )
-   ierr=1
-   do while (ierr /= 0)
-     read(unit, nml=test_data_override_nml, iostat=io, end=10)
-          ierr = check_nml_error(io, 'test_data_override_nml')
-   enddo
-10 call close_file (unit)
- endif
-#endif
+ read (input_nml_file, test_data_override_nml, iostat=io)
+ ierr = check_nml_error(io, 'test_data_override_nml')
 
  if(field_exist(grid_file, "x_T" ) ) then
     call field_size(grid_file, 'x_T', siz)
@@ -395,7 +383,6 @@ contains
 
   integer :: pe, npes
   integer :: nx, ny, nz=40, stackmax=4000000
-  integer :: unit=7
   integer :: stdunit = 6
   logical :: debug=.FALSE., opened
 

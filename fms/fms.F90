@@ -419,19 +419,8 @@ subroutine fms_init (localcomm )
 
     call nml_error_init()  ! first initialize namelist iostat error codes
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, fms_nml, iostat=io)
-      ierr = check_nml_error(io,'fms_nml')
-#else
-    if (file_exist('input.nml')) then
-       unit = open_namelist_file ( )
-       ierr=1; do while (ierr /= 0)
-          read  (unit, nml=fms_nml, iostat=io, end=10)
-          ierr = check_nml_error(io,'fms_nml')  ! also initializes nml error codes
-       enddo
- 10    call mpp_close (unit)
-    endif
-#endif
+    read (input_nml_file, fms_nml, iostat=io)
+    ierr = check_nml_error(io,'fms_nml')
 
 !---- define mpp stack sizes if non-zero -----
 

@@ -21,7 +21,7 @@ program test_time_manager
 
  use          mpp_mod, only: input_nml_file, mpp_error, NOTE, FATAL
  use          fms_mod, only: fms_init, fms_end, stderr
- use          fms_mod, only: open_namelist_file, check_nml_error, close_file, open_file
+ use          fms_mod, only: check_nml_error
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
  use       fms_io_mod, only: fms_io_exit
  use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
@@ -42,7 +42,7 @@ program test_time_manager
  integer :: year, month, dday, days_this_month
  integer :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
  logical :: leap
- integer :: nr, icode, nmlunit, ierr, io, nn, errunit, outunit
+ integer :: nr, icode, ierr, io, nn, errunit, outunit
  character(len=256) :: err_msg, char_date
  character(len=8),  allocatable, dimension(:) :: test_time
  character(len=23), allocatable, dimension(:) :: test_date
@@ -60,20 +60,11 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
  call fms_init
  call constants_init
 
-#ifdef INTERNAL_FILE_NML
-   read (input_nml_file, test_nml, iostat=io)
-   ierr = check_nml_error (io, 'test_nml')
-#else
- nmlunit = open_namelist_file()
- ierr=1
- do while (ierr /= 0)
-   read(nmlunit, nml=test_nml, iostat=io, end=12)
-   ierr = check_nml_error (io, 'test_nml')
- enddo
- 12 call close_file (nmlunit)
-#endif
+ read (input_nml_file, test_nml, iostat=io)
+ ierr = check_nml_error (io, 'test_nml')
 
- outunit = open_file(file='test_time_manager.out', form='formatted', action='write')
+ open(newunit = outunit, file='test_time_manager.out', status='replace', form='formatted')
+
  errunit = stderr()
  call set_ticks_per_second(10)
 
