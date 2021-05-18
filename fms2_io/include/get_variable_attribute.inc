@@ -37,6 +37,7 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
 
   integer :: varid
   integer :: err
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
   integer :: j
   character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
   logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
@@ -47,7 +48,9 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   if (present(reproduce_null_char_bug_flag)) reproduce_null_char_bug=reproduce_null_char_bug_flag
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_attribute_0d: file:"//trim(fileobj%path)//"- variable:"//&
+                       &trim(variable_name)//" attribute: "//trim(attribute_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(attribute_value)
       type is (character(len=*))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), charbuf(1))
@@ -70,7 +73,7 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
       class default
         call error("unsupported type.")
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -116,9 +119,12 @@ subroutine get_variable_attribute_1d(fileobj, variable_name, attribute_name, &
 
   integer :: varid
   integer :: err
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_attribute_1d: file:"//trim(fileobj%path)//"- variable:"//&
+                       &trim(variable_name)//" attribute: "//trim(attribute_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(attribute_value)
       type is (integer(kind=i4_kind))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
@@ -134,7 +140,7 @@ subroutine get_variable_attribute_1d(fileobj, variable_name, attribute_name, &
       class default
         call error("unsupported type.")
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then

@@ -35,10 +35,13 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
   integer(kind=i8_kind), dimension(2) :: i64_range
   real(kind=r4_kind), dimension(2) :: r32_range
   real(kind=r8_kind), dimension(2) :: r64_range
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "register_variable_attribute_0d: file:"//trim(fileobj%path)//"- variable:"//&
+                       &trim(variable_name)//" attribute: "//trim(attribute_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(attribute_value)
       type is (character(len=*))
         if (.not. present(str_len)) call error("register_variable_attribute_0d: Need to include str length")
@@ -62,7 +65,7 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
       class default
         call error("unsupported type.")
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
 
     !The missing_value attribute is not NUG compliant, but is included here to support
     !legacy model component code.
@@ -138,10 +141,13 @@ subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name
   integer :: err
   integer :: axtype
   integer :: xtype
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "register_variable_attribute_0d: file:"//trim(fileobj%path)//"- variable:"//&
+                       &trim(variable_name)//" attribute: "//trim(attribute_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(attribute_value)
       type is (integer(kind=i4_kind))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
@@ -161,7 +167,7 @@ subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name
       class default
         call error("unsupported type.")
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
 
     if (string_compare(attribute_name, "_FillValue") .or. &
         string_compare(attribute_name, "valid_min") .or. &

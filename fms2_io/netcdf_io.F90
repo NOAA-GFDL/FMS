@@ -330,7 +330,7 @@ end subroutine netcdf_io_init
 subroutine check_netcdf_code(err, msg)
 
   integer, intent(in) :: err !< Code returned by netcdf.
-  character(len=*), intent(in), optional :: msg
+  character(len=*), intent(in), optional :: msg !< Error message
 
   character(len=80) :: buf
 
@@ -375,7 +375,7 @@ end subroutine set_netcdf_mode
 !> @brief Get the id of a dimension from its name.
 !! @return Dimension id, or dimension_missing if it doesn't exist.
 !! @internal
-function get_dimension_id(ncid, dimension_name, allow_failure) &
+function get_dimension_id(ncid, dimension_name, allow_failure, msg) &
   result(dimid)
 
   integer, intent(in) :: ncid !< Netcdf file id.
@@ -383,6 +383,8 @@ function get_dimension_id(ncid, dimension_name, allow_failure) &
   logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if dimension
                                                  !! does not exist.
+  character(len=*), intent(in), optional :: msg !< Error message
+
   integer :: dimid
 
   integer :: err
@@ -394,14 +396,14 @@ function get_dimension_id(ncid, dimension_name, allow_failure) &
       return
     endif
   endif
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_dimension_id
 
 
 !> @brief Get the id of a variable from its name.
 !! @return Variable id, or variable_missing if it doesn't exist.
 !! @internal
-function get_variable_id(ncid, variable_name, allow_failure) &
+function get_variable_id(ncid, variable_name, allow_failure, msg) &
   result(varid)
 
   integer, intent(in) :: ncid !< Netcdf file object.
@@ -409,6 +411,8 @@ function get_variable_id(ncid, variable_name, allow_failure) &
   logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if variable does
                                                  !! not exist.
+  character(len=*), intent(in), optional :: msg !< Error message
+
   integer :: varid
 
   integer :: err
@@ -420,7 +424,7 @@ function get_variable_id(ncid, variable_name, allow_failure) &
       return
     endif
   endif
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_variable_id
 
 
@@ -1073,7 +1077,9 @@ function variable_att_exists(fileobj, variable_name, attribute_name, &
 
   att_exists = .false.
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+            & msg="variable_att_exists: file:"//trim(fileobj%path)//"- variable:"//&
+            &trim(variable_name))
     att_exists = attribute_exists(fileobj%ncid, varid, trim(attribute_name))
   endif
   if (present(broadcast)) then
@@ -1103,7 +1109,7 @@ function get_num_dimensions(fileobj, broadcast) &
 
   if (fileobj%is_root) then
     err = nf90_inquire(fileobj%ncid, nDimensions=ndims)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_num_dimensions: file:"//trim(fileobj%path))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1143,7 +1149,7 @@ subroutine get_dimension_names(fileobj, names, broadcast)
     names(:) = ""
     do i = 1, ndims
       err = nf90_inquire_dimension(fileobj%ncid, i, name=names(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, "get_dimension_names: file:"//trim(fileobj%path))
     enddo
   endif
   if (present(broadcast)) then
@@ -1217,14 +1223,17 @@ function is_dimension_unlimited(fileobj, dimension_name, broadcast) &
                                              !! by default.
   logical :: is_unlimited
 
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
   integer :: dimid
   integer :: err
   integer :: ulim_dimid
 
   if (fileobj%is_root) then
-    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name))
+    append_error_msg="is_dimension_unlimited: file:"//trim(fileobj%path)//&
+                   & " dimension_name:"//trim(dimension_name)
+    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), msg=append_error_msg)
     err = nf90_inquire(fileobj%ncid, unlimitedDimId=ulim_dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     is_unlimited = dimid .eq. ulim_dimid
   endif
   if (present(broadcast)) then
@@ -1255,9 +1264,9 @@ subroutine get_unlimited_dimension_name(fileobj, dimension_name, broadcast)
   dimension_name = ""
   if (fileobj%is_root) then
     err = nf90_inquire(fileobj%ncid, unlimitedDimId=dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_unlimited_dimension_name: file:"//trim(fileobj%path))
     err = nf90_inquire_dimension(fileobj%ncid, dimid, dimension_name)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_unlimited_dimension_name: file:"//trim(fileobj%path))
     call string_copy(buffer(1), dimension_name)
   endif
   if (present(broadcast)) then
@@ -1286,11 +1295,13 @@ subroutine get_dimension_size(fileobj, dimension_name, dim_size, broadcast)
 
   integer :: dimid
   integer :: err
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   if (fileobj%is_root) then
-    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name))
+    append_error_msg = "get_dimension_size: file:"//trim(fileobj%path)//" dimension_name: "//trim(dimension_name)
+    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), msg=append_error_msg)
     err = nf90_inquire_dimension(fileobj%ncid, dimid, len=dim_size)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1319,7 +1330,7 @@ function get_num_variables(fileobj, broadcast) &
 
   if (fileobj%is_root) then
     err = nf90_inquire(fileobj%ncid, nVariables=nvars)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_num_variables: file: "//trim(fileobj%path))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1359,7 +1370,7 @@ subroutine get_variable_names(fileobj, names, broadcast)
     names(:) = ""
     do i = 1, nvars
       err = nf90_inquire_variable(fileobj%ncid, i, name=names(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, "get_variable_names: "//trim(fileobj%path))
     enddo
   endif
   if (present(broadcast)) then
@@ -1431,11 +1442,14 @@ function get_variable_num_dimensions(fileobj, variable_name, broadcast) &
 
   integer :: varid
   integer :: err
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_num_dimension: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1467,12 +1481,16 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   integer :: ndims
   integer,dimension(nf90_max_var_dims) :: dimids
   integer :: i
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_dimension_names: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
+
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims, &
                                 dimids=dimids)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
         call error("incorrect size of dim_names array.")
@@ -1483,7 +1501,7 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
     dim_names(:) = ""
     do i = 1, ndims
       err = nf90_inquire_dimension(fileobj%ncid, dimids(i), name=dim_names(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
   endif
   if (present(broadcast)) then
@@ -1526,11 +1544,13 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
   integer :: ndims
   integer,dimension(nf90_max_var_dims) :: dimids
   integer :: i
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_size: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims, dimids=dimids)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
         call error("incorrect size of dim_sizes array.")
@@ -1540,7 +1560,7 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
     endif
     do i = 1, ndims
       err = nf90_inquire_dimension(fileobj%ncid, dimids(i), len=dim_sizes(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
   endif
   if (present(broadcast)) then
