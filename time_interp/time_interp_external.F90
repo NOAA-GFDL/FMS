@@ -142,10 +142,10 @@ module time_interp_external_mod
   !! @param index index of external field from previous call to init_external_field
   !! @param time target time for data
   !! @param [inout] data global or local data array
-  !! @param interp time_interp_external defined interpolation method (optional).  Currently 
+  !! @param interp time_interp_external defined interpolation method (optional).  Currently
   !! this module only supports LINEAR_TIME_INTERP.
   !! @param verbose verbose flag for debugging (optional).
-  !! 
+  !!
   !! Contains:
   !! @ref time_interp_external_0d
   !! @ref time_interp_external_2d
@@ -254,6 +254,22 @@ module time_interp_external_mod
 !</INOUT>
 
 
+    !> Initialize an external field.  Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations.
+    !! distributed reads are supported using the optional "domain" flag.
+    !! Units conversion via the optional "desired_units" flag using udunits_mod.
+    !!
+    !> @return integer id of field for future calls to time_interp_external.
+    !> @param file filename
+    !> @param fieldname fieldname (in file)
+    !> @param format mpp_io flag for format of file(optional). Currently only "MPP_NETCDF" supported
+    !> @param threading mpp_io flag for threading (optional). "MPP_SINGLE" means root pe reads
+    !! global field and distributes to other PEs. "MPP_MULTI" means all PEs read data
+    !> @param domain domain flag (optional)
+    !> @param desired_units Target units for data (optional), e.g. convert from deg_K to deg_C.
+    !! Failure to convert using udunits will result in failure of this module.
+    !> @param verbose verbose flag for debugging (optional).
+    !> @param [out] axis_names List of axis names (optional).
+    !> @param [inout] axis_sizes array of axis lengths ordered X-Y-Z-T (optional).
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
          verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
          permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts )

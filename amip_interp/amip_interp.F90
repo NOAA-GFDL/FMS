@@ -37,12 +37,12 @@
 !! a namelist option allows for use of the climatological monthly
 !! mean values which are computed from all of the data in a particular
 !! data set.
-!! AMIP 1:\n
-!!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).\n
+!! \n AMIP 1:\n
+!!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).\n\n
 !! Reynolds OI:\n
 !!   from Nov 1981 to Jan 1999 (1 deg x 1 deg)\n
 !!   The analysis uses in situ and satellite SST's plus
-!!   SST's simulated by sea-ice cover.
+!!   SST's simulated by sea-ice cover.\n\n
 !! Reynold's EOF:\n
 !!   from Jan 1950 to Dec 1998 (2 deg x 2 deg)\n
 !!   NCEP Reynolds Historical Reconstructed Sea Surface Temperature

@@ -24,7 +24,7 @@
 !
 !-----------------------------------------------------------------------
 
-!> @defgroup mpp_mod mpp_mod 
+!> @defgroup mpp_mod mpp_mod
 !> @ingroup mpp
 !> @brief A set of simple calls to provide a uniform interface
 !! to different message-passing libraries. It currently can be
@@ -77,7 +77,7 @@
 !!   This module is used to develop higher-level calls for <LINK
 !!   SRC="mpp_domains.html">domain decomposition</LINK> and <LINK
 !!   SRC="mpp_io.html">parallel I/O</LINK>.
-!! <br/> 
+!! <br/>
 !!   Parallel computing is initially daunting, but it soon becomes
 !!   second nature, much the way many of us can now write vector code
 !!   without much effort. The key insight required while reading and
@@ -485,7 +485,7 @@ private
   !! appropriate point in the code where all PEs are known to be present.
   !!        @verbose call mpp_set_stack_size(n)
   !!
-  public :: mpp_set_stack_size 
+  public :: mpp_set_stack_size
   ! from mpp_util.h
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -498,7 +498,7 @@ private
   !> @param[in] field A field of any numerical or logical type
   !> @param[in] array_of_subsizes Integer array of subsizes
   !> @param[in] array_of_starts Integer array of starts
-  !> @param[out] dtype_out Output variable for created @ref mpp_type 
+  !> @param[out] dtype_out Output variable for created @ref mpp_type
   interface mpp_type_create
       module procedure mpp_type_create_int4
       module procedure mpp_type_create_int8
@@ -691,7 +691,7 @@ private
      module procedure mpp_gather_pelist_real8_3d
   end interface
 
-  !> @brief Scatter information to the given pelist 
+  !> @brief Scatter information to the given pelist
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
@@ -1125,7 +1125,7 @@ private
   !! <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
   !! @example            mpp_chksum( var, pelist )
   !! @param var Data to calculate checksum of
-  !! @param pelist Optional list of PE's to include in checksum calculation if not using 
+  !! @param pelist Optional list of PE's to include in checksum calculation if not using
   !! current pelist
   !! @return Parallel checksum of var across given or implicit pelist
   interface mpp_chksum

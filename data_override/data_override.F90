@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup data_override_mod data_override_mod
-!> @ingroup data_override 
+!> @ingroup data_override
 !! @brief Routines to get data in a file whose path is described in a user-provided data_table
 !! and do spatial and temporal interpolation if necessary to convert data to model's grid and time.
 !! @author Z. Liang, M.J. Harrison, M. Winton
@@ -147,7 +147,7 @@ namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug, 
 !> @page data_override_interface data_override Interface
 !! Interface for inserting and interpolating data into a file
 !! for a model's grid and time. Data path must be described in
-!! a user-provided data_table, see @ref data_override_mod "module description" 
+!! a user-provided data_table, see @ref data_override_mod "module description"
 !! for more information.\n
 !! Contains the following routines:\n
 !! @ref data_override_0d \n
@@ -1359,7 +1359,7 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
 end subroutine data_override_0d
 ! </SUBROUTINE>
 
-!> @brief 
+!> @brief
 subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
   character(len=3),   intent(in) :: gridname !< model grid ID
   character(len=*),   intent(in) :: fieldname !< field to override

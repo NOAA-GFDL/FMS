@@ -25,33 +25,33 @@
 !!    extensive that all those between antwerp and lima.
 !!    A brief description of these changes follows.
 !!
-!!    1) Added option to set the smallest time increment to something less than one second.
+!!    -# Added option to set the smallest time increment to something less than one second.
 !!       This is controlled by calling the pubic subroutine set_ticks_per_second.
 !!
-!!    2) Gregorian calendar fixed.
+!!    -# Gregorian calendar fixed.
 !!
-!!    3) Optional error flag added to calling arguments of public routines.
+!!    -# Optional error flag added to calling arguments of public routines.
 !!       This allows the using routine to terminate the program. It is likely that more
 !!       diagnostic information is available from the user than from time_manager alone.
 !!       If the error flag is present then it is the responsibility of the using
 !!       routine to test it and add additional information to the error message.
 !!
-!!    4) Removed the restriction that time increments be positive in routines that increment or decrement
+!!    -# Removed the restriction that time increments be positive in routines that increment or decrement
 !!       time and date. The option to prohibit negative increments can be turned on via optional argument.
 !!
-!!    5) subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
+!!    -# subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
 !!       This complies with CF convensions.
 !!
-!!    6) Made calendar specific routines private.
+!!    -# Made calendar specific routines private.
 !!       They are not used, and should not be used, by any using code.
 !!
-!!    7) Error messages made more informative.
+!!    -# Error messages made more informative.
 !!
 !!    The module defines a type that can be used to represent discrete
 !!    times (accurate to one second) and to map these times into dates
 !!    using a variety of calendars. A time is mapped to a date by
 !!    representing the time with respect to an arbitrary base date (refer
-!!    to <B>NOTES</B> section for the <LINK SRC="#base date">base date</LINK> setting).
+!!    to <B>NOTES</B> section for the base date setting).
 !!
 !!    The time_manager provides a single defined type, time_type, which is
 !!    used to store time and date quantities. A time_type is a positive
@@ -68,12 +68,12 @@
 !!    of the interfaces is separated into two sections. The first deals with
 !!    operations on time intervals while the second deals with operations
 !!    that convert time intervals to dates for a given calendar.
-!
+!!
 !!    The smallest increment of time is referred to as a tick.
 !!    A tick cannot be larger than 1 second, which also is the default.
 !!    The number of ticks per second is set via pubic subroutine set_ticks_per_second.
 !!    For example, ticks_per_second = 1000  will set the tick to one millisecond.
-!
+
 !! <DATA NAME="time_type" TYPE="derived type">
 !!    Derived-type data variable used to store time and date quantities. It
 !!    contains three PRIVATE variables: days, seconds and ticks.
@@ -162,7 +162,8 @@ integer,parameter :: do_floor = 0
 integer,parameter :: do_nearest = 1
 
 
-! time_type is implemented as seconds and days to allow for larger intervals
+!> @brief Type to represent amounts of time
+!> Implemented as seconds and days to allow for larger intervals.
 type time_type
    private
    integer:: seconds
@@ -190,6 +191,20 @@ interface assignment(=);  module procedure time_assignment;  end interface
 
 !======================================================================
 
+!> @page set_time set_time Interface
+!> @brief Given some number of seconds and days, returns the
+!! corresponding time_type.
+!!
+!> Given some number of seconds and days, returns the
+!! corresponding time_type. set_time has two forms;
+!! one accepts integer input, the other a character string.
+!! For the first form, there are no restrictions on the range of the inputs,
+!! except that the result must be positive time.
+!! e.g. days=-1, seconds=86401 is acceptable.
+!! For the second form, days and seconds must both be positive.
+!! <br>Example usage:
+!!              set_time(seconds, days, ticks, err_msg)
+!!              set_time(time_string, err_msg, allow_rounding)
 interface set_time
   module procedure set_time_i, set_time_c
 end interface

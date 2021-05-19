@@ -33,7 +33,7 @@
 !!    Constants can be used on the right side on an assignment statement
 !!    (their value can not be reassigned).
 !!
-!!    Example: 
+!!    Example:
 !!
 !! @verbatim
 !!    use constants_mod, only:  TFREEZE, grav_new => GRAV
@@ -173,4 +173,4 @@ end subroutine constants_init
 
 end module constants_mod
 !> @}
-! close documentation grouping 
+! close documentation grouping

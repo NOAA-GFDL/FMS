@@ -92,7 +92,7 @@ end subroutine mosaic_init
 
 !#######################################################################
 !> @brief return exchange grid size of mosaic xgrid file.
-!! 
+!!
 !! Example usage:
 !!              nxgrid = get_mosaic_xgrid_size(xgrid_file)
   function get_mosaic_xgrid_size(fileobj)
@@ -166,7 +166,7 @@ end subroutine mosaic_init
   !> @return Number of tiles in given file
   !> @example
   !!     ntiles = get_mosaic_ntiles( mosaic_file)
-  !! 
+  !!
   function get_mosaic_ntiles(fileobj)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
     integer                           :: get_mosaic_ntiles
@@ -203,7 +203,7 @@ end subroutine mosaic_init
   !> @param fileobj mosaic file object
   !> @param[inout] nx List of grid size in x-direction of each tile
   !> @param[inout] ny List of grid size in y-direction of each tile
-  !> @example 
+  !> @example
   !!            call get_mosaic_grid_sizes(mosaic_file, nx, ny)
   subroutine get_mosaic_grid_sizes( fileobj, nx, ny)
     type(FmsNetcdfFile_t), intent(in)    :: fileobj

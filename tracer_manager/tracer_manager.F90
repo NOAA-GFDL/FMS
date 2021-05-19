@@ -17,11 +17,13 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup tracer_manager_mod tracer_manager_mod
-!> @ingroup tracer_manager 
+!> @ingroup tracer_manager
 !> @brief Code to manage the simple addition of tracers to the FMS code.
 !! This code keeps track of the numbers and names of tracers included
 !! in a tracer table.
+!!
 !> @author William Cooke
+!!
 !> This code is a grouping of calls which will allow the simple
 !! introduction of tracers into the FMS framework. It is designed to
 !! allow users of a variety of component models interact easily with
@@ -164,6 +166,9 @@ contains
 !   <TEMPLATE>
 !     call tracer_manager_init
 !   </TEMPLATE>
+!> @brief Not necessary to call, only needed for backward compatability.
+!!
+!> Writes version to logfile and sets init flag for this module
 subroutine tracer_manager_init
 integer :: model, num_tracers, num_prog, num_diag
 
@@ -186,9 +191,10 @@ end subroutine tracer_manager_init
 ! read tracer table and store tracer information associated with "model"
 ! in "tracers" array.
 !   </OVERVIEW>
+!> @brief Read in tracer table and store tracer information associated with "model"
 subroutine get_tracer_meta_data(model, num_tracers,num_prog,num_diag)
 
-integer,  intent(in) :: model ! model being used
+integer,  intent(in) :: model !< model being used
 integer, intent(out) :: num_tracers, num_prog, num_diag
 character(len=256)    :: warnmesg
 
@@ -577,9 +583,14 @@ end function model_tracer_number
 !   <OUT NAME="num_diag" TYPE="integer">
 !     The number of diagnostic tracers within the component model.
 !   </OUT>
+!> @brief Not necessary to call, only needed for backward compatability.
+!!
+!> Returns the total number of valid, prognostic and diagnostic tracers.
 subroutine register_tracers(model, num_tracers, num_prog, num_diag, num_family)
-integer, intent(in) :: model
-integer, intent(out) :: num_tracers, num_prog, num_diag
+integer, intent(in) :: model !< A parameter to identify which model is being used.
+integer, intent(out) :: num_tracers !< The total number of valid tracers within the component model.
+integer, intent(out) :: num_prog !< The number of prognostic tracers within the component model.
+integer, intent(out) :: num_diag !< The number of diagnostic tracers within the component model.
 integer, intent(out), optional :: num_family
 
 if(.not.module_is_initialized) call tracer_manager_init
@@ -615,10 +626,20 @@ end subroutine register_tracers
 !   <OUT NAME="num_diag" TYPE="integer, optional">
 !     The number of diagnostic tracers within the component model.
 !   </OUT>
+!> @brief A routine to return the number of tracers included in a component model.
+!!
+!> This routine returns the total number of valid tracers,
+!! the number of prognostic and diagnostic tracers
 subroutine get_number_tracers(model, num_tracers, num_prog, num_diag, num_family)
 
-integer,  intent(in) :: model
-integer, intent(out), optional :: num_tracers, num_prog, num_diag, num_family
+integer,  intent(in) :: model !< A parameter to identify which model is being used
+integer, intent(out), optional :: num_tracers !< The total number of valid tracers within
+                                              !! the component model
+integer, intent(out), optional :: num_prog !< The number of prognostic tracers within the
+                                           !! component model.
+integer, intent(out), optional :: num_diag !< The number of diagnostic tracers within the
+                                           !! component model
+integer, intent(out), optional :: num_family
 
 if(.not.module_is_initialized) call tracer_manager_init
 
@@ -671,6 +692,21 @@ end subroutine get_number_tracers
 ! An array containing the tracer manager defined indices for
 !             the diagnostic tracers within the component model.
 !   </OUT>
+!> @brief Routine to return the component model tracer indices as defined within
+!! the tracer manager.
+!!
+!> If several models are being used or redundant tracers have been written to
+!! the tracer_table, then the indices in the component model and the tracer
+!! manager may not have a one to one correspondence. Therefore the component
+!! model needs to know what index to pass to calls to tracer_manager routines in
+!! order that the correct tracer information be accessed.
+!> @param model A parameter to identify which model is being used.
+!> @param ind An array containing the tracer manager defined indices for
+!! all the tracers within the component model.
+!> @param prog_ind An array containing the tracer manager defined indices for
+!! the prognostic tracers within the component model.
+!> @param diag_ind An array containing the tracer manager defined indices for
+!! the diagnostic tracers within the component model.
 subroutine get_tracer_indices(model, ind, prog_ind, diag_ind, fam_ind)
 
 integer, intent(in) :: model

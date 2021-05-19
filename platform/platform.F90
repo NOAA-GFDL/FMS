@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @defgroup platform_mod platform_mod
 !> @ingroup platform
-!> @brief Uses @ref fms_platform.h to define byte sizes for variable kinds 
+!> @brief Uses @ref fms_platform.h to define byte sizes for variable kinds
 !! to be used in fms.
 
 !> @file

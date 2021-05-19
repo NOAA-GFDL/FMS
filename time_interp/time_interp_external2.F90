@@ -18,8 +18,11 @@
 !***********************************************************************
 !> @defgroup time_interp_external2_mod time_interp_external2_mod
 !> @ingroup time_interp
-!> @brief Perform I/O and time interpolation of external fields (contained in a file).
+!> @brief Perform I/O and time interpolation of external fields (contained in a file), using
+!! fms2_io.
+!!
 !> @author M.J. Harrison
+!!
 !> Perform I/O and time interpolation for external fields.
 !! Uses udunits library to calculate calendar dates and
 !! convert units.  Allows for reading data decomposed across
@@ -124,7 +127,7 @@ module time_interp_external2_mod
      type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
   end type filetype
 
-  !> @page time_interp_external time_interp_external Interface
+  !> @page time_interp_external2 time_interp_external Interface
   !! Provide data from external file interpolated to current model time.
   !! Data may be local to current processor or global, depending on
   !! "init_external_field" flags.
@@ -132,14 +135,10 @@ module time_interp_external2_mod
   !! @param index index of external field from previous call to init_external_field
   !! @param time target time for data
   !! @param [inout] data global or local data array
-  !! @param interp time_interp_external defined interpolation method (optional).  Currently 
+  !! @param interp time_interp_external defined interpolation method (optional).  Currently
   !! this module only supports LINEAR_TIME_INTERP.
   !! @param verbose verbose flag for debugging (optional).
-  !! 
-  !! Contains:
-  !! @ref time_interp_external_0d
-  !! @ref time_interp_external_2d
-  !! @ref time_interp_external_3d
+  !!
   interface time_interp_external
      module procedure time_interp_external_0d
      module procedure time_interp_external_2d
@@ -245,7 +244,7 @@ module time_interp_external2_mod
     !> @param file filename
     !> @param fieldname fieldname (in file)
     !> @param format mpp_io flag for format of file(optional). Currently only "MPP_NETCDF" supported
-    !> @param threading mpp_io flag for threading (optional). "MPP_SINGLE" means root pe reads 
+    !> @param threading mpp_io flag for threading (optional). "MPP_SINGLE" means root pe reads
     !! global field and distributes to other PEs. "MPP_MULTI" means all PEs read data
     !> @param domain domain flag (optional)
     !> @param desired_units Target units for data (optional), e.g. convert from deg_K to deg_C.
@@ -765,7 +764,7 @@ module time_interp_external2_mod
 ! verbose flag for debugging (optional).
 !</IN>
 
-    !> @brief 3D interpolation for @ref time_interp_external
+    !> 3D interpolation for @ref time_interp_external
     subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)
 
       integer,                    intent(in)           :: index
@@ -925,6 +924,7 @@ module time_interp_external2_mod
 
     end subroutine time_interp_external_3d
 !</SUBROUTINE> NAME="time_interp_external"
+
     !> @brief Scalar interpolation for @ref time_interp_external
     subroutine time_interp_external_0d(index, time, data, verbose)
 

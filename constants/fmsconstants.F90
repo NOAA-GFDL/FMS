@@ -17,14 +17,16 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup fmsconstants FMSconstants
+!> @ingroup libfms
 !> @brief Essentially a copy of @ref constants_mod for external usage alongside
-!! @ref libfms
-!> See @ref constants_mod for individual parameter information
-module FMSconstants 
+!! @ref libfms.
+!!
+!> See @ref constants_mod for individual parameter information.
+module FMSconstants
 
   !> rename to not conflict with any other version vars
   use constants_mod, version_constants => version
 
   implicit none
 
-end module FMSconstants 
+end module FMSconstants

@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup get_grid_version_mpp_mod get_grid_version_mpp_mod
-!> @ingroup data_override 
-!! @brief mpp_io implementations of grid routines 
+!> @ingroup data_override
+!! @brief mpp_io implementations of grid routines
 
 !> @file
 !> @brief File for @ref get_grid_version_mpp_mod

@@ -193,10 +193,10 @@ end interface
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
 !! ~~~~~~~~~~
 !!
-!! @param [in] <grdin> Input grid 
-!! @param [in] <grdout> Output grid 
-!! @param [in] <datin> Input data 
-!! @param [out] <datout> Output data 
+!! @param [in] <grdin> Input grid
+!! @param [in] <grdout> Output grid
+!! @param [in] <datin> Input data
+!! @param [out] <datout> Output data
 interface interp_weighted_scalar
    module procedure interp_weighted_scalar_1D
    module procedure interp_weighted_scalar_2D

@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup get_cal_time_mod get_cal_time_mod
-!> @ingroup time_manager  
+!> @ingroup time_manager
 !> @brief Given a time increment as a real number, and base time and calendar
 !!  as a character strings, returns time as a time_type variable.
 

@@ -31,7 +31,7 @@
 !! The interpolation scheme conserves the area-weighted average
 !! of the input data by using module horiz_interp.
 !!
-!! The interfaces get_gaussian_topog and gaussian_topog_init are documented 
+!! The interfaces get_gaussian_topog and gaussian_topog_init are documented
 !! in @ref gaussian_topog_mod
 
 !> @file

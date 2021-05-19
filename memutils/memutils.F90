@@ -17,7 +17,7 @@
 !! License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup memutils_mod memutils_mod
-!> @ingroup memutils 
+!> @ingroup memutils
 !! @brief Module to expose the memory printing API
 !! @author V. Balaji
 !!

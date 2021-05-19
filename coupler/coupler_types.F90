@@ -22,7 +22,7 @@
 !> @author Richard Slater, John Dunne
 
 !> @file
-!> @brief File for @ref coupler_types_mod 
+!> @brief File for @ref coupler_types_mod
 
 !> @addtogroup coupler_types_mod
 !> @{

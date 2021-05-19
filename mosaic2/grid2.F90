@@ -144,7 +144,7 @@ function get_great_circle_algorithm()
    if (global_att_exists(gridfileobj, "great_circle_algorithm")) then
       call get_global_attribute(gridfileobj, "great_circle_algorithm", attvalue)
       if(trim(attvalue) == "TRUE") then
-         get_great_circle_algorithm = .true. 
+         get_great_circle_algorithm = .true.
       else if(trim(attvalue) .NE. "FALSE") then
          call mpp_error(FATAL, module_name//'/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
                    trim(grid_file)//' should be TRUE or FALSE')
@@ -231,7 +231,7 @@ subroutine close_component_mosaics
     if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call close_file(mosaic_fileobj(3))
 end subroutine close_component_mosaics
 
-!> @brief Get the component number of a model component (atm, lnd, ocn) 
+!> @brief Get the component number of a model component (atm, lnd, ocn)
 !! @return Integer component number
 function get_component_number(component)
   character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)

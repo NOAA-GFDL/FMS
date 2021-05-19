@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup fms_io_utils_mod fms_io_utils_mod
-!> @ingroup fms2_io 
+!> @ingroup fms2_io
 !> @brief Misc. utility routines for use in @ref fms2_io
 
 !> @file
@@ -69,7 +69,7 @@ public :: get_instance_filename
 public :: nullify_filename_appendix
 
 !> @brief A linked list of strings
-public, type :: char_linked_list
+type char_linked_list
   character(len=128) :: string
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list

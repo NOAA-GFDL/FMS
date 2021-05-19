@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup gaussian_topog_mod gaussian_topog_mod
-!> @ingroup topography 
+!> @ingroup topography
 !> @brief Routines for creating Gaussian-shaped land surface topography
 !! for latitude-longitude grids.
 !> @author Bruce Wyman

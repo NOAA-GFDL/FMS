@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup column_diagnostics_mod column_diagnostics_mod 
-!> @ingroup column_diagnostics 
+!> @defgroup column_diagnostics_mod column_diagnostics_mod
+!> @ingroup column_diagnostics
 !! @brief Module to locate and mark desired diagnostic columns
 
 !> @file

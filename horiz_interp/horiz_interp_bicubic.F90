@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @defgroup horiz_interp_bicubic_mod horiz_interp_bicubic_mod
 !> @ingroup horiz_interp
-!> @brief Delivers methods for bicubic interpolation from a coarse regular grid 
+!> @brief Delivers methods for bicubic interpolation from a coarse regular grid
 !! on a fine regular grid
 
 !> @file

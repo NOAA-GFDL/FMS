@@ -83,8 +83,8 @@
 !!        integer :: pos\n
 !!      end type domain2D\n
 !!
-!! type(domain1D), public :: NULL_DOMAIN1D\n
-!! type(domain2D), public :: NULL_DOMAIN2D\n
+!!      type(domain1D), public :: NULL_DOMAIN1D\n
+!!      type(domain2D), public :: NULL_DOMAIN2D\n
 
 !> @file
 !> @brief File for @ref mpp_domains_mod
@@ -230,7 +230,7 @@ module mpp_domains_mod
      integer :: begin_index, end_index
   end type unstruct_axis_spec
 
-  !> axis specification data for an unstructured domain 
+  !> axis specification data for an unstructured domain
   type unstruct_domain_spec
      private
      type(unstruct_axis_spec) :: compute
@@ -259,7 +259,7 @@ module mpp_domains_mod
      private
      type(unstruct_axis_spec) :: compute, global !< axis specifications
      type(unstruct_domain_spec), pointer :: list(:)=>NULL() !<
-     type(domainUG), pointer :: io_domain=>NULL() !< 
+     type(domainUG), pointer :: io_domain=>NULL() !<
      type(unstruct_pass_type) :: SG2UG
      type(unstruct_pass_type) :: UG2SG
      integer, pointer :: grid_index(:) => NULL() !< index of grid on current pe
@@ -346,6 +346,7 @@ module mpp_domains_mod
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
 
+!> @typedef
 !> @brief The domain2D type contains all the necessary information to
 !! define the global, compute and data domains of each task, as well as the PE
 !! associated with the task. The PEs from which remote data may be
@@ -354,7 +355,7 @@ module mpp_domains_mod
 !> Domain types of higher rank can be constructed from type domain1D
 !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
 !! some elements are repeated below if they are needed once per domain, not once per axis
-  type domain2D
+  public, type domain2D
      private
      character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
      integer(i8_kind)            :: id
@@ -517,7 +518,7 @@ module mpp_domains_mod
 
   integer, parameter :: MAX_REQUEST = 100
 
-  !> Used for nonblocking data transfer 
+  !> Used for nonblocking data transfer
   type nonblock_type
      integer                         :: recv_pos
      integer                         :: send_pos
@@ -731,10 +732,10 @@ module mpp_domains_mod
 
   !> @page mpp_define_domains mpp_define_domains Interface
   !> @brief Set up a domain decomposition.
-  !! 
+  !!
   !> There are two forms for the \e mpp_define_domains call. The 2D version is generally
   !! to be used but is built by repeated calls to the 1D version, also provided.
-  !! 
+  !!
   !!            call mpp_define_domains( global_indices, ndivs, domain, &
   !!                                   pelist, flags, halo, extent, maskmap )
   !!            call mpp_define_domains( global_indices, layout, domain, pelist, &
@@ -873,7 +874,7 @@ module mpp_domains_mod
   end interface
 
   !> @page mpp_copy_domain mpp_copy_domain Interface
-  !! Copy 1D or 2D domain 
+  !! Copy 1D or 2D domain
   !> @param domain_in Input domain to get read
   !> @param domain_out Output domain to get written to
   interface mpp_copy_domain
@@ -1537,7 +1538,7 @@ module mpp_domains_mod
 !! at C-cell center.
 !! \nExample usage:
 !!              call mpp_get_boundary(domain, field, ebuffer, sbuffer, wbuffer, nbuffer)
-!! Get boundary information from domain and field and store in buffers 
+!! Get boundary information from domain and field and store in buffers
   interface mpp_get_boundary
      module procedure mpp_get_boundary_r8_2d
      module procedure mpp_get_boundary_r8_3d
@@ -1683,7 +1684,7 @@ module mpp_domains_mod
 !! There are two forms for the <TT>mpp_check_field</TT> call. The 2D
 !! version is generally to be used and 3D version is  built by repeated calls to the
 !! 2D version.\n
-!! \nExample usage: 
+!! \nExample usage:
 !!     call mpp_check_field(field_in, pelist1, pelist2, domain, mesg, &
 !!                                w_halo, s_halo, e_halo, n_halo, force_abort  )
   interface mpp_check_field
@@ -1731,12 +1732,12 @@ module mpp_domains_mod
 
 !> @page mpp_global_field mpp_global_field Interface
 !! Fill in a global array from domain-decomposed arrays.\n
-!! 
+!!
 !! <TT>mpp_global_field</TT> is used to get an entire
 !! domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
 !! <TT>complex</TT>, <TT>integer</TT>, <TT>logical</TT> or <TT>real</TT>;
 !! of 4-byte or 8-byte kind; of rank up to 5.\n
-!! 
+!!
 !! All PEs in a domain decomposition must call
 !! <TT>mpp_global_field</TT>, and each will have a complete global field
 !! at the end. Please note that a global array of rank 3 or higher could
@@ -2123,7 +2124,7 @@ module mpp_domains_mod
      module procedure mpp_domainUG_ne
   end interface
 
-  !> @page mpp_get_compute_domain mpp_get_compute_domain Interface 
+  !> @page mpp_get_compute_domain mpp_get_compute_domain Interface
   !! These routines retrieve the axis specifications associated with the compute domains.
   !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the compute domains

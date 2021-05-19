@@ -19,7 +19,7 @@
 !> @defgroup mpp_parameter_mod mpp_parameter_mod
 !> @ingroup mpp
 !> @brief Parameters values for use in various @ref mpp modules
-!> If needed, these values should be imported from their corresponding mpp module 
+!> If needed, these values should be imported from their corresponding mpp module
 
 !> @file
 !> @brief File for @ref mpp_parameter_mod

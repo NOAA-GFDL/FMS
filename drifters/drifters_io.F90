@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @defgroup drifters_io_mod drifters_io_mod
 !> @ingroup drifters
-!> @brief Saves drifter data for postprocessing and restarts 
+!> @brief Saves drifter data for postprocessing and restarts
 
 !> @file
 !> @brief File for @ref drifters_io_mod

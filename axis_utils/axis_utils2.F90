@@ -53,7 +53,7 @@ module axis_utils2_mod
   !! 1D interpolation
   !! @param grid1
   !! @param grid2
-  !! @param data1 Data to interpolate 
+  !! @param data1 Data to interpolate
   !! @param [inout] data2 Interpolated data
   !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
   interface interp_1d

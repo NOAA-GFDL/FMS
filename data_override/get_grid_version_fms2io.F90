@@ -23,7 +23,7 @@
 !> @file
 !> @brief File for @ref get_grid_version_fms2_io_mod
 
-!> @addtogroup get_grid_version_fms2_io_mod 
+!> @addtogroup get_grid_version_fms2_io_mod
 !> @{
 module get_grid_version_fms2io_mod
 use constants_mod, only: PI

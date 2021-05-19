@@ -43,6 +43,7 @@ type pk_type
   integer, dimension(:), allocatable :: jj
 end type pk_type
 
+!> @brief Block data and extents for OpenMP threading of column-based calculations
 type block_control_type
   integer :: nx_block, ny_block  !< blocking factor using mpp-style decomposition
   integer :: nblks               !< number of blocks cover MPI domain

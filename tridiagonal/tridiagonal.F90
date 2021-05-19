@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup tridiagonal_mod tridiagonal_mod
-!> @ingroup tridiagonal 
+!> @ingroup tridiagonal
 !> @brief Solves the tridiagonal system of equations.
 !> The following schematic represents the system of equations solved,
 !! where X is the solution.
@@ -51,7 +51,7 @@
 !! <PRE>
 !!    call close_tridiagonal
 !! </PRE>
-!! The following module variables are used to retain the relevant information
+!! Arguments A, B, and C are optional, and are saved as module variables
 !! if one recalls tri_invert without changing (A,B,C)
 
 !> @file
@@ -104,13 +104,15 @@ contains
 !      The value of A(N) is modified on output, and B and C are unchanged.
 !   </NOTE>
 
+!> @brief Sets up and solves the tridiagonal system of equations
 subroutine tri_invert(x,d,a,b,c)
 
 implicit none
 
-real, intent(out), dimension(:,:,:) :: x
-real, intent(in),  dimension(:,:,:) :: d
-real, optional,    dimension(:,:,:) :: a,b,c
+real, intent(out), dimension(:,:,:) :: x !< Solution to the tridiagonal system of equations
+real, intent(in),  dimension(:,:,:) :: d !< The right-hand side term, see the schematic above.
+real, optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schematic above).
+                                             !! If not provided, values from last call are used
 
 real, dimension(size(x,1),size(x,2),size(x,3)) :: f
 integer :: k
@@ -173,6 +175,7 @@ end subroutine tri_invert
 !     There are no arguments to this routine.
 !   </NOTE>
 
+!> @brief Releases memory used by the solver
 subroutine close_tridiagonal
 
 implicit none

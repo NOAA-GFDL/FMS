@@ -43,7 +43,7 @@ real, parameter           :: tol = 10.0*epsilon(1.)
 CONTAINS
 
 !...............................................................................
-!> Get expanded list of indices from contracted index 
+!> Get expanded list of indices from contracted index
 !> @param Ic contracted index
 !> @param[out] ie(:) expanded list of indices
 !> @param[out] ier error flag, non zero if operation unsuccessful
@@ -72,7 +72,7 @@ pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
 !...............................................................................
 !> Contract list of indices to an single integer
 !> @param ie(:) expanded list of indices
-!> @param[out] Ic contracted index 
+!> @param[out] Ic contracted index
 !> @param[out] ier error flag, non zero if operation unsuccessful
 pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
     integer, intent(in) ::  ie(:)
@@ -97,7 +97,7 @@ pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
 
 !...............................................................................
 !...............................................................................
-!> Cloud interpolation for linear cells 
+!> Cloud interpolation for linear cells
 !> @param fvals values at the cell nodes
 !> @param ts normalized [0,1]^nd cell coordinates
 !> @param[out] interpolated value
