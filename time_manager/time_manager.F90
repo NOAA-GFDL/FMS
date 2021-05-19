@@ -157,11 +157,11 @@ integer, parameter :: max_type = 4
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
 integer, parameter :: seconds_per_day = rseconds_per_day  ! This should automatically cast real to integer
 integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregorian
-integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian
-integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian
-integer, parameter :: invalid_date=-1                     ! Used only for gregorian
-integer,parameter :: do_floor = 0
-integer,parameter :: do_nearest = 1
+integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian, to be removed
+integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian, to be removed
+integer, parameter :: invalid_date=-1                     ! Used only for gregorian, to be removed
+integer, parameter :: do_floor = 0
+integer, parameter :: do_nearest = 1
 
 
 ! time_type is implemented as seconds and days to allow for larger intervals
@@ -1520,11 +1520,12 @@ end function repeat_alarm
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
 
-!> @brief Sets calendar_type. The arrays coded_date and days_this_month used for the Gregorian calendar
-!! are assigned in this subroutine.  The arrays and this component of the subroutine has been kept in order to be used by the original/old
-!! get_date_gregorian and set_date_gregorian which are now called get_date_gregorian_old and set_date_gregorian_old.  The
-!! get/set_date_gregorian_old subroutines have been kept in order to test the new get/set_date_gregorian. The new get/set_date_gregorian
-!! do not utilize the coded_date and days_this_month arrays.  As done in the get/set_date_gregorian_old, in the new routines,
+!> @brief Sets calendar_type. The coded_date and days_this_month arrays that were used for the Gregorian calendar
+!! are assigned in this subroutine.  The new get/set_date_gregorian do not thesearrays.  The arrays and the
+!! associated component of the subroutine have been kept in order to be used by the original/old get_date_gregorian
+!! and set_date_gregorian which are now called get_date_gregorian_old and set_date_gregorian_old.
+!! The get/set_date_gregorian_old subroutines have been kept for testing and will be removed by FMS 2021.04.
+!! As done in the get/set_date_gregorian_old, in the new routines,
 !! negative years and the proleptic Gregorian calendar are not used; and the discontinuity of days in October 1582
 !! (when the Gregorian calendar was adopted by select groups in Europe) is not taken into account.
 subroutine set_calendar_type(type, err_msg)
@@ -1555,6 +1556,7 @@ endif
 
 calendar_type = type
 
+! this section will be removed in the future
 if(type == GREGORIAN) then
   date_to_day = invalid_date
   iday = 0
@@ -1678,8 +1680,7 @@ end function get_ticks_per_second
 !   </OUT>
 
 !> @brief Gets the date for different calendar types.
-!! The added optional argument old_method allows user to choose either the new or old version
-!! of get_date_gregorian.  The variable old_method is only useful if the calendar type is Gregorian
+!! For calanedar_type = Gregorian, the new get_date_gregorian is called
  subroutine get_date(time, year, month, day, hour, minute, second, tick, err_msg)
 
 ! Given a time, computes the corresponding date given the selected calendar
@@ -1740,9 +1741,9 @@ end function get_ticks_per_second
  integer :: yearx, monthx, dayx, idayx !< temporary values for year, month, day
  integer :: i                          !< counter, dummy variable
 
- ! Computes date corresponding to time for gregorian calendar
+ ! Computes the date from time%days for the gregorian calendar
 
- !Carried over from the old subroutine
+ ! Carried over from the old subroutine
  if(Time%seconds >= 86400) then ! This check appears to be unecessary.
    call error_mesg('get_date','Time%seconds .ge. 86400 in subroutine get_date_gregorian',FATAL)
  endif
@@ -1807,7 +1808,7 @@ end function get_ticks_per_second
 
 !> @brief Gets the date on a Gregorian calendar.  This is the original/old subroutine.
 !! Looks up the year, month, day from the coded_date array
-!! This subroutine is kept in order to test the new get_date_gregorian
+!! This subroutine will be removed for 2021.04
  subroutine get_date_gregorian_old(time, year, month, day, hour, minute, second, tick)
 
 ! Computes date corresponding to time for gregorian calendar
@@ -2044,8 +2045,7 @@ end function get_ticks_per_second
 !   <OUT NAME="set_date" TYPE="time_type"> A time interval.</OUT>
 
 !> @brief Sets days for different calendar types.
-!! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian.  The variable old_method is only useful if the calendar type is Gregorian
+!! For calendar_type = Gregorian, the new set_date_gregorian is called
  function set_date_private(year, month, day, hour, minute, second, tick, Time_out, err_msg)
 
 ! Given a date, computes the corresponding time given the selected
@@ -2085,8 +2085,6 @@ end function get_ticks_per_second
 !------------------------------------------------------------------------
 
 !> @brief Calls set_date_private to set days for different calendar types.
-!! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
  function set_date_i(year, month, day, hour, minute, second, tick, err_msg)
  type(time_type) :: set_date_i
  integer, intent(in) :: day, month, year
@@ -2112,8 +2110,6 @@ end function get_ticks_per_second
 !------------------------------------------------------------------------
 
 !> @brief Calls set_date_private for different calendar types when given a string input.
-!! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
  function set_date_c(string, zero_year_warning, err_msg, allow_rounding)
 
  ! Examples of acceptable forms of string:
@@ -2324,7 +2320,7 @@ end function get_ticks_per_second
 
 !> @brief Sets Time_out%days on a Gregorian calendar.  This is the original/old subroutine.
 !! Look up the total number of days between 1/1/0001 to the current month/day/year in the array date_to_day
-!! This function is kept in order to test the new set_date_gregorian
+!! This function will be removed by 2021.04
  function set_date_gregorian_old(year, month, day, hour, minute, second, tick, Time_out, err_msg)
  logical :: set_date_gregorian_old
 
