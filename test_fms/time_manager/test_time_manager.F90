@@ -613,7 +613,7 @@ program test_time_manager
   write(outunit,'(a,i6)') ' ticks_per_second=',get_ticks_per_second()
 
  !==============================================================================================
- !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian added to this test program
+ !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian copied over to this test program
  !  This test loops through every day up to year 3200
 
   if(test20) then
@@ -691,14 +691,14 @@ program test_time_manager
         days_this_month = days_per_month(month)
         if(leap .and. month == 2) days_this_month = 29
         do dday=1,days_this_month
-          !: test new set_date_gregorian
+          ! test new set_date_gregorian
           Time  = set_date(year, month, dday, 0, 0, 0)
           Time0 = set_date_gregorian_old(year, month, dday, 0, 0, 0, 0, date_to_day)
           if( .not. (Time==Time0) ) then
              write(outunit,'("ERROR with year",i5,"mo",i5,"dday",i5)') year, month, dday
              call mpp_error(FATAL, 'ERROR testing set_date_gregorian:  Time!=Time0')
           end if
-          !: test #1 get_date
+          ! test #1 get_date
           call get_date(Time0, yr, mo, day, hr, min, sec)
           call get_date_gregorian_old(Time0, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
@@ -707,7 +707,7 @@ program test_time_manager
             write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
             call mpp_error(FATAl,'Error testing get_date_gregorian 1')
           end if
-          !: test #2 get_date
+          ! test #2 get_date
           call get_date(Time, yr, mo, day, hr, min, sec)
           call get_date_gregorian_old(Time, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
@@ -716,7 +716,7 @@ program test_time_manager
             write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
             call mpp_error(FATAl,'Error testing get_date_gregorian 2')
           end if
-          !: test #3 get_date
+          ! test #3 get_date
           call get_date(Time, yr, mo, day, hr, min, sec)
           call get_date_gregorian_old(Time0, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
@@ -725,7 +725,7 @@ program test_time_manager
             write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
             call mpp_error(FATAl,'Error testing get_date_gregorian 3')
           end if
-          !: test #4 get_date
+          ! test #4 get_date
           call get_date(Time0, yr, mo, day, hr, min, sec)
           call get_date_gregorian_old(Time, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
           if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
