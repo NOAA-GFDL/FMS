@@ -1355,7 +1355,7 @@ CONTAINS
        ! </ERROR>
        CALL error_mesg('diag_util_mod::init_output_field',&
             & 'MAX_FIELDS_PER_FILE = '//TRIM(error_msg)//' exceeded.  Increase MAX_FIELDS_PER_FILE in diag_data.F90.', FATAL)
-    ELSEIF (.not. allocated(files(file_num)%fields(num_fields))) THEN
+    ELSEIF (.not. allocated(files(file_num)%fields)) THEN
        allocate(files(file_num)%fields(MAX_FIELDS_PER_FILE)) 
     END IF
     num_fields = files(file_num)%num_fields
