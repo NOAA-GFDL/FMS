@@ -6,7 +6,7 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
-## [2021.02] - 2021-05-19
+## [2021.02] - 2021-05-20
 ### Added
 - FMS2_IO: Added fms2_io support for boundary condition restarts. `register_restart_region_2d` and `register_restart_region_3d` were added to fms2_io’s `register_restart_field` interface and `read_restart_bc` and `write_restart_bc` subroutines were added to read and write boundary conditions restarts. See [test_fms/fms2_io/test_bc_restart.F90](https://github.com/NOAA-GFDL/FMS/blob/9d55115a331685e4c6e01f2dfb3b770a9f80fa37/test_fms/fms2_io/test_bc_restart.F90) for sample usage.
 - FMS2_IO: Added fms2_io’s version of set_filename_appendix. The string sent in will be appended to the filename of a restart/history file before the *.nc or before *.tile if tile is in the filename.
