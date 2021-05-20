@@ -93,9 +93,6 @@ use platform_mod
 
 
   ! <!-- PARAMETERS for diag_data.F90 -->
-  ! <DATA NAME="MAX_FIELDS_PER_FILE" TYPE="INTEGER, PARAMETER" DEFAULT="300">
-  !   Maximum number of fields per file.
-  ! </DATA>
   ! <DATA NAME="DIAG_OTHER" TYPE="INTEGER, PARAMETER" DEFAULT="0" />
   ! <DATA NAME="DIAG_OCEAN" TYPE="INTEGER, PARAMETER" DEFAULT="1" />
   ! <DATA NAME="DIAG_ALL" TYPE="INTEGER, PARAMETER" DEFAULT="2" />
@@ -121,7 +118,6 @@ use platform_mod
   !   Return value for a diag_field that isn't found in the diag_table
   ! </DATA>
   ! Specify storage limits for fixed size tables used for pointers, etc.
-  INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   INTEGER, PARAMETER :: DIAG_OTHER = 0
   INTEGER, PARAMETER :: DIAG_OCEAN = 1
   INTEGER, PARAMETER :: DIAG_ALL   = 2
