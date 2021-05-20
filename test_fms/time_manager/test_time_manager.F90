@@ -46,7 +46,7 @@ program test_time_manager
  character(len=256) :: err_msg, char_date
  character(len=8),  allocatable, dimension(:) :: test_time
  character(len=23), allocatable, dimension(:) :: test_date
- character(len=8)   :: test_name
+ character(len=8) :: test_name
  character(len=256) :: out_msg
 
  !: for testing set/get_date_gregorian
