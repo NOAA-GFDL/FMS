@@ -183,7 +183,7 @@ use platform_mod
   TYPE file_type
      CHARACTER(len=128) :: name !< Name of the output file.
      CHARACTER(len=128) :: long_name
-     INTEGER, DIMENSION(max_fields_per_file) :: fields
+     INTEGER, allocatable, DIMENSION(:) :: fields
      INTEGER :: num_fields
      INTEGER :: output_freq
      INTEGER :: output_units
@@ -410,6 +410,7 @@ use platform_mod
   !   Will determine which value to use when checking a regional output if the region is the full axis or a sub-axis.
   !   The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT> (-1) in <TT>diag_data_mod</TT>.
   ! </DATA>
+  !> MAX_FIELDS_PER_FILE default = 300 Maximum number of fields per file.
   LOGICAL :: append_pelist_name = .FALSE.
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
@@ -442,7 +443,7 @@ use platform_mod
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
-
+  INTEGER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   ! <!-- netCDF variable -->
   ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
   !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
