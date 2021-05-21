@@ -125,7 +125,7 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
       endif
       deallocate(buf_r8_kind)
     class default
-      call error("Compute_global_checksum: unsupported type.")
+      call error("unsupported variable type: compute_global_checksum_2d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val
@@ -239,7 +239,7 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
       endif
       deallocate(buf_r8_kind)
     class default
-      call error("Compute_global_checksum: unsupported type.")
+      call error("unsupported variable type: compute_global_checksum_3d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val
@@ -354,7 +354,7 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
       endif
       deallocate(buf_r8_kind)
     class default
-      call error("Compute_global_checksum: unsupported type.")
+      call error("unsupported variable type: compute_global_checksum_4d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
   end select
   chksum = ""
   write(chksum, "(Z16)") chksum_val

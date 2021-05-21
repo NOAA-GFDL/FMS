@@ -182,48 +182,50 @@ subroutine copy_metadata(fileobj, new_fileobj)
   integer(kind=i4_kind), dimension(:), allocatable :: buf_int
   real(kind=r4_kind), dimension(:), allocatable :: buf_float
   real(kind=r8_kind), dimension(:), allocatable :: buf_double
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
+  append_error_msg = "copy_metadata: original file:"//trim(fileobj%path)//" new file:"//trim(new_fileobj%path)
   if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
     !Copy global attributes to the new file.
     call set_netcdf_mode(fileobj%ncid, define_mode)
     call set_netcdf_mode(new_fileobj%ncid, define_mode)
     err = nf90_inquire(fileobj%ncid, nattributes=natt)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     do i = 1, natt
       err = nf90_inq_attname(fileobj%ncid, nf90_global, i, n)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
       err = nf90_copy_att(fileobj%ncid, nf90_global, n, new_fileobj%ncid, nf90_global)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
 
     !Copy the dimensions to the new file.
     err = nf90_inquire(fileobj%ncid, ndimensions=ndim)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     err = nf90_inquire(fileobj%ncid, unlimiteddimid=ulim_dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     do i = 1, ndim
       err = nf90_inquire_dimension(fileobj%ncid, i, dimnames(i), dimlens(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
       if (i .eq. ulim_dimid) then
         err = nf90_def_dim(new_fileobj%ncid, dimnames(i), nf90_unlimited, dimids(i))
         ulim_dimid = dimids(i)
       else
         err = nf90_def_dim(new_fileobj%ncid, dimnames(i), dimlens(i), dimids(i))
       endif
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
 
     !Copy the variables to the new file.
     err = nf90_inquire(fileobj%ncid, nvariables=nvar)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     do i = 1, nvar
       err = nf90_inquire_variable(fileobj%ncid, i, varname, xtype, varndim, d, natt)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
 
       !Map to new dimension ids.
       do j = 1, varndim
         err = nf90_inquire_dimension(fileobj%ncid, d(j), n)
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, append_error_msg)
         do k = 1, ndim
           if (string_compare(n, dimnames(k))) then
             d(j) = dimids(k)
@@ -234,7 +236,7 @@ subroutine copy_metadata(fileobj, new_fileobj)
 
       !Define variable in new file.
       err = nf90_def_var(new_fileobj%ncid, varname, xtype, d(1:varndim), varid)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
 
       !If the variable is an "axis", copy its data to the new file.
       if (varndim .eq. 1 .and. d(1) .ne. ulim_dimid) then
@@ -245,25 +247,25 @@ subroutine copy_metadata(fileobj, new_fileobj)
             if (xtype .eq. nf90_int) then
               allocate(buf_int(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_int)
-              call check_netcdf_code(err)
+              call check_netcdf_code(err, append_error_msg)
               err = nf90_put_var(new_fileobj%ncid, varid, buf_int)
               deallocate(buf_int)
             elseif (xtype .eq. nf90_float) then
               allocate(buf_float(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_float)
-              call check_netcdf_code(err)
+              call check_netcdf_code(err, append_error_msg)
               err = nf90_put_var(new_fileobj%ncid, varid, buf_float)
               deallocate(buf_float)
             elseif (xtype .eq. nf90_double) then
               allocate(buf_double(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_double)
-              call check_netcdf_code(err)
+              call check_netcdf_code(err, append_error_msg)
               err = nf90_put_var(new_fileobj%ncid, varid, buf_double)
               deallocate(buf_double)
             else
               call error("this branch should not be reached.")
             endif
-            call check_netcdf_code(err)
+            call check_netcdf_code(err, append_error_msg)
             call set_netcdf_mode(fileobj%ncid, define_mode)
             call set_netcdf_mode(new_fileobj%ncid, define_mode)
             exit
@@ -274,9 +276,9 @@ subroutine copy_metadata(fileobj, new_fileobj)
       !Copy variable attributes to the new file.
       do j = 1, natt
         err = nf90_inq_attname(fileobj%ncid, i, j, n)
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, append_error_msg)
         err = nf90_copy_att(fileobj%ncid, i, n, new_fileobj%ncid, varid)
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, append_error_msg)
       enddo
     enddo
   endif

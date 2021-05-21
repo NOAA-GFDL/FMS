@@ -330,17 +330,13 @@ end subroutine netcdf_io_init
 subroutine check_netcdf_code(err, msg)
 
   integer, intent(in) :: err !< Code returned by netcdf.
-  character(len=*), intent(in), optional :: msg !< Error message
+  character(len=*), intent(in) :: msg !< Error message to be appended to the FATAL
 
   character(len=80) :: buf
 
   if (err .ne. nf90_noerr) then
     buf = nf90_strerror(err)
-    if (present(msg)) then
-       call error(trim(buf)//": "//trim(msg))
-    else
-       call error(trim(buf))
-    endif
+    call error(trim(buf)//": "//trim(msg))
   endif
 end subroutine check_netcdf_code
 
@@ -368,22 +364,22 @@ subroutine set_netcdf_mode(ncid, mode)
   else
     call error("mode must be either define_mode or data_mode.")
   endif
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, "set_netcdf_mode")
 end subroutine set_netcdf_mode
 
 
 !> @brief Get the id of a dimension from its name.
 !! @return Dimension id, or dimension_missing if it doesn't exist.
 !! @internal
-function get_dimension_id(ncid, dimension_name, allow_failure, msg) &
+function get_dimension_id(ncid, dimension_name, msg, allow_failure) &
   result(dimid)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   character(len=*), intent(in) :: dimension_name !< Dimension name.
+  character(len=*), intent(in) :: msg !< Error message
   logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if dimension
                                                  !! does not exist.
-  character(len=*), intent(in), optional :: msg !< Error message
 
   integer :: dimid
 
@@ -403,15 +399,15 @@ end function get_dimension_id
 !> @brief Get the id of a variable from its name.
 !! @return Variable id, or variable_missing if it doesn't exist.
 !! @internal
-function get_variable_id(ncid, variable_name, allow_failure, msg) &
+function get_variable_id(ncid, variable_name, msg, allow_failure) &
   result(varid)
 
   integer, intent(in) :: ncid !< Netcdf file object.
   character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), intent(in) :: msg !< Error message
   logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if variable does
                                                  !! not exist.
-  character(len=*), intent(in), optional :: msg !< Error message
 
   integer :: varid
 
@@ -431,12 +427,14 @@ end function get_variable_id
 !> @brief Determine if an attribute exists.
 !! @return Flag telling if the attribute exists.
 !! @internal
-function attribute_exists(ncid, varid, attribute_name) &
+function attribute_exists(ncid, varid, attribute_name, msg) &
   result(att_exists)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   integer, intent(in) :: varid !< Variable id.
   character(len=*), intent(in) :: attribute_name !< Attribute name.
+  character(len=*), intent(in), optional :: msg !< Error message
+
   logical :: att_exists
 
   integer :: err
@@ -445,7 +443,7 @@ function attribute_exists(ncid, varid, attribute_name) &
   if (err .eq. nf90_enotatt) then
     att_exists = .false.
   else
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, msg)
     att_exists = .true.
   endif
 end function attribute_exists
@@ -454,35 +452,39 @@ end function attribute_exists
 !> @brief Get the type of a netcdf attribute.
 !! @return The netcdf type of the attribute.
 !! @internal
-function get_attribute_type(ncid, varid, attname) &
+function get_attribute_type(ncid, varid, attname, msg) &
   result(xtype)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   integer, intent(in) :: varid !< Variable id.
   character(len=*), intent(in) :: attname !< Attribute name.
+  character(len=*), intent(in), optional :: msg !< Error message
+
   integer :: xtype
 
   integer :: err
 
   err = nf90_inquire_attribute(ncid, varid, attname, xtype=xtype)
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_attribute_type
 
 
 !> @brief Get the type of a netcdf variable.
 !! @return The netcdf type of the variable.
 !! @internal
-function get_variable_type(ncid, varid) &
+function get_variable_type(ncid, varid, msg) &
   result(xtype)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   integer, intent(in) :: varid !< Variable id.
+  character(len=*), intent(in), optional :: msg !< Error message to append to netcdf error code
+
   integer :: xtype
 
   integer :: err
 
   err = nf90_inquire_variable(ncid, varid, xtype=xtype)
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_variable_type
 
 
@@ -577,8 +579,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%allow_int8 = .false.
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
-    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set.")
-    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set.")
+    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
+    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
 
     if (present(nc_format)) then
       if (string_compare(nc_format, "64bit", .true.)) then
@@ -589,7 +591,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
         fileobj%allow_int8 = .true.
         nc_format_param = nf90_netcdf4
       else
-        call error("unrecognized netcdf file format "//trim(nc_format)//".")
+        call error("unrecognized netcdf file format "//trim(nc_format)//": file:"//trim(fileobj%path))
       endif
       call string_copy(fileobj%nc_format, nc_format)
     else
@@ -606,9 +608,9 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     else
-      call error("unrecognized file mode "//trim(mode)//".")
+      call error("unrecognized file mode "//trim(mode)//": file:"//trim(fileobj%path))
     endif
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
   else
     fileobj%ncid = missing_ncid
   endif
@@ -647,7 +649,7 @@ subroutine netcdf_file_close(fileobj)
 
   if (fileobj%is_root) then
     err = nf90_close(fileobj%ncid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "netcdf_file_close:"//trim(fileobj%path))
   endif
   if (allocated(fileobj%is_open)) fileobj%is_open = .false.
   fileobj%path = missing_path
@@ -782,7 +784,7 @@ subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
   if (fileobj%is_root .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"//trim(dimension_name))
   endif
 end subroutine netcdf_add_dimension
 
@@ -831,6 +833,9 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
   integer :: vtype
   integer :: varid
   integer :: i
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_add_variable: file:"//trim(fileobj%path)//"variable:"//trim(variable_name)
 
   if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
@@ -848,22 +853,22 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     elseif (string_compare(variable_type, "char", .true.)) then
       vtype = nf90_char
       if (.not. present(dimensions)) then
-        call error("string variables require a string length dimension.")
+        call error("String variables require a string length dimension:"//trim(append_error_msg))
       endif
     else
-      call error("unsupported type.")
+      call error("Unsupported variable type:"//trim(append_error_msg))
     endif
     if (present(dimensions)) then
       allocate(dimids(size(dimensions)))
       do i = 1, size(dimids)
-        dimids(i) = get_dimension_id(fileobj%ncid, trim(dimensions(i)))
+        dimids(i) = get_dimension_id(fileobj%ncid, trim(dimensions(i)),msg=append_error_msg)
       enddo
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
       deallocate(dimids)
     else
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
     endif
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_add_variable
 
@@ -1045,7 +1050,8 @@ function global_att_exists(fileobj, attribute_name, broadcast) &
   logical :: att_exists
 
   if (fileobj%is_root) then
-    att_exists = attribute_exists(fileobj%ncid, nf90_global, trim(attribute_name))
+    att_exists = attribute_exists(fileobj%ncid, nf90_global, trim(attribute_name), &
+                 & msg="global_att_exists: file:"//trim(fileobj%path)//" attribute name:"//trim(attribute_name))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1080,7 +1086,9 @@ function variable_att_exists(fileobj, variable_name, attribute_name, &
     varid = get_variable_id(fileobj%ncid, trim(variable_name), &
             & msg="variable_att_exists: file:"//trim(fileobj%path)//"- variable:"//&
             &trim(variable_name))
-    att_exists = attribute_exists(fileobj%ncid, varid, trim(attribute_name))
+    att_exists = attribute_exists(fileobj%ncid, varid, trim(attribute_name), &
+                 &msg="variable_att_exists: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)//&
+                 &" attribute name:"//trim(attribute_name))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1192,6 +1200,7 @@ function dimension_exists(fileobj, dimension_name, broadcast) &
 
   if (fileobj%is_root) then
     dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), &
+                             msg="dimension_exists: file:"//trim(fileobj%path)//" dimension:"//trim(dimension_name), &
                              allow_failure=.true.)
     if (dimid .eq. dimension_missing) then
       dim_exists = .false.
@@ -1413,6 +1422,7 @@ function variable_exists(fileobj, variable_name, broadcast) &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+                            msg="variable_exists: file:"//trim(fileobj%path)//" variable:"//trim(variable_name), &
                             allow_failure=.true.)
     var_exists = varid .ne. variable_missing
   endif
@@ -1641,9 +1651,11 @@ function get_valid(fileobj, variable_name) &
   real(kind=r8_kind) :: add_offset
   real(kind=r8_kind), dimension(2) :: buffer
   integer :: xtype
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
+  append_error_msg = "get_valid: file:"//trim(fileobj%path)
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, variable_name)
+    varid = get_variable_id(fileobj%ncid, variable_name, msg=append_error_msg)
     valid%has_max = .false.
     valid%has_min = .false.
     valid%has_fill = .false.
@@ -1652,13 +1664,13 @@ function get_valid(fileobj, variable_name) &
 
     !This routine makes use of netcdf's automatic type conversion to
     !store all range information in double precision.
-    if (attribute_exists(fileobj%ncid, varid, "scale_factor")) then
+    if (attribute_exists(fileobj%ncid, varid, "scale_factor", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "scale_factor", scale_factor, &
                                   broadcast=.false.)
     else
       scale_factor = 1._r8_kind
     endif
-    if (attribute_exists(fileobj%ncid, varid, "add_offset")) then
+    if (attribute_exists(fileobj%ncid, varid, "add_offset", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset, &
                                   broadcast=.false.)
     else
@@ -1669,7 +1681,7 @@ function get_valid(fileobj, variable_name) &
     !"valid_max" variable attributes if they are present in the file. If either the maximum value
     !or minimum value is defined, valid%has_range is set to .true. (i.e. open ended ranges
     !are valid and should be tested within the is_valid function).
-    if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
+    if (attribute_exists(fileobj%ncid, varid, "valid_range", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "valid_range", buffer, &
                                   broadcast=.false.)
       valid%max_val = buffer(2)*scale_factor + add_offset
@@ -1677,13 +1689,13 @@ function get_valid(fileobj, variable_name) &
       valid%min_val = buffer(1)*scale_factor + add_offset
       valid%has_min = .true.
     else
-      if (attribute_exists(fileobj%ncid, varid, "valid_max")) then
+      if (attribute_exists(fileobj%ncid, varid, "valid_max", msg=append_error_msg)) then
         call get_variable_attribute(fileobj, variable_name, "valid_max", buffer(1), &
                                   broadcast=.false.)
         valid%max_val = buffer(1)*scale_factor + add_offset
         valid%has_max = .true.
       endif
-      if (attribute_exists(fileobj%ncid, varid, "valid_min")) then
+      if (attribute_exists(fileobj%ncid, varid, "valid_min", msg=append_error_msg)) then
         call get_variable_attribute(fileobj, variable_name, "valid_min", buffer(1), &
                                   broadcast=.false.)
         valid%min_val = buffer(1)*scale_factor + add_offset
@@ -1694,7 +1706,7 @@ function get_valid(fileobj, variable_name) &
 
 
     !Get the missing value from the file if it exists.
-    if (attribute_exists(fileobj%ncid, varid, "missing_value")) then
+    if (attribute_exists(fileobj%ncid, varid, "missing_value", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1), &
                                   broadcast=.false.)
       valid%missing_val = buffer(1)*scale_factor + add_offset
@@ -1709,12 +1721,13 @@ function get_valid(fileobj, variable_name) &
     !non-positive fill value will be the exclusive lower bound (i.e. valis
     !values are greater than the fill value). As before, valid%has_range is true
     !if either a maximum or minimum value is set.
-    if (attribute_exists(fileobj%ncid, varid, "_FillValue")) then
+    if (attribute_exists(fileobj%ncid, varid, "_FillValue", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "_FillValue", buffer(1), &
                                   broadcast=.false.)
       valid%fill_val = buffer(1)*scale_factor + add_offset
       valid%has_fill = .true.
-      xtype = get_variable_type(fileobj%ncid, varid)
+      xtype = get_variable_type(fileobj%ncid, varid, msg=append_error_msg)
+
       if (.not. valid%has_range) then
         if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
           if (buffer(1) .gt. 0) then
@@ -1735,7 +1748,7 @@ function get_valid(fileobj, variable_name) &
             valid%has_min = .true.
           endif
         else
-          call error("unsupported type.")
+          call error("Unsupported variable type:"//trim(append_error_msg))
         endif
         valid%has_range = .true.
       endif

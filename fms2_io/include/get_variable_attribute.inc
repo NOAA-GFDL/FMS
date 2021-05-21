@@ -47,9 +47,10 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   reproduce_null_char_bug = .false.
   if (present(reproduce_null_char_bug_flag)) reproduce_null_char_bug=reproduce_null_char_bug_flag
 
+  append_error_msg = "get_variable_attribute_0d: file:"//trim(fileobj%path)//"- variable:"//&
+                     &trim(variable_name)//" attribute: "//trim(attribute_name)
+
   if (fileobj%is_root) then
-    append_error_msg = "get_variable_attribute_0d: file:"//trim(fileobj%path)//"- variable:"//&
-                       &trim(variable_name)//" attribute: "//trim(attribute_name)
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(attribute_value)
       type is (character(len=*))
@@ -71,7 +72,7 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
       type is (real(kind=r8_kind))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       class default
-        call error("unsupported type.")
+        call error("unsupported attribute type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
   endif
@@ -97,7 +98,7 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
     type is (real(kind=r8_kind))
       call mpp_broadcast(attribute_value, fileobj%io_root, pelist=fileobj%pelist)
     class default
-      call error("unsupported type.")
+      call error("unsupported attribute type: "//trim(append_error_msg))
   end select
 end subroutine get_variable_attribute_0d
 
@@ -121,9 +122,10 @@ subroutine get_variable_attribute_1d(fileobj, variable_name, attribute_name, &
   integer :: err
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
+  append_error_msg = "get_variable_attribute_1d: file:"//trim(fileobj%path)//"- variable:"//&
+                     &trim(variable_name)//" attribute: "//trim(attribute_name)
+
   if (fileobj%is_root) then
-    append_error_msg = "get_variable_attribute_1d: file:"//trim(fileobj%path)//"- variable:"//&
-                       &trim(variable_name)//" attribute: "//trim(attribute_name)
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(attribute_value)
       type is (integer(kind=i4_kind))
@@ -138,7 +140,7 @@ subroutine get_variable_attribute_1d(fileobj, variable_name, attribute_name, &
       type is (real(kind=r8_kind))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       class default
-        call error("unsupported type.")
+        call error("unsupported attribute type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
   endif
@@ -161,6 +163,6 @@ subroutine get_variable_attribute_1d(fileobj, variable_name, attribute_name, &
       call mpp_broadcast(attribute_value, size(attribute_value), fileobj%io_root, &
                          pelist=fileobj%pelist)
     class default
-      call error("unsupported type.")
+      call error("unsupported attribute type: "//trim(append_error_msg))
   end select
 end subroutine get_variable_attribute_1d
