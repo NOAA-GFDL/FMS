@@ -19,6 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp
+!> @brief Utility routines for use in @ref mpp_domains_mod
+
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
   !    Set user stack size.
@@ -36,6 +40,14 @@
   !  </TEMPLATE>
   !  <IN NAME="n" TYPE="integer"></IN>
   ! </SUBROUTINE>
+
+  !> @brief Set user stack size.
+  !!
+  !> This sets the size of an array that is used for internal storage by
+  !! <TT>mpp_domains</TT>. This array is used, for instance, to buffer the
+  !! data sent and received in halo updates.<br>
+  !! This call has implied global synchronization. It should be
+  !! placed somewhere where all PEs can call it.
   subroutine mpp_domains_set_stack_size(n)
     !set the mpp_domains_stack variable to be at least n LONG words long
     integer, intent(in) :: n

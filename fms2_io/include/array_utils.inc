@@ -19,9 +19,6 @@
 !> @file
 !> @ingroup fms2_io
 
-!> @addtogroup fms2_io_utils_mod
-!> @{
-
 !> @brief Allocate arrays using an input array of sizes.
 subroutine allocate_array_i4_kind_1d(buf, sizes)
 

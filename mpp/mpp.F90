@@ -420,8 +420,9 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @function mpp_init
+  !> @function mpp_init mpp_init
   !> @brief Initialize @ref mpp_mod
+  !!
   !> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
   !! that this call be the first executed line in your program. It sets the
   !! number of PEs assigned to this run (acquired from the command line, or
@@ -455,6 +456,7 @@ private
 
   !#####################################################################
 
+  
   !> @brief Allocate module internal workspace.
   !> @param Integer to set stack size to(in words)
   !> <TT>mpp_mod</TT> maintains a private internal array called
@@ -494,6 +496,7 @@ private
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  !> @page mpp_type_create mpp_type_create Interface
   !> @brief Create a mpp_type variable
   !> @param[in] field A field of any numerical or logical type
   !> @param[in] array_of_subsizes Integer array of subsizes

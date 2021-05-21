@@ -717,14 +717,14 @@ module mpp_domains_mod
 !***********************************************************************
   !> @page mpp_define_layout mpp_define_layout Interface
   !> @brief Retrieve layout associated with a domain decomposition.
-  !> @detailed Given a global 2D domain and the number of divisions in the
+  !> Given a global 2D domain and the number of divisions in the
   !! decomposition ndivs (usually the PE count unless some
   !! domains are \e masked) this calls returns a 2D domain layout.
   !! By default, mpp_define_layout will attempt to divide the
   !! 2D index space into domains that maintain the aspect ratio of the
   !! global domain. If this cannot be done, the algorithm favours domains
   !! that are longer in \e x than \e y, a preference that could improve vector performance.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_define_layout( global_indices, ndivs, layout )
   interface mpp_define_layout
      module procedure mpp_define_layout2D
@@ -736,59 +736,40 @@ module mpp_domains_mod
   !> There are two forms for the \e mpp_define_domains call. The 2D version is generally
   !! to be used but is built by repeated calls to the 1D version, also provided.
   !!
+  !! <br>Example usage:
   !!            call mpp_define_domains( global_indices, ndivs, domain, &
   !!                                   pelist, flags, halo, extent, maskmap )
   !!            call mpp_define_domains( global_indices, layout, domain, pelist, &
   !!                                   xflags, yflags, xhalo, yhalo,           &
   !!                                   xextent, yextent, maskmap, name )
-  !!   <IN NAME="global_indices" >
-  !!     Defines the global domain.
-  !!   </IN>
-  !!   <IN NAME="ndivs">
-  !!     Is the number of domain divisions required.
-  !!   </IN>
-  !!   <INOUT NAME="domain">
-  !!     Holds the resulting domain decomposition.
-  !!   </INOUT>
-  !!   <IN NAME="pelist">
-  !!     List of PEs to which the domains are to be assigned.
-  !!   </IN>
-  !!   <IN NAME="flags">
-  !!      An optional flag to pass additional information
-  !!      about the desired domain topology. Useful flags in a 1D decomposition
-  !!      include <TT>GLOBAL_DATA_DOMAIN</TT> and
-  !!      <TT>CYCLIC_GLOBAL_DOMAIN</TT>. Flags are integers: multiple flags may
-  !!      be added together. The flag values are public parameters available by
-  !!      use association.
-  !!   </IN>
-  !!   <IN NAME="halo">
-  !!     Width of the halo.
-  !!   </IN>
-  !!   <IN NAME="extent">
-  !!      Normally <TT>mpp_define_domains</TT> attempts
-  !!      an even division of the global domain across <TT>ndivs</TT>
-  !!      domains. The <TT>extent</TT> array can be used by the user to pass a
-  !!      custom domain division. The <TT>extent</TT> array has <TT>ndivs</TT>
-  !!      elements and holds the compute domain widths, which should add up to
-  !!      cover the global domain exactly.
-  !!   </IN>
-  !!   <IN NAME="maskmap">
-  !!     Some divisions may be masked
-  !!     (<TT>maskmap=.FALSE.</TT>) to exclude them from the computation (e.g
-  !!     for ocean model domains that are all land). The <TT>maskmap</TT> array
-  !!     is dimensioned <TT>ndivs</TT> and contains <TT>.TRUE.</TT> values for
-  !!     any domain that must be <I>included</I> in the computation (default
-  !!     all). The <TT>pelist</TT> array length should match the number of
-  !!     domains included in the computation.
-  !!    </IN>
+  !! @param global_indices Defines the global domain.
+  !! @param ndivs The number of domain divisions required.
+  !! @param [inout] domain Holds the resulting domain decomposition.
+  !! @param pelist List of PEs to which the domains are to be assigned.
+  !! @param flags An optional flag to pass additional information
+  !! about the desired domain topology. Useful flags in a 1D decomposition
+  !! include <TT>GLOBAL_DATA_DOMAIN</TT> and
+  !! <TT>CYCLIC_GLOBAL_DOMAIN</TT>. Flags are integers: multiple flags may
+  !! be added together. The flag values are public parameters available by
+  !! use association.
+  !! @param halo Width of the halo.
+  !! @param extent Normally <TT>mpp_define_domains</TT> attempts
+  !! an even division of the global domain across <TT>ndivs</TT>
+  !! domains. The <TT>extent</TT> array can be used by the user to pass a
+  !! custom domain division. The <TT>extent</TT> array has <TT>ndivs</TT>
+  !! elements and holds the compute domain widths, which should add up to
+  !! cover the global domain exactly.
+  !! @param maskmap Some divisions may be masked
+  !! (<TT>maskmap=.FALSE.</TT>) to exclude them from the computation (e.g
+  !! for ocean model domains that are all land). The <TT>maskmap</TT> array
+  !! is dimensioned <TT>ndivs</TT> and contains <TT>.TRUE.</TT> values for
+  !! any domain that must be <I>included</I> in the computation (default
+  !! all). The <TT>pelist</TT> array length should match the number of
+  !! domains included in the computation.
   !!
-  !!  <IN NAME="layout"></IN>
-  !!  <IN NAME="xflags, yflags"></IN>
-  !!  <IN NAME="xhalo, yhalo"></IN>
-  !!  <IN NAME="xextent, yextent"></IN>
-  !!  <IN NAME="name" ></IN>
-  !> @example call mpp_define_domains( (/1,100/), 10, domain, &
-  !!         flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
+  !! <br>Example usage:
+  !!            call mpp_define_domains( (/1,100/), 10, domain, &
+  !!                    flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
   !!
   !! defines 10 compute domains spanning the range [1,100] of the global
   !! domain. The compute domains are non-overlapping blocks of 10. All the data
@@ -797,22 +778,22 @@ module mpp_domains_mod
   !! domain(9)%next => domain(0) and domain(0)%prev =>
   !! domain(9). A field is allocated on the data domain, and computations proceed on
   !! the compute domain. A call to mpp_update_domains would fill in the values
-  !! in the halo region:\n
-  !!\n
-  !! call mpp_get_data_domain( domain, isd, ied ) !returns -1 and 102
-  !! call mpp_get_compute_domain( domain, is, ie ) !returns (1,10) on PE 0 ...
-  !! allocate( a(isd:ied) )
-  !! do i = is,ie
-  !!   a(i) = &lt;perform computations&gt;
-  !! end do
-  !! call mpp_update_domains( a, domain )\n
-  !!\n
+  !! in the halo region:<br>
+  !!<br>
+  !!            call mpp_get_data_domain( domain, isd, ied ) !returns -1 and 102
+  !!            call mpp_get_compute_domain( domain, is, ie ) !returns (1,10) on PE 0 ...
+  !!            allocate( a(isd:ied) )
+  !!            do i = is,ie
+  !!              a(i) = &lt;perform computations&gt;
+  !!            end do
+  !!            call mpp_update_domains( a, domain )<br>
+  !!<br>
   !! The call to mpp_update_domainsfills in the regions outside
   !! the compute domain. Since the global domain is cyclic, the values at
   !! \e i=(-1,0) are the same as at \e i=(99,100); and \e i=(101,102)
   !! are the same as \e i=(1,2).
-  !
-  !> @example The 2D version is just an extension of this syntax to two dimensions.
+  !!
+  !! The 2D version is just an extension of this syntax to two dimensions.
   !!
   !! The 2D version of the above should generally be used in
   !! codes, including 1D-decomposed ones, if there is a possibility of
@@ -828,16 +809,15 @@ module mpp_domains_mod
   !! mpp_update_domains. In addition, shift operations may need to be applied to vector fields on
   !! staggered grids, also described in the vector interface to mpp_update_domains.
   !!
-  !!    <TT>name</TT> is the name associated with the decomposition,
-  !!    e.g <TT>'Ocean model'</TT>. If this argument is present,
-  !!    <TT>mpp_define_domains</TT> will print the domain decomposition
-  !!    generated to <TT>stdlog</TT>.
+  !! <TT>name</TT> is the name associated with the decomposition,
+  !! e.g <TT>'Ocean model'</TT>. If this argument is present,
+  !! <TT>mpp_define_domains</TT> will print the domain decomposition
+  !! generated to <TT>stdlog</TT>.
   !!
-  !!    Examples:
-  !!
-  !> @example call mpp_define_domains( (/1,100,1,100/), (/2,2/), domain, xhalo=1 )
-  !! will create the following domain layout:\n
-  !!\n
+  !! <br>Examples:
+  !!                    call mpp_define_domains( (/1,100,1,100/), (/2,2/), domain, xhalo=1 )
+  !! will create the following domain layout:<br>
+  !!<br>
   !!                   |---------|-----------|-----------|-------------|
   !!                   |domain(1)|domain(2)  |domain(3)  |domain(4)    |
   !!    |--------------|---------|-----------|-----------|-------------|
@@ -848,12 +828,12 @@ module mpp_domains_mod
   !!
   !! Again, we allocate arrays on the data domain, perform computations
   !! on the compute domain, and call mpp_update_domains to update the halo region.
-  !
-  !> @example If we wished to perfom a 1D decomposition along Y on the same global domain,
+  !!
+  !! If we wished to perfom a 1D decomposition along Y on the same global domain,
   !! we could use:
-  !! call mpp_define_domains( (/1,100,1,100/), layout=(/4,1/), domain, xhalo=1 )
-  !! This will create the following domain layout:\n
-  !!\n
+  !!            call mpp_define_domains( (/1,100,1,100/), layout=(/4,1/), domain, xhalo=1 )
+  !! This will create the following domain layout:<br>
+  !!<br>
   !!                   |----------|-----------|-----------|------------|
   !!                   |domain(1) |domain(2)  |domain(3)  |domain(4)   |
   !!    |--------------|----------|-----------|-----------|------------|
@@ -903,7 +883,7 @@ module mpp_domains_mod
 !***********************************************************************
 
 !> @page mpp_update_domains mpp_update_domains Interface
-!! Performs halo updates for a given domain.\n
+!! Performs halo updates for a given domain.<br>
 !!
 !! Used to perform a halo update of a
 !! domain-decomposed array on each PE. \e MPP_TYPE can be of type
@@ -916,60 +896,60 @@ module mpp_domains_mod
 !! to update the west, east, north and south halos respectively.
 !! Any combination of halos may be used by adding the requisite flags, e.g:
 !! \e flags=XUPDATE+SUPDATE or \e flags=EUPDATE+WUPDATE+SUPDATE will update the east,
-!! west and south halos.\n
-!!\n
+!! west and south halos.<br>
+!!<br>
 !! If a call to \e mpp_update_domains involves at least one E-W
 !! halo and one N-S halo, the corners involved will also be updated, i.e,
-!! in the example above, the SE and SW corners will be updated.\n
-!! If \e flags is not supplied, that is equivalent to \e flags=XUPDATE+YUPDATE.\n
-!!\n
+!! in the example above, the SE and SW corners will be updated.<br>
+!! If \e flags is not supplied, that is equivalent to \e flags=XUPDATE+YUPDATE.<br>
+!!<br>
 !! The vector version is passed the \e x and \e y components of a vector field in tandem,
 !! and both are updated upon return. They are passed together to treat parity issues on various
 !! grids. For example, on a cubic sphere projection, the \e x \e y components may be
 !! interchanged when passing from an equatorial cube face to a polar face.
 !! For grids with folds, vector components change sign on crossing the fold. Paired scalar
 !! quantities can also be passed with the vector version if \e flags=SCALAR_PAIR, in which
-!! case components are appropriately interchanged, but signs are not.\n
-!!\n
+!! case components are appropriately interchanged, but signs are not.<br>
+!!<br>
 !!    Special treatment at boundaries such as folds is also required for
 !!    staggered grids. The following types of staggered grids are
-!!    recognized:\n
-!!\n
-!!    1) AGRID: values are at grid centers.\n
+!!    recognized:<br>
+!!<br>
+!!    1) AGRID: values are at grid centers.<br>
 !!    2) BGRID_NE: vector fields are at the NE vertex of a grid
-!!    cell, i.e: the array elements \eu(i,j)and \ev(i,j)are
-!!    actually at (i,j;) with respect to the grid centers.\n
+!!    cell, i.e: the array elements \e u(i,j)and \e v(i,j)are
+!!    actually at (i,j;) with respect to the grid centers.<br>
 !!    3) BGRID_SW: vector fields are at the SW vertex of a grid
-!!    cell, i.e: the array elements \eu(i,j) and \ev(i,j) are
-!!    actually at (i;,j;) with respect to the grid centers\n
+!!    cell, i.e: the array elements \e u(i,j) and \e v(i,j) are
+!!    actually at (i;,j;) with respect to the grid centers<br>
 !!    4) CGRID_NE: vector fields are at the N and E faces of a
-!!    grid cell, i.e: the array elements \eu(i,j) and \ev(i,j)
+!!    grid cell, i.e: the array elements \e u(i,j) and \e v(i,j)
 !!    are actually at (i;,j) and (i,j+&#189;) with respect to the
-!!    grid centers.\n
+!!    grid centers.<br>
 !!    5) CGRID_SW: vector fields are at the S and W faces of a
-!!    grid cell, i.e: the array elements \eu(i,j)and \ev(i,j)
+!!    grid cell, i.e: the array elements \e u(i,j)and \e v(i,j)
 !!    are actually at (i;,j) and (i,j;) with respect to the
-!!    grid centers.\n
-!!\n
+!!    grid centers.<br>
+!!<br>
 !!    The gridtypes listed above are all available by use association as
-!!   integer parameters. The scalar version of \empp_update_domains
-!!    assumes that the values of a scalar field are always at \eAGRID
+!!   integer parameters. The scalar version of \e mpp_update_domains
+!!    assumes that the values of a scalar field are always at \e AGRID
 !!    locations, and no special boundary treatment is required. If vector
 !!    fields are at staggered locations, the optional argument
-!!    \egridtype must be appropriately set for correct treatment at
+!!    \e gridtype must be appropriately set for correct treatment at
 !!    boundaries.
-!!\n
+!!<br>
 !!    It is safe to apply vector field updates to the appropriate arrays
 !!    irrespective of the domain topology: if the topology requires no
-!!    special treatment of vector fields, specifying \egridtype will
-!!    do no harm.\n
-!!\n
-!!    \empp_update_domains internally buffers the date being sent
+!!    special treatment of vector fields, specifying \e gridtype will
+!!    do no harm.<br>
+!!<br>
+!!    \e mpp_update_domains internally buffers the date being sent
 !!    and received into single messages for efficiency. A turnable internal
 !!    buffer area in memory is provided for this purpose by
-!!    \empp_domains_mod. The size of this buffer area can be set by
+!!    \e mpp_domains_mod. The size of this buffer area can be set by
 !!   the user by calling mpp_domains
-!!   \empp_domains_set_stack_size.
+!!   \e mpp_domains_set_stack_size.
 !!
 !!   Example usage:
 !!              call mpp_update_domains( field, domain, flags )
@@ -1017,20 +997,20 @@ module mpp_domains_mod
 
 !> @page mpp_start_update_domains mpp_start_update_domains Interface
 !! Interface to start halo updates
-!! \empp_start_update_domains is used to start a halo update of a
-!!    domain-decomposed array on each PE. \eMPP_TYPE_ can be of type
-!!    \ecomplex, \einteger, \elogical or \ereal;
+!! \e mpp_start_update_domains is used to start a halo update of a
+!!    domain-decomposed array on each PE. \e MPP_TYPE_ can be of type
+!!    \e complex, \e integer, \e logical or \e real;
 !!    of 4-byte or 8-byte kind; of rank up to 5. The vector version (with
-!!    two input data fields) is only present for \ereal types.\n
-!!\n
+!!    two input data fields) is only present for \ereal types.<br>
+!!<br>
 !!    \empp_start_update_domains must be paired together with
-!!    \empp_complete_update_domains. In \empp_start_update_domains,
+!!    \empp_complete_update_domains. In \e mpp_start_update_domains,
 !!    a buffer will be pre-post to receive (non-blocking) the
 !!    data and data on computational domain will be packed and sent (non-blocking send)
-!!    to other processor. In \empp_complete_update_domains, buffer will
+!!    to other processor. In \e mpp_complete_update_domains, buffer will
 !!    be unpacked to fill the halo and mpp_sync_self will be called to
-!!    to ensure communication safe at the last call of mpp_complete_update_domains.\n
-!!\n
+!!    to ensure communication safe at the last call of mpp_complete_update_domains.<br>
+!!<br>
 !!    Each mpp_update_domains can be replaced by the combination of mpp_start_update_domains
 !!    and mpp_complete_update_domains. The arguments in mpp_start_update_domains
 !!    and mpp_complete_update_domains should be the exact the same as in
@@ -1038,121 +1018,121 @@ module mpp_domains_mod
 !!    The following are examples on how to replace mpp_update_domains with
 !!    mpp_start_update_domains/mpp_complete_update_domains
 !!
-!> @par Example 1: Replace one scalar mpp_update_domains.\n
-!!\n
-!!    Replace\n
-!!\n
-!!       call mpp_update_domains(data, domain, flags=update_flags)\n
+!> @par Example 1: Replace one scalar mpp_update_domains.<br>
+!!<br>
+!!    Replace<br>
+!!<br>
+!!       call mpp_update_domains(data, domain, flags=update_flags)<br>
 !!
-!!    with\n
-!!\n
-!!        id_update = mpp_start_update_domains(data, domain, flags=update_flags)\n
-!!        ...( doing some computation )\n
-!!        call mpp_complete_update_domains(id_update, data, domain, flags=update_flags)\n
+!!    with<br>
+!!<br>
+!!        id_update = mpp_start_update_domains(data, domain, flags=update_flags)<br>
+!!        ...( doing some computation )<br>
+!!        call mpp_complete_update_domains(id_update, data, domain, flags=update_flags)<br>
 !!
-!> @par Example 2: Replace group scalar mpp_update_domains\n
-!!\n
-!!    Replace\n
-!!\n
-!!       call mpp_update_domains(data_1, domain, flags=update_flags, complete=.false.)\n
-!!        .... ( other n-2 call mpp_update_domains with complete = .false. )\n
-!!        call mpp_update_domains(data_n, domain, flags=update_flags, complete=.true. )\n
-!!\n
-!!    With\n
-!!\n
-!!        id_up_1 = mpp_start_update_domains(data_1, domain, flags=update_flags)\n
-!!        .... ( other n-2 call mpp_start_update_domains )\n
-!!        id_up_n = mpp_start_update_domains(data_n, domain, flags=update_flags)\n
-!!\n
-!!        ..... ( doing some computation )\n
-!!\n
-!!        call mpp_complete_update_domains(id_up_1, data_1, domain, flags=update_flags)\n
-!!        .... ( other n-2 call mpp_complete_update_domains  )\n
-!!        call mpp_complete_update_domains(id_up_n, data_n, domain, flags=update_flags)\n
+!> @par Example 2: Replace group scalar mpp_update_domains<br>
+!!<br>
+!!    Replace<br>
+!!<br>
+!!       call mpp_update_domains(data_1, domain, flags=update_flags, complete=.false.)<br>
+!!        .... ( other n-2 call mpp_update_domains with complete = .false. )<br>
+!!        call mpp_update_domains(data_n, domain, flags=update_flags, complete=.true. )<br>
+!!<br>
+!!    With<br>
+!!<br>
+!!        id_up_1 = mpp_start_update_domains(data_1, domain, flags=update_flags)<br>
+!!        .... ( other n-2 call mpp_start_update_domains )<br>
+!!        id_up_n = mpp_start_update_domains(data_n, domain, flags=update_flags)<br>
+!!<br>
+!!        ..... ( doing some computation )<br>
+!!<br>
+!!        call mpp_complete_update_domains(id_up_1, data_1, domain, flags=update_flags)<br>
+!!        .... ( other n-2 call mpp_complete_update_domains  )<br>
+!!        call mpp_complete_update_domains(id_up_n, data_n, domain, flags=update_flags)<br>
 !!
-!> @par Example 3: Replace group CGRID_NE vector, mpp_update_domains\n
-!!\n
-!!    Replace\n
-!!\n
-!!        call mpp_update_domains(u_1, v_1, domain, flags=update_flgs, gridtype=CGRID_NE, complete=.false.)\n
-!!       .... ( other n-2 call mpp_update_domains with complete = .false. )\n
-!!        call mpp_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE, complete=.true. )\n
-!!\n
-!!    with\n
-!!\n
-!!        id_up_1 = mpp_start_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)\n
-!!        .... ( other n-2 call mpp_start_update_domains )\n
-!!        id_up_n = mpp_start_update_domains(u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)\n
-!!\n
-!!        ..... ( doing some computation )\n
-!!\n
-!!        call mpp_complete_update_domains(id_up_1, u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)\n
-!!        .... ( other n-2 call mpp_complete_update_domains  )\n
-!!        call mpp_complete_update_domains(id_up_n, u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)\n
-!!\n
+!> @par Example 3: Replace group CGRID_NE vector, mpp_update_domains<br>
+!!<br>
+!!    Replace<br>
+!!<br>
+!!        call mpp_update_domains(u_1, v_1, domain, flags=update_flgs, gridtype=CGRID_NE, complete=.false.)<br>
+!!       .... ( other n-2 call mpp_update_domains with complete = .false. )<br>
+!!        call mpp_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE, complete=.true. )<br>
+!!<br>
+!!    with<br>
+!!<br>
+!!        id_up_1 = mpp_start_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!        .... ( other n-2 call mpp_start_update_domains )<br>
+!!        id_up_n = mpp_start_update_domains(u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!<br>
+!!        ..... ( doing some computation )<br>
+!!<br>
+!!        call mpp_complete_update_domains(id_up_1, u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!        .... ( other n-2 call mpp_complete_update_domains  )<br>
+!!        call mpp_complete_update_domains(id_up_n, u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!<br>
 !!    For 2D domain updates, if there are halos present along both
-!!   \ex and \ey, we can choose to update one only, by
-!!    specifying \eflags=XUPDATE or \eflags=YUPDATE. In
-!!    addition, one-sided updates can be performed by setting \eflags
-!!    to any combination of \eWUPDATE, \eEUPDATE,
-!!    \eSUPDATE and \eNUPDATE, to update the west, east, north
+!!   \e x and \e y, we can choose to update one only, by
+!!    specifying \e flags=XUPDATE or \e flags=YUPDATE. In
+!!    addition, one-sided updates can be performed by setting \e flags
+!!    to any combination of \e WUPDATE, \e EUPDATE,
+!!    \e SUPDATE and \e NUPDATE, to update the west, east, north
 !!    and south halos respectively. Any combination of halos may be used by
-!!   adding the requisite flags, e.g: \eflags=XUPDATE+SUPDATE or
-!!    \eflags=EUPDATE+WUPDATE+SUPDATE will update the east, west and
-!!    south halos.\n
-!!\n
-!!   If a call to \empp_start_update_domains/mpp_complete_update_domains involves at least one E-W
+!!   adding the requisite flags, e.g: \e flags=XUPDATE+SUPDATE or
+!!    \e flags=EUPDATE+WUPDATE+SUPDATE will update the east, west and
+!!    south halos.<br>
+!!<br>
+!!   If a call to \e mpp_start_update_domains/mpp_complete_update_domains involves at least one E-W
 !!    halo and one N-S halo, the corners involved will also be updated, i.e,
-!!    in the example above, the SE and SW corners will be updated.\n
-!!\n
-!!    If \eflags is not supplied, that is
-!!    equivalent to \eflags=XUPDATE+YUPDATE.\n
-!!\n
-!!   The vector version is passed the \ex and \ey
+!!    in the example above, the SE and SW corners will be updated.<br>
+!!<br>
+!!    If \e flags is not supplied, that is
+!!    equivalent to \e flags=XUPDATE+YUPDATE.<br>
+!!<br>
+!!   The vector version is passed the \e x and \e y
 !!   components of a vector field in tandem, and both are updated upon
 !!    return. They are passed together to treat parity issues on various
-!!    grids. For example, on a cubic sphere projection, the \ex and
-!!    \ey components may be interchanged when passing from an
+!!    grids. For example, on a cubic sphere projection, the \e x and
+!!    \e y components may be interchanged when passing from an
 !!    equatorial cube face to a polar face. For grids with folds, vector
 !!    components change sign on crossing the fold.  Paired scalar quantities
 !!    can also be passed with the vector version if flags=SCALAR_PAIR, in which
-!!    case components are appropriately interchanged, but signs are not.\n
-!!\n
+!!    case components are appropriately interchanged, but signs are not.<br>
+!!<br>
 !!    Special treatment at boundaries such as folds is also required for
 !!    staggered grids. The following types of staggered grids are
 !!    recognized:
-!!\n
-!!    1) \eAGRID: values are at grid centers.\n
-!!    2) \eBGRID_NE: vector fields are at the NE vertex of a grid
-!!    cell, i.e: the array elements \eu(i,j) and \ev(i,j) are
-!!    actually at (i+&#189;,j+&#189;) with respect to the grid centers.\n
-!!    3) \eBGRID_SW: vector fields are at the SW vertex of a grid
-!!    cell, i.e., the array elements \eu(i,j) and \ev(i,j) are
-!!    actually at (i-&#189;,j-&#189;) with respect to the grid centers.\n
-!!    4) \eCGRID_NE: vector fields are at the N and E faces of a
-!!    grid cell, i.e: the array elements \eu(i,j) and \ev(i,j)
+!!<br>
+!!    1) \e AGRID: values are at grid centers.<br>
+!!    2) \e BGRID_NE: vector fields are at the NE vertex of a grid
+!!    cell, i.e: the array elements \e u(i,j) and \e v(i,j) are
+!!    actually at (i+&#189;,j+&#189;) with respect to the grid centers.<br>
+!!    3) \e BGRID_SW: vector fields are at the SW vertex of a grid
+!!    cell, i.e., the array elements \e u(i,j) and \e v(i,j) are
+!!    actually at (i-&#189;,j-&#189;) with respect to the grid centers.<br>
+!!    4) \e CGRID_NE: vector fields are at the N and E faces of a
+!!    grid cell, i.e: the array elements \e u(i,j) and \e v(i,j)
 !!    are actually at (i+&#189;,j) and (i,j+&#189;) with respect to the
-!!    grid centers.\n
-!!    5) \eCGRID_SW: vector fields are at the S and W faces of a
-!!    grid cell, i.e: the array elements \eu(i,j) and \ev(i,j)
+!!    grid centers.<br>
+!!    5) \e CGRID_SW: vector fields are at the S and W faces of a
+!!    grid cell, i.e: the array elements \e u(i,j) and \e v(i,j)
 !!    are actually at (i-&#189;,j) and (i,j-&#189;) with respect to the
-!!    grid centers.\n
-!!\n
+!!    grid centers.<br>
+!!<br>
 !!    The gridtypes listed above are all available by use association as
 !!    integer parameters. If vector fields are at staggered locations, the
-!!    optional argument \egridtype must be appropriately set for
+!!    optional argument \e gridtype must be appropriately set for
 !!    correct treatment at boundaries.
-!!\n
+!!<br>
 !!    It is safe to apply vector field updates to the appropriate arrays
 !!    irrespective of the domain topology: if the topology requires no
-!!    special treatment of vector fields, specifying \egridtype will
-!!    do no harm.\n
-!!\n
-!!    \empp_start_update_domains/mpp_complete_update_domains internally
+!!    special treatment of vector fields, specifying \e gridtype will
+!!    do no harm.<br>
+!!<br>
+!!    \e mpp_start_update_domains/mpp_complete_update_domains internally
 !!    buffers the data being sent and received into single messages for efficiency.
 !!    A turnable internal buffer area in memory is provided for this purpose by
-!!    \empp_domains_mod. The size of this buffer area can be set by
-!!    the user by calling \empp_domains_set_stack_size.\n
+!!    \e mpp_domains_mod. The size of this buffer area can be set by
+!!    the user by calling \e mpp_domains_set_stack_size.<br>
 !!    Example usage:
 !!              call mpp_start_update_domains( field, domain, flags )
 !!              call mpp_complete_update_domains( field, domain, flags )
@@ -1317,7 +1297,7 @@ module mpp_domains_mod
   !> @page mpp_update_nest_fine mpp_update_nest_fine Interface
   !! Pass the data from coarse grid to fill the buffer to be ready to be interpolated
   !! nto fine grid.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer,
   !!                           nest_level, flags, complete, position, extra_halo, name,
   !!                           tile_count)
@@ -1370,7 +1350,7 @@ module mpp_domains_mod
   !> @page mpp_update_nest_coarse mpp_update_nest_coarse Interface
   !! Pass the data from fine grid to fill the buffer to be ready to be interpolated
   !! onto coarse grid.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_update_nest_coarse(field, nest_domain, field_out, nest_level, complete,
   !!                                 position, name, tile_count)
   interface mpp_update_nest_coarse
@@ -1421,7 +1401,7 @@ module mpp_domains_mod
 
   !> @page mpp_get_F2C_index mpp_get_F2C_index Interface
   !! Get the index of the data passed from fine grid to coarse grid.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_get_F2C_index(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse,
   !!                            is_fine, ie_fine, js_fine, je_fine, nest_level, position)
   interface mpp_get_F2C_index
@@ -1496,7 +1476,7 @@ module mpp_domains_mod
 
   !> @page mpp_pass_SG_to_UG mpp_pass_SG_to_UG
   !! Passes data from a structured grid to an unstructured grid
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_pass_SG_to_UG(domain, sg_data, ug_data)
   interface mpp_pass_SG_to_UG
      module procedure mpp_pass_SG_to_UG_r8_2d
@@ -1532,11 +1512,11 @@ module mpp_domains_mod
   end interface
 !
 !> @page mpp_get_boundary mpp_get_boundary Interface
-!! Get the boundary data for symmetric domain when the data is at C, E, or N-cell center.\n
-!! \empp_get_boundary is used to get the boundary data for symmetric domain
+!! Get the boundary data for symmetric domain when the data is at C, E, or N-cell center.<br>
+!! \e mpp_get_boundary is used to get the boundary data for symmetric domain
 !! when the data is at C, E, or N-cell center. For cubic grid, the data should always
 !! at C-cell center.
-!! \nExample usage:
+!! <br>Example usage:
 !!              call mpp_get_boundary(domain, field, ebuffer, sbuffer, wbuffer, nbuffer)
 !! Get boundary information from domain and field and store in buffers
   interface mpp_get_boundary
@@ -1584,11 +1564,11 @@ module mpp_domains_mod
   end interface
 
 !> @page mpp_redistribute mpp_redistribute Interface
-!! Reorganization of distributed global arrays.\n
-!! \empp_redistribute is used to reorganize a distributed array.
+!! Reorganization of distributed global arrays.<br>
+!! \e mpp_redistribute is used to reorganize a distributed array.
 !! \e MPP_TYPE_can be of type \e integer, \e complex, or \e real;
 !! of 4-byte or 8-byte kind; of rank up to 5.
-!! \nExample usage:
+!! <br>Example usage:
 !!              call mpp_redistribute( domain_in, field_in, domain_out, field_out )
   interface mpp_redistribute
      module procedure mpp_redistribute_r8_2D
@@ -1680,11 +1660,11 @@ module mpp_domains_mod
 ! </INTERFACE>
 
 !> @page mpp_check_field mpp_check_field Interface
-!! Parallel checking between two ensembles which run on different set pes at the same time\n
+!! Parallel checking between two ensembles which run on different set pes at the same time<br>
 !! There are two forms for the <TT>mpp_check_field</TT> call. The 2D
 !! version is generally to be used and 3D version is  built by repeated calls to the
-!! 2D version.\n
-!! \nExample usage:
+!! 2D version.<br>
+!! <br>Example usage:
 !!     call mpp_check_field(field_in, pelist1, pelist2, domain, mesg, &
 !!                                w_halo, s_halo, e_halo, n_halo, force_abort  )
   interface mpp_check_field
@@ -1731,12 +1711,12 @@ module mpp_domains_mod
 ! </INTERFACE>
 
 !> @page mpp_global_field mpp_global_field Interface
-!! Fill in a global array from domain-decomposed arrays.\n
+!! Fill in a global array from domain-decomposed arrays.<br>
 !!
 !! <TT>mpp_global_field</TT> is used to get an entire
 !! domain-decomposed array on each PE. <TT>MPP_TYPE_</TT> can be of type
 !! <TT>complex</TT>, <TT>integer</TT>, <TT>logical</TT> or <TT>real</TT>;
-!! of 4-byte or 8-byte kind; of rank up to 5.\n
+!! of 4-byte or 8-byte kind; of rank up to 5.<br>
 !!
 !! All PEs in a domain decomposition must call
 !! <TT>mpp_global_field</TT>, and each will have a complete global field
@@ -1894,17 +1874,17 @@ module mpp_domains_mod
 !    the maximum (as in the <TT>MAXLOC</TT> intrinsic of f90).
 !  </OUT>
 !> @page mpp_global_max mpp_global_max Interface
-!! Global max/min of domain-decomposed arrays.\n
-!! \empp_global_max is used to get the maximum value of a
+!! Global max/min of domain-decomposed arrays.<br>
+!! \e mpp_global_max is used to get the maximum value of a
 !! domain-decomposed array on each PE. \e MPP_TYPE_can be of type
 !! \e integer or \e real; of 4-byte or 8-byte kind; of rank
-!! up to 5. The dimension of \e locus must equal the rank of \e field.\n
-!!\n
+!! up to 5. The dimension of \e locus must equal the rank of \e field.<br>
+!!<br>
 !! All PEs in a domain decomposition must call \e mpp_global_max,
 !! and each will have the result upon exit.
 !! The function \e mpp_global_min, with an identical syntax. is also available.
 !!
-!! \nExample usage:
+!! <br>Example usage:
 !!              mpp_global_max( domain, field, locus )
   interface mpp_global_max
      module procedure mpp_global_max_r8_2d
@@ -1963,11 +1943,11 @@ module mpp_domains_mod
 !  </IN>
 
 !> @page mpp_global_sum mpp_global_sum Interface
-!! Global sum of domain-decomposed arrays.\n
-!! \empp_global_sum is used to get the sum of a domain-decomposed array
+!! Global sum of domain-decomposed arrays.<br>
+!! \e mpp_global_sum is used to get the sum of a domain-decomposed array
 !! on each PE. \e MPP_TYPE_ can be of type \e integer, \e complex, or \e real; of 4-byte or
 !! 8-byte kind; of rank up to 5.
-!! \nExample usage:
+!! <br>Example usage:
 !!              call mpp_global_sum( domain, field, flags )
 !! @note All PEs in a domain decomposition must call \e mpp_global_sum,
 !! and each will have the result upon exit.
@@ -2083,8 +2063,8 @@ module mpp_domains_mod
   !! +1 (right) or -1 (left) for a 1-D domain decomposition and either NORTH, SOUTH,
   !! EAST, WEST, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, or NORTH_WEST for a 2-D
   !! decomposition. If no neighboring domain exists (masked domain), then the
-  !! returned "pe" value will be set to NULL_PE.\n
-  !! \nExample usage:
+  !! returned "pe" value will be set to NULL_PE.<br>
+  !! <br>Example usage:
   !!            call mpp_get_neighbor_pe( domain1d, direction=+1   , pe)
   !! Set pe to the neighbor pe number that is to the right of the current pe
   !!            call mpp_get_neighbor_pe( domain2d, direction=NORTH, pe)
@@ -2095,21 +2075,21 @@ module mpp_domains_mod
   end interface
 
   !> @page operators_domains Operator Overrides for domain types
-  !! Equality/inequality operators for domaintypes. \n
+  !! Equality/inequality operators for domaintypes. <br>
   !!
-  !! \nThe module provides public operators to check for
-  !! equality/inequality of domaintypes, e.g:\n
+  !! <br>The module provides public operators to check for
+  !! equality/inequality of domaintypes, e.g:<br>
   !!
-  !!            type(domain1D) :: a, b\n
-  !!            type(domain2D) :: c, d\n
-  !!            ...\n
-  !!            if( a.NE.b )then\n
-  !!            ...\n
-  !!            end if\n
-  !!            if( c==d )then\n
-  !!            ...\n
-  !!            end if\n
-  !!\n
+  !!            type(domain1D) :: a, b<br>
+  !!            type(domain2D) :: c, d<br>
+  !!            ...<br>
+  !!            if( a.NE.b )then<br>
+  !!            ...<br>
+  !!            end if<br>
+  !!            if( c==d )then<br>
+  !!            ...<br>
+  !!            end if<br>
+  !!<br>
   !! Domains are considered equal if and only if the start and end
   !! indices of each of their component global, data and compute domains are equal.
   interface operator(.EQ.)
@@ -2129,7 +2109,7 @@ module mpp_domains_mod
   !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the compute domains
   !! The 2D version of these is a simple extension of 1D.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_get_compute_domain(domain_1D, is, ie)
   !!            call mpp_get_compute_domain(domain_2D, is, ie, js, je)
   interface mpp_get_compute_domain
@@ -2139,8 +2119,8 @@ module mpp_domains_mod
 
   !> @page mpp_get_compute_domains mpp_get_compute_domains Interface
   !! Retrieve the entire array of compute domain extents associated with a decomposition.
-  !! \nExample usage:
-  !!            call mpp_get_compute_domains( domain, xbegin, xend, xsize, &\n
+  !! <br>Example usage:
+  !!            call mpp_get_compute_domains( domain, xbegin, xend, xsize, &<br>
   !!                                                ybegin, yend, ysize )
   !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
   !  <OUT NAME="xbegin,ybegin" TYPE="integer" DIM="(:)"></OUT>
@@ -2161,7 +2141,7 @@ module mpp_domains_mod
   !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the data domains.
   !! The 2D version of these is a simple extension of 1D.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_get_data_domain(domain_1d, isd, ied)
   !!            call mpp_get_data_domain(domain_2d, isd, ied, jsd, jed)
   interface mpp_get_data_domain
@@ -2174,7 +2154,7 @@ module mpp_domains_mod
   !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the global domains.
   !! The 2D version of these is a simple extension of 1D.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_get_global_domain(domain_1d, isg, ieg)
   !!            call mpp_get_global_domain(domain_2d, isg, ieg, jsg, jeg)
   interface mpp_get_global_domain
@@ -2187,7 +2167,7 @@ module mpp_domains_mod
   !! The domain is a derived type with private elements. These routines
   !! retrieve the axis specifications associated with the memory domains.
   !! The 2D version of these is a simple extension of 1D.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_get_memory_domain(domain_1d, ism, iem)
   !!            call mpp_get_memory_domain(domain_2d, ism, iem, jsm, jem)
   interface mpp_get_memory_domain
@@ -2205,7 +2185,7 @@ module mpp_domains_mod
   !! The domain is a derived type with private elements. These routines
   !! set the axis specifications associated with the compute domains
   !! The 2D version of these is a simple extension of 1D.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_set_compute_domain()
   interface mpp_set_compute_domain
      module procedure mpp_set_compute_domain1D
@@ -2250,7 +2230,7 @@ module mpp_domains_mod
   !! The 1D version of this call returns the number of divisions that was assigned to this
   !! decomposition axis. The 2D version of this call returns an array of dimension 2 holding the
   !! results on two axes.
-  !! \nExample usage:
+  !! <br>Example usage:
   !!            call mpp_get_layout( domain, layout )
   interface mpp_get_layout
      module procedure mpp_get_layout1D

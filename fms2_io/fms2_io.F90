@@ -18,7 +18,8 @@
 !***********************************************************************
 !> @defgroup fms2_io_mod fms2_io_mod
 !> @ingroup fms2_io
-!> @brief Public API for fms2 I/O interfaces and routines
+!> @brief An updated library for parallel IO to replace @ref mpp_io_mod. This module contains
+!! the public API for fms2 I/O interfaces and routines defined throughout this directory.
 !!
 !> Provides public interfaces for routines within @ref fms2_io.
 !! Interfaces and example usages are listed below, see individual routine
@@ -118,7 +119,7 @@ public :: string2
 !!              io_success = open_file(fileobj, "filename", "overwrite", domain)
 !!
 !! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or
-!! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
+!! - @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
 !!
 !! Contains the following routines: <br>
 !! netcdf_file_open_wrap
@@ -145,12 +146,12 @@ end interface open_file
 !!              io_success = open_virtual_file(fileobj, domain, "filename")
 !!
 !! Opens a virtual domain file through @ref fmsnetcdfdomainfile_t or
-!! @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
+!! - @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
 !!
 !! Contains the following routines <br>
-!! @ref create_diskless_netcdf_file_wrap
-!! @ref create_diskless_domain_file
-!! @ref create_diskless_unstructured_domain_file
+!! - @ref create_diskless_netcdf_file_wrap
+!! - @ref create_diskless_domain_file
+!! - @ref create_diskless_unstructured_domain_file
 interface open_virtual_file
   module procedure create_diskless_netcdf_file_wrap
   module procedure create_diskless_domain_file
@@ -159,7 +160,7 @@ end interface open_virtual_file
 
 !> @page close_file close_file Interface
 !> @brief Close a netcdf or domain file opened with @ref open_file or
-!! @ref open_virtual_file
+!! - @ref open_virtual_file
 !!
 !> <br>Example usage:
 !!
@@ -168,9 +169,9 @@ end interface open_virtual_file
 !! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file <br>
 !!
 !! Contains the following routines <br>
-!! @ref netcdf_file_close_wrap
-!! @ref close_domain_file
-!! @ref close_unstructured_domain_file
+!! - @ref netcdf_file_close_wrap
+!! - @ref close_domain_file
+!! - @ref close_unstructured_domain_file
 interface close_file
   module procedure netcdf_file_close_wrap
   module procedure close_domain_file
@@ -192,10 +193,10 @@ end interface close_file
 !! Adds a dimension named "lon" with length n to a given netcdf file
 !!
 !! Contains the following routines
-!! @ref netcdf_add_dimension
-!! @ref register_compressed_dimension
-!! @ref register_domain_decomposed_dimension
-!! @ref register_unstructured_dimension
+!! - @ref netcdf_add_dimension
+!! - @ref register_compressed_dimension
+!! - @ref register_domain_decomposed_dimension
+!! - @ref register_unstructured_dimension
 interface register_axis
   module procedure netcdf_add_dimension
   module procedure register_compressed_dimension
@@ -215,9 +216,9 @@ end interface register_axis
 !! field, scalar if list not provided.
 !!
 !! Contains the following routines
-!! @ref netcdf_add_variable_wrap
-!! @ref register_domain_variable
-!! @ref register_unstructured_domain_variable
+!! - @ref netcdf_add_variable_wrap
+!! - @ref register_domain_variable
+!! - @ref register_unstructured_domain_variable
 interface register_field
   module procedure netcdf_add_variable_wrap
   module procedure register_domain_variable
@@ -234,26 +235,26 @@ end interface register_field
 !! the list of dimension names. Rank of data_ptr must equal the amount of corresponding dimensions.
 !!
 !! Contains the following routines
-!! @ref netcdf_add_restart_variable_0d_wrap
-!! @ref netcdf_add_restart_variable_1d_wrap
-!! @ref netcdf_add_restart_variable_2d_wrap
-!! @ref netcdf_add_restart_variable_3d_wrap
-!! @ref netcdf_add_restart_variable_4d_wrap
-!! @ref netcdf_add_restart_variable_5d_wrap
-!! @ref register_domain_restart_variable_0d
-!! @ref register_domain_restart_variable_1d
-!! @ref register_domain_restart_variable_2d
-!! @ref register_domain_restart_variable_3d
-!! @ref register_domain_restart_variable_4d
-!! @ref register_domain_restart_variable_5d
-!! @ref register_unstructured_domain_restart_variable_0d
-!! @ref register_unstructured_domain_restart_variable_1d
-!! @ref register_unstructured_domain_restart_variable_2d
-!! @ref register_unstructured_domain_restart_variable_3d
-!! @ref register_unstructured_domain_restart_variable_4d
-!! @ref register_unstructured_domain_restart_variable_5d
-!! @ref register_restart_region_2d
-!! @ref register_restart_region_3d
+!! - @ref netcdf_add_restart_variable_0d_wrap
+!! - @ref netcdf_add_restart_variable_1d_wrap
+!! - @ref netcdf_add_restart_variable_2d_wrap
+!! - @ref netcdf_add_restart_variable_3d_wrap
+!! - @ref netcdf_add_restart_variable_4d_wrap
+!! - @ref netcdf_add_restart_variable_5d_wrap
+!! - @ref register_domain_restart_variable_0d
+!! - @ref register_domain_restart_variable_1d
+!! - @ref register_domain_restart_variable_2d
+!! - @ref register_domain_restart_variable_3d
+!! - @ref register_domain_restart_variable_4d
+!! - @ref register_domain_restart_variable_5d
+!! - @ref register_unstructured_domain_restart_variable_0d
+!! - @ref register_unstructured_domain_restart_variable_1d
+!! - @ref register_unstructured_domain_restart_variable_2d
+!! - @ref register_unstructured_domain_restart_variable_3d
+!! - @ref register_unstructured_domain_restart_variable_4d
+!! - @ref register_unstructured_domain_restart_variable_5d
+!! - @ref register_restart_region_2d
+!! - @ref register_restart_region_3d
 interface register_restart_field
   module procedure netcdf_add_restart_variable_0d_wrap
   module procedure netcdf_add_restart_variable_1d_wrap
@@ -286,24 +287,24 @@ end interface register_restart_field
 !! Write the value(s) in data to the field named "lon"
 !!
 !! Contains the following routines
-!! @ref compressed_write_0d_wrap
-!! @ref compressed_write_1d_wrap
-!! @ref compressed_write_2d_wrap
-!! @ref compressed_write_3d_wrap
-!! @ref compressed_write_4d_wrap
-!! @ref compressed_write_5d_wrap
-!! @ref domain_write_0d
-!! @ref domain_write_1d
-!! @ref domain_write_2d
-!! @ref domain_write_3d
-!! @ref domain_write_4d
-!! @ref domain_write_5d
-!! @ref unstructured_domain_write_0d
-!! @ref unstructured_domain_write_1d
-!! @ref unstructured_domain_write_2d
-!! @ref unstructured_domain_write_3d
-!! @ref unstructured_domain_write_4d
-!! @ref unstructured_domain_write_5d
+!! - @ref compressed_write_0d_wrap
+!! - @ref compressed_write_1d_wrap
+!! - @ref compressed_write_2d_wrap
+!! - @ref compressed_write_3d_wrap
+!! - @ref compressed_write_4d_wrap
+!! - @ref compressed_write_5d_wrap
+!! - @ref domain_write_0d
+!! - @ref domain_write_1d
+!! - @ref domain_write_2d
+!! - @ref domain_write_3d
+!! - @ref domain_write_4d
+!! - @ref domain_write_5d
+!! - @ref unstructured_domain_write_0d
+!! - @ref unstructured_domain_write_1d
+!! - @ref unstructured_domain_write_2d
+!! - @ref unstructured_domain_write_3d
+!! - @ref unstructured_domain_write_4d
+!! - @ref unstructured_domain_write_5d
 interface write_data
   module procedure compressed_write_0d_wrap
   module procedure compressed_write_1d_wrap
@@ -335,24 +336,24 @@ end interface write_data
 !! Read the values for the field "lat" from the file and write them onto data <br>
 !!
 !! Contains the following routines
-!! @ref compressed_read_0d <br>
-!! @ref compressed_read_1d <br>
-!! @ref compressed_read_2d <br>
-!! @ref compressed_read_3d <br>
-!! @ref compressed_read_4d <br>
-!! @ref compressed_read_5d <br>
-!! @ref domain_read_0d
-!! @ref domain_read_1d
-!! @ref domain_read_2d
-!! @ref domain_read_3d
-!! @ref domain_read_4d
-!! @ref domain_read_5d
-!! @ref unstructured_domain_read_0d
-!! @ref unstructured_domain_read_1d
-!! @ref unstructured_domain_read_2d
-!! @ref unstructured_domain_read_3d
-!! @ref unstructured_domain_read_4d
-!! @ref unstructured_domain_read_5d
+!! - @ref compressed_read_0d <br>
+!! - @ref compressed_read_1d <br>
+!! - @ref compressed_read_2d <br>
+!! - @ref compressed_read_3d <br>
+!! - @ref compressed_read_4d <br>
+!! - @ref compressed_read_5d <br>
+!! - @ref domain_read_0d
+!! - @ref domain_read_1d
+!! - @ref domain_read_2d
+!! - @ref domain_read_3d
+!! - @ref domain_read_4d
+!! - @ref domain_read_5d
+!! - @ref unstructured_domain_read_0d
+!! - @ref unstructured_domain_read_1d
+!! - @ref unstructured_domain_read_2d
+!! - @ref unstructured_domain_read_3d
+!! - @ref unstructured_domain_read_4d
+!! - @ref unstructured_domain_read_5d
 interface read_data
   module procedure compressed_read_0d
   module procedure compressed_read_1d
@@ -383,9 +384,9 @@ end interface read_data
 !! Writes previously registered restart fields to the given restart file
 !!
 !! Contains the following routines
-!! @ref netcdf_save_restart_wrap
-!! @ref save_domain_restart
-!! @ref unstructured_write_restart
+!! - @ref netcdf_save_restart_wrap
+!! - @ref save_domain_restart
+!! - @ref unstructured_write_restart
 interface write_restart
   module procedure netcdf_save_restart_wrap
   module procedure save_domain_restart
@@ -402,7 +403,9 @@ end interface write_restart
 !! restart fields in the given restart file.
 !!
 !> Contains the following routines
-!! @ref
+!! - @ref netcdf_save_restart_wrap2
+!! - @ref save_domain_restart_wrap
+!! - @ref unstructured_write_restart_wrap
 interface write_new_restart
   module procedure netcdf_save_restart_wrap2
   module procedure save_domain_restart_wrap
@@ -410,18 +413,23 @@ interface write_new_restart
 end interface write_new_restart
 
 !> @page read_restart read_restart Interface
-!> @brief
-!> Contains the following routines
-!! @ref
+!> @brief Reads in restart variables from a given file
+!> <br>Example usage:
+!!              call read_restart(fileobj)
+!! Reads registered restart variables from fileobj
+!! Contains the following routines:
+!! - @ref netcdf_restart_state
+!! - @ref restore_domain_state
 interface read_restart
   module procedure netcdf_restore_state
   module procedure restore_domain_state
 end interface read_restart
 
 !> @page read_new_restart read_new_restart Interface
-!> @brief
+!> @brief Read registered restarts from a new file
 !> Contains the following routines
-!! @ref
+!! - @ref netcdf_restore_state_wrap
+!! - @ref restore_domain_state_wrap
 interface read_new_restart
   module procedure netcdf_restore_state_wrap
   module procedure restore_domain_state_wrap
