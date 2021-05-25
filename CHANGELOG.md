@@ -29,6 +29,7 @@ sequential patch number (starting from `01`).
 ###Fixed
 - DIAG_MANAGER: Fixed a bug where the variable type of `Time` and `Time_bounds` were different (float vs double) when compiling with 32 bit reals
 - FMS2_IO: Fixed a bug where the code was crashing when you were trying to read/write scalar variables with the domain decomposed fileobj
+- TOPOGRAPHY: Fixed issue with GNU Fortran compiler failing from undeclared namelist variable
 ### Tag Commit Hashes
 - 2021.02-alpha1 (1a653fcb86a826251e6c8d0a90db897377acc49e)
 - 2021.02-alpha2 (81a5b6ea2559e2c31edbcab32a3230dfc31287be)
