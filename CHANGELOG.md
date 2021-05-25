@@ -21,15 +21,15 @@ sequential patch number (starting from `01`).
 - FMS2_IO: Adds logic so that the domain decomposition variable attribute is only added if the io_layout is not 1,1.
 - FMS_IO: Moved get_great_circle_algorithm from fms_io to grid2.F90
 - FMS_IO: Moved routines and submodules that were not IO related to fms_mod
-###Removed
+### Removed
 - DIAG_MANAGER: Removed the variable attributes `_FillValue` and `missing_value` from the `time_bounds` variable to be cf compliant
 - FV3GFS: Removes the unused fv3gfs directory
 - MOSAIC/GRID: Removed references in grid.F90 to fms_mod(replaced with mpp_mod direct calls)
 - MOSAIC/GRID: Moved mosaic/mosaic2.F90 to mosaic2 folder
-###Fixed
+### Fixed
 - DIAG_MANAGER: Fixed a bug where the variable type of `Time` and `Time_bounds` were different (float vs double) when compiling with 32 bit reals
 - FMS2_IO: Fixed a bug where the code was crashing when you were trying to read/write scalar variables with the domain decomposed fileobj
-- TOPOGRAPHY: Fixed issue with GNU Fortran compiler failing from undeclared namelist variable
+- TOPOGRAPHY: Fixed an issue causing the latest version of the GNU Fortran compiler to fail from an undeclared namelist variable
 ### Tag Commit Hashes
 - 2021.02-alpha1 (1a653fcb86a826251e6c8d0a90db897377acc49e)
 - 2021.02-alpha2 (81a5b6ea2559e2c31edbcab32a3230dfc31287be)
