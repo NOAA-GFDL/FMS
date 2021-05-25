@@ -101,13 +101,13 @@ end interface
 
    character(len=128) :: topog_file = 'DATA/navy_topography.data', &
                          water_file = 'DATA/navy_pctwater.data'
+   logical :: use_mpp_io = .false.  !>@var Namelist flag to enable usage of mpp_io subroutines if true
    namelist /topography_nml/ topog_file, water_file, use_mpp_io
 ! </NAMELIST>
    integer, parameter    :: TOPOG_INDEX = 1
    integer, parameter    :: WATER_INDEX = 2
    logical :: file_is_opened(2) = .false.
    type(FmsNetcdfFile_t) :: fileobj(2) !< needed for fms2_io
-   logical :: use_mpp_io=.false.!>@var Namelist flag to enable usage of mpp_io subroutines if true
 !-----------------------------------------------------------------------
 ! --- resolution of the topography data set ---
 ! <DATASET NAME="">
