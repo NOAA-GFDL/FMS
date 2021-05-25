@@ -253,9 +253,9 @@ module fms
                       calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area, &
                       is_inside_polygon, &
                       mosaic2_get_mosaic_tile_grid => get_mosaic_tile_grid !overloaded in fms2_io
-  use grid_mod, only: get_grid_ntiles, get_grid_size, get_grid_cell_centers, &
+  use grid2_mod, only: get_grid_ntiles, get_grid_size, get_grid_cell_centers, &
                       get_grid_cell_vertices, get_grid_cell_Area, get_grid_comp_area, &
-                      define_cube_mosaic
+                      define_cube_mosaic, get_great_circle_algorithm, grid_init, grid_end
   use gradient_mod, only: gradient_cubic, calc_cubic_grid_info
 
   !> mpp
