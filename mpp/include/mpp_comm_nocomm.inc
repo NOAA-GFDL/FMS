@@ -30,6 +30,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
+!> @brief Initialize the @ref mpp_mod module
 subroutine mpp_init( flags,localcomm )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
@@ -173,7 +174,7 @@ subroutine mpp_init( flags,localcomm )
 end subroutine mpp_init
 
 !#######################################################################
-  !to be called at the end of a run
+!> @brief To be called at the end of a run
 subroutine mpp_exit()
   integer :: i, j, k, n, nmax, istat, out_unit
   real    :: t, tmin, tmax, tavg, tstd
@@ -261,7 +262,7 @@ subroutine mpp_exit()
 end subroutine mpp_exit
 
 !#######################################################################
-    !set the mpp_stack variable to be at least n LONG words long
+  !> Set the mpp_stack variable to be at least n LONG words long
   subroutine mpp_set_stack_size(n)
     integer, intent(in) :: n
     character(len=8)    :: text

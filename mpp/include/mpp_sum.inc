@@ -21,7 +21,7 @@
 
 !> @file
 !> @ingroup mpp
-!> @brief Summation routines for @ref mpp_mod 
+!> @brief Summation routines for @ref mpp_mod
 !#######################################################################
 
     subroutine MPP_SUM_SCALAR_( a, pelist )

@@ -78,7 +78,7 @@
  *  
  */
 
-/** @defgroup fms FMS utilities
+/** @defgroup fms FMS 
  *
  */
 

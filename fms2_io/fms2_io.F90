@@ -119,12 +119,12 @@ public :: string2
 !!              io_success = open_file(fileobj, "filename", "overwrite", domain)
 !!
 !! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or
-!! - @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
+!! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
 !!
-!! Contains the following routines: <br>
-!! netcdf_file_open_wrap
-!> @ref open_domain_file
-!> @ref open_unstructured_domain_file
+!! <br>Contains the following routines:
+!! - @ref netcdf_file_open_wrap
+!! - @ref open_domain_file
+!! - @ref open_unstructured_domain_file
 interface open_file
   module procedure netcdf_file_open_wrap
   module procedure open_domain_file
@@ -148,7 +148,7 @@ end interface open_file
 !! Opens a virtual domain file through @ref fmsnetcdfdomainfile_t or
 !! - @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
 !!
-!! Contains the following routines <br>
+!! <br>Contains the following routines:
 !! - @ref create_diskless_netcdf_file_wrap
 !! - @ref create_diskless_domain_file
 !! - @ref create_diskless_unstructured_domain_file
@@ -160,15 +160,15 @@ end interface open_virtual_file
 
 !> @page close_file close_file Interface
 !> @brief Close a netcdf or domain file opened with @ref open_file or
-!! - @ref open_virtual_file
+!! @ref open_virtual_file
 !!
 !> <br>Example usage:
 !!
 !!              call close_file(fileobj)
 !!
-!! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file <br>
+!! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file
 !!
-!! Contains the following routines <br>
+!! <br>Contains the following routines:
 !! - @ref netcdf_file_close_wrap
 !! - @ref close_domain_file
 !! - @ref close_unstructured_domain_file
@@ -190,9 +190,9 @@ end interface close_file
 !!
 !!              call register_axis(fileobj, "lon", n)
 !!
-!! Adds a dimension named "lon" with length n to a given netcdf file
+!! Adds a dimension named "lon" with length n to a given netcdf file.<br>
 !!
-!! Contains the following routines
+!! <br>Contains the following routines:
 !! - @ref netcdf_add_dimension
 !! - @ref register_compressed_dimension
 !! - @ref register_domain_decomposed_dimension
@@ -215,7 +215,7 @@ end interface register_axis
 !! The size of dimension name list provided is the amount of ranks for the created
 !! field, scalar if list not provided.
 !!
-!! Contains the following routines
+!! <br>Contains the following routines
 !! - @ref netcdf_add_variable_wrap
 !! - @ref register_domain_variable
 !! - @ref register_unstructured_domain_variable
@@ -234,7 +234,7 @@ end interface register_field
 !! Creates a restart variable and sets it to the values from data_ptr, corresponding to
 !! the list of dimension names. Rank of data_ptr must equal the amount of corresponding dimensions.
 !!
-!! Contains the following routines
+!! <br>Contains the following routines:
 !! - @ref netcdf_add_restart_variable_0d_wrap
 !! - @ref netcdf_add_restart_variable_1d_wrap
 !! - @ref netcdf_add_restart_variable_2d_wrap
@@ -286,7 +286,7 @@ end interface register_restart_field
 !!
 !! Write the value(s) in data to the field named "lon"
 !!
-!! Contains the following routines
+!! <br>Contains the following routines
 !! - @ref compressed_write_0d_wrap
 !! - @ref compressed_write_1d_wrap
 !! - @ref compressed_write_2d_wrap
@@ -383,7 +383,7 @@ end interface read_data
 !!
 !! Writes previously registered restart fields to the given restart file
 !!
-!! Contains the following routines
+!! <br>Contains the following routines
 !! - @ref netcdf_save_restart_wrap
 !! - @ref save_domain_restart
 !! - @ref unstructured_write_restart
@@ -402,7 +402,7 @@ end interface write_restart
 !! Creates a new restart file, with the provided timestamp and filename, out of the registered
 !! restart fields in the given restart file.
 !!
-!> Contains the following routines
+!> <br>Contains the following routines
 !! - @ref netcdf_save_restart_wrap2
 !! - @ref save_domain_restart_wrap
 !! - @ref unstructured_write_restart_wrap
@@ -417,7 +417,7 @@ end interface write_new_restart
 !> <br>Example usage:
 !!              call read_restart(fileobj)
 !! Reads registered restart variables from fileobj
-!! Contains the following routines:
+!! <br>Contains the following routines:
 !! - @ref netcdf_restart_state
 !! - @ref restore_domain_state
 interface read_restart
@@ -427,7 +427,7 @@ end interface read_restart
 
 !> @page read_new_restart read_new_restart Interface
 !> @brief Read registered restarts from a new file
-!> Contains the following routines
+!> <br>Contains the following routines
 !! - @ref netcdf_restore_state_wrap
 !! - @ref restore_domain_state_wrap
 interface read_new_restart

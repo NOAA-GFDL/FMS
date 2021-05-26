@@ -20,7 +20,7 @@
 !***********************************************************************
 !> @file
 !> @ingroup mpp
-!> @brief Imports various routines used for communications and calculations 
+!> @brief Imports various routines used for communications and calculations
 !! between PE's in @ref mpp
 
 #if defined(use_libMPI)

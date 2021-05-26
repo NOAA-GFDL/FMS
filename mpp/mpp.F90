@@ -456,7 +456,7 @@ private
 
   !#####################################################################
 
-  
+
   !> @brief Allocate module internal workspace.
   !> @param Integer to set stack size to(in words)
   !> <TT>mpp_mod</TT> maintains a private internal array called

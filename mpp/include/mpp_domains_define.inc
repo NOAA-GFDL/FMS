@@ -29,7 +29,7 @@
   !  <IN NAME="ndivs" TYPE="integer"></IN>
   !  <OUT NAME="layout" TYPE="integer" DIM="(2)"></OUT>
   ! </SUBROUTINE>
-  !> @brief Instantiates a layout with the given indices and divisions 
+  !> @brief Instantiates a layout with the given indices and divisions
   subroutine mpp_define_layout2D( global_indices, ndivs, layout )
     integer, intent(in) :: global_indices(:) !< (/ isg, ieg, jsg, jeg /); Defines the global domain.
     integer, intent(in) :: ndivs !< number of divisions to divide global domain

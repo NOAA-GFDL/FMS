@@ -1264,20 +1264,20 @@ end subroutine data_override_3d
 !   <IN NAME="data_index" TYPE="integer">
 !   </IN>
 
-!> @brief This routine performs data override for scalar fields
+!> @brief Routine to perform data override for scalar fields
 subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_index)
-  character(len=3), intent(in) :: gridname !> model grid ID
-  character(len=*), intent(in) :: fieldname_code !> field name as used in the model
-  logical, intent(out), optional :: override !> true if the field has been overriden succesfully
-  type(time_type), intent(in) :: time !> (target) model time
-  real,             intent(out) :: data !> data returned by this call
+  character(len=3), intent(in) :: gridname !< model grid ID
+  character(len=*), intent(in) :: fieldname_code !< field name as used in the model
+  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  type(time_type), intent(in) :: time !< (target) model time
+  real,             intent(out) :: data !< data returned by this call
   integer, intent(in), optional :: data_index
 
-  character(len=512) :: filename !> file containing source data
-  character(len=128) :: fieldname !> fieldname used in the data file
-  integer :: index1 !> field index in data_table
-  integer :: id_time !> index for time interp in override array
-  integer :: curr_position !> position of the field currently processed in override_array
+  character(len=512) :: filename !< file containing source data
+  character(len=128) :: fieldname !< fieldname used in the data file
+  integer :: index1 !< field index in data_table
+  integer :: id_time !< index for time interp in override array
+  integer :: curr_position !< position of the field currently processed in override_array
   integer :: i
   real :: factor
 
@@ -1359,7 +1359,7 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
 end subroutine data_override_0d
 ! </SUBROUTINE>
 
-!> @brief
+!> @brief Data override for 2D unstructured grids
 subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
   character(len=3),   intent(in) :: gridname !< model grid ID
   character(len=*),   intent(in) :: fieldname !< field to override
@@ -1395,6 +1395,7 @@ subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
 
 end subroutine data_override_UG_1d
 
+!> @brief Data override for 2D unstructured grids
 subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
   character(len=3),     intent(in) :: gridname !< model grid ID
   character(len=*),     intent(in) :: fieldname !< field to override
@@ -1438,5 +1439,5 @@ subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
 end subroutine data_override_UG_2d
 
 end module data_override_mod
-! @}
+!> @}
 ! close documentation grouping

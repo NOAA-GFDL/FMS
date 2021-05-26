@@ -59,32 +59,32 @@
 !! single processor). 2D domains are defined using a derived type domain2D,
 !! constructed as follows (see comments in code for more details).
 !!
-!!      type, public :: domain_axis_spec\n
-!!        private\n
-!!        integer :: begin, end, size, max_size\n
-!!        logical :: is_global\n
-!!      end type domain_axis_spec\n
+!!      type, public :: domain_axis_spec
+!!        private
+!!        integer :: begin, end, size, max_size
+!!        logical :: is_global
+!!      end type domain_axis_spec
 !!
-!!      type, public :: domain1D\n
-!!        private\n
-!!        type(domain_axis_spec) :: compute, data, global, active\n
-!!        logical :: mustputb, mustgetb, mustputf, mustgetf, folded\n
-!!        type(domain1D), pointer, dimension(:) :: list\n
-!!        integer :: pe  ! pe to which the domain is assigned\n
-!!        integer :: pos\n
+!!      type, public :: domain1D
+!!        private
+!!        type(domain_axis_spec) :: compute, data, global, active
+!!        logical :: mustputb, mustgetb, mustputf, mustgetf, folded
+!!        type(domain1D), pointer, dimension(:) :: list
+!!        integer :: pe  ! pe to which the domain is assigned
+!!        integer :: pos
 !!      end type domain1D
 !!
-!!      type, public :: domain2D\n
-!!        private\n
-!!        type(domain1D) :: x\n
-!!        type(domain1D) :: y\n
-!!        type(domain2D), pointer, dimension(:) :: list\n
-!!        integer :: pe ! PE to which this domain is assigned\n
-!!        integer :: pos\n
-!!      end type domain2D\n
+!!      type, public :: domain2D
+!!        private
+!!        type(domain1D) :: x
+!!        type(domain1D) :: y
+!!        type(domain2D), pointer, dimension(:) :: list
+!!        integer :: pe ! PE to which this domain is assigned
+!!        integer :: pos
+!!      end type domain2D
 !!
-!!      type(domain1D), public :: NULL_DOMAIN1D\n
-!!      type(domain2D), public :: NULL_DOMAIN2D\n
+!!      type(domain1D), public :: NULL_DOMAIN1D
+!!      type(domain2D), public :: NULL_DOMAIN2D
 
 !> @file
 !> @brief File for @ref mpp_domains_mod
@@ -346,16 +346,16 @@ module mpp_domains_mod
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
 
-!> @typedef
-!> @brief The domain2D type contains all the necessary information to
-!! define the global, compute and data domains of each task, as well as the PE
-!! associated with the task. The PEs from which remote data may be
-!! acquired to update the data domain are also contained in a linked list of neighbours.
-!!
-!> Domain types of higher rank can be constructed from type domain1D
-!! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
-!! some elements are repeated below if they are needed once per domain, not once per axis
-  public, type domain2D
+  !> @typedef domain2D 
+  !> @brief The domain2D type contains all the necessary information to
+  !! define the global, compute and data domains of each task, as well as the PE
+  !! associated with the task. The PEs from which remote data may be
+  !! acquired to update the data domain are also contained in a linked list of neighbours.
+  !!
+  !> Domain types of higher rank can be constructed from type domain1D
+  !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
+  !! some elements are repeated below if they are needed once per domain, not once per axis
+  type domain2D
      private
      character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
      integer(i8_kind)            :: id
@@ -725,7 +725,7 @@ module mpp_domains_mod
   !! global domain. If this cannot be done, the algorithm favours domains
   !! that are longer in \e x than \e y, a preference that could improve vector performance.
   !! <br>Example usage:
-  !!            call mpp_define_layout( global_indices, ndivs, layout )
+  !!                    call mpp_define_layout( global_indices, ndivs, layout )
   interface mpp_define_layout
      module procedure mpp_define_layout2D
   end interface
@@ -737,11 +737,13 @@ module mpp_domains_mod
   !! to be used but is built by repeated calls to the 1D version, also provided.
   !!
   !! <br>Example usage:
-  !!            call mpp_define_domains( global_indices, ndivs, domain, &
+  !!
+  !!                    call mpp_define_domains( global_indices, ndivs, domain, &
   !!                                   pelist, flags, halo, extent, maskmap )
-  !!            call mpp_define_domains( global_indices, layout, domain, pelist, &
+  !!                    call mpp_define_domains( global_indices, layout, domain, pelist, &
   !!                                   xflags, yflags, xhalo, yhalo,           &
   !!                                   xextent, yextent, maskmap, name )
+  !!
   !! @param global_indices Defines the global domain.
   !! @param ndivs The number of domain divisions required.
   !! @param [inout] domain Holds the resulting domain decomposition.
@@ -768,8 +770,9 @@ module mpp_domains_mod
   !! domains included in the computation.
   !!
   !! <br>Example usage:
-  !!            call mpp_define_domains( (/1,100/), 10, domain, &
-  !!                    flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
+  !!
+  !!                            call mpp_define_domains( (/1,100/), 10, domain, &
+  !!                                    flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
   !!
   !! defines 10 compute domains spanning the range [1,100] of the global
   !! domain. The compute domains are non-overlapping blocks of 10. All the data
@@ -786,7 +789,7 @@ module mpp_domains_mod
   !!            do i = is,ie
   !!              a(i) = &lt;perform computations&gt;
   !!            end do
-  !!            call mpp_update_domains( a, domain )<br>
+  !!            call mpp_update_domains( a, domain )
   !!<br>
   !! The call to mpp_update_domainsfills in the regions outside
   !! the compute domain. Since the global domain is cyclic, the values at
@@ -818,29 +821,27 @@ module mpp_domains_mod
   !!                    call mpp_define_domains( (/1,100,1,100/), (/2,2/), domain, xhalo=1 )
   !! will create the following domain layout:<br>
   !!<br>
-  !!                   |---------|-----------|-----------|-------------|
-  !!                   |domain(1)|domain(2)  |domain(3)  |domain(4)    |
+  !!
+  !!    |    domain    |domain(1)|domain(2)  |domain(3)  |domain(4)    |
   !!    |--------------|---------|-----------|-----------|-------------|
   !!    |Compute domain|1,50,1,50|51,100,1,50|1,50,51,100|51,100,51,100|
-  !!    |--------------|---------|-----------|-----------|-------------|
   !!    |Data domain   |0,51,1,50|50,101,1,50|0,51,51,100|50,101,51,100|
-  !!    |--------------|---------|-----------|-----------|-------------|
+  !!    
   !!
   !! Again, we allocate arrays on the data domain, perform computations
   !! on the compute domain, and call mpp_update_domains to update the halo region.
   !!
   !! If we wished to perfom a 1D decomposition along Y on the same global domain,
   !! we could use:
-  !!            call mpp_define_domains( (/1,100,1,100/), layout=(/4,1/), domain, xhalo=1 )
+  !!
+  !!                    call mpp_define_domains( (/1,100,1,100/), layout=(/4,1/), domain, xhalo=1 )
+  !!
   !! This will create the following domain layout:<br>
   !!<br>
-  !!                   |----------|-----------|-----------|------------|
-  !!                   |domain(1) |domain(2)  |domain(3)  |domain(4)   |
+  !!    |    domain    |domain(1) |domain(2)  |domain(3)  |domain(4)   |
   !!    |--------------|----------|-----------|-----------|------------|
   !!    |Compute domain|1,100,1,25|1,100,26,50|1,100,51,75|1,100,76,100|
-  !!    |--------------|----------|-----------|-----------|------------|
   !!    |Data domain   |0,101,1,25|0,101,26,50|0,101,51,75|1,101,76,100|
-  !!    |--------------|----------|-----------|-----------|------------|
   interface mpp_define_domains
      module procedure mpp_define_domains1D
      module procedure mpp_define_domains2D
@@ -1022,53 +1023,53 @@ module mpp_domains_mod
 !!<br>
 !!    Replace<br>
 !!<br>
-!!       call mpp_update_domains(data, domain, flags=update_flags)<br>
+!!              call mpp_update_domains(data, domain, flags=update_flags)<br>
 !!
 !!    with<br>
 !!<br>
-!!        id_update = mpp_start_update_domains(data, domain, flags=update_flags)<br>
-!!        ...( doing some computation )<br>
-!!        call mpp_complete_update_domains(id_update, data, domain, flags=update_flags)<br>
+!!              id_update = mpp_start_update_domains(data, domain, flags=update_flags)<br>
+!!              ...( doing some computation )<br>
+!!              call mpp_complete_update_domains(id_update, data, domain, flags=update_flags)<br>
 !!
 !> @par Example 2: Replace group scalar mpp_update_domains<br>
 !!<br>
 !!    Replace<br>
 !!<br>
-!!       call mpp_update_domains(data_1, domain, flags=update_flags, complete=.false.)<br>
-!!        .... ( other n-2 call mpp_update_domains with complete = .false. )<br>
-!!        call mpp_update_domains(data_n, domain, flags=update_flags, complete=.true. )<br>
+!!              call mpp_update_domains(data_1, domain, flags=update_flags, complete=.false.)<br>
+!!              .... ( other n-2 call mpp_update_domains with complete = .false. )<br>
+!!              call mpp_update_domains(data_n, domain, flags=update_flags, complete=.true. )<br>
 !!<br>
 !!    With<br>
 !!<br>
-!!        id_up_1 = mpp_start_update_domains(data_1, domain, flags=update_flags)<br>
-!!        .... ( other n-2 call mpp_start_update_domains )<br>
-!!        id_up_n = mpp_start_update_domains(data_n, domain, flags=update_flags)<br>
+!!              id_up_1 = mpp_start_update_domains(data_1, domain, flags=update_flags)<br>
+!!              .... ( other n-2 call mpp_start_update_domains )<br>
+!!              id_up_n = mpp_start_update_domains(data_n, domain, flags=update_flags)<br>
 !!<br>
-!!        ..... ( doing some computation )<br>
+!!              ..... ( doing some computation )<br>
 !!<br>
-!!        call mpp_complete_update_domains(id_up_1, data_1, domain, flags=update_flags)<br>
-!!        .... ( other n-2 call mpp_complete_update_domains  )<br>
-!!        call mpp_complete_update_domains(id_up_n, data_n, domain, flags=update_flags)<br>
+!!              call mpp_complete_update_domains(id_up_1, data_1, domain, flags=update_flags)<br>
+!!              .... ( other n-2 call mpp_complete_update_domains  )<br>
+!!              call mpp_complete_update_domains(id_up_n, data_n, domain, flags=update_flags)<br>
 !!
 !> @par Example 3: Replace group CGRID_NE vector, mpp_update_domains<br>
 !!<br>
 !!    Replace<br>
 !!<br>
-!!        call mpp_update_domains(u_1, v_1, domain, flags=update_flgs, gridtype=CGRID_NE, complete=.false.)<br>
-!!       .... ( other n-2 call mpp_update_domains with complete = .false. )<br>
-!!        call mpp_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE, complete=.true. )<br>
+!!              call mpp_update_domains(u_1, v_1, domain, flags=update_flgs, gridtype=CGRID_NE, complete=.false.)<br>
+!!              .... ( other n-2 call mpp_update_domains with complete = .false. )<br>
+!!              call mpp_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE, complete=.true. )<br>
 !!<br>
 !!    with<br>
 !!<br>
-!!        id_up_1 = mpp_start_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)<br>
-!!        .... ( other n-2 call mpp_start_update_domains )<br>
-!!        id_up_n = mpp_start_update_domains(u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!              id_up_1 = mpp_start_update_domains(u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!              .... ( other n-2 call mpp_start_update_domains )<br>
+!!              id_up_n = mpp_start_update_domains(u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)<br>
 !!<br>
-!!        ..... ( doing some computation )<br>
+!!              ..... ( doing some computation )<br>
 !!<br>
-!!        call mpp_complete_update_domains(id_up_1, u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)<br>
-!!        .... ( other n-2 call mpp_complete_update_domains  )<br>
-!!        call mpp_complete_update_domains(id_up_n, u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!              call mpp_complete_update_domains(id_up_1, u_1, v_1, domain, flags=update_flags, gridtype=CGRID_NE)<br>
+!!              .... ( other n-2 call mpp_complete_update_domains  )<br>
+!!              call mpp_complete_update_domains(id_up_n, u_n, v_n, domain, flags=update_flags, gridtype=CGRID_NE)<br>
 !!<br>
 !!    For 2D domain updates, if there are halos present along both
 !!   \e x and \e y, we can choose to update one only, by
@@ -1134,8 +1135,9 @@ module mpp_domains_mod
 !!    \e mpp_domains_mod. The size of this buffer area can be set by
 !!    the user by calling \e mpp_domains_set_stack_size.<br>
 !!    Example usage:
-!!              call mpp_start_update_domains( field, domain, flags )
-!!              call mpp_complete_update_domains( field, domain, flags )
+!!
+!!                    call mpp_start_update_domains( field, domain, flags )
+!!                    call mpp_complete_update_domains( field, domain, flags )
   interface mpp_start_update_domains
      module procedure mpp_start_update_domain2D_r8_2d
      module procedure mpp_start_update_domain2D_r8_3d
@@ -1298,9 +1300,10 @@ module mpp_domains_mod
   !! Pass the data from coarse grid to fill the buffer to be ready to be interpolated
   !! nto fine grid.
   !! <br>Example usage:
-  !!            call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer,
-  !!                           nest_level, flags, complete, position, extra_halo, name,
-  !!                           tile_count)
+  !!
+  !!                call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer, 
+  !!                            nbuffer, nest_level, flags, complete, position, extra_halo, name,
+  !!                            tile_count)
   interface mpp_update_nest_fine
      module procedure mpp_update_nest_fine_r8_2d
      module procedure mpp_update_nest_fine_r8_3d
@@ -1351,7 +1354,8 @@ module mpp_domains_mod
   !! Pass the data from fine grid to fill the buffer to be ready to be interpolated
   !! onto coarse grid.
   !! <br>Example usage:
-  !!            call mpp_update_nest_coarse(field, nest_domain, field_out, nest_level, complete,
+  !!
+  !!               call mpp_update_nest_coarse(field, nest_domain, field_out, nest_level, complete,
   !!                                 position, name, tile_count)
   interface mpp_update_nest_coarse
      module procedure mpp_update_nest_coarse_r8_2d
@@ -1402,6 +1406,7 @@ module mpp_domains_mod
   !> @page mpp_get_F2C_index mpp_get_F2C_index Interface
   !! Get the index of the data passed from fine grid to coarse grid.
   !! <br>Example usage:
+  !!
   !!            call mpp_get_F2C_index(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse,
   !!                            is_fine, ie_fine, js_fine, je_fine, nest_level, position)
   interface mpp_get_F2C_index
@@ -1477,6 +1482,7 @@ module mpp_domains_mod
   !> @page mpp_pass_SG_to_UG mpp_pass_SG_to_UG
   !! Passes data from a structured grid to an unstructured grid
   !! <br>Example usage:
+  !! 
   !!            call mpp_pass_SG_to_UG(domain, sg_data, ug_data)
   interface mpp_pass_SG_to_UG
      module procedure mpp_pass_SG_to_UG_r8_2d
@@ -1517,7 +1523,8 @@ module mpp_domains_mod
 !! when the data is at C, E, or N-cell center. For cubic grid, the data should always
 !! at C-cell center.
 !! <br>Example usage:
-!!              call mpp_get_boundary(domain, field, ebuffer, sbuffer, wbuffer, nbuffer)
+!!
+!!                    call mpp_get_boundary(domain, field, ebuffer, sbuffer, wbuffer, nbuffer)
 !! Get boundary information from domain and field and store in buffers
   interface mpp_get_boundary
      module procedure mpp_get_boundary_r8_2d
@@ -2080,15 +2087,15 @@ module mpp_domains_mod
   !! <br>The module provides public operators to check for
   !! equality/inequality of domaintypes, e.g:<br>
   !!
-  !!            type(domain1D) :: a, b<br>
-  !!            type(domain2D) :: c, d<br>
-  !!            ...<br>
-  !!            if( a.NE.b )then<br>
-  !!            ...<br>
-  !!            end if<br>
-  !!            if( c==d )then<br>
-  !!            ...<br>
-  !!            end if<br>
+  !!            type(domain1D) :: a, b
+  !!            type(domain2D) :: c, d
+  !!            ...
+  !!            if( a.NE.b )then
+  !!            ...
+  !!            end if
+  !!            if( c==d )then
+  !!            ...
+  !!            end if
   !!<br>
   !! Domains are considered equal if and only if the start and end
   !! indices of each of their component global, data and compute domains are equal.
@@ -2110,6 +2117,7 @@ module mpp_domains_mod
   !! retrieve the axis specifications associated with the compute domains
   !! The 2D version of these is a simple extension of 1D.
   !! <br>Example usage:
+  !!
   !!            call mpp_get_compute_domain(domain_1D, is, ie)
   !!            call mpp_get_compute_domain(domain_2D, is, ie, js, je)
   interface mpp_get_compute_domain

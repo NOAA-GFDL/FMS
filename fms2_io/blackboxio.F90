@@ -356,7 +356,8 @@ end subroutine new_netcdf_file
 
 
 !> @brief Wrapper to distinguish interfaces.
-!! @return Flag telling whether the creation of the buffer was successful.
+!!
+!> @return Flag telling whether the creation of the buffer was successful.
 function create_diskless_netcdf_file_wrap(fileobj, pelist, path) &
   result(success)
 

@@ -19,7 +19,7 @@
 
 !> @file
 !> @ingroup mpp
-!> @brief Routines for defining and managing unstructured grids 
+!> @brief Routines for defining and managing unstructured grids
 
   !#####################################################################
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)

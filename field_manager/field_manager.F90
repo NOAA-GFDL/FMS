@@ -19,26 +19,29 @@
 !> @defgroup field_manager_mod
 !> @ingroup field_manager
 !> @brief Reads entries from a field table and stores this
-!! information along with the type  of field it belongs to. This allows
-!! the component models to query the field manager to see if  non-default
+!! information along with the type  of field it belongs to.
+!!
+!> This allows the component models to query the field manager to see if non-default
 !! methods of operation are desired. In essence the field table is a
 !! powerful type of namelist. Default values can be provided for all the
 !! fields through a namelist, individual fields can be modified  through
 !! the field table however.
+!!
 !> @author William Cooke
-!> An example of field table entries could be
+!!
+!! An example of field table entries could be
 !! <PRE>
-!!"tracer","atmos_mod","sphum"/
+!!              "tracer","atmos_mod","sphum"
 !!
-!!"tracer","atmos_mod","sf6"
-!!"longname","sulf_hex"
-!!"advection_scheme_horiz","2nd_order"
-!!"Profile_type","Fixed","surface_value = 0.0E+00"/
+!!              "tracer","atmos_mod","sf6"
+!!              "longname","sulf_hex"
+!!              "advection_scheme_horiz","2nd_order"
+!!              "Profile_type","Fixed","surface_value = 0.0E+00"/
 !!
-!!"prog_tracers","ocean_mod","age_global"
-!!horizontal-advection-scheme = mdfl_sweby
-!!vertical-advection-scheme = mdfl_sweby
-!!restart_file = ocean_age.res.nc
+!!              "prog_tracers","ocean_mod","age_global"
+!!              horizontal-advection-scheme = mdfl_sweby
+!!              vertical-advection-scheme = mdfl_sweby
+!!              restart_file = ocean_age.res.nc
 !! </PRE>
 !!
 !! The field table consists of entries in the following format.
@@ -152,7 +155,7 @@
 !> @file
 !> @brief File for @ref field_manager_mod
 
-!> @addtogroup field_manager
+!> @addtogroup field_manager_mod
 !> @{
 module field_manager_mod
 #ifndef MAXFIELDS_
@@ -204,51 +207,51 @@ logical            :: module_is_initialized  = .false.
 !        Public routines
 !        Interface definitions (optional arguments are in [brackets]):
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-public :: field_manager_init   ! (nfields, [table_name]) returns number of fields
-public :: field_manager_end    ! ()
-public :: find_field_index     ! (model, field_name) or (list_path)
-public :: find_field_index_old ! (model, field_name) returns index of field_name in
-public :: find_field_index_new ! (list_path) returns index of field_name in
-                               ! component model model
-public :: get_field_info       ! (n,fld_type,fld_name,model,num_methods)
-                               ! Returns parameters relating to field n.
-public :: get_field_method     ! (n, m, method) Returns the m-th method of field n
-public :: get_field_methods    ! (n, methods) Returns the methods related to field n
-public :: parse                ! (text, label, values) Overloaded function to parse integer,
-                               ! real or character. Parse returns the number of values
-                               ! decoded (> 1 => an array of values)
-public :: fm_change_list       ! (list) return success
-public :: fm_change_root       ! (list) return success
-public :: fm_dump_list         ! (list [, recursive]) return success
-public :: fm_exists            ! (field) return success
-public :: fm_get_index         ! (field) return index
-public :: fm_get_current_list  ! () return path
-public :: fm_get_length        ! (list) return length
-public :: fm_get_type          ! (field) return string
-public :: fm_get_value         ! (entry, value [, index]) return success !! generic
-public :: fm_get_value_integer !   as above (overloaded function)
-public :: fm_get_value_logical !   as above (overloaded function)
-public :: fm_get_value_real    !   as above (overloaded function)
-public :: fm_get_value_string  !   as above (overloaded function)
-public :: fm_intersection      ! (lists, num_lists) return fm_array_list pointer
-public :: fm_init_loop         ! (list, iter)
-public :: fm_loop_over_list    ! (list, name, type, index) return success
-                               ! (iter, name, type, index) return success
-public :: fm_new_list          ! (list [, create] [, keep]) return index
-public :: fm_new_value         ! (entry, value [, create] [, index]) return index !! generic
-public :: fm_new_value_integer !   as above (overloaded function)
-public :: fm_new_value_logical !   as above (overloaded function)
-public :: fm_new_value_real    !   as above (overloaded function)
-public :: fm_new_value_string  !   as above (overloaded function)
-public :: fm_reset_loop        ! ()
-public :: fm_return_root       ! () return success
-public :: fm_modify_name       ! (oldname, newname) return success
-public :: fm_query_method      ! (name, method_name, method_control) return success and
-                               ! name and control strings
-public :: fm_find_methods      ! (list, methods, control) return success and name and
-                               ! control strings.
-public :: fm_copy_list         ! (list, suffix, [create]) return index
-public :: fm_set_verbosity     ! ([verbosity])
+public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
+public :: field_manager_end    !< ()
+public :: find_field_index     !< (model, field_name) or (list_path)
+public :: find_field_index_old !< (model, field_name) returns index of field_name in
+public :: find_field_index_new !< (list_path) returns index of field_name in
+                               !! component model model
+public :: get_field_info       !< (n,fld_type,fld_name,model,num_methods)
+                               !! Returns parameters relating to field n.
+public :: get_field_method     !< (n, m, method) Returns the m-th method of field n
+public :: get_field_methods    !< (n, methods) Returns the methods related to field n
+public :: parse                !< (text, label, values) Overloaded function to parse integer,
+                               !! real or character. Parse returns the number of values
+                               !! decoded (> 1 => an array of values)
+public :: fm_change_list       !< (list) return success
+public :: fm_change_root       !< (list) return success
+public :: fm_dump_list         !< (list [, recursive]) return success
+public :: fm_exists            !< (field) return success
+public :: fm_get_index         !< (field) return index
+public :: fm_get_current_list  !< () return path
+public :: fm_get_length        !< (list) return length
+public :: fm_get_type          !< (field) return string
+public :: fm_get_value         !< (entry, value [, index]) return success !! generic
+public :: fm_get_value_integer !<   as above (overloaded function)
+public :: fm_get_value_logical !<   as above (overloaded function)
+public :: fm_get_value_real    !<   as above (overloaded function)
+public :: fm_get_value_string  !<   as above (overloaded function)
+public :: fm_intersection      !< (lists, num_lists) return fm_array_list pointer
+public :: fm_init_loop         !< (list, iter)
+public :: fm_loop_over_list    !< (list, name, type, index) return success
+                               !! (iter, name, type, index) return success
+public :: fm_new_list          !< (list [, create] [, keep]) return index
+public :: fm_new_value         !< (entry, value [, create] [, index]) return index !! generic
+public :: fm_new_value_integer !<   as above (overloaded function)
+public :: fm_new_value_logical !<   as above (overloaded function)
+public :: fm_new_value_real    !<   as above (overloaded function)
+public :: fm_new_value_string  !<   as above (overloaded function)
+public :: fm_reset_loop        !< ()
+public :: fm_return_root       !< () return success
+public :: fm_modify_name       !< (oldname, newname) return success
+public :: fm_query_method      !< (name, method_name, method_control) return success and
+                               !! name and control strings
+public :: fm_find_methods      !< (list, methods, control) return success and name and
+                               !! control strings.
+public :: fm_copy_list         !< (list, suffix, [create]) return index
+public :: fm_set_verbosity     !< ([verbosity])
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !   Private routines
@@ -331,17 +334,16 @@ end type  fm_array_list_def  !}
 ! <TYPE NAME="method_type">
 ! <DESCRIPTION>
 
-! This method_type is a way to allow a component module to alter the parameters it needs
-! for various tracers. In essence this is a way to modify a namelist. A namelist can supply
-! default parameters for all tracers. This  method will allow the user to modify these
-! default parameters for an individual tracer. An example could be that  the user wishes to
-! use second order advection on a tracer and also use fourth order advection on a second
-! tracer  within the same model run. The default advection could be second order and the
-! field table would then indicate  that the second tracer requires fourth order advection.
-! This would be parsed by the advection routine.
-
-!
-! </DESCRIPTION>
+!> @brief This method_type is a way to allow a component module to alter the parameters it needs
+!! for various tracers. 
+!!
+!> In essence this is a way to modify a namelist. A namelist can supply
+!! default parameters for all tracers. This  method will allow the user to modify these
+!! default parameters for an individual tracer. An example could be that  the user wishes to
+!! use second order advection on a tracer and also use fourth order advection on a second
+!! tracer  within the same model run. The default advection could be second order and the
+!! field table would then indicate  that the second tracer requires fourth order advection.
+!! This would be parsed by the advection routine.
 type, public :: method_type
 
   ! <DATA NAME="method_type :: method_type" TYPE="character" DIM="(128)">
@@ -367,13 +369,10 @@ type, public :: method_type
 end type
 ! </TYPE> NAME="method_type"
 
-! <TYPE NAME="method_type_short">
-! <DESCRIPTION>
-!   This method_type is the same as method_type except that the
-!   method_control string is not present. This is used when you wish to
-!   change to a scheme within a module but do not need to pass
-!   parameters.
-! </DESCRIPTION>
+!>   This method_type is the same as method_type except that the
+!!   method_control string is not present. This is used when you wish to
+!!   change to a scheme within a module but do not need to pass
+!!   parameters.
 type, public :: method_type_short
   ! <DATA NAME="method_type_short :: method_type" TYPE="character" DIM="(128)">
   !   see method_type :: method_type above.
@@ -387,13 +386,10 @@ type, public :: method_type_short
 end type
 ! </TYPE> NAME="method_type_short"
 
-! <TYPE NAME="method_type_very_short">
-! <DESCRIPTION>
-!   This method_type is the same as method_type except that the
-!   method_control and method_name strings are not present. This is used
-!   when you wish to change to a scheme within a module but do not need
-!   to pass  parameters.
-! </DESCRIPTION>
+!>   This method_type is the same as method_type except that the
+!!   method_control and method_name strings are not present. This is used
+!!   when you wish to change to a scheme within a module but do not need
+!!   to pass  parameters.
 type, public :: method_type_very_short
   ! <DATA NAME="method_type_short :: method_type" TYPE="character" DIM="(128)">
   !   see method_type :: method_type above.

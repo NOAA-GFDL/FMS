@@ -342,7 +342,7 @@
    !!
    !> Copy time information from file and convert to time_type
    !! <br>Example usage:
-   !! 		call mpp_get_times( unit, time_values) 
+   !! 		call mpp_get_times( unit, time_values)
    subroutine mpp_get_times( unit, time_values )
       integer, intent(in) :: unit
       real, intent(inout) :: time_values(:)

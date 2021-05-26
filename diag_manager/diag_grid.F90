@@ -83,7 +83,7 @@ use platform_mod
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !> @brief Contains the model's global grid data, and other grid information.
+!> @brief Contains the model's global grid data, and other grid information.
   TYPE :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
@@ -107,7 +107,7 @@ use platform_mod
   END TYPE diag_global_grid_type
 
   !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
-  !!   location.
+  !! location.
   TYPE :: point
      REAL :: x !< The x value of the (x,y,z) coordinates.
      REAL :: y !< The y value of the (x,y,z) coordinates.
@@ -634,11 +634,12 @@ CONTAINS
   END SUBROUTINE get_local_indexes2
 
   !> @brief Convert an angle in radian to degrees.
-  !! @description Given a scalar, or an array of angles in radians this
-  !!   function will return a scalar or array (of the same
-  !!   dimension) of angles in degrees.
+  !!
+  !> Given a scalar, or an array of angles in radians this
+  !! function will return a scalar or array (of the same
+  !! dimension) of angles in degrees.
   !! @return Scalar or array (depending on the size of angle) of angles in
-  !!   degrees.
+  !! degrees.
   PURE ELEMENTAL REAL FUNCTION rad2deg(angle)
     REAL, INTENT(in) :: angle !< Scalar or array of angles in radians.
 
@@ -646,7 +647,8 @@ CONTAINS
   END FUNCTION rad2deg
 
   !> @brief Convert an angle in degrees to radians.
-  !! @description Given a scalar, or an array of angles in degrees this
+  !!
+  !> Given a scalar, or an array of angles in degrees this
   !!   function will return a scalar or array (of the same
   !!   dimension) of angles in radians.
   !! @return Scalar or array (depending on the size of angle) of angles in
@@ -658,7 +660,8 @@ CONTAINS
   END FUNCTION deg2rad
 
   !> @brief Return the closest index (i,j) to the given (lat,lon) point.
-  !! @description This function searches a pole a-grid tile looking for the grid point
+  !!
+  !> This function searches a pole a-grid tile looking for the grid point
   !!   closest to the give (lat, lon) location, and returns the i
   !!   and j indexes of the point.
   !! @return The (i, j) location of the closest grid to the given (lat,
@@ -821,7 +824,8 @@ CONTAINS
   END FUNCTION find_pole_index_agrid
 
   !> @brief Return the closest index (i,j) to the given (lat,lon) point.
-  !! @description This function searches a equator grid tile looking for the grid point
+  !!
+  !> This function searches a equator grid tile looking for the grid point
   !!   closest to the give (lat, lon) location, and returns the i
   !!   and j indexes of the point.
   !! @return The (i, j) location of the closest grid to the given (lat,
@@ -963,7 +967,8 @@ CONTAINS
   END FUNCTION find_equator_index_agrid
 
   !> @brief Return the (x,y,z) position of a given (lat,lon) point.
-  !! @description Given a specific (lat, lon) point on the Earth, return the
+  !!
+  !> Given a specific (lat, lon) point on the Earth, return the
   !!   corresponding (x,y,z) location.  The return of latlon2xyz
   !!   will be either a scalar or an array of the same size as lat
   !!   and lon.
@@ -999,7 +1004,7 @@ CONTAINS
 
   !> @brief Find the distance between two points in the Cartesian
   !!   coordinate space.
-  !! @description <TT>distanceSqrd</TT> will find the distance squared between
+  !> <TT>distanceSqrd</TT> will find the distance squared between
   !!   two points in the xyz coordinate space.  <TT>pt1</TT> and <TT>
   !!   pt2</TT> can either be both scalars, both arrays of the same
   !!   size, or one a scalar and one an array.  The return value
@@ -1014,7 +1019,8 @@ CONTAINS
   END FUNCTION distanceSqrd
 
   !> @brief Find the distance, along the geodesic, between two points.
-  !> @description <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined
+  !!
+  !> <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined
   !!   by the (lat,lon) position of each point.
   !! @return real
   PURE ELEMENTAL REAL FUNCTION gCirDistance(lat1, lon1, lat2, lon2)
@@ -1033,7 +1039,7 @@ CONTAINS
   END FUNCTION gCirDistance
 
   !> @brief Find the i,j indices and distance of the a-grid point nearest to
-  !!   the inputted lat,lon point.
+  !! the inputted lat,lon point.
   SUBROUTINE find_nearest_agrid_index(lat, &
                                       lon, &
                                       minI, &

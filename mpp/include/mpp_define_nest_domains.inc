@@ -22,7 +22,7 @@
 
 !> @file
 !> @ingroup mpp
-!> @brief Routines for use in @mpp_domains_mod for routines utilizing 
+!> @brief Routines for use in @ref mpp_domains_mod for routines utilizing
 !! domains with nested grids
 
 !#############################################################################
@@ -42,22 +42,24 @@
 !! passing data from coarse to fine. You may call mpp_get_F2C_index before calling
 !! mpp_update_nest_coarse to get the index for passing data from coarse to fine.
 !!
-!> @note: The following tests for nesting of regular lat-lon grids upon a cubed-sphere
+!> @note The following tests for nesting of regular lat-lon grids upon a cubed-sphere
 !! grid are done in test_mpp_domains:\n
 !!   a) a first-level nest spanning multiple cubed-sphere faces (tiles 1, 2, & 4)\n
 !!   b) a first-level nest wholly contained within tile 3\n
 !!   c) a second-level nest contained within the nest mentioned in a)\n
 !! Tests are done for data at T, E, C, N-cell center.\n
 !!
+!!
 !! Below is an example to pass data between fine and coarse grid (More details on how to
 !! use the nesting domain update are available in routine test_update_nest_domain of
 !! test_fms/mpp/test_mpp_domains.F90.\n
 !!\n
+!! @verbatim
 !! 		if( concurrent ) then
 !!   			call mpp_broadcast_domain(domain_fine)
 !!   			call mpp_broadcast_domain(domain_coarse)
-!! 		endif 
-!! 
+!! 		endif
+!!
 !! 		call mpp_define_nest_domains(nest_domain,domain,num_nest,nest_level(1:num_nest), &
 !!                              tile_fine(1:num_nest), tile_coarse(1:num_nest), &
 !!                              istart_coarse(1:num_nest), icount_coarse(1:num_nest), &
@@ -83,6 +85,7 @@
 !! 		call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
 !!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &
 !!                                    npes_nest_tile, x_refine, y_refine, extra_halo, name)
+!! @endverbatim
 !> @note Currently the contact will be limited to overlap contact.
 subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, npes_nest_tile, &

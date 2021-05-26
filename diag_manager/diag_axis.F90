@@ -18,13 +18,13 @@
 !***********************************************************************
 !> @defgroup diag_axis_mod
 !> @ingroup diag_manager
-!! @brief is an integral part
-!!   of diag_manager_mod. It helps to create axis IDs
-!!   that are used in register_diag_field.
-!! @author Seth Underwood
-!> Users first create axis ID by calling
-!!   diag_axis_init, then use this axis ID in
-!!   register_diag_field.
+!> @brief An integral part of @ref diag_manager_mod. It helps to create axis IDs
+!! that are used in register_diag_field.
+!!
+!> @author Seth Underwood
+!!
+!! Users first create axis ID by calling diag_axis_init, then use this axis ID in
+!! register_diag_field.
 
 !> @file
 !> @brief File for @ref diag_axis_mod
@@ -97,16 +97,15 @@ use platform_mod
   LOGICAL :: module_is_initialized = .FALSE.
 
   !> @page diag_axis_add_attribute diag_axis_add_attribute Interface
-  !> Add a attribute to the diag axis
-  !! Add an arbitrary attribute and value to the diagnostic axis.  Any number
+  !> Add an arbitrary attribute and value to the diagnostic axis.  Any number
   !! of attributes can be added to a given axis.  All attribute addition must
-  !! be done before first <TT>send_data</TT> call.
+  !! be done before first <TT>send_data</TT> call.<br>
   !!
   !! If a real or integer attribute is already defined, a FATAL error will be called.
   !! If a character attribute is already defined, then it will be prepended to the
   !! existing attribute value.
   !! Example usage:
-  !!            call diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+  !!                    call diag_axis_add_attribute(diag_axis_id, att_name, att_value)
   INTERFACE diag_axis_add_attribute
      MODULE PROCEDURE diag_axis_add_attribute_scalar_r
      MODULE PROCEDURE diag_axis_add_attribute_scalar_i
@@ -120,7 +119,8 @@ CONTAINS
 
   !> @brief Initialize the axis, and return the axis ID.
   !! @return integer axis ID
-  !! @description <TT>diag_axis_init</TT> initializes an axis and returns the axis ID that
+  !!
+  !> <TT>diag_axis_init</TT> initializes an axis and returns the axis ID that
   !!     is to be used with <TT>register_diag_field</TT>.  This function also
   !!     increments the axis counter and fills in the axes
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&

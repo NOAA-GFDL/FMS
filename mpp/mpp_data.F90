@@ -18,7 +18,8 @@
 !***********************************************************************
 !> @defgroup mpp_data_mod mpp_data_mod
 !> @ingroup mpp
-!> @brief Module to hold pointer and stack data for use in @ref mpp modules
+!> @brief Module to hold pointer and stack data for use in @ref mpp modules.
+!!
 !> Makes stack and pointer data publicly available from @ref mpp_data_mpi.inc and @ref
 !! mpp_data_nocomm.inc for use in @ref mpp modules. This module is mainly
 !! for internal use within @ref mpp_mod and @ref mpp_domains_mod .
