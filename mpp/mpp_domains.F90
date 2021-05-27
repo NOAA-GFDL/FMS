@@ -223,7 +223,7 @@ module mpp_domains_mod
 
   ! data types used by mpp_domains_mod
 
-  !> axis specification data for an unstructured grid
+  !> @brief axis specification data for an unstructured grid
   type unstruct_axis_spec
      private
      integer :: begin, end, size, max_size
@@ -300,8 +300,8 @@ module mpp_domains_mod
      integer                :: pos
   end type domain1D_spec
 
-  !> Specify multiple index limits and pe information for a 2D domain
-  type domain2D_spec
+  !> @brief Specify multiple index limits and pe information for a 2D domain
+  TYPE :: domain2D_spec
      private
      type(domain1D_spec), pointer :: x(:)       => NULL() !< x-direction domain decomposition
      type(domain1D_spec), pointer :: y(:)       => NULL() !< y-direction domain decomposition
@@ -342,11 +342,11 @@ module mpp_domains_mod
   end type overlapSpec
 
   !> Upper and lower x and y bounds for a tile
+  !> @typedef
   type tile_type
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
 
-  !> @typedef domain2D 
   !> @brief The domain2D type contains all the necessary information to
   !! define the global, compute and data domains of each task, as well as the PE
   !! associated with the task. The PEs from which remote data may be
@@ -355,7 +355,7 @@ module mpp_domains_mod
   !> Domain types of higher rank can be constructed from type domain1D
   !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
   !! some elements are repeated below if they are needed once per domain, not once per axis
-  type domain2D
+  type :: domain2D
      private
      character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
      integer(i8_kind)            :: id

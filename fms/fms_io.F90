@@ -20,7 +20,8 @@
 !> @ingroup fms
 !> @brief Module for writing and reading restart data via NetCDF files
 !> @author M.J. Harrison, Zhi Liang
-!> This module is for writing and reading restart data in NetCDF format.
+!!
+!! This module is for writing and reading restart data in NetCDF format.
 !! fms_io_init must be called before the first write_data/read_data call
 !! For writing, fms_io_exit must be called after ALL write calls have
 !! been made. Typically, fms_io_init and fms_io_exit are placed in the
@@ -32,53 +33,54 @@
 !! switch to turn on/off netCDF restart options in all of the modules that deal with
 !! restart files. Here two more namelist variables (logical type) are introduced to fms_io
 !!
-!! fms_netcdf_override
-!! fms_netcdf_restart
+!! - fms_netcdf_override
+!! - fms_netcdf_restart
 !!
 !! because default values of both flags are .true., the default behavior of the entire model is
 !! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
-!! <NAMELIST NAME="fms_io_nml">
-!! <DATA NAME="threading_read" TYPE="character">
-!! threading_read can be 'single' or 'multi'
-!! </DATA>
-!! <DATA NAME="fms_netcdf_override" TYPE="logical">
-!!   .true. : fms_netcdf_restart overrides individual do_netcdf_restart value (default behavior)
-!!   .false.: individual module settings has a precedence over the global setting, therefore fms_netcdf_restart is ignored
-!! </DATA>
-!! <DATA NAME="fms_netcdf_restart" TYPE="logical">
-!!   .true. : all modules deal with restart files will operate under netCDF mode (default behavior)
-!!   .false.: all modules deal with restart files will operate under binary mode
-!!   This flag is effective only when fms_netcdf_override is .true. When fms_netcdf_override is .false., individual
-!!   module setting takes over.
-!! </DATA>
-!! <DATA NAME="time_stamped_restart" TYPE="logical">
-!!   .true. : time_stamp will be added to the restart file name as a prefix when
-!!            optional argument time_stamp is passed into routine save_restart.
-!!   .false.: time_stmp will not be added to the restart file name even though
-!!            time_stamp is passed into save_restart.
-!!    default is true.
-!! </DATA>
-!! <DATA NAME="print_chksum" TYPE="logical">
-!!    set print_chksum (default is false) to true to print out chksum of fields that are
-!!    read and written through save_restart/restore_state. The chksum is accross all the
-!!    processors, so there will be only one chksum even there are multiple-tiles in the
-!!    grid. For the multiple case, the filename appeared in the message will contain
-!!    tile1 because the message is print out from root pe and on root pe the tile id is tile1.
-!! </DATA>
-!! <DATA NAME="debug_mask_list" TYPE="logical">
-!!    set debug_mask_list (default is false) to true to print out mask_list reading from mask_table.
-!! </DATA>
-!! <DATA NAME="checksum_required" TYPE="logical">
-!!    Set checksum_required (default is true) to true to compare checksums stored in the attribute of a
-!!    field against the checksum after reading in the data. This check mitigates the possibility of data
-!!    that gets corrupted on write or read from being used in a n ongoing fashion. The checksum is across
-!!    all the  processors, so there will be only one checksum even if there are multiple-tiles in the
-!!    grid. For the decomposed file case, the filename appearing in the message will contain tile1
-!!    because the message is printed out from the root pe and on root pe the tile id is tile1.
-!!
-!!    Set checksum_required to false if you do not want to compare checksums.
-!! </DATA>
-!!</NAMELIST>
+
+! <NAMELIST NAME="fms_io_nml">
+! <DATA NAME="threading_read" TYPE="character">
+! threading_read can be 'single' or 'multi'
+! </DATA>
+! <DATA NAME="fms_netcdf_override" TYPE="logical">
+!   .true. : fms_netcdf_restart overrides individual do_netcdf_restart value (default behavior)
+!   .false.: individual module settings has a precedence over the global setting, therefore fms_netcdf_restart is ignored
+! </DATA>
+! <DATA NAME="fms_netcdf_restart" TYPE="logical">
+!   .true. : all modules deal with restart files will operate under netCDF mode (default behavior)
+!   .false.: all modules deal with restart files will operate under binary mode
+!   This flag is effective only when fms_netcdf_override is .true. When fms_netcdf_override is .false., individual
+!   module setting takes over.
+! </DATA>
+! <DATA NAME="time_stamped_restart" TYPE="logical">
+!   .true. : time_stamp will be added to the restart file name as a prefix when
+!            optional argument time_stamp is passed into routine save_restart.
+!   .false.: time_stmp will not be added to the restart file name even though
+!            time_stamp is passed into save_restart.
+!    default is true.
+! </DATA>
+! <DATA NAME="print_chksum" TYPE="logical">
+!    set print_chksum (default is false) to true to print out chksum of fields that are
+!    read and written through save_restart/restore_state. The chksum is accross all the
+!    processors, so there will be only one chksum even there are multiple-tiles in the
+!    grid. For the multiple case, the filename appeared in the message will contain
+!    tile1 because the message is print out from root pe and on root pe the tile id is tile1.
+! </DATA>
+! <DATA NAME="debug_mask_list" TYPE="logical">
+!    set debug_mask_list (default is false) to true to print out mask_list reading from mask_table.
+! </DATA>
+! <DATA NAME="checksum_required" TYPE="logical">
+!    Set checksum_required (default is true) to true to compare checksums stored in the attribute of a
+!    field against the checksum after reading in the data. This check mitigates the possibility of data
+!    that gets corrupted on write or read from being used in a n ongoing fashion. The checksum is across
+!    all the  processors, so there will be only one checksum even if there are multiple-tiles in the
+!    grid. For the decomposed file case, the filename appearing in the message will contain tile1
+!    because the message is printed out from the root pe and on root pe the tile id is tile1.
+!
+!    Set checksum_required to false if you do not want to compare checksums.
+! </DATA>
+!</NAMELIST>
 
 !> @file
 !> @brief File for @ref fms_io_mod
@@ -183,14 +185,14 @@ type ax_type
    character(len=128) :: dimlen_name = ''
    character(len=128) :: dimlen_lname = ''
    character(len=128) :: calendar = ''
-   integer            :: sense              !Orientation of z axis definition
-   integer            :: dimlen             !max dim of elements across global domain
-   real               :: min             !valid min for real axis data
-   integer            :: imin            !valid min for integer axis data
-   integer,allocatable :: idx(:)         !compressed io-domain index vector
-   integer,allocatable :: nelems(:)      !num elements for each rank in io domain
-   real, pointer      :: data(:) =>NULL()    !real axis values (not used if time axis)
-   type(domain2d),pointer :: domain =>NULL() ! domain associated with compressed axis
+   integer            :: sense              !<Orientation of z axis definition
+   integer            :: dimlen             !<max dim of elements across global domain
+   real               :: min             !<valid min for real axis data
+   integer            :: imin            !<valid min for integer axis data
+   integer,allocatable :: idx(:)         !<compressed io-domain index vector
+   integer,allocatable :: nelems(:)      !<num elements for each rank in io domain
+   real, pointer      :: data(:) =>NULL()    !<real axis values (not used if time axis)
+   type(domain2d),pointer :: domain =>NULL() !< domain associated with compressed axis
 
 !----------
 !ug support

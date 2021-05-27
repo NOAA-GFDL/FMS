@@ -19,10 +19,12 @@
 
 !> @defgroup diag_grid_mod diag_grid_mod
 !> @ingroup diag_manager
-!! @brief diag_grid_mod is a set of procedures to work with the
+!> @brief diag_grid_mod is a set of procedures to work with the
 !!   model's global grid to allow regional output.
-!! @author Seth Underwood<"seth.underwood@noaa.gov">
-!! @description TT>diag_grid_mod</TT> contains useful utilities for dealing
+!!
+!> @author Seth Underwood<"seth.underwood@noaa.gov">
+!!
+!! <TT>diag_grid_mod</TT> contains useful utilities for dealing
 !!   with, mostly, regional output for grids other than the standard
 !!   lat/lon grid.  This module contains three public procedures <TT>
 !!   diag_grid_init</TT>, which is shared globably in the <TT>
@@ -83,7 +85,7 @@ use platform_mod
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-!> @brief Contains the model's global grid data, and other grid information.
+  !> @brief Contains the model's global grid data, and other grid information.
   TYPE :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.

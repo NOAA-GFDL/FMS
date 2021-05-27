@@ -57,18 +57,20 @@
 !!          misspelled module name or field name.</LI>
 !!     <LI> Check if a field is registered twice.</LI>
 !!     <LI> Check for duplicate lines in diag_table. </LI>
-!!     <LI> <LINK SRC="diag_table.html">diag_table</LINK> can contain fields
+!!     <LI> @ref diag_table_mod can contain fields
 !!          that are NOT written to any files. The file name in diag_table of
 !!          these fields is <TT>null</TT>.</LI>
 !!     <LI> By default, a field is output in its global grid.  The user can now
 !!          output a field in a specified region.  See
-!!          <LINK SRC="#send_data"><TT>send_data</TT></LINK> for more details.</LI>
+!!          @ref send_data for more details.</LI>
 !!     <LI> To check if the diag table is set up correctly, user should set
 !!          <TT>debug_diag_manager=.true.</TT> in diag_manager namelist, then
 !!          the the content of diag_table is printed in stdout.</LI>
-!!     <LI> New optional format of file information in <LINK SRC="diag_table.html">diag_table</LINK>.It is possible to have just
-!!           one file name and reuse it many times. A time string will be appended to the base file name each time a new file is
-!!          opened. The time string can be any combination from year to second of current model time.
+!!     <LI> New optional format of file information in @ref diag_table_mod.
+!!          It is possible to have just
+!!          one file name and reuse it many times. A time string will be appended to 
+!!          the base file name each time a new file is opened. The time string can be
+!!          any combination from year to second of current model time.
 !!
 !!          Here is an example file line: <BR />
 !!          <PRE>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</PRE>
@@ -120,12 +122,11 @@
 !!
 !!          A diurnal average or the average of an integer power can also be requested using <TT>diurnal##</TT> or <TT>pow##</TT> where
 !!          <TT>##</TT> are the number of diurnal sections or integer power to average.</LI>
-!!     <LI> <TT>standard_name</TT> is added as optional argument in <LINK SRC="#register_diag_field"><TT>register_diag_field</TT>
-!!          </LINK>.</LI>
+!!     <LI> <TT>standard_name</TT> is added as optional argument in @ref register_diag_field. </LI>
 !!     <LI>When namelist variable <TT>debug_diag_manager = .true.</TT> array
-!!         bounds are checked in <LINK SRC="#send_data"><TT>send_data</TT></LINK>.</LI>
+!!         bounds are checked in @ref send_data.</LI>
 !!     <LI>Coordinate attributes can be written in the output file if the
-!!         argument "<TT>aux</TT>" is given in <LINK SRC="diag_axis.html#diag_axis_init"><TT>diag_axis_init</TT></LINK>. The
+!!         argument "<TT>aux</TT>" is given in @ref diag_axis_mod#diag_axis_init . The
 !!         corresponding fields (geolat/geolon) should also be written to the
 !!         same file.</LI>
 !!   </OL>
@@ -166,7 +167,7 @@ use platform_mod
   !   Use of <TT>diag_manager</TT> includes the following steps:
   !   <OL>
   !     <LI> Create diag_table as described in the
-  !          <LINK SRC="diag_table.html">diag_table.F90</LINK>
+  !          @ref diag_table_mod
   !          documentation.</LI>
   !     <LI> Call <LINK SRC="#diag_manager_init"><TT>diag_manager_init</TT></LINK> to initialize
   !          diag_manager_mod.</LI>
@@ -437,9 +438,7 @@ use platform_mod
   !
   !     Regional output on the cubed sphere grid is also supported.  To use regional
   !     output on the cubed sphere grid, first the grid information needs to be sent to
-  !     <TT>diag_manager_mod</TT> using the <LINK
-  !     SRC="diag_grid.html#diag_grid_init"><TT> diag_grid_init</TT></LINK>
-  !     subroutine.
+  !     <TT>diag_manager_mod</TT> using the @ref diag_grid#diag_grid_init subroutine.
   !
   !     <B><I>NOTE:</I></B> When using regional output the files containing regional
   !     outputs should be different from files containing global (default) output.
@@ -519,9 +518,7 @@ use platform_mod
   !!
   !!     Regional output on the cubed sphere grid is also supported.  To use regional
   !!     output on the cubed sphere grid, first the grid information needs to be sent to
-  !!     <TT>diag_manager_mod</TT> using the <LINK
-  !!     SRC="diag_grid.html#diag_grid_init"><TT> diag_grid_init</TT></LINK>
-  !!     subroutine.
+  !!     <TT>diag_manager_mod</TT> using the @ref diag_grid#diag_grid_init subroutine.
   !!
   !!     <B><I>NOTE:</I></B> When using regional output the files containing regional
   !!     outputs should be different from files containing global (default) output.
@@ -4339,6 +4336,7 @@ CONTAINS
   !   <IN NAME="diag_field_id" TYPE="INTEGER" />
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="att_value" TYPE="REAL" />
+  !> @brief Add a scalar real attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_r(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -4352,6 +4350,7 @@ CONTAINS
   !   <IN NAME="diag_field_id" TYPE="INTEGER" />
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="att_value" TYPE="INTEGER" />
+  !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_i(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -4365,6 +4364,7 @@ CONTAINS
   !   <IN NAME="diag_field_id" TYPE="INTEGER" />
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="att_value" TYPE="CHARACTER(len=*)" />
+  !> @brief Add a scalar character attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_c(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -4378,6 +4378,7 @@ CONTAINS
   !   <IN NAME="diag_field_id" TYPE="INTEGER" />
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="att_value" TYPE="REAL, DIMENSION(:)" />
+  !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_r1d(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -4394,6 +4395,7 @@ CONTAINS
   !   <IN NAME="diag_field_id" TYPE="INTEGER" />
   !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
   !   <IN NAME="att_value" TYPE="INTEGER, DIMENSION(:)" />
+  !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_i1d(diag_field_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_field_id
     CHARACTER(len=*), INTENT(in) :: att_name
@@ -4403,9 +4405,10 @@ CONTAINS
   END SUBROUTINE diag_field_add_attribute_i1d
 
   !> @brief Add the cell_measures attribute to a diag out field
-  !! @details Add the cell_measures attribute to a give diag field.  This is useful if the
-  !!     area/volume fields for the diagnostic field are defined in another module after
-  !!     the diag_field.
+  !!
+  !> Add the cell_measures attribute to a give diag field.  This is useful if the
+  !! area/volume fields for the diagnostic field are defined in another module after
+  !! the diag_field.
   SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
     INTEGER, INTENT(in) :: diag_field_id
     INTEGER, INTENT(in), OPTIONAL :: area !< diag ids of area

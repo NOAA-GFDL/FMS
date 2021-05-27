@@ -25,9 +25,9 @@
 !!
 !> When using these routines three possible data sets are available:
 !!
-!! 1)  AMIP @link http://www-pcmdi.llnl.gov/amip @endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
-!! 2)  Reynolds OI @link amip_interp.rey_oi.txt @endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!! 3)  Reynolds EOF @link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!! 1. AMIP @link http://www-pcmdi.llnl.gov/amip @endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
+!! 2. Reynolds OI @link amip_interp.rey_oi.txt @endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+!! 3. Reynolds EOF @link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
 !!
 !! All original data are observed monthly means. This module
 !! interpolates linearly in time between pairs of monthly means.
@@ -36,7 +36,7 @@
 !! When a requested date falls outside the range of dates available
 !! a namelist option allows for use of the climatological monthly
 !! mean values which are computed from all of the data in a particular
-!! data set.
+!! data set. \n
 !! \n AMIP 1:\n
 !!   from Jan 1979 to Jan 1989 (2 deg x 2 deg).\n\n
 !! Reynolds OI:\n
@@ -52,7 +52,7 @@
 !!   satellite SSTs and in-situ data are used from 1981 to the
 !!   end of 1998.
 !!
-!! Note: The data set used by this module have been reformatted as 32-bit IEEE.
+!> @note The data set used by this module have been reformatted as 32-bit IEEE.
 !!   The data values are packed into 16-bit integers.
 !!
 !!   The data sets are read from the following files:
@@ -182,18 +182,19 @@ end interface
 !!     specify the horiz_interp scheme. = "conservative" means conservative scheme,
 !!     = "bilinear" means  bilinear interpolation.
 !!
-!> @return Interp
-!!     A defined data type variable needed when calling get_amip_sst and get_amip_ice.
+!> @return interp, a defined data type variable needed when calling get_amip_sst and get_amip_ice.
 !!
-!!     Interp = amip_interp_new ( lon, lat, mask, use_climo, use_annual, interp_method )
+!! \n Example usage:
 !!
-!!     This function may be called to initialize multiple variables
-!!     of type amip_interp_type.  However, there currently is no
-!!     call to release the storage used by this variable.
+!!                 Interp = amip_interp_new ( lon, lat, mask, use_climo, use_annual, interp_method )
 !!
-!!     The size of input augment mask must be a function of the size
-!!     of input augments lon and lat. The first and second dimensions
-!!     of mask must equal (size(lon,1)-1, size(lat,2)-1).
+!! This function may be called to initialize multiple variables
+!! of type amip_interp_type.  However, there currently is no
+!! call to release the storage used by this variable.
+!!
+!! The size of input augment mask must be a function of the size
+!! of input augments lon and lat. The first and second dimensions
+!! of mask must equal (size(lon,1)-1, size(lat,2)-1).
 !!
 !> @throws "FATAL: the value of the namelist parameter DATA_SET being used is not allowed"
 !! Check the value of namelist variable DATA_SET.
@@ -295,6 +296,7 @@ end type
 
 !> @page amip_interp_nml amip_interp Namelist
 !> @brief Namelist documentation for @ref amip_interp_mod
+!>
 !! @var character(len=24) data_set
 !! Name/type of SST data that will be used.
 !!        Possible values (case-insensitive) are:

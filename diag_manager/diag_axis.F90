@@ -104,8 +104,9 @@ use platform_mod
   !! If a real or integer attribute is already defined, a FATAL error will be called.
   !! If a character attribute is already defined, then it will be prepended to the
   !! existing attribute value.
-  !! Example usage:
-  !!                    call diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+  !! <br>Example usage:
+  !!
+  !!                            call diag_axis_add_attribute(diag_axis_id, att_name, att_value)
   INTERFACE diag_axis_add_attribute
      MODULE PROCEDURE diag_axis_add_attribute_scalar_r
      MODULE PROCEDURE diag_axis_add_attribute_scalar_i

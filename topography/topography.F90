@@ -21,7 +21,8 @@
 !> @brief Routines for creating land surface topography fields and land-water masks
 !! for latitude-longitude grids.
 !> @author Bruce Wyman
-!> This module generates realistic mountains and land-water masks
+!!
+!! This module generates realistic mountains and land-water masks
 !! on a specified latitude-longitude grid by interpolating from the
 !! 1/6 degree Navy mean topography and percent water data sets.
 !! The fields that can be generated are mean and standard deviation
@@ -205,6 +206,11 @@ end interface
 !     Check the input grid size and output field size.
 !   </ERROR>
 
+ !> @brief Returns a "realistic" mean surface height field.
+ !! Returns realistic mountains on a latitude-longtude grid.
+ !! The returned field is the mean topography for the given grid boxes.
+ !! Computed using a conserving area-weighted interpolation.
+ !! The current input data set is the 1/6 degree Navy mean topography.
  function get_topog_mean_1d (blon, blat, zmean)
 
    real, intent(in),  dimension(:)   :: blon, blat
@@ -290,6 +296,12 @@ end interface
 !     input topography data set was not readable.
 !   </OUT>
 
+ !> @brief Returns a standard deviation of higher resolution topography with
+ !! the given model grid boxes.
+ !!
+ !> Returns the standard deviation of the "finer" input topography data set,
+ !! currently the Navy 1/6 degree mean topography data, within the
+ !! boundaries of the given input grid.
  function get_topog_stdev_1d (blon, blat, stdev)
 
    real, intent(in),  dimension(:)   :: blon, blat
@@ -371,6 +383,8 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
+ !> @brief Returns fractional area covered by ocean in a grid box.
+ !> @returns ocean_frac The fractional area covered by ocean in the given model grid boxes.
  function get_ocean_frac_1d (blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
@@ -456,6 +470,8 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
+ !> @brief Returns a land-ocean mask in a grid box.
+ !> @return ocean_mask A land-ocean mask in the given model grid boxes.
  function get_ocean_mask_1d (blon, blat, ocean_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
@@ -538,6 +554,7 @@ end interface
 !      Check the input grid size and output field size.
 !   </ERROR>
 
+ !> @brief Returns the percent of water in a grid box.
  function get_water_frac_1d (blon, blat, water_frac)
 
  real, intent(in),  dimension(:)   :: blon, blat
@@ -621,6 +638,7 @@ end interface
 !     if the Navy 1/6 degree percent water data set was not readable.
 !   </OUT>
 
+ !> @brief Returns a land-water mask in the given model grid boxes.
  function get_water_mask_1d (blon, blat, water_mask)
 
  real   , intent(in),  dimension(:)   :: blon, blat
@@ -970,9 +988,8 @@ end interface
  end subroutine determine_ocean_points
 
 !#######################################################################
-! reads the namelist file, write namelist to log file,
-! and initializes constants
-
+!> @brief Reads the namelist file, write namelist to log file,
+!! and initializes constants
 subroutine read_namelist
 
    integer :: unit, ierr, io

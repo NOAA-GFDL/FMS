@@ -25,13 +25,15 @@
 !! the bounding lines of the two (logically rectangular) participating
 !! grids.  The exchange grid is therefore the coarsest grid that is a
 !! refinement of both participating grids.  Exchange grids are used for
-!! two purposes by coupled models:  (1) conservative interpolation of fields
+!! two purposes by coupled models:
+!! 1. conservative interpolation of fields
 !! between models uses the exchange grid cell areas as weights and
-!! (2) the surface flux calculation takes place on the exchange grid thereby
-!! using the finest scale data available.  <TT>xgrid_mod</TT> uses a NetCDF grid
+!! 2. the surface flux calculation takes place on the exchange grid thereby
+!! using the finest scale data available.
+!! <TT>xgrid_mod</TT> uses a NetCDF grid
 !! specification file containing the grid cell overlaps in combination with
-!! the <LINK SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90">
-!! <TT>mpp_domains</TT></LINK> domain decomposition information to determine
+!! the @link ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90 @endlink domain 
+!! decomposition information to determine
 !! the grid and processor connectivities.
 !!
 !!

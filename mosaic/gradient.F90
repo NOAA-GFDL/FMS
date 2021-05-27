@@ -20,7 +20,8 @@
 !> @ingroup mosaic
 !> @brief Implements some utility routines to calculate gradient.
 !> @author Zhi Liang
-!> Currently only gradient on cubic grid is implemented. Also a public interface
+!!
+!! Currently only gradient on cubic grid is implemented. Also a public interface
 !! is provided to calculate grid information needed to calculate gradient.
 
 !> @file

@@ -20,8 +20,10 @@
 !> @ingroup libfms
 !> @brief A convenience module to use any FMS routines, functions, values
 !> @author Ryan Mulhall
-!> @date 2/2021
-!> Imports all supported FMS modules so that any public interfaces,
+!!
+!! @date 2/2021
+!!
+!! Imports all supported FMS modules so that any public interfaces,
 !! variables or routines can be used via this module. Excludes mpp_io modules
 !! and routines. Overloaded type operators/assignments cannot be imported individually
 !! (ie. `use fms, only: OPERATOR(*)` includes any defined '*' operators within FMS).
@@ -42,6 +44,7 @@
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
 !!                     fms_mod(partial, old io excluded), drifters modules
 !!                     constants_mod (FMSconstants should be used externally)
+!!                     grid_mod, mosaic_mod
 !!
 !! A full list of supported interfaces and public types intended for use via
 !! this module is provided in the [supported_interfaces.md](../../supported_interfaces.md)

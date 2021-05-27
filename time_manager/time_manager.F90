@@ -25,27 +25,27 @@
 !! extensive that all those between antwerp and lima.
 !! A brief description of these changes follows.
 !!
-!! - Added option to set the smallest time increment to something less than one second.
-!!    This is controlled by calling the pubic subroutine set_ticks_per_second.
+!! <LI> Added option to set the smallest time increment to something less than one second.
+!!    This is controlled by calling the pubic subroutine set_ticks_per_second. </LI>
 !!
-!! - Gregorian calendar fixed.
+!! <LI>Gregorian calendar fixed.</LI>
 !!
-!! - Optional error flag added to calling arguments of public routines.
+!! <LI>Optional error flag added to calling arguments of public routines.
 !!    This allows the using routine to terminate the program. It is likely that more
 !!    diagnostic information is available from the user than from time_manager alone.
 !!    If the error flag is present then it is the responsibility of the using
-!!    routine to test it and add additional information to the error message.
+!!    routine to test it and add additional information to the error message.</LI>
 !!
-!! - Removed the restriction that time increments be positive in routines that increment or decrement
-!!    time and date. The option to prohibit negative increments can be turned on via optional argument.
+!! <LI>Removed the restriction that time increments be positive in routines that increment or decrement
+!!    time and date. The option to prohibit negative increments can be turned on via optional argument.</LI>
 !!
-!! - subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
-!!    This complies with CF convensions.
+!! <LI>subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
+!!    This complies with CF convensions.</LI>
 !!
-!! - Made calendar specific routines private.
-!!    They are not used, and should not be used, by any using code.
+!! <LI>Made calendar specific routines private.
+!!    They are not used, and should not be used, by any using code.</LI>
 !!
-!! - Error messages made more informative.
+!! <LI>Error messages made more informative.</LI>
 !!
 !! The module defines a type that can be used to represent discrete
 !! times (accurate to one second) and to map these times into dates
