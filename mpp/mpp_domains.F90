@@ -255,7 +255,7 @@ module mpp_domains_mod
   end type unstruct_pass_type
 
   !> Domain information for managing data on unstructured grids
-  type domainUG
+  type, public domainUG
      private
      type(unstruct_axis_spec) :: compute, global !< axis specifications
      type(unstruct_domain_spec), pointer :: list(:)=>NULL() !<
@@ -275,14 +275,14 @@ module mpp_domains_mod
   end type domainUG
 
   !> type used to specify index limits along an axis of a domain
-  type domain_axis_spec
+  type, public :: domain_axis_spec
      private
      integer :: begin, end, size, max_size !< start, end of domain axis, size, max size in set
      logical :: is_global !< .true. if domain axis extent covers global domain
   end type domain_axis_spec
 
   !> One dimensional domain used to manage shared data access between pes
-  type domain1D
+  TYPE, PUBLIC :: domain1D
      private
      type(domain_axis_spec) :: compute, data, global, memory !> index limits for different domains
      logical :: cyclic
@@ -341,8 +341,8 @@ module mpp_domains_mod
      type(overlapSpec),  pointer :: next => NULL()
   end type overlapSpec
 
-  !> Upper and lower x and y bounds for a tile
   !> @typedef
+  !> @brief Upper and lower x and y bounds for a tile
   type tile_type
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
@@ -2072,9 +2072,13 @@ module mpp_domains_mod
   !! decomposition. If no neighboring domain exists (masked domain), then the
   !! returned "pe" value will be set to NULL_PE.<br>
   !! <br>Example usage:
-  !!            call mpp_get_neighbor_pe( domain1d, direction=+1   , pe)
+  !!
+  !!                    call mpp_get_neighbor_pe( domain1d, direction=+1   , pe)
+  !!
   !! Set pe to the neighbor pe number that is to the right of the current pe
-  !!            call mpp_get_neighbor_pe( domain2d, direction=NORTH, pe)
+  !!
+  !!                    call mpp_get_neighbor_pe( domain2d, direction=NORTH, pe)
+  !!
   !! Get neighbor pe number that's above/north of the current pe
   interface mpp_get_neighbor_pe
      module procedure mpp_get_neighbor_pe_1d
@@ -2128,6 +2132,7 @@ module mpp_domains_mod
   !> @page mpp_get_compute_domains mpp_get_compute_domains Interface
   !! Retrieve the entire array of compute domain extents associated with a decomposition.
   !! <br>Example usage:
+  !!
   !!            call mpp_get_compute_domains( domain, xbegin, xend, xsize, &<br>
   !!                                                ybegin, yend, ysize )
   !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
@@ -2150,8 +2155,9 @@ module mpp_domains_mod
   !! retrieve the axis specifications associated with the data domains.
   !! The 2D version of these is a simple extension of 1D.
   !! <br>Example usage:
-  !!            call mpp_get_data_domain(domain_1d, isd, ied)
-  !!            call mpp_get_data_domain(domain_2d, isd, ied, jsd, jed)
+  !!
+  !!                    call mpp_get_data_domain(domain_1d, isd, ied)
+  !!                    call mpp_get_data_domain(domain_2d, isd, ied, jsd, jed)
   interface mpp_get_data_domain
      module procedure mpp_get_data_domain1D
      module procedure mpp_get_data_domain2D
@@ -2163,8 +2169,9 @@ module mpp_domains_mod
   !! retrieve the axis specifications associated with the global domains.
   !! The 2D version of these is a simple extension of 1D.
   !! <br>Example usage:
-  !!            call mpp_get_global_domain(domain_1d, isg, ieg)
-  !!            call mpp_get_global_domain(domain_2d, isg, ieg, jsg, jeg)
+  !!
+  !!                    call mpp_get_global_domain(domain_1d, isg, ieg)
+  !!                    call mpp_get_global_domain(domain_2d, isg, ieg, jsg, jeg)
   interface mpp_get_global_domain
      module procedure mpp_get_global_domain1D
      module procedure mpp_get_global_domain2D
@@ -2176,8 +2183,9 @@ module mpp_domains_mod
   !! retrieve the axis specifications associated with the memory domains.
   !! The 2D version of these is a simple extension of 1D.
   !! <br>Example usage:
-  !!            call mpp_get_memory_domain(domain_1d, ism, iem)
-  !!            call mpp_get_memory_domain(domain_2d, ism, iem, jsm, jem)
+  !!
+  !!                    call mpp_get_memory_domain(domain_1d, ism, iem)
+  !!                    call mpp_get_memory_domain(domain_2d, ism, iem, jsm, jem)
   interface mpp_get_memory_domain
      module procedure mpp_get_memory_domain1D
      module procedure mpp_get_memory_domain2D
@@ -2194,7 +2202,8 @@ module mpp_domains_mod
   !! set the axis specifications associated with the compute domains
   !! The 2D version of these is a simple extension of 1D.
   !! <br>Example usage:
-  !!            call mpp_set_compute_domain()
+  !!
+  !!                        call mpp_set_compute_domain()
   interface mpp_set_compute_domain
      module procedure mpp_set_compute_domain1D
      module procedure mpp_set_compute_domain2D
@@ -2225,7 +2234,7 @@ module mpp_domains_mod
   !! The 1D version of this call returns an array of the PEs assigned to
   !! this 1D domain decomposition. In addition the optional argument pos may be
   !! used to retrieve the 0-based position of the domain local to the
-  !! calling PE, i.e., \e domain%list(pos)%pe is the local PE,
+  !! calling PE, i.e., \e domain\%list(pos)%pe is the local PE,
   !! as returned by mpp_pe()
   !! The 2D version of this call is identical to 1D version.
   interface mpp_get_pelist
@@ -2239,7 +2248,8 @@ module mpp_domains_mod
   !! decomposition axis. The 2D version of this call returns an array of dimension 2 holding the
   !! results on two axes.
   !! <br>Example usage:
-  !!            call mpp_get_layout( domain, layout )
+  !!
+  !!                    call mpp_get_layout( domain, layout )
   interface mpp_get_layout
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
@@ -2253,8 +2263,9 @@ module mpp_domains_mod
   !> @page mpp_nullify_domain_list mpp_nullify_domain_list Interface
   !! Nullify domain list. This interface is needed in mpp_domains_test.
   !! 1-D case can be added in if needed.
-  !! Example usage:
-  !!            call mpp_nullify_domain_list(domain)
+  !! <br>Example usage:
+  !!
+  !!                    call mpp_nullify_domain_list(domain)
   interface mpp_nullify_domain_list
      module procedure nullify_domain2d_list
   end interface

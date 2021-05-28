@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms_mod
+!> @ingroup fms
 
 !>For an inputted file name, check if it or any of its variants exist.
 !!For a file named "foo", variants checked (in order) include:

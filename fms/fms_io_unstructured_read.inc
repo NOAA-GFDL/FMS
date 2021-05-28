@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms_mod
+!> @ingroup fms
 
 !------------------------------------------------------------------------------
 !>Read in a scalar field from a file associated with an unstructured mpp

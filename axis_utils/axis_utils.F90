@@ -50,7 +50,7 @@ module axis_utils_mod
 #include<file_version.h>
 
   !> @page interp_1d interp_1d Interface
-  !! 1D interpolation
+  !! Perform 1D interpolation
   !! @param grid1
   !! @param grid2
   !! @param data1 Data to interpolate
@@ -362,44 +362,41 @@ contains
     return
   end subroutine tranlon
 
-  !> @return real frac_index
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!   be the nearest data point to 0.0
+  !!
+  !!   @return real frac_index
   function frac_index (value, array)
-    !=======================================================================
-    !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
-    !
-    !=======================================================================
     integer :: ia, i, ii, unit
     real :: value !< arbitrary data...same units as elements in "array"
     real :: frac_index
@@ -439,43 +436,44 @@ contains
   end function frac_index
 
   !> @brief Return index of nearest point along axis
+  !!
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!     ia     = dimension of "array"
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!     be the nearest data point to 0.0
   !! @return integer nearest_index
   function nearest_index (value, array)
     !=======================================================================
     !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !     ia     = dimension of "array"
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
     !
     !=======================================================================
 

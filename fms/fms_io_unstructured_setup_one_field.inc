@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms_mod
+!> @ingroup fms
 
 !>Add a field to a restart object (restart_file_type).  Return the index of the
 !!inputted field in the fileObj%var array.

@@ -138,7 +138,8 @@ type date_type
    integer :: year, month, day
 end type
 
-!> assignment overload for amip_interp_type
+!> @page amip_interp_type Assignment
+!> Assignment overload to allow native assignment between amip_interp_type variables.
 interface assignment(=)
   module procedure  amip_interp_type_eq
 end interface
@@ -296,8 +297,8 @@ end type
 
 !> @page amip_interp_nml amip_interp Namelist
 !> @brief Namelist documentation for @ref amip_interp_mod
-!>
-!! @var character(len=24) data_set
+!!
+!> @var character(len=24) data_set
 !! Name/type of SST data that will be used.
 !!        Possible values (case-insensitive) are:
 !!                          1) amip1

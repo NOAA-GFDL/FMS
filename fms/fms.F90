@@ -21,21 +21,22 @@
 !! @brief The fms module provides routines that are commonly used
 !!   by most FMS modules.
 !> @author Bruce Wyman
+!!
 !> Here is a summary of the functions performed by routines
 !!     in the fms module.
 !!
-!!   1. Output module version numbers to a common (<TT>log</TT>) file
+!! 1. Output module version numbers to a common (<TT>log</TT>) file
 !!     using a common format.<BR/>
-!!   2. Open specific types of files common to many FMS modules.
+!! 2. Open specific types of files common to many FMS modules.
 !!     These include namelist files, restart files, and 32-bit IEEE
 !!     data files. There also is a matching interface to close the files.
 !!     If other file types are needed the <TT>mpp_open</TT> and <TT>mpp_close</TT>
-!!     interfaces in module <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html">mpp_io</LINK> must be used.<BR/>
-!!    3. Read and write distributed data to simple native unformatted files.
+!!     interfaces in module @ref mpp_io_mod must be used.<BR/>
+!! 3. Read and write distributed data to simple native unformatted files.
 !!     This type of file (called a restart file) is used to checkpoint
 !!     model integrations for a subsequent restart of the run.<BR/>
-!!    4. For convenience there are several routines published from
-!!     the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">mpp</LINK> module. These are routines for getting processor
+!! 4. For convenience there are several routines published from
+!!     the @ref mpp module. These are routines for getting processor
 !!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
 
 !> @file
@@ -218,7 +219,7 @@ public :: do_cf_compliance
 !of course you can go and set the flag to SYNC or DETAILED by hand
 integer, public :: clock_flag_default
 
-! Namelist read error values
+  !> Namelist read error values
   TYPE nml_errors_type
      INTEGER :: multipleNMLSinFile
      INTEGER :: badType1

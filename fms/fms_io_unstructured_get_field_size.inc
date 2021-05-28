@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms_mod
+!> @ingroup fms
 
 !>Get the size of the dimensions of a field from a file associated with an
 !!unstructured mpp domain.

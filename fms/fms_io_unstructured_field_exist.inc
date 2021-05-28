@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms_mod
+!> @ingroup fms
 
 !>Return a flag indicating whether the inputted field exists in the inputted
 !!file, where the file is associated with an unstructured mpp domain.
