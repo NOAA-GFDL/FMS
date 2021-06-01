@@ -163,7 +163,7 @@ integer, parameter, private :: NIDX=8
 
 logical, private :: warn_string_function = .true.
 
-type meta_type
+type, private meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
 !!$ Gfortran on gaea does not yet support deferred length character strings
 !!$  character(len=:),allocatable  :: name
@@ -175,7 +175,7 @@ type meta_type
   character(len=256)   :: cval
 end type meta_type
 
-type ax_type
+type, private ax_type
    private
    character(len=128) :: name = ''
    character(len=128) :: units = ''
@@ -202,7 +202,7 @@ type ax_type
 
 end type ax_type
 
-type var_type
+type, private var_type
    private
    character(len=128)                     :: name = ''
    character(len=128)                     :: longname = ''
@@ -283,7 +283,7 @@ type Ptr3Di
    integer, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Di
 
-type restart_file_type
+type, public restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
    character(len=128)                       :: name = ''

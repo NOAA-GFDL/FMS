@@ -50,7 +50,7 @@ module stock_constants_mod
   integer, parameter :: NSIDES  = 3         !< top, bottom, side
 
   !> @brief per PE values
-  type stock_type ! per PE values
+  type, private stock_type ! per PE values
      real  :: q_start = 0.0    !< total stocks at start time
      real  :: q_now   = 0.0    !< total stocks at time t
 

@@ -44,9 +44,9 @@ module drifters_core_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !! @brief Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
-  !!   when adding members
-  type drifters_core_type
+  !> @brief Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
+  !! when adding members
+  type, public drifters_core_type
      ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
      ! when adding members
      integer(kind=i8_kind) :: it   ! time index

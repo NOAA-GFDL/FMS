@@ -220,7 +220,7 @@ public :: do_cf_compliance
 integer, public :: clock_flag_default
 
   !> Namelist read error values
-  TYPE nml_errors_type
+  TYPE, PUBLIC nml_errors_type
      INTEGER :: multipleNMLSinFile
      INTEGER :: badType1
      INTEGER :: badType2
@@ -501,9 +501,10 @@ end subroutine fms_init
 ! also calls mpp destructor routines
 
 !> @brief Calls the termination routines for all modules in the MPP package.
-!! @details Termination routine for the fms module. It also calls destructor routines
-!!      for the mpp, mpp_domains, and mpp_io modules. If this routine is called
-!!      more than once it will return silently. There are no arguments.
+!!
+!> Termination routine for the fms module. It also calls destructor routines
+!! for the mpp, mpp_domains, and mpp_io modules. If this routine is called
+!! more than once it will return silently. There are no arguments.
 subroutine fms_end ( )
 
     if (.not.module_is_initialized) return  ! return silently
@@ -995,8 +996,9 @@ integer :: i
 end function monotonic_array
 ! </FUNCTION>
 !! Functions from the old fms_io
-!> \brief Converts an integer to a string
-!! This has been updated from the fms_io function.
+  !> @brief Converts an integer to a string
+  !!
+  !> This has been updated from the fms_io function.
   function string_from_integer(i) result (res)
     integer, intent(in) :: i !< Integer to be converted to a string
     character(:),allocatable :: res !< String converted frominteger
@@ -1008,7 +1010,7 @@ end function monotonic_array
   end function string_from_integer
 
   !#######################################################################
-!> \brief Converts a real to a string
+  !> @brief Converts a real to a string
   function string_from_real(a)
     real, intent(in) :: a
     character(len=32) :: string_from_real

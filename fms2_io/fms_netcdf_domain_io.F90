@@ -49,7 +49,7 @@ character(len=16), parameter :: y = "y"
 
 
 !> @brief Domain variable.
-type :: DomainDimension_t
+type, private :: DomainDimension_t
   character(len=nf90_max_name) :: varname !< Variable name.
   integer :: pos !< Domain position.
 endtype DomainDimension_t

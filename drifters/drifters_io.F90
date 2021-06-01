@@ -47,7 +47,7 @@ module drifters_io_mod
   real :: drfts_eps_t = 10.*epsilon(1.)
 
 
-  type drifters_io_type
+  type, public drifters_io_type
      real                 :: time
      integer              :: it !< time index
      integer              :: it_id !< infinite axis index

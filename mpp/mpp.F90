@@ -133,7 +133,7 @@
 !!   call is provided to set the current pelist.
 !! </DESCRIPTION>
 !! <br/>
-!! <PUBLIC>
+!!
 !!  F90 is a strictly-typed language, and the syntax pass of the
 !!  compiler requires matching of type, kind and rank (TKR). Most calls
 !!  listed here use a generic type, shown here as <TT>MPP_TYPE_</TT>. This
@@ -143,7 +143,6 @@
 !!  rank 0 to 5, leading to 48 specific module procedures under the same
 !!  generic interface. Any of the variables below shown as
 !!  <TT>MPP_TYPE_</TT> is treated in this way.
-!! </PUBLIC>
 
 !> @file
 !> @brief File for @ref mpp_mod
@@ -229,16 +228,16 @@ private
   !
   !*********************************************************************
   !> peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
-  type :: communicator
+  type, public :: communicator
      private
      character(len=32) :: name
      integer, pointer  :: list(:) =>NULL()
      integer           :: count
-     integer           :: start, log2stride ! dummy variables when libMPI is defined.
-     integer           :: id, group         ! MPI communicator and group id for this PE set.
+     integer           :: start, log2stride !< dummy variables when libMPI is defined.
+     integer           :: id, group         !< MPI communicator and group id for this PE set.
   end type communicator
 
-  type :: event
+  type, public :: event
      private
      character(len=16)                         :: name
      integer(i8_kind), dimension(MAX_EVENTS)   :: ticks, bytes
@@ -246,7 +245,7 @@ private
   end type event
 
   !> a clock contains an array of event profiles for a region
-  type :: clock
+  type, public :: clock
      private
      character(len=32)    :: name
      integer(i8_kind)     :: hits
@@ -261,7 +260,7 @@ private
   end type clock
 
   !> Summary of information from a clock run
-  type :: Clock_Data_Summary
+  type, public :: Clock_Data_Summary
      private
      character(len=16)  :: name
      real(r8_kind)      :: msg_size_sums(MAX_BINS)
@@ -273,14 +272,14 @@ private
   end type Clock_Data_Summary
 
   !> holds name and clock data for use in @ref mpp_util.h
-  type :: Summary_Struct
+  type, public :: Summary_Struct
      private
      character(len=16)         :: name
      type (Clock_Data_Summary) :: event(MAX_EVENT_TYPES)
   end type Summary_Struct
 
   !> Data types for generalized data transfer (e.g. MPI_Type)
-  type :: mpp_type
+  type, public :: mpp_type
      private
      integer :: counter !> Number of instances of this type
      integer :: ndims
@@ -295,7 +294,7 @@ private
   end type mpp_type
 
   !> Persisent elements for linked list interaction
-  type :: mpp_type_list
+  type, public :: mpp_type_list
       private
       type(mpp_type), pointer :: head => null()
       type(mpp_type), pointer :: tail => null()
@@ -307,15 +306,10 @@ private
 !     public interface from mpp_util.h
 !
 !***********************************************************************
-  !> @interface
-  !! @description
-  !! @htmlonly
-  !! <INTERFACE NAME="mpp_error">
-  !!  <OVERVIEW>
-  !!    Error handler.
-  !!  </OVERVIEW>
-  !!  <DESCRIPTION>
-  !!    It is strongly recommended that all error exits pass through
+  !> @page mpp_error mpp_error Interface
+  !> @brief Error handler.
+  !!
+  !>    It is strongly recommended that all error exits pass through
   !!    <TT>mpp_error</TT> to assure the program fails cleanly. An individual
   !!    PE encountering a <TT>STOP</TT> statement, for instance, can cause the
   !!    program to hang. The use of the <TT>STOP</TT> statement is strongly
@@ -324,14 +318,14 @@ private
   !!    Calling mpp_error with no arguments produces an immediate error
   !!    exit, i.e:
   !!    <PRE>
-  !!    call mpp_error
-  !!    call mpp_error()
+  !!                    call mpp_error
+  !!                    call mpp_error()
   !!    </PRE>
   !!    are equivalent.
   !!
   !!    The argument order
   !!    <PRE>
-  !!    call mpp_error( routine, errormsg, errortype )
+  !!                    call mpp_error( routine, errormsg, errortype )
   !!    </PRE>
   !!    is also provided to support legacy code. In this version of the
   !!    call, none of the arguments may be omitted.
@@ -339,12 +333,12 @@ private
   !!    The behaviour of <TT>mpp_error</TT> for a <TT>WARNING</TT> can be
   !!    controlled with an additional call <TT>mpp_set_warn_level</TT>.
   !!    <PRE>
-  !!    call mpp_set_warn_level(ERROR)
+  !!                    call mpp_set_warn_level(ERROR)
   !!    </PRE>
   !!    causes <TT>mpp_error</TT> to treat <TT>WARNING</TT>
   !!    exactly like <TT>FATAL</TT>.
   !!    <PRE>
-  !!    call mpp_set_warn_level(WARNING)
+  !!                    call mpp_set_warn_level(WARNING)
   !!    </PRE>
   !!    resets to the default behaviour described above.
   !!
@@ -358,15 +352,15 @@ private
   !!    the user can take appropriate action:
   !!
   !!    <PRE>
-  !!    if( ... )call mpp_error( WARNING, '...' )
-  !!    if( ... )call mpp_error( WARNING, '...' )
-  !!    if( ... )call mpp_error( WARNING, '...' )
-  !!    ...
-  !!    if( mpp_error_state().EQ.WARNING )call mpp_error( FATAL, '...' )
+  !!                    if( ... )call mpp_error( WARNING, '...' )
+  !!                    if( ... )call mpp_error( WARNING, '...' )
+  !!                    if( ... )call mpp_error( WARNING, '...' )
+  !!                    ...
+  !!                    if( mpp_error_state().EQ.WARNING )call mpp_error( FATAL, '...' )
   !!    </PRE>
   !!  </DESCRIPTION>
   !!  <TEMPLATE>
-  !!    call mpp_error( errortype, routine, errormsg )
+  !!                    call mpp_error( errortype, routine, errormsg )
   !!  </TEMPLATE>
   !!  <IN NAME="errortype">
   !!    One of <TT>NOTE</TT>, <TT>WARNING</TT> or <TT>FATAL</TT>
@@ -376,7 +370,6 @@ private
   !!    <TT>FATAL</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>,
   !!    and induces a clean error exit with a call stack traceback.
   !!  </IN>
-  !! </INTERFACE>
   interface mpp_error
      module procedure mpp_error_basic
      module procedure mpp_error_mesg
@@ -402,6 +395,7 @@ private
      module procedure mpp_error_rs_is
      module procedure mpp_error_rs_rs
   end interface
+  !> @page array_to_char array_to_char Interface
   !> Takes a given integer or real array and returns it as a string
   interface array_to_char
      module procedure iarray_to_char
@@ -420,7 +414,7 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @function mpp_init mpp_init
+  !> @page mpp_init mpp_init Interface
   !> @brief Initialize @ref mpp_mod
   !!
   !> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
@@ -428,35 +422,32 @@ private
   !! number of PEs assigned to this run (acquired from the command line, or
   !! through the environment variable <TT>NPES</TT>), and associates an ID
   !! number to each PE. These can be accessed by calling @ref mpp_npes and
-  !! @ref mpp_pe
-  !!  <TEMPLATE>
-  !!   call mpp_init( flags )
-  !!  </TEMPLATE>
-  !!  <IN NAME="flags" TYPE="integer">
+  !! @ref mpp_pe. 
+  !! <br> Example usage:
+  !! 
+  !!            call mpp_init( flags )
+  !!
+  !! @param flags" TYPE="integer">
   !!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
   !!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
   !!  </IN>
   !! </SUBROUTINE>
 
-
-  !! <SUBROUTINE NAME="mpp_exit">
-  !!  <OVERVIEW>
-  !!   Exit <TT>mpp_mod</TT>.
-  !!  </OVERVIEW>
-  !!  <DESCRIPTION>
-  !!   Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
-  !!   should you require that for some odd reason.
+  !> @page mpp_exit mpp_exit Interface
+  !> @brief Exit <TT>@ref mpp_mod</TT>.
   !!
-  !   This call implies synchronization across all PEs.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   call mpp_exit()
-  !  </TEMPLATE>
-  ! </SUBROUTINE>
+  !> Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
+  !! should you require that for some odd reason.
+  !!
+  !! This call implies synchronization across all PEs.
+  !! 
+  !! <br>Example usage:
+  !!
+  !!            call mpp_exit()
 
   !#####################################################################
 
-
+  !> @page mpp_set_stack_size mpp_set_stack_size Interface
   !> @brief Allocate module internal workspace.
   !> @param Integer to set stack size to(in words)
   !> <TT>mpp_mod</TT> maintains a private internal array called
@@ -519,26 +510,17 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> <INTERFACE NAME="mpp_max">
-  !!  <OVERVIEW>
-  !!    Reduction operations.
-  !!  </OVERVIEW>
-  !!  <DESCRIPTION>
-  !!    Find the max of scalar a the PEs in pelist
+  !> @page mpp_max mpp_max Interface
+  !> @brief Reduction operations.
+  !>    Find the max of scalar a the PEs in pelist
   !!    result is also automatically broadcast to all PEs
-  !!  </DESCRIPTION>
   !!  <TEMPLATE>
-  !!    call  mpp_max( a, pelist )
+  !!            call  mpp_max( a, pelist )
   !!  </TEMPLATE>
-  !!  <IN NAME="a">
-  !!    <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
-  !!  </IN>
-  !!  <IN NAME="pelist">
-  !!    If <TT>pelist</TT> is omitted, the context is assumed to be the
+  !> @param a <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
+  !> @param pelist If <TT>pelist</TT> is omitted, the context is assumed to be the
   !!    current pelist. This call implies synchronization across the PEs in
   !!    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
-  !!  </IN>
-  !! </INTERFACE>
   interface mpp_max
      module procedure mpp_max_real8_0d
      module procedure mpp_max_real8_1d
@@ -550,6 +532,7 @@ private
      module procedure mpp_max_int4_1d
   end interface
 
+  !> @page mpp_min mpp_min Interface
   !> @brief Get minimum value out of the PEs in pelist
   !> Result is also broadcast to all PEs
   interface mpp_min
@@ -564,7 +547,9 @@ private
   end interface
 
 
+  !> @page mpp_sum mpp_sum Interface
   !> @brief Reduction operation.
+  !!
   !> <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
   !! <TT>integer, real, complex</TT> variables, of rank 0 or 1. A
   !! contiguous block from a multi-dimensional array may be passed by its
@@ -630,6 +615,7 @@ private
 #endif
   end interface
 
+  !> @page mpp_sum_ad mpp_sum_ad Interface
   !> Calculates sum of a given numerical array across pe's for adjoint domains
   interface mpp_sum_ad
      module procedure mpp_sum_int8_ad
@@ -674,6 +660,7 @@ private
 #endif
   end interface
 
+  !> @page mpp_gather mpp_gather Interface
   !> @brief Gather information onto root pe
   interface mpp_gather
      module procedure mpp_gather_logical_1d
@@ -694,6 +681,7 @@ private
      module procedure mpp_gather_pelist_real8_3d
   end interface
 
+  !> @page mpp_scatter mpp_scatter Interface
   !> @brief Scatter information to the given pelist
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
@@ -705,7 +693,9 @@ private
   end interface
 
   !#####################################################################
+  !> @page mpp_alltoall mpp_alltoall Interface
   !> @brief Scatter a vector across all PEs
+  !!
   !> Transpose the vector and PE index
   interface mpp_alltoall
      module procedure mpp_alltoall_int4
@@ -748,13 +738,10 @@ private
 
 
   !#####################################################################
-
-  !! <INTERFACE NAME="mpp_transmit">
-  !!  <OVERVIEW>
-  !!    Basic message-passing call.
-  !!  </OVERVIEW>
-  !!  <DESCRIPTION>
-  !!    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
+  !> @page mpp_transmit mpp_transmit Interface
+  !> @brief Basic message-passing call.
+  !!
+  !>    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
   !!    <TT>integer, real, complex, logical</TT> variables, of rank 0 or 1. A
   !!    contiguous block from a multi-dimensional array may be passed by its
   !!    starting address and its length, as in <TT>f77</TT>.
@@ -877,7 +864,9 @@ private
      module procedure mpp_transmit_logical4_4d
      module procedure mpp_transmit_logical4_5d
   end interface
+  !> @page mpp_recv mpp_recv Interface
   !> @brief Recieve data to another PE
+  !!
   !> @param[out] get_data scalar or array to get written with received data
   !> @param get_len size of array to recv from get_data
   !> @param from_pe PE number to receive from
@@ -940,7 +929,9 @@ private
      module procedure mpp_recv_logical4_4d
      module procedure mpp_recv_logical4_5d
   end interface
+  !> @page mpp_send mpp_send Interface
   !> @brief Send data to another PE
+  !!
   !> @param[out] put_data scalar or array to get written with received data
   !> @param put_len size of array to recv from get_data
   !> @param to_pe PE number to receive from
@@ -1005,7 +996,9 @@ private
   end interface
 
 
+  !> @page mpp_broadcast mpp_broadcast Interface
   !> @brief Perform parallel broadcasts
+  !!
   !> The <TT>mpp_broadcast</TT> call has been added because the original
   !! syntax (using <TT>ALL_PES</TT> in <TT>mpp_transmit</TT>) did not
   !! support a broadcast across a pelist.
@@ -1024,7 +1017,8 @@ private
   !! pelist. This call implies synchronization across the PEs in
   !! <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
   !!
-  !! Example usage
+  !! <br>Example usage:
+  !!
   !!            call mpp_broadcast( data, length, from_pe, pelist )
   !!
   !> @param[inout] data Data to broadcast
@@ -1091,8 +1085,10 @@ private
 
   !#####################################################################
 
+  !> @page mpp_chksum mpp_chksum Interface
   !> @brief Calculate parallel checksums
-  !> \empp_chksum is a parallel checksum routine that returns an
+  !!
+  !> \e mpp_chksum is a parallel checksum routine that returns an
   !! identical answer for the same array irrespective of how it has been
   !! partitioned across processors. \eint_kind is the KIND
   !! parameter corresponding to long integers (see discussion on
@@ -1126,7 +1122,10 @@ private
   !! If <TT>pelist</TT> is omitted, the context is assumed to be the
   !! current pelist. This call implies synchronization across the PEs in
   !! <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
-  !! @example            mpp_chksum( var, pelist )
+  !! <br> Example usage:
+  !!
+  !!            mpp_chksum( var, pelist )
+  !!
   !! @param var Data to calculate checksum of
   !! @param pelist Optional list of PE's to include in checksum calculation if not using
   !! current pelist

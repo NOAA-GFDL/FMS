@@ -61,7 +61,7 @@
 !> @file
 !> @brief File for @ref drifters_mod
 
-!> @addtogroup
+!> @addtogroup drifters_mod
 !> @{
 module drifters_mod
 
@@ -111,7 +111,7 @@ module drifters_mod
   real :: DRFT_EMPTY_ARRAY(0)
 
   !> @brief type to hold drifter data
-  type drifters_type
+  type, public drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
      type(drifters_core_type)  :: core

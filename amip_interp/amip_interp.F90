@@ -133,7 +133,7 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 !-----------------------------------------------------------------------
 !------ private defined data type --------
 
-type date_type
+type, private date_type
    sequence
    integer :: year, month, day
 end type
@@ -223,7 +223,7 @@ end interface
 !----- public data type ------
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
-type amip_interp_type
+type, public amip_interp_type
    private
    type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
    real, pointer            ::    data1(:,:) =>NULL(), &

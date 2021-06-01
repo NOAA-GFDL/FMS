@@ -59,8 +59,8 @@ module drifters_comm_mod
   public :: drifters_comm_type, drifters_comm_new, drifters_comm_del, drifters_comm_set_pe_neighbors
   public :: drifters_comm_set_domain, drifters_comm_update, drifters_comm_gather
 
-  !> type for drifter communication between PE's
-  type drifters_comm_type
+  !> @brief Type for drifter communication between PE's
+  type, public drifters_comm_type
      ! compute domain
      real           :: xcmin !> compute domain
      real           :: xcmax !> compute domain

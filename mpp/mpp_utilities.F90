@@ -40,6 +40,7 @@ contains
 !#######################################################################
 !> @brief Compute and return the global min and max of an array
 !! and the corresponding lat-lon-depth locations .
+!!
 !> This algorithm works only for an input array that has a unique global
 !! max and min location. This is assured by introducing a factor that distinguishes
 !! the values of extrema at each processor.

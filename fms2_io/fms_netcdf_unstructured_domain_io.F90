@@ -20,7 +20,7 @@
 !> @ingroup fms2_io
 !> @brief Handles netcdf I/O for unstructured domains
 !!
-!> Mainl
+!> Mainly routines for use via interfaces in @ref fms2_io_mod
 
 !> @file
 !> @brief File for @ref fms_netcdf_unstructured_domain_io_mod
@@ -38,7 +38,7 @@ private
 
 
 !> @brief netcdf unstructured domain file type.
-type, extends(FmsNetcdfFile_t), public :: FmsNetcdfUnstructuredDomainFile_t
+type, public, extends(FmsNetcdfFile_t) :: FmsNetcdfUnstructuredDomainFile_t
   type(domainug) :: domain !< Unstructured domain.
   character(len=256) :: non_mangled_path !< Non-domain-mangled path.
 endtype FmsNetcdfUnstructuredDomainFile_t

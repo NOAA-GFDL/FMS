@@ -43,35 +43,33 @@
 !!       date</I> of the experiment respectively.  The <I>title</I> must be a Fortran CHARACTER string.  The <I>base date</I>
 !!       is the reference time used for the time units, and must be greater than or equal to the model start time.
 !!       The <I>base date</I> consists of six space-separated integer in the following format.<BR />
-!!       <TT><NOBR>year month day hour minute second</NOBR></TT><BR />
+!!       <TT> year month day hour minute second </TT><BR />
 !!     </LI>
 !!     <LI>
 !!       <B>File Section:</B> File lines contain 6 required and 5 optional fields (optional fields are surrounded with
 !!       square brackets ([]).  File lines can be intermixed with the field lines, but the file must be defined before any
 !!       fields that are to be written to the file.  File lines have the following format:<BR />
-!!       <PRELN>
 !!         "file_name", output_freq, "output_freq_units", file_format, "time_axis_units", "time_axis_name"
 !!         [, new_file_freq, "new_file_freq_units"[, "start_time"[, file_duration, "file_duration_units"]]]
-!!       </PRELN>
 !!       <BR />
 !!       with the following descriptions.
 !!       <DL>
 !!         <DT><TT>CHARACTER(len=128) :: file_name</TT></DT>
 !!         <DD>
-!!           Output file name without the trailing "<TT>.nc</TT>".
+!!           Output file name without the trailing <TT>".nc"</TT>.
 !!
 !!           A single file description can produce multiple files using special time string suffix keywords.  This time string
 !!           will append the time strings to the base file name each time a new file is opened.  They syntax for the time string
 !!           suffix keywords are <TT>%#tt</TT> Where <TT>#</TT> is a mandatory single digit number specifying the width of the
 !!           field, and <TT>tt</TT> can be as follows:
-!!           <NL>
-!!             <LI><TT>yr</TT> <EN /> Years</LI>
-!!             <LI><TT>mo</TT> <EN /> Months</LI>
-!!             <LI><TT>dy</TT> <EN /> Days</LI>
-!!             <LI><TT>hr</TT> <EN /> Hours</LI>
-!!             <LI><TT>mi</TT> <EN /> Minutes</LI>
-!!             <LI><TT>sc</TT> <EN /> Seconds</LI>
-!!           </NL>
+!!           <UL>
+!!             <LI><TT>yr</TT>  Years</LI>
+!!             <LI><TT>mo</TT>  Months</LI>
+!!             <LI><TT>dy</TT>  Days</LI>
+!!             <LI><TT>hr</TT>  Hours</LI>
+!!             <LI><TT>mi</TT>  Minutes</LI>
+!!             <LI><TT>sc</TT>  Seconds</LI>
+!!           </UL>
 !!           Thus, a file name of <TT>file2_yr_dy%1yr%3dy</TT> will have a base file name of <TT>file2_yr_dy_1_001</TT> if the
 !!           file is created on year 1 day 1 of the model run.  <B><I>NOTE:</I></B> The time suffix keywords must be used if the
 !!           optional fields <TT>new_file_freq</TT> and <TT>new_file_freq_units</TT> are used, otherwise a <TT>FATAL</TT> error
@@ -149,7 +147,7 @@
 !!       with the following descriptions.
 !!       <DL>
 !!         <DT><TT>CHARACTER(len=128) :: module_name</TT></DT>
-!!         <DD>Module that contains the <TT>field_name</TT> variable.  (e.g. <TT>atmos_mod</TT>, <TT>land_mod</TT>)</DD>
+!!         <DD>Module that contains the <TT>field_name</TT> variable. (e.g. <TT>atmos_mod</TT>, <TT>land_mod</TT>)</DD>
 !!         <DT><TT>CHARACTER(len=128) :: field_name</TT></DT>
 !!         <DD>Module variable name that has data to be written to file.</DD>
 !!         <DT><TT>CHARACTER(len=128) :: output_name</TT></DT>
@@ -200,7 +198,6 @@
 !!   </OL>
 !!
 !!   <H4><B>Sample <TT>diag_table</TT></B></H4>
-!!   <NL>
 !!     <LI>
 !!       <PRE>
 !! "diag manager test"
@@ -220,7 +217,6 @@
 !! "ocean_mod", "temp", "temp", "temp_local", "all", .FALSE., "5 259.5 -59.5 59.5 1 1", 2
 !!       </PRE>
 !!     </LI>
-!!   </NL>
 !!
 !!   <H4>Useful Additional Utility</H4>
 !!   A simple utility has been created to help discover

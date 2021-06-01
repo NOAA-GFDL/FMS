@@ -57,7 +57,7 @@ character (len = 10), private :: fms2_nc_format !< Netcdf format type used in ne
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
 !> @brief information needed fr regional restart variables
-type :: bc_information
+type, private :: bc_information
   integer, dimension(:), allocatable :: indices !< Indices for the halo region for the variable
                                                 !! (starting x, ending x, starting y, ending y)
   integer, dimension(:), allocatable :: global_size !< Size of the variable for each dimension
@@ -77,7 +77,7 @@ type :: bc_information
 endtype bc_information
 
 !> @brief Restart variable.
-type :: RestartVariable_t
+type, private :: RestartVariable_t
   character(len=256) :: varname !< Variable name.
   class(*), pointer :: data0d => null() !< Scalar data pointer.
   class(*), dimension(:), pointer :: data1d => null() !< 1d data pointer.
@@ -92,7 +92,7 @@ type :: RestartVariable_t
 endtype RestartVariable_t
 
 !> @brief Compressed dimension.
-type :: CompressedDimension_t
+type, private :: CompressedDimension_t
   character(len=256) :: dimname !< Dimension name.
   integer, dimension(:), allocatable :: npes_corner !< Array of starting
                                                     !! indices for each rank.
@@ -103,7 +103,7 @@ type :: CompressedDimension_t
 endtype CompressedDimension_t
 
 !> @brief information about the current dimensions for regional restart variables
-type :: dimension_information
+type, private :: dimension_information
   integer, dimension(5) :: xlen !> The size of each unique x dimension
   integer, dimension(5) :: ylen !> The size of each unique y dimension
   integer, dimension(5) :: zlen !> The size of each unique z dimension

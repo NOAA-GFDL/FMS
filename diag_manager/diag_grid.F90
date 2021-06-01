@@ -86,7 +86,7 @@ use platform_mod
 #include<file_version.h>
 
   !> @brief Contains the model's global grid data, and other grid information.
-  TYPE :: diag_global_grid_type
+  TYPE, PRIVATE :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: aglo_lat !< The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
@@ -110,7 +110,7 @@ use platform_mod
 
   !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
   !! location.
-  TYPE :: point
+  TYPE, PRIVATE :: point
      REAL :: x !< The x value of the (x,y,z) coordinates.
      REAL :: y !< The y value of the (x,y,z) coordinates.
      REAL :: z !< The z value of the (x,y,z) coordinates.

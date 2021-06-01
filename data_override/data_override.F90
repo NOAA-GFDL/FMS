@@ -83,7 +83,7 @@ private
 #include<file_version.h>
 
 !> @brief Holds field and grid data
-type data_type
+type, private data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code !< fieldname used in user's code (model)
    character(len=128) :: fieldname_file !< fieldname used in the netcdf data file
@@ -94,8 +94,7 @@ type data_type
    integer            :: region_type
 end type data_type
 
-
-type override_type
+type, private override_type
    character(len=3)                 :: gridname
    character(len=128)               :: fieldname
    integer                          :: t_index                 !< index for time interp

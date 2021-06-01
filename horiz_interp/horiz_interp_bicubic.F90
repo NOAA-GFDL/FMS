@@ -20,6 +20,24 @@
 !> @ingroup horiz_interp
 !> @brief Delivers methods for bicubic interpolation from a coarse regular grid
 !! on a fine regular grid
+!!
+!! This module delivers methods for bicubic interpolation from a
+!! coarse regular grid on a fine regular grid.
+!! Subroutines
+!!
+!! - @ref bcuint
+!! - @ref bcucof
+!!
+!! are methods taken from
+!!
+!!       W. H. Press, S. A. Teukolski, W. T. Vetterling and B. P. Flannery,
+!!       Numerical Recipies in FORTRAN, The Art of Scientific Computing.
+!!       Cambridge University Press, 1992
+!!
+!! written by
+!!       martin.schmidt@io-warnemuende.de (2004)
+!! revised by
+!!       martin.schmidt@io-warnemuende.de (2004)
 
 !> @file
 !> @brief File for @ref horiz_interp_bicubic_mod
@@ -109,6 +127,7 @@ module horiz_interp_bicubic_mod
   !     writes version number to logfile.out
   !  </DESCRIPTION>
 
+  !> @brief Writes version number to logfile.out
   subroutine horiz_interp_bicubic_init
 
      if(module_is_initialized) return

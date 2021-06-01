@@ -24,14 +24,13 @@
 !
 !-----------------------------------------------------------------------
 
-!!!!  TODO move type descriptions to where they need to be for doxygen
-
 !> @defgroup mpp_io_mod mpp_io_mod
 !> @ingroup mpp
 !> @brief a set of simple calls for parallel I/O on
 !!   distributed systems. It is geared toward the writing of data in netCDF
 !!   format
 !> @author V. Balaji <"vb@gfdl.noaa.gov">
+!!
 !> In massively parallel environments, an often difficult problem is
 !! the reading and writing of data to files on disk. MPI-IO and MPI-2 IO
 !! are moving toward providing this capability, but are currently not
@@ -401,7 +400,7 @@ private
   !-----------------------------------------------------------------------------
 integer FILE_TYPE_USED
 integer, parameter :: MAX_ATT_LENGTH = 1280
-type :: atttype
+type, public :: atttype
      private
      integer             :: type, len
      character(len=128)  :: name
@@ -409,7 +408,7 @@ type :: atttype
      real, pointer       :: fatt(:) =>NULL() ! just use type conversion for integers
   end type atttype
 
-  type :: axistype
+  type, public :: axistype
      private
      character(len=128) :: name
      character(len=128) :: name_bounds
@@ -429,13 +428,13 @@ type :: atttype
      type(atttype), pointer :: Att(:) =>NULL()
   end type axistype
 
-  type :: validtype
+  type, public :: validtype
      private
      logical :: is_range ! if true, then the data represent the valid range
      real    :: min,max  ! boundaries of the valid range or missing value
   end type validtype
 
-  type :: fieldtype
+  type, public :: fieldtype
      private
      character(len=128)      :: name
      character(len=128)      :: units
@@ -454,7 +453,7 @@ type :: atttype
      integer                 :: position ! indicate the location of the data ( CENTER, NORTH, EAST, CORNER )
   end type fieldtype
 
-  type :: filetype
+  type, public :: filetype
      private
      character(len=256) :: name
      integer            :: action, format, access, threading, fileset, record, ncid
@@ -507,6 +506,11 @@ type :: atttype
 !  <IN NAME="unit"></IN>
 !  <IN NAME="global_atts"></IN>
 ! </INTERFACE>
+  !> @page mpp_get_atts mpp_get_atts Interface
+  !> @brief Get file global metadata.
+  !!
+  !> <br>Example usage:
+  !!                    call mpp_get_atts( unit, global_atts)
   interface mpp_get_atts
      module procedure mpp_get_global_atts
      module procedure mpp_get_field_atts

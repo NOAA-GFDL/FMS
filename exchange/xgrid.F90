@@ -315,7 +315,7 @@ interface conservation_check_ug
 end interface
 
 
-type xcell_type
+type, private xcell_type
   integer :: i1 !< indices of cell in model arrays on both sides
   integer :: j1 !< indices of cell in model arrays on both sides
   integer :: i2 !< indices of cell in model arrays on both sides
@@ -332,7 +332,7 @@ type xcell_type
   real    :: scale
 end type xcell_type
 
-type grid_box_type
+type, public grid_box_type
    real, dimension(:,:),   pointer :: dx     => NULL()
    real, dimension(:,:),   pointer :: dy     => NULL()
    real, dimension(:,:),   pointer :: area   => NULL()
@@ -346,7 +346,7 @@ type grid_box_type
    real, dimension(:,:,:), pointer :: vlat   => NULL()
 end type grid_box_type
 
-type grid_type
+type, private grid_type
   character(len=3)                :: id                               !< grid identifier
   integer                         :: npes                             !< number of processor on this grid.
   logical                         :: on_this_pe                       !< indicate the domain is defined on this pe
@@ -408,7 +408,7 @@ type grid_type
 
 end type grid_type
 
-type x1_type
+type, private x1_type
   integer :: i, j
   real    :: area   !< (= geographic area * frac_area)
 !  real    :: area_ratio !(= x1_area/grid1_area) ! will be added in the future to improve efficiency
@@ -418,13 +418,13 @@ type x1_type
   integer :: pos
 end type x1_type
 
-type x2_type
+type, private x2_type
   integer :: i, j, l, k, pos
   real    :: area   !< geographic area of exchange cell
 !  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
-type overlap_type
+type, private overlap_type
    integer          :: count
    integer          :: pe
    integer          :: buffer_pos
@@ -437,7 +437,7 @@ type overlap_type
    real,    allocatable :: dj(:)
 end type overlap_type
 
-type comm_type
+type, private comm_type
   integer                         :: nsend, nrecv
   integer                         :: sendsize, recvsize
   integer,            pointer, dimension(:) :: unpack_ind=>NULL()
@@ -445,7 +445,7 @@ type comm_type
   type(overlap_type), pointer, dimension(:) :: recv=>NULL()
 end type comm_type
 
-type xmap_type
+type, public xmap_type
   private
   integer :: size            !< # of exchange grid cells with area > 0 on this pe
   integer :: size_put1       !< # of exchange grid cells for put_1_to_xgrid

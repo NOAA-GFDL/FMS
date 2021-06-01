@@ -38,8 +38,8 @@ module drifters_input_mod
   character, parameter, private :: SEPARATOR = ' '
 
   !> @brief Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
-  !!   when adding members
-  type drifters_input_type
+  !! when adding members
+  type, public drifters_input_type
      ! Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
      ! when adding members
      character(len=MAX_STR_LEN), allocatable :: position_names(:)
