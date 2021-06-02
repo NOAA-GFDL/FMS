@@ -32,7 +32,7 @@
 !! using the finest scale data available.
 !! <TT>xgrid_mod</TT> uses a NetCDF grid
 !! specification file containing the grid cell overlaps in combination with
-!! the @link ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90 @endlink domain 
+!! the @link ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90 @endlink domain
 !! decomposition information to determine
 !! the grid and processor connectivities.
 !!

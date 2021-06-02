@@ -68,7 +68,7 @@
 !!          the the content of diag_table is printed in stdout.</LI>
 !!     <LI> New optional format of file information in @ref diag_table_mod.
 !!          It is possible to have just
-!!          one file name and reuse it many times. A time string will be appended to 
+!!          one file name and reuse it many times. A time string will be appended to
 !!          the base file name each time a new file is opened. The time string can be
 !!          any combination from year to second of current model time.
 !!

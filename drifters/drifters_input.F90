@@ -54,9 +54,12 @@ module drifters_input_mod
      character(len=MAX_STR_LEN)               :: version
   end type drifters_input_type
 
+  ! exclude from docs since doxygen parses assignment interfaces incorrectly
+  !> @cond
   interface assignment(=)
      module procedure drifters_input_copy_new
   end interface
+  !> @endcond
 
 
   contains

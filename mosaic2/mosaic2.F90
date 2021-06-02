@@ -17,8 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @defgroup mosaic2_mod mosaic2_mod
-!> @ingroup mosaic
+!> @ingroup mosaic2
 !> @brief Implements some utility routines to read mosaic information.
+!!
 !> @author Zhi Liang
 !!
 !! Implements some utility routines to read mosaic information.
@@ -78,7 +79,7 @@ contains
 !> @brief Initialize the mosaic_mod.
 !> Initialization routine for the mosaic module. It writes the
 !! version information to the log file.
-!! Example usage:
+!! <br>Example usage:
 !!     call mosaic_init ( )
 subroutine mosaic_init()
 
@@ -93,7 +94,7 @@ end subroutine mosaic_init
 !#######################################################################
 !> @brief return exchange grid size of mosaic xgrid file.
 !!
-!! Example usage:
+!> <br>Example usage:
 !!              nxgrid = get_mosaic_xgrid_size(xgrid_file)
   function get_mosaic_xgrid_size(fileobj)
     type(FmsNetcdfFile_t), intent(in) :: fileobj !> File that contains exchange grid information.
@@ -107,7 +108,7 @@ end subroutine mosaic_init
 !#######################################################################
 !> @brief Get exchange grid information from mosaic xgrid file.
 !> Example usage:
-!> @example
+!!
 !!           call get_mosaic_xgrid(fileobj, nxgrid, i1, j1, i2, j2, area)
 !!
   subroutine get_mosaic_xgrid(fileobj, i1, j1, i2, j2, area, ibegin, iend)
@@ -164,7 +165,7 @@ end subroutine mosaic_init
   !> Get number of tiles in the mosaic_file.
   !> @param fileobj mosaic file object
   !> @return Number of tiles in given file
-  !> @example
+  !> <br>Example usage:
   !!     ntiles = get_mosaic_ntiles( mosaic_file)
   !!
   function get_mosaic_ntiles(fileobj)
@@ -181,7 +182,7 @@ end subroutine mosaic_init
   !> Get number of contacts in the mosaic_file.
   !> @param fileobj mosaic file object
   !> @return number of contacts in a given file
-  !> @example
+  !> <br>Example usage:
   !!         ntiles = get_mosaic_ncontacts( mosaic_file)
   function get_mosaic_ncontacts(fileobj)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
@@ -203,7 +204,7 @@ end subroutine mosaic_init
   !> @param fileobj mosaic file object
   !> @param[inout] nx List of grid size in x-direction of each tile
   !> @param[inout] ny List of grid size in y-direction of each tile
-  !> @example
+  !> <br>Example usage:
   !!            call get_mosaic_grid_sizes(mosaic_file, nx, ny)
   subroutine get_mosaic_grid_sizes( fileobj, nx, ny)
     type(FmsNetcdfFile_t), intent(in)    :: fileobj
@@ -240,7 +241,7 @@ end subroutine mosaic_init
 
   !###############################################################################
   !> Get contact information from mosaic_file
-  !> @example
+  !> <br>Example usage:
   !!         call get_mosaic_contact(mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1,
   !!                                 istart2, iend2, jstart2, jend2)
   !> @param fileobj mosaic file object
@@ -403,7 +404,7 @@ end function transfer_to_model_index
   !> @param lon geographical longitude of grid cell vertices.
   !> @param lat geographical latitude of grid cell vertices.
   !> @param[inout] area grid cell area.
-  !> @example
+  !> <br>Example usage:
   !!            call calc_mosaic_grid_area(lon, lat, area)
   subroutine calc_mosaic_grid_area(lon, lat, area)
      real, dimension(:,:), intent(in)    :: lon
@@ -430,7 +431,7 @@ end function transfer_to_model_index
   !> @param lon geographical longitude of grid cell vertices.
   !> @param lat geographical latitude of grid cell vertices.
   !> @param[inout] area grid cell area.
-  !> @example
+  !> <br>Example usage:
   !!            call calc_mosaic_grid_great_circle_area(lon, lat, area)
   subroutine calc_mosaic_grid_great_circle_area(lon, lat, area)
      real, dimension(:,:), intent(in)    :: lon

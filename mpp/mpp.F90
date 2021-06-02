@@ -422,9 +422,9 @@ private
   !! number of PEs assigned to this run (acquired from the command line, or
   !! through the environment variable <TT>NPES</TT>), and associates an ID
   !! number to each PE. These can be accessed by calling @ref mpp_npes and
-  !! @ref mpp_pe. 
+  !! @ref mpp_pe.
   !! <br> Example usage:
-  !! 
+  !!
   !!            call mpp_init( flags )
   !!
   !! @param flags" TYPE="integer">
@@ -440,7 +440,7 @@ private
   !! should you require that for some odd reason.
   !!
   !! This call implies synchronization across all PEs.
-  !! 
+  !!
   !! <br>Example usage:
   !!
   !!            call mpp_exit()

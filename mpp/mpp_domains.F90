@@ -224,14 +224,14 @@ module mpp_domains_mod
   ! data types used by mpp_domains_mod
 
   !> @brief axis specification data for an unstructured grid
-  type, private unstruct_axis_spec
+  type, private :: unstruct_axis_spec
      private
      integer :: begin, end, size, max_size
      integer :: begin_index, end_index
   end type unstruct_axis_spec
 
   !> axis specification data for an unstructured domain
-  type, private unstruct_domain_spec
+  type, private :: unstruct_domain_spec
      private
      type(unstruct_axis_spec) :: compute
      integer :: pe
@@ -239,7 +239,7 @@ module mpp_domains_mod
      integer :: tile_id
   end type unstruct_domain_spec
 
-  type, private unstruct_overlap_type
+  type, private :: unstruct_overlap_type
      private
      integer :: count = 0
      integer :: pe
@@ -247,7 +247,7 @@ module mpp_domains_mod
      integer, pointer :: j(:)=>NULL()
   end type unstruct_overlap_type
 
-  type, private unstruct_pass_type
+  type, private :: unstruct_pass_type
      private
      integer :: nsend, nrecv
      type(unstruct_overlap_type), pointer :: recv(:)=>NULL()
@@ -255,7 +255,7 @@ module mpp_domains_mod
   end type unstruct_pass_type
 
   !> Domain information for managing data on unstructured grids
-  type, public domainUG
+  type, public :: domainUG
      private
      type(unstruct_axis_spec) :: compute, global !< axis specifications
      type(unstruct_domain_spec), pointer :: list(:)=>NULL() !<
@@ -275,14 +275,14 @@ module mpp_domains_mod
   end type domainUG
 
   !> type used to specify index limits along an axis of a domain
-  type, public domain_axis_spec
+  type, public :: domain_axis_spec
      private
      integer :: begin, end, size, max_size !< start, end of domain axis, size, max size in set
      logical :: is_global !< .true. if domain axis extent covers global domain
   end type domain_axis_spec
 
   !> One dimensional domain used to manage shared data access between pes
-  type, public domain1D
+  type, public :: domain1D
      private
      type(domain_axis_spec) :: compute, data, global, memory !> index limits for different domains
      logical :: cyclic
@@ -293,7 +293,7 @@ module mpp_domains_mod
   end type domain1D
 
   !> Used to specify index limits for a domain decomposition
-  type, private domain1D_spec
+  type, private :: domain1D_spec
      private
      type(domain_axis_spec) :: compute
      type(domain_axis_spec) :: global
@@ -301,7 +301,7 @@ module mpp_domains_mod
   end type domain1D_spec
 
   !> @brief Specify multiple index limits and pe information for a 2D domain
-  type, private domain2D_spec
+  type, private :: domain2D_spec
      private
      type(domain1D_spec), pointer :: x(:)       => NULL() !< x-direction domain decomposition
      type(domain1D_spec), pointer :: y(:)       => NULL() !< y-direction domain decomposition
@@ -311,7 +311,7 @@ module mpp_domains_mod
      integer                 :: tile_root_pe         !< root pe of tile.
   end type domain2D_spec
 
-  type, private overlap_type
+  type, private :: overlap_type
      private
      integer                  :: count = 0                 !< number of overlapping
      integer                  :: pe
@@ -330,7 +330,7 @@ module mpp_domains_mod
      logical,         pointer :: from_contact(:) => NULL() !< indicate if the overlap is computed from define_contact_overlap
   end type overlap_type
 
-  type, private overlapSpec
+  type, private :: overlapSpec
      private
      integer                     :: whalo, ehalo, shalo, nhalo !< halo size
      integer                     :: xbegin, xend, ybegin, yend
@@ -342,7 +342,7 @@ module mpp_domains_mod
   end type overlapSpec
 
   !> @brief Upper and lower x and y bounds for a tile
-  type, private tile_type
+  type, private :: tile_type
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
 
@@ -354,7 +354,7 @@ module mpp_domains_mod
   !> Domain types of higher rank can be constructed from type domain1D
   !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
   !! some elements are repeated below if they are needed once per domain, not once per axis
-  type, public domain2D
+  type, public :: domain2D
      private
      character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
      integer(i8_kind)            :: id
@@ -394,7 +394,7 @@ module mpp_domains_mod
 
   !> Type used to represent the contact between tiles.
   !> @note This type will only be used in mpp_domains_define.inc
-  type contact_type
+  type, private :: contact_type
      private
      integer          :: ncontact                               !< number of neighbor tile.
      integer, pointer :: tile(:) =>NULL()                       !< neighbor tile
@@ -407,13 +407,13 @@ module mpp_domains_mod
   end type contact_type
 
   !> index bounds for use in @ref nestSpec
-  type, private index_type
+  type, private :: index_type
      integer :: is_me, ie_me, js_me, je_me
      integer :: is_you, ie_you, js_you, je_you
   end type index_type
 
  !> Used to specify bounds and index information for nested tiles as a linked list
-  type, private nestSpec
+  type, private :: nestSpec
      private
      integer                     :: xbegin, xend, ybegin, yend
      integer                     :: xbegin_c, xend_c, ybegin_c, yend_c
@@ -429,7 +429,7 @@ module mpp_domains_mod
   end type nestSpec
 
  !> domain with nested fine and course tiles
-  type, public nest_domain_type
+  type, public :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
      type(nest_level_type), pointer :: nest(:) => NULL()
@@ -440,7 +440,7 @@ module mpp_domains_mod
   end type nest_domain_type
 
   !> type to hold data for each level of nesting
-  type, private nest_level_type
+  type, private :: nest_level_type
      private
      logical                    :: on_level
      logical                    :: is_fine, is_coarse
@@ -469,7 +469,7 @@ module mpp_domains_mod
 
 
   !> Used for sending domain data between pe's
-  type, public DomainCommunicator2D
+  type, public :: DomainCommunicator2D
      private
      logical            :: initialized=.false.
      integer(i8_kind) :: id=-9999
@@ -518,7 +518,7 @@ module mpp_domains_mod
   integer, parameter :: MAX_REQUEST = 100
 
   !> Used for nonblocking data transfer
-  type, private nonblock_type
+  type, private :: nonblock_type
      integer                         :: recv_pos
      integer                         :: send_pos
      integer                         :: recv_msgsize
@@ -544,7 +544,7 @@ module mpp_domains_mod
   end type nonblock_type
 
   !> used for updates on a group
-  type, public mpp_group_update_type
+  type, public :: mpp_group_update_type
      private
      logical            :: initialized = .FALSE.
      logical            :: k_loop_inside = .TRUE.
@@ -825,7 +825,7 @@ module mpp_domains_mod
   !!    |--------------|---------|-----------|-----------|-------------|
   !!    |Compute domain|1,50,1,50|51,100,1,50|1,50,51,100|51,100,51,100|
   !!    |Data domain   |0,51,1,50|50,101,1,50|0,51,51,100|50,101,51,100|
-  !!    
+  !!
   !!
   !! Again, we allocate arrays on the data domain, perform computations
   !! on the compute domain, and call mpp_update_domains to update the halo region.
@@ -1300,7 +1300,7 @@ module mpp_domains_mod
   !! nto fine grid.
   !! <br>Example usage:
   !!
-  !!                call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer, 
+  !!                call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer,
   !!                            nbuffer, nest_level, flags, complete, position, extra_halo, name,
   !!                            tile_count)
   interface mpp_update_nest_fine
@@ -1481,7 +1481,7 @@ module mpp_domains_mod
   !> @page mpp_pass_SG_to_UG mpp_pass_SG_to_UG
   !! Passes data from a structured grid to an unstructured grid
   !! <br>Example usage:
-  !! 
+  !!
   !!            call mpp_pass_SG_to_UG(domain, sg_data, ug_data)
   interface mpp_pass_SG_to_UG
      module procedure mpp_pass_SG_to_UG_r8_2d
@@ -2132,7 +2132,7 @@ module mpp_domains_mod
   !! Retrieve the entire array of compute domain extents associated with a decomposition.
   !! <br>Example usage:
   !!
-  !!            call mpp_get_compute_domains( domain, xbegin, xend, xsize, &<br>
+  !!            call mpp_get_compute_domains( domain, xbegin, xend, xsize, &
   !!                                                ybegin, yend, ysize )
   !  <IN NAME="domain" TYPE="type(domain2D)"></IN>
   !  <OUT NAME="xbegin,ybegin" TYPE="integer" DIM="(:)"></OUT>
@@ -2202,7 +2202,8 @@ module mpp_domains_mod
   !! The 2D version of these is a simple extension of 1D.
   !! <br>Example usage:
   !!
-  !!                        call mpp_set_compute_domain()
+  !!                    call mpp_get_data_domain(domain_1d, isd, ied)
+  !!                    call mpp_get_data_domain(domain_2d, isd, ied, jsd, jed)
   interface mpp_set_compute_domain
      module procedure mpp_set_compute_domain1D
      module procedure mpp_set_compute_domain2D
@@ -2213,6 +2214,10 @@ module mpp_domains_mod
   !! The domain is a derived type with private elements. These routines
   !! set the axis specifications associated with the data domains.
   !! The 2D version of these is a simple extension of 1D.
+  !! <br>Example usage:
+  !!
+  !!                    call mpp_set_data_domain(domain_1d, isd, ied)
+  !!                    call mpp_set_data_domain(domain_2d, isd, ied, jsd, jed)
   interface mpp_set_data_domain
      module procedure mpp_set_data_domain1D
      module procedure mpp_set_data_domain2D
@@ -2223,6 +2228,10 @@ module mpp_domains_mod
   !! The domain is a derived type with private elements. These routines
   !! set the axis specifications associated with the global domains.
   !! The 2D version of these is a simple extension of 1D.
+  !! <br>Example usage:
+  !!
+  !!                    call mpp_set_global_domain(domain_1d, isg, ieg)
+  !!                    call mpp_set_global_domain(domain_2d, isg, ieg, jsg, jeg)
   interface mpp_set_global_domain
      module procedure mpp_set_global_domain1D
      module procedure mpp_set_global_domain2D
@@ -2233,8 +2242,8 @@ module mpp_domains_mod
   !! The 1D version of this call returns an array of the PEs assigned to
   !! this 1D domain decomposition. In addition the optional argument pos may be
   !! used to retrieve the 0-based position of the domain local to the
-  !! calling PE, i.e., \e domain\%list(pos)%pe is the local PE,
-  !! as returned by mpp_pe()
+  !! calling PE, i.e., <TT> domain\%list(pos)\%pe</TT> is the local PE,
+  !! as returned by @ref mpp_pe().
   !! The 2D version of this call is identical to 1D version.
   interface mpp_get_pelist
      module procedure mpp_get_pelist1D

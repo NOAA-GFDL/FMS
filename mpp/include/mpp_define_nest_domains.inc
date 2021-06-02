@@ -54,7 +54,7 @@
 !! use the nesting domain update are available in routine test_update_nest_domain of
 !! test_fms/mpp/test_mpp_domains.F90.\n
 !!\n
-!! @verbatim
+!! @code{.F90}
 !! 		if( concurrent ) then
 !!   			call mpp_broadcast_domain(domain_fine)
 !!   			call mpp_broadcast_domain(domain_coarse)
@@ -85,7 +85,8 @@
 !! 		call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
 !!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &
 !!                                    npes_nest_tile, x_refine, y_refine, extra_halo, name)
-!! @endverbatim
+!! @endcode
+!!
 !> @note Currently the contact will be limited to overlap contact.
 subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, npes_nest_tile, &
@@ -1521,11 +1522,14 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
   !################################################################
   !> @brief Get the index of the data passed from coarse grid to fine grid.
-  !> @detailed Get the index of the data passed from coarse grid to fine grid.
-  !> @example call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
+  !!
+  !> Get the index of the data passed from coarse grid to fine grid.
+  !!
+  !! <br>Example usage:
+  !!
+  !! 		call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
   !!                            is_coarse, ie_coarse, js_coarse, je_coarse, dir,
   !!                            nest_level, position)
-  !
   subroutine mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine, &
                 is_coarse, ie_coarse, js_coarse, je_coarse, dir, nest_level, position)
 
@@ -1823,7 +1827,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end subroutine get_nnest
 
 
-!--- This routine will convert the global coarse grid index to nest grid index.
+  !> This routine will convert the global coarse grid index to nest grid index.
   function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
                        ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out, rotate_out)
     type(domain2D), intent(in) :: domain

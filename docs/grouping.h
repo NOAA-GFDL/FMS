@@ -20,14 +20,14 @@
 
 // This header file is used exclusively for doxygen documentation
 // Defines groups for each subdirectory to add their modules into
-// Additional doxygen pages can be added here as well 
+// Additional doxygen pages can be added here as well
 
 /** @defgroup affinity Affinity
  *
  */
 
 /** @defgroup astronomy Astronomy
- *  
+ *
  */
 
 /** @defgroup axis_utils Axis Utilities
@@ -39,46 +39,46 @@
  */
 
 /** @defgroup block_control Block Control
- *  
+ *
  */
 
-/** @defgroup column_diagnostics Column Diagnostics 
- *  
+/** @defgroup column_diagnostics Column Diagnostics
+ *
  */
 
 /** @defgroup constants Constants
- *  
+ *
  */
 
 /** @defgroup coupler Coupler
- *  
+ *
  */
 
 /** @defgroup data_override Data Override
- *  
+ *
  */
 
 /** @defgroup diag_integral Diag Integral
- *  
+ *
  */
 
 /** @defgroup diag_manager Diag Manager
- *  
+ *
  */
 
 /** @defgroup drifters Drifters
- *  
+ *
  */
 
-/** @defgroup exchange Exchange 
- *  
+/** @defgroup exchange Exchange
+ *
  */
 
-/** @defgroup field_manager Field Manager 
- *  
+/** @defgroup field_manager Field Manager
+ *
  */
 
-/** @defgroup fms FMS 
+/** @defgroup fms FMS
  *
  */
 
@@ -92,9 +92,9 @@
 
 /** @defgroup interpolator Interpolator
  *
- */ 
+ */
 
-/** @defgroup memutils Memory Utilities 
+/** @defgroup memutils Memory Utilities
  *
  */
 
@@ -103,6 +103,10 @@
  */
 
 /** @defgroup mosaic Mosaic
+ *
+ */
+
+/** @defgroup mosaic2 Mosaic2
  *
  */
 
@@ -153,6 +157,6 @@
  *
  * @subpage autotools
  *
- * @subpage cmake 
+ * @subpage cmake
  *
- */  
+ */

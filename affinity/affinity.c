@@ -1,3 +1,4 @@
+/// \cond EXCLUDE
 /***********************************************************************
  *                   GNU Lesser General Public License
  *
@@ -30,6 +31,8 @@
 #ifdef __APPLE__
 #include <pthread.h>
 #endif
+/// \endcond
+// skips doc parsing
 
 /**
  * \file

@@ -152,10 +152,12 @@ module drifters_mod
      integer :: nx, ny
      logical, allocatable   :: remove(:)
   end type drifters_type
-
+  ! exclude from docs since doxygen parses assignment interfaces incorrectly
+  !> @cond
   interface assignment(=)
      module procedure drifters_copy_new
   end interface
+  !> @endcond
 
   interface drifters_push
     module procedure drifters_push_2

@@ -16,6 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup grid2_mod grid2_mod
+!> @ingroup mosaic2
+!> @brief Routines for grid calculations, using @ref fms2_io
+
+!> @file
+!> @brief File for @ref grid2_mod
+
+!> @addtogroup grid2_mod
+!> @{
 module grid2_mod
 
 use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE
@@ -1089,3 +1098,5 @@ subroutine define_cube_mosaic(component, domain, layout, halo, maskmap)
 end subroutine define_cube_mosaic
 
 end module grid2_mod
+!> @}
+! close documentation grouping
