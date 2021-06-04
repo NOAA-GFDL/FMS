@@ -244,6 +244,6 @@ BUILT_SOURCES = \
   mpp_efp_mod.$(FC_MODEXT) \
   mpp_domains_mod.$(FC_MODEXT) \
   mpp_io_mod.$(FC_MODEXT)
-nodist_include_HEADERS = $(BUILD_SOURCES)
+nodist_include_HEADERS = $(BUILT_SOURCES)
 
 include $(top_srcdir)/mkmods.mk
