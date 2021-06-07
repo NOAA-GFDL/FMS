@@ -69,21 +69,125 @@ public :: topography_init,                 &
           get_water_frac, get_water_mask,  &
           gaussian_topog_init, get_gaussian_topog
 
+!> @page get_topog_mean get_topog_mean Interface
+!> @brief Returns a "realistic" mean surface height field.
+!!
+!> Returns realistic mountains on a latitude-longtude grid.
+!! The returned field is the mean topography for the given grid boxes.
+!! Computed using a conserving area-weighted interpolation.
+!! The current input data set is the 1/6 degree Navy mean topography.
+!!
+!! @param real blon The longitude (in radians) at grid box boundaries.
+!! @param real blat The latitude (in radians) at grid box boundaries.
+!! @param real zmean The mean surface height (meters). The size of this 
+!!                        field must be size(blon)-1 by size(blat)-1.
+!! @return A logical value of TRUE is returned if the surface height field
+!! was successfully created. A value of FALSE may be returned if the
+!! input topography data set was not readable.
+!!
+!! <br>Example usage:
+!! @code{.F90} flag = get_topog_mean ( blon, blat, zmean )@endcode
 interface get_topog_mean
   module procedure get_topog_mean_1d, get_topog_mean_2d
 end interface
+
+!> @page get_topog_stdev get_topog_stdev Interface
+!> Returns a standard deviation of higher resolution topography with
+!! the given model grid boxes.
+!!
+!> Returns the standard deviation of the "finer" input topography data set,
+!! currently the Navy 1/6 degree mean topography data, within the
+!! boundaries of the given input grid.
+!!
+!! @param real blon The longitude (in radians) at grid box boundaries.
+!! @param real blat The latitude (in radians) at grid box boundaries.
+!! @param [out] real stdev The standard deviation of surface height (in meters) within
+!! given input model grid boxes.
+!! The size of this field must be size(blon)-1 by size(blat)-1.
+!!
+!! @return A logical value of TRUE is returned if the output field was
+!! successfully created. A value of FALSE may be returned if the
+!! input topography data set was not readable.
+!!
+!! Example usage:
+!! @code{.F90} flag = get_topog_stdev( blon, blat, stdev ) @code
 interface get_topog_stdev
   module procedure get_topog_stdev_1d, get_topog_stdev_2d
 end interface
+
+!> @page get_ocean_frac get_ocean_frac Interfaces
+!> @brief Returns fractional area covered by ocean in a grid box.
+!! Returns fractional area covered by ocean in the given model grid boxes.
+!!
+!! @param real blon The longitude (in radians) at grid box boundaries.
+!! @param real blat The latitude (in radians) at grid box boundaries.
+!! @param real ocean_frac The fractional amount (0 to 1) of ocean in a grid box.
+!! The size of this field must be size(blon)-1 by size(blat)-1.
+!!
+!! @return A logical value of TRUE is returned if the output field
+!! was successfully created. A value of FALSE may be returned
+!! if the Navy 1/6 degree percent water data set was not readable.
+!!
+!! Example usage:
+!! @code{.F90} flag = <B>get_ocean_frac</B> ( blon, blat, ocean_frac ) @endcode
 interface get_ocean_frac
   module procedure get_ocean_frac_1d, get_ocean_frac_2d
 end interface
+
+!> @page get_ocean_mask get_ocean_mask Interface
+!> @brief Returns a land-ocean mask in a grid box.
+!!
+!> Returns a land-ocean mask in the given model grid boxes.
+!!
+!! @param real blon The longitude (in radians) at grid box boundaries.
+!! @param real blat The latitude (in radians) at grid box boundaries.
+!! @param real ocean_frac The fractional amount (0 to 1) of ocean in a grid box.
+!!  The size of this field must be size(blon)-1 by size(blat)-1.
+!!
+!! @return A logical value of TRUE is returned if the output field
+!! was successfully created. A value of FALSE may be returned
+!! if the Navy 1/6 degree percent water data set was not readable.
+!!
+!! Example code:
+!! @code{.F90} flag = get_ocean_mask( blon, blat, ocean_mask ) @endcode
 interface get_ocean_mask
   module procedure get_ocean_mask_1d, get_ocean_mask_2d
 end interface
+
+!> @page get_water_frac get_water_frac Interface
+!> @brief Returns fractional area covered by water.
+!!
+!> Returns the percent of water in a grid box.
+!!
+!! @param real blon The longitude (in radians) at grid box boundaries.
+!! @param real blat The latitude (in radians) at grid box boundaries.
+!! @param [out] real water_frac The fractional amount (0 to 1) of water in a grid box.
+!!     The size of this field must be size(blon)-1 by size(blat)-1.
+!!
+!! @return A logical value of TRUE is returned if the output field
+!! was successfully created. A value of FALSE may be returned
+!! if the Navy 1/6 degree percent water data set was not readable.
+!!
+!! <br>Example usage:<br> @code{.F90} flag = get_water_frac ( blon, blat, water_frac ) @endcode
 interface get_water_frac
   module procedure get_water_frac_1d, get_water_frac_2d
 end interface
+
+!> @page get_water_mask get_water_mask Interface
+!> @brief Returns a land-water mask in a grid box.
+!!
+!> Returns a land-water mask in the given model grid boxes.
+!!
+!! @param real blon The longitude (in radians) at grid box boundaries.
+!! @param real blat The latitude (in radians) at grid box boundaries.
+!! @param real water_mask(:,:) A binary mask for water (true) or land (false).
+!! The size of this field must be size(blon)-1 by size(blat)-1.
+!!
+!! @return A logical value of TRUE is returned if the output field
+!! was successfully created. A value of FALSE may be returned
+!! if the Navy 1/6 degree percent water data set was not readable.
+!!
+!! Example usage: @code{.F90}flag = get_water_mask( blon, blat, water_mask ) @endcode
 interface get_water_mask
   module procedure get_water_mask_1d, get_water_mask_2d
 end interface
@@ -207,11 +311,12 @@ end interface
 !   </ERROR>
 
  !> @brief Returns a "realistic" mean surface height field.
+ !!
  !! Returns realistic mountains on a latitude-longtude grid.
  !! The returned field is the mean topography for the given grid boxes.
  !! Computed using a conserving area-weighted interpolation.
  !! The current input data set is the 1/6 degree Navy mean topography.
- function get_topog_mean_1d (blon, blat, zmean)
+ function get_topog_mean_1d(blon, blat, zmean)
 
    real, intent(in),  dimension(:)   :: blon, blat
    real, intent(out), dimension(:,:) :: zmean

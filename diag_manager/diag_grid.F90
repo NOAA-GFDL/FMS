@@ -86,7 +86,7 @@ use platform_mod
 #include<file_version.h>
 
   !> @brief Contains the model's global grid data, and other grid information.
-  TYPE, PRIVATE :: diag_global_grid_type
+  type, private :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: aglo_lat !< The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
@@ -110,7 +110,7 @@ use platform_mod
 
   !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
   !! location.
-  TYPE, PRIVATE :: point
+  type, private :: point
      REAL :: x !< The x value of the (x,y,z) coordinates.
      REAL :: y !< The y value of the (x,y,z) coordinates.
      REAL :: z !< The z value of the (x,y,z) coordinates.
@@ -138,14 +138,16 @@ CONTAINS
 
   !> @brief Send the global grid to the <TT>diag_manager_mod</TT> for
   !!   regional output.
-  !! @description In order for the diag_manager to do regional output for grids
-  !!     other than the standard lat/lon grid, the <TT>
-  !!     diag_manager_mod</TT> needs to know the the latitude and
-  !!     longitude values for the entire global grid.  This procedure
-  !!     is the mechanism the models will use to share their grid with
-  !!     the diagnostic manager.
-  !!     This procedure needs to be called after the grid is created,
-  !!     and before the first call to register the fields.
+  !!
+  !> In order for the diag_manager to do regional output for grids
+  !! other than the standard lat/lon grid, the <TT>
+  !! diag_manager_mod</TT> needs to know the the latitude and
+  !! longitude values for the entire global grid.  This procedure
+  !! is the mechanism the models will use to share their grid with
+  !! the diagnostic manager.
+  !!
+  !! This procedure needs to be called after the grid is created,
+  !! and before the first call to register the fields.
   SUBROUTINE diag_grid_init(domain, glo_lat, glo_lon, aglo_lat, aglo_lon)
     TYPE(domain2d), INTENT(in) :: domain !< The domain to which the grid data corresponds.
     REAL, INTENT(in), DIMENSION(:,:) :: glo_lat !< The latitude information for the grid tile.
@@ -305,11 +307,12 @@ CONTAINS
   END SUBROUTINE diag_grid_init
 
   !> @brief Unallocate the diag_global_grid variable.
-  !! @description The <TT>diag_global_grid</TT> variable is only needed during
-  !!     the register field calls, and then only if there are fields
-  !!     requestion regional output.  Once all the register fields
-  !!     calls are complete (before the first <TT>send_data</TT> call
-  !!     this procedure can be called to free up memory.
+  !!
+  !> The <TT>diag_global_grid</TT> variable is only needed during
+  !! the register field calls, and then only if there are fields
+  !! requestion regional output.  Once all the register fields
+  !! calls are complete (before the first <TT>send_data</TT> call
+  !! this procedure can be called to free up memory.
   SUBROUTINE diag_grid_end()
 
     IF ( diag_grid_initialized ) THEN
@@ -348,7 +351,8 @@ CONTAINS
 
   !> @brief Find the local start and local end indexes on the local PE
   !!   for regional output.
-  !! @description Given a defined region, find the local indexes on the local
+  !!
+  !> Given a defined region, find the local indexes on the local
   !!   PE surrounding the region.
   SUBROUTINE get_local_indexes(latStart, latEnd, lonStart, lonEnd,&
        & istart, iend, jstart, jend)
@@ -635,6 +639,7 @@ CONTAINS
 
   END SUBROUTINE get_local_indexes2
 
+  !> @fn pure elemental real rad2deg(real angle)
   !> @brief Convert an angle in radian to degrees.
   !!
   !> Given a scalar, or an array of angles in radians this
@@ -1006,6 +1011,7 @@ CONTAINS
 
   !> @brief Find the distance between two points in the Cartesian
   !!   coordinate space.
+  !!
   !> <TT>distanceSqrd</TT> will find the distance squared between
   !!   two points in the xyz coordinate space.  <TT>pt1</TT> and <TT>
   !!   pt2</TT> can either be both scalars, both arrays of the same

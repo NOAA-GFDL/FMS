@@ -162,9 +162,9 @@ integer,parameter :: do_floor = 0
 integer,parameter :: do_nearest = 1
 
 
-!> @brief Type to represent amounts of time
+!> @brief Type to represent amounts of time.
 !> Implemented as seconds and days to allow for larger intervals.
-type time_type
+type, public :: time_type
    private
    integer:: seconds
    integer:: days
@@ -202,9 +202,12 @@ interface assignment(=);  module procedure time_assignment;  end interface
 !! except that the result must be positive time.
 !! e.g. days=-1, seconds=86401 is acceptable.
 !! For the second form, days and seconds must both be positive.
+!!
 !! <br>Example usage:
-!!              set_time(seconds, days, ticks, err_msg)
-!!              set_time(time_string, err_msg, allow_rounding)
+!! @code{.F90}
+!! set_time(seconds, days, ticks, err_msg)
+!! set_time(time_string, err_msg, allow_rounding)
+!! @endcode
 interface set_time
   module procedure set_time_i, set_time_c
 end interface
@@ -2118,9 +2121,9 @@ end function get_ticks_per_second
 
 !------------------------------------------------------------------------
 
-!> @brief Calls set_date_private to set days for different calendar types.
-!! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
+ !> @brief Calls set_date_private to set days for different calendar types.
+ !! The added optional argument old_method allows user to choose either the new or old version
+ !! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
  function set_date_i(year, month, day, hour, minute, second, tick, err_msg, old_method)
  type(time_type) :: set_date_i
  integer, intent(in) :: day, month, year

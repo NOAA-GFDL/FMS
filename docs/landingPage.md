@@ -10,4 +10,5 @@ found in the 'Modules' section in the sidebar, or linked [**here**](modules.html
 
 For installation and building instructions and information, see @ref build "Building and Installation"
 
-All project code and contributing information can be found at <https://github.com/NOAA-GFDL/FMS>
+To contribute, all project code and contributing information can be found at <https://github.com/NOAA-GFDL/FMS>
+Please see the documentation style guide [**here**](md_docs_doxygenGuide.html), for how to document FMS code for this site.

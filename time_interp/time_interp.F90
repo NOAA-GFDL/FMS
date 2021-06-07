@@ -196,35 +196,40 @@ public :: time_interp_init, time_interp, fraction_of_year
 !! Time1 and Time2 may be specified by any of several different ways,
 !! which is the reason for multiple interfaces.\n
 !!
-!! If Time1 and Time2 are the begining and end of the year in which
-!! Time falls, use first interface.\n
+!! - If Time1 and Time2 are the begining and end of the year in which
+!!   Time falls, use first interface.\n
 !!
-!! If Time1 and Time2 fall on year boundaries, use second interface.\n
+!! - If Time1 and Time2 fall on year boundaries, use second interface.\n
 !!
-!! If Time1 and Time2 fall on month boundaries, use third.\n
+!! - If Time1 and Time2 fall on month boundaries, use third.\n
 !!
-!! If Time1 and Time2 fall on day boundaries, use fourth.\n
+!! - If Time1 and Time2 fall on day boundaries, use fourth.\n
 !!
-!! If Time1 and Time2 are consecutive elements of an assending list, use fifth.
-!! The fifth also returns the indices of Timelist between which Time falls.\n
+!! - If Time1 and Time2 are consecutive elements of an assending list, use fifth.
+!!   The fifth also returns the indices of Timelist between which Time falls.\n
 !!
-!! The sixth interface is for cyclical data. Time_beg and Time_end specify the
-!! begining and end of a repeating period. In this case:
+!! - The sixth interface is for cyclical data. Time_beg and Time_end specify the
+!!   begining and end of a repeating period. In this case:<br>
 !!              weight = (Time_adjusted - Time1) / (Time2 - Time1)
-!! \nWhere:
+!! <br>Where:
+!! @code{.F90}
 !!              Time1 = Timelist(index1)
 !!              Time2 = Timelist(index2)
 !!              Time_adjusted = Time - N*Period
 !!              Period = Time_end-Time_beg
+!! @endcode
 !! N is between (Time-Time_end)/Period and (Time-Time_beg)/Period
 !! That is, N is the integer that results in Time_adjusted that is between Time_beg and Time_end.
-!! \n\nExample usages:
+!!
+!! <br>Example usages:
+!! @code{.F90}
 !!              call time_interp( Time, weight )
 !!              call time_interp( Time, weight, year1, year2 )
 !!              call time_interp( Time, weight, year1, year2, month1, month2 )
 !!              call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
 !!              call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
 !!              call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
+!! @endcode
 interface time_interp
     module procedure time_interp_frac,  time_interp_year, &
                      time_interp_month, time_interp_day,  &
@@ -289,12 +294,11 @@ contains
 !   <IN NAME="Time" TYPE="time_type" > </IN>
 !   <OUT NAME="weight" TYPE="real"> </OUT>
 ! </SUBROUTINE>
-!  returns the fractional time into the current year
-
+ !> @brief Calculates the fractional time into the current year
  subroutine time_interp_frac ( Time, weight )
 
    type(time_type), intent(in)  :: Time
-   real           , intent(out) :: weight
+   real           , intent(out) :: weight !< fractional time
 
    integer         :: year, month, day, hour, minute, second
    type(time_type) :: Year_beg, Year_end
@@ -340,10 +344,11 @@ contains
 ! </SUBROUTINE>
 !  returns fractional time between mid points of consecutive years
 
+ !> @brief Calculates fractional time between mid points of consecutive years
  subroutine time_interp_year ( Time, weight, year1, year2 )
 
    type(time_type), intent(in)  :: Time
-   real           , intent(out) :: weight
+   real           , intent(out) :: weight !< fractional time between midpoints of year1 and year2
    integer        , intent(out) :: year1, year2
 
    integer :: year, month, day, hour, minute, second
@@ -382,8 +387,7 @@ contains
 !   <OUT NAME="month1" TYPE="integer"> </OUT>
 !   <OUT NAME="month2" TYPE="integer"> </OUT>
 ! </SUBROUTINE>
-!  returns fractional time between mid points of consecutive months
-
+ !> @brief Calculates fractional time between mid points of consecutive months
  subroutine time_interp_month ( Time, weight, year1, year2, month1, month2 )
 
    type(time_type), intent(in)  :: Time
@@ -444,8 +448,7 @@ contains
 !   <OUT NAME="day1" TYPE="integer"> </OUT>
 !   <OUT NAME="day2" TYPE="integer"> </OUT>
 ! </SUBROUTINE>
-!  returns fractional time between mid points of consecutive days
-
+ !> @brief Calculates fractional time between mid points of consecutive days
  subroutine time_interp_day ( Time, weight, year1, year2, month1, month2, day1, day2 )
 
    type(time_type), intent(in)  :: Time
@@ -515,7 +518,14 @@ subroutine time_interp_modulo(Time, Time_beg, Time_end, Timelist, weight, index1
 type(time_type), intent(in)  :: Time, Time_beg, Time_end, Timelist(:)
 real           , intent(out) :: weight
 integer        , intent(out) :: index1, index2
-logical, intent(in), optional :: correct_leap_year_inconsistency
+logical, intent(in), optional :: correct_leap_year_inconsistency!< When true turns on a kluge for an 
+                                !! inconsistency which may occur in a special case.
+                                !! When the modulo time period (i.e. Time_end - Time_beg) is a
+                                !! whole number of years and is not a multiple of 4, and the calendar
+                                !! in use has leap years, then it is likely that the interpolation
+                                !! will involve mapping a common year onto a leap year. In this case
+                                !! it is often desirable, but not absolutely necessary, to use data
+                                !! for Feb 28 of the leap year when it is mapped onto a common year.
 character(len=*), intent(out), optional :: err_msg
 
   type(time_type) :: Period, T
@@ -669,11 +679,11 @@ character(len=*), intent(out), optional :: err_msg
 end subroutine time_interp_modulo
 
 !#######################################################################
-! given an array of times in ascending order and a specific time returns
-! values of index1 and index2 such that the Timelist(index1)<=Time and
-! Time<=Timelist(index2), and index2=index1+1
-! index1=0, index2=1 or index=n, index2=n+1 are returned to indicate that
-! the time is out of range
+!> Given an array of times in ascending order and a specific time returns
+!! values of index1 and index2 such that the Timelist(index1)<=Time and
+!! Time<=Timelist(index2), and index2=index1+1
+!! index1=0, index2=1 or index=n, index2=n+1 are returned to indicate that
+!! the time is out of range
 subroutine bisect(Timelist,Time,index1,index2)
   type(time_type)  , intent(in)  :: Timelist(:)
   type(time_type)  , intent(in)  :: Time

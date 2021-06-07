@@ -92,20 +92,21 @@ module time_interp_external2_mod
   private find_buf_index,&
          set_time_modulo
 
+  !> Represents external fields
   type, private :: ext_fieldtype
-     type(FmsNetcdfFile_t), pointer :: fileobj=>NULL() ! keep unit open when not reading all records
+     type(FmsNetcdfFile_t), pointer :: fileobj=>NULL() !< keep unit open when not reading all records
      character(len=128) :: name, units
      integer :: siz(4), ndim
      character(len=32) :: axisname(4)
      type(domain2d) :: domain
-     type(time_type), dimension(:), pointer :: time =>NULL() ! midpoint of time interval
+     type(time_type), dimension(:), pointer :: time =>NULL() !< midpoint of time interval
      type(time_type), dimension(:), pointer :: start_time =>NULL(), end_time =>NULL()
      type(time_type), dimension(:), pointer :: period =>NULL()
-     logical :: modulo_time ! denote climatological time axis
-     real, dimension(:,:,:,:), pointer :: data =>NULL() ! defined over data domain or global domain
-     logical, dimension(:,:,:,:), pointer :: mask =>NULL() ! defined over data domain or global domain
-     integer, dimension(:), pointer :: ibuf  =>NULL() ! record numbers associated with buffers
-     real, dimension(:,:,:,:), pointer :: src_data  =>NULL() ! input data buffer
+     logical :: modulo_time !< denote climatological time axis
+     real, dimension(:,:,:,:), pointer :: data =>NULL() !< defined over data domain or global domain
+     logical, dimension(:,:,:,:), pointer :: mask =>NULL() !< defined over data domain or global domain
+     integer, dimension(:), pointer :: ibuf  =>NULL() !< record numbers associated with buffers
+     real, dimension(:,:,:,:), pointer :: src_data  =>NULL() !< input data buffer
      type(valid_t) :: valid ! data validator
      integer :: nbuf
      logical :: domain_present
@@ -122,6 +123,7 @@ module time_interp_external2_mod
      real    :: missing ! missing value
   end type ext_fieldtype
 
+  !> Holds filename and file object
   type, private :: filetype
      character(len=128) :: filename = ''
      type(FmsNetcdfFile_t), pointer :: fileobj => NULL()

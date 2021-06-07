@@ -117,7 +117,7 @@
 !!          The namelist <B>default</B> value is <TT>mix_snapshot_average_fields=.false.</TT></LI>
 !!     <LI> Time average, Root Mean Square, Max and Min, and diurnal. In addition to time average users can also get then Root Mean Square, Max or Min value
 !!          during the same interval of time as time average. For this purpose, in the diag table users must replace
-!!          <TT>.true.</TT> or <TT>.false.</TT> by "<TT>rms</TT>, <TT>max</TT>" or "<TT>min</TT>".  <B><I>Note:</I></B> Currently, max
+!!          <TT>.true.</TT> or <TT>.false.</TT> by <TT>rms</TT>, <TT>max</TT> or <TT>min</TT>.  <B><I>Note:</I></B> Currently, max
 !!          and min are not available for regional output.
 !!
 !!          A diurnal average or the average of an integer power can also be requested using <TT>diurnal##</TT> or <TT>pow##</TT> where
@@ -481,66 +481,66 @@ use platform_mod
   !> @page send_data send_data Interface
   !> @brief Send data over to output fields.
   !!
-  !>    <TT>send_data</TT> is overloaded for fields having zero dimension
-  !!     (scalars) to 3 dimension.  <TT>diag_field_id</TT> corresponds to the id
-  !!     returned from a previous call to <TT>register_diag_field</TT>. The field
-  !!     array is restricted to the computational range of the array. Optional
-  !!     argument <TT>is_in</TT> can be used to update sub-arrays of the entire
-  !!     field. Additionally, an optional logical or real mask can be used to
-  !!     apply missing values to the array.
+  !> <TT>send_data</TT> is overloaded for fields having zero dimension
+  !! (scalars) to 3 dimension.  <TT>diag_field_id</TT> corresponds to the id
+  !! returned from a previous call to <TT>register_diag_field</TT>. The field
+  !! array is restricted to the computational range of the array. Optional
+  !! argument <TT>is_in</TT> can be used to update sub-arrays of the entire
+  !! field. Additionally, an optional logical or real mask can be used to
+  !! apply missing values to the array.
   !!
-  !!     If a field is declared to be <TT>mask_variant</TT> in
-  !!     <TT>register_diag_field</TT> logical mask should be mandatory.
+  !! If a field is declared to be <TT>mask_variant</TT> in
+  !! <TT>register_diag_field</TT> logical mask should be mandatory.
   !!
-  !!     For the real  mask, the mask is applied if the mask value is less than
-  !!     0.5.
+  !! For the real  mask, the mask is applied if the mask value is less than
+  !! 0.5.
   !!
-  !!     By default, a field will be written out entirely in its global grid.
-  !!     Users can also specify regions in which the field will be output. The
-  !!     region is specified in diag-table just before the end of output_field
-  !!     replacing "none".
+  !! By default, a field will be written out entirely in its global grid.
+  !! Users can also specify regions in which the field will be output. The
+  !! region is specified in diag-table just before the end of output_field
+  !! replacing "none".
   !!
-  !!     For example, by default:
+  !! For example, by default:
   !!
-  !!     "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2
+  !! "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2
   !!
-  !!     for regional output:
+  !! for regional output:
   !!
-  !!     "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 -1 -1",2
+  !! "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 -1 -1",2
   !!
-  !!     The format of a region is "<TT>xbegin xend ybegin yend zbegin zend</TT>".
-  !!     If it is a 2D field use (-1 -1) for (zbegin zend) as in the example above.
-  !!     For a 3D field use (-1 -1) for (zbegin zend) when you want to write the
-  !!     entire vertical extent, otherwise specify real coordinates.  The units
-  !!     used for region are the actual units used in grid_spec.nc (for example
-  !!     degrees for lat, lon).  <B><I>NOTE:</I></B> A FATAL error will occur if
-  !!     the region's boundaries are not found in grid_spec.nc.
+  !! The format of a region is "<TT>xbegin xend ybegin yend zbegin zend</TT>".
+  !! If it is a 2D field use (-1 -1) for (zbegin zend) as in the example above.
+  !! For a 3D field use (-1 -1) for (zbegin zend) when you want to write the
+  !! entire vertical extent, otherwise specify real coordinates.  The units
+  !! used for region are the actual units used in grid_spec.nc (for example
+  !! degrees for lat, lon).  <B><I>NOTE:</I></B> A FATAL error will occur if
+  !! the region's boundaries are not found in grid_spec.nc.
   !!
-  !!     Regional output on the cubed sphere grid is also supported.  To use regional
-  !!     output on the cubed sphere grid, first the grid information needs to be sent to
-  !!     <TT>diag_manager_mod</TT> using the @ref diag_grid#diag_grid_init subroutine.
+  !! Regional output on the cubed sphere grid is also supported.  To use regional
+  !! output on the cubed sphere grid, first the grid information needs to be sent to
+  !! <TT>diag_manager_mod</TT> using the @ref diag_grid#diag_grid_init subroutine.
   !!
-  !!     <B><I>NOTE:</I></B> When using regional output the files containing regional
-  !!     outputs should be different from files containing global (default) output.
-  !!     It is a FATAL error to have one file containing both regional and global
-  !!     results. For maximum flexibility and independence from PE counts one file
-  !!     should contain just one region.
+  !! <B><I>NOTE:</I></B> When using regional output the files containing regional
+  !! outputs should be different from files containing global (default) output.
+  !! It is a FATAL error to have one file containing both regional and global
+  !! results. For maximum flexibility and independence from PE counts one file
+  !! should contain just one region.
   !!
-  !!     Time averaging is supported in regional output.
+  !! Time averaging is supported in regional output.
   !!
-  !!     Physical fields (written in "physics windows" of atmospheric code) are
-  !!     fully supported for regional outputs.
+  !! Physical fields (written in "physics windows" of atmospheric code) are
+  !! fully supported for regional outputs.
   !!
-  !!     <B><I>NOTE:</I></B> Most fields are defined in the data domain but use the
-  !!     compute domain. In <TT>send_data</TT> the field can be passed in either
-  !!     the data domain or in the compute domain.  If the data domain is used, the
-  !!     start and end indicies of the compute domain (isc, iec, . . .) should be
-  !!     passed.  If the compute domain is used no indices are needed.  The indices
-  !!     are for determining halo exclusively.  If users want to output the field
-  !!     partially they should use regional output as mentioned above.
+  !! <B><I>NOTE:</I></B> Most fields are defined in the data domain but use the
+  !! compute domain. In <TT>send_data</TT> the field can be passed in either
+  !! the data domain or in the compute domain.  If the data domain is used, the
+  !! start and end indicies of the compute domain (isc, iec, . . .) should be
+  !! passed.  If the compute domain is used no indices are needed.  The indices
+  !! are for determining halo exclusively.  If users want to output the field
+  !! partially they should use regional output as mentioned above.
   !!
-  !!     Weight in Time averaging is now supported, each time level may have a
-  !!     different weight. The default of weight is 1.
+  !! Weight in Time averaging is now supported, each time level may have a
+  !! different weight. The default of weight is 1.
   INTERFACE send_data
      MODULE PROCEDURE send_data_0d
      MODULE PROCEDURE send_data_1d
@@ -554,6 +554,9 @@ use platform_mod
 
   !> @page register_diag_field register_diag_field Interface
   !> @brief Register a diagnostic field for a given module
+  !! <br>Contains:
+  !! - @ref register_diag_field_scalar
+  !! - @ref register_diag_field_array
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
@@ -569,8 +572,7 @@ use platform_mod
 
   !> @page diag_field_add_attribute diag_field_add_attribute Interface
   !> @brief Add a attribute to the output field
-  !!
-  !> Contains:<br>
+  !! <br>Contains:
   !! - @ref diag_field_add_attribute_scalar_r
   !! - @ref diag_field_add_attribute_scalar_i
   !! - @ref diag_field_add_attribute_scalar_c
@@ -603,6 +605,7 @@ CONTAINS
   !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
   !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
   !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
+
   !> @brief Registers a scalar field
   !> @return integer
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &

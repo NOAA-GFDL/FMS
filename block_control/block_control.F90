@@ -34,17 +34,17 @@ implicit none
 
 public block_control_type
 
-type, private ix_type
+type, private :: ix_type
   integer, dimension(:,:), allocatable :: ix
 end type ix_type
 
-type, private pk_type
+type, private :: pk_type
   integer, dimension(:), allocatable :: ii
   integer, dimension(:), allocatable :: jj
 end type pk_type
 
 !> @brief Block data and extents for OpenMP threading of column-based calculations
-type, public block_control_type
+type, public :: block_control_type
   integer :: nx_block, ny_block  !< blocking factor using mpp-style decomposition
   integer :: nblks               !< number of blocks cover MPI domain
   integer :: isc, iec, jsc, jec  !< MPI domain global extents

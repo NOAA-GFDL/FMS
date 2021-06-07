@@ -49,8 +49,9 @@ module axis_utils2_mod
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
-  !> @page interp_1d interp_1d Interface
-  !! 1D interpolation
+
+  !> @page interp_1d_2 interp_1d Interface
+  !> 1D interpolation
   !! @param grid1 grid for data1
   !! @param grid2 grid for data2
   !! @param data1 Data to interpolate
@@ -330,6 +331,12 @@ end subroutine axis_edges
   end function lon_in_range
 
   !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
+  !!
+  !> <br>The first istrt-1 entries are moved to the end of the array:
+  !!
+  !! e.g.
+  !!        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
+  !!        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
   subroutine tranlon(lon, lon_start, istrt)
 
     ! returns array of longitudes s.t.  lon_strt <= lon < lon_strt+360.
@@ -413,7 +420,6 @@ end subroutine axis_edges
   !!   be the nearest data point to 0.0
   !!
   !!   @return real frac_index
-  !> @return real frac_index
   function frac_index (value, array)
 
     integer :: ia, i, ii, unit
