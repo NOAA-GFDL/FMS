@@ -149,15 +149,10 @@ end interface
 !#######################################################################
 
    subroutine topography_init ()
-     integer :: std_log !> @var standard log unit number to output which io is being used
      if ( module_is_initialized ) return
-
      call write_version_number("TOPOGRAPHY_MOD", version)
      call read_namelist
      module_is_initialized = .TRUE.
-     std_log = stdlog()
-     call error_mesg('topography_init',"Using fms2_io in topography_mod",NOTE)
-     if( mpp_pe() == mpp_root_pe()) write(std_log, '(a)')"Using fms2_io in topography_mod"
    end subroutine topography_init
 
 !#######################################################################
