@@ -95,10 +95,10 @@ end interface
 !   <DATA NAME="water_file" TYPE="character" DEFAULT="DATA/navy_pctwater.data">
 !       Name of percent water file.
 !   </DATA>
-
+   logical :: use_mpp_io = .false. !> deprecated namelist variable for using mpp_io in this module.
    character(len=128) :: topog_file = 'DATA/navy_topography.data', &
                          water_file = 'DATA/navy_pctwater.data'
-   namelist /topography_nml/ topog_file, water_file
+   namelist /topography_nml/ topog_file, water_file, use_mpp_io
 ! </NAMELIST>
    integer, parameter    :: TOPOG_INDEX = 1
    integer, parameter    :: WATER_INDEX = 2
@@ -153,6 +153,10 @@ end interface
      call write_version_number("TOPOGRAPHY_MOD", version)
      call read_namelist
      module_is_initialized = .TRUE.
+     if (use_mpp_io) then
+       call mpp_error('topography_mod', &
+         'MPP_IO is no longer supported. Please remove use_mpp_io from topography_nml', FATAL)
+     endif
    end subroutine topography_init
 
 !#######################################################################
