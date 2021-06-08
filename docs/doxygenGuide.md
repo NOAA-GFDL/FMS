@@ -32,36 +32,33 @@ will start the full description (as long as the brief description is terminated)
 
 Simple subroutine/function documentation:
 
-<!--- @code{.F90} -->
-```
-!> description
-!! continued description
-function foo()
-  integer :: bar !< variable description
-```
-<!--- @endcode -->
+@code{.F90}
+	!> description
+	!! continued description
+		function foo()
+	  integer :: bar !< variable description
+@endcode
 
 Full subroutine/function documentation:
-<!--- @code{.F90} -->
-```
-!> @brief short description
-!! continued short description
-!!
-!> Long description
-!! continued long description
-!! <br>Example 1:
-!!
-!! 		foo()
-!!
-!! Example 2:
-!! @code{.F90}
-!! foo()
-!! @endcode
-subroutine foo()
-  integer :: bar !< variable description
-  ...
-```
-<!--- @endcode -->
+
+@code{.F90}
+	!> @brief short description
+	!! continued short description
+	!!
+	!> Long description
+	!! continued long description
+	!! <br>Example 1:
+	!!
+	!! 		foo()
+	!!
+	!! Example 2:
+	!! @code{.F90}
+	!! foo()
+	!! @endcode
+	subroutine foo()
+	  integer :: bar !< variable description
+	  ...
+@endcode
 
 ### Documenting Interfaces
 Doxygen supports documenting interfaces, just not Fortran's version of an interface. As a workaround,
@@ -70,16 +67,14 @@ interface. The descriptions work the same as routines/functions, but any paramet
 must be defined with commands as the interface definition is not actually getting parsed.
 
 Example:
-<!--- @code{.F90} -->
-```
-!> @page foo foo Interface
-!> @brief short description
-!!
-!> Longer description
-!! @param[inout] arg1 description
-!! @returns retval description
-```
-<!--- @endcode -->
+@code{.F90}
+	!> @page foo foo Interface
+	!> @brief short description
+	!!
+	!> Longer description
+	!! @param[inout] arg1 description
+	!! @returns retval description
+@endcode
 
 ### Documenting Type Definitions
 Type definitions are only parsed through doxygen if they are defined in a certain way. They must
@@ -87,14 +82,12 @@ include the visibility(public or private) and `::` otherwise will likely be miss
 Other than that they are documented the same as subroutines.
 
 Example:
-<!--- @code{.F90} -->
-```
-!> description
-type, public :: typename
-    integer :: num !< description
-end type typename
-```
-<!--- @endcode -->
+@code{.F90}
+	!> description
+	type, public :: typename
+    	integer :: num !< description
+	end type typename
+@endcode
 
 ### Module Grouping
 To get the modules parsed correctly, each module page is created through a grouping defined at the

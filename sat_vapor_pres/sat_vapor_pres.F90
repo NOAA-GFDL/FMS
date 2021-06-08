@@ -243,7 +243,9 @@ private
 !          If the lookup table needs a larger temperature range,
 !          then parameters in the module header must be modified.
 !   </ERROR> *
+
  !> @page lookup_es lookup_es Interface
+ !> @ingroup sat_vapor_pres_mod 
  !> @brief For the given temperatures, returns the saturation vapor pressures
  !!
  !> For the given temperatures these routines return the saturation vapor pressure(esat).
