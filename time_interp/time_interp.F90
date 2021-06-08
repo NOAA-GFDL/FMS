@@ -21,7 +21,7 @@
 !> @brief Computes a weight and dates/indices for linearly interpolating between two dates.
 !> @author Bruce Wyman
 !!
-!! \nA time type is converted into two consecutive dates plus
+!! A time type is converted into two consecutive dates plus
 !! a fraction representing the distance between the dates.
 !! This information can be used to interpolate between the dates.
 !! The dates may be expressed as years, months, or days or

@@ -169,11 +169,26 @@ type, public :: time_type
    integer:: seconds
    integer:: days
    integer:: ticks
-   integer:: dummy ! added as a workaround bug on IRIX64 (AP)
+   integer:: dummy !< added as a workaround bug on IRIX64 (AP)
 end type time_type
 
 !======================================================================
+!> @page time_type time_time Operators
+!> @brief All operator override interfaces are provided for @ref time_type.
+!!
+!> Any arithmetic, logical, or assignment operators can be used with @ref time_type
+!! via these interfaces.
+!! <br> Example usage:
+!! @code{.F90}
+!! use FMS, only: operator(+), assignment(=), operator(>=)
+!! type(time_type) :: t1, t2, t3, t4
+!! t1 = t2 + t3
+!! if(t1 .ge. t4) then
+!! etc...
+!! @endcode
 
+! excludes incorrect parse in docs
+!> @cond
 interface operator (+);   module procedure time_plus;        end interface
 interface operator (-);   module procedure time_minus;       end interface
 interface operator (*);   module procedure time_scalar_mult
@@ -188,6 +203,7 @@ interface operator (==);  module procedure time_eq;          end interface
 interface operator (/=);  module procedure time_ne;          end interface
 interface operator (//);  module procedure time_real_divide; end interface
 interface assignment(=);  module procedure time_assignment;  end interface
+!> @endcond
 
 !======================================================================
 
@@ -212,6 +228,42 @@ interface set_time
   module procedure set_time_i, set_time_c
 end interface
 
+!> @page set_date set_date Interface
+!> @brief Given an input date in year, month, days, etc., creates a
+!! time_type that represents this time interval from the
+!! internally defined base date.
+!!
+!> Given a date, computes the corresponding time given the selected
+!! date time mapping algorithm. Note that it is possible to specify
+!! any number of illegal dates; these should be checked for and generate
+!! errors as appropriate.
+!!
+!! <br>Example usage:
+!! <br> Integer input
+!! @code{.F90} time = set_date(year, month, day, hours, minute, second, tick, err_msg) @endcode
+!! <br> String input
+!! @code{.F90} time = set_date_c(time_string, zero_year_warning, err_msg, allow_rounding) @endcode
+!!
+!! @param time_string A character string containing a date formatted
+!! according to CF conventions. e.g. '1980-12-31 23:59:59.9'
+!!
+!! @param zero_year_warning If the year number is zero, it will be silently changed to one,
+!! unless zero_year_warning=.true., in which case a WARNING message
+!! will also be issued.
+!!
+!! @param allow_rounding When .true., any fractions of a second will be rounded off to the nearest
+!! tick. When .false., it is a fatal error if the second fraction cannot be exactly
+!! represented by a number of ticks.
+!!
+!! @param err_msg When present, and when non-blank, a fatal error condition as been detected.
+!! The string itself is an error message.
+!! It is recommended that, when err_msg is present in the call
+!! to this routine, the next line of code should be something
+!! similar to this:
+!! @code{.F90} 
+!! if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg) ,FATAL)
+!! @endcode
+!!
 interface set_date
   module procedure set_date_i, set_date_c
 end interface
@@ -507,6 +559,16 @@ contains
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
 
+!> @brief Returns days and seconds ( < 86400 ) corresponding to a time.
+!! <TT>err_msg</TT> should be checked for any errors.
+!!
+!> @param time A @ref time_type interval to get days and seconds from
+!! @param [out] seconds The number of seconds
+!! @param [out] days The number of seconds
+!! @param [out] ticks The number of ticks
+!! @param [out] err_msg Contains an error message on failure
+!! <br>Example usage:
+!! @code{.F90} get_time(time, seconds, days, ticks, err_msg) @endcode
 subroutine get_time(Time, seconds, days, ticks, err_msg)
 
 ! Returns days and seconds ( < 86400 ) corresponding to a time.
@@ -589,17 +651,23 @@ end subroutine get_time
 !     This mimics the behavior of lima and earlier revisions.
 !   </IN>
 
+ !> @brief Given a time and an increment of days and seconds, returns
+ !! a time that adds this increment to an input time.
+ !!
+ !> Increments a time by seconds and days.
  function increment_time(Time, seconds, days, ticks, err_msg, allow_neg_inc)
 
 ! Increments a time by seconds, days and ticks.
 
  type(time_type)               :: increment_time
- type(time_type), intent(in)   :: Time
- integer, intent(in)           :: seconds
- integer, intent(in), optional :: days, ticks
- character(len=*), intent(out), optional :: err_msg
- logical, intent(in), optional :: allow_neg_inc
-
+ type(time_type), intent(in)   :: Time !< A time interval
+ integer, intent(in)           :: seconds !< Increment of seconds
+ integer, intent(in), optional :: days, ticks !< Increment of days and ticks
+ character(len=*), intent(out), optional :: err_msg !< When present and non-blank, a fatal error
+                                             !! condition has been detected, with the string itself
+                                             !! as the error message.
+ logical, intent(in), optional :: allow_neg_inc !< When false, negative increments give fatal errors
+                                                !! Defaults to true. 
  integer :: odays, oticks
  character(len=128) :: err_msg_local
  logical :: allow_neg_inc_local
@@ -693,16 +761,23 @@ end subroutine get_time
 !     This mimics the behavior of lima and earlier revisions.
 !   </IN>
 
+!> @brief Decrements a time by seconds and days.
+!!
+!> Given a time and a decrement of days and seconds, returns
+!! a time that subtracts this decrement from an input time.
 function decrement_time(Time, seconds, days, ticks, err_msg, allow_neg_inc)
 
 ! Decrements a time by seconds, days and ticks.
 
 type(time_type)               :: decrement_time
-type(time_type), intent(in)   :: Time
-integer, intent(in)           :: seconds
-integer, intent(in), optional :: days, ticks
-character(len=*), intent(out), optional :: err_msg
-logical, intent(in), optional :: allow_neg_inc
+type(time_type), intent(in)   :: Time !< A time interval
+integer, intent(in)           :: seconds !< Decrement of seconds
+integer, intent(in), optional :: days, ticks !< Decrement of days and ticks
+character(len=*), intent(out), optional :: err_msg !< Present and non-blank when a fatal error has
+                                                   !! occured, holds the error message.
+logical, intent(in), optional :: allow_neg_inc !< Throws fatal warning when set to false if
+                                               !! negative values are used to decrement. Default
+                                               !! is true.
 
 integer            :: odays, oticks
 character(len=128) :: err_msg_local
@@ -749,9 +824,9 @@ end function decrement_time
 !     time_gt(time1, time2)
 !   </TEMPLATE>
 
+!> Returns true if time1 > time2
 function time_gt(time1, time2)
 
-! Returns true if time1 > time2
 
 logical :: time_gt
 type(time_type), intent(in) :: time1, time2
@@ -867,9 +942,9 @@ end function time_lt
 !       Returns true if time1 <= time2
 !   </OUT>
 
+!> Returns true if time1 <= time2
 function time_le(time1, time2)
 
-! Returns true if time1 <= time2
 
 logical :: time_le
 type(time_type), intent(in) :: time1, time2
@@ -940,9 +1015,8 @@ end function time_eq
 !       Returns true if time1 /= time2
 !   </OUT>
 
+!> Returns true if time1 /= time2
 function time_ne(time1, time2)
-
-! Returns true if time1 /= time2
 
 logical :: time_ne
 type(time_type), intent(in) :: time1, time2
@@ -975,9 +1049,9 @@ end function time_ne
 !       Returns sum of two time_types.
 !   </OUT>
 
+!> Returns sum of two time_types
 function time_plus(time1, time2)
 
-! Returns sum of two time_types
 
 type(time_type) :: time_plus
 type(time_type), intent(in) :: time1, time2
@@ -1016,10 +1090,10 @@ end function time_plus
 !       Returns difference of two time_types.
 !   </OUT>
 
+!> Returns difference of two time_types. WARNING: a time type is positive
+!! so by definition time1 - time2  is the same as time2 - time1.
 function time_minus(time1, time2)
 
-! Returns difference of two time_types. WARNING: a time type is positive
-! so by definition time1 - time2  is the same as time2 - time1.
 
 type(time_type) :: time_minus
 type(time_type), intent(in) :: time1, time2
@@ -1058,9 +1132,9 @@ end function time_minus
 !       Returns time multiplied by integer factor n.
 !   </OUT>
 
+!> Returns time multiplied by integer factor n
 function time_scalar_mult(time, n)
 
-! Returns time multiplied by integer factor n
 
 type(time_type)             :: time_scalar_mult
 type(time_type), intent(in) :: time
@@ -1118,9 +1192,8 @@ end function time_scalar_mult
 !       Returns time multiplied by integer factor n.
 !   </OUT>
 
+!> Returns time multipled by integer factor n
 function scalar_time_mult(n, time)
-
-! Returns time multipled by integer factor n
 
 type(time_type) :: scalar_time_mult
 type(time_type), intent(in) :: time
@@ -1155,9 +1228,8 @@ end function scalar_time_mult
 !       Returns the largest integer, n, for which time1 >= time2 * n.
 !   </OUT>
 
+!> Returns the largest integer, n, for which time1 >= time2 * n.
 function time_divide(time1, time2)
-
-! Returns the largest integer, n, for which time1 >= time2 * n.
 
 integer                     :: time_divide
 type(time_type), intent(in) :: time1, time2
@@ -1203,9 +1275,8 @@ end function time_divide
 !       Returns the double precision quotient of two times
 !   </OUT>
 
+!> Returns the double precision quotient of two times
 function time_real_divide(time1, time2)
-
-! Returns the double precision quotient of two times
 
 double precision :: time_real_divide
 type(time_type), intent(in) :: time1, time2
@@ -1244,6 +1315,8 @@ end function time_real_divide
 !      A time type variable.
 !   </IN>
 
+!> Assigns all components of the time_type variable on
+!! RHS to same components of time_type variable on LHS.
 subroutine time_assignment(time1, time2)
 type(time_type), intent(out) :: time1
 type(time_type), intent(in)  :: time2
@@ -1431,14 +1504,13 @@ end function time_scalar_divide
 !                   if the function is true.
 !   </INOUT>
 
+!> Supports a commonly used type of test on times for models.  Given the
+!! current time, and a time for an alarm, determines if this is the closest
+!! time to the alarm time given a time step of time_interval.  If this
+!! is the closest time (alarm - time <= time_interval/2), the function
+!! returns true and the alarm is incremented by the alarm_interval.  Watch
+!! for problems if the new alarm time is less than time + time_interval
 function interval_alarm(time, time_interval, alarm, alarm_interval)
-
-! Supports a commonly used type of test on times for models.  Given the
-! current time, and a time for an alarm, determines if this is the closest
-! time to the alarm time given a time step of time_interval.  If this
-! is the closest time (alarm - time <= time_interval/2), the function
-! returns true and the alarm is incremented by the alarm_interval.  Watch
-! for problems if the new alarm time is less than time + time_interval
 
 logical :: interval_alarm
 type(time_type), intent(in) :: time, time_interval, alarm_interval
@@ -1484,14 +1556,13 @@ end function interval_alarm
 !     Returns either True or false.
 !   </OUT>
 
+!> Repeat_alarm supports an alarm that goes off with alarm_frequency and
+!! lasts for alarm_length.  If the nearest occurence of an alarm time
+!! is less than half an alarm_length from the input time, repeat_alarm
+!! is true.  For instance, if the alarm_frequency is 1 day, and the
+!! alarm_length is 2 hours, then repeat_alarm is true from time 2300 on
+!! day n to time 0100 on day n + 1 for all n.
 function repeat_alarm(time, alarm_frequency, alarm_length)
-
-! Repeat_alarm supports an alarm that goes off with alarm_frequency and
-! lasts for alarm_length.  If the nearest occurence of an alarm time
-! is less than half an alarm_length from the input time, repeat_alarm
-! is true.  For instance, if the alarm_frequency is 1 day, and the
-! alarm_length is 2 hours, then repeat_alarm is true from time 2300 on
-! day n to time 0100 on day n + 1 for all n.
 
 logical :: repeat_alarm
 type(time_type), intent(in) :: time, alarm_frequency, alarm_length
@@ -1606,9 +1677,8 @@ end subroutine set_calendar_type
 !     get_calendar_type()
 !   </TEMPLATE>
 
+!> Returns default calendar type for mapping from time to date.
 function get_calendar_type()
-
-! Returns default calendar type for mapping from time to date.
 
 integer :: get_calendar_type
 
@@ -1629,6 +1699,7 @@ end function get_calendar_type
 !   <TEMPLATE> call set_ticks_per_second(ticks_per_second) </TEMPLATE>
 !   <IN NAME="type" TYPE="integer" DIM="(scalar)" DEFAULT="1"> </IN>
 
+!> Sets the number of ticks per second.
 subroutine set_ticks_per_second(tps)
 integer, intent(in) :: tps
 
@@ -1651,6 +1722,7 @@ end subroutine set_ticks_per_second
 !     ticks_per_second = get_ticks_per_second()
 !   </TEMPLATE>
 
+!> Returns the number of ticks per second.
 function get_ticks_per_second()
 integer :: get_ticks_per_second
 
@@ -1693,9 +1765,9 @@ end function get_ticks_per_second
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
 
-!> @brief Gets the date for different calendar types.
-!! The added optional argument old_method allows user to choose either the new or old version
-!! of get_date_gregorian.  The variable old_method is only useful if the calendar type is Gregorian
+ !> @brief Gets the date for different calendar types.
+ !! The added optional argument old_method allows user to choose either the new or old version
+ !! of get_date_gregorian.  The variable old_method is only useful if the calendar type is Gregorian
  subroutine get_date(time, year, month, day, hour, minute, second, tick, err_msg, old_method)
 
 ! Given a time, computes the corresponding date given the selected calendar
@@ -2155,9 +2227,9 @@ end function get_ticks_per_second
  end function set_date_i
 !------------------------------------------------------------------------
 
-!> @brief Calls set_date_private for different calendar types when given a string input.
-!! The added optional argument old_method allows user to choose either the new or old version
-!! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
+ !> @brief Calls set_date_private for different calendar types when given a string input.
+ !! The added optional argument old_method allows user to choose either the new or old version
+ !! of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian
  function set_date_c(string, zero_year_warning, err_msg, allow_rounding, old_method)
 
  ! Examples of acceptable forms of string:
@@ -3549,8 +3621,7 @@ function date_to_string(time, err_msg)
 
 end function date_to_string
 
-!> \author Tom Robinson
-!! \email thomas.robinson@noaa.gov
+!> \author Tom Robinson thomas.robinson@noaa.gov
 !! \brief This routine converts the integer t%days to a string
 subroutine time_list_error (T,Terr)
   type(time_type),  intent(in)            :: t     !< time_type input

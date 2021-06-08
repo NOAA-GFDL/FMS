@@ -70,6 +70,7 @@ public :: topography_init,                 &
           gaussian_topog_init, get_gaussian_topog
 
 !> @page get_topog_mean get_topog_mean Interface
+!> @ingroup topography_mod
 !> @brief Returns a "realistic" mean surface height field.
 !!
 !> Returns realistic mountains on a latitude-longtude grid.
@@ -77,9 +78,9 @@ public :: topography_init,                 &
 !! Computed using a conserving area-weighted interpolation.
 !! The current input data set is the 1/6 degree Navy mean topography.
 !!
-!! @param real blon The longitude (in radians) at grid box boundaries.
-!! @param real blat The latitude (in radians) at grid box boundaries.
-!! @param real zmean The mean surface height (meters). The size of this 
+!! @param blon The longitude (in radians) at grid box boundaries.
+!! @param blat The latitude (in radians) at grid box boundaries.
+!! @param zmean The mean surface height (meters). The size of this 
 !!                        field must be size(blon)-1 by size(blat)-1.
 !! @return A logical value of TRUE is returned if the surface height field
 !! was successfully created. A value of FALSE may be returned if the
@@ -99,9 +100,9 @@ end interface
 !! currently the Navy 1/6 degree mean topography data, within the
 !! boundaries of the given input grid.
 !!
-!! @param real blon The longitude (in radians) at grid box boundaries.
-!! @param real blat The latitude (in radians) at grid box boundaries.
-!! @param [out] real stdev The standard deviation of surface height (in meters) within
+!! @param blon The longitude (in radians) at grid box boundaries.
+!! @param blat The latitude (in radians) at grid box boundaries.
+!! @param [out] stdev The standard deviation of surface height (in meters) within
 !! given input model grid boxes.
 !! The size of this field must be size(blon)-1 by size(blat)-1.
 !!
@@ -119,9 +120,9 @@ end interface
 !> @brief Returns fractional area covered by ocean in a grid box.
 !! Returns fractional area covered by ocean in the given model grid boxes.
 !!
-!! @param real blon The longitude (in radians) at grid box boundaries.
-!! @param real blat The latitude (in radians) at grid box boundaries.
-!! @param real ocean_frac The fractional amount (0 to 1) of ocean in a grid box.
+!! @param blon The longitude (in radians) at grid box boundaries.
+!! @param blat The latitude (in radians) at grid box boundaries.
+!! @param ocean_frac The fractional amount (0 to 1) of ocean in a grid box.
 !! The size of this field must be size(blon)-1 by size(blat)-1.
 !!
 !! @return A logical value of TRUE is returned if the output field
@@ -129,7 +130,7 @@ end interface
 !! if the Navy 1/6 degree percent water data set was not readable.
 !!
 !! Example usage:
-!! @code{.F90} flag = <B>get_ocean_frac</B> ( blon, blat, ocean_frac ) @endcode
+!! @code{.F90} flag = get_ocean_frac ( blon, blat, ocean_frac ) @endcode
 interface get_ocean_frac
   module procedure get_ocean_frac_1d, get_ocean_frac_2d
 end interface
@@ -139,9 +140,9 @@ end interface
 !!
 !> Returns a land-ocean mask in the given model grid boxes.
 !!
-!! @param real blon The longitude (in radians) at grid box boundaries.
-!! @param real blat The latitude (in radians) at grid box boundaries.
-!! @param real ocean_frac The fractional amount (0 to 1) of ocean in a grid box.
+!! @param blon The longitude (in radians) at grid box boundaries.
+!! @param blat The latitude (in radians) at grid box boundaries.
+!! @param ocean_frac The fractional amount (0 to 1) of ocean in a grid box.
 !!  The size of this field must be size(blon)-1 by size(blat)-1.
 !!
 !! @return A logical value of TRUE is returned if the output field
@@ -159,9 +160,9 @@ end interface
 !!
 !> Returns the percent of water in a grid box.
 !!
-!! @param real blon The longitude (in radians) at grid box boundaries.
-!! @param real blat The latitude (in radians) at grid box boundaries.
-!! @param [out] real water_frac The fractional amount (0 to 1) of water in a grid box.
+!! @param blon The longitude (in radians) at grid box boundaries.
+!! @param blat The latitude (in radians) at grid box boundaries.
+!! @param [out] water_frac The fractional amount (0 to 1) of water in a grid box.
 !!     The size of this field must be size(blon)-1 by size(blat)-1.
 !!
 !! @return A logical value of TRUE is returned if the output field
@@ -178,9 +179,9 @@ end interface
 !!
 !> Returns a land-water mask in the given model grid boxes.
 !!
-!! @param real blon The longitude (in radians) at grid box boundaries.
-!! @param real blat The latitude (in radians) at grid box boundaries.
-!! @param real water_mask(:,:) A binary mask for water (true) or land (false).
+!! @param blon The longitude (in radians) at grid box boundaries.
+!! @param blat The latitude (in radians) at grid box boundaries.
+!! @param water_mask A binary mask for water (true) or land (false).
 !! The size of this field must be size(blon)-1 by size(blat)-1.
 !!
 !! @return A logical value of TRUE is returned if the output field

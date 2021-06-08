@@ -21,7 +21,8 @@
 !> @brief Routines for creating Gaussian-shaped land surface topography
 !! for latitude-longitude grids.
 !> @author Bruce Wyman
-!> Interfaces generate simple Gaussian-shaped mountains from
+!!
+!! Interfaces generate simple Gaussian-shaped mountains from
 !! parameters specified by either argument list or namelist input.
 !! The mountain shapes are controlled by the height, half-width,
 !! and ridge-width parameters.

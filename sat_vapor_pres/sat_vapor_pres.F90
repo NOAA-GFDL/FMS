@@ -23,8 +23,61 @@
 !> Given a specified relative humidity, calculates es, qs, and mrs, as well as their
 !! derivatives with respect to temperature, and also includes routines
 !! to initialize the look-up table.
+!! This module contains routines for determining the saturation vapor
+!! pressure (<TT>ES</TT>) from lookup tables constructed using equations given
+!! in the Smithsonian tables.  The <TT>ES</TT> lookup tables are valid between
+!! -160C and +100C (approx 113K to 373K).
 !!
-!! Example Usage:
+!! The values of <TT>ES</TT> are computed over ice from -160C to -20C,
+!! over water from 0C to 100C, and a blended value (over water and ice)
+!! from -20C to 0C.
+!!
+!! Routines are also included to calculate the saturation specific
+!! humidity and saturation mixing ratio for vapor, and their deriv-
+!! atives with respect to temperature.  By default, the values returned
+!! are those at saturation; optionally, values of q and mr at a spec-
+!! ified relative humidity may instead be returned. Two forms are
+!! available; the approximate form that has been traditionally used in
+!! GCMs, and an exact form provided by SJ Lin in which saturation is
+!! reached while maintaining constant pressure and temperature.
+!!
+!! This version was written for non-vector machines.
+!! See the <LINK SRC="#NOTES">notes</LINK> section for details on vectorization.
+!!
+!!    arguments
+!!    ---------
+!!      temp    intent in       temperature in degrees kelvin
+!!      es      intent out      saturation vapor pressure in Pascals
+!!      des     intent out      derivative of saturation vapor pressure
+!!                              with respect to temperature
+!!                              (Pascals/degree)
+!!      press   intent in       atmospheric pressure in Pascals
+!!      qs      intent out      specific humidity at relative humidity hc
+!!                              (kg(vapor) / kg(moist air)
+!!      mrs     intent out      mixing ratio at relative humidity hc
+!!                              (kg(vapor) / kg(dry air)
+!!
+!!   optional arguments
+!!   ------------------
+!!      q       intent in       vapor specific humidity
+!!                              (kg(vapor) / kg(moist air)
+!!      hc      intent in       relative humidity at which output
+!!                              fields are desired: default is 100 %
+!!      dqsdT   intent out      derivative of saturation specific
+!!                              humidity with respect to temperature
+!!                              (kg(vapor) / kg(moist air) /degree)
+!!      mr      intent in       vapor mixing ratio
+!!                              (kg(vapor) / kg(dry air)
+!!      dmrsdT  intent out      derivative of saturation mixing ratio
+!!                              with respect to temperature
+!!                              (kg(vapor) / kg(dry air) /degree)
+!!      esat    intent out      saturation vapor pressure
+!!                              (Pascals)
+!!      err_msg intent out      character string to hold error message
+!!      es_over_liq
+!!              intent  in      use es table wrt liquid only
+!!
+!! Example Usages:
 !!
 !!              call lookup_es  (temp, es, err_msg)
 !!
@@ -190,7 +243,28 @@ private
 !          If the lookup table needs a larger temperature range,
 !          then parameters in the module header must be modified.
 !   </ERROR> *
-
+ !> @page lookup_es lookup_es Interface
+ !> @brief For the given temperatures, returns the saturation vapor pressures
+ !!
+ !> For the given temperatures these routines return the saturation vapor pressure(esat).
+ !! The return values are derived from lookup tables.
+ !! Example usage:
+ !! @code{.F90} call lookup_es( temp, esat, err_msg ) @endcode
+ !! 
+ !! @param temp Temperature in degrees Kelvin.
+ !! @param esat Saturation vapor pressure in pascals.
+ !!             May be a scalar, 1d, 2d, or 3d array
+ !!             Must have the same order and size as temp.
+ !! @param err_msg Character string containing error message to be returned to
+ !!                calling routine.
+ !! @throws FATAL table overflow, nbad=##
+ !!     Temperature(s) provided to the saturation vapor pressure lookup
+ !!          are outside the valid range of the lookup table (-160 to 100 deg C).
+ !!          This may be due to a numerical instability in the model.
+ !!          Information should have been printed to standard output to help
+ !!          determine where the instability may have occurred.
+ !!          If the lookup table needs a larger temperature range,
+ !!          then parameters in the module header must be modified.
  interface lookup_es
    module procedure lookup_es_0d, lookup_es_1d, lookup_es_2d, lookup_es_3d
  end interface
@@ -235,7 +309,31 @@ private
 !          If the lookup table needs a larger temperature range,
 !          then parameters in the module header must be modified.
 !   </ERROR> *
-
+ !> @page lookup_des lookup_des Interface
+ !> For the given temperatures, returns the derivative of saturation vapor pressure
+ !! with respect to temperature.
+ !!
+ !! For the given temperatures these routines return the derivtive of esat w.r.t. temperature
+ !! (desat). The return values are derived from lookup tables.
+ !!
+ !! @param [in] temp Temperature in degrees kelvin
+ !! @param [out] desat Derivative of saturation vapor pressure w.r.t. temperature
+ !!                 in pascals/degree. May be a scalar, 1d, 2d, or 3d array.
+ !!                 Must have the same order and size as temp.
+ !! @param [out] err_msg Character string containing error message to be returned to
+ !!     calling routine.
+ !!
+ !! @error FATAL table overflow, nbad=##
+ !!        Temperature(s) provided to the saturation vapor pressure lookup
+ !!        are outside the valid range of the lookup table (-160 to 100 deg C).
+ !!        This may be due to a numerical instability in the model.
+ !!        Information should have been printed to standard output to help
+ !!        determine where the instability may have occurred.
+ !!        If the lookup table needs a larger temperature range,
+ !!        then parameters in the module header must be modified.
+ !! 
+ !! <br>Example usage:
+ !! @code{.F90} call lookup_des( temp, desat) @endcode
  interface lookup_des
    module procedure lookup_des_0d, lookup_des_1d, lookup_des_2d, lookup_des_3d
  end interface
@@ -289,7 +387,35 @@ private
 !          If the lookup table needs a larger temperature range,
 !          then parameters in the module header must be modified.
 !   </ERROR> *
-
+ !> @page lookup_es_des lookup_es_des Interfaces
+ !> @brief For the given temperatures, returns the saturation vapor pressure
+ !! and the derivative of saturation vapor pressure with respect to
+ !! temperature.
+ !!
+ !> For the given temperatures these routines return the
+ !! saturation vapor pressure (esat) and the derivative of esat w.r.t
+ !! temperature (desat). The return values are derived from
+ !! lookup tables (see notes below).
+ !!
+ !! <br>Example usage:
+ !! @code{.F90} call lookup_es_des( temp, esat, desat, err_msg ) @endcode
+ !!
+ !! @param temp Temperature in degrees Kelvin.
+ !! @param [out] esat Saturation vapor pressure in pascals. May be a scalar, 1d, 2d, or 3d array.
+ !!              Must have the same order and size as temp.
+ !! @param [out] desat Derivative of saturation vapor pressure w.r.t. temperature
+ !!                    in pascals/degree. May be a scalar, 1d, 2d, or 3d array.
+ !!                    Must have the same order and size as temp.
+ !! @param [out] err_msg Character string containing error message to be returned to
+ !!                      calling routine.
+ !! @error FATAL table overflow, nbad=##
+ !! Temperature(s) provided to the saturation vapor pressure lookup
+ !! are outside the valid range of the lookup table (-160 to 100 deg C).
+ !! This may be due to a numerical instability in the model.
+ !! Information should have been printed to standard output to help
+ !! determine where the instability may have occurred.
+ !! If the lookup table needs a larger temperature range,
+ !! then parameters in the module header must be modified.
  interface lookup_es_des
    module procedure lookup_es_des_0d, lookup_es_des_1d, lookup_es_des_2d, lookup_es_des_3d
  end interface
@@ -390,6 +516,29 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
+ !> @page compute_qs compute_qs Interface
+ !> @brief For the given temperatures, pressures and optionally vapor
+ !! specific humidity, returns the specific humidity at saturation
+ !! (optionally at relative humidity hc instead of at saturation) and
+ !! optionally the derivative of saturation specific humidity w.r.t.
+ !! temperature, and the saturation vapor pressure.
+ !!
+ !! For the input temperature and pressure these routines return the
+ !! specific humidity (qsat) at saturation (unless optional argument
+ !! hc is used to specify the relative humidity at which qsat should
+ !! apply) and, if desired, the derivative of qsat w.r.t temperature
+ !! (dqsdT) and / or the saturation vapor pressure (esat). If the
+ !! optional input argument specific humidity (q) is present, the
+ !! exact expression for qs is used; if q is not present the tradit-
+ !! ional form (valid at saturation) is used. if the optional qsat
+ !! derivative argument is present, the derivative of qsat w.r.t.
+ !! temperature will also be returned, defined consistent with the
+ !! expression used for qsat. The return values are derived from
+ !! lookup tables (see notes below).
+ !!
+ !! Example usage:
+ !! @code{.F90} call compute_qs( temp, press, qsat, q, hc, dqsdT, esat, err_msg ) @endcode
+ !!
  interface compute_qs
    module procedure compute_qs_0d, compute_qs_1d, compute_qs_2d, compute_qs_3d
  end interface
@@ -466,6 +615,30 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
+ !> @page compute_mrs compute_mrs Interface
+ !! 
+ !! For the given temperatures, pressures and optionally vapor
+ !! mixing ratio, returns the  vapor mixing ratio at saturation
+ !! (optionally at relative humidity hc instead of at saturation) and
+ !! optionally the derivative of saturation vapor mixing ratio w.r.t.
+ !! temperature, and the saturation vapor pressure.
+ !!
+ !! For the input temperature and pressure these routines return the
+ !! vapor mixing ratio (mrsat) at saturation (unless optional argument
+ !! hc is used to specify the relative humidity at which mrsat should
+ !! apply) and, if desired, the derivative of mrsat w.r.t temperature
+ !! (dmrsdT) and / or the saturation vapor pressure (esat). If the
+ !! optional input argument specific humidity (mr) is present, the
+ !! exact expression for mrs is used; if qr is not present the tradit-
+ !! ional form (valid at saturation) is used. if the optional mrsat
+ !! derivative argument is present, the derivative of mrsat w.r.t.
+ !! temperature will also be returned, defined consistent with the
+ !! expression used for mrsat. The return values are derived from
+ !! lookup tables (see notes below).
+ !!
+ !! <br>Example usage:
+ !! @code{.F90} call compute_mrs( temp, press, mrsat, mr, hc, dmrsdT, esat,
+ !!                       err_msg ) @endcode
  interface compute_mrs
    module procedure compute_mrs_0d, compute_mrs_1d, compute_mrs_2d, compute_mrs_3d
  end interface

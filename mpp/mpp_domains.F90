@@ -274,7 +274,7 @@ module mpp_domains_mod
      integer(i4_kind) :: io_layout
   end type domainUG
 
-  !> type used to specify index limits along an axis of a domain
+  !> Used to specify index limits along an axis of a domain
   type, public :: domain_axis_spec
      private
      integer :: begin, end, size, max_size !< start, end of domain axis, size, max size in set
@@ -311,7 +311,7 @@ module mpp_domains_mod
      integer                 :: tile_root_pe         !< root pe of tile.
   end type domain2D_spec
 
-  type, private :: overlap_type
+  type :: overlap_type
      private
      integer                  :: count = 0                 !< number of overlapping
      integer                  :: pe
@@ -346,12 +346,12 @@ module mpp_domains_mod
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
 
-  !> @brief The domain2D type contains all the necessary information to
+  !> The domain2D type contains all the necessary information to
   !! define the global, compute and data domains of each task, as well as the PE
   !! associated with the task. The PEs from which remote data may be
   !! acquired to update the data domain are also contained in a linked list of neighbours.
   !!
-  !> Domain types of higher rank can be constructed from type domain1D
+  !! Domain types of higher rank can be constructed from type domain1D
   !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
   !! some elements are repeated below if they are needed once per domain, not once per axis
   type, public :: domain2D
@@ -412,7 +412,7 @@ module mpp_domains_mod
      integer :: is_you, ie_you, js_you, je_you
   end type index_type
 
- !> Used to specify bounds and index information for nested tiles as a linked list
+  !> Used to specify bounds and index information for nested tiles as a linked list
   type, private :: nestSpec
      private
      integer                     :: xbegin, xend, ybegin, yend
@@ -428,7 +428,7 @@ module mpp_domains_mod
 
   end type nestSpec
 
- !> domain with nested fine and course tiles
+  !> domain with nested fine and course tiles
   type, public :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
@@ -724,7 +724,7 @@ module mpp_domains_mod
   !! global domain. If this cannot be done, the algorithm favours domains
   !! that are longer in \e x than \e y, a preference that could improve vector performance.
   !! <br>Example usage:
-  !!                    call mpp_define_layout( global_indices, ndivs, layout )
+  !! @code{.F90}call mpp_define_layout( global_indices, ndivs, layout )@endcode
   interface mpp_define_layout
      module procedure mpp_define_layout2D
   end interface
@@ -769,9 +769,10 @@ module mpp_domains_mod
   !! domains included in the computation.
   !!
   !! <br>Example usage:
-  !!
-  !!                            call mpp_define_domains( (/1,100/), 10, domain, &
-  !!                                    flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
+  !! @code{.F90}
+  !!    call mpp_define_domains( (/1,100/), 10, domain, &
+  !!                             flags=GLOBAL_DATA_DOMAIN+CYCLIC_GLOBAL_DOMAIN, halo=2 )
+  !! @endcode
   !!
   !! defines 10 compute domains spanning the range [1,100] of the global
   !! domain. The compute domains are non-overlapping blocks of 10. All the data
@@ -782,6 +783,7 @@ module mpp_domains_mod
   !! the compute domain. A call to mpp_update_domains would fill in the values
   !! in the halo region:<br>
   !!<br>
+  !! @code{.F90}
   !!            call mpp_get_data_domain( domain, isd, ied ) !returns -1 and 102
   !!            call mpp_get_compute_domain( domain, is, ie ) !returns (1,10) on PE 0 ...
   !!            allocate( a(isd:ied) )
@@ -789,6 +791,7 @@ module mpp_domains_mod
   !!              a(i) = &lt;perform computations&gt;
   !!            end do
   !!            call mpp_update_domains( a, domain )
+  !! @endcode
   !!<br>
   !! The call to mpp_update_domainsfills in the regions outside
   !! the compute domain. Since the global domain is cyclic, the values at
@@ -820,11 +823,10 @@ module mpp_domains_mod
   !!                    call mpp_define_domains( (/1,100,1,100/), (/2,2/), domain, xhalo=1 )
   !! will create the following domain layout:<br>
   !!<br>
-  !!
-  !!    |    domain    |domain(1)|domain(2)  |domain(3)  |domain(4)    |
-  !!    |--------------|---------|-----------|-----------|-------------|
-  !!    |Compute domain|1,50,1,50|51,100,1,50|1,50,51,100|51,100,51,100|
-  !!    |Data domain   |0,51,1,50|50,101,1,50|0,51,51,100|50,101,51,100|
+  !! |    domain    |domain(1)|domain(2)  |domain(3)  |domain(4)    |
+  !! |--------------|---------|-----------|-----------|-------------|
+  !! |Compute domain|1,50,1,50|51,100,1,50|1,50,51,100|51,100,51,100|
+  !! |Data domain   |0,51,1,50|50,101,1,50|0,51,51,100|50,101,51,100|
   !!
   !!
   !! Again, we allocate arrays on the data domain, perform computations

@@ -25,7 +25,6 @@ The following previously used commands are invalid:
 - `@email`, email can be included in `@author` line
 - `@description`, `@details` can be used, but is also implied by `!>` if a brief description is already given
 - `@example`, not actually invalid, but should not be used in subroutine/function descriptions as it is for presenting examples of source code separately. Some examples of what can be used for programming examples in descriptions are below.
-
 ### Documenting subroutines and functions:
 
 The first `!>` comment above a routine implicitly starts the brief description, and the second `!>`
@@ -33,14 +32,17 @@ will start the full description (as long as the brief description is terminated)
 
 Simple subroutine/function documentation:
 
+<!--- @code{.F90} -->
 ```
 !> description
 !! continued description
 function foo()
   integer :: bar !< variable description
 ```
+<!--- @endcode -->
 
 Full subroutine/function documentation:
+<!--- @code{.F90} -->
 ```
 !> @brief short description
 !! continued short description
@@ -59,6 +61,7 @@ subroutine foo()
   integer :: bar !< variable description
   ...
 ```
+<!--- @endcode -->
 
 ### Documenting Interfaces
 Doxygen supports documenting interfaces, just not Fortran's version of an interface. As a workaround,
@@ -67,6 +70,7 @@ interface. The descriptions work the same as routines/functions, but any paramet
 must be defined with commands as the interface definition is not actually getting parsed.
 
 Example:
+<!--- @code{.F90} -->
 ```
 !> @page foo foo Interface
 !> @brief short description
@@ -75,6 +79,7 @@ Example:
 !! @param[inout] arg1 description
 !! @returns retval description
 ```
+<!--- @endcode -->
 
 ### Documenting Type Definitions
 Type definitions are only parsed through doxygen if they are defined in a certain way. They must
@@ -82,12 +87,14 @@ include the visibility(public or private) and `::` otherwise will likely be miss
 Other than that they are documented the same as subroutines.
 
 Example:
+<!--- @code{.F90} -->
 ```
 !> description
 type, public :: typename
     integer :: num !< description
 end type typename
 ```
+<!--- @endcode -->
 
 ### Module Grouping
 To get the modules parsed correctly, each module page is created through a grouping defined at the
