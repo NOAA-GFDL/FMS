@@ -277,7 +277,10 @@ module mpp_domains_mod
   !> Used to specify index limits along an axis of a domain
   type, public :: domain_axis_spec
      private
-     integer :: begin, end, size, max_size !< start, end of domain axis, size, max size in set
+     integer :: begin !< start of domain axis
+     integer :: end !< end of domain axis
+     integer :: size !< size of domain axis
+     integer :: max_size !< max size in set
      logical :: is_global !< .true. if domain axis extent covers global domain
   end type domain_axis_spec
 
@@ -354,7 +357,7 @@ module mpp_domains_mod
   !! Domain types of higher rank can be constructed from type domain1D
   !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
   !! some elements are repeated below if they are needed once per domain, not once per axis
-  type, public :: domain2D
+  TYPE, PUBLIC :: domain2D
      private
      character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
      integer(i8_kind)            :: id
@@ -390,7 +393,7 @@ module mpp_domains_mod
      type(overlapSpec),  pointer :: update_C      => NULL() !< send and recv information for halo update of C-cell.
      type(overlapSpec),  pointer :: update_N      => NULL() !< send and recv information for halo update of N-cell.
      type(domain2d),     pointer :: io_domain     => NULL() !< domain for IO, will be set through calling mpp_set_io_domain ( this will be changed).
-  end type domain2D
+  END TYPE domain2D
 
   !> Type used to represent the contact between tiles.
   !> @note This type will only be used in mpp_domains_define.inc
@@ -428,7 +431,7 @@ module mpp_domains_mod
 
   end type nestSpec
 
-  !> domain with nested fine and course tiles
+  !> @brief domain with nested fine and course tiles
   type, public :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
@@ -469,7 +472,7 @@ module mpp_domains_mod
 
 
   !> Used for sending domain data between pe's
-  type, public :: DomainCommunicator2D
+  type, public :: domaincommunicator2D
      private
      logical            :: initialized=.false.
      integer(i8_kind) :: id=-9999

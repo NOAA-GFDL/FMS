@@ -69,22 +69,34 @@ logical :: debug = .false.    !< Making this true enables debugging output.
 !!
 !! This idea comes from R. Hallberg and A. Adcroft.
 !!
-interface mpp_reproducing_sum !> @{
+interface mpp_reproducing_sum
   module procedure mpp_reproducing_sum_r8_2d
   module procedure mpp_reproducing_sum_r8_3d
-  module procedure mpp_reproducing_sum_r4_2d !> @}
+  module procedure mpp_reproducing_sum_r4_2d
 end interface mpp_reproducing_sum
 
 !> The Extended Fixed Point (mpp_efp) type provides a public interface for doing
 !! sums and taking differences with this type.
-type, public :: mpp_efp_type ; private
+type, public :: mpp_efp_type
+  private
   integer(i8_kind), dimension(NUMINT) :: v
 end type mpp_efp_type
+
+!> @page mpp_efp_type_ops mpp_efp_type Operators
+!> Override interfaces are provided for addition and subtraction between mpp_efp_types, as well
+!! as assignment.
+!! <br> Example usage:
+!! @code{.F90} 
+!! use FMS, only: operator(+), assignment(=)
+!! efp1 = efp2 + efp3
+!! @endcode
+
 !> @cond
 interface operator (+); module procedure mpp_efp_plus  ; end interface
-!> @endcond
 interface operator (-); module procedure mpp_efp_minus ; end interface
 interface assignment(=); module procedure mpp_efp_assign ; end interface
+!> @endcond
+! excludes from docs because these are parsed incorrectly
 
 contains
 

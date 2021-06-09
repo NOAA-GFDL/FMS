@@ -16,7 +16,7 @@ Certain doxygen commands must be terminated with an empty comment line, mainly `
 , otherwise will include any additional documentation below it.
 
 Some html commands, such as `<TT>` and `<br>` are allowed. Full list can be found
-[here](https://www.doxygen.nl/manual/htmlcmds.html). Coding examples can be formatted by
+[**here**](https://www.doxygen.nl/manual/htmlcmds.html). Coding examples can be formatted by
 either tabbing, or within the `@code` commands(see full subroutine documentation
 below for examples of both). Links to other pages within the documentation can be created with
 `@ref name`.
@@ -25,7 +25,9 @@ The following previously used commands are invalid:
 - `@email`, email can be included in `@author` line
 - `@description`, `@details` can be used, but is also implied by `!>` if a brief description is already given
 - `@example`, not actually invalid, but should not be used in subroutine/function descriptions as it is for presenting examples of source code separately. Some examples of what can be used for programming examples in descriptions are below.
-### Documenting subroutines and functions:
+
+
+### Documenting subroutines and functions
 
 The first `!>` comment above a routine implicitly starts the brief description, and the second `!>`
 will start the full description (as long as the brief description is terminated).
@@ -35,8 +37,9 @@ Simple subroutine/function documentation:
 @code{.F90}
 	!> description
 	!! continued description
-		function foo()
+        function foo()
 	  integer :: bar !< variable description
+          ...
 @endcode
 
 Full subroutine/function documentation:
@@ -54,7 +57,7 @@ Full subroutine/function documentation:
 	!! Example 2:
 	!! @code{.F90}
 	!! foo()
-	!! @endcode
+	!! endcode (`@` ommitted to not close this example)
 	subroutine foo()
 	  integer :: bar !< variable description
 	  ...
