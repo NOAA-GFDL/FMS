@@ -80,7 +80,7 @@ public :: topography_init,                 &
 !!
 !! @param blon The longitude (in radians) at grid box boundaries.
 !! @param blat The latitude (in radians) at grid box boundaries.
-!! @param zmean The mean surface height (meters). The size of this 
+!! @param zmean The mean surface height (meters). The size of this
 !!                        field must be size(blon)-1 by size(blat)-1.
 !! @return A logical value of TRUE is returned if the surface height field
 !! was successfully created. A value of FALSE may be returned if the

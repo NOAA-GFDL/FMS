@@ -518,7 +518,7 @@ subroutine time_interp_modulo(Time, Time_beg, Time_end, Timelist, weight, index1
 type(time_type), intent(in)  :: Time, Time_beg, Time_end, Timelist(:)
 real           , intent(out) :: weight
 integer        , intent(out) :: index1, index2
-logical, intent(in), optional :: correct_leap_year_inconsistency!< When true turns on a kluge for an 
+logical, intent(in), optional :: correct_leap_year_inconsistency!< When true turns on a kluge for an
                                 !! inconsistency which may occur in a special case.
                                 !! When the modulo time period (i.e. Time_end - Time_beg) is a
                                 !! whole number of years and is not a multiple of 4, and the calendar

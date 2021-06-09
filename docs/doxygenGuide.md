@@ -64,6 +64,7 @@ Full subroutine/function documentation:
 @endcode
 
 ### Documenting Interfaces
+
 Doxygen supports documenting interfaces, just not Fortran's version of an interface. As a workaround,
 the `@page interface_name Interface name to display` command can be used to create sections for each
 interface. The descriptions work the same as routines/functions, but any parameters/return values

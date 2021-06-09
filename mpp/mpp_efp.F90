@@ -86,7 +86,7 @@ end type mpp_efp_type
 !> Override interfaces are provided for addition and subtraction between mpp_efp_types, as well
 !! as assignment.
 !! <br> Example usage:
-!! @code{.F90} 
+!! @code{.F90}
 !! use FMS, only: operator(+), assignment(=)
 !! efp1 = efp2 + efp3
 !! @endcode

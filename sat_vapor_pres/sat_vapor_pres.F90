@@ -245,14 +245,14 @@ private
 !   </ERROR> *
 
  !> @page lookup_es lookup_es Interface
- !> @ingroup sat_vapor_pres_mod 
+ !> @ingroup sat_vapor_pres_mod
  !> @brief For the given temperatures, returns the saturation vapor pressures
  !!
  !> For the given temperatures these routines return the saturation vapor pressure(esat).
  !! The return values are derived from lookup tables.
  !! Example usage:
  !! @code{.F90} call lookup_es( temp, esat, err_msg ) @endcode
- !! 
+ !!
  !! @param temp Temperature in degrees Kelvin.
  !! @param esat Saturation vapor pressure in pascals.
  !!             May be a scalar, 1d, 2d, or 3d array
@@ -333,7 +333,7 @@ private
  !!        determine where the instability may have occurred.
  !!        If the lookup table needs a larger temperature range,
  !!        then parameters in the module header must be modified.
- !! 
+ !!
  !! <br>Example usage:
  !! @code{.F90} call lookup_des( temp, desat) @endcode
  interface lookup_des
@@ -618,7 +618,7 @@ private
 !   </ERROR> *
 
  !> @page compute_mrs compute_mrs Interface
- !! 
+ !!
  !! For the given temperatures, pressures and optionally vapor
  !! mixing ratio, returns the  vapor mixing ratio at saturation
  !! (optionally at relative humidity hc instead of at saturation) and

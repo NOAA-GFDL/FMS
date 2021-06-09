@@ -69,10 +69,7 @@ public       &
               diurnal_solar, daily_mean_solar, annual_mean_solar,  &
               astronomy_end, universal_time, orbital_time
 
-!> @page diurnal_solar diurnal_solar Interface
-!> @ingroup astronomy_mod
-!!
-!! ~~~~~~~~~~{.f90}
+!> ~~~~~~~~~~{.f90}
 !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
 !! call diurnal_solar (lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, dt)
 !! ~~~~~~~~~~
@@ -120,7 +117,6 @@ public       &
 !! real, intent(in), optional :: dt
 !! type(time_type), optional :: dt_time
 !! ~~~~~~~~~~
-!! (see test.90 for examples of the use of these types)
 !!
 !! @param [in] <lat> Latitudes of model grid points [radians]
 !! @param [in] <lon> Longitudes of model grid points [radians]
@@ -145,9 +141,7 @@ interface diurnal_solar
    module procedure diurnal_solar_cal_0d
 end interface
 
-!> @page daily_mean_solar daily_mean_solar Interface
-!!
-!! ~~~~~~~~~~{.f90}
+!> ~~~~~~~~~~{.f90}
 !! call daily_mean_solar (lat, time, cosz, fracday, rrsun)
 !! call daily_mean_solar (lat, time_since_ae, cosz, fracday, rrsun)
 !! call daily_mean_solar (lat, time, cosz, solar)
@@ -202,9 +196,7 @@ interface daily_mean_solar
    module procedure daily_mean_solar_cal_0d
 end interface
 
-!> @page annual_mean_solar annual_mean_solar Interface
-!!
-!! ~~~~~~~~~~{.f90}
+!> ~~~~~~~~~~{.f90}
 !! call annual_mean_solar (js, je, lat, cosz, solar, fracday, rrsun)
 !! call annual_mean_solar (lat, cosz, solar)
 !! ~~~~~~~~~~
@@ -243,8 +235,7 @@ interface annual_mean_solar
    module procedure annual_mean_solar_2level
 end interface
 
-!> @page get_period get_period Interface
-!! Example usage:
+!> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call get_period (period)
 !! ~~~~~~~~~~
@@ -262,8 +253,7 @@ interface get_period
    module procedure get_period_time_type, get_period_integer
 end interface
 
-!> @page set_period set_period Interface
-!! Example usage:
+!> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call set_period (period_in)
 !! ~~~~~~~~~~
@@ -289,8 +279,9 @@ private &
 !             half_day, orbital_time, & ! called from  diurnal_solar and daily_mean_solar
 !             universal_time ! called from  diurnal_solar:
 
-!> @page half_day half_day Interface
-!! Example usage:
+!> Private interface for internal use by dirunal_solar and daily_mean_solar.
+!!
+!> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! half_day (latitude, dec) result (h)
 !! ~~~~~~~~~~

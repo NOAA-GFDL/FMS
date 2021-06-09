@@ -260,7 +260,7 @@ end interface
 !! It is recommended that, when err_msg is present in the call
 !! to this routine, the next line of code should be something
 !! similar to this:
-!! @code{.F90} 
+!! @code{.F90}
 !! if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg) ,FATAL)
 !! @endcode
 !!
@@ -667,7 +667,7 @@ end subroutine get_time
                                              !! condition has been detected, with the string itself
                                              !! as the error message.
  logical, intent(in), optional :: allow_neg_inc !< When false, negative increments give fatal errors
-                                                !! Defaults to true. 
+                                                !! Defaults to true.
  integer :: odays, oticks
  character(len=128) :: err_msg_local
  logical :: allow_neg_inc_local

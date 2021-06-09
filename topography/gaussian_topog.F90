@@ -169,7 +169,7 @@ end subroutine gaussian_topog_init
 
 !> @brief Returns a simple surface height field that consists of a single
 !! Gaussian-shaped mountain.
-!! 
+!!
 !> The height, position, width, and elongation of the mountain
 !! is controlled by optional arguments.
 !! @param real lon The mean grid box longitude in radians.

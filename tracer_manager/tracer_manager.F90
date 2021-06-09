@@ -100,11 +100,10 @@ public  tracer_manager_init, &
         NO_TRACER,           &
         MAX_TRACER_FIELDS
 
-!-----------------------------------------------------------------------
+!> Retrieves the tracer index 
 interface get_tracer_index
   module procedure get_tracer_index_integer, get_tracer_index_logical
 end interface
-!-----------------------------------------------------------------------
 
 integer            :: num_tracer_fields = 0
 integer, parameter :: MAX_TRACER_FIELDS = 150

@@ -930,16 +930,16 @@ private
      module procedure mpp_recv_logical4_5d
   end interface
   !> @page mpp_send mpp_send Interface
-  !> Send data to a receiving PE. 
+  !> Send data to a receiving PE.
   !!
-  !> @param put_data scalar or array to get sent to a receiving PE 
+  !> @param put_data scalar or array to get sent to a receiving PE
   !> @param put_len size of data to send from put_data
-  !> @param to_pe PE number to send to 
+  !> @param to_pe PE number to send to
   !> @param block true for blocking, false for non-blocking. Defaults to true
   !> @param tag communication tag
   !> @param[out] request MPI request handle
   !! <br> Example usage:
-  !! @code{.F90} call mpp_send(data, ie, pe) @endcode 
+  !! @code{.F90} call mpp_send(data, ie, pe) @endcode
   interface mpp_send
      module procedure mpp_send_real8
      module procedure mpp_send_real8_scalar

@@ -110,7 +110,7 @@ contains
 !!
 !! Example: 'days since 100 0' Indicates 100 days 0 seconds
 !!
-!! @param calendar 
+!! @param calendar
 !! Acceptable values of calendar are:
 !! 'noleap'
 !! '365_day'
