@@ -44,11 +44,10 @@ module drifters_core_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !> @brief Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
-  !! when adding members
+  !> @brief Core data needed for drifters.
+  !! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
+  !! when adding members.
   type, public drifters_core_type
-     ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
-     ! when adding members
      integer(kind=i8_kind) :: it   !< time index
      integer :: nd     !< number of dimensions
      integer :: np     !< number of particles (drifters)
@@ -57,12 +56,10 @@ module drifters_core_mod
      real   , allocatable :: positions(:,:)
   end type drifters_core_type
 
-  ! excludes this interface from docs because it gets parsed incorrectly as a data type
-  !> @cond
+  !> @brief Assignment override for @ref drifters_core_type
   interface assignment(=)
      module procedure drifters_core_copy_new
   end interface
-  !> @endcond
 
 contains
 

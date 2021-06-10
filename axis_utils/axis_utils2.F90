@@ -50,9 +50,9 @@ module axis_utils2_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !> @page interp_1d_2 interp_1d Interface
-  !> 1D interpolation
-  !! @param grid1 grid for data1
+  !> Perform 1D interpolation between grids.
+  !!
+  !> @param grid1 grid for data1
   !! @param grid2 grid for data2
   !! @param data1 Data to interpolate
   !! @param [inout] data2 Interpolated data

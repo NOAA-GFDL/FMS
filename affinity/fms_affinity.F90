@@ -44,12 +44,16 @@ module fms_affinity_mod
   private
 
   interface
-    !> Function to get affinity from a component
+
+    !> Function to get affinity from the current component.
+    !!
+    !> Defined in @ref affinity.c.
     !> @return integer for component's affinity
     integer(KIND=c_int) function fms_affinity_get() bind(c, name="get_cpu_affinity")
       import c_int
     end function fms_affinity_get
 
+    !> Retrieves this groups CPU set and it's size.
     integer(KIND=c_int) function get_cpuset(fsz, output, pe, debug) bind(c, name="get_cpuset")
       import c_int, c_bool
       integer(KIND=c_int), value, intent(in) :: fsz, pe
@@ -57,6 +61,7 @@ module fms_affinity_mod
       logical(KIND=c_bool), value :: debug
     end function get_cpuset
 
+    !> Set CPU afinity to a given core.
     integer(KIND=c_int) function set_cpu_affinity(cpu) bind(c, name="set_cpu_affinity")
       import c_int
       integer(KIND=c_int), value, intent(in) :: cpu

@@ -217,9 +217,6 @@
 !! "ocean_mod", "temp", "temp", "temp_local", "all", .FALSE., "5 259.5 -59.5 59.5 1 1", 2
 !!       </PRE>
 !!     </LI>
-!!
-!!   <H4>Useful Additional Utility</H4>
-!!   A simple utility has been created to help discover
 
 !> @file
 !> @brief File for @ref diag_table_mod
@@ -454,6 +451,7 @@ MODULE diag_table_mod
   PRIVATE
   PUBLIC :: parse_diag_table
 
+  !> Contains metadata and additional information for a field
   TYPE field_description_type
      CHARACTER(len=128) :: module_name, field_name, output_name, file_name
      CHARACTER(len=50) :: time_sampling
@@ -463,6 +461,7 @@ MODULE diag_table_mod
      INTEGER :: pack
   END TYPE field_description_type
 
+  !> Contains metadata and additional information for a file
   TYPE file_description_type
      INTEGER :: output_freq
      INTEGER :: file_format

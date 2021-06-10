@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup field_manager_mod
+!> @defgroup field_manager_mod field_manager_mod
 !> @ingroup field_manager
 !> @brief Reads entries from a field table and stores this
 !! information along with the type  of field it belongs to.
@@ -325,10 +325,10 @@ character(len=11), parameter, public, dimension(NUM_MODELS) :: &
 !        Public type definitions
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-type, public :: fm_array_list_def  !{
+type, public :: fm_array_list_def
   character (len=fm_field_name_len), dimension(:), pointer :: names => NULL()
   integer                                                  :: length
-end type  fm_array_list_def  !}
+end type  fm_array_list_def
 
 !
 ! <TYPE NAME="method_type">
@@ -346,26 +346,15 @@ end type  fm_array_list_def  !}
 !! This would be parsed by the advection routine.
 type, public :: method_type
 
-  ! <DATA NAME="method_type :: method_type" TYPE="character" DIM="(128)">
-  !
-  !   This string represents a tag that a module using this method can
-  !   key on. Typically this should contain some reference to the module
-  !   that is calling it.
-  ! </DATA>
-  !
-  ! <DATA NAME="method_type :: method_name" TYPE="character" DIM="(128)">
-  !   This is the name of a method which the module can parse and use
-  !   to assign different default values to a field method.
-  ! </DATA>
-  !
-  ! <DATA NAME="method_type :: method_control" TYPE="character" DIM="(256)">
-  !   This is the string containing parameters that the module can use
-  !   as values  for a field method. These should override default
-  !   values within the module.
-  ! </DATA>
-  character(len=fm_string_len) :: method_type
-  character(len=fm_string_len) :: method_name
-  character(len=fm_string_len) :: method_control
+  character(len=fm_string_len) :: method_type !< This string represents a tag that a module 
+                                 !! using this method can key on. Typically this should
+                                 !! contain some reference to the module that is calling it.
+  character(len=fm_string_len) :: method_name !< This is the name of a method which the module
+                                 !! can parse and use to assign different default values to 
+                                 !! a field method.
+  character(len=fm_string_len) :: method_control !< This is the string containing parameters that
+                                 !! the module can use as values  for a field method. These should
+                                 !! override default values within the module.
 end type
 ! </TYPE> NAME="method_type"
 
@@ -400,7 +389,7 @@ end type
 
 ! iterator over the field manager list
 type, public :: fm_list_iter_type
-   type(field_def), pointer    :: ptr => NULL()  ! pointer to the current field
+   type(field_def), pointer    :: ptr => NULL()  !< pointer to the current field
 end type fm_list_iter_type
 
 
@@ -433,19 +422,19 @@ interface parse
   module procedure  parse_strings
 end interface
 
-interface  fm_new_value  !{
+interface  fm_new_value
   module procedure  fm_new_value_integer
   module procedure  fm_new_value_logical
   module procedure  fm_new_value_real
   module procedure  fm_new_value_string
-end interface  !}
+end interface
 
-interface  fm_get_value  !{
+interface  fm_get_value
   module procedure  fm_get_value_integer
   module procedure  fm_get_value_logical
   module procedure  fm_get_value_real
   module procedure  fm_get_value_string
-end interface  !}
+end interface
 
 interface fm_loop_over_list
   module procedure  fm_loop_over_list_new
@@ -559,19 +548,19 @@ contains
 
 ! <SUBROUTINE NAME="field_manager_init">
 !   <OVERVIEW>
-!     Routine to initialize the field manager.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     This routine reads from a file containing formatted strings.
-!     These formatted strings contain information on which schemes are
-!     needed within various modules. The field manager does not
-!     initialize any of those schemes however. It simply holds the
-!     information and is queried by the appropriate  module.
 !   </DESCRIPTION>
 !   <TEMPLATE>
-!     call field_manager_init(nfields, table_name)
 !   </TEMPLATE>
 
+!> @brief Routine to initialize the field manager.
+!!
+!> This routine reads from a file containing formatted strings.
+!! These formatted strings contain information on which schemes are
+!! needed within various modules. The field manager does not
+!! initialize any of those schemes however. It simply holds the
+!! information and is queried by the appropriate  module.
 subroutine field_manager_init(nfields, table_name)
 
 ! <OUT NAME="nfields" TYPE="integer">
@@ -1063,20 +1052,27 @@ end subroutine check_for_name_duplication
 !   <TEMPLATE>
 !     call new_name ( list_name, method_name , val_name_in)
 !   </TEMPLATE>
+
+!> @brief Subroutine to add new values to list parameters.
+!!
+!> This subroutine uses input strings list_name, method_name
+!! and val_name_in to add new values to the list. Given
+!! list_name a new list item is created that is named
+!! method_name and is given the value or values in
+!! val_name_in. If there is more than 1 value in
+!! val_name_in, these values should be  comma-separated.
 subroutine new_name ( list_name, method_name_in , val_name_in)
 !   <IN NAME="list_name" TYPE="character(len=*)">
-!     The name of the field that is of interest here.
 !   </IN>
 !   <IN NAME="method_name" TYPE="character(len=*)">
-!     The name of the method that values are being supplied for.
 !   </IN>
-character(len=*), intent(in)    :: list_name
-character(len=*), intent(in)    :: method_name_in
+character(len=*), intent(in)    :: list_name !< The name of the field that is of interest here.
+character(len=*), intent(in)    :: method_name_in !< The name of the method that values are 
+                                                  !! being supplied for.
 !   <INOUT NAME="val_name_in" TYPE="character(len=*)">
-!     The value or values that will be parsed and used as the value when
-!     creating a new field or fields.
 !   </INOUT>
-character(len=*), intent(inout) :: val_name_in
+character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
+                                               !! used as the value when creating a new field or fields.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1306,15 +1302,15 @@ end subroutine new_name
 
 ! <SUBROUTINE NAME="field_manager_end">
 !   <OVERVIEW>
-!     Destructor for field manager.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This subroutine writes to the logfile that the user is exiting field_manager and
-!     changes the initialized flag to false.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call field_manager_end
 !   </TEMPLATE>
+
+!> @brief Destructor for field manager.
+!!
+!! This subroutine writes to the logfile that the user is exiting field_manager and
+!! changes the initialized flag to false.
 subroutine field_manager_end
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1352,6 +1348,9 @@ end subroutine field_manager_end
 !   <TEMPLATE>
 !     call strip_front_blanks(name)
 !   </TEMPLATE>
+!> @brief A routine to strip whitespace from the start of character strings.
+!!
+!> This subroutine removes spaces and tabs from the start of a character string.
 subroutine strip_front_blanks(name)
 
 character(len=*), intent(inout) :: name

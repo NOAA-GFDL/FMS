@@ -16,8 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @cond
 #undef _TYP
 #define _TYP integer
+!> @endcond
 
 !> @file
 !> @ingroup drifters

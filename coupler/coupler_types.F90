@@ -215,8 +215,7 @@ module coupler_types_mod
 
   ! Interface definitions for overloaded routines
 
-  !> @page coupler_type_copy coupler_type_copy Interface
-  !! This is the interface to spawn one coupler_bc_type into another and then
+  !> This is the interface to spawn one coupler_bc_type into another and then
   !! register diagnostics associated with the new type.
   interface  coupler_type_copy
     module procedure coupler_type_copy_1d_2d, coupler_type_copy_1d_3d
@@ -224,79 +223,67 @@ module coupler_types_mod
     module procedure coupler_type_copy_3d_2d, coupler_type_copy_3d_3d
   end interface coupler_type_copy
 
-  !> @page coupler_type_spawn coupler_type_spawn Interface
-  !! This is the interface to spawn one coupler_bc_type into another.
+  !> This is the interface to spawn one coupler_bc_type into another.
   interface  coupler_type_spawn
     module procedure CT_spawn_1d_2d, CT_spawn_2d_2d, CT_spawn_3d_2d
     module procedure CT_spawn_1d_3d, CT_spawn_2d_3d, CT_spawn_3d_3d
   end interface coupler_type_spawn
 
-  !> @page coupler_type_copy_data coupler_type_copy_data Interface
-  !! This is the interface to copy the field data from one coupler_bc_type
+  !> This is the interface to copy the field data from one coupler_bc_type
   !! to another of the same rank, size and decomposition.
   interface coupler_type_copy_data
     module procedure CT_copy_data_2d, CT_copy_data_3d, CT_copy_data_2d_3d
   end interface coupler_type_copy_data
 
-  !> @page coupler_type_redistribute_data coupler_type_redistribute_data Interface
-  !! This is the interface to redistribute the field data from one coupler_bc_type
+  !> This is the interface to redistribute the field data from one coupler_bc_type
   !! to another of the same rank and global size, but a different decomposition.
   interface coupler_type_redistribute_data
     module procedure CT_redistribute_data_2d, CT_redistribute_data_3d
   end interface coupler_type_redistribute_data
 
-  !> @page coupler_type_rescale_data coupler_type_rescale_data Interface
-  !! This is the interface to rescale the field data in a coupler_bc_type.
+  !> This is the interface to rescale the field data in a coupler_bc_type.
   interface coupler_type_rescale_data
     module procedure CT_rescale_data_2d, CT_rescale_data_3d
   end interface coupler_type_rescale_data
 
-  !> @page coupler_type_increment_data coupler_type_increment_data Interface
-  !! This is the interface to increment the field data from one coupler_bc_type
+  !> This is the interface to increment the field data from one coupler_bc_type
   !! with the data from another.  Both must have the same horizontal size and
   !! decomposition, but a 2d type may be incremented by a 2d or 3d type
   interface coupler_type_increment_data
     module procedure CT_increment_data_2d_2d, CT_increment_data_3d_3d, CT_increment_data_2d_3d
   end interface coupler_type_increment_data
 
-  !> @page coupler_type_extract_data coupler_type_extract_data Interface
-  !! This is the interface to extract a field in a coupler_bc_type into an array.
+  !> This is the interface to extract a field in a coupler_bc_type into an array.
   interface coupler_type_extract_data
     module procedure CT_extract_data_2d, CT_extract_data_3d, CT_extract_data_3d_2d
   end interface coupler_type_extract_data
 
-  !> @page coupler_type_set_data coupler_type_set_data Interface
-  !! This is the interface to set a field in a coupler_bc_type from an array.
+  !> This is the interface to set a field in a coupler_bc_type from an array.
   interface coupler_type_set_data
     module procedure CT_set_data_2d, CT_set_data_3d, CT_set_data_2d_3d
   end interface coupler_type_set_data
 
-  !> @page coupler_type_set_diags coupler_type_set_diags Interface
-  !! This is the interface to set diagnostics for the arrays in a coupler_bc_type.
+  !> This is the interface to set diagnostics for the arrays in a coupler_bc_type.
   interface coupler_type_set_diags
     module procedure CT_set_diags_2d, CT_set_diags_3d
   end interface coupler_type_set_diags
 
-  !> @page coupler_type_write_chksums coupler_type_write_chksums Interface
-  !! This is the interface to write out checksums for the elements of a coupler_bc_type.
+  !> This is the interface to write out checksums for the elements of a coupler_bc_type.
   interface coupler_type_write_chksums
     module procedure CT_write_chksums_2d, CT_write_chksums_3d
   end interface coupler_type_write_chksums
 
-  !> @page coupler_type_send_data coupler_type_send_data Interface
-  !! This is the interface to write out diagnostics of the arrays in a coupler_bc_type.
+  !> This is the interface to write out diagnostics of the arrays in a coupler_bc_type.
   interface coupler_type_send_data
     module procedure CT_send_data_2d, CT_send_data_3d
   end interface coupler_type_send_data
 
-  !> @page coupler_type_data_override coupler_type_data_override Interface
-  !! This is the interface to override the values of the arrays in a coupler_bc_type.
+  !> This is the interface to override the values of the arrays in a coupler_bc_type.
   interface coupler_type_data_override
     module procedure CT_data_override_2d, CT_data_override_3d
   end interface coupler_type_data_override
 
-  !> @page coupler_type_register_restarts coupler_type_register_restarts Interface
-  !! This is the interface to register the fields in a coupler_bc_type to be saved
+  !> This is the interface to register the fields in a coupler_bc_type to be saved
   !! in restart files.
   interface coupler_type_register_restarts
     module procedure mpp_io_CT_register_restarts_2d, mpp_io_CT_register_restarts_3d
@@ -305,22 +292,19 @@ module coupler_types_mod
     module procedure CT_register_restarts_2d, CT_register_restarts_3d
   end interface coupler_type_register_restarts
 
-  !> @page coupler_type_restore_state coupler_type_restore_state Interface
-  !! This is the interface to read in the fields in a coupler_bc_type that have
+  !> This is the interface to read in the fields in a coupler_bc_type that have
   !! been saved in restart files.
   interface coupler_type_restore_state
     module procedure mpp_io_CT_restore_state_2d, mpp_io_CT_restore_state_3d
     module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
-  !> @page coupler_type_initialized coupler_type_initialized Interface
-  !! This function interface indicates whether a coupler_bc_type has been initialized.
+  !> This function interface indicates whether a coupler_bc_type has been initialized.
   interface coupler_type_initialized
     module procedure CT_initialized_1d, CT_initialized_2d, CT_initialized_3d
   end interface coupler_type_initialized
 
-  !> @page coupler_type_destructor coupler_type_destructor Interface
-  !! This is the interface to deallocate any data associated with a coupler_bc_type.
+  !> This is the interface to deallocate any data associated with a coupler_bc_type.
   interface coupler_type_destructor
     module procedure CT_destructor_1d, CT_destructor_2d, CT_destructor_3d
   end interface coupler_type_destructor

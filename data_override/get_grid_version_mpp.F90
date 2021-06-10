@@ -39,8 +39,8 @@ implicit none
 
 real, parameter    :: deg_to_radian=PI/180.
 contains
-! Get lon and lat of three model (target) grids from grid_spec.nc
 
+!> Get lon and lat of three model (target) grids from grid_spec.nc
 subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
 character(len=12), intent(in) :: domain_name
 type (domain2d),   intent(in) :: Domain
@@ -64,6 +64,7 @@ if(nlon .NE. xsize .OR. nlat .NE. ysize) then
 endif
 end subroutine check_grid_sizes
 
+!> Get global lon and lat of three model (target) grids, with a given file name
 subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
   character(len=*),            intent(in) :: grid_file
   character(len=*),            intent(in) :: mod_name
@@ -185,8 +186,8 @@ subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc
 
 end subroutine get_grid_version_classic_1
 
-! Get global lon and lat of three model (target) grids from mosaic.nc
-! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
+!> Get global lon and lat of three model (target) grids from mosaic.nc.
+!! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine get_grid_version_classic_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   character(len=*),            intent(in) :: mosaic_file
   character(len=*),            intent(in) :: mod_name

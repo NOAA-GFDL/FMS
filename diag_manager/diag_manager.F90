@@ -478,7 +478,6 @@ use platform_mod
 
 
 
-  !> @page send_data send_data Interface
   !> @brief Send data over to output fields.
   !!
   !> <TT>send_data</TT> is overloaded for fields having zero dimension
@@ -520,11 +519,12 @@ use platform_mod
   !! output on the cubed sphere grid, first the grid information needs to be sent to
   !! <TT>diag_manager_mod</TT> using the @ref diag_grid#diag_grid_init subroutine.
   !!
-  !! <B><I>NOTE:</I></B> When using regional output the files containing regional
+  !! @note When using regional output the files containing regional
   !! outputs should be different from files containing global (default) output.
   !! It is a FATAL error to have one file containing both regional and global
   !! results. For maximum flexibility and independence from PE counts one file
   !! should contain just one region.
+  !!
   !!
   !! Time averaging is supported in regional output.
   !!
@@ -552,17 +552,12 @@ use platform_mod
 #endif
   END INTERFACE
 
-  !> @page register_diag_field register_diag_field Interface
   !> @brief Register a diagnostic field for a given module
-  !! <br>Contains:
-  !! - @ref register_diag_field_scalar
-  !! - @ref register_diag_field_array
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
   END INTERFACE
 
-  !> @page send_tile_averaged_data send_tile_averaged_data Interface
   !> @brief Send tile-averaged data over to output fields.
   INTERFACE send_tile_averaged_data
      MODULE PROCEDURE send_tile_averaged_data1d
@@ -570,14 +565,7 @@ use platform_mod
      MODULE PROCEDURE send_tile_averaged_data3d
   END INTERFACE
 
-  !> @page diag_field_add_attribute diag_field_add_attribute Interface
   !> @brief Add a attribute to the output field
-  !! <br>Contains:
-  !! - @ref diag_field_add_attribute_scalar_r
-  !! - @ref diag_field_add_attribute_scalar_i
-  !! - @ref diag_field_add_attribute_scalar_c
-  !! - @ref diag_field_add_attribute_r1d
-  !! - @ref diag_field_add_attribute_i1d
   INTERFACE diag_field_add_attribute
      MODULE PROCEDURE diag_field_add_attribute_scalar_r
      MODULE PROCEDURE diag_field_add_attribute_scalar_i
@@ -845,7 +833,7 @@ CONTAINS
   END FUNCTION register_diag_field_array
 
   !> @brief Return field index for subsequent call to send_data.
-  !! @return Return (integer) field index for subsequent call to send_data.
+  !! @return (integer) field index for subsequent call to send_data.
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
        & tile_count, area, volume, realm)

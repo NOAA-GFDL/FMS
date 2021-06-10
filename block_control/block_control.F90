@@ -34,10 +34,12 @@ implicit none
 
 public block_control_type
 
+!> Private type to dereference packed index from global index.
 type, private :: ix_type
   integer, dimension(:,:), allocatable :: ix
 end type ix_type
 
+!> Private type to dereference packed index from global indices.
 type, private :: pk_type
   integer, dimension(:), allocatable :: ii
   integer, dimension(:), allocatable :: jj
@@ -197,16 +199,6 @@ contains
 !! integer,                  intent(inout) :: blksz
 !! logical,                  intent(inout) :: message
 !! @endcode
-!!
-!! @param [in]    <component>
-!! @param [inout] <Block>
-!! @param [in]    <isc>
-!! @param [in]    <iec>
-!! @param [in]    <jsc>
-!! @param [in]    <jec>
-!! @param [in]    <kpts>
-!! @param [inout] <blksz>
-!! @param [inout] <message>
 !!
   subroutine define_blocks_packed (component, Block, isc, iec, jsc, jec, &
                                    kpts, blksz, message)

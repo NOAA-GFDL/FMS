@@ -19,8 +19,8 @@
 !> @defgroup diag_output_mod diag_output_mod
 !> @ingroup diag_manager
 !! @brief diag_output_mod is an integral part of
-!!   diag_manager_mod<. Its function is to write axis-meta-data,
-!!   field-meta-data and field data
+!!   diag_manager_mod. Its function is to write axis-meta-data,
+!!   field-meta-data and field data.
 !! @author Seth Underwood
 
 !> @file
@@ -106,28 +106,34 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   ! Include variable "version" to be written to log file.
   character(len=*), parameter :: version = '2020.03'
-!> This interface is exclusive to fms2_io output
+
+  !> Write diag field using @ref fms2_io 
   interface diag_field_write
      module procedure diag_field_write_field
      module procedure diag_field_write_varname
   end interface
 
-!> The following interfaces are used in conjuctions with use_mpp_io
+  ! The following interfaces are used in conjuctions with use_mpp_io
+
+  !> Initialize output for writing.
   interface diag_output_init
      module procedure diag_output_init_fms2_io
      module procedure diag_output_init_use_mpp_io
   end interface
 
+  !> Writes axis metadata to a file. 
   interface write_axis_meta_data
      module procedure write_axis_meta_data_fms2_io
      module procedure write_axis_meta_data_use_mpp_io
   end interface
 
+  !> Writes field metadata to a file.
   interface write_field_meta_data
      module procedure write_field_meta_data_fms2_io
      module procedure write_field_meta_data_use_mpp_io
   end interface
 
+  !> Writes metadata for an attribute to a file.
   interface write_attribute_meta
      module procedure write_attribute_meta_fms2_io
      module procedure write_attribute_meta_use_mpp_io
@@ -317,7 +323,7 @@ CONTAINS
 
   END SUBROUTINE diag_output_init_fms2_io
 
-  !> @brief Write the axes meta data to file.
+  !> @brief Write the axis meta data to file.
   SUBROUTINE write_axis_meta_data_fms2_io(file_unit, axes, fileob, time_ops, time_axis_registered)
     INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: axes(:) !< Array of axis ID's, including the time axis

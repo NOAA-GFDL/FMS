@@ -65,25 +65,19 @@ Full subroutine/function documentation:
 
 ### Documenting Interfaces
 
-Doxygen supports documenting interfaces, just not Fortran's version of an interface. As a workaround,
-the `@page interface_name Interface name to display` command can be used to create sections for each
-interface. The descriptions work the same as routines/functions, but any parameters/return values
-must be defined with commands as the interface definition is not actually getting parsed.
+Interfaces and type definitions can be documentated the same way as subroutines/functions.
+In the documentation they will both be listed a data type and will show any included subroutines
+or variables with links if available. 
 
 Example:
 @code{.F90}
-	!> @page foo foo Interface
 	!> @brief short description
 	!!
 	!> Longer description
 	!! @param[inout] arg1 description
 	!! @returns retval description
+        interface foo
 @endcode
-
-### Documenting Type Definitions
-Type definitions are only parsed through doxygen if they are defined in a certain way. They must
-include the visibility(public or private) and `::` otherwise will likely be missed by the parser.
-Other than that they are documented the same as subroutines.
 
 Example:
 @code{.F90}

@@ -133,6 +133,7 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 !-----------------------------------------------------------------------
 !------ private defined data type --------
 
+!> @brief Private data type for representing a calendar date
 type, private date_type
    sequence
    integer :: year, month, day
@@ -256,45 +257,39 @@ end type
 !-----------------------------------------------------------------------
 !---- namelist ----
 
- character(len=24) :: data_set = 'amip1'   !>  use 'amip1'
-                                           !!      'amip2'
-                                           !!      'reynolds_eof'
-                                           !!      'reynolds_oi'
-                                           !!      'hurrell'
-                                           !!      'daily', when "use_daily=.T."
-                                           ! add by JHC
+ character(len=24) :: data_set = 'amip1' !< use 'amip1', 'amip2', 'reynolds_eof'
+                                         !! 'reynolds_oi', 'hurrell', or 'daily', 
+                                         !! when "use_daily=.T."
+                                         ! add by JHC
 
- character(len=16) :: date_out_of_range = 'fail'  !>  use 'fail'
-                                                  !!      'initclimo'
-                                                  !!      'climo'
+ character(len=16) :: date_out_of_range = 'fail' !< use 'fail', 'initclimo', or 'climo'
 
- real    :: tice_crit    = -1.80       !>  in degC or degK
- integer :: verbose      = 0           !>  0 <= verbose <= 3
+ real    :: tice_crit    = -1.80 !<  in degC or degK
+ integer :: verbose      = 0     !<  0 <= verbose <= 3
 
- logical :: use_zonal    = .false. !> parameters for prescribed zonal sst option
- real :: teq  = 305. !> parameters for prescribed zonal sst option
- real :: tdif = 50. !> parameters for prescribed zonal sst option
- real :: tann = 20. !> parameters for prescribed zonal sst option
- real :: tlag = 0.875 !> parameters for prescribed zonal sst option
+ logical :: use_zonal    = .false. !< parameters for prescribed zonal sst option
+ real :: teq  = 305. !< parameters for prescribed zonal sst option
+ real :: tdif = 50. !< parameters for prescribed zonal sst option
+ real :: tann = 20. !< parameters for prescribed zonal sst option
+ real :: tlag = 0.875 !< parameters for prescribed zonal sst option
 
 
- integer :: amip_date(3)=(/-1,-1,-1/) !> amip date for repeating single day (rsd) option
+ integer :: amip_date(3)=(/-1,-1,-1/) !< amip date for repeating single day (rsd) option
 
- real :: sst_pert = 0. !> global temperature perturbation used for sensitivity experiments
+ real :: sst_pert = 0. !< global temperature perturbation used for sensitivity experiments
 
- character(len=6) :: sst_pert_type = 'fixed'  !> use 'random' or 'fixed'
+ character(len=6) :: sst_pert_type = 'fixed'  !< use 'random' or 'fixed'
  logical :: do_sst_pert = .false.
- logical :: use_daily = .false. !> if '.true.', give 'data_set = 'daily''
+ logical :: use_daily = .false. !< if '.true.', give 'data_set = 'daily''
 
- logical :: use_ncep_sst = .false. !> SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
+ logical :: use_ncep_sst = .false. !< SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
                                    !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
- logical ::  no_anom_sst = .true.  !> SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
+ logical ::  no_anom_sst = .true.  !< SJL: During nudging:   use_ncep_sst = .T.;  no_anom_sst = .T.
                                    !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
- logical :: use_ncep_ice = .false. !> For seasonal forecast: use_ncep_ice = .F.
- logical :: interp_oi_sst = .false. !> changed to false for regular runs
- logical :: use_mpp_io = .false. !> Set to .true. to use mpp_io, otherwise fms2io is used
+ logical :: use_ncep_ice = .false. !< For seasonal forecast: use_ncep_ice = .F.
+ logical :: interp_oi_sst = .false. !< changed to false for regular runs
+ logical :: use_mpp_io = .false. !< Set to .true. to use mpp_io, otherwise fms2io is used
 
-!> @page amip_interp_nml amip_interp Namelist
 !> @brief Namelist documentation for @ref amip_interp_mod
 !!
 !> @var character(len=24) data_set

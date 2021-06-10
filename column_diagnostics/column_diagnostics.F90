@@ -113,7 +113,7 @@ logical    :: module_is_initialized = .false.
 
 !####################################################################
 
-!> @brief column_diagnostics_init is the constructor for column_diagnostics_mod.
+!> @brief column_diagnostics_init is the initializer for column_diagnostics_mod.
 subroutine column_diagnostics_init
 
 !--------------------------------------------------------------------

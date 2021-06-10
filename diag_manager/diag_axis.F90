@@ -16,10 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup diag_axis_mod
+!> @defgroup diag_axis_mod diag_axis_mod
 !> @ingroup diag_manager
 !> @brief An integral part of @ref diag_manager_mod. It helps to create axis IDs
-!! that are used in register_diag_field.
+!! that are used in @ref register_diag_field.
 !!
 !> @author Seth Underwood
 !!
@@ -96,17 +96,16 @@ use platform_mod
   TYPE(diag_axis_type), ALLOCATABLE, SAVE :: Axes(:) !< ---- global storage for all defined axes ----
   LOGICAL :: module_is_initialized = .FALSE.
 
-  !> @page diag_axis_add_attribute diag_axis_add_attribute Interface
-  !> Add an arbitrary attribute and value to the diagnostic axis.  Any number
-  !! of attributes can be added to a given axis.  All attribute addition must
+  !> @brief Add an arbitrary attribute and value to the diagnostic axis.
+  !!
+  !> Any number of attributes can be added to a given axis.  All attribute addition must
   !! be done before first <TT>send_data</TT> call.<br>
   !!
   !! If a real or integer attribute is already defined, a FATAL error will be called.
   !! If a character attribute is already defined, then it will be prepended to the
   !! existing attribute value.
   !! <br>Example usage:
-  !!
-  !!                            call diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+  !! @code{.F90} call diag_axis_add_attribute(diag_axis_id, att_name, att_value) @endcode
   INTERFACE diag_axis_add_attribute
      MODULE PROCEDURE diag_axis_add_attribute_scalar_r
      MODULE PROCEDURE diag_axis_add_attribute_scalar_i
@@ -119,11 +118,12 @@ use platform_mod
 CONTAINS
 
   !> @brief Initialize the axis, and return the axis ID.
-  !! @return integer axis ID
   !!
   !> <TT>diag_axis_init</TT> initializes an axis and returns the axis ID that
-  !!     is to be used with <TT>register_diag_field</TT>.  This function also
-  !!     increments the axis counter and fills in the axes
+  !! is to be used with <TT>register_diag_field</TT>.  This function also
+  !! increments the axis counter and fills in the axes
+  !!
+  !! @return integer axis ID
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
        & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     CHARACTER(len=*), INTENT(in) :: name !< Short name for axis

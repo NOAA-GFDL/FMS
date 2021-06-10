@@ -110,7 +110,7 @@ module drifters_mod
 #include<file_version.h>
   real :: DRFT_EMPTY_ARRAY(0)
 
-  !> @brief type to hold drifter data
+  !> @brief Holds all data needed for drifters communication, io, and input.
   type, public drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
@@ -152,13 +152,12 @@ module drifters_mod
      integer :: nx, ny
      logical, allocatable   :: remove(:)
   end type drifters_type
-  ! exclude from docs since doxygen parses assignment interfaces incorrectly
-  !> @cond
+
+  !> @brief Assignment override for @ref drifters_type 
   interface assignment(=)
      module procedure drifters_copy_new
   end interface
-  !> @endcond
-
+ 
   interface drifters_push
     module procedure drifters_push_2
     module procedure drifters_push_3

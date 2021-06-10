@@ -104,10 +104,7 @@ public      &
 
 
 !###############################################################################
-!> @page sum_diag_integral_field sum_diag_integral_field Interface
-!> @ingroup diag_integral_mod
-!!
-!! This interface can be called in any one of three ways:
+!> This interface can be called in any one of three ways:
 !!
 !! @code{.f90}
 !! call sum_diag_integral_field (name, data, is, js)
@@ -137,10 +134,12 @@ public      &
 !!        is to occur
 !!
 interface sum_diag_integral_field
-   module procedure sum_field_2d,   &
-                    sum_field_2d_hemi, &
+   module procedure sum_field_2d_hemi, &
                     sum_field_3d,   &
                     sum_field_wght_3d
+   !> @cond
+   module procedure sum_field_2d
+   !> @endcond
 end interface
 
 

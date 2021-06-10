@@ -59,38 +59,32 @@ module drifters_comm_mod
   public :: drifters_comm_type, drifters_comm_new, drifters_comm_del, drifters_comm_set_pe_neighbors
   public :: drifters_comm_set_domain, drifters_comm_update, drifters_comm_gather
 
-  !> @brief Type for drifter communication between PE's
-  type, public drifters_comm_type
-     ! compute domain
-     real           :: xcmin !> compute domain
-     real           :: xcmax !> compute domain
-     real           :: ycmin !> compute domain
-     real           :: ycmax !> compute domain
-     ! data domain
-     real           :: xdmin !> data domain
-     real           :: xdmax !> data domain
-     real           :: ydmin !> data domain
-     real           :: ydmax !> data domain
-     ! global valid min/max
-     real           :: xgmin !> global valid min/max
-     real           :: xgmax !> global valid min/max
-     real           :: ygmin !> global valid min/max
-     real           :: ygmax !> global valid min/max
-     ! x/y period (can be be nearly infinite)
-     logical        :: xperiodic !> x/y period (can be be nearly infinite)
-     logical        :: yperiodic !> x/y period (can be be nearly infinite)
-     ! neighbor domains
-     integer        :: pe_N !> neighbor domains
-     integer        :: pe_S !> neighbor domains
-     integer        :: pe_E !> neighbor domains
-     integer        :: pe_W !> neighbor domains
-     integer        :: pe_NE !> neighbor domains
-     integer        :: pe_SE !> neighbor domains
-     integer        :: pe_SW !> neighbor domains
-     integer        :: pe_NW !> neighbor domains
-     ! starting/ending pe, set this to a value /= 0 if running concurrently
-     integer        :: pe_beg !> starting/ending pe, set this to a value /= 0 if running concurrently
-     integer        :: pe_end !> starting/ending pe, set this to a value /= 0 if running concurrently
+  !> Type for drifter communication between PE's
+  type, public :: drifters_comm_type
+     real           :: xcmin !< compute domain
+     real           :: xcmax !< compute domain
+     real           :: ycmin !< compute domain
+     real           :: ycmax !< compute domain
+     real           :: xdmin !< data domain
+     real           :: xdmax !< data domain
+     real           :: ydmin !< data domain
+     real           :: ydmax !< data domain
+     real           :: xgmin !< global valid min/max
+     real           :: xgmax !< global valid min/max
+     real           :: ygmin !< global valid min/max
+     real           :: ygmax !< global valid min/max
+     logical        :: xperiodic !< x/y period (can be be nearly infinite)
+     logical        :: yperiodic !< x/y period (can be be nearly infinite)
+     integer        :: pe_N !< neighbor domains
+     integer        :: pe_S !< neighbor domains
+     integer        :: pe_E !< neighbor domains
+     integer        :: pe_W !< neighbor domains
+     integer        :: pe_NE !< neighbor domains
+     integer        :: pe_SE !< neighbor domains
+     integer        :: pe_SW !< neighbor domains
+     integer        :: pe_NW !< neighbor domains
+     integer        :: pe_beg !< starting/ending pe, set this to a value /= 0 if running concurrently
+     integer        :: pe_end !< starting/ending pe, set this to a value /= 0 if running concurrently
   end type drifters_comm_type
 
 contains

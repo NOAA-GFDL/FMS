@@ -49,8 +49,8 @@ module stock_constants_mod
 
   integer, parameter :: NSIDES  = 3         !< top, bottom, side
 
-  !> @brief per PE values
-  type, private stock_type ! per PE values
+  !> @brief Holds stocks amounts per PE values
+  type, private stock_type
      real  :: q_start = 0.0    !< total stocks at start time
      real  :: q_now   = 0.0    !< total stocks at time t
 
@@ -79,7 +79,7 @@ module stock_constants_mod
 
 contains
 
-
+    !> Starts a stock report
     subroutine stocks_report_init(Time)
     type(time_type)               , intent(in) :: Time
 
@@ -164,7 +164,7 @@ contains
 
   end subroutine stocks_report_init
 
-
+  !> Writes update to stock report
   subroutine stocks_report(Time)
     type(time_type)               , intent(in) :: Time
 

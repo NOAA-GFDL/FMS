@@ -22,7 +22,7 @@
 !> @brief diag_grid_mod is a set of procedures to work with the
 !!   model's global grid to allow regional output.
 !!
-!> @author Seth Underwood<"seth.underwood@noaa.gov">
+!> @author Seth Underwood seth.underwood@noaa.gov
 !!
 !! <TT>diag_grid_mod</TT> contains useful utilities for dealing
 !!   with, mostly, regional output for grids other than the standard

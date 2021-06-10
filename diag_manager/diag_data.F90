@@ -133,7 +133,7 @@ use platform_mod
   END TYPE diag_fieldtype
 
   !> @brief Attribute type for diagnostic fields
-  type :: diag_atttype
+  TYPE :: diag_atttype
      INTEGER             :: type !< Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
      INTEGER             :: len !< Number of values in attribute, or if a character string then
                                 !! length of the string.
@@ -141,7 +141,7 @@ use platform_mod
      CHARACTER(len=1280) :: catt !< Character string to hold character value of attribute
      REAL, allocatable, DIMENSION(:)    :: fatt !< REAL array to hold value of REAL attributes
      INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
-  end type diag_atttype
+  END TYPE diag_atttype
 
   !> @brief Define the region for field output
   TYPE coord_type

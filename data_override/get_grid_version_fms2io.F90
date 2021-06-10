@@ -38,7 +38,8 @@ implicit none
 
 real, parameter    :: deg_to_radian=PI/180.
 contains
-! Get lon and lat of three model (target) grids from grid_spec.nc
+
+!> Get lon and lat of three model (target) grids from grid_spec.nc
 subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
 character(len=12), intent(in) :: domain_name
 type (domain2d),   intent(in) :: Domain
@@ -62,6 +63,7 @@ if(nlon .NE. xsize .OR. nlat .NE. ysize) then
 endif
 end subroutine check_grid_sizes
 
+!> Get global lon and lat of three model (target) grids, with a given file name
 subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
   character(len=*),            intent(in) :: grid_file
   character(len=*),            intent(in) :: mod_name
@@ -72,9 +74,9 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   logical,           intent(in), optional :: grid_center_bug
 
   integer                                      :: i, j, siz(4)
-  integer                                      :: nlon, nlat         ! size of global lon and lat
-  real,          dimension(:,:,:), allocatable :: lon_vert, lat_vert !of OCN grid vertices
-  real,          dimension(:),     allocatable :: glon, glat         ! lon and lat of 1-D grid of atm/lnd
+  integer                                      :: nlon, nlat !< size of global lon and lat
+  real,          dimension(:,:,:), allocatable :: lon_vert, lat_vert !< of OCN grid vertices
+  real,          dimension(:),     allocatable :: glon, glat  !< lon and lat of 1-D grid of atm/lnd
   logical                                      :: is_new_grid
   integer                                      :: is, ie, js, je
   integer                                      :: isd, ied, jsd, jed
@@ -82,8 +84,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   character(len=3)                             :: xname, yname
   integer                                      :: start(2), nread(2)
   type(FmsNetcdfDomainFile_t)                  :: fileobj
-  integer                                      :: ndims  !> Number of dimensions
-  logical                                      :: gc_bug !> local grid_center_bug variable, default is .false.
+  integer                                      :: ndims  !< Number of dimensions
+  logical                                      :: gc_bug !< local grid_center_bug variable, default is .false.
 
   if(.not. open_file(fileobj, grid_file, 'read', domain )) then
      call mpp_error(FATAL, 'data_override_mod(get_grid_version_1): Error in opening file '//trim(grid_file))
@@ -205,8 +207,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
 
 end subroutine get_grid_version_1
 
-! Get global lon and lat of three model (target) grids from mosaic.nc
-! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
+!> Get global lon and lat of three model (target) grids from mosaic.nc.
+!! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   type(FmsNetcdfFile_t),       intent(in) :: fileobj
   character(len=*),            intent(in) :: mod_name

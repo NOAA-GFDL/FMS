@@ -107,17 +107,19 @@ use fms2_io_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
        & prepend_attribute, attribute_init, diag_util_init
 
-  !> @brief prepend a value to a string attribute in the output field or output file
+
+  !> @brief Prepend a value to a string attribute in the output field or output file.
   INTERFACE prepend_attribute
      MODULE PROCEDURE prepend_attribute_field
      MODULE PROCEDURE prepend_attribute_file
   END INTERFACE prepend_attribute
 
-  !> @brief Allocates the atttype in out_file
+  !> @brief Allocates the atttype in out_file.
   INTERFACE attribute_init
      MODULE PROCEDURE attribute_init_field
      MODULE PROCEDURE attribute_init_file
   END INTERFACE attribute_init
+
   ! </INTERFACE>
 
   ! Include variable "version" to be written to log file.
