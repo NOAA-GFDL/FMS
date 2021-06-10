@@ -1622,6 +1622,7 @@ subroutine zonal_sst (Time, ice, sst)
 end subroutine zonal_sst
 
 !#######################################################################
+!> @}
 
 subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
     type(amip_interp_type), intent(inout) :: amip_interp_out
@@ -1656,4 +1657,3 @@ end module amip_interp_mod
 !   </FUTURE>
 
 ! </INFO>
-!> @}
