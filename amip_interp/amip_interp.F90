@@ -139,28 +139,34 @@ type, private date_type
    integer :: year, month, day
 end type
 
+!> @}
+
 !> Assignment overload to allow native assignment between amip_interp_type variables.
+!> @ingroup amip_interp_mod
 interface assignment(=)
   module procedure  amip_interp_type_eq
 end interface
 
 !> Logical equality overload for amip_interp_type
+!> @ingroup amip_interp_mod
 interface operator (==)
-   !> @}
    module procedure date_equals
-   !> @addtogroup amip_interp
-   !> @{
 end interface
 
 !> Logical inequality overload for amip_interp_type
+!> @ingroup amip_interp_mod
 interface operator (/=)
    module procedure date_not_equals
 end interface
 
 !> Greater than overload for amip_interp_type
+!> @ingroup amip_interp_mod
 interface operator (>)
    module procedure date_gt
 end interface
+
+!> @addtogroup amip_interp_mod
+!> @{
 
 !> Initializes data needed for the horizontal
 !! interpolation between the sst grid and model grid.

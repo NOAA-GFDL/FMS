@@ -15,17 +15,16 @@ For .c files, javadoc-style comments are used (`///` or multi-line with `/**` an
 Certain doxygen commands must be terminated with an empty comment line, mainly `@brief` and `@author`
 , otherwise will include any additional documentation below it.
 
-Some html commands, such as `<TT>` and `<br>` are allowed. Full list can be found
-[**here**](https://www.doxygen.nl/manual/htmlcmds.html). Coding examples can be formatted by
-either tabbing, or within the `@code` commands(see full subroutine documentation
-below for examples of both). Links to other pages within the documentation can be created with
-`@ref name`.
-
 The following previously used commands are invalid:
 - `@email`, email can be included in `@author` line
 - `@description`, `@details` can be used, but is also implied by `!>` if a brief description is already given
 - `@example`, not actually invalid, but should not be used in subroutine/function descriptions as it is for presenting examples of source code separately. Some examples of what can be used for programming examples in descriptions are below.
 
+Some html commands, such as `<TT>` and `<br>` are allowed. Full list can be found
+[**here**](https://www.doxygen.nl/manual/htmlcmds.html). Coding examples can be formatted by
+either tabbing, or within the `@code` commands(see full subroutine documentation
+below for examples of both). Links to other pages within the documentation can be created with
+`@ref name`.
 
 ### Documenting subroutines and functions
 
