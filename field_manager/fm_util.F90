@@ -202,12 +202,12 @@ end subroutine fm_util_set_caller  !}
 ! <SUBROUTINE NAME="fm_util_reset_caller">
 !
 ! <DESCRIPTION>
-! Reset the default value for the optional "caller" variable used in many of these
-! subroutines to blank.
 !
 ! </DESCRIPTION>
 !
 
+!> Reset the default value for the optional "caller" variable used in many of these
+!! subroutines to blank.
 subroutine fm_util_reset_caller  !{
 
 implicit none
@@ -237,12 +237,11 @@ end subroutine fm_util_reset_caller  !}
 ! <SUBROUTINE NAME="fm_util_set_good_name_list">
 !
 ! <DESCRIPTION>
-! Set the default value for the optional "good_name_list" variable used in many of these
-! subroutines.
 !
 ! </DESCRIPTION>
 !
-
+!> Set the default value for the optional "good_name_list" variable used in many of these
+!! subroutines.
 subroutine fm_util_set_good_name_list(good_name_list)  !{
 
 implicit none
@@ -272,19 +271,9 @@ default_good_name_list = good_name_list
 return
 
 end subroutine fm_util_set_good_name_list  !}
-! </SUBROUTINE> NAME="fm_util_set_good_name_list"
 
-
-!#######################################################################
-! <SUBROUTINE NAME="fm_util_reset_good_name_list">
-!
-! <DESCRIPTION>
-! Reset the default value for the optional "good_name_list" variable used in many of these
-! subroutines to the saved value.
-!
-! </DESCRIPTION>
-!
-
+!> Reset the default value for the optional "good_name_list" variable used in many of these
+!! subroutines to the saved value.
 subroutine fm_util_reset_good_name_list  !{
 
 implicit none
@@ -314,12 +303,12 @@ end subroutine fm_util_reset_good_name_list  !}
 ! <SUBROUTINE NAME="fm_util_set_no_overwrite">
 !
 ! <DESCRIPTION>
-! Set the default value for the optional "no_overwrite" variable used in some of these
-! subroutines.
 !
 ! </DESCRIPTION>
 !
 
+!> Set the default value for the optional "no_overwrite" variable used in some of these
+!! subroutines.
 subroutine fm_util_set_no_overwrite(no_overwrite)  !{
 
 implicit none
@@ -356,12 +345,12 @@ end subroutine fm_util_set_no_overwrite  !}
 ! <SUBROUTINE NAME="fm_util_reset_no_overwrite">
 !
 ! <DESCRIPTION>
-! Reset the default value for the optional "no_overwrite" variable used in some of these
-! subroutines to false.
 !
 ! </DESCRIPTION>
 !
 
+!> Reset the default value for the optional "no_overwrite" variable used in some of these
+!! subroutines to false.
 subroutine fm_util_reset_no_overwrite  !{
 
 implicit none
@@ -391,11 +380,11 @@ end subroutine fm_util_reset_no_overwrite  !}
 ! <SUBROUTINE NAME="fm_util_check_for_bad_fields">
 !
 ! <DESCRIPTION>
-! Check for unrecognized fields in a list
 !
 ! </DESCRIPTION>
 !
 
+!> Check for unrecognized fields in a list
 subroutine fm_util_check_for_bad_fields(list, good_fields, caller)  !{
 
 implicit none
@@ -556,9 +545,9 @@ end subroutine fm_util_check_for_bad_fields  !}
 ! <FUNCTION NAME="fm_util_get_length">
 !
 ! <DESCRIPTION>
-! Get the length of an element of the Field Manager tree
 ! </DESCRIPTION>
 !
+!> Get the length of an element of the Field Manager tree
 function fm_util_get_length(name, caller)       &
          result (field_length)  !{
 
@@ -636,9 +625,9 @@ end function fm_util_get_length  !}
 ! <FUNCTION NAME="fm_util_get_index_string">
 !
 ! <DESCRIPTION>
-! Get the index of an element of a string in the Field Manager tree
 ! </DESCRIPTION>
 !
+!> Get the index of an element of a string in the Field Manager tree
 function fm_util_get_index_string(name, string, caller)       &
          result (fm_index)  !{
 
@@ -746,9 +735,9 @@ end function fm_util_get_index_string  !}
 ! <FUNCTION NAME="fm_util_get_index_list">
 !
 ! <DESCRIPTION>
-! Get the length of an element of the Field Manager tree
 ! </DESCRIPTION>
 !
+!> Get the length of an element of the Field Manager tree
 function fm_util_get_index_list(name, caller)       &
          result (fm_index)  !{
 
@@ -836,9 +825,9 @@ end function fm_util_get_index_list  !}
 ! <FUNCTION NAME="fm_util_get_integer_array">
 !
 ! <DESCRIPTION>
-! Get an integer value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get an integer value from the Field Manager tree.
 function fm_util_get_integer_array(name, caller)            &
          result (array)  !{
 
@@ -934,9 +923,9 @@ end function fm_util_get_integer_array  !}
 ! <FUNCTION NAME="fm_util_get_logical_array">
 !
 ! <DESCRIPTION>
-! Get a logical value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get a logical value from the Field Manager tree.
 function fm_util_get_logical_array(name, caller)            &
          result (array)  !{
 
@@ -1032,9 +1021,9 @@ end function fm_util_get_logical_array  !}
 ! <FUNCTION NAME="fm_util_get_real_array">
 !
 ! <DESCRIPTION>
-! Get a real value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get a real value from the Field Manager tree.
 function fm_util_get_real_array(name, caller)            &
          result (array)  !{
 
@@ -1130,9 +1119,9 @@ end function fm_util_get_real_array  !}
 ! <FUNCTION NAME="fm_util_get_string_array">
 !
 ! <DESCRIPTION>
-! Get a string value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get a string value from the Field Manager tree.
 function fm_util_get_string_array(name, caller)            &
          result (array)  !{
 
@@ -1228,9 +1217,9 @@ end function fm_util_get_string_array  !}
 ! <FUNCTION NAME="fm_util_get_integer">
 !
 ! <DESCRIPTION>
-! Get an integer value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get an integer value from the Field Manager tree.
 function fm_util_get_integer(name, caller, index, default_value, scalar)            &
          result (value)  !{
 
@@ -1347,9 +1336,9 @@ end function fm_util_get_integer  !}
 ! <FUNCTION NAME="fm_util_get_logical">
 !
 ! <DESCRIPTION>
-! Get a logical value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get a logical value from the Field Manager tree.
 function fm_util_get_logical(name, caller, index, default_value, scalar)            &
          result (value)  !{
 
@@ -1466,9 +1455,9 @@ end function fm_util_get_logical  !}
 ! <FUNCTION NAME="fm_util_get_real">
 !
 ! <DESCRIPTION>
-! Get a real value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get a real value from the Field Manager tree.
 function fm_util_get_real(name, caller, index, default_value, scalar)            &
          result (value)  !{
 
@@ -1591,9 +1580,9 @@ end function fm_util_get_real  !}
 ! <FUNCTION NAME="fm_util_get_string">
 !
 ! <DESCRIPTION>
-! Get a string value from the Field Manager tree.
 ! </DESCRIPTION>
 !
+!> Get a string value from the Field Manager tree.
 function fm_util_get_string(name, caller, index, default_value, scalar)            &
          result (value)  !{
 
@@ -1710,10 +1699,10 @@ end function fm_util_get_string  !}
 ! <SUBROUTINE NAME="fm_util_set_value_integer_array">
 !
 ! <DESCRIPTION>
-! Set an integer array in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set an integer array in the Field Manager tree.
 subroutine fm_util_set_value_integer_array(name, value, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
@@ -1874,10 +1863,10 @@ end subroutine fm_util_set_value_integer_array  !}
 ! <SUBROUTINE NAME="fm_util_set_value_logical_array">
 !
 ! <DESCRIPTION>
-! Set a logical array in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set a logical array in the Field Manager tree.
 subroutine fm_util_set_value_logical_array(name, value, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
@@ -2038,10 +2027,10 @@ end subroutine fm_util_set_value_logical_array  !}
 ! <SUBROUTINE NAME="fm_util_set_value_real_array">
 !
 ! <DESCRIPTION>
-! Set a real array in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set a real array in the Field Manager tree.
 subroutine fm_util_set_value_real_array(name, value, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
@@ -2202,10 +2191,10 @@ end subroutine fm_util_set_value_real_array  !}
 ! <SUBROUTINE NAME="fm_util_set_value_string_array">
 !
 ! <DESCRIPTION>
-! Set a string array in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set a string array in the Field Manager tree.
 subroutine fm_util_set_value_string_array(name, value, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
@@ -2366,10 +2355,10 @@ end subroutine fm_util_set_value_string_array  !}
 ! <SUBROUTINE NAME="fm_util_set_value_integer">
 !
 ! <DESCRIPTION>
-! Set an integer value in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set an integer value in the Field Manager tree.
 subroutine fm_util_set_value_integer(name, value, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
@@ -2544,10 +2533,10 @@ end subroutine fm_util_set_value_integer  !}
 ! <SUBROUTINE NAME="fm_util_set_value_logical">
 !
 ! <DESCRIPTION>
-! Set a logical value in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set a logical value in the Field Manager tree.
 subroutine fm_util_set_value_logical(name, value, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
@@ -2722,10 +2711,10 @@ end subroutine fm_util_set_value_logical  !}
 ! <SUBROUTINE NAME="fm_util_set_value_real">
 !
 ! <DESCRIPTION>
-! Set a real value in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set a real value in the Field Manager tree.
 subroutine fm_util_set_value_real(name, value, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
@@ -2900,10 +2889,10 @@ end subroutine fm_util_set_value_real  !}
 ! <SUBROUTINE NAME="fm_util_set_value_string">
 !
 ! <DESCRIPTION>
-! Set a string value in the Field Manager tree.
 ! </DESCRIPTION>
 !
 
+!> Set a string value in the Field Manager tree.
 subroutine fm_util_set_value_string(name, value, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
@@ -3078,9 +3067,9 @@ end subroutine fm_util_set_value_string  !}
 ! <SUBROUTINE NAME="fm_util_start_namelist">
 !
 ! <DESCRIPTION>
-! Start processing a namelist
 ! </DESCRIPTION>
 !
+!> Start processing a namelist
 subroutine fm_util_start_namelist(path, name, caller, no_overwrite, check)  !{
 
 implicit none
@@ -3249,9 +3238,9 @@ end subroutine fm_util_start_namelist  !}
 ! <SUBROUTINE NAME="fm_util_end_namelist">
 !
 ! <DESCRIPTION>
-! Finish up processing a namelist
 ! </DESCRIPTION>
 !
+!> Finish up processing a namelist
 subroutine fm_util_end_namelist(path, name, caller, check)  !{
 
 implicit none

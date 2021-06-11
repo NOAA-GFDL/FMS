@@ -185,8 +185,6 @@ public :: time_interp_init, time_interp, fraction_of_year
 !     </PRE>
 !   </NOTE>
 
-!> @page time_interp time_interp Interface
-!> @ingroup time_interp_mod
 !> Returns a weight and dates or indices for interpolating between two dates. The
 !! interface fraction_of_year is provided for backward compatibility with the
 !! previous version.\n

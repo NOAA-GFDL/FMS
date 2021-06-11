@@ -74,7 +74,6 @@ type, public char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
-!> @page string2 string2 Interface
 !> @brief Converts a given integer or real into a character string
 interface string2
   !> @brief gets string from integer

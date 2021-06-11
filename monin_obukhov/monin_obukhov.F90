@@ -50,6 +50,7 @@ private
  public :: stable_mix
 !=======================================================================
 
+!> @brief Compute surface drag coefficients
 interface mo_drag
     module procedure  mo_drag_0d, mo_drag_1d, mo_drag_2d
 end interface

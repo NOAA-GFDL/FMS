@@ -271,54 +271,54 @@ private :: make_list           ! (list_p, name) return field pointer
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Public parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+!> The length of a character string representing the field name.
 integer, parameter, public :: fm_field_name_len = 48
 ! <DATA NAME="fm_field_name_len" TYPE="integer, parameter" DEFAULT="48">
-!   The length of a character string representing the field name.
 ! </DATA>
+!> The length of a character string representing the field path.
 integer, parameter, public :: fm_path_name_len  = 512
 ! <DATA NAME="fm_path_name_len" TYPE="integer, parameter" DEFAULT="512">
-!   The length of a character string representing the field path.
 ! </DATA>
+!> The length of a character string representing character values for the field.
 integer, parameter, public :: fm_string_len     = 128
 ! <DATA NAME="fm_string_len" TYPE="integer, parameter" DEFAULT="128">
-!   The length of a character string representing character values for the field.
 ! </DATA>
+!> The length of a character string representing the various types that the values of the field can take.
 integer, parameter, public :: fm_type_name_len  = 8
 ! <DATA NAME="fm_type_name_len" TYPE="integer, parameter" DEFAULT="8">
-!   The length of a character string representing the various types that the values of the field can take.
 ! </DATA>
+!> Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).
 integer, parameter, public :: NUM_MODELS        = 5
 ! <DATA NAME="NUM_MODELS" TYPE="integer, parameter" DEFAULT="5">
-!   Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).
 ! </DATA>
+!> The value returned if a field is not defined.
 integer, parameter, public :: NO_FIELD          = -1
 ! <DATA NAME="NO_FIELD" TYPE="integer, parameter" DEFAULT="-1">
-!   The value returned if a field is not defined.
 ! </DATA>!
+!> Atmospheric model.
 integer, parameter, public :: MODEL_ATMOS       = 1
 ! <DATA NAME="MODEL_ATMOS" TYPE="integer, parameter" DEFAULT="1">
-!   Atmospheric model.
 ! </DATA>!
+!> Ocean model.
 integer, parameter, public :: MODEL_OCEAN       = 2
 ! <DATA NAME="MODEL_OCEAN" TYPE="integer, parameter" DEFAULT="2">
-!   Ocean model.
 ! </DATA>
+!> Land model.
 integer, parameter, public :: MODEL_LAND        = 3
 ! <DATA NAME="MODEL_LAND" TYPE="integer, parameter" DEFAULT="3">
-!   Land model.
 ! </DATA>
+!> Ice model.
 integer, parameter, public :: MODEL_ICE         = 4
 ! <DATA NAME="MODEL_ICE" TYPE="integer, parameter" DEFAULT="4">
-!   Ice model.
 ! </DATA>
+!> Ice model.
 integer, parameter, public :: MODEL_COUPLER     = 5
 ! <DATA NAME="MODEL_COUPLER" TYPE="integer, parameter" DEFAULT="5">
-!   Ice model.
 ! </DATA>
+!> Model names, e.g. MODEL_NAMES(MODEL_OCEAN) is 'oceanic'
 character(len=11), parameter, public, dimension(NUM_MODELS) :: &
    MODEL_NAMES=(/'atmospheric','oceanic    ','land       ','ice        ','coupler    '/)
 ! <DATA NAME="MODEL_NAMES" TYPE="character(len=11), parameter">
-!   Model names, e.g. MODEL_NAMES(MODEL_OCEAN) is 'oceanic'
 ! </DATA>
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -387,7 +387,7 @@ type, public :: method_type_very_short
 end type
 ! </TYPE> NAME="method_type_very_short"
 
-! iterator over the field manager list
+!> Iterator over the field manager list
 type, public :: fm_list_iter_type
    type(field_def), pointer    :: ptr => NULL()  !< pointer to the current field
 end type fm_list_iter_type

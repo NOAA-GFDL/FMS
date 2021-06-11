@@ -146,7 +146,10 @@ end interface
 
 !> Logical equality overload for amip_interp_type
 interface operator (==)
+   !> @}
    module procedure date_equals
+   !> @addtogroup amip_interp
+   !> @{
 end interface
 
 !> Logical inequality overload for amip_interp_type
@@ -1622,7 +1625,6 @@ subroutine zonal_sst (Time, ice, sst)
 end subroutine zonal_sst
 
 !#######################################################################
-!> @}
 
 subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
     type(amip_interp_type), intent(inout) :: amip_interp_out
@@ -1648,6 +1650,7 @@ end subroutine amip_interp_type_eq
 !#######################################################################
 
 end module amip_interp_mod
+!> @}
 ! <INFO>
 
 !   <FUTURE>

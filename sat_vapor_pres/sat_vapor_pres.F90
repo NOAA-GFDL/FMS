@@ -244,8 +244,6 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
- !> @page lookup_es lookup_es Interface
- !> @ingroup sat_vapor_pres_mod
  !> @brief For the given temperatures, returns the saturation vapor pressures
  !!
  !> For the given temperatures these routines return the saturation vapor pressure(esat).
@@ -311,7 +309,7 @@ private
 !          If the lookup table needs a larger temperature range,
 !          then parameters in the module header must be modified.
 !   </ERROR> *
- !> @page lookup_des lookup_des Interface
+
  !> For the given temperatures, returns the derivative of saturation vapor pressure
  !! with respect to temperature.
  !!
@@ -389,7 +387,7 @@ private
 !          If the lookup table needs a larger temperature range,
 !          then parameters in the module header must be modified.
 !   </ERROR> *
- !> @page lookup_es_des lookup_es_des Interfaces
+
  !> @brief For the given temperatures, returns the saturation vapor pressure
  !! and the derivative of saturation vapor pressure with respect to
  !! temperature.
@@ -518,7 +516,6 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
- !> @page compute_qs compute_qs Interface
  !> @brief For the given temperatures, pressures and optionally vapor
  !! specific humidity, returns the specific humidity at saturation
  !! (optionally at relative humidity hc instead of at saturation) and
@@ -617,9 +614,7 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
- !> @page compute_mrs compute_mrs Interface
- !!
- !! For the given temperatures, pressures and optionally vapor
+ !> For the given temperatures, pressures and optionally vapor
  !! mixing ratio, returns the  vapor mixing ratio at saturation
  !! (optionally at relative humidity hc instead of at saturation) and
  !! optionally the derivative of saturation vapor mixing ratio w.r.t.

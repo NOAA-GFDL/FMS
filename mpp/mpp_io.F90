@@ -506,7 +506,6 @@ type, public :: atttype
 !  <IN NAME="unit"></IN>
 !  <IN NAME="global_atts"></IN>
 ! </INTERFACE>
-  !> @page mpp_get_atts mpp_get_atts Interface
   !> @brief Get file global metadata.
   !!
   !> <br>Example usage:

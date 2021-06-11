@@ -173,7 +173,6 @@ type, public :: time_type
 end type time_type
 
 !======================================================================
-!> @page time_type time_time Operators
 !> @brief All operator override interfaces are provided for @ref time_type.
 !!
 !> Any arithmetic, logical, or assignment operators can be used with @ref time_type
@@ -207,7 +206,6 @@ interface assignment(=);  module procedure time_assignment;  end interface
 
 !======================================================================
 
-!> @page set_time set_time Interface
 !> @brief Given some number of seconds and days, returns the
 !! corresponding time_type.
 !!
@@ -228,7 +226,6 @@ interface set_time
   module procedure set_time_i, set_time_c
 end interface
 
-!> @page set_date set_date Interface
 !> @brief Given an input date in year, month, days, etc., creates a
 !! time_type that represents this time interval from the
 !! internally defined base date.

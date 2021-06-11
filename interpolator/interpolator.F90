@@ -120,8 +120,6 @@ public interpolator_init, &
        query_interpolator,&
        read_data
 
-!> @page interpolator interpolator Interface
-!> @ingroup interpolator_mod
 !> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call interpolator (sulfate, model_time, p_half, model_data, name, is, js, clim_units)
@@ -179,15 +177,12 @@ interface interpolator
    module procedure interpolator_2D_no_time_axis
 end interface
 
-!> @page assignment assignment Interface
 !> Assignment override interface for interpolate type
 interface assignment(=)
    module procedure interpolate_type_eq
 end interface
 
-!> @page interp_weighted_scalar interp_weighted_scalar Interface
-!!
-!! Example usage:
+!> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_data(ilon,j,:,:))
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))

@@ -306,7 +306,6 @@ private
 !     public interface from mpp_util.h
 !
 !***********************************************************************
-  !> @page mpp_error mpp_error Interface
   !> @brief Error handler.
   !!
   !>    It is strongly recommended that all error exits pass through
@@ -395,7 +394,6 @@ private
      module procedure mpp_error_rs_is
      module procedure mpp_error_rs_rs
   end interface
-  !> @page array_to_char array_to_char Interface
   !> Takes a given integer or real array and returns it as a string
   interface array_to_char
      module procedure iarray_to_char
@@ -414,7 +412,6 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @page mpp_init mpp_init Interface
   !> @brief Initialize @ref mpp_mod
   !!
   !> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
@@ -433,7 +430,6 @@ private
   !!  </IN>
   !! </SUBROUTINE>
 
-  !> @page mpp_exit mpp_exit Interface
   !> @brief Exit <TT>@ref mpp_mod</TT>.
   !!
   !> Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
@@ -447,7 +443,6 @@ private
 
   !#####################################################################
 
-  !> @page mpp_set_stack_size mpp_set_stack_size Interface
   !> @brief Allocate module internal workspace.
   !> @param Integer to set stack size to(in words)
   !> <TT>mpp_mod</TT> maintains a private internal array called
@@ -487,7 +482,6 @@ private
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @page mpp_type_create mpp_type_create Interface
   !> @brief Create a mpp_type variable
   !> @param[in] field A field of any numerical or logical type
   !> @param[in] array_of_subsizes Integer array of subsizes
@@ -510,7 +504,6 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @page mpp_max mpp_max Interface
   !> @brief Reduction operations.
   !>    Find the max of scalar a the PEs in pelist
   !!    result is also automatically broadcast to all PEs
@@ -532,7 +525,6 @@ private
      module procedure mpp_max_int4_1d
   end interface
 
-  !> @page mpp_min mpp_min Interface
   !> @brief Get minimum value out of the PEs in pelist
   !> Result is also broadcast to all PEs
   interface mpp_min
@@ -547,7 +539,6 @@ private
   end interface
 
 
-  !> @page mpp_sum mpp_sum Interface
   !> @brief Reduction operation.
   !!
   !> <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
@@ -615,7 +606,6 @@ private
 #endif
   end interface
 
-  !> @page mpp_sum_ad mpp_sum_ad Interface
   !> Calculates sum of a given numerical array across pe's for adjoint domains
   interface mpp_sum_ad
      module procedure mpp_sum_int8_ad
@@ -660,7 +650,6 @@ private
 #endif
   end interface
 
-  !> @page mpp_gather mpp_gather Interface
   !> @brief Gather information onto root pe
   interface mpp_gather
      module procedure mpp_gather_logical_1d
@@ -681,7 +670,6 @@ private
      module procedure mpp_gather_pelist_real8_3d
   end interface
 
-  !> @page mpp_scatter mpp_scatter Interface
   !> @brief Scatter information to the given pelist
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
@@ -693,7 +681,6 @@ private
   end interface
 
   !#####################################################################
-  !> @page mpp_alltoall mpp_alltoall Interface
   !> @brief Scatter a vector across all PEs
   !!
   !> Transpose the vector and PE index
@@ -738,7 +725,6 @@ private
 
 
   !#####################################################################
-  !> @page mpp_transmit mpp_transmit Interface
   !> @brief Basic message-passing call.
   !!
   !>    <TT>MPP_TYPE_</TT> corresponds to any 4-byte and 8-byte variant of
@@ -864,7 +850,6 @@ private
      module procedure mpp_transmit_logical4_4d
      module procedure mpp_transmit_logical4_5d
   end interface
-  !> @page mpp_recv mpp_recv Interface
   !> @brief Recieve data to another PE
   !!
   !> @param[out] get_data scalar or array to get written with received data
@@ -929,7 +914,6 @@ private
      module procedure mpp_recv_logical4_4d
      module procedure mpp_recv_logical4_5d
   end interface
-  !> @page mpp_send mpp_send Interface
   !> Send data to a receiving PE.
   !!
   !> @param put_data scalar or array to get sent to a receiving PE
@@ -998,7 +982,6 @@ private
   end interface
 
 
-  !> @page mpp_broadcast mpp_broadcast Interface
   !> @brief Perform parallel broadcasts
   !!
   !> The <TT>mpp_broadcast</TT> call has been added because the original
@@ -1087,7 +1070,6 @@ private
 
   !#####################################################################
 
-  !> @page mpp_chksum mpp_chksum Interface
   !> @brief Calculate parallel checksums
   !!
   !> \e mpp_chksum is a parallel checksum routine that returns an

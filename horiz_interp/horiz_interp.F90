@@ -70,135 +70,123 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
  public   horiz_interp_type, horiz_interp, horiz_interp_new, horiz_interp_del, &
           horiz_interp_init, horiz_interp_end, assignment(=)
 
-! <INTERFACE NAME="horiz_interp_new">
-!   <OVERVIEW>
-!      Allocates space and initializes a derived-type variable
-!      that contains pre-computed interpolation indices and weights.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Allocates space and initializes a derived-type variable
-!      that contains pre-computed interpolation indices and weights
-!      for improved performance of multiple interpolations between
-!      the same grids. This routine does not need to be called if you
-!      are doing a single grid-to-grid interpolation.
-!   </DESCRIPTION>
-!   <IN NAME="lon_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-!      Longitude (in radians) for source data grid. You can pass 1-D lon_in to
-!      represent the geographical longitude of regular lon/lat grid, or just
-!      pass geographical longitude(lon_in is 2-D). The grid location may be
-!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!   </IN>
-!   <IN NAME="lat_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-!      Latitude (in radians) for source data grid. You can pass 1-D lat_in to
-!      represent the geographical latitude of regular lon/lat grid, or just
-!      pass geographical latitude(lat_in is 2-D). The grid location may be
-!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!   </IN>
-!   <IN NAME="lon_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Longitude (in radians) for destination data grid. You can pass 1-D lon_out to
-!      represent the geographical longitude of regular lon/lat grid, or just
-!      pass geographical longitude(lon_out is 2-D). The grid location may be
-!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!   </IN>
-!   <IN NAME="lat_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-!      Latitude (in radians) for destination data grid. You can pass 1-D lat_out to
-!      represent the geographical latitude of regular lon/lat grid, or just
-!      pass geographical latitude(lat_out is 2-D). The grid location may be
-!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!   </IN>
-!   <IN NAME="verbose" TYPE="integer">
-!      Integer flag that controls the amount of printed output.
-!      verbose = 0, no output; = 1, min,max,means; = 2, still more
-!   </IN>
-!   <IN NAME="interp_method" TYPE="character(len=*)" >
-!      interpolation method, = "conservative", using conservation scheme,
-!      = "bilinear", using bilinear interpolation, = "spherical",using spherical regrid.
-!      = "bicubic", using bicubic interpolation. The default value is "convervative".
-!   </IN>
-!   <IN NAME = "src_modulo" >
-!      Indicate the source data grid is cyclic or not.
-!   </IN>
-!   <IN NAME = "grid_at_center" >
-!      Indicate the data is on the center of grid box or the edge of grid box.
-!      When true, the data is on the center of grid box. default vaule is false.
-!      This option is only available when interp_method = "bilinear" or "bicubic".
-!   </IN>
-!   <OUT NAME="Interp" >
-!      A derived-type variable containing indices and weights used for subsequent
-!      interpolations. To reinitialize this variable for a different grid-to-grid
-!      interpolation you must first use the "horiz_interp_del" interface.
-!   </OUT>
-
+!> Allocates space and initializes a derived-type variable
+!! that contains pre-computed interpolation indices and weights.
+!!
+!> Allocates space and initializes a derived-type variable
+!! that contains pre-computed interpolation indices and weights
+!! for improved performance of multiple interpolations between
+!! the same grids. This routine does not need to be called if you
+!! are doing a single grid-to-grid interpolation.
+!!
+!! @param lon_in
+!!      Longitude (in radians) for source data grid. You can pass 1-D lon_in to
+!!      represent the geographical longitude of regular lon/lat grid, or just
+!!      pass geographical longitude(lon_in is 2-D). The grid location may be
+!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
+!!
+!! @param lat_in
+!!      Latitude (in radians) for source data grid. You can pass 1-D lat_in to
+!!      represent the geographical latitude of regular lon/lat grid, or just
+!!      pass geographical latitude(lat_in is 2-D). The grid location may be
+!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
+!!
+!! @param lon_out
+!!      Longitude (in radians) for destination data grid. You can pass 1-D lon_out to
+!!      represent the geographical longitude of regular lon/lat grid, or just
+!!      pass geographical longitude(lon_out is 2-D). The grid location may be
+!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
+!!
+!! @param lat_out
+!!      Latitude (in radians) for destination data grid. You can pass 1-D lat_out to
+!!      represent the geographical latitude of regular lon/lat grid, or just
+!!      pass geographical latitude(lat_out is 2-D). The grid location may be
+!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
+!!
+!! @param verbose
+!!      Integer flag that controls the amount of printed output.
+!!      verbose = 0, no output; = 1, min,max,means; = 2, still more
+!!
+!! @param interp_method
+!!      interpolation method, = "conservative", using conservation scheme,
+!!      = "bilinear", using bilinear interpolation, = "spherical",using spherical regrid.
+!!      = "bicubic", using bicubic interpolation. The default value is "convervative".
+!!
+!! @param src_modulo
+!!      Indicate the source data grid is cyclic or not.
+!!
+!! @param grid_at_center
+!!      Indicate the data is on the center of grid box or the edge of grid box.
+!!      When true, the data is on the center of grid box. default vaule is false.
+!!      This option is only available when interp_method = "bilinear" or "bicubic".
+!!
+!! @param Interp
+!!      A derived-type variable containing indices and weights used for subsequent
+!!      interpolations. To reinitialize this variable for a different grid-to-grid
+!!      interpolation you must first use the "horiz_interp_del" interface.
  interface horiz_interp_new
     module procedure horiz_interp_new_1d     ! Source grid is 1d, destination grid is 1d
     module procedure horiz_interp_new_1d_src ! Source grid is 1d, destination grid is 2d
     module procedure horiz_interp_new_2d     ! Source grid is 2d, destination grid is 2d
     module procedure horiz_interp_new_1d_dst ! Source grid is 2d, destination grid is 1d
  end interface
-! </INTERFACE>
 
-! <INTERFACE NAME="horiz_interp">
-!
-!   <OVERVIEW>
-!     Subroutine for performing the horizontal interpolation between two grids.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Subroutine for performing the horizontal interpolation between
-!     two grids. There are two forms of this interface.
-!     Form A requires first calling horiz_interp_new, while Form B
-!     requires no initialization.
-!   </DESCRIPTION>
 
-!   <IN NAME="Interp" >
-!     Derived-type variable containing interpolation indices and weights.
-!     Returned by a previous call to horiz_interp_new.
-!   </IN>
-!   <IN NAME="data_in">
-!      Input data on source grid.
-!   </IN>
-!   <IN NAME="verbose">
-!      flag for the amount of print output.
-!               verbose = 0, no output; = 1, min,max,means; = 2, still more
-!   </IN>
-!   <IN NAME="mask_in">
-!      Input mask, must be the same size as the input data. The real value of
-!      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
-!      that should not be used or have missing data. It is Not needed for
-!      spherical regrid.
-!   </IN>
-!   <IN NAME="missing_value" >
-!      Use the missing_value to indicate missing data.
-!   </IN>
-!   <IN NAME="missing_permit">
-!      numbers of points allowed to miss for the bilinear interpolation. The value
-!      should be between 0 and 3.
-!   </IN>
-!   <IN NAME="lon_in, lat_in" >
-!      longitude and latitude (in radians) of source grid. More explanation can
-!      be found in the documentation of horiz_interp_new.
-!   </IN>
-!   <IN NAME="lon_out, lat_out" >
-!      longitude and latitude (in radians) of destination grid. More explanation can
-!      be found in the documentation of horiz_interp_new.
-!   </IN>
-!   <OUT NAME="data_out">
-!      Output data on destination grid.
-!   </OUT>
-!   <OUT NAME="mask_out">
-!      Output mask that specifies whether data was computed.
-!   </OUT>
-
-!   <ERROR MSG="size of input array incorrect" STATUS="FATAL">
-!      The input data array does not match the size of the input grid edges
-!      specified. If you are using the initialization interface make sure you
-!      have the correct grid size.
-!   </ERROR>
-!   <ERROR MSG="size of output array incorrect" STATUS="FATAL">
-!      The output data array does not match the size of the input grid
-!      edges specified. If you are using the initialization interface make
-!      sure you have the correct grid size.
-!   </ERROR>
-
+!> Subroutine for performing the horizontal interpolation between two grids.
+!!
+!> Subroutine for performing the horizontal interpolation between
+!! two grids. There are two forms of this interface.
+!! Form A requires first calling horiz_interp_new, while Form B
+!! requires no initialization.
+!!
+!! @param Interp
+!!     Derived-type variable containing interpolation indices and weights.
+!!     Returned by a previous call to horiz_interp_new.
+!!
+!! @param data_in
+!!      Input data on source grid.
+!!
+!! @param verbose
+!!      flag for the amount of print output.
+!!               verbose = 0, no output; = 1, min,max,means; = 2, still more
+!!
+!! @param mask_in
+!!      Input mask, must be the same size as the input data. The real value of
+!!      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
+!!      that should not be used or have missing data. It is Not needed for
+!!      spherical regrid.
+!!
+!! @param missing_value
+!!      Use the missing_value to indicate missing data.
+!!
+!! @param missing_permit
+!!      numbers of points allowed to miss for the bilinear interpolation. The value
+!!      should be between 0 and 3.
+!!
+!! @param lon_in, lat_in
+!!      longitude and latitude (in radians) of source grid. More explanation can
+!!      be found in the documentation of horiz_interp_new.
+!!
+!! @param lon_out, lat_out
+!!      longitude and latitude (in radians) of destination grid. More explanation can
+!!      be found in the documentation of horiz_interp_new.
+!!
+!! @param data_out
+!!      Output data on destination grid.
+!!
+!! @param mask_out
+!!      Output mask that specifies whether data was computed.
+!!
+!!
+!! @throws FATAL, size of input array incorrect
+!!      The input data array does not match the size of the input grid edges
+!!      specified. If you are using the initialization interface make sure you
+!!      have the correct grid size.
+!!
+!! @throws FATAL, size of output array incorrect
+!!      The output data array does not match the size of the input grid
+!!      edges specified. If you are using the initialization interface make
+!!      sure you have the correct grid size.
  interface horiz_interp
     module procedure horiz_interp_base_2d
     module procedure horiz_interp_base_3d
@@ -208,7 +196,6 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
     module procedure horiz_interp_solo_1d_dst
     module procedure horiz_interp_solo_old
  end interface
-! </INTERFACE>
 
 
  !--- namelist interface
@@ -243,6 +230,7 @@ contains
 !     writes version number to logfile.out
 !  </DESCRIPTION>
 
+  !> writes version number to logfile.out
   subroutine horiz_interp_init
   integer :: unit, ierr, io
 
@@ -739,6 +727,9 @@ contains
 
 !#######################################################################
 
+ !> Overload of interface horiz_interp_base_2d
+ !! uses 3d arrays for data and mask
+ !! this allows for multiple interpolations with one call
  subroutine horiz_interp_base_3d ( Interp, data_in, data_out, verbose, mask_in, mask_out, &
       missing_value, missing_permit, err_msg  )
    !-----------------------------------------------------------------------
@@ -793,6 +784,9 @@ contains
 
 !#######################################################################
 !<PUBLICROUTINE INTERFACE="horiz_interp">
+!> Interpolates from a rectangular grid to rectangular grid.
+!! interp_method can be the value conservative, bilinear or spherical.
+!! horiz_interp_new don't need to be called before calling this routine.
  subroutine horiz_interp_solo_1d ( data_in, lon_in, lat_in, lon_out, lat_out,    &
                                    data_out, verbose, mask_in, mask_out,         &
                                    interp_method, missing_value, missing_permit, &
@@ -836,6 +830,9 @@ contains
 
 !#######################################################################
 
+!> Interpolates from a uniformly spaced grid to any output grid.
+!! interp_method can be the value "onservative","bilinear" or "spherical".
+!! horiz_interp_new don't need to be called before calling this routine.
  subroutine horiz_interp_solo_1d_src ( data_in, lon_in, lat_in, lon_out, lat_out,    &
                                        data_out, verbose, mask_in, mask_out,         &
                                        interp_method, missing_value, missing_permit, &
@@ -897,6 +894,8 @@ contains
 
 !#######################################################################
 
+!> Interpolates from any grid to any grid. interp_method should be "spherical"
+!! horiz_interp_new don't need to be called before calling this routine.
  subroutine horiz_interp_solo_2d ( data_in, lon_in, lat_in, lon_out, lat_out, data_out, &
                                    verbose, mask_in, mask_out, interp_method, missing_value,&
                                    missing_permit, num_nbrs, max_dist, src_modulo  )
@@ -958,6 +957,9 @@ contains
 
 !#######################################################################
 
+!>   interpolates from any grid to rectangular longitude/latitude grid.
+!!   interp_method should be "spherical".
+!!   horiz_interp_new don't need to be called before calling this routine.
  subroutine horiz_interp_solo_1d_dst ( data_in, lon_in, lat_in, lon_out, lat_out, data_out,    &
                                        verbose, mask_in, mask_out,interp_method,missing_value, &
                                        missing_permit,  num_nbrs, max_dist, src_modulo)
@@ -1119,6 +1121,8 @@ contains
 
 ! </SUBROUTINE>
 
+!> Deallocates memory used by "horiz_interp_type" variables.
+!! Must be called before reinitializing with horiz_interp_new.
  subroutine horiz_interp_del ( Interp )
 
    type (horiz_interp_type), intent(inout) :: Interp

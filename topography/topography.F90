@@ -69,8 +69,6 @@ public :: topography_init,                 &
           get_water_frac, get_water_mask,  &
           gaussian_topog_init, get_gaussian_topog
 
-!> @page get_topog_mean get_topog_mean Interface
-!> @ingroup topography_mod
 !> @brief Returns a "realistic" mean surface height field.
 !!
 !> Returns realistic mountains on a latitude-longtude grid.
@@ -116,7 +114,6 @@ interface get_topog_stdev
   module procedure get_topog_stdev_1d, get_topog_stdev_2d
 end interface
 
-!> @page get_ocean_frac get_ocean_frac Interfaces
 !> @brief Returns fractional area covered by ocean in a grid box.
 !! Returns fractional area covered by ocean in the given model grid boxes.
 !!
@@ -135,7 +132,6 @@ interface get_ocean_frac
   module procedure get_ocean_frac_1d, get_ocean_frac_2d
 end interface
 
-!> @page get_ocean_mask get_ocean_mask Interface
 !> @brief Returns a land-ocean mask in a grid box.
 !!
 !> Returns a land-ocean mask in the given model grid boxes.
@@ -155,7 +151,6 @@ interface get_ocean_mask
   module procedure get_ocean_mask_1d, get_ocean_mask_2d
 end interface
 
-!> @page get_water_frac get_water_frac Interface
 !> @brief Returns fractional area covered by water.
 !!
 !> Returns the percent of water in a grid box.
@@ -174,7 +169,6 @@ interface get_water_frac
   module procedure get_water_frac_1d, get_water_frac_2d
 end interface
 
-!> @page get_water_mask get_water_mask Interface
 !> @brief Returns a land-water mask in a grid box.
 !!
 !> Returns a land-water mask in the given model grid boxes.
@@ -662,9 +656,10 @@ end interface
 
  !> @brief Returns the percent of water in a grid box.
  function get_water_frac_1d (blon, blat, water_frac)
-
- real, intent(in),  dimension(:)   :: blon, blat
- real, intent(out), dimension(:,:) :: water_frac
+ real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
+ real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
+                          !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_frac_1d
 
 !-----------------------------------------------------------------------
@@ -690,8 +685,10 @@ end interface
 
  function get_water_frac_2d (blon, blat, water_frac)
 
- real, intent(in),  dimension(:,:) :: blon, blat
- real, intent(out), dimension(:,:) :: water_frac
+ real, intent(in),  dimension(:,:)   :: blon !< The longitude (in radians) at grid box boundaries.
+ real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
+                          !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_frac_2d
 
 !-----------------------------------------------------------------------
@@ -747,8 +744,10 @@ end interface
  !> @brief Returns a land-water mask in the given model grid boxes.
  function get_water_mask_1d (blon, blat, water_mask)
 
- real   , intent(in),  dimension(:)   :: blon, blat
- logical, intent(out), dimension(:,:) :: water_mask
+ real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
+ real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
+                          !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_mask_1d
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
@@ -786,8 +785,10 @@ end interface
 
  function get_water_mask_2d (blon, blat, water_mask)
 
- real   , intent(in),  dimension(:,:) :: blon, blat
- logical, intent(out), dimension(:,:) :: water_mask
+ real, intent(in),  dimension(:,:)   :: blon !< The longitude (in radians) at grid box boundaries.
+ real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
+                          !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_mask_2d
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------

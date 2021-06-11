@@ -134,10 +134,9 @@ module time_interp_external_mod
      integer :: unit = -1
   end type filetype
 
-  !> @page time_interp_external time_interp_external Interface
-  !! Provide data from external file interpolated to current model time.
+  !> Provide data from external file interpolated to current model time.
   !! Data may be local to current processor or global, depending on
-  !! "init_external_field" flags.
+  !! "init_external_field" flags. Uses @ref mpp_io_mod for I/O.
   !!
   !! @param index index of external field from previous call to init_external_field
   !! @param time target time for data

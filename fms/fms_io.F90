@@ -185,19 +185,19 @@ type, private ax_type
    character(len=128) :: dimlen_name = ''
    character(len=128) :: dimlen_lname = ''
    character(len=128) :: calendar = ''
-   integer            :: sense              !<Orientation of z axis definition
-   integer            :: dimlen             !<max dim of elements across global domain
-   real               :: min             !<valid min for real axis data
-   integer            :: imin            !<valid min for integer axis data
-   integer,allocatable :: idx(:)         !<compressed io-domain index vector
-   integer,allocatable :: nelems(:)      !<num elements for each rank in io domain
-   real, pointer      :: data(:) =>NULL()    !<real axis values (not used if time axis)
+   integer            :: sense              !< Orientation of z axis definition
+   integer            :: dimlen             !< max dim of elements across global domain
+   real               :: min             !< valid min for real axis data
+   integer            :: imin            !< valid min for integer axis data
+   integer,allocatable :: idx(:)         !< compressed io-domain index vector
+   integer,allocatable :: nelems(:)      !< num elements for each rank in io domain
+   real, pointer      :: data(:) =>NULL()    !< real axis values (not used if time axis)
    type(domain2d),pointer :: domain =>NULL() !< domain associated with compressed axis
 
 !----------
 !ug support
-   type(domainUG),pointer :: domain_ug => null()     !<A pointer to an unstructured mpp domain.
-   integer(INT_KIND)      :: nelems_for_current_rank !<The number of grid points registered to the current rank (used for error checking).
+   type(domainUG),pointer :: domain_ug => null()     !< A pointer to an unstructured mpp domain.
+   integer(INT_KIND)      :: nelems_for_current_rank !< The number of grid points registered to the current rank (used for error checking).
 !----------
 
 end type ax_type
@@ -212,29 +212,29 @@ type, private var_type
    integer                                :: domain_idx = -1
    logical                                :: is_dimvar = .FALSE.
    logical                                :: read_only = .FALSE.
-   logical                                :: owns_data = .FALSE. ! if true, restart owns the data and will deallocate them when freed
+   logical                                :: owns_data = .FALSE. !< if true, restart owns the data and will deallocate them when freed
    type(fieldtype)                        :: field
    type(axistype)                         :: axis
    integer                                :: position
    integer                                :: ndim
-   integer                                :: siz(5)      ! X/Y/Z/T/A extent of fields (data domain
-                                                         ! size for distributed writes;global size for reads)
-   integer                                :: gsiz(4)     ! global X/Y/Z/A extent of fields
-   integer                                :: id_axes(4)  ! store index for x/y/z/a axistype.
-   logical                                :: initialized ! indicate if the field is read or not in routine save_state.
-   logical                                :: mandatory   ! indicate if the field is mandatory to be when restart.
-   integer                                :: is, ie, js, je  ! index of the data in compute domain
+   integer                                :: siz(5)      !< X/Y/Z/T/A extent of fields (data domain
+                                                         !< size for distributed writes;global size for reads)
+   integer                                :: gsiz(4)     !< global X/Y/Z/A extent of fields
+   integer                                :: id_axes(4)  !< store index for x/y/z/a axistype.
+   logical                                :: initialized !< indicate if the field is read or not in routine save_state.
+   logical                                :: mandatory   !< indicate if the field is mandatory to be when restart.
+   integer                                :: is, ie, js, je  !< index of the data in compute domain
    real                                   :: default_data
-   character(len=8)                       :: compressed_axis !< If on a compressed axis, which axis
+   character(len=8)                       :: compressed_axis !<< If on a compressed axis, which axis
    integer, dimension(:), allocatable     :: pelist
-   integer                                :: ishift, jshift ! can be used to shift indices when no_domain=T
-   integer                                :: x_halo, y_halo ! can be used to indicate halo size when no_domain=T
+   integer                                :: ishift, jshift !< can be used to shift indices when no_domain=T
+   integer                                :: x_halo, y_halo !< can be used to indicate halo size when no_domain=T
 
 !----------
 !ug support
-    type(domainUG),pointer            :: domain_ug => null()   !<A pointer to an unstructured mpp domain.
-    integer(INT_KIND),dimension(5)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
-    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of sizes of the dimensions for the field.
+    type(domainUG),pointer            :: domain_ug => null()   !< A pointer to an unstructured mpp domain.
+    integer(INT_KIND),dimension(5)    :: field_dimension_order !< Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !< Array of sizes of the dimensions for the field.
 !----------
 
 end type var_type

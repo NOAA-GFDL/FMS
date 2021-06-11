@@ -43,8 +43,8 @@ implicit none;private
 
 ! ==== public interfaces =====================================================
 ! grid dimension inquiry subroutines
-public :: get_grid_ntiles ! returns number of tiles
-public :: get_grid_size   ! returns horizontal sizes of the grid
+public :: get_grid_ntiles 
+public :: get_grid_size   
 ! grid geometry inquiry subroutines
 public :: get_grid_cell_centers
 public :: get_grid_cell_vertices
@@ -56,11 +56,12 @@ public :: get_grid_comp_area
 public :: define_cube_mosaic
 ! ==== end of public interfaces ==============================================
 
+!> returns horizontal sizes of the grid
 interface get_grid_size
    module procedure get_grid_size_for_all_tiles
    module procedure get_grid_size_for_one_tile
 end interface
-
+!> returns number of tiles
 interface get_grid_cell_vertices
    module procedure get_grid_cell_vertices_1D
    module procedure get_grid_cell_vertices_2D
@@ -136,8 +137,8 @@ end function get_grid_version
 
 
 ! ============================================================================
-! returns number of tiles for a given component
 ! ============================================================================
+!> Returns number of tiles for a given component
 subroutine get_grid_ntiles(component,ntiles)
   character(len=*)     :: component
   integer, intent(out) :: ntiles
@@ -156,8 +157,8 @@ end subroutine get_grid_ntiles
 
 
 ! ============================================================================
-! returns size of the grid for each of the tiles
 ! ============================================================================
+!> Returns size of the grid for each of the tiles
 subroutine get_grid_size_for_all_tiles(component,nx,ny)
   character(len=*)     :: component
   integer, intent(inout) :: nx(:),ny(:)
@@ -182,8 +183,8 @@ end subroutine get_grid_size_for_all_tiles
 
 
 ! ============================================================================
-! returns size of the grid for one of the tiles
 ! ============================================================================
+!> Returns size of the grid for one of the tiles
 subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
   character(len=*)       :: component
   integer, intent(in)    :: tile
@@ -205,8 +206,8 @@ subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
 end subroutine get_grid_size_for_one_tile
 
 ! ============================================================================
-! return grid cell area for the specified model component and tile
 ! ============================================================================
+!> Return grid cell area for the specified model component and tile
 subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
   character(len=*), intent(in)    :: component
   integer         , intent(in)    :: tile
@@ -250,8 +251,8 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
 end subroutine get_grid_cell_area_SG
 
 ! ============================================================================
-! get the area of the component per grid cell
 ! ============================================================================
+!> Get the area of the component per grid cell
 subroutine get_grid_comp_area_SG(component,tile,area,domain)
   character(len=*) :: component
   integer, intent(in) :: tile
@@ -442,12 +443,12 @@ end subroutine get_grid_comp_area_UG
 
 
 ! ============================================================================
-! returns arrays of global grid cell boundaries for given model component and
-! mosaic tile number.
-! NOTE that in case of non-lat-lon grid the returned coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
 ! ============================================================================
+!> Returns arrays of global grid cell boundaries for given model component and
+!! mosaic tile number.
+!! @note In the case of non-lat-lon grid the returned coordinates may have be not so
+!! meaningful, by the very nature of such grids. But presumably these 1D coordinate
+!! arrays are good enough for diag axis and such.
 subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
   character(len=*), intent(in) :: component
   integer,          intent(in) :: tile
@@ -526,8 +527,8 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 end subroutine get_grid_cell_vertices_1D
 
 ! ============================================================================
-! returns cell vertices for the specified model component and mosaic tile number
 ! ============================================================================
+!> Returns cell vertices for the specified model component and mosaic tile number
 subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
   character(len=*),         intent(in) :: component
   integer,                  intent(in) :: tile
@@ -713,11 +714,10 @@ subroutine get_grid_cell_vertices_UG(component, tile, lonb, latb, SG_domain, UG_
 end subroutine get_grid_cell_vertices_UG
 
 ! ============================================================================
-! returns global coordinate arrays fro given model component and mosaic tile number
-! NOTE that in case of non-lat-lon grid those coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
-! ============================================================================
+!> Returns global coordinate arrays fro given model component and mosaic tile number
+!! @note In the case of non-lat-lon grid those coordinates may have be not so
+!! meaningful, by the very nature of such grids. But presumably these 1D coordinate
+!! arrays are good enough for diag axis and such.
 subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
   character(len=*), intent(in) :: component
   integer, intent(in) :: tile
@@ -782,8 +782,8 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
 end subroutine get_grid_cell_centers_1D
 
 ! ============================================================================
-! returns grid cell centers for specified model component and mosaic tile number
 ! ============================================================================
+!> Returns grid cell centers for specified model component and mosaic tile number
 subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
   character(len=*), intent(in) :: component
   integer, intent(in) :: tile
@@ -930,10 +930,10 @@ subroutine get_grid_cell_centers_UG(component, tile, lon, lat, SG_domain, UG_dom
 end subroutine get_grid_cell_centers_UG
 
 ! ============================================================================
-! given a model component, a layout, and (optionally) a halo size, returns a
-! domain for current processor
 ! ============================================================================
 ! this subroutine probably does not belong in the grid_mod
+!> Given a model component, a layout, and (optionally) a halo size, returns a
+!! domain for current processor
 subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   character(len=*) , intent(in)    :: component
   type(domain2d)   , intent(inout) :: domain

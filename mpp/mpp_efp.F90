@@ -62,7 +62,6 @@ real(r8_kind), parameter, dimension(NUMINT) :: &
 logical :: overflow_error = .false., NaN_error = .false.
 logical :: debug = .false.    !< Making this true enables debugging output.
 
-!> @page mpp_reproducing_sum mpp_reproducing_sum Interface
 !> This interface uses a conversion to an integer representation
 !! of real numbers to give order-invariant sums that will reproduce
 !! across PE count.
@@ -82,7 +81,6 @@ type, public :: mpp_efp_type
   integer(i8_kind), dimension(NUMINT) :: v
 end type mpp_efp_type
 
-!> @page mpp_efp_type_ops mpp_efp_type Operators
 !> Override interfaces are provided for addition and subtraction between mpp_efp_types, as well
 !! as assignment.
 !! <br> Example usage:

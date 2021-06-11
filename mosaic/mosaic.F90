@@ -41,13 +41,13 @@ implicit none
 private
 
 character(len=*), parameter :: &
-     grid_dir  = 'INPUT/'      ! root directory for all grid files
+     grid_dir  = 'INPUT/'      !< root directory for all grid files
 
 integer, parameter :: &
-     MAX_NAME = 256,  & ! max length of the variable names
-     MAX_FILE = 1024, & ! max length of the file names
-     X_REFINE = 2,    & ! supergrid size/model grid size in x-direction
-     Y_REFINE = 2       ! supergrid size/model grid size in y-direction
+     MAX_NAME = 256,  & !< max length of the variable names
+     MAX_FILE = 1024, & !< max length of the file names
+     X_REFINE = 2,    & !< supergrid size/model grid size in x-direction
+     Y_REFINE = 2       !< supergrid size/model grid size in y-direction
 
 ! --- public interface
 
@@ -71,15 +71,15 @@ contains
 
 ! <SUBROUTINE NAME="mosaic_init">
 !   <OVERVIEW>
-!     Initialize the mosaic_mod.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Initialization routine for the mosaic module. It writes the
-!     version information to the log file.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !     call mosaic_init ( )
 !   </TEMPLATE>
+
+!> @brief Initialize the mosaic_mod.
+!!
+!! Initialization routine for the mosaic module. It writes the
+!! version information to the log file.
 subroutine mosaic_init()
 
   if (module_is_initialized) return
@@ -96,7 +96,6 @@ end subroutine mosaic_init
 !     return exchange grid size of mosaic xgrid file.
 !   </OVERVIEW>
 !   <DESCRIPTION>
-!     return exchange grid size of mosaic xgrid file.
 !   </DESCRIPTION>
 !   <TEMPLATE>
 !    nxgrid = get_mosaic_xgrid_size(xgrid_file)
@@ -104,6 +103,7 @@ end subroutine mosaic_init
 !   <IN NAME="xgrid_file" TYPE="character(len=*)">
 !     The file that contains exchange grid information.
 !   </IN>
+  !> Return exchange grid size of mosaic xgrid file.
   function get_mosaic_xgrid_size(xgrid_file)
     character(len=*), intent(in)          :: xgrid_file
     integer                               :: get_mosaic_xgrid_size
@@ -117,7 +117,6 @@ end subroutine mosaic_init
 !#######################################################################
 ! <SUBROUTINE NAME="get_mosaic_xgrid">
 !   <OVERVIEW>
-!     get exchange grid information from mosaic xgrid file.
 !   </OVERVIEW>
 !   <DESCRIPTION>
 !     get exchange grid information from mosaic xgrid file.
@@ -126,7 +125,6 @@ end subroutine mosaic_init
 !     call get_mosaic_xgrid(xgrid_file, nxgrid, i1, j1, i2, j2, area)
 !   </TEMPLATE>
 !   <IN NAME="xgrid_file" TYPE="character(len=*)">
-!     The file that contains exchange grid information.
 !   </IN>
 !   <INOUT NAME="nxgrid" TYPE="integer">
 !     number of exchange grid in xgrid_file
@@ -140,10 +138,14 @@ end subroutine mosaic_init
 !   <INOUT NAME="area" TYPE="real, dimension(:)">
 !     area of the exchange grid. The area is scaled to represent unit earth area.
 !   </INOUT>
+
+  !> Get exchange grid information from mosaic xgrid file.
   subroutine get_mosaic_xgrid(xgrid_file, i1, j1, i2, j2, area, ibegin, iend)
-    character(len=*), intent(in) :: xgrid_file
-    integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:)
-    real,          intent(inout) :: area(:)
+    character(len=*), intent(in) :: xgrid_file !< The file that contains exchange grid information.
+    integer,       intent(inout) :: i1(:), j1(:) !< i and j-index in grid 1 of exchange field
+    integer,       intent(inout) :: i2(:), j2(:) !< i and j-index in grid 2 of exchange field
+    real,          intent(inout) :: area(:) !< area of the exchange grid. The area is sclaed to 
+                                            !! represent unit earth area.
     integer, optional, intent(in) :: ibegin, iend
 
     integer                            :: start(4), nread(4), istart
@@ -193,7 +195,6 @@ end subroutine mosaic_init
   !###############################################################################
   ! <SUBROUTINE NAME="get_mosaic_ntiles">
   !   <OVERVIEW>
-  !     get number of tiles in the mosaic_file.
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     get number of tiles in the mosaic_file.
@@ -202,10 +203,10 @@ end subroutine mosaic_init
   !     ntiles = get_mosaic_ntiles( mosaic_file)
   !   </TEMPLATE>
   !   <IN NAME="mosaic_file" TYPE="character(len=*)">
-  !     The file that contains mosaic information.
   !   </IN>
+  !> Get number of tiles in the mosaic_file.
   function get_mosaic_ntiles(mosaic_file)
-    character(len=*), intent(in) :: mosaic_file
+    character(len=*), intent(in) :: mosaic_file !< The file that contains mosaic information.
     integer                      :: get_mosaic_ntiles
 
     get_mosaic_ntiles = dimension_size(mosaic_file, "ntiles")
@@ -217,20 +218,12 @@ end subroutine mosaic_init
 
   !###############################################################################
   ! <SUBROUTINE NAME="get_mosaic_ncontacts">
-  !   <OVERVIEW>
-  !     get number of contacts in the mosaic_file.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     get number of contacts in the mosaic_file.
-  !   </DESCRIPTION>
   !   <TEMPLATE>
   !     ntiles = get_mosaic_ncontacts( mosaic_file)
   !   </TEMPLATE>
-  !   <IN NAME="mosaic_file" TYPE="character(len=*)">
-  !     The file that contains mosaic information.
-  !   </IN>
+  !> Get number of contacts in the mosaic_file.
   function get_mosaic_ncontacts( mosaic_file)
-    character(len=*), intent(in) :: mosaic_file
+    character(len=*), intent(in) :: mosaic_file !< The file that contains mosaic information.
     integer                      :: get_mosaic_ncontacts
 
     character(len=len_trim(mosaic_file)+1) :: mfile
@@ -252,7 +245,6 @@ end subroutine mosaic_init
   !###############################################################################
   ! <SUBROUTINE NAME="get_mosaic_grid_sizes">
   !   <OVERVIEW>
-  !     get grid size of each tile from mosaic_file
   !   </OVERVIEW>
   !   <DESCRIPTION>
   !     get grid size of each tile from mosaic_file
@@ -269,9 +261,11 @@ end subroutine mosaic_init
   !   <INOUT NAME="ny" TYPE="integer, dimension(:)">
   !     List of grid size in y-direction of each tile.
   !   </INOUT>
+  !> Get grid size of each tile from mosaic_file
   subroutine get_mosaic_grid_sizes( mosaic_file, nx, ny)
-    character(len=*),         intent(in) :: mosaic_file
-    integer, dimension(:), intent(inout) :: nx, ny
+    character(len=*),         intent(in) :: mosaic_file !< The file that contains mosaic information.
+    integer, dimension(:), intent(inout) :: nx !< List of grid size in x-direction of each tile.
+    integer, dimension(:), intent(inout) :: ny !< List of grid size in y-direction of each tile.
 
     character(len=MAX_FILE) :: gridfile
     integer                 :: ntiles, n
@@ -341,6 +335,7 @@ end subroutine mosaic_init
   !   <INOUT NAME="jend2" TYPE="integer, dimension(:)">
   !     list ending j-index in tile 2 of each contact.
   !   </INOUT>
+  !> Get contact information from mosaic_file
   subroutine get_mosaic_contact( mosaic_file, tile1, tile2, istart1, iend1, jstart1, jend1, &
                                    istart2, iend2, jstart2, jend2)
     character(len=*),         intent(in) :: mosaic_file
@@ -503,6 +498,11 @@ end function transfer_to_model_index
   !   <INOUT NAME="area" TYPE="real, dimension(:,:)">
   !     grid cell area.
   !   </INOUT>
+
+  !> @brief Calculate grid cell area.
+  !!
+  !> Calculate the grid cell area. The purpose of this routine is to make
+  !! sure the consistency between model grid area and exchange grid area.
   subroutine calc_mosaic_grid_area(lon, lat, area)
      real, dimension(:,:), intent(in)    :: lon
      real, dimension(:,:), intent(in)    :: lat
@@ -525,11 +525,8 @@ end function transfer_to_model_index
   !###############################################################################
   ! <SUBROUTINE NAME="calc_mosaic_grid_great_circle_area">
   !   <OVERVIEW>
-  !     calculate grid cell area using great cirlce algorithm
   !   </OVERVIEW>
   !   <DESCRIPTION>
-  !     calculate the grid cell area. The purpose of this routine is to make
-  !     sure the consistency between model grid area and exchange grid area.
   !   </DESCRIPTION>
   !   <TEMPLATE>
   !     call calc_mosaic_grid_great_circle_area(lon, lat, area)
@@ -543,10 +540,15 @@ end function transfer_to_model_index
   !   <INOUT NAME="area" TYPE="real, dimension(:,:)">
   !     grid cell area.
   !   </INOUT>
+
+  !> Calculate grid cell area using great cirlce algorithm.
+  !!
+  !> Calculate the grid cell area. The purpose of this routine is to make
+  !! sure the consistency between model grid area and exchange grid area.
   subroutine calc_mosaic_grid_great_circle_area(lon, lat, area)
-     real, dimension(:,:), intent(in)    :: lon
-     real, dimension(:,:), intent(in)    :: lat
-     real, dimension(:,:), intent(inout) :: area
+     real, dimension(:,:), intent(in)    :: lon !< Geographical longitude of grid cell vertices.
+     real, dimension(:,:), intent(in)    :: lat !< Geographical latitude of grid cell vertices.
+     real, dimension(:,:), intent(inout) :: area !< grid cell area
      integer                             :: nlon, nlat
 
 
@@ -564,8 +566,8 @@ end function transfer_to_model_index
   ! </SUBROUTINE>
 
   !#####################################################################
-  ! This function check if a point (lon1,lat1) is inside a polygon (lon2(:), lat2(:))
-  ! lon1, lat1, lon2, lat2 are in radians.
+  !> This function check if a point (lon1,lat1) is inside a polygon (lon2(:), lat2(:))
+  !! lon1, lat1, lon2, lat2 are in radians.
   function is_inside_polygon(lon1, lat1, lon2, lat2 )
      real, intent(in) :: lon1, lat1
      real, intent(in) :: lon2(:), lat2(:)

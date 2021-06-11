@@ -129,10 +129,9 @@ module time_interp_external2_mod
      type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
   end type filetype
 
-  !> @page time_interp_external2 time_interp_external Interface
-  !! Provide data from external file interpolated to current model time.
+  !> Provide data from external file interpolated to current model time.
   !! Data may be local to current processor or global, depending on
-  !! "init_external_field" flags.
+  !! "init_external_field" flags. Uses @ref fms2_io for I/O.
   !!
   !! @param index index of external field from previous call to init_external_field
   !! @param time target time for data
