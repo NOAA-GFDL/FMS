@@ -24,8 +24,6 @@
 !> @file
 !> @brief File for @ref block_control_mod
 
-!> @addtogroup block_control_mod
-!> @{
 module block_control_mod
 
 use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL
@@ -35,17 +33,20 @@ implicit none
 public block_control_type
 
 !> Private type to dereference packed index from global index.
+!> @ingroup block_control_mod
 type, private :: ix_type
   integer, dimension(:,:), allocatable :: ix
 end type ix_type
 
 !> Private type to dereference packed index from global indices.
+!> @ingroup block_control_mod
 type, private :: pk_type
   integer, dimension(:), allocatable :: ii
   integer, dimension(:), allocatable :: jj
 end type pk_type
 
 !> @brief Block data and extents for OpenMP threading of column-based calculations
+!> @ingroup block_control_mod
 type, public :: block_control_type
   integer :: nx_block, ny_block  !< blocking factor using mpp-style decomposition
   integer :: nblks               !< number of blocks cover MPI domain
@@ -65,6 +66,9 @@ type, public :: block_control_type
   type(pk_type), dimension(:),  allocatable :: index !< dereference global indices from
                                                             !! block/ixp combo
 end type block_control_type
+
+!> @addtogroup block_control_mod
+!> @{
 
 public :: define_blocks, define_blocks_packed
 

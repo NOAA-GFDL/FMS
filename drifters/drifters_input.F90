@@ -37,8 +37,10 @@ module drifters_input_mod
 #include<file_version.h>
   character, parameter, private :: SEPARATOR = ' '
 
+  !> @}
   !> @brief Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
   !! when adding members
+  !> @ingroup drifters_input_mod
   type, public drifters_input_type
      ! Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
      ! when adding members
@@ -55,10 +57,13 @@ module drifters_input_mod
   end type drifters_input_type
 
   !> @brief Assignment override for @ref drifters_input_type
+  !> @ingroup drifters_input_mod
   interface assignment(=)
      module procedure drifters_input_copy_new
   end interface
 
+!> @addtogroup drifters_input_mod
+!> @{
 
   contains
 

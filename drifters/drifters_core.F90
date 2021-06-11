@@ -26,8 +26,6 @@
 !> @file
 !> @brief File for @ref drifters_core_mod
 
-!> @addtogroup drifters_core_mod
-!> @{
 module drifters_core_mod
   use platform_mod
   implicit none
@@ -47,6 +45,7 @@ module drifters_core_mod
   !> @brief Core data needed for drifters.
   !! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
   !! when adding members.
+  !> @ingroup drifters_core_mod 
   type, public drifters_core_type
      integer(kind=i8_kind) :: it   !< time index
      integer :: nd     !< number of dimensions
@@ -57,12 +56,15 @@ module drifters_core_mod
   end type drifters_core_type
 
   !> @brief Assignment override for @ref drifters_core_type
+  !> @ingroup drifters_core_mod 
   interface assignment(=)
      module procedure drifters_core_copy_new
   end interface
 
 contains
 
+!> @addtogroup drifters_core_mod
+!> @{
 !###############################################################################
   subroutine drifters_core_new(self, nd, npdim, ermesg)
     type(drifters_core_type)        :: self

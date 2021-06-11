@@ -25,8 +25,6 @@
 !> @file
 !> @brief File for @ref drifters_comm_mod
 
-!> @addtogroup drifters_comm_mod
-!> @{
 module drifters_comm_mod
 
 #ifdef _SERIAL
@@ -60,6 +58,7 @@ module drifters_comm_mod
   public :: drifters_comm_set_domain, drifters_comm_update, drifters_comm_gather
 
   !> Type for drifter communication between PE's
+  !> @ingroup drifters_comm_mod
   type, public :: drifters_comm_type
      real           :: xcmin !< compute domain
      real           :: xcmax !< compute domain
@@ -89,6 +88,8 @@ module drifters_comm_mod
 
 contains
 
+!> @addtogroup drifters_comm_mod
+!> @{
 !===============================================================================
   subroutine drifters_comm_new(self)
     type(drifters_comm_type)   :: self

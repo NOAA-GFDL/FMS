@@ -113,7 +113,10 @@ use platform_mod
   REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
   INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1 !< Return value for a diag_field that isn't found in the diag_table
 
+  !> @}
+
   !> @brief Contains the coordinates of the local domain to output.
+  !> @ingroup diag_data_mod
   TYPE diag_grid
      REAL, DIMENSION(3) :: start !< start coordinates (lat,lon,depth) of local domain to output
      REAL, DIMENSION(3) :: END !< end coordinates (lat,lon,depth) of local domain to output
@@ -123,6 +126,7 @@ use platform_mod
   END TYPE diag_grid
 
   !> @brief Diagnostic field type
+  !> @ingroup diag_data_mod
   TYPE diag_fieldtype
      TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
@@ -133,6 +137,7 @@ use platform_mod
   END TYPE diag_fieldtype
 
   !> @brief Attribute type for diagnostic fields
+  !> @ingroup diag_data_mod
   TYPE :: diag_atttype
      INTEGER             :: type !< Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
      INTEGER             :: len !< Number of values in attribute, or if a character string then
@@ -144,6 +149,7 @@ use platform_mod
   END TYPE diag_atttype
 
   !> @brief Define the region for field output
+  !> @ingroup diag_data_mod
   TYPE coord_type
      REAL :: xbegin
      REAL :: xend
@@ -154,6 +160,7 @@ use platform_mod
   END TYPE coord_type
 
   !> @brief Type to define the diagnostic files that will be written as defined by the diagnostic table.
+  !> @ingroup diag_data_mod
   TYPE file_type
      CHARACTER(len=128) :: name !< Name of the output file.
      CHARACTER(len=128) :: long_name
@@ -193,6 +200,7 @@ use platform_mod
   END TYPE file_type
 
   !> @brief Type to hold the input field description
+  !> @ingroup diag_data_mod
   TYPE input_field_type
      CHARACTER(len=128) :: module_name, field_name, long_name, units
      CHARACTER(len=256) :: standard_name
@@ -219,6 +227,7 @@ use platform_mod
   END TYPE input_field_type
 
   !> @brief Type to hold the output field description.
+  !> @ingroup diag_data_mod
   TYPE output_field_type
      INTEGER :: input_field !< index of the corresponding input field in the table
      INTEGER :: output_file !< index of the output file in the table
@@ -274,6 +283,7 @@ use platform_mod
   END TYPE output_field_type
 
   !> @brief Type to hold the diagnostic axis description.
+  !> @ingroup diag_data_mod
   TYPE diag_axis_type
      CHARACTER(len=128) :: name
      CHARACTER(len=256) :: units, long_name
@@ -302,6 +312,7 @@ use platform_mod
   !   </DATA>
   !   <DATA NAME="tile_name" TYPE="CHARACTER(len=128)" DEFAULT="N/A">
   !   </DATA>
+  !> @ingroup diag_data_mod
   TYPE diag_global_att_type
      CHARACTER(len=128)   :: grid_type='regular'
      CHARACTER(len=128)   :: tile_name='N/A'
@@ -310,7 +321,8 @@ use platform_mod
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
-
+  !> @addtogroup diag_data_mod
+  !> @{
   ! <!-- Other public variables -->
   ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
   !   Number of output files currenly in use by the diag_manager.

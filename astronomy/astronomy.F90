@@ -69,6 +69,8 @@ public       &
               diurnal_solar, daily_mean_solar, annual_mean_solar,  &
               astronomy_end, universal_time, orbital_time
 
+!> @}
+
 !> ~~~~~~~~~~{.f90}
 !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
 !! call diurnal_solar (lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, dt)
@@ -132,6 +134,7 @@ public       &
 !!                       averaged. this produces averaged output rather than instantaneous. time_type, [days, seconds]
 !! @param [in] <allow_negative_cosz> Allow negative values for cosz?
 !! @param [out] <half_day_out> half_day_out
+!> @ingroup affinity_mod
 interface diurnal_solar
    module procedure diurnal_solar_2d
    module procedure diurnal_solar_1d
@@ -185,6 +188,7 @@ end interface
 !! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
 !! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
 !! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared) [dimensionless]
+!> @ingroup affinity_mod
 interface daily_mean_solar
    module procedure daily_mean_solar_2d
    module procedure daily_mean_solar_1d
@@ -229,6 +233,7 @@ end interface
 !!                        Earth-Sun distance of 1.0. [dimensionless]
 !! @param [out] <rrsun> Annual mean Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
 !!                      (a):(a/r)**2 [dimensionless]
+!> @ingroup affinity_mod
 interface annual_mean_solar
    module procedure annual_mean_solar_2d
    module procedure annual_mean_solar_1d
@@ -249,6 +254,7 @@ end interface
 !! ~~~~~~~~~~
 !!
 !! @param [out] <period_out> Length of year for calendar in use
+!> @ingroup affinity_mod
 interface get_period
    module procedure get_period_time_type, get_period_integer
 end interface
@@ -267,6 +273,7 @@ end interface
 !! ~~~~~~~~~~
 !!
 !! @param [in] <period_in> Length of year for calendar in use
+!> @ingroup affinity_mod
 interface set_period
    module procedure set_period_time_type, set_period_integer
 end interface
@@ -301,10 +308,13 @@ private &
 !! @param [in] <dec> Solar declination [radians]
 !! @param [out] <h> Half of the length of daylight at the given latitude and orbital position (dec); value
 !!                  ranges between 0 (all darkness) and pi (all daylight) [dimensionless]
+!> @ingroup affinity_mod
 interface half_day
    module procedure half_day_2d, half_day_0d
 end interface
 
+!> @addtogroup affinity_mod
+!> @{
 
 !---------------------------------------------------------------------
 !-------- namelist  ---------

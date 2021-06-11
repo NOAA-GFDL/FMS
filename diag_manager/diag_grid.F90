@@ -40,8 +40,6 @@
 !> @file
 !> @brief File for @ref diag_grid_mod
 
-!> @addtogroup diag_grid_mod
-!> @{
 MODULE diag_grid_mod
 use platform_mod
 
@@ -86,6 +84,7 @@ use platform_mod
 #include<file_version.h>
 
   !> @brief Contains the model's global grid data, and other grid information.
+  !> @ingroup diag_grid_mod
   type, private :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
@@ -110,12 +109,15 @@ use platform_mod
 
   !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
   !! location.
+  !> @ingroup diag_grid_mod
   type, private :: point
      REAL :: x !< The x value of the (x,y,z) coordinates.
      REAL :: y !< The y value of the (x,y,z) coordinates.
      REAL :: z !< The z value of the (x,y,z) coordinates.
   END TYPE point
 
+!> @addtogroup diag_grid_mod
+!> @{
   ! <PRIVATE>
   ! <DATA NAME="diag_global_grid" TYPE="TYPE(diag_global_grid_type)">
   !   Variable to hold the global grid data

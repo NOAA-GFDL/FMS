@@ -58,8 +58,6 @@
 !> @file
 !! @brief File for @ref diag_integral_mod
 
-!> @addtogroup diag_integral_mod
-!> @{
                      module diag_integral_mod
 
 
@@ -165,6 +163,8 @@ private         &
 !   from sum_diag_integral_field:
           vert_diag_integral
 
+!> @addtogroup diag_integral_mod
+!> @{
 !-------------------------------------------------------------------------------
 !------ namelist -------
 

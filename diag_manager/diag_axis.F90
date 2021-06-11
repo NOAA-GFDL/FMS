@@ -96,6 +96,8 @@ use platform_mod
   TYPE(diag_axis_type), ALLOCATABLE, SAVE :: Axes(:) !< ---- global storage for all defined axes ----
   LOGICAL :: module_is_initialized = .FALSE.
 
+  !> @}
+
   !> @brief Add an arbitrary attribute and value to the diagnostic axis.
   !!
   !> Any number of attributes can be added to a given axis.  All attribute addition must
@@ -106,6 +108,7 @@ use platform_mod
   !! existing attribute value.
   !! <br>Example usage:
   !! @code{.F90} call diag_axis_add_attribute(diag_axis_id, att_name, att_value) @endcode
+  !> @ingroup diag_axis_mod
   INTERFACE diag_axis_add_attribute
      MODULE PROCEDURE diag_axis_add_attribute_scalar_r
      MODULE PROCEDURE diag_axis_add_attribute_scalar_i
@@ -113,7 +116,9 @@ use platform_mod
      MODULE PROCEDURE diag_axis_add_attribute_r1d
      MODULE PROCEDURE diag_axis_add_attribute_i1d
   END INTERFACE diag_axis_add_attribute
-  ! </INTERFACE>
+  ! </INTERFACE
+  !> @addtogroup diag_axis_mod
+  !> @{
 
 CONTAINS
 

@@ -134,8 +134,6 @@
 !> @file
 !> @brief File for @ref diag_manager_mod
 
-!> @addtogroup diag_manager_mod
-!> @{
 MODULE diag_manager_mod
 use platform_mod
   ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
@@ -541,6 +539,7 @@ use platform_mod
   !!
   !! Weight in Time averaging is now supported, each time level may have a
   !! different weight. The default of weight is 1.
+  !> @ingroup diag_manager_mod
   INTERFACE send_data
      MODULE PROCEDURE send_data_0d
      MODULE PROCEDURE send_data_1d
@@ -553,12 +552,14 @@ use platform_mod
   END INTERFACE
 
   !> @brief Register a diagnostic field for a given module
+  !> @ingroup diag_manager_mod
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
   END INTERFACE
 
   !> @brief Send tile-averaged data over to output fields.
+  !> @ingroup diag_manager_mod
   INTERFACE send_tile_averaged_data
      MODULE PROCEDURE send_tile_averaged_data1d
      MODULE PROCEDURE send_tile_averaged_data2d
@@ -566,6 +567,7 @@ use platform_mod
   END INTERFACE
 
   !> @brief Add a attribute to the output field
+  !> @ingroup diag_manager_mod
   INTERFACE diag_field_add_attribute
      MODULE PROCEDURE diag_field_add_attribute_scalar_r
      MODULE PROCEDURE diag_field_add_attribute_scalar_i
@@ -575,6 +577,8 @@ use platform_mod
   END INTERFACE diag_field_add_attribute
   ! </INTERFACE>
 
+!> @addtogroup diag_manager_mod
+!> @{
 CONTAINS
 
   ! <FUNCTION NAME="register_diag_field_scalar" INTERFACE="register_diag_field">

@@ -221,8 +221,6 @@
 !> @file
 !> @brief File for @ref diag_table_mod
 
-!> @addtogroup diag_table_mod
-!> @{
 MODULE diag_table_mod
   ! <CONTACT EMAIL="seth.underwood@noaa.gov">
   !   Seth Underwood
@@ -452,6 +450,7 @@ MODULE diag_table_mod
   PUBLIC :: parse_diag_table
 
   !> Contains metadata and additional information for a field
+  !> @ingroup diag_table_mod
   TYPE field_description_type
      CHARACTER(len=128) :: module_name, field_name, output_name, file_name
      CHARACTER(len=50) :: time_sampling
@@ -462,6 +461,7 @@ MODULE diag_table_mod
   END TYPE field_description_type
 
   !> Contains metadata and additional information for a file
+  !> @ingroup diag_table_mod
   TYPE file_description_type
      INTEGER :: output_freq
      INTEGER :: file_format
@@ -481,6 +481,9 @@ MODULE diag_table_mod
      CHARACTER(len=10) :: filename_time_bounds
      TYPE(time_type) :: start_time
   END TYPE file_description_type
+
+!> @addtogroup diag_table_mod
+!> @{
 
   CHARACTER(len=*), PARAMETER :: UNALLOWED_QTE = "'"//'"'
   CHARACTER(len=*), PARAMETER :: UNALLOWED_ALL = UNALLOWED_QTE//","

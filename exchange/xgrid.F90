@@ -216,6 +216,8 @@ real, allocatable, dimension(:,:) :: AREA_ATM_MODEL, AREA_LND_MODEL, AREA_OCN_MO
 ! Area elements based on a the spherical model used by the ICE layer
 real, allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_SPHERE
 
+!> @}
+
 ! <INTERFACE NAME="put_to_xgrid">
 
 !   <OVERVIEW>
@@ -236,6 +238,7 @@ real, allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_
 !     FIRST_ORDER (=1), SECOND_ORDER(=2). Default value is FIRST_ORDER.
 !   </IN>
 !> @brief Scatters data from model grid onto exchange grid.
+!> @ingroup xgrid_mod
 interface put_to_xgrid
   module procedure put_side1_to_xgrid
   module procedure put_side2_to_xgrid
@@ -258,22 +261,26 @@ end interface
 !   <OUT NAME="d"  TYPE="real"  > </OUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !> @brief Sums data from exchange grid to model grid.
+!> @ingroup xgrid_mod
 interface get_from_xgrid
   module procedure get_side1_from_xgrid
   module procedure get_side2_from_xgrid
 end interface
 ! </INTERFACE>
 
+!> @ingroup xgrid_mod
 interface put_to_xgrid_ug
   module procedure put_side1_to_xgrid_ug
   module procedure put_side2_to_xgrid_ug
 end interface
 
+!> @ingroup xgrid_mod
 interface get_from_xgrid_ug
   module procedure get_side2_from_xgrid_ug
   module procedure get_side1_from_xgrid_ug
 end interface
 
+!> @ingroup xgrid_mod
 interface set_frac_area
   module procedure set_frac_area_sg
   module procedure set_frac_area_ug
@@ -304,17 +311,23 @@ end interface
 !!     variable (1) on its home model grid, (2) after interpolation to the other
 !!     side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !!     Conservation_check must be called by all PEs to work properly.
+!> @ingroup xgrid_mod
 interface conservation_check
   module procedure conservation_check_side1
   module procedure conservation_check_side2
 end interface
 ! </INTERFACE>
+!> For an unstructured grid, returns three numbers which are the global sum of a
+!! variable (1) on its home model grid, (2) after interpolation to the other
+!! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!> @ingroup xgrid_mod
 interface conservation_check_ug
   module procedure conservation_check_ug_side1
   module procedure conservation_check_ug_side2
 end interface
 
 
+!> @ingroup xgrid_mod
 type, private xcell_type
   integer :: i1 !< indices of cell in model arrays on both sides
   integer :: j1 !< indices of cell in model arrays on both sides
@@ -332,6 +345,7 @@ type, private xcell_type
   real    :: scale
 end type xcell_type
 
+!> @ingroup xgrid_mod
 type, public grid_box_type
    real, dimension(:,:),   pointer :: dx     => NULL()
    real, dimension(:,:),   pointer :: dy     => NULL()
@@ -346,6 +360,7 @@ type, public grid_box_type
    real, dimension(:,:,:), pointer :: vlat   => NULL()
 end type grid_box_type
 
+!> @ingroup xgrid_mod
 type, private grid_type
   character(len=3)                :: id                               !< grid identifier
   integer                         :: npes                             !< number of processor on this grid.
@@ -408,6 +423,7 @@ type, private grid_type
 
 end type grid_type
 
+!> @ingroup xgrid_mod
 type, private x1_type
   integer :: i, j
   real    :: area   !< (= geographic area * frac_area)
@@ -418,12 +434,14 @@ type, private x1_type
   integer :: pos
 end type x1_type
 
+!> @ingroup xgrid_mod
 type, private x2_type
   integer :: i, j, l, k, pos
   real    :: area   !< geographic area of exchange cell
 !  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
+!> @ingroup xgrid_mod
 type, private overlap_type
    integer          :: count
    integer          :: pe
@@ -437,6 +455,7 @@ type, private overlap_type
    real,    allocatable :: dj(:)
 end type overlap_type
 
+!> @ingroup xgrid_mod
 type, private comm_type
   integer                         :: nsend, nrecv
   integer                         :: sendsize, recvsize
@@ -445,6 +464,7 @@ type, private comm_type
   type(overlap_type), pointer, dimension(:) :: recv=>NULL()
 end type comm_type
 
+!> @ingroup xgrid_mod
 type, public xmap_type
   private
   integer :: size            !< # of exchange grid cells with area > 0 on this pe
@@ -485,6 +505,8 @@ type, public xmap_type
   type(comm_type), pointer       :: get1_repro =>NULL()!< for get_1_from_xgrid_repro
 end type xmap_type
 
+!> @addtogroup stock_constants_mod
+!> @{
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -509,12 +531,15 @@ end type xmap_type
  integer :: is_nest=0, ie_nest=0, js_nest=0, je_nest=0
  integer :: is_parent=0, ie_parent=0, js_parent=0, je_parent=0
 
+!> @}
  ! The following is required to compute stocks of water, heat, ...
 
+  !> @ingroup xgrid_mod
   interface stock_move
      module procedure stock_move_3d, stock_move_2d
   end interface
 
+  !> @ingroup xgrid_mod
   interface stock_move_ug
      module procedure stock_move_ug_3d
   end interface
@@ -522,10 +547,12 @@ end type xmap_type
   public stock_move, stock_type, stock_print, get_index_range, stock_integrate_2d
   public FIRST_ORDER, SECOND_ORDER, stock_move_ug
 
+  !> @ingroup xgrid_mod
   interface get_area_elements !< for use with use_mpp_io
      module procedure get_area_elements_fms2_io
      module procedure get_area_elements_use_mpp_io
   end interface
+  !> @ingroup xgrid_mod
   interface get_nest_contact
      module procedure get_nest_contact_fms2_io
      module procedure get_nest_contact_use_mpp_io
@@ -535,6 +562,9 @@ end type xmap_type
   private load_xgrid_use_mpp_io, get_grid, get_ocean_model_area_elements_use_mpp_io
 
 contains
+
+!> @addtogroup xgrid_mod
+!> @{
 
 !#######################################################################
 !> @return logical in_box

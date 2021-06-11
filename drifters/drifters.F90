@@ -109,8 +109,10 @@ module drifters_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
   real :: DRFT_EMPTY_ARRAY(0)
+  !> @}
 
   !> @brief Holds all data needed for drifters communication, io, and input.
+  !> @ingroup drifters_mod
   type, public drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
@@ -154,29 +156,33 @@ module drifters_mod
   end type drifters_type
 
   !> @brief Assignment override for @ref drifters_type 
+  !> @ingroup drifters_mod
   interface assignment(=)
      module procedure drifters_copy_new
   end interface
  
+  !> @ingroup drifters_mod
   interface drifters_push
     module procedure drifters_push_2
     module procedure drifters_push_3
   end interface
 
+  !> @ingroup drifters_mod
   interface drifters_compute_k
      module procedure drifters_computek2d
      module procedure drifters_computek3d
   end interface
 
+  !> @ingroup drifters_mod
   interface drifters_set_field
     module procedure drifters_set_field_2d
     module procedure drifters_set_field_3d
   end interface
 
-
+!> @addtogroup drifters_mod
+!> @{
 
 contains
-
   !============================================================================
 ! <SUBROUTINE NAME="drifters_new">
 !  <OVERVIEW>

@@ -1,4 +1,5 @@
-/// \cond EXCLUDE
+/** \cond
+ */
 /***********************************************************************
  *                   GNU Lesser General Public License
  *
@@ -31,8 +32,9 @@
 #ifdef __APPLE__
 #include <pthread.h>
 #endif
-/// \endcond
-// skips doc parsing
+/** \endcond
+ */
+// skips doc parsing for includes and license
 
 /**
  * \file

@@ -39,8 +39,6 @@
 !> @file
 !> @brief File for @ref data_override_mod
 
-!> @addtogroup data_override_mod
-!> @{
 module data_override_mod
 use constants_mod, only: PI
 use mpp_io_mod, only: axistype, mpp_close, mpp_open, mpp_get_axis_data, MPP_RDONLY
@@ -83,6 +81,7 @@ private
 #include<file_version.h>
 
 !> Holds field and grid data
+!> @ingroup data_override_mod
 type, private data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code !< fieldname used in user's code (model)
@@ -95,6 +94,7 @@ type, private data_type
 end type data_type
 
 !> Holds various data fields for performing data overrides 
+!> @ingroup data_override_mod
 type, private override_type
    character(len=3)                 :: gridname
    character(len=128)               :: fieldname
@@ -111,6 +111,26 @@ type, private override_type
    integer                          :: is_src, ie_src, js_src, je_src
 end type override_type
 
+!> Interface for inserting and interpolating data into a file
+!! for a model's grid and time. Data path must be described in
+!! a user-provided data_table, see @ref data_override_mod "module description"
+!! for more information.
+!> @ingroup data_override_mod
+interface data_override
+     module procedure data_override_0d
+     module procedure data_override_2d
+     module procedure data_override_3d
+end interface
+
+!> @ref data_override_interface for unstructured grids
+!> @ingroup data_override_mod
+interface data_override_UG
+     module procedure data_override_UG_1d
+     module procedure data_override_UG_2d
+end interface
+
+!> @addtogroup data_override_mod
+!> @{
  integer, parameter :: max_table=100, max_array=100
  real, parameter    :: deg_to_radian=PI/180.
  integer            :: table_size !< actual size of data table
@@ -144,21 +164,6 @@ logical                                         :: reproduce_null_char_bug = .fa
 
 namelist /data_override_nml/ debug_data_override, grid_center_bug, use_mpp_bug, reproduce_null_char_bug
 
-!> Interface for inserting and interpolating data into a file
-!! for a model's grid and time. Data path must be described in
-!! a user-provided data_table, see @ref data_override_mod "module description"
-!! for more information.
-interface data_override
-     module procedure data_override_0d
-     module procedure data_override_2d
-     module procedure data_override_3d
-end interface
-
-!> @ref data_override_interface for unstructured grids
-interface data_override_UG
-     module procedure data_override_UG_1d
-     module procedure data_override_UG_2d
-end interface
 
 public :: data_override_init, data_override, data_override_unset_domains
 public :: data_override_UG

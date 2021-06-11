@@ -24,8 +24,6 @@
 !> @file
 !> @brief File for @ref diag_util_mod
 
-!> @addtogroup diag_util_mod
-!> @{
 MODULE diag_util_mod
 
 use platform_mod
@@ -109,18 +107,23 @@ use fms2_io_mod
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
+  !> @ingroup diag_util_mod
   INTERFACE prepend_attribute
      MODULE PROCEDURE prepend_attribute_field
      MODULE PROCEDURE prepend_attribute_file
   END INTERFACE prepend_attribute
 
   !> @brief Allocates the atttype in out_file.
+  !> @ingroup diag_util_mod
   INTERFACE attribute_init
      MODULE PROCEDURE attribute_init_field
      MODULE PROCEDURE attribute_init_file
   END INTERFACE attribute_init
 
   ! </INTERFACE>
+
+!> @addtogroup diag_util_mod
+!> @{
 
   ! Include variable "version" to be written to log file.
 #include <file_version.h>

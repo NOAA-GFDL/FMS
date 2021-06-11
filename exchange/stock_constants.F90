@@ -48,8 +48,10 @@ module stock_constants_mod
   ! flux integrated increments at present time.
 
   integer, parameter :: NSIDES  = 3         !< top, bottom, side
-
+  !> @}
+ 
   !> @brief Holds stocks amounts per PE values
+  !> @ingroup stock_constants_mod
   type, private stock_type
      real  :: q_start = 0.0    !< total stocks at start time
      real  :: q_now   = 0.0    !< total stocks at time t
@@ -60,6 +62,8 @@ module stock_constants_mod
      real  :: dq(NSIDES)    = 0.0    !< stock increments at present time on the Ice   grid
      real  :: dq_IN(NSIDES) = 0.0    !< stock increments at present time on the Ocean grid
   end type stock_type
+  !> @addtogroup stock_constants_mod
+  !> @{
 
   type(stock_type), save, public, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
   type(time_type), save :: init_time

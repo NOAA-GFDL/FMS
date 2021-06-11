@@ -106,8 +106,10 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   ! Include variable "version" to be written to log file.
   character(len=*), parameter :: version = '2020.03'
+  !> @}
 
   !> Write diag field using @ref fms2_io 
+  !> @ingroup diag_output_mod
   interface diag_field_write
      module procedure diag_field_write_field
      module procedure diag_field_write_varname
@@ -116,29 +118,35 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   ! The following interfaces are used in conjuctions with use_mpp_io
 
   !> Initialize output for writing.
+  !> @ingroup diag_output_mod
   interface diag_output_init
      module procedure diag_output_init_fms2_io
      module procedure diag_output_init_use_mpp_io
   end interface
 
   !> Writes axis metadata to a file. 
+  !> @ingroup diag_output_mod
   interface write_axis_meta_data
      module procedure write_axis_meta_data_fms2_io
      module procedure write_axis_meta_data_use_mpp_io
   end interface
 
   !> Writes field metadata to a file.
+  !> @ingroup diag_output_mod
   interface write_field_meta_data
      module procedure write_field_meta_data_fms2_io
      module procedure write_field_meta_data_use_mpp_io
   end interface
 
   !> Writes metadata for an attribute to a file.
+  !> @ingroup diag_output_mod
   interface write_attribute_meta
      module procedure write_attribute_meta_fms2_io
      module procedure write_attribute_meta_use_mpp_io
   end interface
 
+!> @addtogroup diag_output_init
+!> @{
 CONTAINS
 
   !> @brief Registers the time axis and opens the output file.
