@@ -82,7 +82,7 @@ private
 
 !> Holds field and grid data
 !> @ingroup data_override_mod
-type, private data_type
+type data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code !< fieldname used in user's code (model)
    character(len=128) :: fieldname_file !< fieldname used in the netcdf data file
@@ -95,7 +95,7 @@ end type data_type
 
 !> Holds various data fields for performing data overrides 
 !> @ingroup data_override_mod
-type, private override_type
+type override_type
    character(len=3)                 :: gridname
    character(len=128)               :: fieldname
    integer                          :: t_index                 !< index for time interp

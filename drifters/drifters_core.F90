@@ -46,7 +46,7 @@ module drifters_core_mod
   !! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
   !! when adding members.
   !> @ingroup drifters_core_mod 
-  type, public drifters_core_type
+  type drifters_core_type
      integer(kind=i8_kind) :: it   !< time index
      integer :: nd     !< number of dimensions
      integer :: np     !< number of particles (drifters)

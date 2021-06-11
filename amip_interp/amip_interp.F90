@@ -137,7 +137,7 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 
 !> @brief Private data type for representing a calendar date
 !> @ingroup amip_interp_mod
-type, private date_type
+type date_type
    sequence
    integer :: year, month, day
 end type
@@ -233,7 +233,7 @@ end interface
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
 !> @ingroup amip_interp_mod
-type, public amip_interp_type
+type amip_interp_type
    private
    type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
    real, pointer            ::    data1(:,:) =>NULL(), &
@@ -270,7 +270,7 @@ end type
 !---- namelist ----
 
  character(len=24) :: data_set = 'amip1' !< use 'amip1', 'amip2', 'reynolds_eof'
-                                         !! 'reynolds_oi', 'hurrell', or 'daily', 
+                                         !! 'reynolds_oi', 'hurrell', or 'daily',
                                          !! when "use_daily=.T."
                                          ! add by JHC
 

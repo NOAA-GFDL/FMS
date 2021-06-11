@@ -49,7 +49,7 @@ module drifters_io_mod
 !> @}
 
   !> @ingroup drifters_input_mod
-  type, public drifters_io_type
+  type drifters_io_type
      real                 :: time
      integer              :: it !< time index
      integer              :: it_id !< infinite axis index

@@ -41,7 +41,7 @@ module drifters_input_mod
   !> @brief Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
   !! when adding members
   !> @ingroup drifters_input_mod
-  type, public drifters_input_type
+  type drifters_input_type
      ! Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
      ! when adding members
      character(len=MAX_STR_LEN), allocatable :: position_names(:)

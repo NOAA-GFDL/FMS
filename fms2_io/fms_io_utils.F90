@@ -72,7 +72,7 @@ public :: nullify_filename_appendix
 
 !> @brief A linked list of strings
 !> @ingroup fms_io_utils_mod 
-type, public char_linked_list
+type, public :: char_linked_list
   character(len=128) :: string
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list

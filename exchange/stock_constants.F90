@@ -52,7 +52,7 @@ module stock_constants_mod
  
   !> @brief Holds stocks amounts per PE values
   !> @ingroup stock_constants_mod
-  type, private stock_type
+  type stock_type
      real  :: q_start = 0.0    !< total stocks at start time
      real  :: q_now   = 0.0    !< total stocks at time t
 

@@ -328,7 +328,7 @@ end interface
 
 
 !> @ingroup xgrid_mod
-type, private xcell_type
+type xcell_type
   integer :: i1 !< indices of cell in model arrays on both sides
   integer :: j1 !< indices of cell in model arrays on both sides
   integer :: i2 !< indices of cell in model arrays on both sides
@@ -346,7 +346,7 @@ type, private xcell_type
 end type xcell_type
 
 !> @ingroup xgrid_mod
-type, public grid_box_type
+type grid_box_type
    real, dimension(:,:),   pointer :: dx     => NULL()
    real, dimension(:,:),   pointer :: dy     => NULL()
    real, dimension(:,:),   pointer :: area   => NULL()
@@ -361,7 +361,7 @@ type, public grid_box_type
 end type grid_box_type
 
 !> @ingroup xgrid_mod
-type, private grid_type
+type grid_type
   character(len=3)                :: id                               !< grid identifier
   integer                         :: npes                             !< number of processor on this grid.
   logical                         :: on_this_pe                       !< indicate the domain is defined on this pe
@@ -424,7 +424,7 @@ type, private grid_type
 end type grid_type
 
 !> @ingroup xgrid_mod
-type, private x1_type
+type x1_type
   integer :: i, j
   real    :: area   !< (= geographic area * frac_area)
 !  real    :: area_ratio !(= x1_area/grid1_area) ! will be added in the future to improve efficiency
@@ -435,14 +435,14 @@ type, private x1_type
 end type x1_type
 
 !> @ingroup xgrid_mod
-type, private x2_type
+type x2_type
   integer :: i, j, l, k, pos
   real    :: area   !< geographic area of exchange cell
 !  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
 !> @ingroup xgrid_mod
-type, private overlap_type
+type overlap_type
    integer          :: count
    integer          :: pe
    integer          :: buffer_pos
@@ -456,7 +456,7 @@ type, private overlap_type
 end type overlap_type
 
 !> @ingroup xgrid_mod
-type, private comm_type
+type comm_type
   integer                         :: nsend, nrecv
   integer                         :: sendsize, recvsize
   integer,            pointer, dimension(:) :: unpack_ind=>NULL()
@@ -465,7 +465,7 @@ type, private comm_type
 end type comm_type
 
 !> @ingroup xgrid_mod
-type, public xmap_type
+type xmap_type
   private
   integer :: size            !< # of exchange grid cells with area > 0 on this pe
   integer :: size_put1       !< # of exchange grid cells for put_1_to_xgrid

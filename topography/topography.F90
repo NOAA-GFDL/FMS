@@ -193,6 +193,7 @@ end interface
 !> @addtogroup topography_mod
 !> @{
 
+   logical :: use_mpp_io=.false.!>@var Namelist flag to enable usage of mpp_io subroutines if true
    character(len=128) :: topog_file = 'DATA/navy_topography.data', &
                          water_file = 'DATA/navy_pctwater.data'
    namelist /topography_nml/ topog_file, water_file, use_mpp_io
@@ -201,7 +202,6 @@ end interface
    integer, parameter    :: WATER_INDEX = 2
    logical :: file_is_opened(2) = .false.
    type(FmsNetcdfFile_t) :: fileobj(2) !< needed for fms2_io
-   logical :: use_mpp_io=.false.!>@var Namelist flag to enable usage of mpp_io subroutines if true
 
 !-----------------------------------------------------------------------
 ! --- resolution of the topography data set ---
@@ -744,8 +744,8 @@ end interface
 
  real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
  real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries. 
- real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
-                          !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
+ logical, intent(out), dimension(:,:) :: water_mask !< A binary mask for water (true) or land (false).
+                                     !! The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_mask_1d
 
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
@@ -785,8 +785,8 @@ end interface
 
  real, intent(in),  dimension(:,:)   :: blon !< The longitude (in radians) at grid box boundaries.
  real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries. 
- real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
-                          !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
+ logical, intent(out), dimension(:,:) :: water_mask !< A binary mask for water (true) or land (false).
+                                     !! The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_mask_2d
  real, dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
 !-----------------------------------------------------------------------

@@ -165,7 +165,7 @@ logical, private :: warn_string_function = .true.
 
 !> @}
 !> @ingroup fms_io_mod
-type, private meta_type
+type, private :: meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
 !!$ Gfortran on gaea does not yet support deferred length character strings
 !!$  character(len=:),allocatable  :: name
@@ -178,7 +178,7 @@ type, private meta_type
 end type meta_type
 
 !> @ingroup fms_io_mod
-type, private ax_type
+type, private :: ax_type
    private
    character(len=128) :: name = ''
    character(len=128) :: units = ''
@@ -206,7 +206,7 @@ type, private ax_type
 end type ax_type
 
 !> @ingroup fms_io_mod
-type, private var_type
+type, private :: var_type
    private
    character(len=128)                     :: name = ''
    character(len=128)                     :: longname = ''
@@ -299,7 +299,7 @@ type Ptr3Di
 end type Ptr3Di
 
 !> @ingroup fms_io_mod
-type, public restart_file_type
+type restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
    character(len=128)                       :: name = ''

@@ -1,0 +1,41 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+# Including the following, as they may be useful when building other components
+# and as a way to better record how the library was built.
+ccompiler=mpigcc
+fccompiler=mpifc
+cppflagss.compiled=-I/opt/netcdf/4.8.0/GNU/9.3.0/include -fopenmp
+cflags.compiled=-DINTERNAL_FILE_NML -O0 -g -I/opt/netcdf/4.8.0/GNU/9.3.0/include -fopenmp
+fcflags.compiled=-DINTERNAL_FILE_NML -fcray-pointer -Waliasing -ffree-line-length-none -fno-range-check -O0 -g -W -fbounds-check -I/opt/netcdf/4.8.0/GNU/9.3.0/include -ffree-form -fdefault-real-8 -fopenmp
+ldflags.compiled=-O0 -g -I/opt/netcdf/4.8.0/GNU/9.3.0/include
+
+Name: FMS
+Description: The Flexible Modeling System Infrastructure Library
+URL: https://www.gfdl.noaa.gov/fms
+Version: 2021.02.0
+Libs: -L$(libdir) -lFMS
+Libs.private: -lnetcdff -lnetcdf 
+Cflags: -I${includedir}
+Fflags: -I${includedir}

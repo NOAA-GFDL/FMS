@@ -221,7 +221,7 @@ integer, public :: clock_flag_default
 !> @}
   !> Namelist read error values
   !> @ingroup fms_mod
-  TYPE, PUBLIC nml_errors_type
+  TYPE nml_errors_type
      INTEGER :: multipleNMLSinFile
      INTEGER :: badType1
      INTEGER :: badType2

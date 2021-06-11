@@ -113,7 +113,7 @@ module drifters_mod
 
   !> @brief Holds all data needed for drifters communication, io, and input.
   !> @ingroup drifters_mod
-  type, public drifters_type
+  type drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
      type(drifters_core_type)  :: core
