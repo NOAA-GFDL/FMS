@@ -148,19 +148,19 @@ interface assignment(=)
   module procedure  amip_interp_type_eq
 end interface
 
-!> Logical equality overload for amip_interp_type
+!> Private logical equality overload for amip_interp_type
 !> @ingroup amip_interp_mod
 interface operator (==)
    module procedure date_equals
 end interface
 
-!> Logical inequality overload for amip_interp_type
+!> Private logical inequality overload for amip_interp_type
 !> @ingroup amip_interp_mod
 interface operator (/=)
    module procedure date_not_equals
 end interface
 
-!> Greater than overload for amip_interp_type
+!> Private logical greater than overload for amip_interp_type
 !> @ingroup amip_interp_mod
 interface operator (>)
    module procedure date_gt

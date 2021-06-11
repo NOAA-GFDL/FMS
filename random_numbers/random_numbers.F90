@@ -27,8 +27,6 @@
 !> @file
 !> @brief File for @ref random_numbers_mod
 
-!> @addtogroup random_numbers_mod
-!> @{
 module random_numbers_mod
 
   use MersenneTwister_mod, only: randomNumberSequence, & ! The random number engine.
@@ -36,15 +34,17 @@ module random_numbers_mod
   use time_manager_mod, only: time_type, get_date
   implicit none
   private
-
+  !> @ingroup random_numbers_mod
   type randomNumberStream
     type(randomNumberSequence) :: theNumbers
   end type randomNumberStream
 
+  !> @ingroup random_numbers_mod
   interface getRandomNumbers
     module procedure getRandomNumber_Scalar, getRandomNumber_1D, getRandomNumber_2D
   end interface getRandomNumbers
 
+  !> @ingroup random_numbers_mod
   interface initializeRandomNumberStream
     module procedure initializeRandomNumberStream_S, initializeRandomNumberStream_V
   end interface initializeRandomNumberStream
@@ -52,6 +52,8 @@ module random_numbers_mod
   public :: randomNumberStream,                             &
             initializeRandomNumberStream, getRandomNumbers, &
             constructSeed
+!> @addtogroup random_numbers_mod
+!> @{
 contains
   ! ---------------------------------------------------------
   ! Initialization

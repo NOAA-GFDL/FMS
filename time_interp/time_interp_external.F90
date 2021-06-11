@@ -98,6 +98,9 @@ module time_interp_external_mod
   private find_buf_index,&
          set_time_modulo
 
+  !> @}
+
+  !> @ingroup time_interp_external_mod
   type, private :: ext_fieldtype
      integer :: unit ! keep unit open when not reading all records
      character(len=128) :: name, units
@@ -129,6 +132,7 @@ module time_interp_external_mod
      real    :: missing ! missing value
   end type ext_fieldtype
 
+  !> @ingroup time_interp_external_mod
   type, private :: filetype
      character(len=128) :: filename = ''
      integer :: unit = -1
@@ -145,15 +149,15 @@ module time_interp_external_mod
   !! this module only supports LINEAR_TIME_INTERP.
   !! @param verbose verbose flag for debugging (optional).
   !!
-  !! Contains:
-  !! @ref time_interp_external_0d
-  !! @ref time_interp_external_2d
-  !! @ref time_interp_external_3d
+  !> @ingroup time_interp_external_mod
   interface time_interp_external
      module procedure time_interp_external_0d
      module procedure time_interp_external_2d
      module procedure time_interp_external_3d
   end interface
+
+  !> @addtogroup time_interp_external_mod
+  !> @{
 
   integer :: outunit
 

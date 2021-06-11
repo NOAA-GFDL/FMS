@@ -62,12 +62,15 @@ real(r8_kind), parameter, dimension(NUMINT) :: &
 logical :: overflow_error = .false., NaN_error = .false.
 logical :: debug = .false.    !< Making this true enables debugging output.
 
+!> @}
+
 !> This interface uses a conversion to an integer representation
 !! of real numbers to give order-invariant sums that will reproduce
 !! across PE count.
 !!
 !! This idea comes from R. Hallberg and A. Adcroft.
 !!
+!> @ingroup mpp_efp_mod
 interface mpp_reproducing_sum
   module procedure mpp_reproducing_sum_r8_2d
   module procedure mpp_reproducing_sum_r8_3d
@@ -76,25 +79,25 @@ end interface mpp_reproducing_sum
 
 !> The Extended Fixed Point (mpp_efp) type provides a public interface for doing
 !! sums and taking differences with this type.
+!> @ingroup mpp_efp_mod
 type, public :: mpp_efp_type
   private
   integer(i8_kind), dimension(NUMINT) :: v
 end type mpp_efp_type
 
-!> Override interfaces are provided for addition and subtraction between mpp_efp_types, as well
-!! as assignment.
-!! <br> Example usage:
-!! @code{.F90}
-!! use FMS, only: operator(+), assignment(=)
-!! efp1 = efp2 + efp3
-!! @endcode
 
-!> @cond
+!> Operator override interface for mpp_efp_type
+!> @ingroup mpp_efp_mod
 interface operator (+); module procedure mpp_efp_plus  ; end interface
+!> Operator override interface for mpp_efp_type
+!> @ingroup mpp_efp_mod
 interface operator (-); module procedure mpp_efp_minus ; end interface
+!> Assignment override interface for mpp_efp_type
+!> @ingroup mpp_efp_mod
 interface assignment(=); module procedure mpp_efp_assign ; end interface
-!> @endcond
-! excludes from docs because these are parsed incorrectly
+
+!> @addtogroup mpp_efp_mod
+!> @{
 
 contains
 

@@ -42,8 +42,6 @@
 !> @file
 !> @brief File for @ref tracer_manager_mod
 
-!> @addtogroup tracer_manager_mod
-!> @{
 module tracer_manager_mod
 
 !----------------------------------------------------------------------
@@ -101,19 +99,12 @@ public  tracer_manager_init, &
         MAX_TRACER_FIELDS
 
 !> Retrieves the tracer index 
+!> @ingroup tracer_manager_mod
 interface get_tracer_index
   module procedure get_tracer_index_integer, get_tracer_index_logical
 end interface
 
-integer            :: num_tracer_fields = 0
-integer, parameter :: MAX_TRACER_FIELDS = 150
-integer, parameter :: MAX_TRACER_METHOD = 20
-integer, parameter :: NO_TRACER         = 1-HUGE(1)
-integer, parameter :: NOTRACER          = -HUGE(1)
-
-integer :: total_tracers(NUM_MODELS), prog_tracers(NUM_MODELS), diag_tracers(NUM_MODELS)
-logical :: model_registered(NUM_MODELS) = .FALSE.
-
+!> @ingroup tracer_manager_mod
 type, private ::  tracer_type
    character(len=32)        :: tracer_name, tracer_units
    character(len=128)       :: tracer_longname
@@ -126,19 +117,31 @@ type, private ::  tracer_type
    logical                  :: needs_positive_adjust
 end type tracer_type
 
+!> @ingroup tracer_manager_mod
 type, private ::  tracer_name_type
    character(len=32)  :: model_name, tracer_name, tracer_units
    character(len=128) :: tracer_longname
 end type tracer_name_type
 
-
+!> @ingroup tracer_manager_mod
 type, private :: inst_type
    character(len=128) :: name
    integer            :: instances
 end type inst_type
 
+!> @addtogroup tracer_manager_mod
+!> @{
 type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
+
+integer            :: num_tracer_fields = 0
+integer, parameter :: MAX_TRACER_FIELDS = 150
+integer, parameter :: MAX_TRACER_METHOD = 20
+integer, parameter :: NO_TRACER         = 1-HUGE(1)
+integer, parameter :: NOTRACER          = -HUGE(1)
+
+integer :: total_tracers(NUM_MODELS), prog_tracers(NUM_MODELS), diag_tracers(NUM_MODELS)
+logical :: model_registered(NUM_MODELS) = .FALSE.
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>

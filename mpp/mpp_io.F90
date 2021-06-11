@@ -400,6 +400,8 @@ private
   !-----------------------------------------------------------------------------
 integer FILE_TYPE_USED
 integer, parameter :: MAX_ATT_LENGTH = 1280
+!> @}
+!> @ingroup mpp_io_mod
 type, public :: atttype
      private
      integer             :: type, len
@@ -408,6 +410,7 @@ type, public :: atttype
      real, pointer       :: fatt(:) =>NULL() ! just use type conversion for integers
   end type atttype
 
+  !> @ingroup mpp_io_mod
   type, public :: axistype
      private
      character(len=128) :: name
@@ -428,12 +431,14 @@ type, public :: atttype
      type(atttype), pointer :: Att(:) =>NULL()
   end type axistype
 
+  !> @ingroup mpp_io_mod
   type, public :: validtype
      private
      logical :: is_range ! if true, then the data represent the valid range
      real    :: min,max  ! boundaries of the valid range or missing value
   end type validtype
 
+  !> @ingroup mpp_io_mod
   type, public :: fieldtype
      private
      character(len=128)      :: name
@@ -453,6 +458,7 @@ type, public :: atttype
      integer                 :: position ! indicate the location of the data ( CENTER, NORTH, EAST, CORNER )
   end type fieldtype
 
+  !> @ingroup mpp_io_mod
   type, public :: filetype
      private
      character(len=256) :: name
@@ -483,6 +489,8 @@ type, public :: atttype
 !----------
   end type filetype
 
+!> @addtogroup mpp_io_mod
+!> @{
 !***********************************************************************
 !
 !     public interface from mpp_io_util.h

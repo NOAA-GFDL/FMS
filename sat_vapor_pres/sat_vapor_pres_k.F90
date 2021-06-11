@@ -24,8 +24,6 @@
 !> @file
 !> @brief File for @ref sat_vapor_pres_k_mod
 
-!> @addtogroup sat_vapor_pres_k_mod
-!> @{
  module sat_vapor_pres_k_mod
 
 ! This module is what I (pjp) think a kernel should be.
@@ -71,6 +69,7 @@
  public :: compute_qs_k
  public :: compute_mrs_k
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es_k
    module procedure lookup_es_k_0d
    module procedure lookup_es_k_1d
@@ -78,6 +77,7 @@
    module procedure lookup_es_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_des_k
    module procedure lookup_des_k_0d
    module procedure lookup_des_k_1d
@@ -85,6 +85,7 @@
    module procedure lookup_des_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es_des_k
    module procedure lookup_es_des_k_0d
    module procedure lookup_es_des_k_1d
@@ -92,6 +93,7 @@
    module procedure lookup_es_des_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es2_k
    module procedure lookup_es2_k_0d
    module procedure lookup_es2_k_1d
@@ -99,6 +101,7 @@
    module procedure lookup_es2_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_des2_k
    module procedure lookup_des2_k_0d
    module procedure lookup_des2_k_1d
@@ -106,6 +109,7 @@
    module procedure lookup_des2_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es2_des2_k
    module procedure lookup_es2_des2_k_0d
    module procedure lookup_es2_des2_k_1d
@@ -113,6 +117,7 @@
    module procedure lookup_es2_des2_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es3_k
    module procedure lookup_es3_k_0d
    module procedure lookup_es3_k_1d
@@ -120,6 +125,7 @@
    module procedure lookup_es3_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_des3_k
    module procedure lookup_des3_k_0d
    module procedure lookup_des3_k_1d
@@ -127,6 +133,7 @@
    module procedure lookup_des3_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es3_des3_k
    module procedure lookup_es3_des3_k_0d
    module procedure lookup_es3_des3_k_1d
@@ -134,19 +141,23 @@
    module procedure lookup_es3_des3_k_3d
  end interface
 
+ !> @ingroup sat_vapor_pres_k_mod
  interface compute_qs_k
    module procedure compute_qs_k_0d
    module procedure compute_qs_k_1d
    module procedure compute_qs_k_2d
    module procedure compute_qs_k_3d
  end interface
-
+ !> @ingroup sat_vapor_pres_k_mod
  interface compute_mrs_k
    module procedure compute_mrs_k_0d
    module procedure compute_mrs_k_1d
    module procedure compute_mrs_k_2d
    module procedure compute_mrs_k_3d
  end interface
+
+!> @addtogroup sat_vapor_pres_k_mod
+!> @{
 
  real :: dtres, tepsl, tminl, dtinvl
  integer :: table_siz

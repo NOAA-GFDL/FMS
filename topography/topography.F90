@@ -38,8 +38,6 @@
 !> @file
 !> @brief File for @ref topography_mod
 
-!> @addtogroup topography_mod
-!> @{
 module topography_mod
 
 use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
@@ -86,6 +84,7 @@ public :: topography_init,                 &
 !!
 !! <br>Example usage:
 !! @code{.F90} flag = get_topog_mean ( blon, blat, zmean )@endcode
+!> @ingroup topography_mod
 interface get_topog_mean
   module procedure get_topog_mean_1d, get_topog_mean_2d
 end interface
@@ -110,6 +109,7 @@ end interface
 !!
 !! Example usage:
 !! @code{.F90} flag = get_topog_stdev( blon, blat, stdev ) @code
+!> @ingroup topography_mod
 interface get_topog_stdev
   module procedure get_topog_stdev_1d, get_topog_stdev_2d
 end interface
@@ -128,6 +128,7 @@ end interface
 !!
 !! Example usage:
 !! @code{.F90} flag = get_ocean_frac ( blon, blat, ocean_frac ) @endcode
+!> @ingroup topography_mod
 interface get_ocean_frac
   module procedure get_ocean_frac_1d, get_ocean_frac_2d
 end interface
@@ -147,6 +148,7 @@ end interface
 !!
 !! Example code:
 !! @code{.F90} flag = get_ocean_mask( blon, blat, ocean_mask ) @endcode
+!> @ingroup topography_mod
 interface get_ocean_mask
   module procedure get_ocean_mask_1d, get_ocean_mask_2d
 end interface
@@ -165,6 +167,7 @@ end interface
 !! if the Navy 1/6 degree percent water data set was not readable.
 !!
 !! <br>Example usage:<br> @code{.F90} flag = get_water_frac ( blon, blat, water_frac ) @endcode
+!> @ingroup topography_mod
 interface get_water_frac
   module procedure get_water_frac_1d, get_water_frac_2d
 end interface
@@ -183,10 +186,13 @@ end interface
 !! if the Navy 1/6 degree percent water data set was not readable.
 !!
 !! Example usage: @code{.F90}flag = get_water_mask( blon, blat, water_mask ) @endcode
+!> @ingroup topography_mod
 interface get_water_mask
   module procedure get_water_mask_1d, get_water_mask_2d
 end interface
 
+!> @addtogroup topography_mod
+!> @{
 !-----------------------------------------------------------------------
 ! <NAMELIST NAME="topography_nml">
 !   <DATA NAME="topog_file" TYPE="character" DEFAULT="DATA/navy_topography.data">

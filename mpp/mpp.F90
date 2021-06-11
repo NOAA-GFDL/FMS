@@ -147,8 +147,6 @@
 !> @file
 !> @brief File for @ref mpp_mod
 
-!> @addtogroup mpp_mod
-!> @{
 module mpp_mod
 
 ! Define rank(X) for PGI compiler
@@ -228,6 +226,7 @@ private
   !
   !*********************************************************************
   !> peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
+  !> @ingroup mpp_mod
   type, public :: communicator
      private
      character(len=32) :: name
@@ -237,6 +236,7 @@ private
      integer           :: id, group         !< MPI communicator and group id for this PE set.
   end type communicator
 
+  !> @ingroup mpp_mod
   type, public :: event
      private
      character(len=16)                         :: name
@@ -245,6 +245,7 @@ private
   end type event
 
   !> a clock contains an array of event profiles for a region
+  !> @ingroup mpp_mod
   type, public :: clock
      private
      character(len=32)    :: name
@@ -260,6 +261,7 @@ private
   end type clock
 
   !> Summary of information from a clock run
+  !> @ingroup mpp_mod
   type, public :: Clock_Data_Summary
      private
      character(len=16)  :: name
@@ -272,6 +274,7 @@ private
   end type Clock_Data_Summary
 
   !> holds name and clock data for use in @ref mpp_util.h
+  !> @ingroup mpp_mod
   type, public :: Summary_Struct
      private
      character(len=16)         :: name
@@ -279,6 +282,7 @@ private
   end type Summary_Struct
 
   !> Data types for generalized data transfer (e.g. MPI_Type)
+  !> @ingroup mpp_mod
   type, public :: mpp_type
      private
      integer :: counter !> Number of instances of this type
@@ -294,6 +298,7 @@ private
   end type mpp_type
 
   !> Persisent elements for linked list interaction
+  !> @ingroup mpp_mod
   type, public :: mpp_type_list
       private
       type(mpp_type), pointer :: head => null()
@@ -301,6 +306,8 @@ private
       integer :: length
   end type mpp_type_list
 
+!> @addtogroup mpp_mod
+!> @{
 !***********************************************************************
 !
 !     public interface from mpp_util.h

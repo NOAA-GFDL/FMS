@@ -161,9 +161,11 @@ integer, parameter :: invalid_date=-1                     ! Used only for gregor
 integer,parameter :: do_floor = 0
 integer,parameter :: do_nearest = 1
 
+!> @}
 
 !> @brief Type to represent amounts of time.
 !> Implemented as seconds and days to allow for larger intervals.
+!> @ingroup time_manager_mod
 type, public :: time_type
    private
    integer:: seconds
@@ -172,37 +174,44 @@ type, public :: time_type
    integer:: dummy !< added as a workaround bug on IRIX64 (AP)
 end type time_type
 
-!======================================================================
-!> @brief All operator override interfaces are provided for @ref time_type.
-!!
-!> Any arithmetic, logical, or assignment operators can be used with @ref time_type
-!! via these interfaces.
-!! <br> Example usage:
-!! @code{.F90}
-!! use FMS, only: operator(+), assignment(=), operator(>=)
-!! type(time_type) :: t1, t2, t3, t4
-!! t1 = t2 + t3
-!! if(t1 .ge. t4) then
-!! etc...
-!! @endcode
-
-! excludes incorrect parse in docs
-!> @cond
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (+);   module procedure time_plus;        end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (-);   module procedure time_minus;       end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (*);   module procedure time_scalar_mult
                           module procedure scalar_time_mult; end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (/);   module procedure time_scalar_divide
                           module procedure time_divide;      end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (>);   module procedure time_gt;          end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (>=);  module procedure time_ge;          end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (<);   module procedure time_lt;          end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (<=);  module procedure time_le;          end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (==);  module procedure time_eq;          end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (/=);  module procedure time_ne;          end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface operator (//);  module procedure time_real_divide; end interface
+!> Operator override interface for use with @ref time_type
+!> @ingroup time_manager_mod
 interface assignment(=);  module procedure time_assignment;  end interface
-!> @endcond
 
 !======================================================================
 
@@ -222,6 +231,7 @@ interface assignment(=);  module procedure time_assignment;  end interface
 !! set_time(seconds, days, ticks, err_msg)
 !! set_time(time_string, err_msg, allow_rounding)
 !! @endcode
+!> @ingroup time_manager_mod
 interface set_time
   module procedure set_time_i, set_time_c
 end interface
@@ -261,9 +271,13 @@ end interface
 !! if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg) ,FATAL)
 !! @endcode
 !!
+!> @ingroup time_manager_mod
 interface set_date
   module procedure set_date_i, set_date_c
 end interface
+
+!> @addtogroup time_manager_mod
+!> @{
 
 !======================================================================
 
@@ -689,9 +703,9 @@ end subroutine get_time
 ! </FUNCTION>
 !--------------------------------------------------------------------------
 
+ !> Increments a time by seconds, days and ticks.
  function increment_time_private(Time_in, seconds, days, ticks, Time_out, err_msg)
 
-! Increments a time by seconds, days and ticks.
 
  logical                       :: increment_time_private
  type(time_type),  intent(in)  :: Time_in
@@ -1425,6 +1439,7 @@ end function safe_rtoi
 !       Returns the largest time, t, for which n * t <= time.
 !   </OUT>
 
+!> Returns the largest time, t, for which n * t <= time.
 function time_scalar_divide(time, n)
 
 ! Returns the largest time, t, for which n * t <= time
@@ -1950,10 +1965,10 @@ end function get_ticks_per_second
  end function cut0
 !------------------------------------------------------------------------
 
+!> Base date for Julian calendar is year 1 with all multiples of 4
+!! years being leap years.
  subroutine get_date_julian_private(time, year, month, day, hour, minute, second, tick)
 
-! Base date for Julian calendar is year 1 with all multiples of 4
-! years being leap years.
 
  type(time_type), intent(in) :: time
  integer, intent(out) :: second, minute, hour, day, month, year
@@ -3519,6 +3534,10 @@ end subroutine print_time
 !      Unit number for printed output. The default unit is stdout.
 !   </IN>
 
+!> @brief Prints the time to standard output (or optional unit) as a date.
+!!
+!! Prints the given time_type argument as a date (using year, month, day,
+!! hour, minutes, seconds and ticks). NOTE: there is no check for PE number.
 subroutine print_date (Time,str,unit)
 type(time_type)  , intent(in) :: Time
 character (len=*), intent(in), optional :: str

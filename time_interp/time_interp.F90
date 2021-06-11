@@ -30,8 +30,6 @@
 !> @file
 !> @brief File for @ref time_interp_mod
 
-!> @addtogroup time_interp_mod
-!> @{
 module time_interp_mod
 
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &
@@ -228,6 +226,7 @@ public :: time_interp_init, time_interp, fraction_of_year
 !!              call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
 !!              call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
 !! @endcode
+!> @ingroup time_interp_mod
 interface time_interp
     module procedure time_interp_frac,  time_interp_year, &
                      time_interp_month, time_interp_day,  &
@@ -235,6 +234,8 @@ interface time_interp
 end interface
 ! </INTERFACE>
 
+!> @addtogroup time_interp_mod
+!> @{
 integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
 
 !-----------------------------------------------------------------------

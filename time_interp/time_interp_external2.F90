@@ -91,8 +91,10 @@ module time_interp_external2_mod
 
   private find_buf_index,&
          set_time_modulo
+  !> @}
 
   !> Represents external fields
+  !> @ingroup time_interp_external2_mod
   type, private :: ext_fieldtype
      type(FmsNetcdfFile_t), pointer :: fileobj=>NULL() !< keep unit open when not reading all records
      character(len=128) :: name, units
@@ -124,6 +126,7 @@ module time_interp_external2_mod
   end type ext_fieldtype
 
   !> Holds filename and file object
+  !> @ingroup time_interp_external2_mod
   type, private :: filetype
      character(len=128) :: filename = ''
      type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
@@ -140,11 +143,15 @@ module time_interp_external2_mod
   !! this module only supports LINEAR_TIME_INTERP.
   !! @param verbose verbose flag for debugging (optional).
   !!
+  !> @ingroup time_interp_external2_mod
   interface time_interp_external
      module procedure time_interp_external_0d
      module procedure time_interp_external_2d
      module procedure time_interp_external_3d
   end interface
+
+  !> @addtogroup time_interp_external2_mod
+  !> @{
 
   integer :: outunit
 

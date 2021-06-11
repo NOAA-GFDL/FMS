@@ -103,20 +103,23 @@ module MersenneTwister_mod
   ! Period parameters
   integer, parameter :: blockSize = 624,         &
                         M         = 397,         &
-                        MATRIX_A  = -1727483681, & ! constant vector a         (0x9908b0dfUL)
-                        UMASK     = -2147483648_8, & ! most significant w-r bits (0x80000000UL)
-                        LMASK     =  2147483647    ! least significant r bits  (0x7fffffffUL)
-  ! Tempering parameters
-  integer, parameter :: TMASKB= -1658038656, & ! (0x9d2c5680UL)
-                        TMASKC= -272236544     ! (0xefc60000UL)
+                        MATRIX_A  = -1727483681, & !< constant vector a         (0x9908b0dfUL)
+                        UMASK     = -2147483648_8, & !< most significant w-r bits (0x80000000UL)
+                        LMASK     =  2147483647    !< least significant r bits  (0x7fffffffUL)
+  !> Tempering parameters
+  integer, parameter :: TMASKB= -1658038656, & !< (0x9d2c5680UL)
+                        TMASKC= -272236544     !< (0xefc60000UL)
   ! -------
+  !> @}
 
-  ! The type containing the state variable
+  !> The type containing the state variable
+  !> @ingroup mersennetwister_mod
   type randomNumberSequence
     integer                            :: currentElement ! = blockSize
     integer, dimension(0:blockSize -1) :: state ! = 0
   end type randomNumberSequence
 
+  !> @ingroup mersennetwister_mod
   interface new_RandomNumberSequence
     module procedure initialize_scalar, initialize_vector
   end interface new_RandomNumberSequence
@@ -124,6 +127,8 @@ module MersenneTwister_mod
   public :: randomNumberSequence
   public :: new_RandomNumberSequence, finalize_RandomNumberSequence, &
             getRandomInt, getRandomPositiveInt, getRandomReal
+!> @addtogroup mersennetwister_mod
+!> @{
 ! -------------------------------------------------------------
 contains
   ! -------------------------------------------------------------
