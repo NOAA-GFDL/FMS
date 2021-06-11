@@ -49,7 +49,7 @@ module fms_affinity_mod
     !> Function to get affinity from the current component.
     !!
     !> Defined in @ref affinity.c.
-    !> @return integer for component's affinity
+    !> @ingroup fms_affinity_mod
     integer(KIND=c_int) function fms_affinity_get() bind(c, name="get_cpu_affinity")
       import c_int
     end function fms_affinity_get

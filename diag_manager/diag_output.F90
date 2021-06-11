@@ -145,7 +145,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
      module procedure write_attribute_meta_use_mpp_io
   end interface
 
-!> @addtogroup diag_output_init
+!> @addtogroup diag_output_mod
 !> @{
 CONTAINS
 

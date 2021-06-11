@@ -89,7 +89,6 @@ interface get_topog_mean
   module procedure get_topog_mean_1d, get_topog_mean_2d
 end interface
 
-!> @page get_topog_stdev get_topog_stdev Interface
 !> Returns a standard deviation of higher resolution topography with
 !! the given model grid boxes.
 !!
@@ -193,24 +192,17 @@ end interface
 
 !> @addtogroup topography_mod
 !> @{
-!-----------------------------------------------------------------------
-! <NAMELIST NAME="topography_nml">
-!   <DATA NAME="topog_file" TYPE="character" DEFAULT="DATA/navy_topography.data">
-!       Name of topography file.
-!   </DATA>
-!   <DATA NAME="water_file" TYPE="character" DEFAULT="DATA/navy_pctwater.data">
-!       Name of percent water file.
-!   </DATA>
 
    character(len=128) :: topog_file = 'DATA/navy_topography.data', &
                          water_file = 'DATA/navy_pctwater.data'
    namelist /topography_nml/ topog_file, water_file, use_mpp_io
-! </NAMELIST>
+
    integer, parameter    :: TOPOG_INDEX = 1
    integer, parameter    :: WATER_INDEX = 2
    logical :: file_is_opened(2) = .false.
    type(FmsNetcdfFile_t) :: fileobj(2) !< needed for fms2_io
    logical :: use_mpp_io=.false.!>@var Namelist flag to enable usage of mpp_io subroutines if true
+
 !-----------------------------------------------------------------------
 ! --- resolution of the topography data set ---
 ! <DATASET NAME="">
