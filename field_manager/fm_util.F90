@@ -131,6 +131,9 @@ character(len=fm_path_name_len) :: save_name
   !module procedure  fm_util_get_value_string_array
 !end interface  !}
 
+!> @}
+
+!> @ingroup fm_util_mod
 interface  fm_util_set_value  !{
   module procedure  fm_util_set_value_integer_array
   module procedure  fm_util_set_value_logical_array
@@ -147,6 +150,8 @@ end interface  !}
   !module procedure  fm_util_get_index_string
 !end interface  !}
 
+!> @addtogroup fm_util_mod
+!> @{
 
 contains
 

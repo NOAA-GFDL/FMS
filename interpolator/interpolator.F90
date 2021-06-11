@@ -23,9 +23,7 @@
 
 !> @file
 !> File for @ref interpolator_mod
-!
-!> @addtogroup interpolator_mod
-!> @{
+
 module interpolator_mod
 
 use mpp_mod,           only : mpp_error, &
@@ -168,6 +166,7 @@ public interpolator_init, &
 !! @param [in] <js> Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> The units of field_name
+!> @ingroup interpolator_mod
 interface interpolator
    module procedure interpolator_4D
    module procedure interpolator_3D
@@ -178,6 +177,7 @@ interface interpolator
 end interface
 
 !> Assignment override interface for interpolate type
+!> @ingroup interpolator_mod
 interface assignment(=)
    module procedure interpolate_type_eq
 end interface
@@ -192,6 +192,7 @@ end interface
 !! @param [in] <grdout> Output grid
 !! @param [in] <datin> Input data
 !! @param [out] <datout> Output data
+!> @ingroup interpolator_mod
 interface interp_weighted_scalar
    module procedure interp_weighted_scalar_1D
    module procedure interp_weighted_scalar_2D
@@ -202,10 +203,10 @@ end interface interp_weighted_scalar
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
-logical            :: module_is_initialized = .false.
-logical            :: clim_diag_initialized = .false.
 
-type, public  :: interpolate_type          !< Redundant climatology data between fields
+!> Redundant climatology data between fields
+!> @ingroup interpolate_type
+type, public  :: interpolate_type
 private
 !Redundant data between fields
 !All climatology data
@@ -261,6 +262,11 @@ type(fieldtype),   pointer :: field_type(:) =>NULL()   !< NetCDF field type
 
 end type interpolate_type
 
+!> @addtogroup interpolator_mod
+!> @{
+
+logical            :: module_is_initialized = .false.
+logical            :: clim_diag_initialized = .false.
 
 integer :: ndim          !< No description
 integer :: nvar          !< No description

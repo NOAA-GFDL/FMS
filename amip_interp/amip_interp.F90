@@ -133,13 +133,14 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 !-----------------------------------------------------------------------
 !------ private defined data type --------
 
+!> @}
+
 !> @brief Private data type for representing a calendar date
+!> @ingroup amip_interp_mod
 type, private date_type
    sequence
    integer :: year, month, day
 end type
-
-!> @}
 
 !> Assignment overload to allow native assignment between amip_interp_type variables.
 !> @ingroup amip_interp_mod
@@ -165,8 +166,6 @@ interface operator (>)
    module procedure date_gt
 end interface
 
-!> @addtogroup amip_interp_mod
-!> @{
 
 !> Initializes data needed for the horizontal
 !! interpolation between the sst grid and model grid.
@@ -223,6 +222,7 @@ end interface
 !! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !! argument use_annual = true.  This combination is not allowed.
 !!
+!> @ingroup amip_interp_mod
 interface amip_interp_new
    module procedure amip_interp_new_1d
    module procedure amip_interp_new_2d
@@ -232,6 +232,7 @@ end interface
 !----- public data type ------
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
+!> @ingroup amip_interp_mod
 type, public amip_interp_type
    private
    type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
@@ -242,6 +243,8 @@ type, public amip_interp_type
    logical                  :: I_am_initialized=.false.
 end type
 
+!> @addtogroup amip_interp_mod
+!> @{
 !-----------------------------------------------------------------------
 !  ---- resolution/grid variables ----
 

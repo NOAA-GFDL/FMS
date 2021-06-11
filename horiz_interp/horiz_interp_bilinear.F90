@@ -29,8 +29,6 @@
 !> @file
 !> @brief File for @ref horiz_interp_bilinear_mod
 
-!> @addtogroup
-!> @{
 module horiz_interp_bilinear_mod
 
   ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
@@ -49,12 +47,15 @@ module horiz_interp_bilinear_mod
   public :: horiz_interp_bilinear_new, horiz_interp_bilinear, horiz_interp_bilinear_del
   public :: horiz_interp_bilinear_init
 
-  !--- public interface
+  !> Creates a @ref horiz_interp_type for bilinear interpolation.
+  !> @ingroup horiz_interp_bilinear_mod
   interface horiz_interp_bilinear_new
     module procedure horiz_interp_bilinear_new_1d
     module procedure horiz_interp_bilinear_new_2d
   end interface
 
+!> @addtogroup horiz_interp_bilinear_mod
+!> @{
 
   real, parameter :: epsln=1.e-10
   integer, parameter :: DUMMY = -999
@@ -72,9 +73,9 @@ contains
   !     writes version number to logfile.out
   !  </OVERVIEW>
   !  <DESCRIPTION>
-  !     writes version number to logfile.out
   !  </DESCRIPTION>
 
+  !> Writes version number to logfile.
   subroutine horiz_interp_bilinear_init
 
     if(module_is_initialized) return

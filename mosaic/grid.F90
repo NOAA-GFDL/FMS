@@ -23,8 +23,6 @@
 !> @file
 !> @brief File for @ref grid_mod
 
-!> @addtogroup grid_mod
-!> @{
 module grid_mod
 
 use mpp_mod, only : mpp_root_pe, uppercase, lowercase, FATAL, NOTE, mpp_error
@@ -57,32 +55,40 @@ public :: define_cube_mosaic
 ! ==== end of public interfaces ==============================================
 
 !> returns horizontal sizes of the grid
+!> @ingroup grid_mod
 interface get_grid_size
    module procedure get_grid_size_for_all_tiles
    module procedure get_grid_size_for_one_tile
 end interface
 !> returns number of tiles
+!> @ingroup grid_mod
 interface get_grid_cell_vertices
    module procedure get_grid_cell_vertices_1D
    module procedure get_grid_cell_vertices_2D
    module procedure get_grid_cell_vertices_UG
 end interface
 
+!> @ingroup grid_mod
 interface get_grid_cell_centers
    module procedure get_grid_cell_centers_1D
    module procedure get_grid_cell_centers_2D
    module procedure get_grid_cell_centers_UG
 end interface
 
+!> @ingroup grid_mod
 interface get_grid_cell_area
    module procedure get_grid_cell_area_SG
    module procedure get_grid_cell_area_UG
 end interface get_grid_cell_area
 
+!> @ingroup grid_mod
 interface get_grid_comp_area
    module procedure get_grid_comp_area_SG
    module procedure get_grid_comp_area_UG
 end interface get_grid_comp_area
+
+!> @addtogroup grid_mod
+!> @{
 
 ! ==== module constants ======================================================
 character(len=*), parameter :: &

@@ -46,11 +46,15 @@ private
 public :: CONSERVE, BILINEAR, SPHERICA, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
 
+!> @}
+
+!> @ingroup horiz_interp_type_mod
 interface assignment(=)
   module procedure horiz_interp_type_eq
 end interface
 
 !<PUBLICTYPE >
+!> @ingroup horiz_interp_type_mod
  type horiz_interp_type
    real,    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
    real,    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
@@ -100,6 +104,8 @@ end interface
  end type
 !</PUBLICTYPE>
 
+!> @addtogroup horiz_interp_type_mod
+!> @{
 contains
 
 !#######################################################################

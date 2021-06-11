@@ -42,8 +42,6 @@
 !> @file
 !> @brief File for @ref horiz_interp_bicubic_mod
 
-!> @addtogroup horiz_interp_bicubic_mod
-!> @{
 module horiz_interp_bicubic_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
@@ -82,10 +80,15 @@ module horiz_interp_bicubic_mod
    public  :: horiz_interp_bicubic, horiz_interp_bicubic_new, horiz_interp_bicubic_del, fill_xy
    public  :: horiz_interp_bicubic_init
 
+  !> Creates a new @ref horiz_interp_type for bicubic interpolation.
+  !> @ingroup horiz_interp_bicubic_mod
   interface horiz_interp_bicubic_new
     module procedure horiz_interp_bicubic_new_1d
     module procedure horiz_interp_bicubic_new_1d_s
   end interface
+
+!> @addtogroup horiz_interp_bicubic_mod
+!> @{
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>

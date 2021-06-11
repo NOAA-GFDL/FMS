@@ -36,8 +36,6 @@
 !> @file
 !> @brief File for @ref horiz_interp_mod
 
-!> @addtogroup
-!> @{
 module horiz_interp_mod
 
 !-----------------------------------------------------------------------
@@ -187,6 +185,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 !!      The output data array does not match the size of the input grid
 !!      edges specified. If you are using the initialization interface make
 !!      sure you have the correct grid size.
+!> @ingroup horiz_interp_mod
  interface horiz_interp
     module procedure horiz_interp_base_2d
     module procedure horiz_interp_base_3d
@@ -198,18 +197,14 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
  end interface
 
 
- !--- namelist interface
- !<NAMELIST NAME="horiz_interp_nml">
- ! <DATA NAME="reproduce_siena" TYPE="logical" DEFAULT=".FALSE." >
- !   Set reproduce_siena = .true. to reproduce siena results.
- !   Set reproduce_siena = .false. to decrease truncation error
- !   in routine poly_area in file mosaic_util.c. The truncation error of
- !   second order conservative remapping might be big for high resolution
- !   grid.
- ! </DATA>
- !</NAMELIST>
+!> @addtogroup horiz_interp_mod
+!> @{
 
- logical :: reproduce_siena = .false.
+ logical :: reproduce_siena = .false. !< Set reproduce_siena = .true. to reproduce siena results.
+                 !! Set reproduce_siena = .false. to decrease truncation error
+                 !! in routine poly_area in file mosaic_util.c. The truncation error of
+                 !! second order conservative remapping might be big for high resolution
+                 !! grid.
 
  namelist /horiz_interp_nml/ reproduce_siena
 

@@ -47,8 +47,10 @@ character(len=16), parameter :: domain_axis_att_name = "domain_axis"
 character(len=16), parameter :: x = "x"
 character(len=16), parameter :: y = "y"
 
+!> @}
 
 !> @brief Domain variable.
+!> @ingroup fms_netcdf_domain_io_mod
 type, private :: DomainDimension_t
   character(len=nf90_max_name) :: varname !< Variable name.
   integer :: pos !< Domain position.
@@ -56,6 +58,7 @@ endtype DomainDimension_t
 
 
 !> @brief netcdf domain file type.
+!> @ingroup fms_netcdf_domain_io_mod
 type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
   type(domain2d) :: domain !< Two-dimensional domain.
   type(DomainDimension_t), dimension(:), allocatable :: xdims !< Dimensions associated
@@ -101,12 +104,15 @@ public :: get_global_io_domain_indices
 public :: is_dimension_registered
 public :: get_mosaic_tile_grid
 
+!> @ingroup fms_netcdf_domain_io_mod
 interface compute_global_checksum
   module procedure compute_global_checksum_2d
   module procedure compute_global_checksum_3d
   module procedure compute_global_checksum_4d
 end interface compute_global_checksum
 
+!> @addtogroup fms_netcdf_domain_io_mod
+!> @{
 
 contains
 

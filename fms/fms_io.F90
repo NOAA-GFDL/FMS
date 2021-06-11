@@ -163,6 +163,8 @@ integer, parameter, private :: NIDX=8
 
 logical, private :: warn_string_function = .true.
 
+!> @}
+!> @ingroup fms_io_mod
 type, private meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
 !!$ Gfortran on gaea does not yet support deferred length character strings
@@ -175,6 +177,7 @@ type, private meta_type
   character(len=256)   :: cval
 end type meta_type
 
+!> @ingroup fms_io_mod
 type, private ax_type
    private
    character(len=128) :: name = ''
@@ -202,6 +205,7 @@ type, private ax_type
 
 end type ax_type
 
+!> @ingroup fms_io_mod
 type, private var_type
    private
    character(len=128)                     :: name = ''
@@ -239,50 +243,62 @@ type, private var_type
 
 end type var_type
 
+!> @ingroup fms_io_mod
 type Ptr0Dr
    real,                   pointer :: p => NULL()
 end type Ptr0Dr
 
+!> @ingroup fms_io_mod
 type Ptr1Dr
    real, dimension(:),     pointer :: p => NULL()
 end type Ptr1Dr
 
+!> @ingroup fms_io_mod
 type Ptr2Dr
    real, dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Dr
 
+!> @ingroup fms_io_mod
 type Ptr3Dr
    real, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr
 
+!> @ingroup fms_io_mod
 type Ptr2Dr8
    real(DOUBLE_KIND), dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Dr8
 
+!> @ingroup fms_io_mod
 type Ptr3Dr8
    real(DOUBLE_KIND), dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr8
 
+!> @ingroup fms_io_mod
 type Ptr4Dr
    real, dimension(:,:,:,:), pointer :: p => NULL()
 end type Ptr4Dr
 
+!> @ingroup fms_io_mod
 type Ptr0Di
    integer,                   pointer :: p => NULL()
 end type Ptr0Di
 
+!> @ingroup fms_io_mod
 type Ptr1Di
    integer, dimension(:),     pointer :: p => NULL()
 end type Ptr1Di
 
+!> @ingroup fms_io_mod
 type Ptr2Di
    integer, dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Di
 
+!> @ingroup fms_io_mod
 type Ptr3Di
    integer, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Di
 
+!> @ingroup fms_io_mod
 type, public restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
@@ -311,6 +327,8 @@ type, public restart_file_type
    type(Ptr3Di),   dimension(:,:), pointer  :: p3di => NULL()
 end type restart_file_type
 
+!> Read data from a file
+!> @ingroup fms_io_mod
 interface read_data
    module procedure read_data_4d_new
    module procedure read_data_3d_new
@@ -336,6 +354,7 @@ interface read_data
 #endif
 end interface
 
+!> @ingroup fms_io_mod
 interface read_distributed
    module procedure read_distributed_r1D
    module procedure read_distributed_r3D
@@ -345,8 +364,9 @@ interface read_distributed
    module procedure read_distributed_a1D
 end interface
 
-! Only need read compressed att; write is handled in with
-! mpp_io calls in save_compressed_restart
+!> Only need read compressed att; write is handled in with
+!! mpp_io calls in save_compressed_restart
+!> @ingroup fms_io_mod
 interface read_compressed
    module procedure read_compressed_i1d
    module procedure read_compressed_i2d
@@ -355,6 +375,7 @@ interface read_compressed
    module procedure read_compressed_3d
 end interface read_compressed
 
+!> @ingroup fms_io_mod
 interface write_data
    module procedure write_data_4d_new
    module procedure write_data_3d_new
@@ -372,6 +393,7 @@ interface write_data
 #endif
 end interface
 
+!> @ingroup fms_io_mod
 interface register_restart_field
    module procedure register_restart_field_r0d
    module procedure register_restart_field_r1d
@@ -400,12 +422,14 @@ interface register_restart_field
    module procedure register_restart_region_r3d
 end interface
 
+!> @ingroup fms_io_mod
 interface register_restart_axis
    module procedure register_restart_axis_r1d
    module procedure register_restart_axis_i1d
    module procedure register_restart_axis_unlimited
 end interface
 
+!> @ingroup fms_io_mod
 interface reset_field_pointer
    module procedure reset_field_pointer_r0d
    module procedure reset_field_pointer_r1d
@@ -426,11 +450,13 @@ interface reset_field_pointer
    module procedure reset_field_pointer_i3d_2level
 end interface
 
+!> @ingroup fms_io_mod
 interface restore_state
    module procedure restore_state_all
    module procedure restore_state_one_field
 end interface
 
+!> @ingroup fms_io_mod
 interface query_initialized
    module procedure query_initialized_id
    module procedure query_initialized_name
@@ -439,6 +465,7 @@ interface query_initialized
    module procedure query_initialized_r4d
 end interface
 
+!> @ingroup fms_io_mod
 interface set_initialized
    module procedure set_initialized_id
    module procedure set_initialized_name
@@ -447,30 +474,36 @@ interface set_initialized
    module procedure set_initialized_r4d
 end interface
 
+!> @ingroup fms_io_mod
 interface get_global_att_value
   module procedure get_global_att_value_text
   module procedure get_global_att_value_real
 end interface
 
+!> @ingroup fms_io_mod
 interface get_var_att_value
   module procedure get_var_att_value_text
 end interface
 
+!> @ingroup fms_io_mod
 interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
 end interface
 
+!> @ingroup fms_io_mod
 interface get_mosaic_tile_file
   module procedure get_mosaic_tile_file_sg
   module procedure get_mosaic_tile_file_ug
 end interface
 
+!> @addtogroup fms_io_mod
+!> @{
 
-integer :: num_files_r = 0 ! number of currently opened files for reading
-integer :: num_files_w = 0 ! number of currently opened files for writing
-integer :: num_domains = 0 ! number of domains in array_domain
-integer :: num_registered_files = 0 ! mumber of files registered by calling register_restart_file
+integer :: num_files_r = 0 !< number of currently opened files for reading
+integer :: num_files_w = 0 !< number of currently opened files for writing
+integer :: num_domains = 0 !< number of domains in array_domain
+integer :: num_registered_files = 0 !< mumber of files registered by calling register_restart_file
 
 integer :: thread_r, form
 logical :: module_is_initialized = .FALSE.
@@ -482,12 +515,12 @@ logical           :: great_circle_algorithm=.FALSE.
 ! entrained from fms_mod.  This will be deprecated in the future.
 type(domain2D), pointer, private :: Current_domain =>NULL()
 
-integer, private :: is,ie,js,je      ! compute domain
-integer, private :: isd,ied,jsd,jed  ! data domain
-integer, private :: isg,ieg,jsg,jeg  ! global domain
-character(len=128),      dimension(:), allocatable         :: registered_file ! file names registered through register_restart_file
-type(restart_file_type), dimension(:), allocatable         :: files_read  ! store files that are read through read_data
-type(restart_file_type), dimension(:), allocatable, target :: files_write ! store files that are written through write_data
+integer, private :: is,ie,js,je      !< compute domain
+integer, private :: isd,ied,jsd,jed  !< data domain
+integer, private :: isg,ieg,jsg,jeg  !< global domain
+character(len=128),      dimension(:), allocatable         :: registered_file !< file names registered through register_restart_file
+type(restart_file_type), dimension(:), allocatable         :: files_read  !< store files that are read through read_data
+type(restart_file_type), dimension(:), allocatable, target :: files_write !< store files that are written through write_data
 type(domain2d), dimension(max_domains), target, save  :: array_domain
 type(domain1d), dimension(max_domains), save       :: domain_x, domain_y
 public  :: read_data, read_compressed, write_data, read_distributed
@@ -513,10 +546,14 @@ public  :: get_great_circle_algorithm
 character(len=32), save :: filename_appendix = ''
 
 !--- public interface ---
+!> @}
+!> @ingroup fms_io_mod
 interface string
    module procedure string_from_integer
    module procedure string_from_real
 end interface
+!> @addtogroup fms_io_mod
+!> @{
 
 !--- namelist interface
 logical           :: fms_netcdf_override = .true.
@@ -556,12 +593,16 @@ public :: fms_io_unstructured_get_field_size
 public :: fms_io_unstructured_file_unit
 public :: fms_io_unstructured_field_exist
 
+!> @}
+
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_register_restart_axis
     module procedure fms_io_unstructured_register_restart_axis_r1D
     module procedure fms_io_unstructured_register_restart_axis_i1D
     module procedure fms_io_unstructured_register_restart_axis_u
 end interface fms_io_unstructured_register_restart_axis
 
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_register_restart_field
     module procedure fms_io_unstructured_register_restart_field_r_0d
     module procedure fms_io_unstructured_register_restart_field_r_1d
@@ -576,6 +617,7 @@ interface fms_io_unstructured_register_restart_field
     module procedure fms_io_unstructured_register_restart_field_i_2d
 end interface fms_io_unstructured_register_restart_field
 
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_read
     module procedure fms_io_unstructured_read_r_scalar
     module procedure fms_io_unstructured_read_r_1D
@@ -587,6 +629,8 @@ interface fms_io_unstructured_read
 end interface fms_io_unstructured_read
 !----------
 
+!> @addtogroup fms_io_mod
+!> @{
 contains
 
 ! <SUBROUTINE NAME="get_restart_io_mode">

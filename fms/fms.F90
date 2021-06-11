@@ -218,8 +218,9 @@ public :: do_cf_compliance
 !this is published by fms and applied to any initialized clocks
 !of course you can go and set the flag to SYNC or DETAILED by hand
 integer, public :: clock_flag_default
-
+!> @}
   !> Namelist read error values
+  !> @ingroup fms_mod
   TYPE, PUBLIC nml_errors_type
      INTEGER :: multipleNMLSinFile
      INTEGER :: badType1
@@ -228,7 +229,8 @@ integer, public :: clock_flag_default
      INTEGER :: NotInFile
   END TYPE nml_errors_type
   TYPE(nml_errors_type), SAVE :: nml_errors
-
+!> @addtogroup fms_mod
+!> @{
 
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
@@ -313,12 +315,17 @@ integer, public :: clock_flag_default
   logical, private :: fms_io_initialized = .FALSE.!> used to make sure fms_io version is only
                                                   !! written to log once
 
+!> @}
+
 !> Converts a number to a string
+!> @ingroup fms_mod
 interface string
    module procedure string_from_integer
    module procedure string_from_real
 end interface
 
+!> @addtogroup fms_mod
+!> @{
 contains
 
 !#######################################################################

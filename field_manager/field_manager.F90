@@ -325,6 +325,9 @@ character(len=11), parameter, public, dimension(NUM_MODELS) :: &
 !        Public type definitions
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+!> @}
+
+!> @ingroup field_manager_mod
 type, public :: fm_array_list_def
   character (len=fm_field_name_len), dimension(:), pointer :: names => NULL()
   integer                                                  :: length
@@ -344,6 +347,7 @@ end type  fm_array_list_def
 !! tracer  within the same model run. The default advection could be second order and the
 !! field table would then indicate  that the second tracer requires fourth order advection.
 !! This would be parsed by the advection routine.
+!> @ingroup field_manager_mod
 type, public :: method_type
 
   character(len=fm_string_len) :: method_type !< This string represents a tag that a module 
@@ -362,6 +366,7 @@ end type
 !!   method_control string is not present. This is used when you wish to
 !!   change to a scheme within a module but do not need to pass
 !!   parameters.
+!> @ingroup field_manager_mod
 type, public :: method_type_short
   ! <DATA NAME="method_type_short :: method_type" TYPE="character" DIM="(128)">
   !   see method_type :: method_type above.
@@ -379,6 +384,7 @@ end type
 !!   method_control and method_name strings are not present. This is used
 !!   when you wish to change to a scheme within a module but do not need
 !!   to pass  parameters.
+!> @ingroup field_manager_mod
 type, public :: method_type_very_short
   ! <DATA NAME="method_type_short :: method_type" TYPE="character" DIM="(128)">
   !   see method_type :: method_type above.
@@ -388,6 +394,7 @@ end type
 ! </TYPE> NAME="method_type_very_short"
 
 !> Iterator over the field manager list
+!> @ingroup field_manager_mod
 type, public :: fm_list_iter_type
    type(field_def), pointer    :: ptr => NULL()  !< pointer to the current field
 end type fm_list_iter_type
@@ -397,6 +404,7 @@ end type fm_list_iter_type
 !        Public types
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+!> @ingroup field_manager_mod
 type(method_type), public :: default_method
 
 
@@ -408,11 +416,13 @@ type(method_type), public :: default_method
 !        Interface definitions for overloaded routines
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+!> @ingroup field_manager_mod
 interface find_field_index
   module procedure  find_field_index_old
   module procedure  find_field_index_new
 end interface
 
+!> @ingroup field_manager_mod
 interface parse
   module procedure  parse_real
   module procedure  parse_reals
@@ -422,6 +432,7 @@ interface parse
   module procedure  parse_strings
 end interface
 
+!> @ingroup field_manager_mod
 interface  fm_new_value
   module procedure  fm_new_value_integer
   module procedure  fm_new_value_logical
@@ -429,6 +440,7 @@ interface  fm_new_value
   module procedure  fm_new_value_string
 end interface
 
+!> @ingroup field_manager_mod
 interface  fm_get_value
   module procedure  fm_get_value_integer
   module procedure  fm_get_value_logical
@@ -436,6 +448,7 @@ interface  fm_get_value
   module procedure  fm_get_value_string
 end interface
 
+!> @ingroup field_manager_mod
 interface fm_loop_over_list
   module procedure  fm_loop_over_list_new
   module procedure  fm_loop_over_list_old
@@ -474,6 +487,7 @@ integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
 !        Private type definitions
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+!> @ingroup field_manager_mod
 type, private :: field_mgr_type !{
   character(len=fm_field_name_len)                    :: field_type
   character(len=fm_string_len)                    :: field_name
@@ -481,17 +495,20 @@ type, private :: field_mgr_type !{
   type(method_type)                                   :: methods(MAX_FIELD_METHODS)
 end type field_mgr_type !}
 
+!> @ingroup field_manager_mod
 type, private :: field_names_type !{
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
   character(len=fm_string_len)                    :: fld_name
 end  type field_names_type !}
 
+!> @ingroup field_manager_mod
 type, private :: field_names_type_short !{
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
 end type field_names_type_short !}
 
+!> @ingroup field_manager_mod
 type, private :: field_def  !{
   character (len=fm_field_name_len)                   :: name
   integer                                             :: index
@@ -509,6 +526,9 @@ type, private :: field_def  !{
   type (field_def), pointer                           :: next => NULL()
   type (field_def), pointer                           :: prev => NULL()
 end type field_def  !}
+
+!> @addtogroup field_manager_mod
+!> @{
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Private types

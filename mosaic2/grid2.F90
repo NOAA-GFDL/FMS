@@ -23,8 +23,6 @@
 !> @file
 !> @brief File for @ref grid2_mod
 
-!> @addtogroup grid2_mod
-!> @{
 module grid2_mod
 
 use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE
@@ -61,6 +59,7 @@ public :: grid_end
 ! ==== end of public interfaces ==============================================
 
 !> Gets the size of the grid for one or all tiles 
+!> @ingroup grid2_mod
 interface get_grid_size
    module procedure get_grid_size_for_all_tiles
    module procedure get_grid_size_for_one_tile
@@ -68,6 +67,7 @@ end interface
 
 !> Gets arrays of global grid cell boundaries for given model component and
 !! mosaic tile number 
+!> @ingroup grid2_mod
 interface get_grid_cell_vertices
    module procedure get_grid_cell_vertices_1D
    module procedure get_grid_cell_vertices_2D
@@ -75,6 +75,7 @@ interface get_grid_cell_vertices
 end interface
 
 !> Gets grid cell centers
+!> @ingroup grid2_mod
 interface get_grid_cell_centers
    module procedure get_grid_cell_centers_1D
    module procedure get_grid_cell_centers_2D
@@ -82,17 +83,21 @@ interface get_grid_cell_centers
 end interface
 
 !> Finds area of a grid cell
+!> @ingroup grid2_mod
 interface get_grid_cell_area
    module procedure get_grid_cell_area_SG
    module procedure get_grid_cell_area_UG
 end interface get_grid_cell_area
 
 !> Gets the area of a given component per grid cell 
+!> @ingroup grid2_mod
 interface get_grid_comp_area
    module procedure get_grid_comp_area_SG
    module procedure get_grid_comp_area_UG
 end interface get_grid_comp_area
 
+!> @addtogroup grid2_mod
+!> @{
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
      module_name = 'grid2_mod'

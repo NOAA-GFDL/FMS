@@ -25,8 +25,6 @@
 !> @file
 !> @brief File for @ref fms_netcdf_unstructured_domain_io_mod
 
-!> @addtogroup fms_netcdf_unstructured_domain_io_mod
-!> @{
 module fms_netcdf_unstructured_domain_io_mod
 use,intrinsic :: iso_fortran_env
 use netcdf
@@ -36,14 +34,15 @@ use netcdf_io_mod
 implicit none
 private
 
-
 !> @brief netcdf unstructured domain file type.
+!> @ingroup fms_netcdf_unstructured_domain_io_mod
 type, public, extends(FmsNetcdfFile_t) :: FmsNetcdfUnstructuredDomainFile_t
   type(domainug) :: domain !< Unstructured domain.
   character(len=256) :: non_mangled_path !< Non-domain-mangled path.
 endtype FmsNetcdfUnstructuredDomainFile_t
 
-
+!> @addtogroup fms_netcdf_unstructured_domain_io_mod
+!> @{
 public :: open_unstructured_domain_file
 public :: close_unstructured_domain_file
 public :: register_unstructured_dimension
@@ -70,7 +69,6 @@ public :: unstructured_write_restart
 
 
 contains
-
 
 !> @brief Open a netcdf file that is associated with an unstructured domain.
 !! @return Flag telling if the open completed successfully.

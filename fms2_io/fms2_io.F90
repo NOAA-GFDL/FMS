@@ -104,6 +104,7 @@ public :: set_filename_appendix
 public :: get_instance_filename
 public :: nullify_filename_appendix
 public :: string2
+!> @}
 
 !> @brief Opens a given netcdf or domain file.
 !!
@@ -118,6 +119,7 @@ public :: string2
 !!
 !! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or
 !! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
+!> @ingroup fms2_io_mod
 interface open_file
   module procedure netcdf_file_open_wrap
   module procedure open_domain_file
@@ -141,10 +143,7 @@ end interface open_file
 !! Opens a virtual domain file through @ref fmsnetcdfdomainfile_t or
 !! - @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
 !!
-!! <br>Contains the following routines:
-!! - @ref create_diskless_netcdf_file_wrap
-!! - @ref create_diskless_domain_file
-!! - @ref create_diskless_unstructured_domain_file
+!> @ingroup fms2_io_mod
 interface open_virtual_file
   module procedure create_diskless_netcdf_file_wrap
   module procedure create_diskless_domain_file
@@ -160,6 +159,7 @@ end interface open_virtual_file
 !!
 !! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file
 !!
+!> @ingroup fms2_io_mod
 interface close_file
   module procedure netcdf_file_close_wrap
   module procedure close_domain_file
@@ -179,6 +179,7 @@ end interface close_file
 !!
 !! Adds a dimension named "lon" with length n to a given netcdf file.<br>
 !!
+!> @ingroup fms2_io_mod
 interface register_axis
   module procedure netcdf_add_dimension
   module procedure register_compressed_dimension
@@ -196,6 +197,7 @@ end interface register_axis
 !! The size of dimension name list provided is the amount of ranks for the created
 !! field, scalar if list not provided.
 !!
+!> @ingroup fms2_io_mod
 interface register_field
   module procedure netcdf_add_variable_wrap
   module procedure register_domain_variable
@@ -210,6 +212,7 @@ end interface register_field
 !! Creates a restart variable and sets it to the values from data_ptr, corresponding to
 !! the list of dimension names. Rank of data_ptr must equal the amount of corresponding dimensions.
 !!
+!> @ingroup fms2_io_mod
 interface register_restart_field
   module procedure netcdf_add_restart_variable_0d_wrap
   module procedure netcdf_add_restart_variable_1d_wrap
@@ -240,6 +243,7 @@ end interface register_restart_field
 !!
 !! Write the value(s) in data to the field named "lon"
 !!
+!> @ingroup fms2_io_mod
 interface write_data
   module procedure compressed_write_0d_wrap
   module procedure compressed_write_1d_wrap
@@ -269,6 +273,7 @@ end interface write_data
 !!
 !! Read the values for the field "lat" from the file and write them onto data <br>
 !!
+!> @ingroup fms2_io_mod
 interface read_data
   module procedure compressed_read_0d
   module procedure compressed_read_1d
@@ -297,6 +302,7 @@ end interface read_data
 !!
 !! Writes previously registered restart fields to the given restart file
 !!
+!> @ingroup fms2_io_mod
 interface write_restart
   module procedure netcdf_save_restart_wrap
   module procedure save_domain_restart
@@ -311,6 +317,7 @@ end interface write_restart
 !! Creates a new restart file, with the provided timestamp and filename, out of the registered
 !! restart fields in the given restart file.
 !!
+!> @ingroup fms2_io_mod
 interface write_new_restart
   module procedure netcdf_save_restart_wrap2
   module procedure save_domain_restart_wrap
@@ -322,16 +329,21 @@ end interface write_new_restart
 !!              call read_restart(fileobj)
 !! Reads registered restart variables from fileobj
 !!
+!> @ingroup fms2_io_mod
 interface read_restart
   module procedure netcdf_restore_state
   module procedure restore_domain_state
 end interface read_restart
 
 !> @brief Read registered restarts from a new file
+!> @ingroup fms2_io_mod
 interface read_new_restart
   module procedure netcdf_restore_state_wrap
   module procedure restore_domain_state_wrap
 end interface read_new_restart
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
 

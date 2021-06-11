@@ -36,8 +36,6 @@
 !> @file
 !> @brief File for @ref horiz_interp_conserve_mod
 
-!> @addtogroup
-!> @{
 module horiz_interp_conserve_mod
 
 #include <fms_platform.h>
@@ -56,53 +54,51 @@ module horiz_interp_conserve_mod
   ! public interface
 
 
-  ! <INTERFACE NAME="horiz_interp_conserve_new">
-  !   <OVERVIEW>
-  !      Allocates space and initializes a derived-type variable
-  !      that contains pre-computed interpolation indices and weights.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !      Allocates space and initializes a derived-type variable
-  !      that contains pre-computed interpolation indices and weights
-  !      for improved performance of multiple interpolations between
-  !      the same grids.
-
-  !   </DESCRIPTION>
-  !   <IN NAME="lon_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid.
-  !   </IN>
-  !   <IN NAME="lat_in" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians">
-  !      Latitude (in radians) for source data grid.
-  !   </IN>
-  !   <IN NAME="lon_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for destination data grid.
-  !   </IN>
-  !   <IN NAME="lat_out" TYPE="real" DIM="dimension(:), dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for destination data grid.
-  !   </IN>
-  !   <IN NAME="verbose" TYPE="integer, optional" >
-  !      flag for the amount of print output.
-  !   </IN>
-  !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
-  !      Input mask.  must be the size (size(lon_in)-1, size(lon. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
-  !      that should not be used or have missing data.
-  !   </IN>
-  !   <OUT NAME="mask_out" TYPE="real, dimension(:,:),optional">
-  !      Output mask that specifies whether data was computed.
-  !   </OUT>
-  !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
-  !      A derived-type variable containing indices and weights used for subsequent
-  !      interpolations. To reinitialize this variable for a different grid-to-grid
-  !      interpolation you must first use the "horiz_interp_del" interface.
-  !   </INOUT>
+  !> @brief Allocates space and initializes a derived-type variable
+  !! that contains pre-computed interpolation indices and weights.
+  !!
+  !> Allocates space and initializes a derived-type variable
+  !! that contains pre-computed interpolation indices and weights
+  !! for improved performance of multiple interpolations between
+  !! the same grids.
+  !! @param lon_in
+  !!      Longitude (in radians) for source data grid.
+  !!
+  !! @param lat_in
+  !!      Latitude (in radians) for source data grid.
+  !!
+  !! @param lon_out
+  !!      Longitude (in radians) for destination data grid.
+  !!
+  !! @param lat_out
+  !!      Latitude (in radians) for destination data grid.
+  !!
+  !! @param verbose
+  !!      flag for the amount of print output.
+  !!
+  !! @param mask_in
+  !!      Input mask.  must be the size (size(lon_in)-1, size(lon. The real value of
+  !!      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
+  !!      that should not be used or have missing data.
+  !!
+  !! @param mask_out
+  !!      Output mask that specifies whether data was computed.
+  !!
+  !! @param Interp
+  !!      A derived-type variable containing indices and weights used for subsequent
+  !!      interpolations. To reinitialize this variable for a different grid-to-grid
+  !!      interpolation you must first use the "horiz_interp_del" interface.
+  !!
+  !> @ingroup horiz_interp_conserve_mod
   interface horiz_interp_conserve_new
      module procedure horiz_interp_conserve_new_1dx1d
      module procedure horiz_interp_conserve_new_1dx2d
      module procedure horiz_interp_conserve_new_2dx1d
      module procedure horiz_interp_conserve_new_2dx2d
   end interface
-  ! </INTERFACE>
+
+  !> @addtogroup horiz_interp_conserve_mod
+  !> @{
   public :: horiz_interp_conserve_init
   public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
 
@@ -122,9 +118,9 @@ contains
   !     writes version number to logfile.out
   !  </OVERVIEW>
   !  <DESCRIPTION>
-  !     writes version number to logfile.out
   !  </DESCRIPTION>
 
+  !> Writes version number to logfile.
   subroutine horiz_interp_conserve_init
 
     if(module_is_initialized) return

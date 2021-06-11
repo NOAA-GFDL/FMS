@@ -55,6 +55,8 @@ module fms_affinity_mod
     end function fms_affinity_get
 
     !> Retrieves this groups CPU set and it's size.
+    !!
+    !> Defined in @ref affinity.c.
     integer(KIND=c_int) function get_cpuset(fsz, output, pe, debug) bind(c, name="get_cpuset")
       import c_int, c_bool
       integer(KIND=c_int), value, intent(in) :: fsz, pe
@@ -63,6 +65,8 @@ module fms_affinity_mod
     end function get_cpuset
 
     !> Set CPU afinity to a given core.
+    !!
+    !> Defined in @ref affinity.c.
     integer(KIND=c_int) function set_cpu_affinity(cpu) bind(c, name="set_cpu_affinity")
       import c_int
       integer(KIND=c_int), value, intent(in) :: cpu
