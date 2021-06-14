@@ -19,7 +19,8 @@
 !
 !> @defgroup amip_interp_mod amip_interp_mod
 !> @ingroup amip_interp
-!> @brief Provides observed SST and ice mask data sets that have been interpolated onto your model's grid.
+!> @brief Provides observed sea surface temperature and ice mask data sets that have been
+!! interpolated onto your model's grid.
 !!
 !> @author Bruce Wyman
 !!
@@ -168,7 +169,7 @@ end interface
 
 
 !> Initializes data needed for the horizontal
-!! interpolation between the sst grid and model grid.
+!! interpolation between the sst data and model grid.
 !!
 !> The returned variable of type amip_interp_type is needed when
 !! calling get_amip_sst and get_amip_ice.
@@ -302,7 +303,7 @@ end type
  logical :: interp_oi_sst = .false. !< changed to false for regular runs
  logical :: use_mpp_io = .false. !< Set to .true. to use mpp_io, otherwise fms2io is used
 
-!> @brief Namelist documentation for @ref amip_interp_mod
+!> @page amip_interp_nml @ref amip_interp_mod Namelist
 !!
 !> @var character(len=24) data_set
 !! Name/type of SST data that will be used.
@@ -369,13 +370,13 @@ end type
 contains
 
 ! modified by JHC
-!> Retrieve sst data and amip interpolated data
+!> Retrieve sea surface temperature data and interpolated grid
 subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
 
-   type (time_type),         intent(in)    :: Time
-   type (amip_interp_type),  intent(inout) :: Interp
-   real,                     intent(out)   ::  sst(:,:)
-   character(len=*), optional, intent(out) :: err_msg
+   type (time_type),         intent(in)    :: Time !< Time to interpolate
+   type (amip_interp_type),  intent(inout) :: Interp !< Holds data for interpolation
+   real,                     intent(out)   ::  sst(:,:) !< Sea surface temperature data 
+   character(len=*), optional, intent(out) :: err_msg !< Holds error message string if present
 
    real, dimension(mobs,nobs) :: sice
 
@@ -680,21 +681,13 @@ endif
 
  end subroutine get_amip_sst
 
-
-!#######################################################################
-! <SUBROUTINE NAME="get_amip_ice" INTERFACE="get_amip_ice">
-!   <IN NAME="Time"  TYPE="time_type"  > </IN>
-!   <OUT NAME="ice" TYPE="real" DIM="(:,:)"> </OUT>
-!   <INOUT NAME="Interp" TYPE="amip_interp_type"> </INOUT>
-! </SUBROUTINE>
-
 !> AMIP interpolation for ice
 subroutine get_amip_ice (Time, Interp, ice, err_msg)
 
-   type (time_type),         intent(in)    :: Time
-   type (amip_interp_type),  intent(inout) :: Interp
-   real,                     intent(out)   :: ice(:,:)
-   character(len=*), optional, intent(out) :: err_msg
+   type (time_type),         intent(in)    :: Time !< Time to interpolate
+   type (amip_interp_type),  intent(inout) :: Interp !< Holds data for interpolation
+   real,                     intent(out)   :: ice(:,:) !< ice data
+   character(len=*), optional, intent(out) :: err_msg !< Holds error message string if present
 
     real, dimension(mobs,nobs) :: sice, temp
 
@@ -813,21 +806,9 @@ endif
 
  end subroutine get_amip_ice
 
-
-
 !#######################################################################
 
-! <FUNCTION NAME="amip_interp_new_1d" INTERFACE="amip_interp_new">
-
-!   <IN NAME="lon" TYPE="real" DIM="(:)"> </IN>
-!   <IN NAME="lat" TYPE="real" DIM="(:)"> </IN>
-!   <IN NAME="mask" TYPE="logical" DIM="(:,:)"> </IN>
-!   <IN NAME="use_climo" TYPE="logical" DEFAULT="use_climo = .false."> </IN>
-!   <IN NAME="use_annual" TYPE="logical" DEFAULT="use_annual = .false."> </IN>
-!   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative"></IN>
-!   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
-
- !> @return amip_interp_type Interp
+ !> @return A newly created @ref amip_interp_type
  function amip_interp_new_1d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
@@ -866,19 +847,8 @@ endif
     Interp%I_am_initialized = .true.
 
    end function amip_interp_new_1d
-! </FUNCTION>
 
-!#######################################################################
-! <FUNCTION NAME="amip_interp_new_2d" INTERFACE="amip_interp_new">
-!   <IN NAME="lon" TYPE="real" DIM="(:,:)"> </IN>
-!   <IN NAME="lat" TYPE="real" DIM="(:,:)"> </IN>
-!   <IN NAME="mask" TYPE="logical" DIM="(:,:)"> </IN>
-!   <IN NAME="use_climo" TYPE="logical" DEFAULT="use_climo = .false."> </IN>
-!   <IN NAME="use_annual" TYPE="logical" DEFAULT="use_annual = .false."> </IN>
-!   <IN NAME="interp_method" TYPE="character(len=*), optional" DEFAULT="interp_method = conservative "></IN>
-!   <OUT NAME="Interp" TYPE="amip_interp_type"> </OUT>
-
- !> @return amip_interp_type Interp
+ !> @return A newly created @ref amip_interp_type
  function amip_interp_new_2d ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
@@ -917,7 +887,6 @@ endif
    Interp%I_am_initialized = .true.
 
    end function amip_interp_new_2d
-! </FUNCTION>
 
 !#######################################################################
 
@@ -1083,9 +1052,6 @@ endif
      Interp%I_am_initialized = .false.
 
    end subroutine amip_interp_del
-!#######################################################################
-
-! </SUBROUTINE>
 
 !#######################################################################
 
@@ -1300,19 +1266,15 @@ endif
       nlon = mobs;  nlat = nobs
 
    end subroutine get_sst_grid_size
-! </SUBROUTINE>
 
 !#######################################################################
 
-! <SUBROUTINE NAME="get_sst_grid_boundary">
-
-
 !> @brief Returns the grid box boundaries of the observed data grid.
 !!
-!! ERROR MSG="have not called amip_interp_new" STATUS="FATAL"
+!! @throws FATAL, have not called amip_interp_new
 !!     Must call amip_interp_new before get_sst_grid_boundary.
 !!
-!! ERROR MSG="invalid argument dimensions" STATUS="FATAL"
+!! @throws FATAL, invalid argument dimensions
 !!     The size of the output argument arrays do not agree with
 !!     the size of the observed data. See the documentation for
 !!     interfaces get_sst_grid_size and get_sst_grid_boundary.
@@ -1539,7 +1501,7 @@ end function date_not_equals
 
 !#######################################################################
 
-!> #return logical answer
+!> @return logical answer
 function date_gt (Left, Right) result (answer)
 type (date_type), intent(in) :: Left, Right
 logical :: answer
