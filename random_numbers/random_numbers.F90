@@ -19,10 +19,11 @@
 !> @defgroup random_numbers_mod random_numbers_mod
 !> @ingroup random_numbers
 !> @brief Generic module to wrap random number generators.
+!!
 !> The module defines a type that identifies the particular stream of random
-!  numbers, and has procedures for initializing it and getting real numbers
-!  in the range 0 to 1.
-!  This version uses the Mersenne Twister to generate random numbers on [0, 1].
+!!  numbers, and has procedures for initializing it and getting real numbers
+!!  in the range 0 to 1.
+!!  This version uses the Mersenne Twister to generate random numbers on [0, 1].
 
 !> @file
 !> @brief File for @ref random_numbers_mod
@@ -34,16 +35,19 @@ module random_numbers_mod
   use time_manager_mod, only: time_type, get_date
   implicit none
   private
+
   !> @ingroup random_numbers_mod
   type randomNumberStream
     type(randomNumberSequence) :: theNumbers
   end type randomNumberStream
 
+  !> Returns scalar, 1 or 2 D random real numbers
   !> @ingroup random_numbers_mod
   interface getRandomNumbers
     module procedure getRandomNumber_Scalar, getRandomNumber_1D, getRandomNumber_2D
   end interface getRandomNumbers
 
+  !> Initializes stream for generating random numbers.
   !> @ingroup random_numbers_mod
   interface initializeRandomNumberStream
     module procedure initializeRandomNumberStream_S, initializeRandomNumberStream_V

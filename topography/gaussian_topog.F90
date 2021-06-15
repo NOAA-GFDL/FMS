@@ -99,33 +99,6 @@ contains
 
 !#######################################################################
 
-! <SUBROUTINE NAME="gaussian_topog_init">
-
-!   <OVERVIEW>
-!     Returns a surface height field that consists
-!     of the sum of one or more Gaussian-shaped mountains.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns a land surface topography that consists of a "set" of
-!     simple Gaussian-shaped mountains.  The height, position,
-!     width, and elongation of the mountains can be controlled
-!     by variables in namelist <LINK SRC="#NAMELIST">&#38;gaussian_topog_nml</LINK>.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     <B>call gaussian_topog_init</B> ( lon, lat, zsurf )
-!   </TEMPLATE>
-
-!   <IN NAME="lon" UNITS="radians" TYPE="real" DIM="(:)">
-!     The mean grid box longitude in radians.
-!   </IN>
-!   <IN NAME="lat" UNITS="radians" TYPE="real" DIM="(:)">
-!     The mean grid box latitude in radians.
-!   </IN>
-!   <OUT NAME="zsurf" UNITS="meter" TYPE="real" DIM="(:,:)">
-!     The surface height (in meters).
-!     The size of this field must be size(lon) by size(lat).
-!   </OUT>
-
 !> Returns a surface height field that consists
 !! of the sum of one or more Gaussian-shaped mountains.
 !!
@@ -135,8 +108,9 @@ contains
 !! by variables in the namelist.
 subroutine gaussian_topog_init ( lon, lat, zsurf )
 
-real, intent(in)  :: lon(:), lat(:)
-real, intent(out) :: zsurf(:,:)
+real, intent(in)  :: lon(:) !< The mean grid box longitude in radians
+real, intent(in)  :: lat(:) !< The mean grid box latitude in radians
+real, intent(out) :: zsurf(:,:) !< The surface height (meters). Size must be size(lon) by size(lat)
 
 integer :: n
 
@@ -161,11 +135,8 @@ integer :: n
  module_is_initialized = .TRUE.
 
 end subroutine gaussian_topog_init
-! </SUBROUTINE>
 
 !#######################################################################
-
-! <FUNCTION NAME="get_gaussian_topog">
 
 !> @brief Returns a simple surface height field that consists of a single
 !! Gaussian-shaped mountain.
@@ -239,7 +210,6 @@ real    :: tpi, dtr, dx, dy, xx, yy
     enddo
 
 end function get_gaussian_topog
-! </FUNCTION>
 
 !#######################################################################
 

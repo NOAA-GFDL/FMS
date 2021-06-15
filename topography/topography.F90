@@ -268,51 +268,24 @@ end interface
 
 !#######################################################################
 
-! <FUNCTION NAME="get_topog_mean">
-
-!   <OVERVIEW>
-!     Returns a "realistic" mean surface height field.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns realistic mountains on a latitude-longtude grid.
-!     The returned field is the mean topography for the given grid boxes.
-!     Computed using a conserving area-weighted interpolation.
-!     The current input data set is the 1/6 degree Navy mean topography.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     flag = <B>get_topog_mean</B> ( blon, blat, zmean )
-!   </TEMPLATE>
-
-!   <IN NAME="blon" TYPE="real" DIM="(:)">
-!     The longitude (in radians) at grid box boundaries.
-!   </IN>
-!   <IN NAME="blat" TYPE="real" DIM="(:)">
-!     The latitude (in radians) at grid box boundaries.
-!   </IN>
-!   <OUT NAME="zmean" UNIT=" meter" TYPE="real" DIM="(:,:)">
-!     The mean surface height (meters).
-!     The size of this field must be size(blon)-1 by size(blat)-1.
-!   </OUT>
-!   <OUT NAME="get_topog_mean" TYPE="logical">
-!     A logical value of TRUE is returned if the surface height field
-!     was successfully created. A value of FALSE may be returned if the
-!     input topography data set was not readable.
-!   </OUT>
-
-!   <ERROR MSG="shape(zmean) is not equal to (/size(blon)-1,size(blat)-1/))" STATUS="FATAL">
-!     Check the input grid size and output field size.
-!   </ERROR>
-
  !> @brief Returns a "realistic" mean surface height field.
  !!
- !! Returns realistic mountains on a latitude-longtude grid.
+ !> Returns realistic mountains on a latitude-longtude grid.
  !! The returned field is the mean topography for the given grid boxes.
  !! Computed using a conserving area-weighted interpolation.
  !! The current input data set is the 1/6 degree Navy mean topography.
+ !!
+ !! @returns A logical value of true is returned if the surface height field was successfully
+ !! created. A value of false may be returned if the input topography data set was not readable.
+ !!
+ !! @throws FATAL, shape(zmean) is not equal to (/size(blon)-1,size(blat)-1/)
+ !! Check the input grid size and output field size.
  function get_topog_mean_1d(blon, blat, zmean)
 
-   real, intent(in),  dimension(:)   :: blon, blat
-   real, intent(out), dimension(:,:) :: zmean
+   real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
+   real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
+   real, intent(out), dimension(:,:) :: zmean !< Mean surface height(meters). Size must be 
+                                              !! size(blon)-1 by size(blat)-1
    logical :: get_topog_mean_1d
 
 !-----------------------------------------------------------------------
@@ -360,39 +333,7 @@ end interface
 
  end function get_topog_mean_2d
 
-! </FUNCTION>
 !#######################################################################
-
-! <FUNCTION NAME="get_topog_stdev">
-
-!   <OVERVIEW>
-!     Returns a standard deviation of higher resolution topography with
-!     the given model grid boxes.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns the standard deviation of the "finer" input topography data set,
-!     currently the Navy 1/6 degree mean topography data, within the
-!     boundaries of the given input grid.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     flag = <B>get_topog_stdev</B> ( blon, blat, stdev )
-!   </TEMPLATE>
-!   <IN NAME="blon" TYPE="real" DIM="(:)">
-!     The longitude (in radians) at grid box boundaries.
-!   </IN>
-!   <IN NAME="blat" TYPE="real" DIM="(:)">
-!     The latitude (in radians) at grid box boundaries.
-!   </IN>
-!   <OUT NAME="stdev" UNITS="meter" TYPE="real" DIM="(:,:)">
-!     The standard deviation of surface height (in meters) within
-!     given input model grid boxes.
-!     The size of this field must be size(blon)-1 by size(blat)-1.
-!   </OUT>
-!   <OUT NAME="get_topog_stdev" TYPE="logical">
-!     A logical value of TRUE is returned if the output field was
-!     successfully created. A value of FALSE may be returned if the
-!     input topography data set was not readable.
-!   </OUT>
 
  !> @brief Returns a standard deviation of higher resolution topography with
  !! the given model grid boxes.
@@ -400,10 +341,16 @@ end interface
  !> Returns the standard deviation of the "finer" input topography data set,
  !! currently the Navy 1/6 degree mean topography data, within the
  !! boundaries of the given input grid.
+ !!
+ !! @returns A logical value of true if the output field was successfully created and false
+ !! if the input topography data set was not readable.
  function get_topog_stdev_1d (blon, blat, stdev)
 
-   real, intent(in),  dimension(:)   :: blon, blat
-   real, intent(out), dimension(:,:) :: stdev
+   real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
+   real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
+   real, intent(out), dimension(:,:) :: stdev !< The standard deviation of surface height (in
+                                     !! meters) within given input model grid boxes. Size must be
+                                     !! size(blon)-1 by size(blat)-1
    logical :: get_topog_stdev_1d
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -450,43 +397,17 @@ end interface
 
  end function get_topog_stdev_2d
 
-! </FUNCTION>
 !#######################################################################
 
-! <FUNCTION NAME="get_ocean_frac">
-
-!   <OVERVIEW>
-!      Returns fractional area covered by ocean in a grid box.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns fractional area covered by ocean in the given model grid boxes.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     flag = <B>get_ocean_frac</B> ( blon, blat, ocean_frac )
-!   </TEMPLATE>
-
-!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
-!     The longitude (in radians) at grid box boundaries.
-!   </IN>
-!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
-!     The latitude (in radians) at grid box boundaries.
-!   </IN>
-!   <OUT NAME="ocean_frac" TYPE="real" DIM="(:,:)">
-!     The fractional amount (0 to 1) of ocean in a grid box.
-!     The size of this field must be size(blon)-1 by size(blat)-1.
-!   </OUT>
-!   <OUT NAME="get_ocean_frac" TYPE="logical">
-!     A logical value of TRUE is returned if the output field
-!     was successfully created. A value of FALSE may be returned
-!     if the Navy 1/6 degree percent water data set was not readable.
-!   </OUT>
-
  !> @brief Returns fractional area covered by ocean in a grid box.
- !> @returns ocean_frac The fractional area covered by ocean in the given model grid boxes.
+ !> @returns A logical value of true if the output field was successfully created. A value of false
+ !! may be returned if the Navy 1/6 degree percent water data set was not readable. 
  function get_ocean_frac_1d (blon, blat, ocean_frac)
 
- real, intent(in),  dimension(:)   :: blon, blat
- real, intent(out), dimension(:,:) :: ocean_frac
+ real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
+ real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
+ real, intent(out), dimension(:,:) :: ocean_frac !< The fractional amount (0-1) of ocean in a grid
+                                     !! box. The size must be size(blon)-1 by size(blat)-1
  logical :: get_ocean_frac_1d
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
@@ -538,42 +459,17 @@ end interface
 
  end function get_ocean_frac_2d
 
-! </FUNCTION>
 !#######################################################################
-! <FUNCTION NAME="get_ocean_mask">
-
-!   <OVERVIEW>
-!     Returns a land-ocean mask in a grid box.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns a land-ocean mask in the given model grid boxes.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     flag = <B>get_ocean_mask</B> ( blon, blat, ocean_mask )
-!   </TEMPLATE>
-
-!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
-!     The longitude (in radians) at grid box boundaries.
-!   </IN>
-!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
-!     The latitude (in radians) at grid box boundaries.
-!   </IN>
-!   <OUT NAME="ocean_frac" TYPE="real" DIM="(:,:)">
-!     The fractional amount (0 to 1) of ocean in a grid box.
-!     The size of this field must be size(blon)-1 by size(blat)-1.
-!   </OUT>
-!   <OUT NAME="get_ocean_mask" TYPE="logical">
-!     A logical value of TRUE is returned if the output field
-!     was successfully created. A value of FALSE may be returned
-!     if the Navy 1/6 degree percent water data set was not readable.
-!   </OUT>
 
  !> @brief Returns a land-ocean mask in a grid box.
- !> @return ocean_mask A land-ocean mask in the given model grid boxes.
+ !> @returns A logical value of true if the output field was successfully created. A value of false
+ !! may be returned if the Navy 1/6 degree percent water data set was not readable. 
  function get_ocean_mask_1d (blon, blat, ocean_mask)
 
- real   , intent(in),  dimension(:)   :: blon, blat
- logical, intent(out), dimension(:,:) :: ocean_mask
+ real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
+ real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
+ logical, intent(out), dimension(:,:) :: ocean_mask !< Mask for ocean in a grid box.
+                                                 !! The size must be size(blon)-1 by size(blat)-1
  logical :: get_ocean_mask_1d
  real, dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
 !-----------------------------------------------------------------------
@@ -619,40 +515,12 @@ end interface
 
  end function get_ocean_mask_2d
 
-! </FUNCTION>
-!#######################################################################
-! <FUNCTION NAME="get_water_frac">
-
-!   <OVERVIEW>
-!     Returns fractional area covered by water.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns the percent of water in a grid box.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     flag = <B>get_water_frac</B> ( blon, blat, water_frac )
-!   </TEMPLATE>
-
-!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
-!     The longitude (in radians) at grid box boundaries.
-!   </IN>
-!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
-!     The latitude (in radians) at grid box boundaries.
-!   </IN>
-!   <OUT NAME="water_frac" TYPE="real" DIM="(:,:)">
-!     The fractional amount (0 to 1) of water in a grid box.
-!     The size of this field must be size(blon)-1 by size(blat)-1.
-!   </OUT>
-!   <OUT NAME="get_water_frac" TYPE="logical">
-!     A logical value of TRUE is returned if the output field
-!     was successfully created. A value of FALSE may be returned
-!     if the Navy 1/6 degree percent water data set was not readable.
-!   </OUT>
-!   <ERROR MSG="shape(water_frac) is not equal to (/size(blon)-1,size(blat)-1/))" STATUS="FATAL">
-!      Check the input grid size and output field size.
-!   </ERROR>
-
  !> @brief Returns the percent of water in a grid box.
+ !> @returns A logical value of true if the output field was successfully created. A value of false
+ !! may be returned if the Navy 1/6 degree percent water data set was not readable. 
+ !!
+ !! @throws FATAL, shape(water_frac) is not equal to (/size(blon)-1,size(blat)-1/)
+ !! Check the input grid size and output field size.
  function get_water_frac_1d (blon, blat, water_frac)
  real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
  real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries. 
@@ -709,37 +577,12 @@ end interface
 
  end function get_water_frac_2d
 
-! </FUNCTION>
 !#######################################################################
-! <FUNCTION NAME="get_water_mask">
-
-!   <OVERVIEW>
-!     Returns a land-water mask in a grid box.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns a land-water mask in the given model grid boxes.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     flag = <B>get_water_mask</B> ( blon, blat, water_mask )
-!   </TEMPLATE>
-
-!   <IN NAME="blon" UNITS="radians" TYPE="real" DIM="(:)">
-!     The longitude (in radians) at grid box boundaries.
-!   </IN>
-!   <IN NAME="blat" UNITS="radians" TYPE="real" DIM="(:)">
-!     The latitude (in radians) at grid box boundaries.
-!   </IN>
-!   <OUT NAME="water_mask" TYPE="real" DIM="(:,:)">
-!     A binary mask for water (true) or land (false).
-!     The size of this field must be size(blon)-1 by size(blat)-1.
-!   </OUT>
-!   <OUT NAME="get_water_mask" TYPE="logical">
-!     A logical value of TRUE is returned if the output field
-!     was successfully created. A value of FALSE may be returned
-!     if the Navy 1/6 degree percent water data set was not readable.
-!   </OUT>
 
  !> @brief Returns a land-water mask in the given model grid boxes.
+ !> @return A logical value of TRUE is returned if the output field
+ !! was successfully created. A value of FALSE may be returned
+ !! if the Navy 1/6 degree percent water data set was not readable.
  function get_water_mask_1d (blon, blat, water_mask)
 
  real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
@@ -819,8 +662,6 @@ end interface
 !-----------------------------------------------------------------------
 
  end function get_water_mask_2d
-
-! </FUNCTION>
 
 !#######################################################################
 !##################   private interfaces below here   ##################

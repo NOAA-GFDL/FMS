@@ -261,15 +261,16 @@ contains
   ! -------------------------------------------------------------
   ! Public functions
   ! --------------------
+   !> Generate a random integer on the interval [0,0xffffffff]
+   !!
+   !> Equivalent to genrand_int32 in the C code.
+   !! Fortran doesn't have a type that's unsigned like C does,
+   !! so this is integers in the range -2**31 - 2**31
+   !! All functions for getting random numbers call this one,
+   !! then manipulate the result
   function getRandomInt(twister)
     type(randomNumberSequence), intent(inout) :: twister
     integer                      :: getRandomInt
-    ! Generate a random integer on the interval [0,0xffffffff]
-    !   Equivalent to genrand_int32 in the C code.
-    !   Fortran doesn't have a type that's unsigned like C does,
-    !   so this is integers in the range -2**31 - 2**31
-    ! All functions for getting random numbers call this one,
-    !   then manipulate the result
 
     if(twister%currentElement >= blockSize) call nextState(twister)
 
@@ -278,12 +279,12 @@ contains
 
   end function getRandomInt
   ! --------------------
+  !> Generate a random integer on the interval [0,0x7fffffff]
+  !! or [0,2**31].
+  !! Equivalent to genrand_int31 in the C code.
   function getRandomPositiveInt(twister)
     type(randomNumberSequence), intent(inout) :: twister
     integer                      :: getRandomPositiveInt
-    ! Generate a random integer on the interval [0,0x7fffffff]
-    !   or [0,2**31]
-    !   Equivalent to genrand_int31 in the C code.
 
     ! Local integers
     integer :: localInt
@@ -293,12 +294,12 @@ contains
 
   end function getRandomPositiveInt
   ! --------------------
+  !> Generate a random number on [0,1]
+  !! Equivalent to genrand_real1 in the C code.
+  !! The result is stored as double precision but has 32 bit resolution
   function getRandomReal(twister)
     type(randomNumberSequence), intent(inout) :: twister
     double precision             :: getRandomReal
-    ! Generate a random number on [0,1]
-    !   Equivalent to genrand_real1 in the C code
-    !   The result is stored as double precision but has 32 bit resolution
 
     integer :: localInt
 

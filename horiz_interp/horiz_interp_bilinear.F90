@@ -19,6 +19,7 @@
 !> @defgroup horiz_interp_bilinear_mod horiz_interp_bilinear_mod
 !> @ingroup horiz_interp
 !> @brief Performs spatial interpolation between grids using bilinear interpolation
+!!
 !> @author Zhi Liang <Zhi.Liang@noaa.gov>
 !> This module can interpolate data from regular rectangular grid
 !! to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
@@ -30,10 +31,6 @@
 !> @brief File for @ref horiz_interp_bilinear_mod
 
 module horiz_interp_bilinear_mod
-
-  ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
-
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
   use fms_mod,               only: write_version_number
@@ -67,15 +64,7 @@ module horiz_interp_bilinear_mod
 
 contains
 
-  !#######################################################################
-  !  <SUBROUTINE NAME="horiz_interp_bilinear_init">
-  !  <OVERVIEW>
-  !     writes version number to logfile.out
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !  </DESCRIPTION>
-
-  !> Writes version number to logfile.
+  !> Initialize this module and writes version number to logfile.
   subroutine horiz_interp_bilinear_init
 
     if(module_is_initialized) return
@@ -84,7 +73,6 @@ contains
 
   end subroutine horiz_interp_bilinear_init
 
-  !  </SUBROUTINE>
 
   !########################################################################
 

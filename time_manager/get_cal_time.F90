@@ -43,9 +43,9 @@ private
 
 public :: get_cal_time
 
-logical :: module_is_initialized=.false. ! This module is initialized on
-                                         ! the first call to get_cal_time
-                                         ! because there is no constructor.
+logical :: module_is_initialized=.false. !> This module is initialized on
+                                         !! the first call to get_cal_time
+                                         !! because there is no constructor.
 ! <NAMELIST NAME="get_cal_time_nml">
 ! <DATA NAME="allow_calendar_conversion" TYPE="logical"  DEFAULT=".true.">
 !   This sets the default value of the optional argument named "permit_calendar_conversion" of get_cal_time.
@@ -351,7 +351,6 @@ else
 endif
 
 end function get_cal_time
-! </FUNCTION>
 !------------------------------------------------------------------------
 function cut0(string)
 character(len=256) :: cut0

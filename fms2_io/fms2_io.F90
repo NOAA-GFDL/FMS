@@ -127,7 +127,6 @@ interface open_file
 end interface open_file
 
 
-!> @page open_virtual_file open_virtual_file Interface
 !> @brief Creates a diskless netcdf or domain file
 !!
 !> @return true if successful, false otherwise
@@ -347,7 +346,7 @@ end interface read_new_restart
 
 logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
 
-!< Namelist variables
+! Namelist variables
 integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
 character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf file format, acceptable values

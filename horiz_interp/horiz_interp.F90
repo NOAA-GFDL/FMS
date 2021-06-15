@@ -19,8 +19,10 @@
 !> @defgroup horiz_interp_mod horiz_interp_mod
 !> @ingroup horiz_interp
 !> @brief Performs spatial interpolation between grids.
+!!
 !> @author Zhi Liang, Bruce Wyman
-!> This module can interpolate data from any logically rectangular grid
+!!
+!! This module can interpolate data from any logically rectangular grid
 !! to any logically rectangular grid. Four interpolation schems are used here:
 !! conservative, bilinear, bicubic and inverse of square distance weighted.
 !! The four interpolation schemes are implemented seperately in
@@ -217,15 +219,8 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 contains
 
 !#######################################################################
-!  <SUBROUTINE NAME="horiz_interp_init">
-!  <OVERVIEW>
-!     writes version number to logfile.out
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!     writes version number to logfile.out
-!  </DESCRIPTION>
 
-  !> writes version number to logfile.out
+  !> Initialize module and writes version number to logfile.out
   subroutine horiz_interp_init
   integer :: unit, ierr, io
 
@@ -254,8 +249,6 @@ contains
 
   end subroutine horiz_interp_init
 
-!  </SUBROUTINE>
-
 !#######################################################################
 !  <SUBROUTINE NAME="horiz_interp_new_1d" INTERFACE="horiz_interp_new">
 !  <IN NAME="lon_in" TYPE="real" DIM="(:),(:,:)" UNITS="radians"></IN>
@@ -268,6 +261,8 @@ contains
 !  <OUT NAME="Interp" TYPE="type(horiz_interp_type)"></OUT>
 
 !<PUBLICROUTINE INTERFACE="horiz_interp_new">
+
+  !> @brief Creates a 1D @ref horiz_interp_type with the given parameters
   subroutine horiz_interp_new_1d (Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                                   interp_method, num_nbrs, max_dist, src_modulo,     &
                                   grid_at_center, mask_in, mask_out)

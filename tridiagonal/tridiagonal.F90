@@ -18,7 +18,8 @@
 !***********************************************************************
 !> @defgroup tridiagonal_mod tridiagonal_mod
 !> @ingroup tridiagonal
-!> @brief Solves the tridiagonal system of equations.
+!> @brief Solves a tridiagonal system of equations.
+!!
 !> The following schematic represents the system of equations solved,
 !! where X is the solution.
 !! <PRE>
@@ -71,40 +72,13 @@ contains
 
 !--------------------------------------------------------------------------
 
-! <SUBROUTINE NAME="tri_invert">
-
-!   <OVERVIEW>
-!     Sets up and solves the tridiagonal system of equations.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Sets up and solves the tridiagonal system of equations.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call tri_invert ( x,d,a,b,c)
-!   </TEMPLATE>
-
-!   <IN NAME="d" TYPE="real" DIM="(:,:,:)">
-!     The right-hand side term, see the schematic above.
-!   </IN>
-!   <OUT NAME="x" TYPE="real" DIM="(:,:,:)">
-!     The solution to the tridiagonal system of equations.
-!   </OUT>
-!   <INOUT NAME="a,b,c" TYPE="real" DIM="(:,:,:)">
-!     The left-hand-side terms (matrix), see the schematic above.
-!             If A is not present, it is assumed that the matrix (A,B.C)
-!             has not been changed since the last call to tri_invert.
-!   </INOUT>
-
-!   <NOTE>
-!      For simplicity, A and C are assumed to be dimensioned the same size
-!      as B, D, and X, although any input values for A(N) and C(1) are ignored.
-!      There are no checks to make sure the sizes agree.
-!   </NOTE>
-!   <NOTE>
-!      The value of A(N) is modified on output, and B and C are unchanged.
-!   </NOTE>
-
 !> @brief Sets up and solves the tridiagonal system of equations
+!!
+!> For simplicity, A and C are assumed to be dimensioned the same size
+!! as B, D, and X, although any input values for A(N) and C(1) are ignored.
+!! There are no checks to make sure the sizes agree.
+!!
+!! The value of A(N) is modified on output, and B and C are unchanged.
 subroutine tri_invert(x,d,a,b,c)
 
 implicit none
@@ -155,25 +129,8 @@ end do
 
 return
 end subroutine tri_invert
-! </SUBROUTINE>
 
 !-----------------------------------------------------------------
-
-! <SUBROUTINE NAME="close_tridiagonal">
-
-!   <OVERVIEW>
-!     Releases memory used by the solver.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Releases memory used by the solver.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call close_tridiagonal
-!   </TEMPLATE>
-
-!   <NOTE>
-!     There are no arguments to this routine.
-!   </NOTE>
 
 !> @brief Releases memory used by the solver
 subroutine close_tridiagonal
@@ -187,11 +144,8 @@ deallocate(cc)
 
 return
 end subroutine close_tridiagonal
-! </SUBROUTINE>
 
 !----------------------------------------------------------------
-
-
 
 end module tridiagonal_mod
 

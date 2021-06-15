@@ -220,7 +220,7 @@ interface assignment(=);  module procedure time_assignment;  end interface
 !!
 !> Given some number of seconds and days, returns the
 !! corresponding time_type. set_time has two forms;
-!! one accepts integer input, the other a character string.
+!! one accepts integer input, the other a character string with the day and second counts.
 !! For the first form, there are no restrictions on the range of the inputs,
 !! except that the result must be positive time.
 !! e.g. days=-1, seconds=86401 is acceptable.
@@ -228,8 +228,9 @@ interface assignment(=);  module procedure time_assignment;  end interface
 !!
 !! <br>Example usage:
 !! @code{.F90}
-!! set_time(seconds, days, ticks, err_msg)
-!! set_time(time_string, err_msg, allow_rounding)
+!! type(time_type) :: time1, time2
+!! time1 = set_time(seconds, days, ticks, err_msg)
+!! time2 = set_time("100 43200", err_msg, allow_rounding)
 !! @endcode
 !> @ingroup time_manager_mod
 interface set_time
@@ -297,64 +298,9 @@ contains
 
 ! First define all operations on time intervals independent of calendar
 
-!=========================================================================
-! <FUNCTION NAME="set_time">
-
-!   <OVERVIEW>
-!     Given some number of seconds and days, returns the
-!     corresponding time_type.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Given some number of seconds and days, returns the
-!     corresponding time_type. set_time has two forms;
-!     one accepts integer input, the other a character string.
-!     For the first form, there are no restrictions on the range of the inputs,
-!     except that the result must be positive time.
-!     e.g. days=-1, seconds=86401 is acceptable.
-!     For the second form, days and seconds must both be positive.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     1. set_time(seconds, days, ticks, err_msg)
-!   </TEMPLATE>
-!   <TEMPLATE>
-!     2. set_time(time_string, err_msg, allow_rounding)
-!   </TEMPLATE>
-
-!   <IN NAME="seconds" UNITS="" TYPE="integer" DIM="(scalar)">
-!     A number of seconds.
-!   </IN>
-!   <IN NAME="days" UNITS="" TYPE="integer" DIM="(scalar)">
-!     A number of days.
-!   </IN>
-!   <IN NAME="ticks" UNITS="" TYPE="integer, optional" DIM="(scalar)">
-!     A number of ticks.
-!   </IN>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <IN NAME="time_string" TYPE="character">
-!     Contains days and seconds separated by a single blank.
-!     days must be integer, seconds may be integer or real.
-!     Examples: '100 43200'  '100 43200.50'
-!   </IN>
-!   <IN NAME="allow_rounding"   TYPE="logical, optional" DEFAULT=".true.">
-!     When .true., any fractions of a second will be rounded off to the nearest tick.
-!     When .false., it is a fatal error if the second fraction cannot be exactly
-!     represented by a number of ticks.
-!   </IN>
-!   <OUT NAME="set_time" UNITS="" TYPE="" DIM="" DEFAULT="">
-!     A time interval corresponding to this number of days and seconds.
-!   </OUT>
-
+!> Returns a time interval corresponding to this number of days, seconds, and ticks.
+!! days, seconds and ticks may be negative, but resulting time must be positive.
  function set_time_private(seconds, days, ticks, Time_out, err_msg)
-
-! Returns a time interval corresponding to this number of days, seconds, and ticks.
-! days, seconds and ticks may be negative, but resulting time must be positive.
 
 ! -- pjp --
 ! To understand why inputs may be negative,
@@ -402,12 +348,18 @@ contains
 
  end function set_time_private
 !---------------------------------------------------------------------------
-
+ !> @brief Returns a time_type set to the given amount of time via integer amounts.
  function set_time_i(seconds, days, ticks, err_msg)
  type(time_type)               :: set_time_i
- integer, intent(in)           :: seconds
- integer, intent(in), optional :: days, ticks
- character(len=*), intent(out), optional :: err_msg
+ integer, intent(in)           :: seconds !< A number of seconds
+ integer, intent(in), optional :: days !< A number of days
+ integer, intent(in), optional :: ticks !< A number of ticks
+ character(len=*), intent(out), optional :: err_msg !< When present, and when non-blank, a fatal
+                         !! error condition as been detected. The string itself is an error message.
+                         !! It is recommended that, when err_msg is present in the call
+                         !! to this routine, the next line of code should be something
+                         !! similar to this:
+                         !! if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
  character(len=128) :: err_msg_local
  integer            :: odays, oticks
 
@@ -424,12 +376,22 @@ contains
  end function set_time_i
 !---------------------------------------------------------------------------
 
+ !> @brief Returns a time_type set to the given amount of time via a string
  function set_time_c(string, err_msg, allow_rounding)
 
  type(time_type) :: set_time_c
- character(len=*), intent(in) :: string
- character(len=*), intent(out), optional :: err_msg
- logical, intent(in), optional :: allow_rounding
+ character(len=*), intent(in) :: string !< Contains days and seconds separated by a single blank.
+                                    !! days must be integer, seconds may be integer or real.
+                                    !! Examples: '100 43200'  '100 43200.50'
+ character(len=*), intent(out), optional :: err_msg !< When present, and when non-blank, a fatal
+                         !! error condition as been detected. The string itself is an error message.
+                         !! It is recommended that, when err_msg is present in the call
+                         !! to this routine, the next line of code should be something
+                         !! similar to this:
+                         !! if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
+ logical, intent(in), optional :: allow_rounding !< When .true., any fractions of a second will be
+                               !! rounded off to the nearest tick. When .false., it is a fatal error
+                               !! if the second fraction cannot be exactly represented by a number of ticks.
 
  character(len=4) :: formt='(i )'
  integer :: i1, i2, i3, day, second, tick, nsps
@@ -494,7 +456,6 @@ contains
 
  end function set_time_c
 !---------------------------------------------------------------------------
-! </FUNCTION>
 
  function get_tick_from_string(string, err_msg, allow_rounding, tick)
 
@@ -536,39 +497,6 @@ contains
  endif
 
  end function get_tick_from_string
-!---------------------------------------------------------------------------
-! <SUBROUTINE NAME="get_time">
-
-!   <OVERVIEW>
-!     Given a time interval, returns the corresponding seconds and days.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Given a time interval, returns the corresponding seconds and days.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     get_time(time, seconds, days, ticks, err_msg)
-!   </TEMPLATE>
-
-!   <IN NAME="time" TYPE="time_type">
-!     A time interval.
-!   </IN>
-!   <OUT NAME="seconds" UNITS="" TYPE="integer" DIM="(scalar)">
-!     A number of seconds.
-!   </OUT>
-!   <OUT NAME="days" UNITS="" TYPE="integer" DIM="(scalar)">
-!     A number of days.
-!   </OUT>
-!   <OUT NAME="ticks" UNITS="" TYPE="integer, optional" DIM="(scalar)">
-!     A number of ticks.
-!   </OUT>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
 
 !> @brief Returns days and seconds ( < 86400 ) corresponding to a time.
 !! <TT>err_msg</TT> should be checked for any errors.
@@ -615,60 +543,13 @@ else
 endif
 
 end subroutine get_time
-! </SUBROUTINE>
 
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="increment_time">
-
-!   <OVERVIEW>
-!      Given a time and an increment of days and seconds, returns
-!      a time that adds this increment to an input time.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Given a time and an increment of days and seconds, returns
-!      a time that adds this increment to an input time.
-!      Increments a time by seconds and days.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     increment_time(time, seconds, days, ticks, err_msg, allow_neg_inc)
-!   </TEMPLATE>
-
-!   <IN NAME="time"  TYPE="time_type" DIM="(scalar)">
-!      A time interval.
-!   </IN>
-!   <IN NAME="seconds"  TYPE="integer" DIM="(scalar)">
-!     Increment of seconds.
-!   </IN>
-!   <IN NAME="days" UNITS="" TYPE="integer, optional" DIM="(scalar)">
-!     Increment of days.
-!   </IN>
-!   <IN NAME="ticks"  TYPE="integer, optional" DIM="(scalar)">
-!     Increment of ticks.
-!   </IN>
-!   <OUT NAME="increment_time"  TYPE="time_type" DIM="(scalar)">
-!     A time that adds this increment to the input time.
-!     A negative result is a fatal error.
-!   </OUT>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <IN NAME="allow_neg_inc" TYPE="logical, optional" DIM="(scalar)" DEFAULT=".true.">
-!     When .false., it is a fatal error if any of the input time increments are negative.
-!     This mimics the behavior of lima and earlier revisions.
-!   </IN>
-
- !> @brief Given a time and an increment of days and seconds, returns
- !! a time that adds this increment to an input time.
+ !> @brief Increments a time by seconds and days.
  !!
- !> Increments a time by seconds and days.
+ !> Given a time and an increment of days and seconds, returns
+ !! a new time_type that represents the given time after the given increment.
+ !! @returns incremented @ref time_type
  function increment_time(Time, seconds, days, ticks, err_msg, allow_neg_inc)
-
-! Increments a time by seconds, days and ticks.
 
  type(time_type)               :: increment_time
  type(time_type), intent(in)   :: Time !< A time interval
@@ -700,7 +581,6 @@ end subroutine get_time
  endif
 
  end function increment_time
-! </FUNCTION>
 !--------------------------------------------------------------------------
 
  !> Increments a time by seconds, days and ticks.
@@ -730,52 +610,12 @@ end subroutine get_time
  end function increment_time_private
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="decrement_time">
-
-!   <OVERVIEW>
-!      Given a time and a decrement of days and seconds, returns
-!      a time that subtracts this decrement from an input time.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Decrements a time by seconds and days.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     Decrement_time(time, seconds, days, ticks, err_msg, allow_neg_inc)
-!   </TEMPLATE>
-
-!   <IN NAME="time"  TYPE="time_type" DIM="(scalar)">
-!      A time interval.
-!   </IN>
-!   <IN NAME="seconds"  TYPE="integer" DIM="(scalar)">
-!     Decrement of seconds.
-!   </IN>
-!   <IN NAME="days"  TYPE="integer, optional" DIM="(scalar)">
-!     Decrement of days.
-!   </IN>
-!   <IN NAME="ticks"  TYPE="integer, optional" DIM="(scalar)">
-!     Decrement of ticks.
-!   </IN>
-!   <OUT NAME="decrement_time"  TYPE="time_type">
-!      A time that subtracts this decrement from an input time.
-!      A negative result is a fatal error.
-!   </OUT>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <IN NAME="allow_neg_inc" TYPE="logical, optional" DIM="(scalar)" DEFAULT=".true.">
-!     When .false., it is a fatal error if any of the input time increments are negative.
-!     This mimics the behavior of lima and earlier revisions.
-!   </IN>
 
 !> @brief Decrements a time by seconds and days.
 !!
 !> Given a time and a decrement of days and seconds, returns
 !! a time that subtracts this decrement from an input time.
+!> @returns A time that suvtracts this decrement from an input time. A negative result is a fatal error.
 function decrement_time(Time, seconds, days, ticks, err_msg, allow_neg_inc)
 
 ! Decrements a time by seconds, days and ticks.
@@ -811,7 +651,6 @@ endif
  endif
 
 end function decrement_time
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
 ! <FUNCTION NAME="time_gt  operator(>)">
@@ -835,9 +674,8 @@ end function decrement_time
 !     time_gt(time1, time2)
 !   </TEMPLATE>
 
-!> Returns true if time1 > time2
+!> @brief Returns true if time1 > time2
 function time_gt(time1, time2)
-
 
 logical :: time_gt
 type(time_type), intent(in) :: time1, time2
@@ -3184,18 +3022,11 @@ end function leap_year_no_leap
 
 !END OF leap_year BLOCK
 !==========================================================================
-! START OF length_of_year BLOCK
-! <FUNCTION NAME="length_of_year">
 
-!   <OVERVIEW>
-!      Returns the mean length of the year in the default calendar setting.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      There are no arguments in this function. It returns the mean
-!      length of the year in the default calendar setting.
-!   </DESCRIPTION>
-!   <TEMPLATE> length_of_year() </TEMPLATE>
-
+!> @brief Returns the mean length of the year in the default calendar setting.
+!!
+!> There are no arguments in this function. It returns the mean
+!! length of the year for the default calendar. 
 function length_of_year()
 
 ! What is the length of the year for the default calendar type
@@ -3268,7 +3099,7 @@ end function length_of_year_no_leap
 !==========================================================================
 
 !==========================================================================
-! return number of day in year; Jan 1st is day 1, not zero!
+!> Returns number of day in year for given time. Jan 1st is day 1, not zero!
 function day_of_year(time)
   integer :: day_of_year
   type(time_type), intent(in) :: Time
@@ -3284,27 +3115,15 @@ end
 ! START OF days_in_year BLOCK
 ! <FUNCTION NAME="days_in_year">
 
-!   <OVERVIEW>
-!      Returns the number of days in the calendar year corresponding to
-!      the date represented by time for the default calendar.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns the number of days in the calendar year corresponding to
-!      the date represented by time for the default calendar.
-!   </DESCRIPTION>
-!   <TEMPLATE> days_in_year(Time) </TEMPLATE>
-!   <IN NAME="Time" TYPE="time_type">A time interval.</IN>
-!   <OUT>
-!      The number of days in this year for the default calendar type.
-!   </OUT>
-
-
+!> @brief Retruns the number of days in the calendar year corresponding to the date represented by
+!! time for the default calendar.
+!> @returns The number of days in this year for the default calendar type.
 function days_in_year(Time)
 
 ! What is the number of days in this year for the default calendar type
 
 integer :: days_in_year
-type(time_type), intent(in) :: Time
+type(time_type), intent(in) :: Time !< A time interval
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -3378,33 +3197,19 @@ end function days_in_year_no_leap
 
 ! END OF days_in_year BLOCK
 
-!==========================================================================
-! <FUNCTION NAME="month_name">
-
-!   <OVERVIEW>
-!      Returns a character string containing the name of the
-!      month corresponding to month number n.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns a character string containing the name of the
-!      month corresponding to month number n. Definition is the
-!      same for all calendar types.
-!   </DESCRIPTION>
-!   <TEMPLATE> month_name(n) </TEMPLATE>
-!   <IN NAME="n" TYPE="integer">Month number.</IN>
-!   <OUT NAME="month_name" TYPE="character(len=9)">
-!      The character string associated with a month.
-!      All calendars have 12 months and return full
-!      month names, not abreviations.
-!   </OUT>
-
+!> @brief Returns a character string containing the name of the
+!! month corresponding to month number n.
+!!
+!> Definition is the same for all calendar types.
+!! @returns The character string associated with a month. All calendars have 12 months and return
+!! full month names, not abreviations.
 function month_name(n)
 
 ! Returns character string associated with a month, for now, all calendars
 ! have 12 months and will return standard names.
 
 character (len=9) :: month_name
-integer, intent(in) :: n
+integer, intent(in) :: n !< Month number
 character (len = 9), dimension(12) :: months = (/'January  ', 'February ', &
           'March    ', 'April    ', 'May      ', 'June     ', 'July     ', &
           'August   ', 'September', 'October  ', 'November ', 'December '/)
@@ -3416,16 +3221,15 @@ if(n < 1 .or. n > 12) call error_mesg('month_name','Illegal month index',FATAL)
 month_name = months(n)
 
 end function month_name
-! </FUNCTION>
 
 !==========================================================================
 
+!> The purpose of this routine is to prevent the addition of an excessive amount of code in order to implement
+!! the error handling scheme involving an optional error flag of type character.
+!! It allows one line of code to accomplish what would otherwise require 6 lines.
+!! A value of .true. for this function is a flag to the caller that it should immediately return to it's caller.
  function error_handler(routine, err_msg_local, err_msg)
 
-! The purpose of this routine is to prevent the addition of an excessive amount of code in order to implement
-! the error handling scheme involving an optional error flag of type character.
-! It allows one line of code to accomplish what would otherwise require 6 lines.
-! A value of .true. for this function is a flag to the caller that it should immediately return to it's caller.
 
  logical :: error_handler
  character(len=*), intent(in) :: routine, err_msg_local
@@ -3441,19 +3245,9 @@ end function month_name
 
  end function error_handler
 
-!==========================================================================
 !------------------------------------------------------------------------
-! <SUBROUTINE NAME="time_manager_init">
 
-!   <OVERVIEW>
-!      Writes the version information to the log file
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Initialization routine.
-!      Writes the version information to the log file
-!   </DESCRIPTION>
-!   <TEMPLATE>time_manager_init()</TEMPLATE>
-
+!> Initialization routine. Writes the version information to the log file
 subroutine time_manager_init ( )
 
   if (module_is_initialized) return  ! silent return if already called
@@ -3462,30 +3256,16 @@ subroutine time_manager_init ( )
   module_is_initialized = .true.
 
 end subroutine time_manager_init
-! </SUBROUTINE>
 
 !------------------------------------------------------------------------
-! <SUBROUTINE NAME="print_time">
 
-!   <OVERVIEW>
-!      Prints the given time_type argument as a time (using days, seconds and ticks)
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Prints the given time_type argument as a time (using days, seconds and ticks)
-!      NOTE: there is no check for PE number.
-!   </DESCRIPTION>
-!   <TEMPLATE>print_time (time,str,unit)</TEMPLATE>
-!   <IN NAME="time" TYPE="time_type"> Time that will be printed. </IN>
-!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:">
-!      Character string that precedes the printed time or date.
-!   </IN>
-!   <IN NAME="unit" TYPE="integer">
-!      Unit number for printed output. The default unit is stdout.
-!   </IN>
+!> @brief Prints the given time_type argument as a time (using days, seconds and ticks)
+!!
+!> @note There is no check for PE number.
 subroutine print_time (Time,str,unit)
-type(time_type)  , intent(in) :: Time
-character (len=*), intent(in), optional :: str
-integer          , intent(in), optional :: unit
+type(time_type)  , intent(in) :: Time !< Time that will be printed
+character (len=*), intent(in), optional :: str !< Character string that precedes the printed time
+integer          , intent(in), optional :: unit !< Unit number for printed output, defaults to stdout
 integer :: s,d,ticks, ns,nd,nt, unit_in
 character(len=19) :: fmt
 
@@ -3512,36 +3292,15 @@ character(len=19) :: fmt
   endif
 
 end subroutine print_time
-! </SUBROUTINE>
-
-!------------------------------------------------------------------------
-! <SUBROUTINE NAME="print_date">
-
-!   <OVERVIEW>
-!      prints the time to standard output (or optional unit) as a date.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Prints the given time_type argument as a date (using year, month, day,
-!      hour, minutes, seconds and ticks). NOTE: there is no check for PE number.
-!   </DESCRIPTION>
-!   <TEMPLATE> print_date (time,str,unit)
-!   </TEMPLATE>
-!   <IN NAME="time" TYPE="time_type"> Time that will be printed. </IN>
-!   <IN NAME="str" TYPE="character (len=*)" DEFAULT="TIME: or DATE:">
-!      Character string that precedes the printed time or date.
-!   </IN>
-!   <IN NAME="unit" TYPE="integer">
-!      Unit number for printed output. The default unit is stdout.
-!   </IN>
 
 !> @brief Prints the time to standard output (or optional unit) as a date.
 !!
 !! Prints the given time_type argument as a date (using year, month, day,
 !! hour, minutes, seconds and ticks). NOTE: there is no check for PE number.
 subroutine print_date (Time,str,unit)
-type(time_type)  , intent(in) :: Time
-character (len=*), intent(in), optional :: str
-integer          , intent(in), optional :: unit
+type(time_type)  , intent(in) :: Time !< Time that will be printed
+character (len=*), intent(in), optional :: str !< Character string that precedes the printed time
+integer          , intent(in), optional :: unit !< Unit number for printed output, defaults to stdout
 integer :: y,mo,d,h,m,s, unit_in
 character(len=9) :: mon
 
@@ -3561,37 +3320,16 @@ character(len=9) :: mon
 10 format (a,i4,1x,a3,4(a1,i2.2))
 
 end subroutine print_date
-! </SUBROUTINE>
 
 !------------------------------------------------------------------------
-! <FUNCTION NAME="valid_calendar_types">
 
-!   <OVERVIEW>
-!     Returns a character string that describes the
-!     calendar type corresponding to the input integer.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns a character string that describes the
-!     calendar type corresponding to the input integer.
-!   </DESCRIPTION>
-!   <IN NAME="ncal" TYPE="integer">
-!     An integer corresponding to a valid calendar type.
-!   </IN>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <OUT NAME="valid_calendar_types" TYPE="character(len=24)">
-!     A character string describing the calendar type.
-!   </OUT>
-
+!> @brief Returns a character string that describes the
+!! calendar type corresponding to the input integer.
+!!
+!> @returns A character string describing the calendar type
 function valid_calendar_types(ncal, err_msg)
-integer, intent(in) :: ncal
-character(len=*), intent(out), optional :: err_msg
+integer, intent(in) :: ncal !< Integer corresponding to a valid calendar type
+character(len=*), intent(out), optional :: err_msg !< Holds an error message when present
 character(len=24) :: valid_calendar_types
 character(len=128) :: err_msg_local
 
