@@ -91,8 +91,9 @@ contains
 !> @addtogroup drifters_comm_mod
 !> @{
 !===============================================================================
+  !> @brief Initializes default values for @ref drifters_comm_type in self
   subroutine drifters_comm_new(self)
-    type(drifters_comm_type)   :: self
+    type(drifters_comm_type)   :: self !< A new @ref drifters_comm_type
 
     self%xcmin = -huge(1.); self%xcmax = +huge(1.)
     self%ycmin = -huge(1.); self%ycmax = +huge(1.)
@@ -121,8 +122,9 @@ contains
   end subroutine drifters_comm_new
 
 !===============================================================================
+  !> @brief Reset data in a given @ref drifters_comm_type to defaults
   subroutine drifters_comm_del(self)
-    type(drifters_comm_type)   :: self
+    type(drifters_comm_type)   :: self !< A @ref drifters_comm_type to reset
 
     ! nothing to deallocate
     call drifters_comm_new(self)
@@ -161,8 +163,8 @@ contains
   !> @brief Set neighboring pe numbers.
   subroutine drifters_comm_set_pe_neighbors(self, domain)
     ! Set neighboring pe numbers.
-    type(drifters_comm_type)   :: self
-    _TYPE_DOMAIN2D, intent(inout) :: domain
+    type(drifters_comm_type)   :: self !< Drifters communication type to set pe numbers for
+    _TYPE_DOMAIN2D, intent(inout) :: domain !< domain to get neighboring PE's from
 
 #ifndef _SERIAL
 ! parallel code
@@ -322,6 +324,7 @@ contains
   end subroutine drifters_comm_set_domain
 
 !===============================================================================
+  !> Updates drifter communication
   subroutine drifters_comm_update(self, drfts, new_positions, &
        & comm, remove, max_add_remove)
 #ifndef _SERIAL

@@ -66,7 +66,7 @@ module coupler_types_mod
 
 !> @}
 
-  !> 3-d fields
+  !> Coupler data for 3D values
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
@@ -84,6 +84,7 @@ module coupler_types_mod
                                            !! if it can not be read from a restart file
   end type coupler_3d_values_type
 
+  !> Coupler data for 3D fields
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_field_type
     character(len=48)                 :: name = ' ' !< name
@@ -106,6 +107,7 @@ module coupler_types_mod
     real                              :: mol_wt = 0.0 !< mol_wt
   end type coupler_3d_field_type
 
+  !> Coupler data for 3D boundary conditions
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
@@ -117,7 +119,7 @@ module coupler_types_mod
   end type coupler_3d_bc_type
 
 
-  !> 2D fields
+  !> Coupler data for 2D values
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
@@ -135,6 +137,7 @@ module coupler_types_mod
                                            !! if it can not be read from a restart file
   end type coupler_2d_values_type
 
+  !> Coupler data for 2D fields 
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_field_type
     character(len=48)                 :: name = ' ' !< name
@@ -157,6 +160,7 @@ module coupler_types_mod
     real                              :: mol_wt = 0.0 !< mol_wt
   end type coupler_2d_field_type
 
+  !> Coupler data for 2D boundary conditions
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
@@ -166,7 +170,7 @@ module coupler_types_mod
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
   end type coupler_2d_bc_type
 
-  !> 1-d fields
+  !> Coupler data for 1D values
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_values_type
     character(len=48)           :: name = ' '  !< The diagnostic name for this array
@@ -181,6 +185,7 @@ module coupler_types_mod
                                                !! if it can not be read from a restart file
   end type coupler_1d_values_type
 
+  !> Coupler data for 1D fields 
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_field_type
     character(len=48)              :: name = ' ' !< name
@@ -199,6 +204,7 @@ module coupler_types_mod
     real                           :: mol_wt = 0.0 !< mol_wt
   end type coupler_1d_field_type
 
+  !> Coupler data for 1D boundary conditions
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields

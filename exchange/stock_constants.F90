@@ -85,7 +85,7 @@ contains
 
     !> Starts a stock report
     subroutine stocks_report_init(Time)
-    type(time_type)               , intent(in) :: Time
+    type(time_type)               , intent(in) :: Time !< Model time
 
     character(len=80) :: formatString,space
     integer :: i,s
@@ -170,7 +170,7 @@ contains
 
   !> Writes update to stock report
   subroutine stocks_report(Time)
-    type(time_type)               , intent(in) :: Time
+    type(time_type)               , intent(in) :: Time !< Model time
 
     type(time_type) :: timeSinceStart
     type(stock_type) :: stck
@@ -332,7 +332,7 @@ contains
   end subroutine stocks_report
 
   subroutine stocks_set_init_time(Time)
-    type(time_type)     , intent(in) :: Time
+    type(time_type)     , intent(in) :: Time !< init time to set for stock report
     init_time = Time
 
   end subroutine stocks_set_init_time

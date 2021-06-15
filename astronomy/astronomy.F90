@@ -240,8 +240,7 @@ interface annual_mean_solar
    module procedure annual_mean_solar_2level
 end interface
 
-!> Example usage:
-!! ~~~~~~~~~~{.f90}
+!> ~~~~~~~~~~{.f90}
 !! call get_period (period)
 !! ~~~~~~~~~~
 !!
@@ -259,8 +258,7 @@ interface get_period
    module procedure get_period_time_type, get_period_integer
 end interface
 
-!> Example usage:
-!! ~~~~~~~~~~{.f90}
+!> ~~~~~~~~~~{.f90}
 !! call set_period (period_in)
 !! ~~~~~~~~~~
 !!

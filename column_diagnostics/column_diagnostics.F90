@@ -70,9 +70,7 @@ public    column_diagnostics_init,  &
           column_diagnostics_header,   &
           close_column_diagnostics_units
 
-
 !private
-
 
 !--------------------------------------------------------------------
 !----    namelist -----
@@ -113,7 +111,9 @@ logical    :: module_is_initialized = .false.
 
 !####################################################################
 
-!> @brief column_diagnostics_init is the initializer for column_diagnostics_mod.
+!> @brief Initialization routine for column_diagnostics_mod.
+!!
+!> Reads namelist and writes to log.
 subroutine column_diagnostics_init
 
 !--------------------------------------------------------------------

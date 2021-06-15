@@ -38,7 +38,9 @@ module drifters_input_mod
   character, parameter, private :: SEPARATOR = ' '
 
   !> @}
-  !> @brief Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
+  !> @brief Input data type for drifters.
+  !!
+  !> @note Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
   !! when adding members
   !> @ingroup drifters_input_mod
   type drifters_input_type

@@ -150,12 +150,14 @@ interface assignment(=)
 end interface
 
 !> Private logical equality overload for amip_interp_type
+!> @private
 !> @ingroup amip_interp_mod
 interface operator (==)
    module procedure date_equals
 end interface
 
 !> Private logical inequality overload for amip_interp_type
+!! @private
 !> @ingroup amip_interp_mod
 interface operator (/=)
    module procedure date_not_equals
@@ -362,8 +364,6 @@ end type
                             ! end add by JHC
                             verbose, i_sst, j_sst, forecast_mode,                &
                             use_mpp_io
-! </NAMELIST>
-
 
 !-----------------------------------------------------------------------
 
@@ -1305,7 +1305,6 @@ endif
 
 
    end subroutine get_sst_grid_boundary
-! </SUBROUTINE>
 
 !#######################################################################
 

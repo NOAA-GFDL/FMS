@@ -18,8 +18,9 @@
 !***********************************************************************
 !> @defgroup axis_utils2_mod axis_utils2_mod
 !> @ingroup axis_utils
-!> @brief A set of utilities for manipulating axes and extracting axis attributes
-!> FMS2_IO equivalent version of @ref axis_utils_mod
+!> @brief A set of utilities for manipulating axes and extracting axis attributes.
+!!
+!> FMS2_IO equivalent version of @ref axis_utils_mod.
 !> @author M.J. Harrison
 
 !> @file
@@ -67,9 +68,9 @@ contains
 
   !> @brief Returns X,Y,Z or T cartesian attribute
   subroutine get_axis_cart(fileobj, axisname, cart)
-    type(FmsNetcdfFile_t), intent(in) :: fileobj
-    character(len=*), intent(in) :: axisname
-    character(len=1), intent(out) :: cart
+    type(FmsNetcdfFile_t), intent(in) :: fileobj !< file object to read from
+    character(len=*), intent(in) :: axisname !< name of axis to retrieve
+    character(len=1), intent(out) :: cart !< Returned attribute axis
 
     character(len=1) :: axis_cart
     character(len=16), dimension(2) :: lon_names, lat_names
@@ -141,9 +142,9 @@ contains
   !> get axis edge data from a given file
   subroutine axis_edges(fileobj, name, edge_data, reproduce_null_char_bug_flag)
 
-  class(FmsNetcdfFile_t), intent(in) :: fileobj
-  character(len=*), intent(in) :: name
-  class(*), dimension(:), intent(out) :: edge_data
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object to read from
+  character(len=*), intent(in) :: name !< Name of a given axis
+  class(*), dimension(:), intent(out) :: edge_data !< Returned edge data from given axis name
   logical, intent(in), optional :: reproduce_null_char_bug_flag !< Flag indicating to reproduce
                                      !! the mpp_io bug where the null characters were not removed
                                      !! after reading a string attribute
@@ -260,8 +261,9 @@ contains
   endif
 end subroutine axis_edges
 
-  !> @brief Returns true if axis has the modulo attribute
-  !! @return logical get_axis_modulo
+  !> @brief Checks if 'modulo' variable exists for a given axis.
+  !!
+  !> @return true if modulo variable exists in fileobj for the given axis name.
   function get_axis_modulo(fileobj, axisname)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
     character(len=*), intent(in) :: axisname
@@ -270,7 +272,8 @@ end subroutine axis_edges
     get_axis_modulo = variable_att_exists(fileobj, axisname, "modulo")
   end function get_axis_modulo
 
-  !> @return logical get_axis_modulo_times
+  !> @return true if modulo_beg and modulo_end exist in fileobj with the given
+  !! axis, and returns their values in tbeg and tend. 
   function get_axis_modulo_times(fileobj, axisname, tbeg, tend)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
     character(len=*), intent(in) :: axisname

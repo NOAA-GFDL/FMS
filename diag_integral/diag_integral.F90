@@ -132,15 +132,15 @@ public      &
 !!        is to occur
 !!
 interface sum_diag_integral_field
-   module procedure sum_field_2d_hemi, &
-                    sum_field_3d,   &
+   module procedure sum_field_2d,      &
+                    sum_field_2d_hemi, &
+                    sum_field_3d,      &
                     sum_field_wght_3d
-   !> @cond
-   module procedure sum_field_2d
-   !> @endcond
 end interface
 
 
+!> @addtogroup diag_integral_mod
+!> @{
 
 private         &
 
@@ -163,8 +163,7 @@ private         &
 !   from sum_diag_integral_field:
           vert_diag_integral
 
-!> @addtogroup diag_integral_mod
-!> @{
+
 !-------------------------------------------------------------------------------
 !------ namelist -------
 
@@ -192,23 +191,11 @@ namelist / diag_integral_nml /      &
                                 fields_per_print_line
 
 !-------------------------------------------------------------------------------
-!------- public data ------
-
-
-!-------------------------------------------------------------------------------
 !------- private data ------
 
 !-------------------------------------------------------------------------------
 !    variables associated with the determination of when integrals
 !    are to be written.
-!         Next_alarm_time  next time at which integrals are to be
-!                          written
-!         Alarm_interval   time interval between writing integrals
-!         Zero_time        time_type variable set to (0,0); used as
-!                          flag to indicate integrals are not being
-!                          output
-!         Time_init_save   initial time associated with experiment;
-!                          used as a base for defining time
 !-------------------------------------------------------------------------------
 type (time_type) :: Next_alarm_time !< next time at which integrals are to be written
 type (time_type) :: Alarm_interval !< time interval between writing integrals
@@ -220,11 +207,6 @@ type (time_type) :: Time_init_save !< initial time associated with experiment;
 !-------------------------------------------------------------------------------
 !    variables used in determining weights associated with each
 !    contribution to the integrand.
-!        area         area of each grid box
-!        idim         x dimension of grid on local processor
-!        jdim         y dimension of grid on local processor
-!        field_size   number of columns on global domain
-!        sum_area     surface area of globe
 !-------------------------------------------------------------------------------
 real, allocatable, dimension(:,:) :: area !< area of each grid box
 integer                           :: idim !< x dimension of grid on local processor
@@ -234,13 +216,6 @@ real                              :: sum_area !< surface area of globe
 
 !-------------------------------------------------------------------------------
 !    variables used to define the integral fields:
-!      max_len_name     maximum length of name associated with integral
-!      max_num_field    maximum number of integrals allowed
-!      num_field        number of integrals that have been activated
-!      field_name(i)    name associated with integral i
-!      field_format(i)  output format for integral i
-!      field_sum(i)     integrand for integral i
-!      field_count(i)   number of values in integrand i
 !-------------------------------------------------------------------------------
 integer, parameter          :: max_len_name   = 12 !< maximum length of name associated with integral
 integer, parameter          :: max_num_field = 32 !< maximum number of integrals allowed
@@ -252,11 +227,6 @@ integer                     :: field_count  (max_num_field) !< number of values 
 
 !-------------------------------------------------------------------------------
 !    variables defining output formats.
-!       format_text       format statement for header
-!       format_data       format statement for data output
-!       do_format_data    a data format needs to be generated ?
-!       nd                number of characters in data format statement
-!       nt                number of characters in text format statement
 !-------------------------------------------------------------------------------
 character(len=160) :: format_text !< format statement for header
 character(len=160) :: format_data !< format statement for data output

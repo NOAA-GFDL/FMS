@@ -65,35 +65,6 @@ use platform_mod
 
   PUBLIC
 
-
-  ! <!-- PARAMETERS for diag_data.F90 -->
-  ! <DATA NAME="MAX_FIELDS_PER_FILE" TYPE="INTEGER, PARAMETER" DEFAULT="300">
-  !   Maximum number of fields per file.
-  ! </DATA>
-  ! <DATA NAME="DIAG_OTHER" TYPE="INTEGER, PARAMETER" DEFAULT="0" />
-  ! <DATA NAME="DIAG_OCEAN" TYPE="INTEGER, PARAMETER" DEFAULT="1" />
-  ! <DATA NAME="DIAG_ALL" TYPE="INTEGER, PARAMETER" DEFAULT="2" />
-  ! <DATA NAME="VERY_LARGE_FILE_FREQ" TYPE="INTEGER, PARAMETER" DEFAULT="100000" />
-  ! <DATA NAME="VERY_LARGE_AXIS_LENGTH" TYPE="INTEGER, PARAMETER" DEFAUTL="10000" />
-  ! <DATA NAME="EVERY_TIME" TYPE="INTEGER, PARAMETER" DEFAULT="0" />
-  ! <DATA NAME="END_OF_RUN" TYPE="INTEGER, PARAMETER" DEFAULT="-1" />
-  ! <DATA NAME="DIAG_SECONDS" TYPE="INTEGER, PARAMETER" DEFAULT="1" />
-  ! <DATA NAME="DIAG_MINUTES" TYPE="INTEGER, PARAMETER" DEFAULT="2" />
-  ! <DATA NAME="DIAG_HOURS" TYPE="INTEGER, PARAMETER" DEFAULT="3" />
-  ! <DATA NAME="DIAG_DAYS" TYPE="INTEGER, PARAMETER" DEFAULT="4" />
-  ! <DATA NAME="DIAG_MONTHS" TYPE="INTEGER, PARAMETER" DEFAULT="5" />
-  ! <DATA NAME="DIAG_YEARS" TYPE="INTEGER, PARAMETER" DEFAULT="6" />
-  ! <DATA NAME="MAX_SUBAXES" TYPE="INTEGER, PARAMETER" DEFAULT="10" />
-  ! <DATA NAME="CMOR_MISSING_VALUE" TYPE="REAL, PARAMETER" DEFAULT="1.0e20" />
-  ! <DATA NAME="GLO_REG_VAL" TYPE="INTEGER, PARAMETER" DEFAULT="-999">
-  !   Value used in the region specification of the diag_table to indicate to use the full axis instead of a sub-axis
-  ! </DATA>
-  ! <DATA NAME="GLO_REG_VAL_ALT" TYPE="INTEGER, PARAMETER" DEFAULT="-1">
-  !   Alternate value used in the region specification of the diag_table to indicate to use the full axis instead of a sub-axis
-  ! </DATA>
-  ! <DATA NAME="DIAG_FIELD_NOT_FOUND" TYPE="INTEGER, PARAMETER" DEFAULT="-1">
-  !   Return value for a diag_field that isn't found in the diag_table
-  ! </DATA>
   ! Specify storage limits for fixed size tables used for pointers, etc.
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   INTEGER, PARAMETER :: DIAG_OTHER = 0
@@ -303,99 +274,26 @@ use platform_mod
      INTEGER :: num_attributes !< Number of defined attibutes
      INTEGER :: domain_position !< The position in the doman (NORTH or EAST or CENTER)
   END TYPE diag_axis_type
-  ! </TYPE>
 
-  ! <TYPE NAME="diag_global_att_type">
-  !   <DESCRIPTION>
-  !   </DESCRIPTION>
-  !   <DATA NAME="grid_type" TYPE="CHARACTER(len=128)" DEFAULT="regular">
-  !   </DATA>
-  !   <DATA NAME="tile_name" TYPE="CHARACTER(len=128)" DEFAULT="N/A">
-  !   </DATA>
   !> @ingroup diag_data_mod
   TYPE diag_global_att_type
      CHARACTER(len=128)   :: grid_type='regular'
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
-  ! </TYPE>
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
+
   !> @addtogroup diag_data_mod
   !> @{
-  ! <!-- Other public variables -->
-  ! <DATA NAME="num_files" TYPE="INTEGER" DEFAULT="0">
-  !   Number of output files currenly in use by the diag_manager.
-  ! </DATA>
-  ! <DATA NAME="num_input_fields" TYPE="INTEGER" DEFAULT="0">
-  !   Number of input fields in use.
-  ! </DATA>
-  ! <DATA NAME="num_output_fields" TYPE="INTEGER" DEFAULT="0">
-  !   Number of output fields in use.
-  ! </DATA>
-  ! <DATA NAME="null_axis_id" TYPE="INTEGER" />
+
+  ! <!-- Other public variables --> 
   INTEGER :: num_files = 0 !< Number of output files currenly in use by the diag_manager.
   INTEGER :: num_input_fields = 0 !< Number of input fields in use.
   INTEGER :: num_output_fields = 0 !< Number of output fields in use.
   INTEGER :: null_axis_id
 
   ! <!-- Namelist variables -->
-  ! <DATA NAME="append_pelist_name" TYPE="LOGICAL" DEFAULT=".FALSE." />
-  ! <DATA NAME="mix_snapshot_average_fields" TYPE="LOGICAL" DEFAULT=".FALSE." />
-  ! <DATA NAME="max_files" TYPE="INTEGER" DEFAULT="31">
-  !   Maximum number of output files allowed.  Increase via the diag_manager_nml namelist.
-  ! </DATA>
-  ! <DATA NAME="max_output_fields" TYPE="INTEGER" DEFAULT="300">
-  !   Maximum number of output fields.  Increase via the diag_manager_nml namelist.
-  ! </DATA>
-  ! <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="600">
-  !   Maximum number of input fields.  Increase via the diag_manager_nml namelist.
-  ! </DATA>
-  ! <DATA NAME="max_out_per_in_field" TYPE="INTEGER" DEFAULT="150">
-  !   Maximum number of output_fields per input_field.
-  ! </DATA>
-  ! <DATA NAME="max_axes" TYPE="INTEGER" DEFAULT="60">
-  !   Maximum number of independent axes.
-  ! </DATA>
-  ! <DATA NAME="do_diag_field_log" TYPE="LOGICAL" DEFAULT=".FALSE." />
-  ! <DATA NAME="write_bytes_in_file" TYPE="LOGICAL" DEFAULT=".FALSE." />
-  ! <DATA NAME="flush_nc_files" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   Indicate if diag_manager should force the flush of the netCDF diagnostic
-  !   files to disk Note: changing this to .TRUE. can greatly reduce the model
-  !   performance as at each write to the netCDF diagnostic file, the model must
-  !   wait until the flush to disk finishes.
-  ! </DATA>
-  ! <DATA NAME="debug_diag_manager" TYPE="LOGICAL" DEFAULT=".FALSE." />
-  ! <DATA NAME="max_num_axis_sets" TYPE="INTEGER" DEFAULT="25" />
-  ! <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   Indicates if we should overwrite the MISSING_VALUE to use the CMOR missing value.
-  ! </DATA>
-  ! <DATA NAME="issue_oor_warnings" TYPE="LOGICAL" DEFAULT=".TRUE.">
-  !   Issue warnings if the output field has values outside the given
-  !   range for a variable.
-  ! </DATA>
-  ! <DATA NAME="oor_warnings_fatal" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   Cause a fatal error if the output field has a value outside the
-  !   given range for a variable.
-  ! </DATA>
-  ! <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">
-  !   Maximum number of user definable attributes per field.
-  ! </DATA>
-  ! <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
-  !   Maximum number of user definable global attributes per file.
-  ! </DATA>
-  ! <DATA NAME="max_axis_attributes" TYPE="INTEGER" DEFAULT="2">
-  !   Maximum number of user definable attributes per axis.
-  ! </DATA>
-  ! <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".TRUE.">
-  !   Indicates if the file start date will be prepended to the file name.  <TT>.TRUE.</TT> is
-  !   only supported if the diag_manager_init routine is called with the optional time_init parameter.
-  !   This was usually done by FRE after the model run.
-  ! </DATA>
-  ! <DATA NAME="region_out_use_alt_value" TYPE="LOGICAL" DEFAULT=".TRUE.">
-  !   Will determine which value to use when checking a regional output if the region is the full axis or a sub-axis.
-  !   The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT> (-1) in <TT>diag_data_mod</TT>.
-  ! </DATA>
   LOGICAL :: append_pelist_name = .FALSE.
   LOGICAL :: mix_snapshot_average_fields =.FALSE.
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
@@ -426,14 +324,13 @@ use platform_mod
   INTEGER :: max_field_attributes = 4 !< Maximum number of user definable attributes per field. Liptak: Changed from 2 to 4 20170718
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
-  LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name
+  LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
+                                   !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
+                                   !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
 
   ! <!-- netCDF variable -->
-  ! <DATA NAME="FILL_VALUE" TYPE="REAL" DEFAULT="NF90_FILL_REAL">
-  !   Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
-  !   netCDF module, otherwise will be 9.9692099683868690e+36.
-  ! </DATA>
+
 #ifdef use_netCDF
   REAL :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
                                     !! netCDF module, otherwise will be 9.9692099683868690e+36.
@@ -445,25 +342,10 @@ use platform_mod
   INTEGER :: pack_size = 1 !< 1 for double and 2 for float
 
   ! <!-- REAL public variables -->
-  ! <DATA NAME="EMPTY" TYPE="REAL" DEFAULT="0.0" />
-  ! <DATA NAME="MAX_VALUE" TYPE="REAL" />
-  ! <DATA NAME="MIN_VALUE" TYPE="REAL" />
   REAL :: EMPTY = 0.0
   REAL :: MAX_VALUE, MIN_VALUE
 
   ! <!-- Global data for all files -->
-  ! <DATA NAME="diag_init_time" TYPE="TYPE(time_type)">
-  !   Time diag_manager_init called.  If init_time not included in
-  !   diag_manager_init call, then same as base_time
-  ! </DATA>
-  ! <DATA NAME="base_time" TYPE="TYPE(time_type)" />
-  ! <DATA NAME="base_year" TYPE="INTEGER" />
-  ! <DATA NAME="base_month" TYPE="INTEGER" />
-  ! <DATA NAME="base_day" TYPE="INTEGER" />
-  ! <DATA NAME="base_hour" TYPE="INTEGER" />
-  ! <DATA NAME="base_minute" TYPE="INTEGER" />
-  ! <DATA NAME="base_second" TYPE="INTEGER" />
-  ! <DATA NAME="global_descriptor" TYPE="CHARACTER(len=256)" />
   TYPE(time_type) :: diag_init_time !< Time diag_manager_init called.  If init_time not included in
                                     !! diag_manager_init call, then same as base_time
   TYPE(time_type) :: base_time
@@ -471,27 +353,16 @@ use platform_mod
   CHARACTER(len = 256):: global_descriptor
 
   ! <!-- ALLOCATABLE variables -->
-  ! <DATA NAME="files" TYPE="TYPE(file_type), DIMENSION(:), SAVE, ALLOCATABLE" />
-  ! <DATA NAME="input_fields" TYPE="TYPE(input_field_type), DIMENSION(:), ALLOCATABLE" />
-  ! <DATA NAME="output_fields" TYPE="TYPE(output_field_type), DIMENSION(:), ALLOCATABLE" />
   TYPE(file_type), SAVE, ALLOCATABLE :: files(:)
   TYPE(input_field_type), ALLOCATABLE :: input_fields(:)
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
-!> used if use_mpp_io = .false.
-    type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
-    type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
-    type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
-    character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
+  ! used if use_mpp_io = .false.
+  type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
+  type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
+  type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
+  character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
+
   ! <!-- Even More Variables -->
-  ! <DATA NAME="time_zero" TYPE="TYPE(time_type)" />
-  ! <DATA NAME="first_send_data_call" TYPE="LOGICAL" DEFAULT=".TRUE." />
-  ! <DATA NAME="module_is_initialized" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   Indicate if diag_manager has been initialized
-  ! </DATA>
-  ! <DATA NAME="diag_log_unit" TYPE="INTEGER" />
-  ! <DATA NAME="time_unit_list" TYPE="CHARACTER(len=10), DIMENSION(6)"
-  !       DEFAULT="(/'seconds   ', 'minutes   ', 'hours     ', 'days      ', 'months    ', 'years     '/)" />
-  ! <DATA NAME="pelist_name" TYPE="CHARACTER(len=32)" />
   TYPE(time_type) :: time_zero
   LOGICAL :: first_send_data_call = .TRUE.
   LOGICAL :: module_is_initialized = .FALSE. !< Indicate if diag_manager has been initialized
@@ -503,17 +374,7 @@ use platform_mod
 
 CONTAINS
 
-  ! <SUBROUTINE NAME="diag_data_init">
-  !   <OVERVIEW>
-  !     Write the version number of this file
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE diag_util_init
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !     Write the version number of this file to the log file.
-  !   </DESCRIPTION>
-  !> @brief Write the version number of this file to the log file.
+  !> @brief Initialize and write the version number of this file to the log file.
   SUBROUTINE diag_data_init()
     IF (module_is_initialized) THEN
        RETURN
@@ -522,7 +383,7 @@ CONTAINS
     ! Write version number out to log file
     call write_version_number("DIAG_DATA_MOD", version)
   END SUBROUTINE diag_data_init
-  ! </SUBROUTINE>
+
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping

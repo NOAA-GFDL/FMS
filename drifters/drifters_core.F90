@@ -66,11 +66,12 @@ contains
 !> @addtogroup drifters_core_mod
 !> @{
 !###############################################################################
+  !> Create a new @ref drifters_core_type
   subroutine drifters_core_new(self, nd, npdim, ermesg)
-    type(drifters_core_type)        :: self
+    type(drifters_core_type)        :: self !< @ref drifters_core_type to create
     integer, intent(in)       :: nd
     integer, intent(in)       :: npdim
-    character(*), intent(out) :: ermesg
+    character(*), intent(out) :: ermesg !< Error message string
     integer ier, iflag, i
     ermesg = ''
     ier    = 0
@@ -92,9 +93,10 @@ contains
   end subroutine drifters_core_new
 
  !###############################################################################
+ !> Deallocates the given @ref drifters_core_type
  subroutine drifters_core_del(self, ermesg)
-    type(drifters_core_type)        :: self
-    character(*), intent(out) :: ermesg
+    type(drifters_core_type)        :: self !< @ref drifters_core_type to delete
+    character(*), intent(out) :: ermesg !< Error message string
     integer ier, iflag
     ermesg = ''
     ier    = 0
@@ -279,7 +281,6 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
 
 end module drifters_core_mod
-!###############################################################################
 !###############################################################################
 !> @}
 ! close documentation grouping

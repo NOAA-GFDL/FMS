@@ -43,18 +43,6 @@
 MODULE diag_grid_mod
 use platform_mod
 
-  !   <B>Change Log</B>
-  !   <DL>
-  !     <DT>September 2009</DT>
-  !     <DD>
-  !       <UL>
-  !         <LI>Single point region in Cubed Sphere</LI>
-  !         <LI>Single tile regions in the cubed sphere</LI>
-  !       </UL>
-  !     </DD>
-  !   </DL>
-  ! </DESCRIPTION>
-
   ! <INFO>
   !   <FUTURE>
   !     Multi-tile regional output in the cubed sphere.
@@ -70,6 +58,7 @@ use platform_mod
   !     regional output to work on any current or future grid.
   !   </FUTURE>
   ! </INFO>
+
   USE constants_mod, ONLY: DEG_TO_RAD, RAD_TO_DEG, RADIUS
   USE fms_mod, ONLY: write_version_number, error_mesg, WARNING, FATAL,&
        & mpp_pe
@@ -79,11 +68,11 @@ use platform_mod
 
   IMPLICIT NONE
 
-  ! Parameters
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !> @brief Contains the model's global grid data, and other grid information.
+  !> @brief Private type to hold the model's global grid data, and other grid information for use
+  !! in this module.
   !> @ingroup diag_grid_mod
   type, private :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
@@ -107,7 +96,7 @@ use platform_mod
      CHARACTER(len=128) :: grid_type !< The global grid type.
   END TYPE diag_global_grid_type
 
-  !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
+  !> @brief Private type to hold the corresponding (x,y,z) location for a (lat,lon)
   !! location.
   !> @ingroup diag_grid_mod
   type, private :: point
@@ -118,18 +107,9 @@ use platform_mod
 
 !> @addtogroup diag_grid_mod
 !> @{
-  ! <PRIVATE>
-  ! <DATA NAME="diag_global_grid" TYPE="TYPE(diag_global_grid_type)">
-  !   Variable to hold the global grid data
-  ! </DATA>
-  ! </PRIVATE>
+
   TYPE(diag_global_grid_type) :: diag_global_grid !< Variable to hold the global grid data
 
-  ! <PRIVATE>
-  ! <DATA NAME="diag_grid_initialized" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   Indicates if the diag_grid_mod has been initialized.
-  ! </DATA>
-  ! </PRIVATE>
   LOGICAL :: diag_grid_initialized = .FALSE. !< Indicates if the diag_grid_mod has been initialized.
 
   PRIVATE

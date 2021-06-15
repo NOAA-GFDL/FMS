@@ -80,7 +80,7 @@ private
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-!> Holds field and grid data
+!> Holds meta data for a field and it's associated grid
 !> @ingroup data_override_mod
 type data_type
    character(len=3)   :: gridname
@@ -196,19 +196,6 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   type (domain2d), intent(in), optional :: Land_domain_in
   type(domainUG) , intent(in), optional :: Land_domainUG_in
 
-! <NOTE>
-! This subroutine should be called in coupler_init after
-! (ocean/atmos/land/ice)_model_init have been called.
-!
-! data_override_init can be called more than once, in one call the user can pass
-! up to 4 domains of component models, at least one domain must be present in
-! any call
-!
-! Data_table is initialized here with default values. Users should provide "real" values
-! that will override the default values. Real values can be given using data_table, each
-! line of data_table contains one data_entry. Items of data_entry are comma separated.
-!
-! </NOTE>
   character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,use_get_grid_version
   integer               :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status, ierr
@@ -558,9 +545,6 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
   logical, intent(in), optional :: unset_Atm, unset_Ocean, unset_Ice, unset_Land
   logical, intent(in), optional :: must_be_set
 
-! <NOTE>
-! This subroutine deallocates any data override domains that have been set.
-! </NOTE>
   logical :: fail_if_not_set
 
   fail_if_not_set = .true. ; if (present(must_be_set)) fail_if_not_set = must_be_set
@@ -605,7 +589,6 @@ end subroutine data_override_unset_domains
 
 !> @brief Given a gridname, this routine returns the working domain associated with this gridname
 subroutine get_domain(gridname, domain, comp_domain)
-! Given a gridname, this routine returns the working domain associated with this gridname
   character(len=3), intent(in) :: gridname
   type(domain2D), intent(inout) :: domain
   integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
@@ -630,7 +613,6 @@ end subroutine get_domain
 
 !> @brief Given a gridname, this routine returns the working domain associated with this gridname
 subroutine get_domainUG(gridname, UGdomain, comp_domain)
-! Given a gridname, this routine returns the working domain associated with this gridname
   character(len=3), intent(in) :: gridname
   type(domainUG), intent(inout) :: UGdomain
   integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
@@ -682,32 +664,6 @@ subroutine data_override_2d(gridname,fieldname,data_2D,time,override, is_in, ie_
   data_2D(:,:) = data_3D(:,:,1)
   deallocate(data_3D)
 end subroutine data_override_2d
-
-! <SUBROUTINE NAME="data_override_3d">
-!   <DESCRIPTION>
-! This routine performs data override for 3D fields
-!   <TEMPLATE>
-! call data_override(gridname,fieldname,data,time,override)
-!   </TEMPLATE>
-!   </DESCRIPTION>
-
-!   <IN NAME="gridname"  TYPE="character" DIM="(*)">
-! Grid name (Ocean, Ice, Atmosphere, Land)
-!   </IN>
-!   <IN NAME="fieldname_code" TYPE="character" DIM="(*)">
-!    Field name as used in the code (may be different from the name in NetCDF data file)
-!   </IN>
-!   <OUT NAME="data" TYPE="real" DIM="(:,:,:)">
-!    array containing output data
-!   </OUT>
-!   <IN NAME="time" TYPE="time_type">
-!    model time
-!   </IN>
-!   <OUT NAME="override" TYPE="logical">
-!    TRUE if the field is overriden, FALSE otherwise
-!   </OUT>
-!   <IN NAME="data_index" TYPE="integer">
-!   </IN>
 
 !> @brief This routine performs data override for 3D fields
 subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
@@ -1233,40 +1189,15 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   if(PRESENT(override)) override = .true.
 
 end subroutine data_override_3d
-! </SUBROUTINE>
-
-! <SUBROUTINE NAME="data_override_0d">
-!   <DESCRIPTION>
-! This routine performs data override for scalar fields
-!   <TEMPLATE>
-! call data_override(fieldname,data,time,override)
-!   </TEMPLATE>
-!   </DESCRIPTION>
-!   <IN NAME="gridname"  TYPE="character" DIM="(*)">
-! Grid name (Ocean, Ice, Atmosphere, Land)
-!   </IN>
-!   <IN NAME="fieldname_code" TYPE="character" DIM="(*)">
-!    Field name as used in the code (may be different from the name in NetCDF data file)
-!   </IN>
-!   <OUT NAME="data" TYPE="real" DIM="(:,:,:)">
-!    array containing output data
-!   </OUT>
-!   <IN NAME="time" TYPE="time_type">
-!    model time
-!   </IN>
-!   <OUT NAME="override" TYPE="logical">
-!    TRUE if the field is overriden, FALSE otherwise
-!   </OUT>
-!   <IN NAME="data_index" TYPE="integer">
-!   </IN>
 
 !> @brief Routine to perform data override for scalar fields
 subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_index)
-  character(len=3), intent(in) :: gridname !< model grid ID
-  character(len=*), intent(in) :: fieldname_code !< field name as used in the model
+  character(len=3), intent(in) :: gridname !< model grid ID (ocn,ice,atm,lnd)
+  character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
+                                                 !! different from the name in NetCDF data file)
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   type(time_type), intent(in) :: time !< (target) model time
-  real,             intent(out) :: data !< data returned by this call
+  real,             intent(out) :: data !< output data array returned by this call
   integer, intent(in), optional :: data_index
 
   character(len=512) :: filename !< file containing source data
@@ -1353,7 +1284,6 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
   if(PRESENT(override)) override = .true.
 
 end subroutine data_override_0d
-! </SUBROUTINE>
 
 !> @brief Data override for 2D unstructured grids
 subroutine data_override_UG_1d(gridname,fieldname,data,time,override)

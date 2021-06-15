@@ -47,7 +47,7 @@ module drifters_io_mod
   real :: drfts_eps_t = 10.*epsilon(1.)
 
 !> @}
-
+  !> @brief IO data for drifters.
   !> @ingroup drifters_input_mod
   type drifters_io_type
      real                 :: time

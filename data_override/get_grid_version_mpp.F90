@@ -66,13 +66,13 @@ end subroutine check_grid_sizes
 
 !> Get global lon and lat of three model (target) grids, with a given file name
 subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
-  character(len=*),            intent(in) :: grid_file
-  character(len=*),            intent(in) :: mod_name
-  type(domain2d),              intent(in) :: domain
+  character(len=*),            intent(in) :: grid_file !< Grid file name
+  character(len=*),            intent(in) :: mod_name !< module name
+  type(domain2d),              intent(in) :: domain !< 2D domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon
-  logical,           intent(in), optional :: grid_center_bug
+  logical,           intent(in), optional :: grid_center_bug !< Enables legacy behaviour
 
   integer                                      :: i, j, siz(4)
   integer                                      :: nlon, nlat         ! size of global lon and lat
@@ -189,9 +189,9 @@ end subroutine get_grid_version_classic_1
 !> Get global lon and lat of three model (target) grids from mosaic.nc.
 !! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine get_grid_version_classic_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  character(len=*),            intent(in) :: mosaic_file
-  character(len=*),            intent(in) :: mod_name
-  type(domain2d),              intent(in) :: domain
+  character(len=*),            intent(in) :: mosaic_file !< Mosaic file name
+  character(len=*),            intent(in) :: mod_name !< module name
+  type(domain2d),              intent(in) :: domain !< 2D domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon

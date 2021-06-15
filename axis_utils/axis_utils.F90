@@ -67,8 +67,8 @@ contains
   !> @brief Returns X,Y,Z or T cartesian attribute
   subroutine get_axis_cart(axis, cart)
 
-    type(axistype), intent(in) :: axis
-    character(len=1), intent(out) :: cart
+    type(axistype), intent(in) :: axis !< axis to get data from
+    character(len=1), intent(out) :: cart !< Returned cartesian axis
     character(len=1) :: axis_cart
     character(len=16), dimension(2) :: lon_names, lat_names
     character(len=16), dimension(3) :: z_names
@@ -189,8 +189,9 @@ contains
     return
   end subroutine get_axis_bounds
 
-  !> @brief Returns true if axis has the modulo attribute
-  !! @return logical get_axis_modulo
+  !> @brief Checks if 'modulo' variable exists for a given axis.
+  !!
+  !> @return true if modulo variable exists in fileobj for the given axis name.
   function get_axis_modulo(axis)
 
     type(axistype) :: axis

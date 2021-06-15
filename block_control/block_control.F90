@@ -78,34 +78,13 @@ contains
 !> @brief Sets up "blocks" used for OpenMP threading of column-based
 !!        calculations using rad_n[x/y]xblock from coupler_nml
 !!
-!> Parameters:
-!!
-!! @code{.f90}
-!! character(len=*),         intent(in)    :: component
-!! type(block_control_type), intent(inout) :: Block
-!! integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
-!! integer,                  intent(in)    :: nx_block, ny_block
-!! logical,                  intent(inout) :: message
-!! @endcode
-!!
-!! @param [in]    <component>
-!! @param [inout] <Block>
-!! @param [in]    <isc>
-!! @param [in]    <iec>
-!! @param [in]    <jsc>
-!! @param [in]    <jec>
-!! @param [in]    <kpts>
-!! @param [in]    <nx_block>
-!! @param [in]    <ny_block>
-!! @param [inout] <message>
-!!
   subroutine define_blocks (component, Block, isc, iec, jsc, jec, kpts, &
                             nx_block, ny_block, message)
-    character(len=*),         intent(in)    :: component
-    type(block_control_type), intent(inout) :: Block
+    character(len=*),         intent(in)    :: component !< Component name string
+    type(block_control_type), intent(inout) :: Block !< Returns instantiated @ref block_control_type
     integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
     integer,                  intent(in)    :: nx_block, ny_block
-    logical,                  intent(inout) :: message
+    logical,                  intent(inout) :: message !< flag for outputting debug message
 
 !-------------------------------------------------------------------------------
 ! Local variables:
@@ -192,25 +171,15 @@ contains
 !###############################################################################
 !> @brief Creates and populates a data type which is used for defining the
 !!        sub-blocks of the MPI-domain to enhance OpenMP and memory performance.
-!!        Uses a packed concept
-!!
-!! Parameters:
-!!
-!! @code{.f90}
-!! character(len=*),         intent(in)    :: component
-!! type(block_control_type), intent(inout) :: Block
-!! integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
-!! integer,                  intent(inout) :: blksz
-!! logical,                  intent(inout) :: message
-!! @endcode
+!!        Uses a packed concept.
 !!
   subroutine define_blocks_packed (component, Block, isc, iec, jsc, jec, &
                                    kpts, blksz, message)
-    character(len=*),         intent(in)    :: component
-    type(block_control_type), intent(inout) :: Block
+    character(len=*),         intent(in)    :: component !< Component name string
+    type(block_control_type), intent(inout) :: Block !< Returns instantiated @ref block_control_type
     integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
-    integer,                  intent(inout) :: blksz
-    logical,                  intent(inout) :: message
+    integer,                  intent(inout) :: blksz !< block size
+    logical,                  intent(inout) :: message !< flag for outputting debug message
 
 !-------------------------------------------------------------------------------
 ! Local variables:
