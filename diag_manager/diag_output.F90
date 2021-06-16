@@ -129,7 +129,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
      module procedure write_field_meta_data_use_mpp_io
   end interface
 
-  !> Writes metadata for an attribute to a file.
+  !> Private interface to write metadata for an attribute to a file.
+  !!
+  !> @note Added for mpp_io support
   !> @ingroup diag_output_mod
   interface write_attribute_meta
      module procedure write_attribute_meta_fms2_io
@@ -1171,7 +1173,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
 
   !> @brief Outputs the diagnostic data to a file using fms2_io taking a field object as input
   subroutine diag_field_write_field (field, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
-    TYPE(diag_fieldtype), INTENT(inout) :: Field
+    TYPE(diag_fieldtype), INTENT(inout) :: Field !<
     REAL , INTENT(inout) :: buffer(:,:,:,:)
     logical, intent(in), optional :: static
     class(FmsNetcdfFile_t), optional, intent(inout),target :: fileob
@@ -1246,7 +1248,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
 
   !> \brief Writes diagnostic data out using fms2_io routine.
   subroutine diag_field_write_varname (varname, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
-    CHARACTER(len=*), INTENT(in) :: varname
+    CHARACTER(len=*), INTENT(in) :: varname !<
     REAL , INTENT(inout) :: buffer(:,:,:,:)
     logical, intent(in), optional :: static
     class(FmsNetcdfFile_t), intent(inout), optional, target :: fileob

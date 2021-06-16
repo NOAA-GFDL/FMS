@@ -26,13 +26,15 @@
 
 !> @defgroup mpp_mod mpp_mod
 !> @ingroup mpp
-!> @brief A set of simple calls to provide a uniform interface
-!! to different message-passing libraries. It currently can be
-!! implemented either in the SGI/Cray native SHMEM library or in the MPI
-!! standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
-!! incorporated as the need arises.
+!> @brief This module defines interfaces for common operations using message-passing libraries.
 !!
 !> @author V. Balaji <"V.Balaji@noaa.gov">
+!!
+!!   A set of simple calls to provide a uniform interface
+!!   to different message-passing libraries. It currently can be
+!!   implemented either in the SGI/Cray native SHMEM library or in the MPI
+!!   standard. Other libraries (e.g MPI-2, Co-Array Fortran) can be
+!!   incorporated as the need arises.
 !!
 !!   The data transfer between a processor and its own memory is based
 !!   on <TT>load</TT> and <TT>store</TT> operations upon
@@ -306,8 +308,6 @@ private
       integer :: length
   end type mpp_type_list
 
-!> @addtogroup mpp_mod
-!> @{
 !***********************************************************************
 !
 !     public interface from mpp_util.h
@@ -376,6 +376,7 @@ private
   !!    <TT>FATAL</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>,
   !!    and induces a clean error exit with a call stack traceback.
   !!  </IN>
+  !> @ingroup mpp_mod
   interface mpp_error
      module procedure mpp_error_basic
      module procedure mpp_error_mesg
@@ -402,6 +403,7 @@ private
      module procedure mpp_error_rs_rs
   end interface
   !> Takes a given integer or real array and returns it as a string
+  !> @ingroup mpp_mod
   interface array_to_char
      module procedure iarray_to_char
      module procedure rarray_to_char
@@ -419,6 +421,7 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  !> @fn subroutine mpp_init( flags, localcomm, test_level)
   !> @brief Initialize @ref mpp_mod
   !!
   !> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
@@ -431,12 +434,14 @@ private
   !!
   !!            call mpp_init( flags )
   !!
-  !! @param flags" TYPE="integer">
+  !! @param flags
   !!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
   !!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
-  !!  </IN>
-  !! </SUBROUTINE>
+  !! @param test_level
+  !!   Debugging flag to set amount of initialization tasks performed 
+  !> @ingroup mpp_mod
 
+  !> @fn subroutine mpp_exit()
   !> @brief Exit <TT>@ref mpp_mod</TT>.
   !!
   !> Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
@@ -447,9 +452,11 @@ private
   !! <br>Example usage:
   !!
   !!            call mpp_exit()
+  !> @ingroup mpp_mod
 
   !#####################################################################
 
+  !> @fn subroutine mpp_set_stack_size(n)
   !> @brief Allocate module internal workspace.
   !> @param Integer to set stack size to(in words)
   !> <TT>mpp_mod</TT> maintains a private internal array called
@@ -480,6 +487,7 @@ private
   !! appropriate point in the code where all PEs are known to be present.
   !!        @verbose call mpp_set_stack_size(n)
   !!
+  !> @ingroup mpp_mod
   public :: mpp_set_stack_size
   ! from mpp_util.h
 
@@ -494,6 +502,7 @@ private
   !> @param[in] array_of_subsizes Integer array of subsizes
   !> @param[in] array_of_starts Integer array of starts
   !> @param[out] dtype_out Output variable for created @ref mpp_type
+  !> @ingroup mpp_mod
   interface mpp_type_create
       module procedure mpp_type_create_int4
       module procedure mpp_type_create_int8
@@ -514,13 +523,14 @@ private
   !> @brief Reduction operations.
   !>    Find the max of scalar a the PEs in pelist
   !!    result is also automatically broadcast to all PEs
-  !!  <TEMPLATE>
+  !!    @code{.F90}
   !!            call  mpp_max( a, pelist )
-  !!  </TEMPLATE>
+  !!    @endcode 
   !> @param a <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
   !> @param pelist If <TT>pelist</TT> is omitted, the context is assumed to be the
   !!    current pelist. This call implies synchronization across the PEs in
   !!    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
+  !> @ingroup mpp_mod
   interface mpp_max
      module procedure mpp_max_real8_0d
      module procedure mpp_max_real8_1d
@@ -534,6 +544,7 @@ private
 
   !> @brief Get minimum value out of the PEs in pelist
   !> Result is also broadcast to all PEs
+  !> @ingroup mpp_mod
   interface mpp_min
      module procedure mpp_min_real8_0d
      module procedure mpp_min_real8_1d
@@ -570,6 +581,7 @@ private
   !! Example usage:
   !!            call mpp_sum( a, length, pelist )
   !!
+  !> @ingroup mpp_mod
   interface mpp_sum
      module procedure mpp_sum_int8
      module procedure mpp_sum_int8_scalar
@@ -614,6 +626,7 @@ private
   end interface
 
   !> Calculates sum of a given numerical array across pe's for adjoint domains
+  !> @ingroup mpp_mod
   interface mpp_sum_ad
      module procedure mpp_sum_int8_ad
      module procedure mpp_sum_int8_scalar_ad
@@ -658,6 +671,7 @@ private
   end interface
 
   !> @brief Gather information onto root pe
+  !> @ingroup mpp_mod
   interface mpp_gather
      module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4_1d
@@ -678,6 +692,7 @@ private
   end interface
 
   !> @brief Scatter information to the given pelist
+  !> @ingroup mpp_mod
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
@@ -691,6 +706,7 @@ private
   !> @brief Scatter a vector across all PEs
   !!
   !> Transpose the vector and PE index
+  !> @ingroup mpp_mod
   interface mpp_alltoall
      module procedure mpp_alltoall_int4
      module procedure mpp_alltoall_int8
@@ -796,11 +812,11 @@ private
   !!        call mpp_recv( a, n, 0 )
   !!    end if
   !!    </PRE>
-  !!  </DESCRIPTION>
-  !!  <TEMPLATE>
+  !! <br>Example call:
+  !! @code{.F90}
   !!    call mpp_transmit( put_data, put_len, put_pe, get_data, get_len, get_pe )
-  !!  </TEMPLATE>
-  !! </INTERFACE>
+  !! @endcode
+  !> @ingroup mpp_mod
   interface mpp_transmit
      module procedure mpp_transmit_real8
      module procedure mpp_transmit_real8_scalar
@@ -865,6 +881,7 @@ private
   !> @param block true for blocking, false for non-blocking. Defaults to true
   !> @param tag communication tag
   !> @param[out] request MPI request handle
+  !> @ingroup mpp_mod
   interface mpp_recv
      module procedure mpp_recv_real8
      module procedure mpp_recv_real8_scalar
@@ -931,6 +948,7 @@ private
   !> @param[out] request MPI request handle
   !! <br> Example usage:
   !! @code{.F90} call mpp_send(data, ie, pe) @endcode
+  !> @ingroup mpp_mod
   interface mpp_send
      module procedure mpp_send_real8
      module procedure mpp_send_real8_scalar
@@ -1017,6 +1035,7 @@ private
   !> @param length Length of data to broadcast
   !> @param from_pe PE to send the data from
   !> @param pelist List of PE's to broadcast across, if not provided uses current list
+  !> @ingroup mpp_mod
   interface mpp_broadcast
      module procedure mpp_broadcast_char
      module procedure mpp_broadcast_real8
@@ -1121,6 +1140,7 @@ private
   !! @param pelist Optional list of PE's to include in checksum calculation if not using
   !! current pelist
   !! @return Parallel checksum of var across given or implicit pelist
+  !> @ingroup mpp_mod
   interface mpp_chksum
      module procedure mpp_chksum_i8_1d
      module procedure mpp_chksum_i8_2d
@@ -1175,6 +1195,8 @@ private
 #endif
   end interface
 
+!> @addtogroup mpp_mod
+!> @{
 !***********************************************************************
 !
 !            module variables

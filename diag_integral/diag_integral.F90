@@ -102,6 +102,8 @@ public      &
 
 
 !###############################################################################
+!> Perform a summation of the named integral field
+!!
 !> This interface can be called in any one of three ways:
 !!
 !! @code{.f90}

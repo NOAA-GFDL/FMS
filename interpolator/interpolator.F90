@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @defgroup interpolator_mod interpolator_mod
 !> @ingroup interpolator
-!> @brief interpolator_mod is a module to interpolate climatology data to model the grid.
+!> @brief A module to interpolate climatology data to model the grid.
 !> @author William Cooke <William.Cooke@noaa.gov>
 
 !> @file
@@ -118,6 +118,8 @@ public interpolator_init, &
        query_interpolator,&
        read_data
 
+!> Interpolates a field to a model grid
+!!
 !> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call interpolator (sulfate, model_time, p_half, model_data, name, is, js, clim_units)
@@ -176,12 +178,14 @@ interface interpolator
    module procedure interpolator_2D_no_time_axis
 end interface
 
-!> Assignment override interface for interpolate type
+!> Private assignment override interface for interpolate type
 !> @ingroup interpolator_mod
 interface assignment(=)
    module procedure interpolate_type_eq
 end interface
 
+!> Private interface for weighted scalar interpolation
+!!
 !> Example usage:
 !! ~~~~~~~~~~{.f90}
 !! call interp_weighted_scalar (pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_data(ilon,j,:,:))
@@ -3958,8 +3962,6 @@ if (size(grdout(:)).ne. (size(datout,1 )+1)) &
 
 end subroutine interp_weighted_scalar_2D
 
-
-!
 !---------------------------------------------------------------------
 !> @brief interp_weighted_scalar_1D receives the variables grdin,
 !!        grdout, and datin as inputs and returns datout.

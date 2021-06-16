@@ -26,7 +26,7 @@ either tabbing, or within the `@code` commands(see full subroutine documentation
 below for examples of both). Links to other pages within the documentation can be created with
 `@ref name`.
 
-### Documenting subroutines and functions
+### Documenting Subroutines and Functions
 
 The first `!>` comment above a routine implicitly starts the brief description, and the second `!>`
 will start the full description (as long as the brief description is terminated).
@@ -88,8 +88,8 @@ contained in interfaces and typedefs if they are included in the module group as
 This can be avoided by ending the module group before the
 interface is defined with `!> @}` and adding `@ingroup module_name_mod` to the interface
 documentation blocks. This will add the interface/type to the module page without any redundant
-items. When adding these commands it is important the add the `!> @addtogroup mod_name_mod` and
-following `!> @{` after any interface definitions or else the rest of the module will be excluded.
+items. After any interface or type definitions are defined, `!> @addtogroup mod_name_mod` and a
+following `!> @{` must be added after or else the rest of the module will be excluded.
 
 Example:
 @code{.F90}
@@ -114,6 +114,8 @@ end type typename
 
 < any other interface/type definitions and documentation >
 
+! add rest of module
 !> @addtogroup foo_mod
 !> @{
+...
 @endcode

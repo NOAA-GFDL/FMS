@@ -19,6 +19,7 @@
 !> @defgroup mpp_utilities_mod mpp_utilities_mod
 !> @ingroup mpp
 !> @brief Module for utiltity routines to be used in @ref mpp modules
+!!
 !> Currently only holds one routine for finding global min and max
 
 !> @file

@@ -1746,7 +1746,7 @@ contains
     enddo
   end subroutine CT_rescale_data_2d
 
-  !! @brief Rescales the fields in the elements of a coupler_3d_bc_type
+  !> @brief Rescales the fields in the elements of a coupler_3d_bc_type
   !!
   !! This subroutine rescales the fields in the elements of a coupler_3d_bc_type by multiplying by a
   !! factor scale.  If scale is 0, this is a direct assignment to 0, so that NaNs will not persist.
@@ -1841,7 +1841,7 @@ contains
   end subroutine CT_rescale_data_3d
 
 
-  !! @brief Increment data in all elements of one coupler_2d_bc_type
+  !> @brief Increment data in all elements of one coupler_2d_bc_type
   !!
   !! Do a direct increment of the data in all elements of one coupler_2d_bc_type into another.  Both
   !! must have the same array sizes.
@@ -1948,7 +1948,7 @@ contains
   end subroutine CT_increment_data_2d_2d
 
 
-  !! @brief Increment data in all elements of one coupler_3d_bc_type
+  !> @brief Increment data in all elements of one coupler_3d_bc_type
   !!
   !! Do a direct increment of the data in all elements of one coupler_3d_bc_type into another.  Both
   !! must have the same array sizes.
@@ -2060,7 +2060,7 @@ contains
     enddo
   end subroutine CT_increment_data_3d_3d
 
-  !! @brief Increment data in the elements of a coupler_2d_bc_type with weighted averages of elements of a
+  !> @brief Increment data in the elements of a coupler_2d_bc_type with weighted averages of elements of a
   !! coupler_3d_bc_type
   !!
   !! Increments the data in the elements of a coupler_2d_bc_type with the weighed average of the
@@ -2335,7 +2335,7 @@ contains
     enddo
   end subroutine CT_extract_data_2d
 
-  !! @brief Extract a single k-level of a 3d field from a coupler_3d_bc_type
+  !> @brief Extract a single k-level of a 3d field from a coupler_3d_bc_type
   !!
   !! Extract a single k-level of a 3-d field from a coupler_3d_bc_type into a two-dimensional array.
   !!

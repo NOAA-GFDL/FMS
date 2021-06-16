@@ -98,18 +98,18 @@ character(len=*), parameter :: &
 #include<file_version.h>
 
 character(len=*), parameter :: &
-     grid_dir  = 'INPUT/',     &      ! root directory for all grid files
-     grid_file = 'INPUT/grid_spec.nc' ! name of the grid spec file
+     grid_dir  = 'INPUT/',     &      !< root directory for all grid files
+     grid_file = 'INPUT/grid_spec.nc' !< name of the grid spec file
 
 integer, parameter :: &
-     MAX_NAME = 256,  & ! max length of the variable names
-     MAX_FILE = 1024, & ! max length of the file names
+     MAX_NAME = 256,  & !< max length of the variable names
+     MAX_FILE = 1024, & !< max length of the file names
      VERSION_0 = 0,   &
      VERSION_1 = 1,   &
      VERSION_2 = 2
 
-integer, parameter :: BUFSIZE = 1048576  ! This is used to control memory usage in get_grid_comp_area
-                                         ! We may change this to a namelist variable is needed.
+integer, parameter :: BUFSIZE = 1048576  !< This is used to control memory usage in get_grid_comp_area
+                                         !! We may change this to a namelist variable is needed.
 
 ! ==== module variables ======================================================
 integer :: grid_version = -1
@@ -452,7 +452,8 @@ end subroutine get_grid_comp_area_UG
 ! ============================================================================
 !> Returns arrays of global grid cell boundaries for given model component and
 !! mosaic tile number.
-!! @note In the case of non-lat-lon grid the returned coordinates may have be not so
+!!
+!> @note In the case of non-lat-lon grid the returned coordinates may have be not so
 !! meaningful, by the very nature of such grids. But presumably these 1D coordinate
 !! arrays are good enough for diag axis and such.
 subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)

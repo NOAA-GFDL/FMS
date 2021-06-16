@@ -80,7 +80,7 @@ private
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-!> Holds meta data for a field and it's associated grid
+!> Private type for holding field and grid information from a data table
 !> @ingroup data_override_mod
 type data_type
    character(len=3)   :: gridname
@@ -93,7 +93,7 @@ type data_type
    integer            :: region_type
 end type data_type
 
-!> Holds various data fields for performing data overrides
+!> Private type for holding various data fields for performing data overrides
 !> @ingroup data_override_mod
 type override_type
    character(len=3)                 :: gridname
@@ -122,7 +122,7 @@ interface data_override
      module procedure data_override_3d
 end interface
 
-!> @ref data_override_interface for unstructured grids
+!> Version of @ref data_override for unstructured grids
 !> @ingroup data_override_mod
 interface data_override_UG
      module procedure data_override_UG_1d

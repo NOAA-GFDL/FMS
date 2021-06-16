@@ -49,18 +49,24 @@ module axis_utils_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!> @}
+
   !> Perform 1D interpolation between grids.
   !!
-  !> @param grid1
+  !> Data and grids can have 1, 2, or 3 dimensions.
+  !! @param grid1
   !! @param grid2
   !! @param data1 Data to interpolate
   !! @param [inout] data2 Interpolated data
   !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
+  !! @ingroup axis_utils_mod
   interface interp_1d
      module procedure interp_1d_1d
      module procedure interp_1d_2d
      module procedure interp_1d_3d
   end interface
+!> @addtogroup axis_utils_mod
+!> @{
 
 contains
 

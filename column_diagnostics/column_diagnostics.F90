@@ -27,8 +27,6 @@
 !> @{
 module column_diagnostics_mod
 
-
-
 use mpp_io_mod,             only:  mpp_io_init
 use fms_mod,                only:  fms_init, mpp_pe, mpp_root_pe, &
                                    mpp_npes, check_nml_error, &

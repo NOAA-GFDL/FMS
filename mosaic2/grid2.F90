@@ -106,19 +106,19 @@ character(len=*), parameter :: &
 #include<file_version.h>
 
 character(len=*), parameter :: &
-     grid_dir  = 'INPUT/',     &      ! root directory for all grid files
-     grid_file = 'INPUT/grid_spec.nc' ! name of the grid spec file
+     grid_dir  = 'INPUT/',     &      !< root directory for all grid files
+     grid_file = 'INPUT/grid_spec.nc' !< name of the grid spec file
 
 integer, parameter :: &
-     MAX_NAME = 256,  & ! max length of the variable names
-     MAX_FILE = 1024, & ! max length of the file names
+     MAX_NAME = 256,  & !< max length of the variable names
+     MAX_FILE = 1024, & !< max length of the file names
      VERSION_0 = 0,   &
      VERSION_1 = 1,   &
      VERSION_2 = 2,   &
      VERSION_3 = 3
 
-integer, parameter :: BUFSIZE = 1048576  ! This is used to control memory usage in get_grid_comp_area
-                                         ! We may change this to a namelist variable is needed.
+integer, parameter :: BUFSIZE = 1048576  !< This is used to control memory usage in get_grid_comp_area
+                                         !! We may change this to a namelist variable is needed.
 
 ! ==== module variables ======================================================
 integer :: grid_version = -1

@@ -19,7 +19,9 @@
 !> @defgroup horiz_interp_conserve_mod horiz_interp_conserve_mod
 !> @ingroup horiz_interp
 !> @brief Performs spatial interpolation between grids using conservative interpolation
+!!
 !> @author Bruce Wyman, Zhi Liang
+!!                
 !> This module can conservatively interpolate data from any logically rectangular grid
 !! to any rectangular grid. The interpolation scheme is area-averaging
 !! conservative scheme. There is an optional mask field for missing input data in both
@@ -113,12 +115,6 @@ module horiz_interp_conserve_mod
 contains
 
   !#######################################################################
-  !  <SUBROUTINE NAME="horiz_interp_conserve_init">
-  !  <OVERVIEW>
-  !     writes version number to logfile.out
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !  </DESCRIPTION>
 
   !> Writes version number to logfile.
   subroutine horiz_interp_conserve_init
@@ -132,17 +128,14 @@ contains
 
   end subroutine horiz_interp_conserve_init
 
-  !  </SUBROUTINE>
-
   !#######################################################################
-  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+
   subroutine horiz_interp_conserve_new_1dx1d ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
     real, intent(in),       dimension(:)   :: lon_in , lat_in
     real, intent(in),       dimension(:)   :: lon_out, lat_out
     integer, intent(in),       optional    :: verbose
 
-  !</PUBLICROUTINE>
     !-----------------------------------------------------------------------
     real, dimension(size(lat_out(:))-1,2) :: sph
     real, dimension(size(lon_out(:))-1,2) :: theta
@@ -336,7 +329,7 @@ contains
   end subroutine horiz_interp_conserve_new_1dx1d
 
   !#######################################################################
-  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+
   subroutine horiz_interp_conserve_new_1dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
@@ -346,7 +339,6 @@ contains
     real, intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
 
-  !</PUBLICROUTINE>
 
     integer :: create_xgrid_1DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -503,7 +495,7 @@ contains
   end subroutine horiz_interp_conserve_new_1dx2d
 
   !#######################################################################
-  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+
   subroutine horiz_interp_conserve_new_2dx1d ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
@@ -512,8 +504,6 @@ contains
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
-
-  !</PUBLICROUTINE>
 
     integer :: create_xgrid_2DX1D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -611,7 +601,7 @@ contains
   end subroutine horiz_interp_conserve_new_2dx1d
 
   !#######################################################################
-  !<PUBLICROUTINE INTERFACE="horiz_interp_conserve_new">
+
   subroutine horiz_interp_conserve_new_2dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
@@ -620,7 +610,6 @@ contains
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
-  !</PUBLICROUTINE>
 
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -716,57 +705,28 @@ contains
   end subroutine horiz_interp_conserve_new_2dx2d
 
   !########################################################################
-  ! <SUBROUTINE NAME="horiz_interp_conserve">
 
-  !   <OVERVIEW>
-  !      Subroutine for performing the horizontal interpolation between two grids.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     Subroutine for performing the horizontal interpolation between two grids.
-  !     horiz_interp_conserve_new must be called before calling this routine.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_conserve ( Interp, data_in, data_out, verbose, mask_in, mask_out)
-  !   </TEMPLATE>
-  !
-  !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
-  !     Derived-type variable containing interpolation indices and weights.
-  !     Returned by a previous call to horiz_interp_new.
-  !   </IN>
-  !   <IN NAME="data_in" TYPE="real, dimension(:,:)">
-  !      Input data on source grid.
-  !   </IN>
-
-  !   <IN NAME="verbose" TYPE="integer, optional">
-  !      flag for the amount of print output.
-  !               verbose = 0, no output; = 1, min,max,means; = 2, still more
-  !   </IN>
-  !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
-  !      Input mask, must be the same size as the input data. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
-  !      that should not be used or have missing data. mask_in will be applied only
-  !      when horiz_interp_conserve_new_1d is called. mask_in will be passed into
-  !      horiz_interp_conserve_new_2d.
-  !   </IN>
-
-  !   <OUT NAME="data_out" TYPE="real, dimension(:,:)">
-  !      Output data on destination grid.
-  !   </OUT>
-  !   <OUT NAME="mask_out" TYPE="real, dimension(:,:),optional">
-  !      Output mask that specifies whether data was computed. mask_out will be computed only
-  !      when horiz_interp_conserve_new_1d is called. mask_out will be computed in
-  !      horiz_interp_conserve_new_2d.
-  !   </OUT>
-
+  !> @brief Subroutine for performing the horizontal interpolation between two grids.
+  !!
+  !> Subroutine for performing the horizontal interpolation between two grids.
+  !! horiz_interp_conserve_new must be called before calling this routine.
   subroutine horiz_interp_conserve ( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real, intent(in),  dimension(:,:) :: data_in
-    real, intent(out), dimension(:,:) :: data_out
-    integer, intent(in),                   optional :: verbose
-    real, intent(in),   dimension(:,:), optional :: mask_in
-    real, intent(out),  dimension(:,:), optional :: mask_out
+    real, intent(in),  dimension(:,:) :: data_in !< Input data on source grid
+    real, intent(out), dimension(:,:) :: data_out !< Output data on destination grid
+    integer, intent(in),                   optional :: verbose !< 0 = no output; 1 = min,max,means;
+                                                               !! 2 = max output
+    real, intent(in),   dimension(:,:), optional :: mask_in !< Input mask, must be the same size as 
+                        !! the input data. The real value of mask_in must be in the range (0.,1.).
+                        !! Set mask_in=0.0 for data points that should not be used or have missing
+                        !! data. mask_in will be applied only when horiz_interp_conserve_new_1d is
+                        !! called. mask_in will be passed into horiz_interp_conserve_new_2d
+    real, intent(out),  dimension(:,:), optional :: mask_out !< Output mask that specifies whether
+                        !! data was computed. mask_out will be computed only when
+                        !! horiz_interp_conserve_new_1d is called. mask_out will be computed in
+                        !! horiz_interp_conserve_new_2d
 
     !  --- error checking ---
     if (size(data_in,1) /= Interp%nlon_src .or. size(data_in,2) /= Interp%nlat_src) &
@@ -785,7 +745,6 @@ contains
     end select
 
   end subroutine horiz_interp_conserve
-  ! </SUBROUTINE>
 
   !##############################################################################
   subroutine horiz_interp_conserve_version1 ( Interp, data_in, data_out, verbose, &
@@ -954,30 +913,14 @@ contains
   end subroutine horiz_interp_conserve_version2
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_conserve_del">
 
-  !   <OVERVIEW>
-  !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_new.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_new.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_conserve_del ( Interp )
-  !   </TEMPLATE>
-
-  !   <INOUT NAME="Interp" TYPE="horiz_interp_type">
-  !     A derived-type variable returned by previous call
-  !     to horiz_interp_new. The input variable must have
-  !     allocated arrays. The returned variable will contain
-  !     deallocated arrays.
-  !   </INOUT>
-
+  !> Deallocates memory used by "horiz_interp_type" variables.
+  !! Must be called before reinitializing with horiz_interp_new.
   subroutine horiz_interp_conserve_del ( Interp )
 
-    type (horiz_interp_type), intent(inout) :: Interp
+    type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by
+                         !! previous call to horiz_interp_new. The input variable must have
+                         !! allocated arrays. The returned variable will contain deallocated arrays.
 
     select case(Interp%version)
     case (1)
@@ -996,10 +939,9 @@ contains
     end select
 
   end subroutine horiz_interp_conserve_del
-  ! </SUBROUTINE>
 
   !#######################################################################
-  !---This statistics is for conservative scheme
+  !> This statistics is for conservative scheme
   subroutine stats ( dat, area, asum, dsum, wsum, low, high, miss, mask )
     real,    intent(in)  :: dat(:,:), area(:,:)
     real,    intent(out) :: asum, dsum, wsum, low, high
@@ -1064,10 +1006,10 @@ contains
 
   !#######################################################################
 
+  !> sums up the data and weights for a single output grid box
   subroutine data_sum( data, area, facis, facie, facjs, facje,  &
        dwtsum, wtsum, arsum, mask )
 
-    !  sums up the data and weights for a single output grid box
     !-----------------------------------------------------------------------
     real, intent(in), dimension(:,:) :: data, area
     real, intent(in)                 :: facis, facie, facjs, facje

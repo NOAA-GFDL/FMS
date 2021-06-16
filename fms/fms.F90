@@ -436,7 +436,6 @@ subroutine fms_init (localcomm )
     call grid_init
 
 end subroutine fms_init
-! </SUBROUTINE>
 
 !#######################################################################
 
@@ -588,7 +587,6 @@ end subroutine fms_end
        CALL mpp_sync()
     END IF
   END FUNCTION check_nml_error
-! </FUNCTION>
 
 !-----------------------------------------------------------------------
 !   private routine for initializing allowable error codes

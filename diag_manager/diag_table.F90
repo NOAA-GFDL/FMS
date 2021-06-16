@@ -186,12 +186,10 @@
 !!         <DT><TT>INTEGER :: packing</TT></DT>
 !!         <DD>
 !!           Fortran number <TT>KIND</TT> of the data written.  Valid values:
-!!           <NL>
-!!             <LI><TT>= 1</TT> <EN /> double precision</LI>
-!!             <LI><TT>= 2</TT> <EN /> float</LI>
-!!             <LI><TT>= 4</TT> <EN /> packed 16-bit integers</LI>
-!!             <LI><TT>= 8</TT> <EN /> packed 1-byte (not tested).</LI>
-!!           </NL>
+!!             - <TT>= 1</TT> <EN /> double precision
+!!             - <TT>= 2</TT> <EN /> float
+!!             - <LI><TT>= 4</TT> <EN /> packed 16-bit integers
+!!             - <TT>= 8</TT> <EN /> packed 1-byte (not tested)
 !!         </DD>
 !!       </DL>
 !!     </LI>
@@ -238,7 +236,7 @@ MODULE diag_table_mod
   PRIVATE
   PUBLIC :: parse_diag_table
 
-  !> Contains metadata and additional information for a field
+  !> Private type to hold field information for the diag table
   !> @ingroup diag_table_mod
   TYPE field_description_type
      CHARACTER(len=128) :: module_name, field_name, output_name, file_name
@@ -249,7 +247,7 @@ MODULE diag_table_mod
      INTEGER :: pack
   END TYPE field_description_type
 
-  !> Contains metadata and additional information for a file
+  !> Private type to hold file information for the diag table 
   !> @ingroup diag_table_mod
   TYPE file_description_type
      INTEGER :: output_freq

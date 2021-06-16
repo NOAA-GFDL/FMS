@@ -161,6 +161,7 @@ module drifters_mod
      module procedure drifters_copy_new
   end interface
 
+  !> @brief "Push" a given drifter at a given velocity for either 2D or 3D data
   !> @ingroup drifters_mod
   interface drifters_push
     module procedure drifters_push_2
@@ -173,6 +174,7 @@ module drifters_mod
      module procedure drifters_computek3d
   end interface
 
+  !> @brief Set the value of a given drifter field
   !> @ingroup drifters_mod
   interface drifters_set_field
     module procedure drifters_set_field_2d

@@ -71,6 +71,8 @@ public       &
 
 !> @}
 
+!> @brief Calculates solar information for the given location(lat & lon) and time
+!!
 !> ~~~~~~~~~~{.f90}
 !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
 !! call diurnal_solar (lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, dt)
@@ -144,6 +146,8 @@ interface diurnal_solar
    module procedure diurnal_solar_cal_0d
 end interface
 
+!> @brief Calculates the daily mean solar information for a given time and latitude.
+!!
 !> ~~~~~~~~~~{.f90}
 !! call daily_mean_solar (lat, time, cosz, fracday, rrsun)
 !! call daily_mean_solar (lat, time_since_ae, cosz, fracday, rrsun)
@@ -200,6 +204,8 @@ interface daily_mean_solar
    module procedure daily_mean_solar_cal_0d
 end interface
 
+!> Calculates the annual mean of solar information for a given latitude and time.
+!!
 !> ~~~~~~~~~~{.f90}
 !! call annual_mean_solar (js, je, lat, cosz, solar, fracday, rrsun)
 !! call annual_mean_solar (lat, cosz, solar)
@@ -240,6 +246,8 @@ interface annual_mean_solar
    module procedure annual_mean_solar_2level
 end interface
 
+!> Gets the length of year for current calendar
+!!
 !> ~~~~~~~~~~{.f90}
 !! call get_period (period)
 !! ~~~~~~~~~~
@@ -258,6 +266,8 @@ interface get_period
    module procedure get_period_time_type, get_period_integer
 end interface
 
+!> Sets the length of a year for the calendar in use
+!!
 !> ~~~~~~~~~~{.f90}
 !! call set_period (period_in)
 !! ~~~~~~~~~~

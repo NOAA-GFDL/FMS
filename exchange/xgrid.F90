@@ -256,22 +256,19 @@ interface set_frac_area
   module procedure set_frac_area_ug
 end interface
 
-
-!   <TEMPLATE>
-!   </TEMPLATE>
-!   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <OUT NAME="" TYPE="real" DIM="3">The global sum of a variable.</OUT>
-!   <IN NAME="remap_method" TYPE="integer,optional">
-!   </IN>
-
 !> @brief Returns three numbers which are the global sum of a variable.
 !! @details Returns three numbers which are the global sum of a
 !!     variable (1) on its home model grid, (2) after interpolation to the other
 !!     side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !!     Conservation_check must be called by all PEs to work properly.
-!! <br>Example usage:
+!!
+!! @param d real data
+!! @param grid_id 3 character grid ID
+!! @param[inout] xmap exchange grid
+!! @param[out] global sum of a variable on home model grid, after side grid interpolation and after
+!!  reinterpolation
+!!
+!! <br>Example usage: 
 !! @code{.F90}
 !! call conservation_check(d, grid_id, xmap,remap_order)
 !! @endcode
@@ -280,7 +277,7 @@ interface conservation_check
   module procedure conservation_check_side1
   module procedure conservation_check_side2
 end interface
-! </INTERFACE>
+
 !> For an unstructured grid, returns three numbers which are the global sum of a
 !! variable (1) on its home model grid, (2) after interpolation to the other
 !! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
@@ -291,6 +288,7 @@ interface conservation_check_ug
 end interface
 
 
+!> Private type for cell indices and data in the exchange grid
 !> @ingroup xgrid_mod
 type xcell_type
   integer :: i1 !< indices of cell in model arrays on both sides
@@ -309,6 +307,7 @@ type xcell_type
   real    :: scale
 end type xcell_type
 
+!> Type to hold pointers for grid boxes
 !> @ingroup xgrid_mod
 type grid_box_type
    real, dimension(:,:),   pointer :: dx     => NULL()
@@ -324,6 +323,7 @@ type grid_box_type
    real, dimension(:,:,:), pointer :: vlat   => NULL()
 end type grid_box_type
 
+!> Private type to hold all data needed from given grid for an exchange grid
 !> @ingroup xgrid_mod
 type grid_type
   character(len=3)                :: id                               !< grid identifier
@@ -387,6 +387,7 @@ type grid_type
 
 end type grid_type
 
+!> Private type for exchange grid data
 !> @ingroup xgrid_mod
 type x1_type
   integer :: i, j
@@ -398,6 +399,7 @@ type x1_type
   integer :: pos
 end type x1_type
 
+!> Private type for exchange grid data
 !> @ingroup xgrid_mod
 type x2_type
   integer :: i, j, l, k, pos
@@ -405,6 +407,7 @@ type x2_type
 !  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
+!> Private type for overlap exchange grid data
 !> @ingroup xgrid_mod
 type overlap_type
    integer          :: count
@@ -419,6 +422,7 @@ type overlap_type
    real,    allocatable :: dj(:)
 end type overlap_type
 
+!> Private type used for exchange grid communication
 !> @ingroup xgrid_mod
 type comm_type
   integer                         :: nsend, nrecv
@@ -428,6 +432,7 @@ type comm_type
   type(overlap_type), pointer, dimension(:) :: recv=>NULL()
 end type comm_type
 
+!> @brief Type for an exchange grid, holds pointers to included grids and any necessary data.
 !> @ingroup xgrid_mod
 type xmap_type
   private

@@ -364,7 +364,6 @@ use platform_mod
      MODULE PROCEDURE diag_field_add_attribute_r1d
      MODULE PROCEDURE diag_field_add_attribute_i1d
   END INTERFACE diag_field_add_attribute
-  ! </INTERFACE>
 
 !> @addtogroup diag_manager_mod
 !> @{
@@ -3972,36 +3971,36 @@ CONTAINS
 
   !> @brief Add a scalar real attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_r(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    REAL, INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    REAL, INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_r
 
   !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_i(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    INTEGER, INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    INTEGER, INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_i
 
   !> @brief Add a scalar character attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_c(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    CHARACTER(len=*), INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
   END SUBROUTINE diag_field_add_attribute_scalar_c
 
   !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_r1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    REAL, DIMENSION(:), INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
     INTEGER :: num_attributes, len
     CHARACTER(len=512) :: err_msg
@@ -4011,9 +4010,9 @@ CONTAINS
 
   !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_i1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    INTEGER, DIMENSION(:), INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    INTEGER, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
   END SUBROUTINE diag_field_add_attribute_i1d

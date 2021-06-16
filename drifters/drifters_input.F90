@@ -36,8 +36,8 @@ module drifters_input_mod
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
   character, parameter, private :: SEPARATOR = ' '
-
   !> @}
+
   !> @brief Input data type for drifters.
   !!
   !> @note Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
