@@ -273,7 +273,7 @@ end subroutine axis_edges
   end function get_axis_modulo
 
   !> @return true if modulo_beg and modulo_end exist in fileobj with the given
-  !! axis, and returns their values in tbeg and tend. 
+  !! axis, and returns their values in tbeg and tend.
   function get_axis_modulo_times(fileobj, axisname, tbeg, tend)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
     character(len=*), intent(in) :: axisname

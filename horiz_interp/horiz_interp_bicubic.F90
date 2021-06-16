@@ -124,7 +124,7 @@ module horiz_interp_bicubic_mod
 
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout) :: Interp !< A derived-type variable containing indices
-                                       !! and weights used for subsequent interpolations. To 
+                                       !! and weights used for subsequent interpolations. To
                                        !! reinitialize this variable for a different grid-to-grid
                                        !! interpolation you must first use the
                                        !! @ref horiz_interp_bicubic_del interface.
@@ -134,7 +134,7 @@ module horiz_interp_bicubic_mod
     real, intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
     integer, intent(in),          optional :: verbose !< flag for print output amount
     logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition along
-                                       !! zonal boundary is cyclic or not. Zonal boundary condition 
+                                       !! zonal boundary is cyclic or not. Zonal boundary condition
                                        !!is cyclic when true
     integer                                :: i, j, ip1, im1, jp1, jm1
     logical                                :: src_is_modulo

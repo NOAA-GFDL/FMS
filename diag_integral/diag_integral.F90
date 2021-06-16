@@ -131,6 +131,7 @@ public      &
 !! @param [in] <is, ie, js, je> starting/ending i,j indices over which summation
 !!        is to occur
 !!
+!! @ingroup diag_integral_mod
 interface sum_diag_integral_field
    module procedure sum_field_2d,      &
                     sum_field_2d_hemi, &

@@ -934,10 +934,10 @@ end function get_tracer_name
 !!
 !! @returns A logical flag set TRUE if the tracer is prognostic.
 function check_if_prognostic(model, n, err_msg)
- 
+
 integer, intent(in) :: model !< Parameter representing component model in use
 integer, intent(in) :: n !< Tracer number
-logical             :: check_if_prognostic 
+logical             :: check_if_prognostic
 character(len=*), intent(out), optional :: err_msg
 character(len=128) :: err_msg_local
 character(len=11) :: chn
@@ -1142,7 +1142,7 @@ end subroutine set_tracer_profile
 !!
 !! @returns A flag to show whether method_type exists with regard to tracer n. If method_type is not
 !! present then one must have default values. the name and control strings are provided by that routine.
-!! 
+!!
 !!  @note At present the tracer manager module allows the initialization of a tracer
 !!  profile if a restart does not exist for that tracer.
 !!  Options for this routine are as follows
@@ -1166,7 +1166,7 @@ end subroutine set_tracer_profile
  character(len=*), intent(out), optional :: control !< A string containing the modified parameters
                                          !! that are associated with method_type and name.
  character(len=*), intent(out), optional :: err_msg
- logical                                 :: query_method 
+ logical                                 :: query_method
 
  integer :: n1
  character(len=256) :: list_name

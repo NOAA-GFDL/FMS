@@ -58,7 +58,7 @@ public :: grid_init
 public :: grid_end
 ! ==== end of public interfaces ==============================================
 
-!> Gets the size of the grid for one or all tiles 
+!> Gets the size of the grid for one or all tiles
 !> @ingroup grid2_mod
 interface get_grid_size
    module procedure get_grid_size_for_all_tiles
@@ -66,7 +66,7 @@ interface get_grid_size
 end interface
 
 !> Gets arrays of global grid cell boundaries for given model component and
-!! mosaic tile number 
+!! mosaic tile number
 !> @ingroup grid2_mod
 interface get_grid_cell_vertices
    module procedure get_grid_cell_vertices_1D
@@ -89,7 +89,7 @@ interface get_grid_cell_area
    module procedure get_grid_cell_area_UG
 end interface get_grid_cell_area
 
-!> Gets the area of a given component per grid cell 
+!> Gets the area of a given component per grid cell
 !> @ingroup grid2_mod
 interface get_grid_comp_area
    module procedure get_grid_comp_area_SG

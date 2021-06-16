@@ -99,7 +99,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   character(len=*), parameter :: version = '2020.03'
   !> @}
 
-  !> Write diag field using @ref fms2_io 
+  !> Write diag field using @ref fms2_io
   !> @ingroup diag_output_mod
   interface diag_field_write
      module procedure diag_field_write_field
@@ -115,7 +115,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
      module procedure diag_output_init_use_mpp_io
   end interface
 
-  !> Writes axis metadata to a file. 
+  !> Writes axis metadata to a file.
   !> @ingroup diag_output_mod
   interface write_axis_meta_data
      module procedure write_axis_meta_data_fms2_io
@@ -1418,7 +1418,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: axes(:) !< Array of axis ID's, including the time axis
     LOGICAL, INTENT(in), OPTIONAL :: time_ops !< true if this file contains any min, max, time_rms,
-                                              !! or time average 
+                                              !! or time average
     TYPE(domain1d)       :: Domain
 
     TYPE(domainUG)       :: domainU

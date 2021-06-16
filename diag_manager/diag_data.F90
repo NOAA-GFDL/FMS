@@ -287,7 +287,7 @@ use platform_mod
   !> @addtogroup diag_data_mod
   !> @{
 
-  ! <!-- Other public variables --> 
+  ! <!-- Other public variables -->
   INTEGER :: num_files = 0 !< Number of output files currenly in use by the diag_manager.
   INTEGER :: num_input_fields = 0 !< Number of input fields in use.
   INTEGER :: num_output_fields = 0 !< Number of output fields in use.

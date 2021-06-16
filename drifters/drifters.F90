@@ -155,12 +155,12 @@ module drifters_mod
      logical, allocatable   :: remove(:)
   end type drifters_type
 
-  !> @brief Assignment override for @ref drifters_type 
+  !> @brief Assignment override for @ref drifters_type
   !> @ingroup drifters_mod
   interface assignment(=)
      module procedure drifters_copy_new
   end interface
- 
+
   !> @ingroup drifters_mod
   interface drifters_push
     module procedure drifters_push_2
@@ -578,7 +578,7 @@ contains
 
   !============================================================================
   !> @brief Write restart file for drifters.
-  !! 
+  !!
   !> Gather all the particle positions distributed
   !! across PE domains on root PE and save the data in netCDF file.
   subroutine drifters_write_restart(self, filename, &

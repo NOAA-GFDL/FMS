@@ -137,7 +137,7 @@ module coupler_types_mod
                                            !! if it can not be read from a restart file
   end type coupler_2d_values_type
 
-  !> Coupler data for 2D fields 
+  !> Coupler data for 2D fields
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_field_type
     character(len=48)                 :: name = ' ' !< name
@@ -185,7 +185,7 @@ module coupler_types_mod
                                                !! if it can not be read from a restart file
   end type coupler_1d_values_type
 
-  !> Coupler data for 1D fields 
+  !> Coupler data for 1D fields
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_field_type
     character(len=48)              :: name = ' ' !< name

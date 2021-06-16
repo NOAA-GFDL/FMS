@@ -74,17 +74,17 @@ to a specific objects documentation block, or to enclose any section of code wit
 !> @addtogroup foo_mod
 !> @{
 < any documented code within here will be included in foo_mod >
-!> @} 
+!> @}
 @endcode
 
 ### Documenting Interfaces and Type Definitions
 
 Interfaces and type definitions can be documentated the in a similar way as subroutines/functions.
 In the documentation they will both be listed data types and will show any included subroutines
-or variables with links if available. 
+or variables with links if available.
 
-For interfaces and type definitions, duplicates can appear for subroutines/functions and variables 
-contained in interfaces and typedefs if they are included in the module group as well. 
+For interfaces and type definitions, duplicates can appear for subroutines/functions and variables
+contained in interfaces and typedefs if they are included in the module group as well.
 This can be avoided by ending the module group before the
 interface is defined with `!> @}` and adding `@ingroup module_name_mod` to the interface
 documentation blocks. This will add the interface/type to the module page without any redundant
@@ -94,7 +94,7 @@ following `!> @{` after any interface definitions or else the rest of the module
 Example:
 @code{.F90}
 !> @}
-! closes module group started at beginning of file 
+! closes module group started at beginning of file
 
 !> @brief short description
 !!
@@ -105,7 +105,7 @@ Example:
 interface foo
   ...
 end interface foo
-            
+
 !> description
 !> @ingroup foo_mod
 type, public :: typename
@@ -113,7 +113,7 @@ type, public :: typename
 end type typename
 
 < any other interface/type definitions and documentation >
- 
+
 !> @addtogroup foo_mod
 !> @{
 @endcode

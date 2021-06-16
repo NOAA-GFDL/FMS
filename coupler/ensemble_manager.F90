@@ -62,7 +62,7 @@ module ensemble_manager_mod
   public :: get_ensemble_filter_pelist
 contains
 
-!> @brief Initializes @ref ensemble_manager_mod 
+!> @brief Initializes @ref ensemble_manager_mod
 !!
 !> @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer"
 !! @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE"
@@ -228,7 +228,7 @@ contains
 
 !nnz: I think the following block of code should be contained in a subroutine
 !     to consolidate and ensure the consistency of declaring the various pelists.
-!> @brief Sets up pe list for an ensemble. 
+!> @brief Sets up pe list for an ensemble.
 !!
 !! @throw FATAL, "ensemble_manager_mod: land_npes > atmos_npes"
 !! @throw FATAL, "ensemble_manager_mod: ice_npes > atmos_npes"

@@ -3026,7 +3026,7 @@ end function leap_year_no_leap
 !> @brief Returns the mean length of the year in the default calendar setting.
 !!
 !> There are no arguments in this function. It returns the mean
-!! length of the year for the default calendar. 
+!! length of the year for the default calendar.
 function length_of_year()
 
 ! What is the length of the year for the default calendar type

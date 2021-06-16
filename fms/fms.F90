@@ -238,7 +238,7 @@ integer, public :: clock_flag_default
   logical           :: read_all_pe   = .true. !< Read global data on all processors extracting local
                        !! part needed (TRUE) or read global data on PE0 and broadcast to all
                        !! PEs(FALSE).
-  character(len=16) :: clock_grain = 'NONE' !< The level of clock granularity used for performance 
+  character(len=16) :: clock_grain = 'NONE' !< The level of clock granularity used for performance
                        !! timing sections of code. Possible values in order of increasing detail
                        !! are: 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE',
                        !! 'ROUTINE', 'LOOP', and 'INFRA'.  Code sections are defined using routines
@@ -253,7 +253,7 @@ integer, public :: clock_flag_default
                        !! code time. See the @ref mpp_mod module for more details.
   character(len=8)  :: warning_level = 'warning' !< Sets the termination condition for the WARNING
                        !! flag to interfaces error_mesg/mpp_error. set warning_level = 'fatal'
-                       !! (program crashes for warning messages) or 'warning' (prints warning 
+                       !! (program crashes for warning messages) or 'warning' (prints warning
                        !! message and continues).
   integer           :: stack_size = 0 !< The size in words of the MPP user stack. If stack_size > 0,
                        !! the following MPP routine is called: call mpp_set_stack_size (stack_size).
@@ -554,12 +554,12 @@ end subroutine fms_end
   !!             call close_file (unit)
   !!         endif
   !!       @endcode
-  !! @throws FATAL, Unknown error while reading namelist ...., (IOSTAT = ####) 
+  !! @throws FATAL, Unknown error while reading namelist ...., (IOSTAT = ####)
   !! There was an error reading the namelist specified. Carefully examine all namelist and variables
   !! for anything incorrect (e.g. malformed, hidden characters).
   !!
   !! @throws FATAL, Unknown namelist, or mistyped namelist variable in namelist ...., (IOSTAT = ####)
-  !! The name list given doesn't exist in the namelist file, or a variable in the namelist is 
+  !! The name list given doesn't exist in the namelist file, or a variable in the namelist is
   !! mistyped or isn't a namelist variable.
   INTEGER FUNCTION check_nml_error(IOSTAT, NML_NAME)
     INTEGER, INTENT(in) :: IOSTAT !< The iostat value returned when reading a namelist record.
@@ -698,7 +698,7 @@ end subroutine fms_end
 
 !> @brief match the input character string to a string
 !!     in an array/list of character strings
-!! @return If an exact match was found then true is returned, otherwise false is returned. 
+!! @return If an exact match was found then true is returned, otherwise false is returned.
 !! @details Tries to find a match for a character string in a list of character strings.
 !!      The match is case sensitive and disregards blank characters to the right of
 !!      the string.

@@ -175,16 +175,16 @@ logical :: make_exchange_reproduce = .false. !< Set to .true. to make <TT>xgrid_
                                              !! numbers of PEs.  This option has a considerable performance impact.
 !< exactly same on different # PEs
 logical :: xgrid_log = .false.
-character(len=64) :: interp_method = 'first_order' !< Exchange grid interpolation method. 
+character(len=64) :: interp_method = 'first_order' !< Exchange grid interpolation method.
                                               !! It has two options: "first_order", "second_order".
 logical :: debug_stocks = .false.
 logical :: xgrid_clocks_on = .false.
 logical :: monotonic_exchange = .false.
 integer :: nsubset = 0 !< Number of processors to read exchange grid information. Those processors
                        !! that read the exchange grid information will send data to other processors
-                       !! to prepare for flux exchange. Default value is 0. When nsubset is 0, each 
-                       !! processor will read part of the exchange grid information. The purpose of 
-                       !! this namelist is to improve performance of setup_xmap when running on 
+                       !! to prepare for flux exchange. Default value is 0. When nsubset is 0, each
+                       !! processor will read part of the exchange grid information. The purpose of
+                       !! this namelist is to improve performance of setup_xmap when running on
                        !! higher processor count and solve receiving size mismatch issue on high
                        !! processor count. Try to set nsubset = mpp_npes/MPI_rank_per_node.
 logical :: do_alltoall = .true.
@@ -3094,7 +3094,7 @@ end subroutine regen
 
 !> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_sg(f, grid_id, xmap)
-real, dimension(:,:,:), intent(in   ) :: f !< fraction area to be set 
+real, dimension(:,:,:), intent(in   ) :: f !< fraction area to be set
 character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
 type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid ID
 
@@ -3158,7 +3158,7 @@ end subroutine  set_frac_area_ug
 !#######################################################################
 
 !> @brief Returns current size of exchange grid variables.
-!! @return size of given exchange grid's variable 
+!! @return size of given exchange grid's variable
 integer function xgrid_count(xmap)
 type (xmap_type), intent(inout) :: xmap
 
@@ -3167,12 +3167,12 @@ end function xgrid_count
 
 !#######################################################################
 
-!> Scatters data to exchange grid 
+!> Scatters data to exchange grid
 subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   real, dimension(:,:), intent(in   )    :: d !< data to send
   character(len=3),     intent(in   )    :: grid_id !< 3 character grid ID
   real, dimension(:),   intent(inout)    :: x !< xgrid data
-  type (xmap_type),     intent(inout)    :: xmap !< exchange grid 
+  type (xmap_type),     intent(inout)    :: xmap !< exchange grid
   integer, intent(in), optional          :: remap_method !< exchange grid interpolation method can
                                                          !! be FIRST_ORDER(=1) or SECOND_ORDER(=2)
   logical, intent(in), optional          :: complete
@@ -3288,7 +3288,7 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   real, dimension(:,:), intent(  out) :: d !< recieved xgrid data
   character(len=3),     intent(in   ) :: grid_id !< 3 character grid ID
   real, dimension(:),   intent(in   ) :: x !< xgrid data
-  type (xmap_type),     intent(inout) :: xmap !< exchange grid 
+  type (xmap_type),     intent(inout) :: xmap !< exchange grid
   logical, intent(in), optional     :: complete
 
   logical                                         :: is_complete, set_mismatch
@@ -4846,7 +4846,7 @@ end subroutine get_side1_from_xgrid_ug
 
 !> @brief Currently only support first order.
 subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
-  real, dimension(:),   intent(in   )    :: d !< 
+  real, dimension(:),   intent(in   )    :: d !<
   character(len=3),     intent(in   )    :: grid_id
   real, dimension(:),   intent(inout)    :: x
   type (xmap_type),     intent(inout)    :: xmap
@@ -6085,7 +6085,7 @@ end subroutine load_xgrid_use_mpp_io
 !
 !
 
-!> @brief Reads the center point of the grid from grid_spec.nc. 
+!> @brief Reads the center point of the grid from grid_spec.nc.
 !!
 !> Only the grid at side 1 is needed, so we only read atm and land grid.
 subroutine get_grid(grid, grid_id, grid_file, grid_version) !< use_mpp_io

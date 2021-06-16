@@ -93,7 +93,7 @@ type data_type
    integer            :: region_type
 end type data_type
 
-!> Holds various data fields for performing data overrides 
+!> Holds various data fields for performing data overrides
 !> @ingroup data_override_mod
 type override_type
    character(len=3)                 :: gridname

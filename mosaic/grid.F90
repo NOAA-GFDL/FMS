@@ -41,8 +41,8 @@ implicit none;private
 
 ! ==== public interfaces =====================================================
 ! grid dimension inquiry subroutines
-public :: get_grid_ntiles 
-public :: get_grid_size   
+public :: get_grid_ntiles
+public :: get_grid_size
 ! grid geometry inquiry subroutines
 public :: get_grid_cell_centers
 public :: get_grid_cell_vertices

@@ -284,7 +284,7 @@ end interface
 
    real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
    real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
-   real, intent(out), dimension(:,:) :: zmean !< Mean surface height(meters). Size must be 
+   real, intent(out), dimension(:,:) :: zmean !< Mean surface height(meters). Size must be
                                               !! size(blon)-1 by size(blat)-1
    logical :: get_topog_mean_1d
 
@@ -401,7 +401,7 @@ end interface
 
  !> @brief Returns fractional area covered by ocean in a grid box.
  !> @returns A logical value of true if the output field was successfully created. A value of false
- !! may be returned if the Navy 1/6 degree percent water data set was not readable. 
+ !! may be returned if the Navy 1/6 degree percent water data set was not readable.
  function get_ocean_frac_1d (blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
@@ -463,7 +463,7 @@ end interface
 
  !> @brief Returns a land-ocean mask in a grid box.
  !> @returns A logical value of true if the output field was successfully created. A value of false
- !! may be returned if the Navy 1/6 degree percent water data set was not readable. 
+ !! may be returned if the Navy 1/6 degree percent water data set was not readable.
  function get_ocean_mask_1d (blon, blat, ocean_mask)
 
  real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
@@ -517,13 +517,13 @@ end interface
 
  !> @brief Returns the percent of water in a grid box.
  !> @returns A logical value of true if the output field was successfully created. A value of false
- !! may be returned if the Navy 1/6 degree percent water data set was not readable. 
+ !! may be returned if the Navy 1/6 degree percent water data set was not readable.
  !!
  !! @throws FATAL, shape(water_frac) is not equal to (/size(blon)-1,size(blat)-1/)
  !! Check the input grid size and output field size.
  function get_water_frac_1d (blon, blat, water_frac)
  real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
- real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries.
  real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
                           !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_frac_1d
@@ -552,7 +552,7 @@ end interface
  function get_water_frac_2d (blon, blat, water_frac)
 
  real, intent(in),  dimension(:,:)   :: blon !< The longitude (in radians) at grid box boundaries.
- real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries.
  real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
                           !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_frac_2d
@@ -586,7 +586,7 @@ end interface
  function get_water_mask_1d (blon, blat, water_mask)
 
  real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
- real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries.
  logical, intent(out), dimension(:,:) :: water_mask !< A binary mask for water (true) or land (false).
                                      !! The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_mask_1d
@@ -627,7 +627,7 @@ end interface
  function get_water_mask_2d (blon, blat, water_mask)
 
  real, intent(in),  dimension(:,:)   :: blon !< The longitude (in radians) at grid box boundaries.
- real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries. 
+ real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries.
  logical, intent(out), dimension(:,:) :: water_mask !< A binary mask for water (true) or land (false).
                                      !! The size of this field must be size(blon)-1 by size(blat)-1.
  logical :: get_water_mask_2d

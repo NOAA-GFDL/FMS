@@ -144,7 +144,7 @@ end subroutine mosaic_init
     character(len=*), intent(in) :: xgrid_file !< The file that contains exchange grid information.
     integer,       intent(inout) :: i1(:), j1(:) !< i and j-index in grid 1 of exchange field
     integer,       intent(inout) :: i2(:), j2(:) !< i and j-index in grid 2 of exchange field
-    real,          intent(inout) :: area(:) !< area of the exchange grid. The area is sclaed to 
+    real,          intent(inout) :: area(:) !< area of the exchange grid. The area is sclaed to
                                             !! represent unit earth area.
     integer, optional, intent(in) :: ibegin, iend
 

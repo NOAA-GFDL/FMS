@@ -49,7 +49,7 @@ module stock_constants_mod
 
   integer, parameter :: NSIDES  = 3         !< top, bottom, side
   !> @}
- 
+
   !> @brief Holds stocks amounts per PE values
   !> @ingroup stock_constants_mod
   type stock_type

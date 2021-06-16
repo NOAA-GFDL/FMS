@@ -373,7 +373,7 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
 
    type (time_type),         intent(in)    :: Time !< Time to interpolate
    type (amip_interp_type),  intent(inout) :: Interp !< Holds data for interpolation
-   real,                     intent(out)   ::  sst(:,:) !< Sea surface temperature data 
+   real,                     intent(out)   ::  sst(:,:) !< Sea surface temperature data
    character(len=*), optional, intent(out) :: err_msg !< Holds error message string if present
 
    real, dimension(mobs,nobs) :: sice

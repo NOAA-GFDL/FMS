@@ -45,7 +45,7 @@ module drifters_core_mod
   !> @brief Core data needed for drifters.
   !! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
   !! when adding members.
-  !> @ingroup drifters_core_mod 
+  !> @ingroup drifters_core_mod
   type drifters_core_type
      integer(kind=i8_kind) :: it   !< time index
      integer :: nd     !< number of dimensions
@@ -56,7 +56,7 @@ module drifters_core_mod
   end type drifters_core_type
 
   !> @brief Assignment override for @ref drifters_core_type
-  !> @ingroup drifters_core_mod 
+  !> @ingroup drifters_core_mod
   interface assignment(=)
      module procedure drifters_core_copy_new
   end interface

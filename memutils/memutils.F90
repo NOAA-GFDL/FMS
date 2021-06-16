@@ -21,8 +21,6 @@
 !! @brief Module to expose the memory printing API
 !! @author V. Balaji
 !!
-!! @section DESCRIPTION
-!!
 !! Module to expose the memory printing API
 !!
 !! Model components at times desire to print the memory statics to stderr,

@@ -71,33 +71,33 @@ public :: nullify_filename_appendix
 !> @}
 
 !> @brief A linked list of strings
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 type, public :: char_linked_list
   character(len=128) :: string
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
 !> @brief Converts a given integer or real into a character string
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface string2
   module procedure string_from_integer2
   module procedure string_from_real2
 end interface string2
 
 
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
 end interface parse_mask_table
 
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface get_mosaic_tile_file
   module procedure get_mosaic_tile_file_sg
   module procedure get_mosaic_tile_file_ug
 end interface get_mosaic_tile_file
 
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface allocate_array
   module procedure allocate_array_i4_kind_1d
   module procedure allocate_array_i4_kind_2d
@@ -128,7 +128,7 @@ interface allocate_array
 end interface allocate_array
 
 
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface put_array_section
   module procedure put_array_section_i4_kind_1d
   module procedure put_array_section_i4_kind_2d
@@ -153,7 +153,7 @@ interface put_array_section
 end interface put_array_section
 
 
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface get_array_section
   module procedure get_array_section_i4_kind_1d
   module procedure get_array_section_i4_kind_2d
@@ -178,7 +178,7 @@ interface get_array_section
 end interface get_array_section
 
 
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface get_data_type_string
   module procedure get_data_type_string_0d
   module procedure get_data_type_string_1d
@@ -188,7 +188,7 @@ interface get_data_type_string
   module procedure get_data_type_string_5d
 end interface get_data_type_string
 
-!> @ingroup fms_io_utils_mod 
+!> @ingroup fms_io_utils_mod
 interface get_checksum
   module procedure get_checksum_0d
   module procedure get_checksum_1d
