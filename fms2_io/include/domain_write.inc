@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @ingroup fms_netcdf_domain_io_mod
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have
 !!        the I/O root write out the data that spans the "global" domain.

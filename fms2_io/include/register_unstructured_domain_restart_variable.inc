@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @ingroup fms_netcdf_unstructured_domain_io_mod
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_0d(fileobj, variable_name, vdata, &

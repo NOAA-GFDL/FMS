@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms
+!> @ingroup fms_io_mod
 
 !------------------------------------------------------------------------------
 !>Store a real axis (x,y,z,...) in a restart object assoicated with an

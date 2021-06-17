@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @ingroup fms_netcdf_domain_io_mod
 
 !> @briefs Calculates a variable's checksum across all ranks in the current pelist.
 !! @return A hex string containing the checksum.

@@ -17,10 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
-
-!> @file
-
+!> @ingroup fms_io_utils_mod
 
 !> @brief Return a string describing the input data's type.
 subroutine get_data_type_string_0d(sdata, type_string)

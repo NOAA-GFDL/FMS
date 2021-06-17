@@ -36,12 +36,16 @@ module random_numbers_mod
   implicit none
   private
 
+  !> @brief Type to hold a stream of randomly generated numbers
   !> @ingroup random_numbers_mod
   type randomNumberStream
     type(randomNumberSequence) :: theNumbers
   end type randomNumberStream
 
   !> Returns scalar, 1 or 2 D random real numbers
+  !!
+  !> @param stream @ref randomNumberStream to generate from 
+  !> @param[out] number output number(s)
   !> @ingroup random_numbers_mod
   interface getRandomNumbers
     module procedure getRandomNumber_Scalar, getRandomNumber_1D, getRandomNumber_2D
@@ -60,8 +64,7 @@ module random_numbers_mod
 !> @{
 contains
   ! ---------------------------------------------------------
-  ! Initialization
-  ! ---------------------------------------------------------
+  !> Initialization
   function initializeRandomNumberStream_S(seed) result(new)
     integer, intent( in)     :: seed
     type(randomNumberStream) :: new
@@ -78,8 +81,7 @@ contains
 
   end function initializeRandomNumberStream_V
   ! ---------------------------------------------------------
-  ! Procedures for drawing random numbers
-  ! ---------------------------------------------------------
+  !> Draws random scalar
   subroutine getRandomNumber_Scalar(stream, number)
     type(randomNumberStream), intent(inout) :: stream
     real,                     intent(  out) :: number
@@ -87,6 +89,7 @@ contains
     number = getRandomReal(stream%theNumbers)
   end subroutine getRandomNumber_Scalar
   ! ---------------------------------------------------------
+  !> Draws random 1D array
   subroutine getRandomNumber_1D(stream, numbers)
     type(randomNumberStream), intent(inout) :: stream
     real, dimension(:),       intent(  out) :: numbers
@@ -99,6 +102,7 @@ contains
     end do
   end subroutine getRandomNumber_1D
   ! ---------------------------------------------------------
+  !> Draws random 2D array
   subroutine getRandomNumber_2D(stream, numbers)
     type(randomNumberStream), intent(inout) :: stream
     real, dimension(:, :),    intent(  out) :: numbers
@@ -111,14 +115,13 @@ contains
     end do
   end subroutine getRandomNumber_2D
   ! ---------------------------------------------------------
-  ! Constructs a unique seed from grid cell index and model date/time
-  !   The perm is supplied we generate a different seed by
-  !   circularly shifting the bits of the seed - this is useful
-  !   if we want to create more than one seed for a given
-  !   column and model date/time.
-  !   Note that abs(perm) must be <= the number of bits used
-  !   to represent the default integer (likely 32)
-  ! ---------------------------------------------------------
+  !> Constructs a unique seed from grid cell index and model date/time
+  !!   The perm is supplied we generate a different seed by
+  !!   circularly shifting the bits of the seed - this is useful
+  !!   if we want to create more than one seed for a given
+  !!   column and model date/time.
+  !!   Note that abs(perm) must be <= the number of bits used
+  !!   to represent the default integer (likely 32)
   function constructSeed(i, j, time, perm) result(seed)
     integer,           intent( in)  :: i, j
     type(time_type),   intent( in) :: time

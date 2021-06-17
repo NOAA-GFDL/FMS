@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms
+!> @ingroup fms_io_mod
 
 !>Find the file unit for an inputted file, searching for its variants.  If the
 !!file is not found, then throw a fatal error.

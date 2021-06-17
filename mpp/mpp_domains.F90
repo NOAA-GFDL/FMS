@@ -882,6 +882,11 @@ module mpp_domains_mod
   end interface
 
   !> Defines a nullified 1D or 2D domain
+  !!
+  !> <br> Example usage:
+  !! @code{.F90}
+  !! call mpp_define_null_domain(domain) 
+  !! @endcode
   !> @ingroup mpp_domains_mod
   interface mpp_define_null_domain
      module procedure mpp_define_null_domain1D
@@ -2266,7 +2271,7 @@ module mpp_domains_mod
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
   end interface
-
+  !> Private interface for internal usage, compares two sizes 
   !> @ingroup mpp_domains_mod
   interface check_data_size
      module procedure check_data_size_1d

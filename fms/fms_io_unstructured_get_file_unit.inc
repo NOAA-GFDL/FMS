@@ -19,7 +19,7 @@
 !----------
 !ug support
 !> @file
-!> @ingroup fms
+!> @ingroup fms_io_mod
 
 !>Return the file unit and index in the "files_read" module array for the
 !!inputted file.  If the file does not currently exist in the "files_read"

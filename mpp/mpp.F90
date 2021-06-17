@@ -227,6 +227,8 @@ private
   !    public data type
   !
   !*********************************************************************
+  !> Communication information for message passing libraries
+  !!
   !> peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
   !> @ingroup mpp_mod
   type, public :: communicator
@@ -238,6 +240,7 @@ private
      integer           :: id, group         !< MPI communicator and group id for this PE set.
   end type communicator
 
+  !> Communication event profile 
   !> @ingroup mpp_mod
   type, public :: event
      private
@@ -365,16 +368,19 @@ private
   !!                    if( mpp_error_state().EQ.WARNING )call mpp_error( FATAL, '...' )
   !!    </PRE>
   !!  </DESCRIPTION>
-  !!  <TEMPLATE>
-  !!                    call mpp_error( errortype, routine, errormsg )
-  !!  </TEMPLATE>
-  !!  <IN NAME="errortype">
+  !! <br> Example usage:
+  !! @code{.F90} 
+  !! call mpp_error( errortype, routine, errormsg )
+  !! @endcode
+  !! @param errortype
   !!    One of <TT>NOTE</TT>, <TT>WARNING</TT> or <TT>FATAL</TT>
   !!    (these definitions are acquired by use association).
   !!    <TT>NOTE</TT> writes <TT>errormsg</TT> to <TT>STDOUT</TT>.
   !!    <TT>WARNING</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>.
   !!    <TT>FATAL</TT> writes <TT>errormsg</TT> to <TT>STDERR</TT>,
   !!    and induces a clean error exit with a call stack traceback.
+  !! @param routine Calling routine name
+  !! @param errmsg Message to output
   !!  </IN>
   !> @ingroup mpp_mod
   interface mpp_error
@@ -1204,21 +1210,21 @@ private
 !***********************************************************************
   integer, parameter   :: PESET_MAX = 10000
   integer              :: current_peset_max = 32
-  type(communicator), allocatable :: peset(:) ! Will be allocated starting from 0, 0 is a dummy used to hold single-PE "self" communicator
+  type(communicator), allocatable :: peset(:) !< Will be allocated starting from 0, 0 is a dummy used to hold single-PE "self" communicator
   logical              :: module_is_initialized = .false.
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0
   integer(i8_kind)     :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
   integer              :: mpp_comm_private
   logical              :: first_call_system_clock_mpi=.TRUE.
-  real(r8_kind)        :: mpi_count0=0  ! use to prevent integer overflow
-  real(r8_kind)        :: mpi_tick_rate=0.d0  ! clock rate for mpi_wtick()
+  real(r8_kind)        :: mpi_count0=0  !< use to prevent integer overflow
+  real(r8_kind)        :: mpi_tick_rate=0.d0  !< clock rate for mpi_wtick()
   logical              :: mpp_record_timing_data=.TRUE.
   type(clock),save     :: clocks(MAX_CLOCKS)
   integer              :: log_unit, etc_unit
   character(len=32)    :: configfile='logfile'
   integer              :: peset_num=0, current_peset_num=0
-  integer              :: world_peset_num                  !the world communicator
+  integer              :: world_peset_num                  !<the world communicator
   integer              :: error
   integer              :: clock_num=0, num_clock_ids=0,current_clock=0, previous_clock(MAX_CLOCKS)=0
   real                 :: tick_rate
@@ -1251,11 +1257,11 @@ private
   integer              :: clock_grain=CLOCK_LOOP-1
 
   !--- variables used in mpp_comm.h
-  integer            :: clock0    !measures total runtime from mpp_init to mpp_exit
+  integer            :: clock0    !<measures total runtime from mpp_init to mpp_exit
   integer            :: mpp_stack_size=0, mpp_stack_hwm=0
   logical            :: verbose=.FALSE.
 
-  integer :: get_len_nocomm = 0 ! needed for mpp_transmit_nocomm.h
+  integer :: get_len_nocomm = 0 !< needed for mpp_transmit_nocomm.h
 
   !--- variables used in mpp_comm_mpi.inc
   integer, parameter :: mpp_init_test_full_init = -1

@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @ingroup fms_netcdf_unstructured_domain_io_mod
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine unstructured_domain_write_0d(fileobj, variable_name, variable_data, &
