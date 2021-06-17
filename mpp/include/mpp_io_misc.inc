@@ -19,7 +19,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_io_mod
 !> @brief Misc. routines including initialization and finalization of @ref mpp_io_mod
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

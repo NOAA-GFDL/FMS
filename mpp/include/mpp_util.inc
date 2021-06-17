@@ -20,7 +20,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_mod
 !> @brief General utility functions for use in @ref mpp_utilities_mod
 
 #if defined(use_libMPI)

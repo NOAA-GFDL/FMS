@@ -21,7 +21,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_domains_mod
 !> @brief Routines for use in @ref mpp_domains_mod for routines utilizing
 !! domains with nested grids
 
@@ -55,34 +55,34 @@
 !! test_fms/mpp/test_mpp_domains.F90.\n
 !!\n
 !! @code{.F90}
-!! 		if( concurrent ) then
-!!   			call mpp_broadcast_domain(domain_fine)
-!!   			call mpp_broadcast_domain(domain_coarse)
-!! 		endif
+!! if( concurrent ) then
+!!   call mpp_broadcast_domain(domain_fine)
+!!   call mpp_broadcast_domain(domain_coarse)
+!! endif
 !!
-!! 		call mpp_define_nest_domains(nest_domain,domain,num_nest,nest_level(1:num_nest), &
-!!                              tile_fine(1:num_nest), tile_coarse(1:num_nest), &
+!! call mpp_define_nest_domains(nest_domain,domain,num_nest,nest_level(1:num_nest), &
+!!                             tile_fine(1:num_nest), tile_coarse(1:num_nest), &
 !!                              istart_coarse(1:num_nest), icount_coarse(1:num_nest), &
 !!                              jstart_coarse(1:num_nest), jcount_coarse(1:num_nest), &
 !!                              npes_nest_tile, x_refine(1:num_nest), y_refine(1:num_nest), &
 !!                              extra_halo=extra_halo, name="nest_domain")
 !!
-!! 		call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, level)
-!! 		call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, level)
-!! 		call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, level)
-!! 		call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, level)
+!! call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, level)
+!! call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, level)
+!! call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, level)
+!! call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, level)
 !!
-!!    		allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))
-!!    		allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))
-!!    		allocate(sbuffer(iss_c:ies_c, jss_c:jes_c,nz))
-!!    		allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))
-!!    		call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer)
+!! allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))
+!! allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))
+!! allocate(sbuffer(iss_c:ies_c, jss_c:jes_c,nz))
+!! allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))
+!! call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer)
 !!
-!!    		call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f, nest_level=level)
-!!    		allocate(buffer (is_f:ie_f, js_f:je_f,nz))
-!!    		call mpp_update_nest_coarse(x, nest_domain, buffer)
+!! call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f, nest_level=level)
+!! allocate(buffer (is_f:ie_f, js_f:je_f,nz))
+!! call mpp_update_nest_coarse(x, nest_domain, buffer)
 !
-!! 		call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
+!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
 !!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &
 !!                                    npes_nest_tile, x_refine, y_refine, extra_halo, name)
 !! @endcode
@@ -1526,10 +1526,11 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   !> Get the index of the data passed from coarse grid to fine grid.
   !!
   !! <br>Example usage:
-  !!
-  !! 		call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
+  !! @code{.F90}
+  !! call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
   !!                            is_coarse, ie_coarse, js_coarse, je_coarse, dir,
   !!                            nest_level, position)
+  !! @endcode
   subroutine mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine, &
                 is_coarse, ie_coarse, js_coarse, je_coarse, dir, nest_level, position)
 

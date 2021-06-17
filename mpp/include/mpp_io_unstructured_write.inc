@@ -18,7 +18,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_io_mod
 !> @brief Parallel file writes for unstructured grids, used in @ref mpp_io_mod
 !----------
 !ug support

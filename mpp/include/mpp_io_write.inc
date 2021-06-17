@@ -24,7 +24,7 @@
 !                             MPP_WRITE_META                                 !
 !                                                                            !
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_io_mod
 !> @brief This series of routines is used to describe the contents of the file
 !! being written on <unit>.
 !!
@@ -94,16 +94,16 @@
 !! I/O). If the <datLINK> element is allocated, it is considered to be a
 !! space axis, otherwise it is a time axis with an unlimited dimension.
 !! Only one time axis is allowed per file.
-!!
-!!  	subroutine mpp_write_meta_field( unit, field, axes, name, units, longname
-!!       				standard_name, min, max, missing, fill, scale, add, pack)
-!!     		integer, intent(in) :: unit
-!!     		type(fieldtype), intent(out) :: field
-!!     		type(axistype), intent(in) :: axes(:)
-!!     		character(len=*), intent(in) :: name, units, longname, standard_name
-!!     		real, intent(in), optional :: min, max, missing, fill, scale, add
-!!     		integer, intent(in), optional :: pack
-!!
+!! @code{.F90}
+!!  subroutine mpp_write_meta_field( unit, field, axes, name, units, longname 
+!!                                   standard_name, min, max, missing, fill, scale, add, pack)
+!!     integer, intent(in) :: unit
+!!     type(fieldtype), intent(out) :: field
+!!     type(axistype), intent(in) :: axes(:)
+!!     character(len=*), intent(in) :: name, units, longname, standard_name
+!!     real, intent(in), optional :: min, max, missing, fill, scale, add
+!!     integer, intent(in), optional :: pack
+!! @endcode
 !! This form defines a field. Metadata corresponding to the type
 !! above are written to the file on <unit>. A unique ID for subsequent
 !! references to this field is returned in field%id. At least one axis

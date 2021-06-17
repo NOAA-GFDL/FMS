@@ -21,7 +21,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_domains_mod
 !> @brief Various routines handling domains in @ref mpp_domains_mod
 
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">

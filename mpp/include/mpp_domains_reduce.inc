@@ -20,7 +20,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_domains_mod
 !> @brief Routines for calculating data from distributed arrays
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -18,7 +18,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_domains_mod
 !> @brief Routines for defining and managing unstructured grids
 
   !#####################################################################

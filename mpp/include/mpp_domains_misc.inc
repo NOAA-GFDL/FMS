@@ -19,7 +19,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_domains_mod
 !> @brief Initialization and finalization routines for @ref mpp_domains_mod as well
 !! as other utility routines.
 

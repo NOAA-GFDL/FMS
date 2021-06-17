@@ -20,7 +20,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_data_mod
 !> @brief Holds dummy constants and stack data for @ref mpp_mod and @ref mpp_domains_mod.
 !! Accessible through @ref mpp_data_mod
 

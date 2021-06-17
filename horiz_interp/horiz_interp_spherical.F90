@@ -113,7 +113,6 @@ end subroutine horiz_interp_spherical_init
     real, intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
     real, intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
     real, intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
-    integer, intent(in),          optional :: verbose !< flag for amount of print output
     logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition
                                           !! along zonal boundary is cyclic or not. Cyclic when true
     integer, intent(in),        optional   :: num_nbrs !< Number of nearest neighbors for regridding
@@ -275,8 +274,7 @@ end subroutine horiz_interp_spherical_init
   !> Subroutine for performing the horizontal interpolation between two grids.
   !! horiz_interp_spherical_new must be called before calling this routine.
   subroutine horiz_interp_spherical( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
-    type (horiz_interp_type), intent(in)        :: Interp
-    type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
+    type(horiz_interp_type), intent(in) :: Interp !< A derived type variable containing indices
                                           !! and weights for subsequent interpolations. Returned
                                           !! by a previous call to horiz_interp_spherical_new
     real, intent(in),  dimension(:,:)           :: data_in !< Input data on source grid

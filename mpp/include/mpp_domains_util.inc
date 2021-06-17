@@ -20,7 +20,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_domains_mod
 !> @brief Utility routines for getting and setting values in @ref mpp_domains_mod
 
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
@@ -301,10 +301,10 @@
   !> @brief Modifies the indices of the input domain to create the supergrid domain
   !!
   !> This is an example of how to use mpp_create_super_grid_domain
-  !!
-  !! 		call mpp_copy_domain(domain_in, domain_out)
-  !! 		call super_grid_domain(domain_out)
-  !!
+  !! @code{.F90}
+  !! call mpp_copy_domain(domain_in, domain_out)
+  !! call super_grid_domain(domain_out)
+  !! @endcode
   !! domain_in is the original domain, domain_out is the domain with the supergrid indices.
   subroutine mpp_create_super_grid_domain(domain)
     type(domain2D), intent(inout) :: domain !< Input domain

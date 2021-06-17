@@ -18,7 +18,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_io_mod
 !> @brief Parallel file reads for unstructured grids, used in @ref mpp_io_mod
 !----------
 !ug support

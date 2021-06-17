@@ -19,8 +19,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
-!> @brief Imports various routines used for communications and calculations
+!> @ingroup mpp_mod
+!> @brief Imports checksum, gather, and scatter routines used for communications and calculations
 !! between PE's in @ref mpp
 
 #if defined(use_libMPI)

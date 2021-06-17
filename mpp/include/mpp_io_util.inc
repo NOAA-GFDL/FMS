@@ -21,7 +21,7 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_io_mod
 !> @brief Routines to retrieve data used in @ref mpp_io_mod
 
   !#####################################################################
@@ -45,7 +45,9 @@
     !> @brief Get some general information about a file.
     !!
     !> <br>Example usage:
-    !! 			call mpp_get_info( unit, ndim, nvar, natt, ntime )
+    !! @code{.F90}
+    !! call mpp_get_info( unit, ndim, nvar, natt, ntime )
+    !! @endcode
     subroutine mpp_get_info( unit, ndim, nvar, natt, ntime )
 
       integer, intent(in) :: unit
@@ -323,26 +325,13 @@
 
   end function mpp_get_default_calendar
 
-  !#####################################################################
-! <SUBROUTINE NAME="mpp_get_times">
-!   <OVERVIEW>
-!     Get file time data.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Get file time data.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_get_times( unit, time_values )
-!   </TEMPLATE>
-!   <IN NAME="unit" TYPE="integer"> </IN>
-!   <INOUT NAME="time_values" TYPE="real(r8_kind)" DIM="(:)"> </INOUT>
-! </SUBROUTINE>
-
    !> @brief Get file time data.
    !!
    !> Copy time information from file and convert to time_type
    !! <br>Example usage:
-   !! 		call mpp_get_times( unit, time_values)
+   !! @code{.F90}
+   !! call mpp_get_times( unit, time_values)
+   !! @endcode
    subroutine mpp_get_times( unit, time_values )
       integer, intent(in) :: unit
       real, intent(inout) :: time_values(:)
