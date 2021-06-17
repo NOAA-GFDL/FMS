@@ -21,7 +21,7 @@
 !***********************************************************************
 !> @file
 !> @ingroup mpp_mod
-!> @brief General utility functions for use in @ref mpp_utilities_mod
+!> @brief General utility functions for use in @ref mpp_mod
 
 #if defined(use_libMPI)
 #include <mpp_util_mpi.inc>
