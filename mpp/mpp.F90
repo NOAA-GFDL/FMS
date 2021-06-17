@@ -240,7 +240,7 @@ private
      integer           :: id, group         !< MPI communicator and group id for this PE set.
   end type communicator
 
-  !> Communication event profile 
+  !> Communication event profile
   !> @ingroup mpp_mod
   type, public :: event
      private
@@ -369,7 +369,7 @@ private
   !!    </PRE>
   !!  </DESCRIPTION>
   !! <br> Example usage:
-  !! @code{.F90} 
+  !! @code{.F90}
   !! call mpp_error( errortype, routine, errormsg )
   !! @endcode
   !! @param errortype
@@ -444,7 +444,7 @@ private
   !!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
   !!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
   !! @param test_level
-  !!   Debugging flag to set amount of initialization tasks performed 
+  !!   Debugging flag to set amount of initialization tasks performed
   !> @ingroup mpp_mod
 
   !> @fn subroutine mpp_exit()
@@ -531,7 +531,7 @@ private
   !!    result is also automatically broadcast to all PEs
   !!    @code{.F90}
   !!            call  mpp_max( a, pelist )
-  !!    @endcode 
+  !!    @endcode
   !> @param a <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
   !> @param pelist If <TT>pelist</TT> is omitted, the context is assumed to be the
   !!    current pelist. This call implies synchronization across the PEs in

@@ -44,7 +44,7 @@ module random_numbers_mod
 
   !> Returns scalar, 1 or 2 D random real numbers
   !!
-  !> @param stream @ref randomNumberStream to generate from 
+  !> @param stream @ref randomNumberStream to generate from
   !> @param[out] number output number(s)
   !> @ingroup random_numbers_mod
   interface getRandomNumbers

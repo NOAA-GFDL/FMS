@@ -676,7 +676,7 @@ contains
   function inside_polygon(polyx, polyy, x, y)
      real, dimension(:), intent(in) :: polyx !< longitude coordinates of corners
      real, dimension(:), intent(in) :: polyy !< latitude coordinates of corners
-     real,               intent(in) :: x !< x coordinate of point to be tested 
+     real,               intent(in) :: x !< x coordinate of point to be tested
      real,               intent(in) :: y !< y coordinate of point to be tested
      logical                        :: inside_polygon
      integer                        :: i, j, nedges
@@ -930,7 +930,7 @@ contains
                                                !! previous call to horiz_interp_bilinear_new
     real, intent(in),  dimension(:,:)           :: data_in !< input data on source grid
     real, intent(out), dimension(:,:)           :: data_out !< output data on source grid
-    integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 = 
+    integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 =
                                                            !! all output
     real, intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
                                     !! the input data. The real value of mask_in must be in the

@@ -268,7 +268,7 @@ end interface
 !! @param[out] global sum of a variable on home model grid, after side grid interpolation and after
 !!  reinterpolation
 !!
-!! <br>Example usage: 
+!! <br>Example usage:
 !! @code{.F90}
 !! call conservation_check(d, grid_id, xmap,remap_order)
 !! @endcode

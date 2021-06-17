@@ -247,7 +247,7 @@ MODULE diag_table_mod
      INTEGER :: pack
   END TYPE field_description_type
 
-  !> Private type to hold file information for the diag table 
+  !> Private type to hold file information for the diag table
   !> @ingroup diag_table_mod
   TYPE file_description_type
      INTEGER :: output_freq

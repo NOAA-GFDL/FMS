@@ -3619,7 +3619,7 @@ logical,          intent(in), optional :: create !< If present and .true., then 
                                                  !! field will be created.
 integer,          intent(in), optional :: index !< The index to an array of values that the user
                                                 !! wishes to apply a new value.
-logical,          intent(in), optional :: append !< If present and .true., then append the value to 
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -3855,7 +3855,7 @@ logical,          intent(in), optional :: create !< If present and .true., then 
                                                  !! field will be created.
 integer,          intent(in), optional :: index !< The index to an array of values that the user
                                                 !! wishes to apply a new value.
-logical,          intent(in), optional :: append !< If present and .true., then append the value to 
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4091,7 +4091,7 @@ logical,          intent(in), optional :: create !< If present and .true., then 
                                                  !! field will be created.
 integer,          intent(in), optional :: index !< The index to an array of values that the user
                                                 !! wishes to apply a new value.
-logical,          intent(in), optional :: append !< If present and .true., then append the value to 
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -4327,7 +4327,7 @@ logical,          intent(in), optional :: create !< If present and .true., then 
                                                  !! field will be created.
 integer,          intent(in), optional :: index !< The index to an array of values that the user
                                                 !! wishes to apply a new value.
-logical,          intent(in), optional :: append !< If present and .true., then append the value to 
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5041,7 +5041,7 @@ end subroutine concat_strings
 !> Given the name of a pre-existing field and a suffix, this function
 !! will create a new field. The name of the new field will be that of
 !! the old field with a suffix supplied by the user.
-!! @return index of the field that has been created by the copy      
+!! @return index of the field that has been created by the copy
 function fm_copy_list(list_name, suffix, create ) &
          result(index)   !{
 integer        :: index

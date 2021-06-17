@@ -277,7 +277,7 @@ end subroutine horiz_interp_spherical_init
   subroutine horiz_interp_spherical( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
     type (horiz_interp_type), intent(in)        :: Interp
     type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
-                                          !! and weights for subsequent interpolations. Returned 
+                                          !! and weights for subsequent interpolations. Returned
                                           !! by a previous call to horiz_interp_spherical_new
     real, intent(in),  dimension(:,:)           :: data_in !< Input data on source grid
     real, intent(out), dimension(:,:)           :: data_out !< Output data on destination grid

@@ -21,7 +21,7 @@
 !> @brief Performs spatial interpolation between grids using conservative interpolation
 !!
 !> @author Bruce Wyman, Zhi Liang
-!!                
+!!
 !> This module can conservatively interpolate data from any logically rectangular grid
 !! to any rectangular grid. The interpolation scheme is area-averaging
 !! conservative scheme. There is an optional mask field for missing input data in both
@@ -718,7 +718,7 @@ contains
     real, intent(out), dimension(:,:) :: data_out !< Output data on destination grid
     integer, intent(in),                   optional :: verbose !< 0 = no output; 1 = min,max,means;
                                                                !! 2 = max output
-    real, intent(in),   dimension(:,:), optional :: mask_in !< Input mask, must be the same size as 
+    real, intent(in),   dimension(:,:), optional :: mask_in !< Input mask, must be the same size as
                         !! the input data. The real value of mask_in must be in the range (0.,1.).
                         !! Set mask_in=0.0 for data points that should not be used or have missing
                         !! data. mask_in will be applied only when horiz_interp_conserve_new_1d is

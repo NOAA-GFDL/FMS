@@ -1050,7 +1050,7 @@ contains
 
  !#####################################################################
 
- !> Dummy routine 
+ !> Dummy routine
  subroutine horiz_interp_end
  return
  end subroutine horiz_interp_end
