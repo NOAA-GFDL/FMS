@@ -161,7 +161,8 @@ contains
   buffer = ""
   if (variable_att_exists(fileobj, name, "edges")) then
     !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character
-    call get_variable_attribute(fileobj, name, "edges", buffer, reproduce_null_char_bug_flag=reproduce_null_char_bug)
+    call get_variable_attribute(fileobj, name, "edges", buffer(1:128), &
+        reproduce_null_char_bug_flag=reproduce_null_char_bug)
 
     !! Check for a null character here, if it exists *_bnds will be calculated instead of read in
     if (reproduce_null_char_bug) then
@@ -171,7 +172,8 @@ contains
     endif
   elseif (variable_att_exists(fileobj, name, "bounds")) then
     !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character
-    call get_variable_attribute(fileobj, name, "bounds", buffer, reproduce_null_char_bug_flag=reproduce_null_char_bug)
+    call get_variable_attribute(fileobj, name, "bounds", buffer(1:128), &
+        reproduce_null_char_bug_flag=reproduce_null_char_bug)
 
     !! Check for a null character here, if it exists *_bnds will be calculated instead of read in
     if (reproduce_null_char_bug) then
