@@ -1447,6 +1447,7 @@ end function rarray_to_char
                             '.  (IOSTAT = '//trim(text)//')')
           else
              num_lines = 1
+             max_length = 1
              do
                 read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
                 if ( status .lt. 0 ) exit
