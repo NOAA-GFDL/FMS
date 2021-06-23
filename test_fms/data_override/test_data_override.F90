@@ -103,7 +103,7 @@ program test
  real, allocatable, dimension(:,:) :: lon, lat
  real, allocatable, dimension(:,:) :: sst, ice
  integer                           :: id_x, id_y, id_lon, id_lat, id_sst, id_ice
- integer                           :: i, j, is, ie, js, je, unit, io, ierr, n
+ integer                           :: i, j, is, ie, js, je, io, ierr, n
  real                              :: rad_to_deg
  character(len=36)                 :: message
  type(time_type)                   :: Time

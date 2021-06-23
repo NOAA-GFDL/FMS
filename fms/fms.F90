@@ -395,8 +395,9 @@ subroutine fms_init (localcomm )
  use fms_io_mod,    only: fms_io_version
 
  integer, intent(in), optional :: localcomm
- integer :: unit, ierr, io
+ integer :: ierr, io
  integer :: logunitnum
+ integer :: stdout_unit !< Unit number for the stdout file
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
@@ -479,9 +480,9 @@ subroutine fms_init (localcomm )
 
     call write_version_number("FMS_MOD", version)
     if (mpp_pe() == mpp_root_pe()) then
-      unit = stdlog()
-      write (unit, nml=fms_nml)
-      write (unit,*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
+      stdout_unit = stdlog()
+      write (stdout_unit, nml=fms_nml)
+      write (stdout_unit,*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
     endif
 
     call memutils_init( print_memory_usage )
