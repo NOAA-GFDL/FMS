@@ -23,7 +23,6 @@ program test_time_manager
  use          fms_mod, only: fms_init, fms_end, stderr
  use          fms_mod, only: check_nml_error
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
- use       fms_io_mod, only: fms_io_exit
  use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
  use time_manager_mod, only: length_of_year, leap_year, days_in_month, days_in_year, print_time
  use time_manager_mod, only: set_ticks_per_second, get_ticks_per_second
@@ -656,7 +655,6 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
     write(outunit,'(a)') 'test successful'
   endif
 
- call fms_io_exit
  call fms_end
 
  end program test_time_manager

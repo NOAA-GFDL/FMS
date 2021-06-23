@@ -28,7 +28,7 @@
 . ../test_common.sh
 
 # Copy file for test.
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+touch input.nml
 
 # Run the test.
 run_test test_time_interp 2

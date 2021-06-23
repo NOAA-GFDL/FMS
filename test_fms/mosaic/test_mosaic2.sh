@@ -27,7 +27,7 @@
 # Set common test settings.
 . ../test_common.sh
 
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+touch input.nml
 
 rm -rf INPUT
 mkdir INPUT

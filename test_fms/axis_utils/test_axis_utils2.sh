@@ -28,7 +28,7 @@
 . ../test_common.sh
 
 # Write the namelist file.
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+touch input.nml
 
 # Run the test.
 run_test test_axis_utils 2
