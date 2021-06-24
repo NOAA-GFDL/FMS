@@ -16,7 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup platform_mod platform_mod
+!> @ingroup platform
+!> @brief Uses @ref fms_platform.h to define byte sizes for variable kinds
+!! to be used in fms.
 
+!> @file
+!> @brief File for @ref platform_mod
+
+!> @addtogroup platform_mod
+!> @{
 module platform_mod
 !platform-dependent settings
 #include <fms_platform.h>
@@ -28,3 +37,5 @@ module platform_mod
                         ptr_kind=POINTER_KIND
 !could additionally define things like OS, compiler...: useful?
 end module platform_mod
+!> @}
+! close documentation grouping

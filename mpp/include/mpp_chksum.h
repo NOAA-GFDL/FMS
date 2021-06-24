@@ -16,6 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup mpp
+!> @brief Wrapper routine for @ref mpp_chksum interface
 
 function MPP_CHKSUM_( var, pelist , mask_val)
 !mold is a dummy array to be used by TRANSFER()

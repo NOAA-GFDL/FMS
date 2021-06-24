@@ -19,6 +19,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup mpp_mod
+!> @brief General utility functions for use in @ref mpp_mod
 
 #if defined(use_libMPI)
 #include <mpp_util_mpi.inc>
@@ -38,6 +41,7 @@
   !   stdin()
   !  </TEMPLATE>
   ! </FUNCTION>
+  !> @brief This function returns the current standard fortran unit numbers for input.
   function stdin()
     integer :: stdin
     stdin = in_unit
@@ -56,6 +60,7 @@
   !   stdout()
   !  </TEMPLATE>
   ! </FUNCTION>
+  !> @brief This function returns the current  standard fortran unit numbers for output.
   function stdout()
     integer :: stdout
     stdout = out_unit
@@ -75,6 +80,7 @@
   !   stderr()
   !  </TEMPLATE>
   ! </FUNCTION>
+  !> @brief This function returns the current standard fortran unit numbers for error messages.
   function stderr()
     integer :: stderr
     stderr = err_unit
@@ -94,6 +100,8 @@
   !    stdlog()
   !  </TEMPLATE>
   ! </FUNCTION>
+  !> @brief This function returns the current  standard fortran unit numbers for log messages.
+  !!    Log messages, by convention, are written to the file <TT>logfile.out</TT>.
   function stdlog()
     integer :: stdlog,istat
     logical :: opened
@@ -182,8 +190,7 @@
   end function mpp_error_state
 
 !#####################################################################
-!overloads to mpp_error_basic
-!support for error_mesg routine in FMS
+!> @brief overloads to mpp_error_basic, support for error_mesg routine in FMS
 subroutine mpp_error_mesg( routine, errormsg, errortype )
   character(len=*), intent(in) :: routine, errormsg
   integer,          intent(in) :: errortype
@@ -425,6 +432,12 @@ end function rarray_to_char
   !    mpp_pe()
   !  </TEMPLATE>
   ! </FUNCTION>
+
+  !> @brief Returns processor ID.
+  !> This returns the unique ID associated with a PE. This number runs
+  !! between 0 and <TT>npes-1</TT>, where <TT>npes</TT> is the total
+  !! processor count, returned by <TT>mpp_npes</TT>. For a uniprocessor
+  !! application this will always return 0.
   function mpp_pe()
     integer :: mpp_pe
 
@@ -446,6 +459,10 @@ end function rarray_to_char
   !    mpp_npes()
   !  </TEMPLATE>
   ! </FUNCTION>
+  !> @brief Returns processor count for current pelist
+  !!
+  !> This returns the number of PEs in the current pelist. For a uniprocessor application,
+  !! it will always return 1.
   function mpp_npes()
     integer :: mpp_npes
 

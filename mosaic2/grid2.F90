@@ -16,6 +16,13 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup grid2_mod grid2_mod
+!> @ingroup mosaic2
+!> @brief Routines for grid calculations, using @ref fms2_io
+
+!> @file
+!> @brief File for @ref grid2_mod
+
 module grid2_mod
 
 use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE
@@ -51,33 +58,46 @@ public :: grid_init
 public :: grid_end
 ! ==== end of public interfaces ==============================================
 
+!> Gets the size of the grid for one or all tiles
+!> @ingroup grid2_mod
 interface get_grid_size
    module procedure get_grid_size_for_all_tiles
    module procedure get_grid_size_for_one_tile
 end interface
 
+!> Gets arrays of global grid cell boundaries for given model component and
+!! mosaic tile number
+!> @ingroup grid2_mod
 interface get_grid_cell_vertices
    module procedure get_grid_cell_vertices_1D
    module procedure get_grid_cell_vertices_2D
    module procedure get_grid_cell_vertices_UG
 end interface
 
+!> Gets grid cell centers
+!> @ingroup grid2_mod
 interface get_grid_cell_centers
    module procedure get_grid_cell_centers_1D
    module procedure get_grid_cell_centers_2D
    module procedure get_grid_cell_centers_UG
 end interface
 
+!> Finds area of a grid cell
+!> @ingroup grid2_mod
 interface get_grid_cell_area
    module procedure get_grid_cell_area_SG
    module procedure get_grid_cell_area_UG
 end interface get_grid_cell_area
 
+!> Gets the area of a given component per grid cell
+!> @ingroup grid2_mod
 interface get_grid_comp_area
    module procedure get_grid_comp_area_SG
    module procedure get_grid_comp_area_UG
 end interface get_grid_comp_area
 
+!> @addtogroup grid2_mod
+!> @{
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
      module_name = 'grid2_mod'
@@ -86,19 +106,19 @@ character(len=*), parameter :: &
 #include<file_version.h>
 
 character(len=*), parameter :: &
-     grid_dir  = 'INPUT/',     &      ! root directory for all grid files
-     grid_file = 'INPUT/grid_spec.nc' ! name of the grid spec file
+     grid_dir  = 'INPUT/',     &      !< root directory for all grid files
+     grid_file = 'INPUT/grid_spec.nc' !< name of the grid spec file
 
 integer, parameter :: &
-     MAX_NAME = 256,  & ! max length of the variable names
-     MAX_FILE = 1024, & ! max length of the file names
+     MAX_NAME = 256,  & !< max length of the variable names
+     MAX_FILE = 1024, & !< max length of the file names
      VERSION_0 = 0,   &
      VERSION_1 = 1,   &
      VERSION_2 = 2,   &
      VERSION_3 = 3
 
-integer, parameter :: BUFSIZE = 1048576  ! This is used to control memory usage in get_grid_comp_area
-                                         ! We may change this to a namelist variable is needed.
+integer, parameter :: BUFSIZE = 1048576  !< This is used to control memory usage in get_grid_comp_area
+                                         !! We may change this to a namelist variable is needed.
 
 ! ==== module variables ======================================================
 integer :: grid_version = -1
@@ -144,7 +164,7 @@ function get_great_circle_algorithm()
    if (global_att_exists(gridfileobj, "great_circle_algorithm")) then
       call get_global_attribute(gridfileobj, "great_circle_algorithm", attvalue)
       if(trim(attvalue) == "TRUE") then
-         get_great_circle_algorithm = .true. 
+         get_great_circle_algorithm = .true.
       else if(trim(attvalue) .NE. "FALSE") then
          call mpp_error(FATAL, module_name//'/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
                    trim(grid_file)//' should be TRUE or FALSE')
@@ -231,7 +251,7 @@ subroutine close_component_mosaics
     if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call close_file(mosaic_fileobj(3))
 end subroutine close_component_mosaics
 
-!> @brief Get the component number of a model component (atm, lnd, ocn) 
+!> @brief Get the component number of a model component (atm, lnd, ocn)
 !! @return Integer component number
 function get_component_number(component)
   character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
@@ -1089,3 +1109,5 @@ subroutine define_cube_mosaic(component, domain, layout, halo, maskmap)
 end subroutine define_cube_mosaic
 
 end module grid2_mod
+!> @}
+! close documentation grouping
