@@ -391,11 +391,11 @@ subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
   integer :: i
 
   if (has_domain_tile_string(source)) then
-    call error("this file has already had a domain tile id added.")
+    call error("The file "//trim(source)//" has a domain tile id (tileX) added. Check your open_file call")
   endif
   i = index(trim(source), ".nc", back=.true.)
   if (i .eq. 0) then
-    call error("file "//trim(source)//" does not contain .nc")
+    call error("The file "//trim(source)//" does not contain .nc. Check your open_file call")
   endif
   write(dest, '(a,i0,a)') source(1:i-1)//".tile", &
                           domain_tile_id, source(i:len_trim(source))
@@ -437,7 +437,7 @@ subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
   integer, intent(in) :: io_domain_tile_id !< I/O domain tile id.
 
   if (has_io_domain_tile_string(source)) then
-    call error("this file has already had a domain tile id added.")
+    call error("The file "//trim(source)//" has already had a domain tile id (.nc.XXXX) added. Check your open_file call.")
   endif
   write(dest,'(a,i4.4)') trim(source)//".", io_domain_tile_id
 end subroutine io_domain_tile_filepath_mangle
@@ -472,7 +472,7 @@ subroutine restart_filepath_mangle(dest, source)
   else
     i = index(trim(source), ".nc", back=.true.)
     if (i .eq. 0) then
-      call error("file "//trim(source)//" does not contain .nc")
+      call error("The file "//trim(source)//" does not contain .nc. Check your open_file call")
     endif
   endif
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
@@ -724,7 +724,7 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
   else
      lens = len_trim(file_in)
      if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
-          'fms_io_mod: .nc should be at the end of file '//trim(file_in))
+          'get_mosaic_tile_file_sg: .nc should be at the end of file '//trim(file_in))
      basefile = file_in(1:lens-3)
   end if
 
