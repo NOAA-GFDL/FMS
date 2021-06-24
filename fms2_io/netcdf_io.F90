@@ -591,7 +591,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
         fileobj%allow_int8 = .true.
         nc_format_param = nf90_netcdf4
       else
-        call error("unrecognized netcdf file format "//trim(nc_format)//": file:"//trim(fileobj%path))
+        call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
+                   &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
       endif
       call string_copy(fileobj%nc_format, nc_format)
     else
@@ -608,7 +609,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     else
-      call error("unrecognized file mode "//trim(mode)//": file:"//trim(fileobj%path))
+      call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are read, append, write, overwrite")
     endif
     call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
   else

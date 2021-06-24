@@ -64,7 +64,8 @@ function compute_global_checksum_2d(fileobj, variable_name, variable_data, is_de
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(variable_data, xdim), size(variable_data, ydim), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, &
-                      yc_size, buffer_includes_halos, extra_x, extra_y)
+                      yc_size, buffer_includes_halos, extra_x, extra_y, &
+                      msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   if (buffer_includes_halos) then
     !Adjust if the input buffer has room for halos.
@@ -179,7 +180,8 @@ function compute_global_checksum_3d(fileobj, variable_name, variable_data, is_de
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(variable_data, xdim), size(variable_data, ydim), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, &
-                      yc_size, buffer_includes_halos, extra_x, extra_y)
+                      yc_size, buffer_includes_halos, extra_x, extra_y, &
+                      msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   if (buffer_includes_halos) then
     !Adjust if the input buffer has room for halos.
@@ -293,7 +295,8 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(variable_data, xdim), size(variable_data, ydim), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, &
-                      yc_size, buffer_includes_halos, extra_x, extra_y)
+                      yc_size, buffer_includes_halos, extra_x, extra_y, &
+                      msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   if (buffer_includes_halos) then
     !Adjust if the input buffer has room for halos.

@@ -142,7 +142,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -436,7 +436,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -730,7 +730,7 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -1024,7 +1024,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
