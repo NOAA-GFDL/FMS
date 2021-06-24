@@ -20,6 +20,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_domains_mod
+!> @brief Routines for domain communications via @ref domaincommunicator2d
+
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
                                         isize_in,jsize_in,ksize_in,isize_out,jsize_out,ksize_out) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm

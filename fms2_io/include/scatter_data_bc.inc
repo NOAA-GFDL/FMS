@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !< Root pe reads the data in the netcdf file and scatters it to the other pes
 subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)

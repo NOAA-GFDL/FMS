@@ -16,6 +16,13 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup grid2_mod grid2_mod
+!> @ingroup mosaic2
+!> @brief Routines for grid calculations, using @ref fms2_io
+
+!> @file
+!> @brief File for @ref grid2_mod
+
 module grid2_mod
 
 use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE
@@ -51,33 +58,46 @@ public :: grid_init
 public :: grid_end
 ! ==== end of public interfaces ==============================================
 
+!> Gets the size of the grid for one or all tiles
+!> @ingroup grid2_mod
 interface get_grid_size
    module procedure get_grid_size_for_all_tiles
    module procedure get_grid_size_for_one_tile
 end interface
 
+!> Gets arrays of global grid cell boundaries for given model component and
+!! mosaic tile number
+!> @ingroup grid2_mod
 interface get_grid_cell_vertices
    module procedure get_grid_cell_vertices_1D
    module procedure get_grid_cell_vertices_2D
    module procedure get_grid_cell_vertices_UG
 end interface
 
+!> Gets grid cell centers
+!> @ingroup grid2_mod
 interface get_grid_cell_centers
    module procedure get_grid_cell_centers_1D
    module procedure get_grid_cell_centers_2D
    module procedure get_grid_cell_centers_UG
 end interface
 
+!> Finds area of a grid cell
+!> @ingroup grid2_mod
 interface get_grid_cell_area
    module procedure get_grid_cell_area_SG
    module procedure get_grid_cell_area_UG
 end interface get_grid_cell_area
 
+!> Gets the area of a given component per grid cell
+!> @ingroup grid2_mod
 interface get_grid_comp_area
    module procedure get_grid_comp_area_SG
    module procedure get_grid_comp_area_UG
 end interface get_grid_comp_area
 
+!> @addtogroup grid2_mod
+!> @{
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
      module_name = 'grid2_mod'
@@ -86,18 +106,19 @@ character(len=*), parameter :: &
 #include<file_version.h>
 
 character(len=*), parameter :: &
-     grid_dir  = 'INPUT/',     &      ! root directory for all grid files
-     grid_file = 'INPUT/grid_spec.nc' ! name of the grid spec file
+     grid_dir  = 'INPUT/',     &      !< root directory for all grid files
+     grid_file = 'INPUT/grid_spec.nc' !< name of the grid spec file
 
 integer, parameter :: &
-     MAX_NAME = 256,  & ! max length of the variable names
-     MAX_FILE = 1024, & ! max length of the file names
+     MAX_NAME = 256,  & !< max length of the variable names
+     MAX_FILE = 1024, & !< max length of the file names
      VERSION_0 = 0,   &
      VERSION_1 = 1,   &
-     VERSION_2 = 2
+     VERSION_2 = 2,   &
+     VERSION_3 = 3
 
-integer, parameter :: BUFSIZE = 1048576  ! This is used to control memory usage in get_grid_comp_area
-                                         ! We may change this to a namelist variable is needed.
+integer, parameter :: BUFSIZE = 1048576  !< This is used to control memory usage in get_grid_comp_area
+                                         !! We may change this to a namelist variable is needed.
 
 ! ==== module variables ======================================================
 integer :: grid_version = -1
@@ -121,13 +142,14 @@ subroutine grid_init
    great_circle_algorithm = get_great_circle_algorithm()
    grid_version = get_grid_version(gridfileobj)
    if (grid_version == VERSION_2) call open_component_mosaics
+   if (grid_version == VERSION_3) call assign_component_mosaics
    module_is_initialized = .TRUE.
 end subroutine grid_init
 
 !> @brief Shutdown the grid2 module
 subroutine grid_end
    if (grid_spec_exists) then
-       if (grid_version == Version_2) call close_component_mosaics
+       if (grid_version == VERSION_2) call close_component_mosaics
        call close_file(gridfileobj)
    endif
 end subroutine grid_end
@@ -142,7 +164,7 @@ function get_great_circle_algorithm()
    if (global_att_exists(gridfileobj, "great_circle_algorithm")) then
       call get_global_attribute(gridfileobj, "great_circle_algorithm", attvalue)
       if(trim(attvalue) == "TRUE") then
-         get_great_circle_algorithm = .true. 
+         get_great_circle_algorithm = .true.
       else if(trim(attvalue) .NE. "FALSE") then
          call mpp_error(FATAL, module_name//'/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
                    trim(grid_file)//' should be TRUE or FALSE')
@@ -199,12 +221,21 @@ function get_grid_version(fileobj)
        get_grid_version = VERSION_1
     else if(variable_exists(fileobj, 'ocn_mosaic_file') ) then
        get_grid_version = VERSION_2
+    else if(variable_exists(fileobj, 'gridfiles') ) then
+       get_grid_version = VERSION_3
     else
        call mpp_error(FATAL, module_name//'/get_grid_version '//&
             'Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
     endif
   endif
 end function get_grid_version
+
+!> @brief Assign the component mosaic files if grid_spec is Version 3
+subroutine assign_component_mosaics
+    mosaic_fileobj(1) = gridfileobj
+    mosaic_fileobj(2) = gridfileobj
+    mosaic_fileobj(3) = gridfileobj
+end subroutine assign_component_mosaics
 
 !> @brief Open the component mosaic files for atm, lnd, and ocn
 subroutine open_component_mosaics
@@ -220,7 +251,7 @@ subroutine close_component_mosaics
     if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call close_file(mosaic_fileobj(3))
 end subroutine close_component_mosaics
 
-!> @brief Get the component number of a model component (atm, lnd, ocn) 
+!> @brief Get the component number of a model component (atm, lnd, ocn)
 !! @return Integer component number
 function get_component_number(component)
   character(len=*), intent(in) :: component !< Component model (atm, lnd, ocn)
@@ -243,7 +274,7 @@ subroutine get_grid_ntiles(component,ntiles)
   select case (grid_version)
   case(VERSION_0,VERSION_1)
      ntiles = 1
-  case(VERSION_2)
+  case(VERSION_2, VERSION_3)
      ntiles = get_mosaic_ntiles(mosaic_fileobj(get_component_number(trim(component))))
   end select
 end subroutine get_grid_ntiles
@@ -263,7 +294,7 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
   case(VERSION_0,VERSION_1)
      call get_variable_size(gridfileobj, varname1, siz)
      nx(1) = siz(1); ny(1)=siz(2)
-  case(VERSION_2) ! mosaic file
+  case(VERSION_2, VERSION_3) ! mosaic file
      call get_mosaic_grid_sizes(mosaic_fileobj(get_component_number(trim(component))),nx,ny)
   end select
 end subroutine get_grid_size_for_all_tiles
@@ -314,7 +345,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
      end select
      ! convert area to m2
      cellarea = cellarea*4.*PI*radius**2
-  case(VERSION_2)
+  case(VERSION_2, VERSION_3)
      if (present(domain)) then
         call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
      else
@@ -379,7 +410,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         call mpp_error(FATAL, module_name//'/get_grid_comp_area'//&
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
-  case(VERSION_2) ! mosaic gridspec
+  case(VERSION_2, VERSION_3) ! mosaic gridspec
      select case (component)
      case ('ATM')
         ! just read the grid cell area and return
@@ -587,7 +618,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
         glatb(nlat+1) = y_vert_t(1,nlat,2)
         deallocate(x_vert_t, y_vert_t)
      end select
-  case(VERSION_2)
+  case(VERSION_2, VERSION_3)
      ! get the name of the grid file for the component and tile
      tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
      call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -715,7 +746,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
         latb(nlon+1,nlat+1) = y_vert_t(nlon,nlat,3)
         deallocate(x_vert_t, y_vert_t)
      end select
-  case(VERSION_2)
+  case(VERSION_2, VERSION_3)
      ! get the name of the grid file for the component and tile
      tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
      call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -839,7 +870,7 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
         call read_data(gridfileobj, "grid_x_T", glon)
         call read_data(gridfileobj, "grid_y_T", glat)
      end select
-  case(VERSION_2)
+  case(VERSION_2, VERSION_3)
      ! get the name of the grid file for the component and tile
      tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
      call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -947,7 +978,7 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         call read_data(gridfileobj, 'x_T', lon)
         call read_data(gridfileobj, 'y_T', lat)
      end select
-  case(VERSION_2) ! mosaic grid file
+  case(VERSION_2, VERSION_3) ! mosaic grid file
      ! get the name of the grid file for the component and tile
      tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
      call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -1078,3 +1109,5 @@ subroutine define_cube_mosaic(component, domain, layout, halo, maskmap)
 end subroutine define_cube_mosaic
 
 end module grid2_mod
+!> @}
+! close documentation grouping

@@ -1,6 +1,5 @@
 ! -*-f90-*-
 
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -19,6 +18,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup mpp
+!> @brief Routines to initialize and finalize @ref mpp_mod with mpi enabled.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -27,6 +29,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
+  !> @brief Initialize the @ref mpp_mod module
   subroutine mpp_init( flags, localcomm, test_level )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm
@@ -227,7 +230,7 @@
 end subroutine mpp_init
 
 !#######################################################################
-  !to be called at the end of a run
+  !> To be called at the end of a run
 subroutine mpp_exit()
   integer :: i, j, k, n, nmax, istat, out_unit, log_unit
   real    :: t, tmin, tmax, tavg, tstd
@@ -339,7 +342,7 @@ subroutine mpp_exit()
 end subroutine mpp_exit
 
 !#######################################################################
-    !set the mpp_stack variable to be at least n LONG words long
+  !> Set the mpp_stack variable to be at least n LONG words long
   subroutine mpp_set_stack_size(n)
     integer, intent(in) :: n
     character(len=8)    :: text

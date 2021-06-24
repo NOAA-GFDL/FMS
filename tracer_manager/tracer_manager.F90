@@ -16,50 +16,33 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup tracer_manager_mod tracer_manager_mod
+!> @ingroup tracer_manager
+!> @brief Code to manage the simple addition of tracers to the FMS code.
+!! This code keeps track of the numbers and names of tracers included
+!! in a tracer table.
+!!
+!> @author William Cooke
+!!
+!> This code is a grouping of calls which will allow the simple
+!! introduction of tracers into the FMS framework. It is designed to
+!! allow users of a variety of component models interact easily with
+!! the dynamical core of the model.
+!!
+!! In calling the tracer manager routines the user must provide a
+!! parameter identifying the model that the user is working with. This
+!! parameter is defined within field_manager as MODEL_X
+!! where X is one of [ATMOS, OCEAN, LAND, ICE].
+!!
+!! In many of these calls the argument list includes model and tracer_index. These
+!! are the parameter corresponding to the component model and the tracer_index N is
+!! the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5
+!! is different from a call with MODEL_OCEAN and 5.
+
+!> @file
+!> @brief File for @ref tracer_manager_mod
 
 module tracer_manager_mod
-! <CONTACT EMAIL="William.Cooke@noaa.gov">
-!   William Cooke
-! </CONTACT>
-
-! <REVIEWER EMAIL="Matthew.Harrison@noaa.gov">
-!   Matt Harrison
-! </REVIEWER>
-
-! <REVIEWER EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </REVIEWER>
-
-! <REVIEWER EMAIL="Peter.Phillipps@noaa.gov">
-!   Peter Phillipps
-! </REVIEWER>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Code to manage the simple addition of tracers to the FMS code.
-!     This code keeps track of the numbers and names of tracers included
-!     in a tracer table.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     This code is a grouping of calls which will allow the simple
-!     introduction of tracers into the FMS framework. It is designed to
-!     allow users of a variety of component models interact easily with
-!     the dynamical core of the model.
-!
-!     In calling the tracer manager routines the user must provide a
-!     parameter identifying the model that the user is working with. This
-!     parameter is defined within field_manager as MODEL_X
-!     where X is one of [ATMOS, OCEAN, LAND, ICE].
-!
-!     In many of these calls the argument list includes model and tracer_index. These
-!     are the parameter corresponding to the component model and the tracer_index N is
-!     the Nth tracer within the component model. Therefore a call with MODEL_ATMOS and 5
-!     is different from a call with MODEL_OCEAN and 5.
-!
-! </DESCRIPTION>
-
 
 !----------------------------------------------------------------------
 
@@ -115,21 +98,37 @@ public  tracer_manager_init, &
         NO_TRACER,           &
         MAX_TRACER_FIELDS
 
-!-----------------------------------------------------------------------
+!> @brief Function which returns the number assigned to the tracer name.
+!!
+!> This is a function which returns the index, as implied within the component model.
+!! There are two overloaded interfaces: one of type integer, one logical.
+!!
+!! @param model A integer parameter to identify which model is being used
+!! @param name The name of the tracer (as assigned in the field table).
+!! @param indices An array indices. When present, the returned index will limit the search for the
+!! tracer to thos tracers whose indices are among those in array 'indices'. This would be useful
+!! when it is desired to limit the search to a subset of the tracers. Such a subset might be the
+!! diagnostic or prognostic tracers.(note that @ref get_tracer_indices returns these subsets)
+!! @param verbose Optional flag for debugging
+!! @param[out] index Holds the returned index if given
+!! @returns The integer function returns the index of the tracer named "name". If no tracer by that
+!!  name exists then the returned value is NO_TRACER. The logical function returns false if no
+!!  tracer by the given name exists and true otherwise, and stores the returned value in index.
+!!
+!! <br>Example usage:
+!! @code{.F90}
+!!     integer:
+!!       index = get_tracer_index(model, name,        indices, verbose)
+!!     logical:
+!!       if ( get_tracer_index(model, name, index, indices, verbose) ) then
+!! @endcode
+!> @ingroup tracer_manager_mod
 interface get_tracer_index
   module procedure get_tracer_index_integer, get_tracer_index_logical
 end interface
-!-----------------------------------------------------------------------
 
-integer            :: num_tracer_fields = 0
-integer, parameter :: MAX_TRACER_FIELDS = 150
-integer, parameter :: MAX_TRACER_METHOD = 20
-integer, parameter :: NO_TRACER         = 1-HUGE(1)
-integer, parameter :: NOTRACER          = -HUGE(1)
-
-integer :: total_tracers(NUM_MODELS), prog_tracers(NUM_MODELS), diag_tracers(NUM_MODELS)
-logical :: model_registered(NUM_MODELS) = .FALSE.
-
+!> Private type to hold metadata for a tracer
+!> @ingroup tracer_manager_mod
 type, private ::  tracer_type
    character(len=32)        :: tracer_name, tracer_units
    character(len=128)       :: tracer_longname
@@ -142,19 +141,34 @@ type, private ::  tracer_type
    logical                  :: needs_positive_adjust
 end type tracer_type
 
+!> Private type to holds string data for a tracer
+!> @ingroup tracer_manager_mod
 type, private ::  tracer_name_type
    character(len=32)  :: model_name, tracer_name, tracer_units
    character(len=128) :: tracer_longname
 end type tracer_name_type
 
-
+!> Private type to represent named instances
+!> @ingroup tracer_manager_mod
 type, private :: inst_type
    character(len=128) :: name
    integer            :: instances
 end type inst_type
 
+!> @addtogroup tracer_manager_mod
+!> @{
+
+integer            :: num_tracer_fields = 0
+integer, parameter :: MAX_TRACER_FIELDS = 150
+integer, parameter :: MAX_TRACER_METHOD = 20
+integer, parameter :: NO_TRACER         = 1-HUGE(1)
+integer, parameter :: NOTRACER          = -HUGE(1)
+
 type(tracer_type), save  :: tracers(MAX_TRACER_FIELDS)
 type(inst_type)  , save  :: instantiations(MAX_TRACER_FIELDS)
+
+integer :: total_tracers(NUM_MODELS), prog_tracers(NUM_MODELS), diag_tracers(NUM_MODELS)
+logical :: model_registered(NUM_MODELS) = .FALSE.
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -166,21 +180,11 @@ integer            :: TRACER_ARRAY(NUM_MODELS,MAX_TRACER_FIELDS)
 
 contains
 
-!
 !#######################################################################
-!
-! <SUBROUTINE NAME="tracer_manager_init">
-!   <OVERVIEW>
-!      It is not necessary to call this routine.
-!      It is included only for backward compatability.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine writes the version to the logfile and
-!     sets the module initialization flag.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call tracer_manager_init
-!   </TEMPLATE>
+
+!> @brief Not necessary to call, only needed for backward compatability.
+!!
+!> Writes version to logfile and sets init flag for this module
 subroutine tracer_manager_init
 integer :: model, num_tracers, num_prog, num_diag
 
@@ -195,17 +199,12 @@ integer :: model, num_tracers, num_prog, num_diag
   enddo
 
 end subroutine tracer_manager_init
-! </SUBROUTINE>
 
-!#######################################################################
-! <SUBROUTINE NAME="get_tracer_meta_data">
-!   <OVERVIEW>
-! read tracer table and store tracer information associated with "model"
-! in "tracers" array.
-!   </OVERVIEW>
+!> @brief Read in tracer table and store tracer information associated with "model" in "tracers"
+!! array.
 subroutine get_tracer_meta_data(model, num_tracers,num_prog,num_diag)
 
-integer,  intent(in) :: model ! model being used
+integer,  intent(in) :: model !< model being used
 integer, intent(out) :: num_tracers, num_prog, num_diag
 character(len=256)    :: warnmesg
 
@@ -546,8 +545,6 @@ endif
 15 format ('Number of tracers in field table for ',A,' model = ',i4)
 
 end subroutine get_tracer_meta_data
-!</SUBROUTINE>
-
 
 function model_tracer_number(model,n)
 integer, intent(in) :: model, n
@@ -567,36 +564,15 @@ enddo
 end function model_tracer_number
 
 !#######################################################################
-!
-! <SUBROUTINE NAME="register_tracers">
 
-!   <OVERVIEW>
-!      It is not necessary to call this routine.
-!      It is included only for backward compatability.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine returns the total number of valid tracers,
-!     the number of prognostic and diagnostic tracers.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call register_tracers(model, num_tracers,num_prog,num_diag)
-!   </TEMPLATE>
-
-!   <IN NAME="model" TYPE="integer">
-!     A parameter to identify which model is being used.
-!   </IN>
-!   <OUT NAME="num_tracers" TYPE="integer">
-!    The total number of valid tracers within the component model.
-!   </OUT>
-!   <OUT NAME="num_prog" TYPE="integer">
-!     The number of prognostic tracers within the component model.
-!   </OUT>
-!   <OUT NAME="num_diag" TYPE="integer">
-!     The number of diagnostic tracers within the component model.
-!   </OUT>
+!> @brief Not necessary to call, only needed for backward compatability.
+!!
+!> Returns the total number of valid, prognostic and diagnostic tracers.
 subroutine register_tracers(model, num_tracers, num_prog, num_diag, num_family)
-integer, intent(in) :: model
-integer, intent(out) :: num_tracers, num_prog, num_diag
+integer, intent(in) :: model !< A parameter to identify which model is being used.
+integer, intent(out) :: num_tracers !< The total number of valid tracers within the component model.
+integer, intent(out) :: num_prog !< The number of prognostic tracers within the component model.
+integer, intent(out) :: num_diag !< The number of diagnostic tracers within the component model.
 integer, intent(out), optional :: num_family
 
 if(.not.module_is_initialized) call tracer_manager_init
@@ -604,38 +580,23 @@ if(.not.module_is_initialized) call tracer_manager_init
 call get_number_tracers(model, num_tracers, num_prog, num_diag, num_family)
 
 end subroutine register_tracers
-!</SUBROUTINE>
 
 !#######################################################################
 
-! <SUBROUTINE NAME="get_number_tracers">
-!   <OVERVIEW>
-!      A routine to return the number of tracers included in a component model.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine returns the total number of valid tracers,
-!     the number of prognostic and diagnostic tracers
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_number_tracers(model, num_tracers,num_prog,num_diag)
-!   </TEMPLATE>
-
-!   <IN NAME="model" TYPE="integer">
-!     A parameter to identify which model is being used.
-!   </IN>
-!   <OUT NAME="num_tracers" TYPE="integer, optional">
-!    The total number of valid tracers within the component model.
-!   </OUT>
-!   <OUT NAME="num_prog" TYPE="integer, optional">
-!     The number of prognostic tracers within the component model.
-!   </OUT>
-!   <OUT NAME="num_diag" TYPE="integer, optional">
-!     The number of diagnostic tracers within the component model.
-!   </OUT>
+!> @brief A routine to return the number of tracers included in a component model.
+!!
+!> This routine returns the total number of valid tracers,
+!! the number of prognostic and diagnostic tracers
 subroutine get_number_tracers(model, num_tracers, num_prog, num_diag, num_family)
 
-integer,  intent(in) :: model
-integer, intent(out), optional :: num_tracers, num_prog, num_diag, num_family
+integer,  intent(in) :: model !< A parameter to identify which model is being used
+integer, intent(out), optional :: num_tracers !< The total number of valid tracers within
+                                              !! the component model
+integer, intent(out), optional :: num_prog !< The number of prognostic tracers within the
+                                           !! component model.
+integer, intent(out), optional :: num_diag !< The number of diagnostic tracers within the
+                                           !! component model
+integer, intent(out), optional :: num_family
 
 if(.not.module_is_initialized) call tracer_manager_init
 
@@ -653,41 +614,22 @@ if (present(num_diag))    num_diag    = diag_tracers(model)
 if (present(num_family))  num_family  = 0 ! Needed only for backward compatability with lima
 
 end subroutine get_number_tracers
-!</SUBROUTINE>
 
-
-! <SUBROUTINE NAME="get_tracer_indices">
-
-!   <OVERVIEW>
-!     Routine to return the component model tracer indices as defined within
-!     the tracer manager.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     If several models are being used or redundant tracers have been written to
-! the tracer_table, then the indices in the component model and the tracer
-! manager may not have a one to one correspondence. Therefore the component
-! model needs to know what index to pass to calls to tracer_manager routines in
-! order that the correct tracer information be accessed.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_tracer_indices(model, ind, prog_ind, diag_ind)
-!   </TEMPLATE>
-
-!   <IN NAME="model" TYPE="integer">
-!     A parameter to identify which model is being used.
-!   </IN>
-!   <OUT NAME="ind" TYPE="integer, optional" DIM="(:)" >
-! An array containing the tracer manager defined indices for
-!             all the tracers within the component model.
-!   </OUT>
-!   <OUT NAME="prog_ind" TYPE="integer, optional" DIM="(:)" >
-! An array containing the tracer manager defined indices for
-!             the prognostic tracers within the component model.
-!   </OUT>
-!   <OUT NAME="diag_ind" TYPE="integer, optional" DIM="(:)" >
-! An array containing the tracer manager defined indices for
-!             the diagnostic tracers within the component model.
-!   </OUT>
+!> @brief Routine to return the component model tracer indices as defined within
+!! the tracer manager.
+!!
+!> If several models are being used or redundant tracers have been written to
+!! the tracer_table, then the indices in the component model and the tracer
+!! manager may not have a one to one correspondence. Therefore the component
+!! model needs to know what index to pass to calls to tracer_manager routines in
+!! order that the correct tracer information be accessed.
+!> @param model A parameter to identify which model is being used.
+!> @param ind An array containing the tracer manager defined indices for
+!! all the tracers within the component model.
+!> @param prog_ind An array containing the tracer manager defined indices for
+!! the prognostic tracers within the component model.
+!> @param diag_ind An array containing the tracer manager defined indices for
+!! the diagnostic tracers within the component model.
 subroutine get_tracer_indices(model, ind, prog_ind, diag_ind, fam_ind)
 
 integer, intent(in) :: model
@@ -741,7 +683,6 @@ enddo
 
 return
 end subroutine get_tracer_indices
-!</SUBROUTINE>
 
 !<FUNCTION NAME= "get_tracer_index">
 !   <OVERVIEW>
@@ -781,12 +722,18 @@ end subroutine get_tracer_indices
 !       If no tracer by that name exists then the returned value is .false.,
 !       otherwise the returned value is .true.
 !   </OUT>
+
+!> @brief Function which returns the number assigned to the tracer name.
+!!
+!> See @ref get_tracer_index Interface for more information.
+!! @returns index of given tracer name if present, otherwise returns NO_TRACER
 function get_tracer_index_integer(model, name, indices, verbose)
 
-integer, intent(in)                         :: model
-character(len=*), intent(in)                :: name
-integer, intent(in), dimension(:), optional :: indices
-logical, intent(in), optional               :: verbose
+integer, intent(in)                         :: model !< Parameter to identify which model is used
+character(len=*), intent(in)                :: name !< name of the tracer
+integer, intent(in), dimension(:), optional :: indices !< An array of indices, limits search to tracers
+                                                       !! whose indices are within the array.
+logical, intent(in), optional               :: verbose !< debug flag
 integer :: get_tracer_index_integer
 
 integer :: i
@@ -828,13 +775,14 @@ return
 end function get_tracer_index_integer
 
 !#######################################################################
+!> @brief Checks if tracer is present, and returns it's position in index
 function get_tracer_index_logical(model, name, index, indices, verbose)
 
-integer, intent(in)                         :: model
-character(len=*), intent(in)                :: name
-integer, intent(out)                        :: index
-integer, intent(in), dimension(:), optional :: indices
-logical, intent(in), optional               :: verbose
+integer, intent(in)                         :: model !< Parameter for which model is used
+character(len=*), intent(in)                :: name !< name of given drifter
+integer, intent(out)                        :: index !< returned drifter index
+integer, intent(in), dimension(:), optional :: indices !< optional list of indices to limit results to
+logical, intent(in), optional               :: verbose !< debug flag
 logical :: get_tracer_index_logical
 
 index = get_tracer_index_integer(model, name, indices, verbose)
@@ -845,19 +793,10 @@ else
 endif
 
 end function get_tracer_index_logical
-!</FUNCTION>
 
 !#######################################################################
-! <SUBROUTINE NAME="tracer_manager_end" >
-!   <OVERVIEW>
-!     Routine to write to the log file that the tracer manager is ending.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Routine to write to the log file that the tracer manager is ending.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call tracer_manager_end
-!   </TEMPLATE>
+
+!> @brief Uninitializes module and writes exit to logfile.
 subroutine tracer_manager_end
 
 integer :: log_unit
@@ -870,22 +809,16 @@ endif
 module_is_initialized = .FALSE.
 
 end subroutine tracer_manager_end
-!</SUBROUTINE>
 
 !#######################################################################
-!
+
+!> @brief Routine to print out the components of the tracer.
+!! This is useful for informational purposes.
+!! Used in get_tracer_meta_data.
 subroutine print_tracer_info(model,n)
-!
-! Routine to print out the components of the tracer.
-! This is useful for informational purposes.
-! Used in get_tracer_meta_data.
-!
-! Arguments:
-! INTENT IN
-!  i            : index of the tracer that is being printed.
-!
-integer, intent(in) :: model,n
-integer :: i,log_unit
+integer, intent(in) :: model
+integer, intent(in) :: n !< index of the tracer that is being printed
+integer :: i, log_unit
 
 if(.not.module_is_initialized) call tracer_manager_init
 
@@ -910,40 +843,19 @@ endif
 end subroutine print_tracer_info
 
 !#######################################################################
-!
-! <SUBROUTINE NAME="get_tracer_names" >
-!   <OVERVIEW>
-!     Routine to find the names associated with a tracer number.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine can return the name, long name and units associated
-!     with a tracer.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_tracer_names(model,n,name,longname, units)
-!   </TEMPLATE>
 
-!   <IN NAME="model" TYPE="integer">
-!     A parameter representing the component model in use.
-!   </IN>
-!   <IN NAME="n" TYPE="integer">
-!     Tracer number.
-!   </IN>
-!   <OUT NAME="name" TYPE="character" >
-!     Field name associated with tracer number.
-!   </OUT>
-!   <OUT NAME="longname" TYPE="character, optional" >
-!     The long name associated with tracer number.
-!   </OUT>
-!   <OUT NAME="units" TYPE="character, optional" >
-!     The units associated with tracer number.
-!   </OUT>
-
+!> @brief Routine to find the names associated with a tracer number.
+!!
+!> This routine can return the name, long name and units associated
+!! with a tracer.
 subroutine get_tracer_names(model,n,name,longname, units, err_msg)
 
-integer,          intent(in)  :: model, n
-character (len=*),intent(out) :: name
-character (len=*), intent(out), optional :: longname, units, err_msg
+integer,          intent(in)  :: model !< A parameter representing component model in use
+integer,          intent(in)  :: n !< Tracer number
+character (len=*),intent(out) :: name !< Field name associate with tracer number
+character (len=*), intent(out), optional :: longname !< Long name associated with tracer number
+character (len=*), intent(out), optional :: units !< Tracer associated units
+character (len=*), intent(out), optional :: err_msg
 character (len=128) :: err_msg_local
 integer :: n1
 character(len=11) :: chn
@@ -962,55 +874,31 @@ if (PRESENT(longname)) longname = trim(tracers(n1)%tracer_longname)
 if (PRESENT(units))    units    = trim(tracers(n1)%tracer_units)
 
 end subroutine get_tracer_names
-!</SUBROUTINE>
-!
+
 !#######################################################################
-!
-! <FUNCTION NAME="get_tracer_name" >
-!   <OVERVIEW>
-!     Routine to find the names associated with a tracer number.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine can return the name, long name and units associated with a tracer.
-!     The return value of get_tracer_name is .false. when a FATAL error condition is
-!     detected, otherwise the return value is .true.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     if(.not.get_tracer_name(model,n,name,longname, units, err_msg)) call mpp_error(.....
-!   </TEMPLATE>
 
-!   <IN NAME="model" TYPE="integer">
-!     A parameter representing the component model in use.
-!   </IN>
-!   <IN NAME="n" TYPE="integer">
-!     Tracer number.
-!   </IN>
-!   <OUT NAME="name" TYPE="character" >
-!     Field name associated with tracer number.
-!   </OUT>
-!   <OUT NAME="longname" TYPE="character, optional" >
-!     The long name associated with tracer number.
-!   </OUT>
-!   <OUT NAME="units" TYPE="character, optional" >
-!     The units associated with tracer number.
-!   </OUT>
-!   <OUT NAME="err_msg" TYPE="character, optional" >
-!     When present:
-!       If a FATAL error condition is detected then err_msg will contain an error message
-!       and the return value of get_tracer_name will be .false.
-!       If no FATAL error is detected err_msg will be filled with space characters and
-!       and the return value of get_tracer_name will be .true.
-!     When not present:
-!       A FATAL error will result in termination inside get_tracer_name without returning.
-!       If no FATAL error is detected the return value of get_tracer_name will be .true.
-!   </OUT>
-
+!> @brief Routine to find the names associated with a tracer number.
+!!
+!> This routine can return the name, long name and units associated with a tracer.
+!! The return value of get_tracer_name is .false. when a FATAL error condition is
+!! detected, otherwise the return value is .true.
 function get_tracer_name(model,n,name,longname, units, err_msg)
 
+integer,          intent(in)  :: model !< A parameter representing component model in use
+integer,          intent(in)  :: n !< Tracer number
+character (len=*),intent(out) :: name !< Field name associate with tracer number
+character (len=*), intent(out), optional :: longname !< Long name associated with tracer number
+character (len=*), intent(out), optional :: units !< Tracer associated units
+character (len=*), intent(out), optional :: err_msg !< When present: If a FATAL error condition is
+               !! detected then err_msg will contain an error message
+               !! and the return value of get_tracer_name will be .false.
+               !! If no FATAL error is detected err_msg will be filled with space characters and
+               !! and the return value of get_tracer_name will be .true.
+               !! When not present:
+               !! A FATAL error will result in termination inside get_tracer_name without returning.
+               !! If no FATAL error is detected the return value of get_tracer_name will be .true.
+
 logical :: get_tracer_name
-integer,          intent(in)  :: model, n
-character (len=*),intent(out) :: name
-character (len=*), intent(out), optional :: longname, units, err_msg
 character (len=128) :: err_msg_local
 integer :: n1
 character(len=11) :: chn
@@ -1034,37 +922,21 @@ if (PRESENT(longname)) longname = trim(tracers(n1)%tracer_longname)
 if (PRESENT(units))    units    = trim(tracers(n1)%tracer_units)
 
 end function get_tracer_name
-!</FUNCTION>
-!
-!#######################################################################
-!
-!<FUNCTION NAME= "check_if_prognostic">
-!   <OVERVIEW>
-!    Function to see if a tracer is prognostic or diagnostic.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!    All tracers are assumed to be prognostic when read in from the field_table
-!    However a tracer can be changed to a diagnostic tracer by adding the line
-!    "tracer_type","diagnostic"
-!    to the tracer description in field_table.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     logical =check_if_prognostic(model, n)
-!   </TEMPLATE>
 
-!   <IN NAME="model" TYPE="integer">
-!     A parameter representing the component model in use.
-!   </IN>
-!   <IN NAME="n" TYPE="integer">
-!     Tracer number
-!   </IN>
-!   <OUT NAME="check_if_prognostic" TYPE="logical">
-!     A logical flag set TRUE if the tracer is
-!                        prognostic.
-!   </OUT>
+!#######################################################################
+
+!> @brief Function to see if a tracer is prognostic or diagnostic.
+!!
+!> All tracers are assumed to be prognostic when read in from the field_table
+!! However a tracer can be changed to a diagnostic tracer by adding the line
+!! "tracer_type","diagnostic"
+!! to the tracer description in field_table.
+!!
+!! @returns A logical flag set TRUE if the tracer is prognostic.
 function check_if_prognostic(model, n, err_msg)
 
-integer, intent(in) :: model, n
+integer, intent(in) :: model !< Parameter representing component model in use
+integer, intent(in) :: n !< Tracer number
 logical             :: check_if_prognostic
 character(len=*), intent(out), optional :: err_msg
 character(len=128) :: err_msg_local
@@ -1084,11 +956,10 @@ endif
 check_if_prognostic = tracers(TRACER_ARRAY(model,n))%is_prognostic
 
 end function check_if_prognostic
-!</FUNCTION>
 
 ! Does tracer need mass or positive definite adjustments?
 !#######################################################################
-! Function to check whether tracer should have its mass adjusted
+!> Function to check whether tracer should have its mass adjusted
 function adjust_mass(model, n, err_msg)
 
 integer, intent(in) :: model, n
@@ -1136,56 +1007,37 @@ adjust_positive_def = tracers(TRACER_ARRAY(model,n))%needs_positive_adjust
 
 end function adjust_positive_def
 
-!
 !#######################################################################
-!
-! <SUBROUTINE NAME="set_tracer_profile" >
-!   <OVERVIEW>
-!     Subroutine to set the tracer field to the wanted profile.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     If the profile type is 'fixed' then the tracer field values are set
-! equal to the surface value.
-! If the profile type is 'profile' then the top/bottom of model and
-! surface values are read and an exponential profile is calculated,
-! with the profile being dependent on the number of levels in the
-! component model. This should be called from the part of the dynamical
-! core where tracer restarts are called in the event that a tracer
-! restart file does not exist.
-!
-!  This can be activated by adding a method to the field_table
-! e.g.
-!  "profile_type","fixed","surface_value = 1e-12"
-!  would return values of surf_value = 1e-12 and a multiplier of 1.0
-!  One can use these to initialize the entire field with a value of 1e-12.
-!
-!  "profile_type","profile","surface_value = 1e-12, top_value = 1e-15"
-!   In a 15 layer model this would return values of surf_value = 1e-12 and
-!   multiplier = 0.6309573 i.e 1e-15 = 1e-12*(0.6309573^15)
-!   In this case the model should be MODEL_ATMOS as you have a "top" value.
-!
-!   If you wish to initialize the ocean model, one can use bottom_value instead
-!   of top_value.
 
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call set_tracer_profile(model, n, tracer)
-!   </TEMPLATE>
-
-!   <IN NAME="model" TYPE="integer">
-!     A parameter representing the component model in use.
-!   </IN>
-!   <IN NAME="n" TYPE="integer">
-!     Tracer number.
-!   </IN>
-!   <INOUT NAME="tracer_array" TYPE="real">
-!     The initialized tracer array.
-!   </INOUT>
-
+!> @brief Subroutine to set the tracer field to the wanted profile.
+!!
+!> If the profile type is 'fixed' then the tracer field values are set
+!! equal to the surface value.
+!! If the profile type is 'profile' then the top/bottom of model and
+!! surface values are read and an exponential profile is calculated,
+!! with the profile being dependent on the number of levels in the
+!! component model. This should be called from the part of the dynamical
+!! core where tracer restarts are called in the event that a tracer
+!! restart file does not exist.
+!!
+!!  This can be activated by adding a method to the field_table
+!!  e.g.
+!!  @verbose "profile_type","fixed","surface_value = 1e-12" @endverbose
+!!  would return values of surf_value = 1e-12 and a multiplier of 1.0
+!!  One can use these to initialize the entire field with a value of 1e-12.
+!!
+!!  "profile_type","profile","surface_value = 1e-12, top_value = 1e-15"
+!!   In a 15 layer model this would return values of surf_value = 1e-12 and
+!!   multiplier = 0.6309573 i.e 1e-15 = 1e-12*(0.6309573^15)
+!!   In this case the model should be MODEL_ATMOS as you have a "top" value.
+!!
+!!   If you wish to initialize the ocean model, one can use bottom_value instead
+!!   of top_value.
 subroutine set_tracer_profile(model, n, tracer, err_msg)
 
-integer,  intent(in)  :: model, n
-   real, intent(inout), dimension(:,:,:) :: tracer
+integer, intent(in) :: model !< Parameter representing component model in use
+integer, intent(in) :: n !< Tracer number
+real, intent(inout), dimension(:,:,:) :: tracer !< Initialized tracer array
 character(len=*), intent(out), optional :: err_msg
 
 real    :: surf_value, multiplier
@@ -1275,92 +1127,45 @@ numlevels = size(tracer,3) -1
 endif ! end of query scheme
 
 end subroutine set_tracer_profile
-!</SUBROUTINE>
 
-!
 !#######################################################################
-!
-! <FUNCTION NAME="query_method" >
-!   <OVERVIEW>
-!     A function to query the "methods" associated with each tracer.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     A function to query the "methods" associated with each tracer. The
-!  "methods" are the parameters of the component model that can be
-!  adjusted by user by placing formatted strings, associated with a
-!  particular tracer, within the field table.
-!  These methods can control the advection, wet deposition, dry
-!  deposition or initial profile of the tracer in question. Any
-!  parametrization can use this function as long as a routine for parsing
-!  the name and control strings are provided by that routine.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     logical =query_method  (method_type, model, n, name, control)
-!   </TEMPLATE>
 
-!   <IN NAME="method_type" TYPE="character">
-!     The method that is being requested.
-!   </IN>
-!   <IN NAME="model" TYPE="integer">
-!     A parameter representing the component model in use.
-!   </IN>
-!   <IN NAME="n" TYPE="integer">
-!     Tracer number
-!   </IN>
-!   <OUT NAME="name" TYPE="character">
-!     A string containing the modified name to be used with
-!     method_type. i.e. "2nd_order" might be the default for
-!     advection. One could use "4th_order" here to modify
-!     that behaviour.
-!   </OUT>
-!   <OUT NAME="control" TYPE="character, optional">
-!     A string containing the modified parameters that are
-!     associated with the method_type and name.
-!   </OUT>
-!   <OUT NAME="query_method" TYPE="logical">
-!      A flag to show whether method_type exists with regard to
-!      tracer n. If method_type is not present then one must
-!      have default values.
-!   </OUT>
-
-!<NOTE>
-!  At present the tracer manager module allows the initialization of a tracer
-!  profile if a restart does not exist for that tracer.
-!  Options for this routine are as follows
-!
-!  Tracer profile setup
-!  ==================================================================
-!  |method_type  |method_name  |method_control                      |
-!  ==================================================================
-!  |profile_type |fixed        |surface_value = X                   |
-!  |profile_type |profile      |surface_value = X, top_value = Y    |(atmosphere)
-!  |profile_type |profile      |surface_value = X, bottom_value = Y |(ocean)
-!  ==================================================================
-!
-!</NOTE>
+!> @brief A function to query the schemes associated with each tracer.
+!!
+!> A function to query the "methods" associated with each tracer. The
+!! "methods" are the parameters of the component model that can be
+!! adjusted by user by placing formatted strings, associated with a
+!! particular tracer, within the field table.
+!! These methods can control the advection, wet deposition, dry
+!! deposition or initial profile of the tracer in question. Any
+!! parametrization can use this function as long as a routine for parsing
+!!
+!! @returns A flag to show whether method_type exists with regard to tracer n. If method_type is not
+!! present then one must have default values. the name and control strings are provided by that routine.
+!!
+!!  @note At present the tracer manager module allows the initialization of a tracer
+!!  profile if a restart does not exist for that tracer.
+!!  Options for this routine are as follows
+!!
+!!  Tracer profile setup
+!!  ==================================================================
+!!  |method_type  |method_name  |method_control                      |
+!!  ==================================================================
+!!  |profile_type |fixed        |surface_value = X                   |
+!!  |profile_type |profile      |surface_value = X, top_value = Y    |(atmosphere)
+!!  |profile_type |profile      |surface_value = X, bottom_value = Y |(ocean)
+!!  ==================================================================
  function query_method  (method_type, model, n, name, control, err_msg)
-!
-!  A function to query the schemes associated with each tracer.
-!
-!  INTENT IN
-!   method_type  : The method that is being requested.
-!   model        : The model that you are calling this function from.
-!   n            : The tracer number.
-!  INTENT OUT
-!   name         : A string containing the modified name to be used with
-!                  method_type. i.e. "2nd_order" might be the default for
-!                  advection. One could use "4th_order" here to modify
-!                  that behaviour.
-!   control      : A string containing the modified parameters that are
-!                  associated with the method_type and name.
-!   query_method : A flag to show whether method_type exists with regard
-!                  to tracer n. If method_type is not present then one
-!                  must have default values.
 
- character(len=*), intent(in)            :: method_type
- integer         , intent(in)            :: model, n
- character(len=*), intent(out)           :: name
- character(len=*), intent(out), optional :: control, err_msg
+ character(len=*), intent(in)            :: method_type !< The requested method
+ integer         , intent(in)            :: model !< Model the function is being called from
+ integer         , intent(in)            :: n !< Tracer number
+ character(len=*), intent(out)           :: name !< A string containing the modified name to be used
+                                         !! with method_type. i.e. "2nd_order" might be the default
+                                         !! advection. One could use "4th_order" to modify behaviour
+ character(len=*), intent(out), optional :: control !< A string containing the modified parameters
+                                         !! that are associated with method_type and name.
+ character(len=*), intent(out), optional :: err_msg
  logical                                 :: query_method
 
  integer :: n1
@@ -1414,41 +1219,21 @@ end subroutine set_tracer_profile
  endif
 
  end function query_method
-!</FUNCTION>
 
-!<SUBROUTINE NAME="set_tracer_atts">
-!   <OVERVIEW>
-!     A subroutine to allow the user set the tracer longname and units from the
-!     tracer initialization routine.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     A function to allow the user set the tracer longname and units from the
-!     tracer initialization routine. It seems sensible that the user who is
-!     coding the tracer code will know what units they are working in and it
-!     is probably safer to set the value in the tracer code rather than in
-!     the field table.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call set_tracer_atts(model, name, longname, units)
-!   </TEMPLATE>
-
-!   <IN NAME="model" TYPE="integer">
-!     A parameter representing the component model in use.
-!   </IN>
-!   <IN NAME="name" TYPE="character">
-!     Tracer name.
-!   </IN>
-!   <OUT NAME="longname" TYPE="character, optional">
-!     A string describing the longname of the tracer for output to NetCDF files
-!   </OUT>
-!   <OUT NAME="units" TYPE="character, optional">
-!     A string describing the units of the tracer for output to NetCDF files
-!   </OUT>
+!> @brief A subroutine to allow the user set the tracer longname and units from the
+!! tracer initialization routine.
+!!
+!> A function to allow the user set the tracer longname and units from the
+!! tracer initialization routine. It seems sensible that the user who is
+!! coding the tracer code will know what units they are working in and it
+!! is probably safer to set the value in the tracer code rather than in
+!! the field table.
 subroutine set_tracer_atts(model, name, longname, units)
 
-integer, intent(in)                    :: model
-character(len=*), intent(in)           :: name
-character(len=*), intent(in), optional :: longname, units
+integer, intent(in)                    :: model !< A parameter representing component model in use
+character(len=*), intent(in)           :: name !< Tracer name
+character(len=*), intent(in), optional :: longname !< Long name of the tracer
+character(len=*), intent(in), optional :: units !< Units for the tracer
 
 integer :: n, index
 logical :: success
@@ -1489,42 +1274,15 @@ else
 endif
 
 end subroutine set_tracer_atts
-!</SUBROUTINE>
 
-!<SUBROUTINE NAME="set_tracer_method">
-!   <OVERVIEW>
-!      A subroutine to allow the user to set some tracer specific methods.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      A subroutine to allow the user to set methods for a specific tracer.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call set_tracer_method(model, name, method_type, method_name, method_control)
-!   </TEMPLATE>
-
-!   <IN NAME="model" TYPE="integer">
-!     A parameter representing the component model in use.
-!   </IN>
-!   <IN NAME="name" TYPE="character">
-!     Tracer name.
-!   </IN>
-!   <IN NAME="method_type" TYPE="character">
-!     The type of the method to be set.
-!   </IN>
-!   <IN NAME="method_name" TYPE="character">
-!     The name of the method to be set.
-!   </IN>
-!   <IN NAME="method_control" TYPE="character">
-!     The control parameters of the method to be set.
-!   </IN>
-
+!> @brief A subroutine to allow the user to set some tracer specific methods.
 subroutine set_tracer_method(model, name, method_type, method_name, method_control)
 
-integer, intent(in)                    :: model
-character(len=*), intent(in)           :: name
-character(len=*), intent(in)           :: method_type
-character(len=*), intent(in)           :: method_name
-character(len=*), intent(in)           :: method_control
+integer, intent(in)                    :: model !< A parameter representing component model in use
+character(len=*), intent(in)           :: name !< Tracer name
+character(len=*), intent(in)           :: method_type !< type of method to be set
+character(len=*), intent(in)           :: method_name !< name of method to be set
+character(len=*), intent(in)           :: method_control !< control parameters of the given method
 
 integer :: n, num_method, index
 logical :: success
@@ -1562,7 +1320,6 @@ if ( get_tracer_index(model,name,n) ) then
 endif
 
 end subroutine set_tracer_method
-!</SUBROUTINE>
 
 function error_handler(routine, err_msg_local, err_msg)
 logical :: error_handler
@@ -1579,3 +1336,5 @@ endif
 end function error_handler
 
 end module tracer_manager_mod
+!> @}
+! close documentation grouping

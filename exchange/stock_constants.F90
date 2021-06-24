@@ -16,9 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup stock_constants_mod stock_constants_mod
+!> @ingroup exchange
+!> @brief Parameters, routines, and types for computing stocks in @ref xgrid_mod
 
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref stock_constants_mod
+
+!> @addtogroup stock_constants_mod
+!> @{
 module stock_constants_mod
 
   use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_sum
@@ -42,9 +48,11 @@ module stock_constants_mod
   ! flux integrated increments at present time.
 
   integer, parameter :: NSIDES  = 3         !< top, bottom, side
+  !> @}
 
-  !> @brief per PE values
-  type stock_type ! per PE values
+  !> @brief Holds stocks amounts per PE values
+  !> @ingroup stock_constants_mod
+  type stock_type
      real  :: q_start = 0.0    !< total stocks at start time
      real  :: q_now   = 0.0    !< total stocks at time t
 
@@ -54,6 +62,8 @@ module stock_constants_mod
      real  :: dq(NSIDES)    = 0.0    !< stock increments at present time on the Ice   grid
      real  :: dq_IN(NSIDES) = 0.0    !< stock increments at present time on the Ocean grid
   end type stock_type
+  !> @addtogroup stock_constants_mod
+  !> @{
 
   type(stock_type), save, public, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
   type(time_type), save :: init_time
@@ -73,9 +83,9 @@ module stock_constants_mod
 
 contains
 
-
+    !> Starts a stock report
     subroutine stocks_report_init(Time)
-    type(time_type)               , intent(in) :: Time
+    type(time_type)               , intent(in) :: Time !< Model time
 
     character(len=80) :: formatString,space
     integer :: i,s
@@ -158,9 +168,9 @@ contains
 
   end subroutine stocks_report_init
 
-
+  !> Writes update to stock report
   subroutine stocks_report(Time)
-    type(time_type)               , intent(in) :: Time
+    type(time_type)               , intent(in) :: Time !< Model time
 
     type(time_type) :: timeSinceStart
     type(stock_type) :: stck
@@ -322,9 +332,11 @@ contains
   end subroutine stocks_report
 
   subroutine stocks_set_init_time(Time)
-    type(time_type)     , intent(in) :: Time
+    type(time_type)     , intent(in) :: Time !< init time to set for stock report
     init_time = Time
 
   end subroutine stocks_set_init_time
 
 end module stock_constants_mod
+!> @}
+! close documentation grouping

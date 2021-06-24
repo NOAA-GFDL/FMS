@@ -19,6 +19,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_data_mod
+!> @brief Holds dummy constants and stack data for @ref mpp_mod and @ref mpp_domains_mod.
+!! Accessible through @ref mpp_data_mod
+
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
 !----------------------------------------------------------------!

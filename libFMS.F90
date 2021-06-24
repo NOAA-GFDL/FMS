@@ -16,18 +16,14 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @file
-!
-!> @author
-!> Ryan Mulhall
-!>
-!> @date
-!> 2/2021
-!>
-!> @brief
-!> A convenience file to use any FMS routines, functions, values
-!>
-!> Imports all supported FMS modules so that any public interfaces,
+!> @defgroup FMS FMS
+!> @ingroup libfms
+!> @brief A convenience module to use any FMS routines, functions, values
+!> @author Ryan Mulhall
+!!
+!! @date 2/2021
+!!
+!! Imports all supported FMS modules so that any public interfaces,
 !! variables or routines can be used via this module. Excludes mpp_io modules
 !! and routines. Overloaded type operators/assignments cannot be imported individually
 !! (ie. `use fms, only: OPERATOR(*)` includes any defined '*' operators within FMS).
@@ -48,11 +44,17 @@
 !!                     get_grid_version_mpp_mod, mpp_io_mod, mosaic_mod,
 !!                     fms_mod(partial, old io excluded), drifters modules
 !!                     constants_mod (FMSconstants should be used externally)
+!!                     grid_mod, mosaic_mod
 !!
 !! A full list of supported interfaces and public types intended for use via
 !! this module is provided in the [supported_interfaces.md](../../supported_interfaces.md)
 !! file.
 
+!> @file
+!> @brief File for @ref FMS
+
+!> @addtogroup FMS
+!> @{
 module fms
 
   !> import each FMS module's public routines/functions, interfaces, and variables
@@ -253,9 +255,9 @@ module fms
                       calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area, &
                       is_inside_polygon, &
                       mosaic2_get_mosaic_tile_grid => get_mosaic_tile_grid !overloaded in fms2_io
-  use grid_mod, only: get_grid_ntiles, get_grid_size, get_grid_cell_centers, &
+  use grid2_mod, only: get_grid_ntiles, get_grid_size, get_grid_cell_centers, &
                       get_grid_cell_vertices, get_grid_cell_Area, get_grid_comp_area, &
-                      define_cube_mosaic
+                      define_cube_mosaic, get_great_circle_algorithm, grid_init, grid_end
   use gradient_mod, only: gradient_cubic, calc_cubic_grid_info
 
   !> mpp
@@ -428,3 +430,5 @@ module fms
   private :: version
 
 end module fms
+!> @}
+! close documentation grouping

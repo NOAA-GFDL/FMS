@@ -33,6 +33,12 @@
 #define EPSLN10 (1.e-10)
 #define EPSLN15 (1.e-15)
 #define EPSLN30 (1.e-30)
+
+/** \file
+ *  \ingroup mosaic
+ *  \brief Error handling and other general utilities for @ref mosaic_mod
+ */
+
 /***********************************************************
     void error_handler(char *str)
     error handler: will print out error message and then abort
