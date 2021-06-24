@@ -18,11 +18,14 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
+!> @file
+!> @ingroup mpp
+!> @brief Adjoint summation routines for @ref mpp_mod
 !#######################################################################
 
+    !> Sums array a.
+    !! when only first element is passed: this routine just converts to a call to MPP_SUM_
     subroutine MPP_SUM_SCALAR_AD_( a, pelist )
-!sums array a when only first element is passed: this routine just converts to a call to MPP_SUM_
       MPP_TYPE_, intent(inout) :: a
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: b(1)

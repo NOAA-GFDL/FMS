@@ -1,3 +1,4 @@
+\page install Installation
 # libFMS Installation
 
 ## External Requirements

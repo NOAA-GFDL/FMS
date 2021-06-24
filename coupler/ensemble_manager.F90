@@ -16,10 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup ensemble_manager_mod ensemble_manager_mod
+!> @ingroup coupler
+!> @brief Routines for setting up and managing ensembles and ensemble pe lists.
 
 !> @file
-!! @brief ensemble_manager_mod
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref ensemble_manager_mod
+
+!> @addtogroup ensemble_manager_mod
+!> @{
 module ensemble_manager_mod
 
 
@@ -57,8 +62,9 @@ module ensemble_manager_mod
   public :: get_ensemble_filter_pelist
 contains
 
-!> @brief ensemble_manager_init
-!! @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer"
+!> @brief Initializes @ref ensemble_manager_mod
+!!
+!> @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer"
 !! @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE"
 !! @throw FATAL, "ensemble_size must be divis by npes"
 !! @throw FATAL, "get_ensemble_pelist: size of pelist 1st index < ensemble_size"
@@ -97,14 +103,14 @@ contains
   end subroutine ensemble_manager_init
 
   !> @brief Getter function for ensemble_id
-  !! @return Integer
+  !! @return integer of ensemble id
   function get_ensemble_id()
     integer :: get_ensemble_id
     get_ensemble_id = ensemble_id
   end function get_ensemble_id
 
   !> @brief Returns ensemble size integer array
-  !! @return Integer array
+  !! @return integer array of sizes
   function get_ensemble_size()
 
     integer, dimension(6) :: get_ensemble_size
@@ -118,11 +124,11 @@ contains
 
   end function get_ensemble_size
 
-
+  !> @brief Gets pe list for current ensemble or a given ensemble component.
   subroutine get_ensemble_pelist(pelist, name)
 
-    integer, intent(inout) :: pelist(:,:)
-    character(len=*), intent(in), optional  :: name
+    integer, intent(inout) :: pelist(:,:) !< Ensemble pelist
+    character(len=*), intent(in), optional  :: name !< Component name.
 
     if (size(pelist,1) < ensemble_size) &
          call mpp_error(FATAL,'get_ensemble_pelist: size of pelist 1st index < ensemble_size')
@@ -171,7 +177,7 @@ contains
     return
   end subroutine get_ensemble_pelist
 
-!> @brief get_ensemble_filter_pelist
+!> @brief Gets filter pelist for a given ensemble component.
 !!
 !! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * ocean_npes_pm"
 !! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * atmos_npes_pm"
@@ -180,8 +186,8 @@ contains
 !! @throw FATAL, "get_ensemble_filter_pelist: unknown argument name=[name]"
   subroutine get_ensemble_filter_pelist(pelist, name)
 
-    integer, intent(inout) :: pelist(:)
-    character(len=*), intent(in)  :: name
+    integer, intent(inout) :: pelist(:) !< Returned filter pe list
+    character(len=*), intent(in)  :: name !< Ensemble component name
 
     select case(name)
     case('ocean')
@@ -222,7 +228,7 @@ contains
 
 !nnz: I think the following block of code should be contained in a subroutine
 !     to consolidate and ensure the consistency of declaring the various pelists.
-!> @brief ensemble_pelist_setup
+!> @brief Sets up pe list for an ensemble.
 !!
 !! @throw FATAL, "ensemble_manager_mod: land_npes > atmos_npes"
 !! @throw FATAL, "ensemble_manager_mod: ice_npes > atmos_npes"
@@ -411,3 +417,5 @@ contains
 
 
 end module ensemble_manager_mod
+!> @}
+! close documentation grouping

@@ -19,6 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_domains_mod
+!> @brief Utility routines for getting and setting values in @ref mpp_domains_mod
+
   ! <SUBROUTINE NAME="mpp_domains_set_stack_size">
   !  <OVERVIEW>
   !    Set user stack size.
@@ -36,6 +40,14 @@
   !  </TEMPLATE>
   !  <IN NAME="n" TYPE="integer"></IN>
   ! </SUBROUTINE>
+
+  !> @brief Set user stack size.
+  !!
+  !> This sets the size of an array that is used for internal storage by
+  !! <TT>mpp_domains</TT>. This array is used, for instance, to buffer the
+  !! data sent and received in halo updates.<br>
+  !! This call has implied global synchronization. It should be
+  !! placed somewhere where all PEs can call it.
   subroutine mpp_domains_set_stack_size(n)
     !set the mpp_domains_stack variable to be at least n LONG words long
     integer, intent(in) :: n
@@ -287,10 +299,13 @@
   end subroutine mpp_set_super_grid_indices
 
   !> @brief Modifies the indices of the input domain to create the supergrid domain
-  !> @example This is an example of how to use mpp_create_super_grid_domain
+  !!
+  !> This is an example of how to use mpp_create_super_grid_domain
+  !! @code{.F90}
   !! call mpp_copy_domain(domain_in, domain_out)
   !! call super_grid_domain(domain_out)
-  !! domain_in is the original domain, domain_out is the domain with the supergrid indices
+  !! @endcode
+  !! domain_in is the original domain, domain_out is the domain with the supergrid indices.
   subroutine mpp_create_super_grid_domain(domain)
     type(domain2D), intent(inout) :: domain !< Input domain
 

@@ -16,13 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
+!> @defgroup diag_manager_mod diag_manager_mod
+!> @ingroup diag_manager
 !! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
 !!   on distributed systems. It is geared toward the writing of data in netCDF
-!!   format.
+!!   format. See @ref diag_manager for diag table information.
 !! @author Matt Harrison, Giang Nong, Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
 !!
 !!   <TT>diag_manager_mod</TT> provides a convenient set of interfaces for
 !!   writing data to disk.  It is built upon the parallel I/O interface of FMS
@@ -36,17 +35,16 @@
 !!   <H4>Usage</H4>
 !!   Use of <TT>diag_manager</TT> includes the following steps:
 !!   <OL>
-!!     <LI> Create diag_table as described in the
-!!          <LINK SRC="diag_table.html">diag_table.F90</LINK>
+!!     <LI> Create diag_table as described in the @ref diag_table_mod
 !!          documentation.</LI>
-!!     <LI> Call <LINK SRC="#diag_manager_init"><TT>diag_manager_init</TT></LINK> to initialize
+!!     <LI> Call @ref diag_manager_init to initialize
 !!          diag_manager_mod.</LI>
-!!     <LI> Call <LINK SRC="#register_diag_field"><TT>register_diag_field</TT></LINK> to register the field to be
+!!     <LI> Call @ref register_diag_field to register the field to be
 !!          output.
 !!          <B>NOTE:</B> ALL fields in diag_table should be registered <I>BEFORE</I>
 !!          the first send_data call</LI>
-!!     <LI> Call <LINK SRC="#send_data"><TT>send_data</TT></LINK> to send data to output fields </LI>
-!!     <LI> Call <LINK SRC="#diag_manager_end"><TT>diag_manager_end</TT></LINK> to exit diag_manager </LI>
+!!     <LI> Call @ref send_data to send data to output fields </LI>
+!!     <LI> Call @ref diag_manager_end to exit diag_manager </LI>
 !!   </OL>
 !!
 !!   <H4>Features</H4>
@@ -59,18 +57,20 @@
 !!          misspelled module name or field name.</LI>
 !!     <LI> Check if a field is registered twice.</LI>
 !!     <LI> Check for duplicate lines in diag_table. </LI>
-!!     <LI> <LINK SRC="diag_table.html">diag_table</LINK> can contain fields
+!!     <LI> @ref diag_table_mod can contain fields
 !!          that are NOT written to any files. The file name in diag_table of
 !!          these fields is <TT>null</TT>.</LI>
 !!     <LI> By default, a field is output in its global grid.  The user can now
 !!          output a field in a specified region.  See
-!!          <LINK SRC="#send_data"><TT>send_data</TT></LINK> for more details.</LI>
+!!          @ref send_data for more details.</LI>
 !!     <LI> To check if the diag table is set up correctly, user should set
 !!          <TT>debug_diag_manager=.true.</TT> in diag_manager namelist, then
 !!          the the content of diag_table is printed in stdout.</LI>
-!!     <LI> New optional format of file information in <LINK SRC="diag_table.html">diag_table</LINK>.It is possible to have just
-!!           one file name and reuse it many times. A time string will be appended to the base file name each time a new file is
-!!          opened. The time string can be any combination from year to second of current model time.
+!!     <LI> New optional format of file information in @ref diag_table_mod.
+!!          It is possible to have just
+!!          one file name and reuse it many times. A time string will be appended to
+!!          the base file name each time a new file is opened. The time string can be
+!!          any combination from year to second of current model time.
 !!
 !!          Here is an example file line: <BR />
 !!          <PRE>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</PRE>
@@ -117,147 +117,25 @@
 !!          The namelist <B>default</B> value is <TT>mix_snapshot_average_fields=.false.</TT></LI>
 !!     <LI> Time average, Root Mean Square, Max and Min, and diurnal. In addition to time average users can also get then Root Mean Square, Max or Min value
 !!          during the same interval of time as time average. For this purpose, in the diag table users must replace
-!!          <TT>.true.</TT> or <TT>.false.</TT> by "<TT>rms</TT>, <TT>max</TT>" or "<TT>min</TT>".  <B><I>Note:</I></B> Currently, max
+!!          <TT>.true.</TT> or <TT>.false.</TT> by <TT>rms</TT>, <TT>max</TT> or <TT>min</TT>.  <B><I>Note:</I></B> Currently, max
 !!          and min are not available for regional output.
 !!
 !!          A diurnal average or the average of an integer power can also be requested using <TT>diurnal##</TT> or <TT>pow##</TT> where
 !!          <TT>##</TT> are the number of diurnal sections or integer power to average.</LI>
-!!     <LI> <TT>standard_name</TT> is added as optional argument in <LINK SRC="#register_diag_field"><TT>register_diag_field</TT>
-!!          </LINK>.</LI>
+!!     <LI> <TT>standard_name</TT> is added as optional argument in @ref register_diag_field. </LI>
 !!     <LI>When namelist variable <TT>debug_diag_manager = .true.</TT> array
-!!         bounds are checked in <LINK SRC="#send_data"><TT>send_data</TT></LINK>.</LI>
+!!         bounds are checked in @ref send_data.</LI>
 !!     <LI>Coordinate attributes can be written in the output file if the
-!!         argument "<TT>aux</TT>" is given in <LINK SRC="diag_axis.html#diag_axis_init"><TT>diag_axis_init</TT></LINK>. The
+!!         argument "<TT>aux</TT>" is given in @ref diag_axis_mod#diag_axis_init . The
 !!         corresponding fields (geolat/geolon) should also be written to the
 !!         same file.</LI>
 !!   </OL>
+
+!> @file
+!> @brief File for @ref diag_manager_mod
+
 MODULE diag_manager_mod
 use platform_mod
-  ! <CONTACT EMAIL="Matthew.Harrison@gfdl.noaa.gov">
-  !   Matt Harrison
-  ! </CONTACT>
-  ! <CONTACT EMAIL="Giang.Nong@noaa.gov">
-  !   Giang Nong
-  ! </CONTACT>
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/" />
-  ! <OVERVIEW>
-  !   <TT>diag_manager_mod</TT> is a set of simple calls for parallel diagnostics
-  !   on distributed systems. It is geared toward the writing of data in netCDF
-  !   format.
-  ! </OVERVIEW>
-  ! <DESCRIPTION>
-  !   <TT>diag_manager_mod</TT> provides a convenient set of interfaces for
-  !   writing data to disk.  It is built upon the parallel I/O interface of FMS
-  !   code <TT>/shared/mpp/mpp_io.F90</TT>.
-  !
-  !   A single group of calls to the <TT>diag_manager_mod</TT> interfaces
-  !   provides data to disk at any number of sampling and/or averaging intervals
-  !   specified at run-time. Run-time specification of diagnostics are input
-  !   through the diagnostics table.
-  !
-  !   <H4>Usage</H4>
-  !   Use of <TT>diag_manager</TT> includes the following steps:
-  !   <OL>
-  !     <LI> Create diag_table as described in the
-  !          <LINK SRC="diag_table.html">diag_table.F90</LINK>
-  !          documentation.</LI>
-  !     <LI> Call <LINK SRC="#diag_manager_init"><TT>diag_manager_init</TT></LINK> to initialize
-  !          diag_manager_mod.</LI>
-  !     <LI> Call <LINK SRC="#register_diag_field"><TT>register_diag_field</TT></LINK> to register the field to be
-  !          output.
-  !          <B>NOTE:</B> ALL fields in diag_table should be registered <I>BEFORE</I>
-  !          the first send_data call</LI>
-  !     <LI> Call <LINK SRC="#send_data"><TT>send_data</TT></LINK> to send data to output fields </LI>
-  !     <LI> Call <LINK SRC="#diag_manager_end"><TT>diag_manager_end</TT></LINK> to exit diag_manager </LI>
-  !   </OL>
-  !
-  !   <H4>Features</H4>
-  !   Features of <TT>diag_manager_mod</TT>:
-  !   <OL>
-  !     <LI> Ability to output from 0D arrays (scalars) to 3D arrays.</LI>
-  !     <LI> Ability to output time average of fields that have time dependent
-  !          mask.</LI>
-  !     <LI> Give optional warning if <TT>register_diag_field</TT> fails due to
-  !          misspelled module name or field name.</LI>
-  !     <LI> Check if a field is registered twice.</LI>
-  !     <LI> Check for duplicate lines in diag_table. </LI>
-  !     <LI> <LINK SRC="diag_table.html">diag_table</LINK> can contain fields
-  !          that are NOT written to any files. The file name in diag_table of
-  !          these fields is <TT>null</TT>.</LI>
-  !     <LI> By default, a field is output in its global grid.  The user can now
-  !          output a field in a specified region.  See
-  !          <LINK SRC="#send_data"><TT>send_data</TT></LINK> for more details.</LI>
-  !     <LI> To check if the diag table is set up correctly, user should set
-  !          <TT>debug_diag_manager=.true.</TT> in diag_manager namelist, then
-  !          the the content of diag_table is printed in stdout.</LI>
-  !     <LI> New optional format of file information in <LINK SRC="diag_table.html">diag_table</LINK>.It is possible to have just
-  !          one file name and reuse it many times. A time string will be appended to the base file name each time a new file is
-  !          opened. The time string can be any combination from year to second of current model time.
-  !
-  !          Here is an example file line: <BR />
-  !          <PRE>"file2_yr_dy%1yr%3dy",2,"hours",1,"hours","Time", 10, "days", "1 1 7 0 0 0", 6, "hours"</PRE>
-  !          <BR />
-  !
-  !          From left to right we have:
-  !          <UL>
-  !            <LI>file name</LI>
-  !            <LI>output frequency</LI>
-  !            <LI>output frequency unit</LI>
-  !            <LI>Format (should always be 1)</LI>
-  !            <LI>time axis unit</LI>
-  !            <LI>time axis name</LI>
-  !            <LI>frequency for creating new file</LI>
-  !            <LI>unit for creating new file</LI>
-  !            <LI>start time of the new file</LI>
-  !            <LI>file duration</LI>
-  !            <LI>file duration unit.</LI>
-  !          </UL>
-  !          The 'file duration', if absent, will be equal to frequency for creating a new file.
-  !
-  !          Thus, the above means: create a new file every 10 days, each file will last 6 hours from creation time, no files will
-  !          be created before time "1 1 7 0 0 0".
-  !
-  !          In this example the string
-  !          <TT>10, "days", "1 1 7 0 0 0", 6, "hours"</TT> is optional.
-  !
-  !          Keywords for the time string suffix is
-  !          <TT>%xyr,%xmo,%xdy,%xhr,%xmi,%xsc</TT> where <TT>x</TT> is a
-  !          mandatory 1 digit number specifying the width of field used in
-  !          writing the string</LI>
-  !     <LI> New time axis for time averaged fields.  Users can use a namelist option to handle the time value written
-  !          to time axis for time averaged fields.
-  !
-  !          If <TT>mix_snapshot_average_fields=.true.</TT> then a time averaged file will have time values corresponding to
-  !          ending time_bound e.g. January monthly average is labeled Feb01. Users can have both snapshot and averaged fields in
-  !          one file.
-  !
-  !          If <TT>mix_snapshot_average_fields=.false.</TT> The time value written to time axis for time averaged fields is the
-  !          middle on the averaging time. For example, January monthly mean will be written at Jan 16 not Feb 01 as
-  !          before. However, to use this new feature users should <B>separate</B> snapshot fields and time averaged fields in
-  !          <B>different</B> files or a fatal error will occur.
-  !
-  !          The namelist <B>default</B> value is <TT>mix_snapshot_average_fields=.false.</TT></LI>
-  !     <LI> Time average, Root Mean Square, Max and Min, and diurnal. In addition to time average users can also get then Root Mean Square, Max or Min value
-  !          during the same interval of time as time average. For this purpose, in the diag table users must replace
-  !          <TT>.true.</TT> or <TT>.false.</TT> by "<TT>rms</TT>, <TT>max</TT>" or "<TT>min</TT>".  <B><I>Note:</I></B> Currently, max
-  !          and min are not available for regional output.
-  !
-  !          A diurnal average or the average of an integer power can also be requested using <TT>diurnal##</TT> or <TT>pow##</TT> where
-  !          <TT>##</TT> are the number of diurnal sections or integer power to average.</LI>
-  !     <LI> <TT>standard_name</TT> is added as optional argument in <LINK SRC="#register_diag_field"><TT>register_diag_field</TT>
-  !          </LINK>.</LI>
-  !     <LI>When namelist variable <TT>debug_diag_manager = .true.</TT> array
-  !         bounds are checked in <LINK SRC="#send_data"><TT>send_data</TT></LINK>.</LI>
-  !     <LI>Coordinate attributes can be written in the output file if the
-  !         argument "<TT>aux</TT>" is given in <LINK SRC="diag_axis.html#diag_axis_init"><TT>diag_axis_init</TT></LINK>. The
-  !         corresponding fields (geolat/geolon) should also be written to the
-  !         same file.</LI>
-  !   </OL>
-  !
-  ! </DESCRIPTION>
 
   ! <NAMELIST NAME="diag_manager_nml">
   !   <DATA NAME="append_pelist_name" TYPE="LOGICAL" DEFAULT=".FALSE.">
@@ -387,92 +265,70 @@ use platform_mod
 
   type(time_type) :: Time_end
 
-  ! <INTERFACE NAME="send_data">
-  !   <TEMPLATE>
-  !     send_data(diag_field_id, field, time, is_in, js_in, ks_in,
-  !             mask, rmask, ie_in, je_in, ke_in, weight)
-  !   </TEMPLATE>
-  !   <OVERVIEW>
-  !     Send data over to output fields.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     <TT>send_data</TT> is overloaded for fields having zero dimension
-  !     (scalars) to 3 dimension.  <TT>diag_field_id</TT> corresponds to the id
-  !     returned from a previous call to <TT>register_diag_field</TT>. The field
-  !     array is restricted to the computational range of the array. Optional
-  !     argument <TT>is_in</TT> can be used to update sub-arrays of the entire
-  !     field. Additionally, an optional logical or real mask can be used to
-  !     apply missing values to the array.
-  !
-  !     If a field is declared to be <TT>mask_variant</TT> in
-  !     <TT>register_diag_field</TT> logical mask should be mandatory.
-  !
-  !     For the real  mask, the mask is applied if the mask value is less than
-  !     0.5.
-  !
-  !     By default, a field will be written out entirely in its global grid.
-  !     Users can also specify regions in which the field will be output. The
-  !     region is specified in diag-table just before the end of output_field
-  !     replacing "none".
-  !
-  !     For example, by default:
-  !
-  !     "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2
-  !
-  !     for regional output:
-  !
-  !     "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 -1 -1",2
-  !
-  !     The format of a region is "<TT>xbegin xend ybegin yend zbegin zend</TT>".
-  !     If it is a 2D field use (-1 -1) for (zbegin zend) as in the example above.
-  !     For a 3D field use (-1 -1) for (zbegin zend) when you want to write the
-  !     entire vertical extent, otherwise specify real coordinates.  The units
-  !     used for region are the actual units used in grid_spec.nc (for example
-  !     degrees for lat, lon).  <B><I>NOTE:</I></B> A FATAL error will occur if
-  !     the region's boundaries are not found in grid_spec.nc.
-  !
-  !     Regional output on the cubed sphere grid is also supported.  To use regional
-  !     output on the cubed sphere grid, first the grid information needs to be sent to
-  !     <TT>diag_manager_mod</TT> using the <LINK
-  !     SRC="diag_grid.html#diag_grid_init"><TT> diag_grid_init</TT></LINK>
-  !     subroutine.
-  !
-  !     <B><I>NOTE:</I></B> When using regional output the files containing regional
-  !     outputs should be different from files containing global (default) output.
-  !     It is a FATAL error to have one file containing both regional and global
-  !     results. For maximum flexibility and independence from PE counts one file
-  !     should contain just one region.
-  !
-  !     Time averaging is supported in regional output.
-  !
-  !     Physical fields (written in "physics windows" of atmospheric code) are
-  !     fully supported for regional outputs.
-  !
-  !     <B><I>NOTE:</I></B> Most fields are defined in the data domain but use the
-  !     compute domain. In <TT>send_data</TT> the field can be passed in either
-  !     the data domain or in the compute domain.  If the data domain is used, the
-  !     start and end indicies of the compute domain (isc, iec, . . .) should be
-  !     passed.  If the compute domain is used no indices are needed.  The indices
-  !     are for determining halo exclusively.  If users want to output the field
-  !     partially they should use regional output as mentioned above.
-  !
-  !     Weight in Time averaging is now supported, each time level may have a
-  !     different weight. The default of weight is 1.
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
-  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"> </IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)"> </IN>
-  !   <IN NAME="is_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="js_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ks_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:), OPTIONAL"></IN>
-  !   <IN NAME="rmask" TYPE="REAL, DIMENSION(:,:,:), OPTIONAL"></IN>
-  !   <IN NAME="ie_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="je_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ke_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
   !> @brief Send data over to output fields.
+  !!
+  !> <TT>send_data</TT> is overloaded for fields having zero dimension
+  !! (scalars) to 3 dimension.  <TT>diag_field_id</TT> corresponds to the id
+  !! returned from a previous call to <TT>register_diag_field</TT>. The field
+  !! array is restricted to the computational range of the array. Optional
+  !! argument <TT>is_in</TT> can be used to update sub-arrays of the entire
+  !! field. Additionally, an optional logical or real mask can be used to
+  !! apply missing values to the array.
+  !!
+  !! If a field is declared to be <TT>mask_variant</TT> in
+  !! <TT>register_diag_field</TT> logical mask should be mandatory.
+  !!
+  !! For the real  mask, the mask is applied if the mask value is less than
+  !! 0.5.
+  !!
+  !! By default, a field will be written out entirely in its global grid.
+  !! Users can also specify regions in which the field will be output. The
+  !! region is specified in diag-table just before the end of output_field
+  !! replacing "none".
+  !!
+  !! For example, by default:
+  !!
+  !! "ocean_mod","Vorticity","vorticity","file1","all",.false.,"none",2
+  !!
+  !! for regional output:
+  !!
+  !! "ocean_mod","Vorticity","vorticity_local","file2","all",.false.,"0.5 53.5 -89.5 -28.5 -1 -1",2
+  !!
+  !! The format of a region is "<TT>xbegin xend ybegin yend zbegin zend</TT>".
+  !! If it is a 2D field use (-1 -1) for (zbegin zend) as in the example above.
+  !! For a 3D field use (-1 -1) for (zbegin zend) when you want to write the
+  !! entire vertical extent, otherwise specify real coordinates.  The units
+  !! used for region are the actual units used in grid_spec.nc (for example
+  !! degrees for lat, lon).  <B><I>NOTE:</I></B> A FATAL error will occur if
+  !! the region's boundaries are not found in grid_spec.nc.
+  !!
+  !! Regional output on the cubed sphere grid is also supported.  To use regional
+  !! output on the cubed sphere grid, first the grid information needs to be sent to
+  !! <TT>diag_manager_mod</TT> using the @ref diag_grid#diag_grid_init subroutine.
+  !!
+  !! @note When using regional output the files containing regional
+  !! outputs should be different from files containing global (default) output.
+  !! It is a FATAL error to have one file containing both regional and global
+  !! results. For maximum flexibility and independence from PE counts one file
+  !! should contain just one region.
+  !!
+  !!
+  !! Time averaging is supported in regional output.
+  !!
+  !! Physical fields (written in "physics windows" of atmospheric code) are
+  !! fully supported for regional outputs.
+  !!
+  !! <B><I>NOTE:</I></B> Most fields are defined in the data domain but use the
+  !! compute domain. In <TT>send_data</TT> the field can be passed in either
+  !! the data domain or in the compute domain.  If the data domain is used, the
+  !! start and end indicies of the compute domain (isc, iec, . . .) should be
+  !! passed.  If the compute domain is used no indices are needed.  The indices
+  !! are for determining halo exclusively.  If users want to output the field
+  !! partially they should use regional output as mentioned above.
+  !!
+  !! Weight in Time averaging is now supported, each time level may have a
+  !! different weight. The default of weight is 1.
+  !> @ingroup diag_manager_mod
   INTERFACE send_data
      MODULE PROCEDURE send_data_0d
      MODULE PROCEDURE send_data_1d
@@ -484,13 +340,15 @@ use platform_mod
 #endif
   END INTERFACE
 
-  !> @brief Register Diagnostic Field.
+  !> @brief Register a diagnostic field for a given module
+  !> @ingroup diag_manager_mod
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
   END INTERFACE
 
   !> @brief Send tile-averaged data over to output fields.
+  !> @ingroup diag_manager_mod
   INTERFACE send_tile_averaged_data
      MODULE PROCEDURE send_tile_averaged_data1d
      MODULE PROCEDURE send_tile_averaged_data2d
@@ -498,6 +356,7 @@ use platform_mod
   END INTERFACE
 
   !> @brief Add a attribute to the output field
+  !> @ingroup diag_manager_mod
   INTERFACE diag_field_add_attribute
      MODULE PROCEDURE diag_field_add_attribute_scalar_r
      MODULE PROCEDURE diag_field_add_attribute_scalar_i
@@ -505,27 +364,13 @@ use platform_mod
      MODULE PROCEDURE diag_field_add_attribute_r1d
      MODULE PROCEDURE diag_field_add_attribute_i1d
   END INTERFACE diag_field_add_attribute
-  ! </INTERFACE>
 
+!> @addtogroup diag_manager_mod
+!> @{
 CONTAINS
 
-  ! <FUNCTION NAME="register_diag_field_scalar" INTERFACE="register_diag_field">
-  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="axes" TYPE="Not Applicable" />
-  !   <IN NAME="init_time" TYPE="TYPE(time_type), OPTIONAL" />
-  !   <IN NAME="long_name" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL" />
-  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL" />
-  !   <IN NAME="mask_variant" TYPE="Not Applicable" />
-  !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
-  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL" />
-  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL" />
-  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !> @return integer
+  !> @brief Registers a scalar field
+  !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
@@ -552,30 +397,9 @@ CONTAINS
             & standard_name=standard_name, do_not_log=do_not_log, realm=realm)
     END IF
   END FUNCTION register_diag_field_scalar
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="register_diag_field_array" INTERFACE="register_diag_field">
-  !   <IN NAME="module_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="field_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="axes" TYPE="INTEGER, DIMENSION(:)" />
-  !   <IN NAME="init_time" TYPE="TYPE(time_type)" />
-  !   <IN NAME="long_name" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="units" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="missing_value" TYPE="REAL, OPTIONAL" />
-  !   <IN NAME="range" TYPE="REAL, DIMENSION(2), OPTIONAL" />
-  !   <IN NAME="mask_variant" TYPE="LOGICAL, OPTIONAL" />
-  !   <IN NAME="standard_name" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <IN NAME="do_not_log" TYPE="LOGICAL, OPTIONAL" />
-  !   <IN NAME="interp_method" TYPE="CHARACTER(len=*), OPTIONAL">
-  !     The interp method to be used when regridding the field in post-processing.
-  !     Valid options are "conserve_order1", "conserve_order2", and "none".
-  !   </IN>
-  !   <IN NAME="tile_count" TYPE="INTEGER, OPTIONAL" />
-  !   <IN NAME="area" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell area field</IN>
-  !   <IN NAME="volume" TYPE="INTEGER, OPTIONAL">diag_field_id containing the cell volume field</IN>
-  !   <IN NAME="realm" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL" />
-  !> @return integer
+  !> @brief Registers an array field
+  !> @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
@@ -763,7 +587,7 @@ CONTAINS
   END FUNCTION register_diag_field_array
 
   !> @brief Return field index for subsequent call to send_data.
-  !! @return Return (integer) field index for subsequent call to send_data.
+  !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
        & tile_count, area, volume, realm)
@@ -1362,11 +1186,10 @@ CONTAINS
        END IF
     END IF
   END SUBROUTINE init_field_cell_measures
-  ! </SUBROUTINE>
 
-  !> \brief Add to the associated files attribute
+  !> @brief Add to the associated files attribute
   !!
-  !! \throw FATAL, "Length of asso_file_name is not long enough to hold the associated file name."
+  !! @throw FATAL, "Length of asso_file_name is not long enough to hold the associated file name."
   !!     The length of character array asso_file_name is not long enough to hold the full file name
   !!     of the associated_file.  Please contact the developer to increase the length of the  variable.
   SUBROUTINE add_associated_files(file_num, cm_file_num, cm_ind)
@@ -1416,21 +1239,7 @@ CONTAINS
          & TRIM(date_prefix)//TRIM(asso_file_name))
   END SUBROUTINE add_associated_files
 
-  ! <FUNCTION NAME="send_data_0d" INTERFACE="send_data">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
-  !   <IN NAME="field" TYPE="REAL"> </IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type), OPTIONAL"> </IN>
-  !   <IN NAME="is_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="js_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="ks_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="mask" TYPE="Not Applicable"></IN>
-  !   <IN NAME="rmask" TYPE="Not Applicable"></IN>
-  !   <IN NAME="ie_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="je_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="weight" TYPE="Not Applicable"></IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
-  !> @return Logical send_data_0d
+  !> @return true if send is successful
   LOGICAL FUNCTION send_data_0d(diag_field_id, field, time, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     REAL, INTENT(in) :: field
@@ -1448,23 +1257,8 @@ CONTAINS
     field_out(1, 1, 1) = field
     send_data_0d = send_data_3d(diag_field_id, field_out, time, err_msg=err_msg)
   END FUNCTION send_data_0d
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_data_1d" INTERFACE="send_data">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
-  !   <IN NAME="field" TYPE="REAL, DIMENSION(:)"> </IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)"> </IN>
-  !   <IN NAME="is_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="js_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="ks_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:), OPTIONAL"></IN>
-  !   <IN NAME="rmask" TYPE="REAL, DIMENSION(:), OPTIONAL"></IN>
-  !   <IN NAME="ie_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="je_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
-  !> @return Logical send_data_1d
+  !> @return true if send is successful
   LOGICAL FUNCTION send_data_1d(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     REAL, DIMENSION(:), INTENT(in) :: field
@@ -1512,23 +1306,8 @@ CONTAINS
        END IF
     END IF
   END FUNCTION send_data_1d
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_data_2d" INTERFACE="send_data">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
-  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:)"> </IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)"> </IN>
-  !   <IN NAME="is_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="js_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ks_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:), OPTIONAL"></IN>
-  !   <IN NAME="rmask" TYPE="REAL, DIMENSION(:,:), OPTIONAL"></IN>
-  !   <IN NAME="ie_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="je_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ke_in" TYPE="Not Applicable"></IN>
-  !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
-  !> @return Logical send_data_2d
+  !> @return true if send is successful
   LOGICAL FUNCTION send_data_2d(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -1568,10 +1347,9 @@ CONTAINS
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     END IF
   END FUNCTION send_data_2d
-  ! </FUNCTION>
 
 #ifdef OVERLOAD_R8
-  ! <FUNCTION NAME="send_data_2d_r8" INTERFACE="send_data">
+  !> @return true if send is successful
   LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -1611,9 +1389,8 @@ CONTAINS
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     END IF
   END FUNCTION send_data_2d_r8
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_data_3d_r8" INTERFACE="send_data">
+  !> @return true if send is successful
   LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -1653,24 +1430,9 @@ CONTAINS
             & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     END IF
   END FUNCTION send_data_3d_r8
-  ! </FUNCTION>
 #endif
 
-  ! <FUNCTION NAME="send_data_3d" INTERFACE="send_data">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"> </IN>
-  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"> </IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)"> </IN>
-  !   <IN NAME="is_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="js_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ks_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:), OPTIONAL"></IN>
-  !   <IN NAME="rmask" TYPE="REAL, DIMENSION(:,:,:), OPTIONAL"></IN>
-  !   <IN NAME="ie_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="je_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="ke_in" TYPE="INTEGER, OPTIONAL"></IN>
-  !   <IN NAME="weight" TYPE="REAL, OPTIONAL"></IN>
-  !   <OUT NAME="err_msg" TYPE="CHARACTER(len=*), OPTIONAL"></OUT>
-  !> @return Logical send_data_3d
+  !> @return true if send is successful
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -3191,15 +2953,8 @@ CONTAINS
 
     DEALLOCATE(oor_mask)
   END FUNCTION send_data_3d
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_tile_averaged_data1d" INTERFACE="send_tile_averaged_data">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
-  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"></IN>
-  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">  </IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)">  </IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:), OPTIONAL"></IN>
-  !> @return Logical send_tile_averaged_data1d
+  !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )
     INTEGER, INTENT(in) :: id  !< id od the diagnostic field
     REAL, INTENT(in) :: field(:,:) !< field to average and send
@@ -3219,19 +2974,7 @@ CONTAINS
     send_tile_averaged_data1d = send_data(id, out, time=time, mask=ANY(mask,DIM=2))
   END FUNCTION send_tile_averaged_data1d
 
-  ! <SUBROUTINE NAME="average_tiles1d">
-  !   <OVERVIEW>
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE average_tiles1d(diag_field_id, x, area, mask, out)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
-  !   <IN NAME="x" TYPE="REAL, DIMENSION(:,:)">(ug_index, tile) field to average</IN>
-  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">(ug_index, tile) fractional area</IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:)">(ug_index, tile) land mask</IN>
-  !   <OUT NAME="out" TYPE="REAL, DIMENSION(:,:)">(ug_index) result of averaging</OUT>
+  !> @brief Calculates average for a field with the given area and land mask
   SUBROUTINE average_tiles1d(diag_field_id, x, area, mask, out)
     INTEGER, INTENT(in) :: diag_field_id
     REAL, DIMENSION(:,:), INTENT(in) :: x !< (ug_index, tile) field to average
@@ -3278,14 +3021,7 @@ CONTAINS
     END WHERE
   END SUBROUTINE average_tiles1d
 
-
-  ! <FUNCTION NAME="send_tile_averaged_data2d" INTERFACE="send_tile_averaged_data">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
-  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:)"></IN>
-  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">  </IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)">  </IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:), OPTIONAL"></IN>
-  !> @return Logical send_tile_averaged_data2d
+  !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data2d ( id, field, area, time, mask )
     INTEGER, INTENT(in) :: id  !< id od the diagnostic field
     REAL, INTENT(in) :: field(:,:,:) !< field to average and send
@@ -3304,15 +3040,8 @@ CONTAINS
     CALL average_tiles(id, field, area, mask, out)
     send_tile_averaged_data2d = send_data(id, out, time, mask=ANY(mask,DIM=3))
   END FUNCTION send_tile_averaged_data2d
-  ! </FUNCTION>
 
-  ! <FUNCTION NAME="send_tile_averaged_data3d" INTERFACE="send_tile_averaged_data">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
-  !   <IN NAME="field" TYPE="REAL, DIMENSION(:,:,:,:)"></IN>
-  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)"></IN>
-  !   <IN NAME="time" TYPE="TYPE(time_type)"></IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:), OPTIONAL">  </IN>
-  !> @return Logical send_tile_averaged_data3d
+  !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data3d( id, field, area, time, mask )
     INTEGER, INTENT(in) :: id !< id of the diagnostic field
     REAL, DIMENSION(:,:,:,:), INTENT(in) :: field !< (lon, lat, tile, lev) field to average and send
@@ -3341,21 +3070,8 @@ CONTAINS
 
     send_tile_averaged_data3d = send_data( id, out, time, mask=mask3 )
   END FUNCTION send_tile_averaged_data3d
-  ! </FUNCTION>
 
-  ! <SUBROUTINE NAME="average_tiles">
-  !   <OVERVIEW>
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE average_tiles(diag_field_id, x, area, mask, out)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !   </DESCRIPTION>
-  !   <IN NAME="diag_field_id" TYPE="INTEGER"></IN>
-  !   <IN NAME="x" TYPE="REAL, DIMENSION(:,:,:)">(lon, lat, tile) field to average</IN>
-  !   <IN NAME="area" TYPE="REAL, DIMENSION(:,:,:)">(lon, lat, tile) fractional area</IN>
-  !   <IN NAME="mask" TYPE="LOGICAL, DIMENSION(:,:,:)">(lon, lat, tile) land mask</IN>
-  !   <OUT NAME="out" TYPE="REAL, DIMENSION(:,:)">(lon, lat) result of averaging</OUT>
+  !> @brief Calculates tile average of a field
   SUBROUTINE average_tiles(diag_field_id, x, area, mask, out)
     INTEGER, INTENT(in) :: diag_field_id
     REAL, DIMENSION(:,:,:), INTENT(in) :: x !< (lon, lat, tile) field to average
@@ -3401,7 +3117,6 @@ CONTAINS
        out(:,:) = local_missing_value
     END WHERE
   END SUBROUTINE average_tiles
-  ! </SUBROUTINE>
 
   !> @return Integer writing_field
   INTEGER FUNCTION writing_field(out_num, at_diag_end, error_string, time)
@@ -3594,11 +3309,12 @@ CONTAINS
   END SUBROUTINE diag_manager_set_time_end
 
   !-----------------------------------------------------------------------
-  !>@brief The subroutine 'diag_send_complete_instant' allows the user to
+  !> @brief The subroutine 'diag_send_complete_instant' allows the user to
   !! save diagnostic data on variable intervals (user defined in code logic)
   !! to the same file.  The argument (time_type) will be written to the
   !! time axis correspondingly.
-  !>@details The user is responsible for any averaging of accumulated data
+  !!
+  !> The user is responsible for any averaging of accumulated data
   !! as this routine is not designed for instantaneous values.  This routine
   !! works only for send_data calls within OpenMP regions as they are buffered
   !! until the complete signal is given.
@@ -3625,6 +3341,7 @@ CONTAINS
   END SUBROUTINE diag_send_complete_instant
 
   !-----------------------------------------------------------------------
+  !> @brief Saves diagnostic data for the given time value.
   SUBROUTINE diag_send_complete(time_step, err_msg)
     TYPE (time_type), INTENT(in)           :: time_step
     character(len=*), INTENT(out), optional :: err_msg
@@ -4091,7 +3808,6 @@ CONTAINS
        init_diurnal_axis = diag_axis_init(name, DATA, units, 'N', 'time of day', set_name='diurnal', edges=edges_id)
     END IF
   END FUNCTION init_diurnal_axis
-  ! </FUNCTION>
 
   SUBROUTINE diag_field_attribute_init(diag_field_id, name, type, cval, ival, rval)
     INTEGER, INTENT(in) :: diag_field_id !< input field ID, obtained from diag_manager_mod::register_diag_field.
@@ -4253,77 +3969,59 @@ CONTAINS
     END IF
   END SUBROUTINE diag_field_attribute_init
 
-  ! <SUBROUTINE NAME="diag_field_add_attribute_scalar_r" INTERFACE="diag_field_add_attribute">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="REAL" />
+  !> @brief Add a scalar real attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_r(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    REAL, INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    REAL, INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_r
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="diag_field_add_attribute_scalar_i" INTERFACE="diag_field_add_attribute">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="INTEGER" />
+  !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_i(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    INTEGER, INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    INTEGER, INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_i
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="diag_field_add_attribute_scalar_c" INTERFACE="diag_field_add_attribute">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="CHARACTER(len=*)" />
+  !> @brief Add a scalar character attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_scalar_c(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    CHARACTER(len=*), INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
   END SUBROUTINE diag_field_add_attribute_scalar_c
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="diag_field_add_attribute_r1d" INTERFACE="diag_field_add_attribute">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="REAL, DIMENSION(:)" />
+  !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_r1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    REAL, DIMENSION(:), INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
     INTEGER :: num_attributes, len
     CHARACTER(len=512) :: err_msg
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
   END SUBROUTINE diag_field_add_attribute_r1d
-  ! </SUBROUTINE>
 
-  ! <SUBROUTINE NAME="diag_field_add_attribute_i1d" INTERFACE="diag_field_add_attribute">
-  !   <IN NAME="diag_field_id" TYPE="INTEGER" />
-  !   <IN NAME="att_name" TYPE="CHARACTER(len=*)" />
-  !   <IN NAME="att_value" TYPE="INTEGER, DIMENSION(:)" />
+  !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
   SUBROUTINE diag_field_add_attribute_i1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id
-    CHARACTER(len=*), INTENT(in) :: att_name
-    INTEGER, DIMENSION(:), INTENT(in) :: att_value
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
+    INTEGER, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
   END SUBROUTINE diag_field_add_attribute_i1d
 
   !> @brief Add the cell_measures attribute to a diag out field
-  !! @details Add the cell_measures attribute to a give diag field.  This is useful if the
-  !!     area/volume fields for the diagnostic field are defined in another module after
-  !!     the diag_field.
+  !!
+  !> Add the cell_measures attribute to a give diag field.  This is useful if the
+  !! area/volume fields for the diagnostic field are defined in another module after
+  !! the diag_field.
   SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
     INTEGER, INTENT(in) :: diag_field_id
     INTEGER, INTENT(in), OPTIONAL :: area !< diag ids of area
@@ -4343,5 +4041,7 @@ CONTAINS
        END DO
     END IF
   END SUBROUTINE diag_field_add_cell_measures
-  ! </SUBROUTINE>
+
 END MODULE diag_manager_mod
+!> @}
+! close documentation grouping

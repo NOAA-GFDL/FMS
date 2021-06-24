@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !> @brief I/O domain reads in data from the netcdf file and broadcasts the
 !!        data to the rest of the ranks.  This routine may only be used with

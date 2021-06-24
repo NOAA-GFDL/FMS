@@ -1,3 +1,4 @@
+\page rm General Project Information
 # Modeling Framework: Flexible Modeling System (FMS)
 
 Today’s climate models simulate highly complex systems. In response to
@@ -37,13 +38,13 @@ parallelization, input and output, data exchange between various model grids,
 orchestration of the time stepping, makefiles, and simple sample run scripts.
 This infrastructure should largely insulate FMS users from machine-specific
 details.
-1. A standardization of the interfaces between various component models
+2. A standardization of the interfaces between various component models
 including software for standardizing, coordinating, and improving diagnostic
 calculations of FMS-based models, and input data preparation for such models.
 Common preprocessing and post-processing software are included to the extent
 that the needed functionality cannot be adequately provided by available
 third-party software.
-1. Contributed component models that are subjected to a rigorous software
+3. Contributed component models that are subjected to a rigorous software
 quality review and improvement process. The development and initial testing of
 these component models is largely a scientific question, and would not fall
 under FMS. The quality review and improvement process includes consideration of
@@ -51,7 +52,7 @@ under FMS. The quality review and improvement process includes consideration of
 portability and inter-operability, (B) understandability (clarity and
 consistency of documentation, comments, interfaces, and code), and (C) general
 computational efficiency without algorithmic changes.
-1. A standardized technique for version control and dissemination of the
+4. A standardized technique for version control and dissemination of the
 software and documentation.
 
 FMS does not include the determination of model configurations, parameter

@@ -16,15 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
-!! @brief Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
-!! Implementation of routines to solve the gas fluxes at the
+!> @defgroup atmos_ocean_fluxes_mod atmos_ocean_fluxes_mod
+!> @ingroup coupler
+!> @brief Implementation of routines to solve the gas fluxes at the
 !! ocean surface for a coupled model as outlined in the Biotic-HOWTO
-!! documentation, revision 1.7, 1999/10/05.
-!! @author Richard Slater, John Dunne
-!! @email gfdl.climate.model.info@noaa.gov
-!! @description This module will take fields from an atmospheric and an
+!! documentation below, revision 1.7, 1999/10/05.
+!!
+!> @author Richard Slater, John Dunne
+!!
+!! Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
+!!
+!! This module will take fields from an atmospheric and an
 !! oceanic model and calculate ocean surface fluxes for
 !! CO2, O2, CFC-11 or CFC-12 as outlined in the various
 !! HOWTO documents at the OCMIP2 website. Multiple instances
@@ -32,7 +34,14 @@
 !! surface fluxes. Additionally, data may be overridden at
 !! the individual fields, or fluxes. This could be used in
 !! the absence of an atmospheric or oceanic model.
+!!
 !! http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
+
+!> @file
+!> @brief File for @ref atmos_ocean_fluxes_mod
+
+!> @addtogroup atmos_ocean_fluxes_mod
+!> @{
 module  atmos_ocean_fluxes_mod
   use mpp_mod,           only: stdout, mpp_error, FATAL, mpp_sum, mpp_npes
   use fms_mod,           only: write_version_number
@@ -90,12 +99,17 @@ contains
   !! @throw FATAL, "Blank flux_type given"
   !!     flux_type or implementation is empty
   !! @throw FATAL, "Undefined flux_type given from field_table"
+  !!     flux_type does not equal flux_type_test
   !! @throw FATAL, "Undefined flux_type given as argument to the subroutine"
+  !!     flux_type does not equal flux_type_test
   !! @throw FATAL, "Undefined flux_type/implementation (implementation given from field_table)"
   !!     flux_type does not equal flux_type_test
   !! @throw FATAL, "Undefined flux_type/implementation (flux_type given from field_table)"
+  !!     flux_type does not equal flux_type_test
   !! @throw FATAL, "Undefined flux_type/implementation (both given from field_table)"
+  !!     flux_type does not equal flux_type_test
   !! @throw FATAL, "Undefined flux_type/implementation given as argument to the subroutine"
+  !!     flux_type does not equal flux_type_test
   !! @throw NOTE, "Number of parameters provided for [variable] does not match the number of parameters required"
   !!     Mismatch between parameter input and the parameters being replaced
   !! @throw FATAL, "Could not change back to [current_list]"
@@ -710,7 +724,7 @@ contains
   end subroutine  atmos_ocean_fluxes_init
 
   !> @brief Initialize the coupler type flux tracers
-  !! Initialize the /coupler_mod/types/ fields in the field manager.  These fields
+  !> Initialize the /coupler_mod/types/ fields in the field manager.  These fields
   !! include:
   !! @verbatim
   !! air_sea_gas_flux_generic/
@@ -840,41 +854,41 @@ contains
   !!                            'mol/m^3'
   !! @endverbatim
   !!
-  !! @throw FATAL, "Could not set the \"coupler_mod\" list"
-  !! @throw FATAL, "Could not set the \"GOOD\" list"
-  !! @throw FATAL, "Could not set the \"/coupler_mod/fluxes\" list"
-  !! @throw FATAL, "Could not set the \"/coupler_mod/types\" list"
-  !! @throw FATAL, "Could not change to \"/coupler_mod/types\""
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux_generic\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux_generic\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux_generic/implementation\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux_generic/implementation/ocmip2\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux_generic/atm\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux_generic/ice\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux_generic/flux\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux/implementation\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux/implementation/ocmip2\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux/implementation/ocmip2_data\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux/implementation/linear\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux/atm\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux/ice\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_gas_flux/flux\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_deposition\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_deposition/implementation\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_deposition/implementation/dry\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_deposition/implementation/wet\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_deposition/atm\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_deposition/ice\" list"
-  !! @throw FATAL, "Could not set the \"air_sea_deposition/flux\" list"
-  !! @throw FATAL, "Could not set the \"land_sea_runoff\" list"
-  !! @throw FATAL, "Could not set the \"land_sea_runoff/implementation\" list"
-  !! @throw FATAL, "Could not set the \"land_sea_runoff/implementation/river\" list"
-  !! @throw FATAL, "Could not set the \"land_sea_runoff/atm\" list"
-  !! @throw FATAL, "Could not set the \"land_sea_runoff/ice\" list"
-  !! @throw FATAL, "Could not set the \"land_sea_runoff/flux\" list"
-  !! @throw FATAL, "Could not change to \"/\""
-  !! @throw FATAL, "Problem dumping /coupler_mod/types tree"
+  !! @throw FATAL, Could not set the \coupler_mod\ list
+  !! @throw FATAL, Could not set the \GOOD\ list
+  !! @throw FATAL, Could not set the \/coupler_mod/fluxes\ list
+  !! @throw FATAL, Could not set the \/coupler_mod/types\ list
+  !! @throw FATAL, Could not change to \/coupler_mod/types\
+  !! @throw FATAL, Could not set the \air_sea_gas_flux_generic\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux_generic\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux_generic/implementation\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux_generic/implementation/ocmip2\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux_generic/atm\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux_generic/ice\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux_generic/flux\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux/implementation\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux/implementation/ocmip2\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux/implementation/ocmip2_data\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux/implementation/linear\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux/atm\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux/ice\ list
+  !! @throw FATAL, Could not set the \air_sea_gas_flux/flux\ list
+  !! @throw FATAL, Could not set the \air_sea_deposition\ list
+  !! @throw FATAL, Could not set the \air_sea_deposition/implementation\ list
+  !! @throw FATAL, Could not set the \air_sea_deposition/implementation/dry\ list
+  !! @throw FATAL, Could not set the \air_sea_deposition/implementation/wet\ list
+  !! @throw FATAL, Could not set the \air_sea_deposition/atm\ list
+  !! @throw FATAL, Could not set the \air_sea_deposition/ice\ list
+  !! @throw FATAL, Could not set the \air_sea_deposition/flux\ list
+  !! @throw FATAL, Could not set the \land_sea_runoff\ list
+  !! @throw FATAL, Could not set the \land_sea_runoff/implementation\ list
+  !! @throw FATAL, Could not set the \land_sea_runoff/implementation/river\ list
+  !! @throw FATAL, Could not set the \land_sea_runoff/atm\ list
+  !! @throw FATAL, Could not set the \land_sea_runoff/ice\ list
+  !! @throw FATAL, Could not set the \land_sea_runoff/flux\ list
+  !! @throw FATAL, Could not change to \/\
+  !! @throw FATAL, Problem dumping /coupler_mod/types tree
   subroutine atmos_ocean_type_fluxes_init(verbosity)
     integer, intent(in), optional :: verbosity  !< A 0-9 integer indicating a level of verbosity.
 
@@ -1207,3 +1221,5 @@ contains
     return
   end subroutine atmos_ocean_type_fluxes_init
 end module  atmos_ocean_fluxes_mod
+!> @}
+! close documentation grouping

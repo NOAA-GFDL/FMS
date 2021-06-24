@@ -16,6 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup mpp_mod
+
 #if defined(use_libMPI)
 #define SYSTEM_CLOCK system_clock_mpi
 

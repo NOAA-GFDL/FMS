@@ -1,3 +1,4 @@
+\page autotools Building with Autotools
 # Autotools Build System Documentation
 
 This document describes the autotools-based build system for FMS.
