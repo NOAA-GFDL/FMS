@@ -19,8 +19,13 @@
 !
 ! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
 
+!> @defgroup drifters_core_mod drifters_core_mod
+!> @ingroup drifters
+!> @brief Handles the mechanics for adding and removing drifters
+
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref drifters_core_mod
+
 module drifters_core_mod
   use platform_mod
   implicit none
@@ -37,31 +42,36 @@ module drifters_core_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !! @brief Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
-  !!   when adding members
+  !> @brief Core data needed for drifters.
+  !! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
+  !! when adding members.
+  !> @ingroup drifters_core_mod
   type drifters_core_type
-     ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
-     ! when adding members
-     integer(kind=i8_kind) :: it   ! time index
-     integer :: nd     ! number of dimensions
-     integer :: np     ! number of particles (drifters)
-     integer :: npdim  ! max number of particles (drifters)
-     integer, allocatable :: ids(:) ! particle id number
+     integer(kind=i8_kind) :: it   !< time index
+     integer :: nd     !< number of dimensions
+     integer :: np     !< number of particles (drifters)
+     integer :: npdim  !< max number of particles (drifters)
+     integer, allocatable :: ids(:) !< particle id number
      real   , allocatable :: positions(:,:)
   end type drifters_core_type
 
+  !> @brief Assignment override for @ref drifters_core_type
+  !> @ingroup drifters_core_mod
   interface assignment(=)
      module procedure drifters_core_copy_new
   end interface
 
 contains
 
+!> @addtogroup drifters_core_mod
+!> @{
 !###############################################################################
+  !> Create a new @ref drifters_core_type
   subroutine drifters_core_new(self, nd, npdim, ermesg)
-    type(drifters_core_type)        :: self
+    type(drifters_core_type)        :: self !< @ref drifters_core_type to create
     integer, intent(in)       :: nd
     integer, intent(in)       :: npdim
-    character(*), intent(out) :: ermesg
+    character(*), intent(out) :: ermesg !< Error message string
     integer ier, iflag, i
     ermesg = ''
     ier    = 0
@@ -83,9 +93,10 @@ contains
   end subroutine drifters_core_new
 
  !###############################################################################
+ !> Deallocates the given @ref drifters_core_type
  subroutine drifters_core_del(self, ermesg)
-    type(drifters_core_type)        :: self
-    character(*), intent(out) :: ermesg
+    type(drifters_core_type)        :: self !< @ref drifters_core_type to delete
+    character(*), intent(out) :: ermesg !< Error message string
     integer ier, iflag
     ermesg = ''
     ier    = 0
@@ -271,4 +282,5 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
 end module drifters_core_mod
 !###############################################################################
-!###############################################################################
+!> @}
+! close documentation grouping

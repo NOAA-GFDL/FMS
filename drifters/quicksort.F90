@@ -16,11 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @cond
 #undef _TYP
 #define _TYP integer
+!> @endcond
 
-! Written by Magnus Lie Hetland
+!> @file
+!> @ingroup drifters
+!> @brief Fortran implementation of quicksort
+!> @author Magnus Lie Hetland
 
+!> Create array partitions for quicksort
 function qksrt_partition(n, list, start, end) result(top)
   implicit none
   integer, intent(in) :: n
@@ -71,6 +77,7 @@ function qksrt_partition(n, list, start, end) result(top)
 
 end function qksrt_partition
 
+!> quicksort a given list
 recursive subroutine qksrt_quicksort(n, list, start, end)
      implicit none
      integer, intent(in) :: n

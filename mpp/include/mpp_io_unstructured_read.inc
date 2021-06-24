@@ -17,6 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_io_mod
+!> @brief Parallel file reads for unstructured grids, used in @ref mpp_io_mod
 !----------
 !ug support
 

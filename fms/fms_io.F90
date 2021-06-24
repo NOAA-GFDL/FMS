@@ -16,48 +16,29 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_io_mod fms_io_mod
+!> @ingroup fms
+!> @brief Module for writing and reading restart data via NetCDF files
+!> @author M.J. Harrison, Zhi Liang
+!!
+!! This module is for writing and reading restart data in NetCDF format.
+!! fms_io_init must be called before the first write_data/read_data call
+!! For writing, fms_io_exit must be called after ALL write calls have
+!! been made. Typically, fms_io_init and fms_io_exit are placed in the
+!! main (driver) program while read_data and write_data can be called where needed.
+!! Presently, two combinations of threading and fileset are supported, users can choose
+!! one line of the following by setting namelist:
+!!
+!! With the introduction of netCDF restart files, there is a need for a global
+!! switch to turn on/off netCDF restart options in all of the modules that deal with
+!! restart files. Here two more namelist variables (logical type) are introduced to fms_io
+!!
+!! - fms_netcdf_override
+!! - fms_netcdf_restart
+!!
+!! because default values of both flags are .true., the default behavior of the entire model is
+!! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
 
-module fms_io_mod
-#include <fms_platform.h>
-
-!
-!
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-! Zhi Liang
-! </CONTACT>
-
-! <CONTACT EMAIL="Matthew.Harrison@noaa.gov">
-! M.J. Harrison
-! </CONTACT>
-!
-! <REVIEWER EMAIL="Matthew.Harrison@noaa.gov">
-! M.J. Harrison
-! </REVIEWER>
-
-! <REVIEWER EMAIL="Bruce.Wyman@noaa.gov">
-! B. Wyman
-! </REVIEWER>
-
-!<DESCRIPTION>
-! This module is for writing and reading restart data in NetCDF format.
-! fms_io_init must be called before the first write_data/read_data call
-! For writing, fms_io_exit must be called after ALL write calls have
-! been made. Typically, fms_io_init and fms_io_exit are placed in the
-! main (driver) program while read_data and write_data can be called where needed.
-! Presently, two combinations of threading and fileset are supported, users can choose
-! one line of the following by setting namelist:
-!
-! With the introduction of netCDF restart files, there is a need for a global
-! switch to turn on/off netCDF restart options in all of the modules that deal with
-! restart files. Here two more namelist variables (logical type) are introduced to fms_io
-!
-! fms_netcdf_override
-! fms_netcdf_restart
-!
-! because default values of both flags are .true., the default behavior of the entire model is
-! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
-!
-!</DESCRIPTION>
 ! <NAMELIST NAME="fms_io_nml">
 ! <DATA NAME="threading_read" TYPE="character">
 ! threading_read can be 'single' or 'multi'
@@ -99,8 +80,16 @@ module fms_io_mod
 !
 !    Set checksum_required to false if you do not want to compare checksums.
 ! </DATA>
-
 !</NAMELIST>
+
+!> @file
+!> @brief File for @ref fms_io_mod
+
+!> @addtogroup fms_io_mod
+!> @{
+module fms_io_mod
+
+#include <fms_platform.h>
 
 use mpp_io_mod,      only: mpp_open, mpp_close, mpp_io_init, mpp_io_exit, mpp_read, mpp_write
 use mpp_io_mod,      only: mpp_write_meta, mpp_get_info, mpp_get_atts, mpp_get_fields
@@ -174,7 +163,9 @@ integer, parameter, private :: NIDX=8
 
 logical, private :: warn_string_function = .true.
 
-type meta_type
+!> @}
+!> @ingroup fms_io_mod
+type, private :: meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
 !!$ Gfortran on gaea does not yet support deferred length character strings
 !!$  character(len=:),allocatable  :: name
@@ -186,7 +177,8 @@ type meta_type
   character(len=256)   :: cval
 end type meta_type
 
-type ax_type
+!> @ingroup fms_io_mod
+type, private :: ax_type
    private
    character(len=128) :: name = ''
    character(len=128) :: units = ''
@@ -196,24 +188,25 @@ type ax_type
    character(len=128) :: dimlen_name = ''
    character(len=128) :: dimlen_lname = ''
    character(len=128) :: calendar = ''
-   integer            :: sense              !Orientation of z axis definition
-   integer            :: dimlen             !max dim of elements across global domain
-   real               :: min             !valid min for real axis data
-   integer            :: imin            !valid min for integer axis data
-   integer,allocatable :: idx(:)         !compressed io-domain index vector
-   integer,allocatable :: nelems(:)      !num elements for each rank in io domain
-   real, pointer      :: data(:) =>NULL()    !real axis values (not used if time axis)
-   type(domain2d),pointer :: domain =>NULL() ! domain associated with compressed axis
+   integer            :: sense              !< Orientation of z axis definition
+   integer            :: dimlen             !< max dim of elements across global domain
+   real               :: min             !< valid min for real axis data
+   integer            :: imin            !< valid min for integer axis data
+   integer,allocatable :: idx(:)         !< compressed io-domain index vector
+   integer,allocatable :: nelems(:)      !< num elements for each rank in io domain
+   real, pointer      :: data(:) =>NULL()    !< real axis values (not used if time axis)
+   type(domain2d),pointer :: domain =>NULL() !< domain associated with compressed axis
 
 !----------
 !ug support
-   type(domainUG),pointer :: domain_ug => null()     !<A pointer to an unstructured mpp domain.
-   integer(INT_KIND)      :: nelems_for_current_rank !<The number of grid points registered to the current rank (used for error checking).
+   type(domainUG),pointer :: domain_ug => null()     !< A pointer to an unstructured mpp domain.
+   integer(INT_KIND)      :: nelems_for_current_rank !< The number of grid points registered to the current rank (used for error checking).
 !----------
 
 end type ax_type
 
-type var_type
+!> @ingroup fms_io_mod
+type, private :: var_type
    private
    character(len=128)                     :: name = ''
    character(len=128)                     :: longname = ''
@@ -223,77 +216,89 @@ type var_type
    integer                                :: domain_idx = -1
    logical                                :: is_dimvar = .FALSE.
    logical                                :: read_only = .FALSE.
-   logical                                :: owns_data = .FALSE. ! if true, restart owns the data and will deallocate them when freed
+   logical                                :: owns_data = .FALSE. !< if true, restart owns the data and will deallocate them when freed
    type(fieldtype)                        :: field
    type(axistype)                         :: axis
    integer                                :: position
    integer                                :: ndim
-   integer                                :: siz(5)      ! X/Y/Z/T/A extent of fields (data domain
-                                                         ! size for distributed writes;global size for reads)
-   integer                                :: gsiz(4)     ! global X/Y/Z/A extent of fields
-   integer                                :: id_axes(4)  ! store index for x/y/z/a axistype.
-   logical                                :: initialized ! indicate if the field is read or not in routine save_state.
-   logical                                :: mandatory   ! indicate if the field is mandatory to be when restart.
-   integer                                :: is, ie, js, je  ! index of the data in compute domain
+   integer                                :: siz(5)      !< X/Y/Z/T/A extent of fields (data domain
+                                                         !< size for distributed writes;global size for reads)
+   integer                                :: gsiz(4)     !< global X/Y/Z/A extent of fields
+   integer                                :: id_axes(4)  !< store index for x/y/z/a axistype.
+   logical                                :: initialized !< indicate if the field is read or not in routine save_state.
+   logical                                :: mandatory   !< indicate if the field is mandatory to be when restart.
+   integer                                :: is, ie, js, je  !< index of the data in compute domain
    real                                   :: default_data
-   character(len=8)                       :: compressed_axis !< If on a compressed axis, which axis
+   character(len=8)                       :: compressed_axis !<< If on a compressed axis, which axis
    integer, dimension(:), allocatable     :: pelist
-   integer                                :: ishift, jshift ! can be used to shift indices when no_domain=T
-   integer                                :: x_halo, y_halo ! can be used to indicate halo size when no_domain=T
+   integer                                :: ishift, jshift !< can be used to shift indices when no_domain=T
+   integer                                :: x_halo, y_halo !< can be used to indicate halo size when no_domain=T
 
 !----------
 !ug support
-    type(domainUG),pointer            :: domain_ug => null()   !<A pointer to an unstructured mpp domain.
-    integer(INT_KIND),dimension(5)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
-    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of sizes of the dimensions for the field.
+    type(domainUG),pointer            :: domain_ug => null()   !< A pointer to an unstructured mpp domain.
+    integer(INT_KIND),dimension(5)    :: field_dimension_order !< Array telling the ordering of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !< Array of sizes of the dimensions for the field.
 !----------
 
 end type var_type
 
+!> @ingroup fms_io_mod
 type Ptr0Dr
    real,                   pointer :: p => NULL()
 end type Ptr0Dr
 
+!> @ingroup fms_io_mod
 type Ptr1Dr
    real, dimension(:),     pointer :: p => NULL()
 end type Ptr1Dr
 
+!> @ingroup fms_io_mod
 type Ptr2Dr
    real, dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Dr
 
+!> @ingroup fms_io_mod
 type Ptr3Dr
    real, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr
 
+!> @ingroup fms_io_mod
 type Ptr2Dr8
    real(DOUBLE_KIND), dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Dr8
 
+!> @ingroup fms_io_mod
 type Ptr3Dr8
    real(DOUBLE_KIND), dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr8
 
+!> @ingroup fms_io_mod
 type Ptr4Dr
    real, dimension(:,:,:,:), pointer :: p => NULL()
 end type Ptr4Dr
 
+!> @ingroup fms_io_mod
 type Ptr0Di
    integer,                   pointer :: p => NULL()
 end type Ptr0Di
 
+!> @ingroup fms_io_mod
 type Ptr1Di
    integer, dimension(:),     pointer :: p => NULL()
 end type Ptr1Di
 
+!> @ingroup fms_io_mod
 type Ptr2Di
    integer, dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Di
 
+!> @ingroup fms_io_mod
 type Ptr3Di
    integer, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Di
 
+!> @ingroup fms_io_mod
 type restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
@@ -322,6 +327,8 @@ type restart_file_type
    type(Ptr3Di),   dimension(:,:), pointer  :: p3di => NULL()
 end type restart_file_type
 
+!> Read data from a file
+!> @ingroup fms_io_mod
 interface read_data
    module procedure read_data_4d_new
    module procedure read_data_3d_new
@@ -347,6 +354,7 @@ interface read_data
 #endif
 end interface
 
+!> @ingroup fms_io_mod
 interface read_distributed
    module procedure read_distributed_r1D
    module procedure read_distributed_r3D
@@ -356,8 +364,9 @@ interface read_distributed
    module procedure read_distributed_a1D
 end interface
 
-! Only need read compressed att; write is handled in with
-! mpp_io calls in save_compressed_restart
+!> Only need read compressed att; write is handled in with
+!! mpp_io calls in save_compressed_restart
+!> @ingroup fms_io_mod
 interface read_compressed
    module procedure read_compressed_i1d
    module procedure read_compressed_i2d
@@ -366,6 +375,7 @@ interface read_compressed
    module procedure read_compressed_3d
 end interface read_compressed
 
+!> @ingroup fms_io_mod
 interface write_data
    module procedure write_data_4d_new
    module procedure write_data_3d_new
@@ -383,6 +393,7 @@ interface write_data
 #endif
 end interface
 
+!> @ingroup fms_io_mod
 interface register_restart_field
    module procedure register_restart_field_r0d
    module procedure register_restart_field_r1d
@@ -411,12 +422,14 @@ interface register_restart_field
    module procedure register_restart_region_r3d
 end interface
 
+!> @ingroup fms_io_mod
 interface register_restart_axis
    module procedure register_restart_axis_r1d
    module procedure register_restart_axis_i1d
    module procedure register_restart_axis_unlimited
 end interface
 
+!> @ingroup fms_io_mod
 interface reset_field_pointer
    module procedure reset_field_pointer_r0d
    module procedure reset_field_pointer_r1d
@@ -437,11 +450,13 @@ interface reset_field_pointer
    module procedure reset_field_pointer_i3d_2level
 end interface
 
+!> @ingroup fms_io_mod
 interface restore_state
    module procedure restore_state_all
    module procedure restore_state_one_field
 end interface
 
+!> @ingroup fms_io_mod
 interface query_initialized
    module procedure query_initialized_id
    module procedure query_initialized_name
@@ -450,6 +465,7 @@ interface query_initialized
    module procedure query_initialized_r4d
 end interface
 
+!> @ingroup fms_io_mod
 interface set_initialized
    module procedure set_initialized_id
    module procedure set_initialized_name
@@ -458,30 +474,36 @@ interface set_initialized
    module procedure set_initialized_r4d
 end interface
 
+!> @ingroup fms_io_mod
 interface get_global_att_value
   module procedure get_global_att_value_text
   module procedure get_global_att_value_real
 end interface
 
+!> @ingroup fms_io_mod
 interface get_var_att_value
   module procedure get_var_att_value_text
 end interface
 
+!> @ingroup fms_io_mod
 interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
 end interface
 
+!> @ingroup fms_io_mod
 interface get_mosaic_tile_file
   module procedure get_mosaic_tile_file_sg
   module procedure get_mosaic_tile_file_ug
 end interface
 
+!> @addtogroup fms_io_mod
+!> @{
 
-integer :: num_files_r = 0 ! number of currently opened files for reading
-integer :: num_files_w = 0 ! number of currently opened files for writing
-integer :: num_domains = 0 ! number of domains in array_domain
-integer :: num_registered_files = 0 ! mumber of files registered by calling register_restart_file
+integer :: num_files_r = 0 !< number of currently opened files for reading
+integer :: num_files_w = 0 !< number of currently opened files for writing
+integer :: num_domains = 0 !< number of domains in array_domain
+integer :: num_registered_files = 0 !< mumber of files registered by calling register_restart_file
 
 integer :: thread_r, form
 logical :: module_is_initialized = .FALSE.
@@ -493,12 +515,12 @@ logical           :: great_circle_algorithm=.FALSE.
 ! entrained from fms_mod.  This will be deprecated in the future.
 type(domain2D), pointer, private :: Current_domain =>NULL()
 
-integer, private :: is,ie,js,je      ! compute domain
-integer, private :: isd,ied,jsd,jed  ! data domain
-integer, private :: isg,ieg,jsg,jeg  ! global domain
-character(len=128),      dimension(:), allocatable         :: registered_file ! file names registered through register_restart_file
-type(restart_file_type), dimension(:), allocatable         :: files_read  ! store files that are read through read_data
-type(restart_file_type), dimension(:), allocatable, target :: files_write ! store files that are written through write_data
+integer, private :: is,ie,js,je      !< compute domain
+integer, private :: isd,ied,jsd,jed  !< data domain
+integer, private :: isg,ieg,jsg,jeg  !< global domain
+character(len=128),      dimension(:), allocatable         :: registered_file !< file names registered through register_restart_file
+type(restart_file_type), dimension(:), allocatable         :: files_read  !< store files that are read through read_data
+type(restart_file_type), dimension(:), allocatable, target :: files_write !< store files that are written through write_data
 type(domain2d), dimension(max_domains), target, save  :: array_domain
 type(domain1d), dimension(max_domains), save       :: domain_x, domain_y
 public  :: read_data, read_compressed, write_data, read_distributed
@@ -524,10 +546,14 @@ public  :: get_great_circle_algorithm
 character(len=32), save :: filename_appendix = ''
 
 !--- public interface ---
+!> @}
+!> @ingroup fms_io_mod
 interface string
    module procedure string_from_integer
    module procedure string_from_real
 end interface
+!> @addtogroup fms_io_mod
+!> @{
 
 !--- namelist interface
 logical           :: fms_netcdf_override = .true.
@@ -567,12 +593,16 @@ public :: fms_io_unstructured_get_field_size
 public :: fms_io_unstructured_file_unit
 public :: fms_io_unstructured_field_exist
 
+!> @}
+
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_register_restart_axis
     module procedure fms_io_unstructured_register_restart_axis_r1D
     module procedure fms_io_unstructured_register_restart_axis_i1D
     module procedure fms_io_unstructured_register_restart_axis_u
 end interface fms_io_unstructured_register_restart_axis
 
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_register_restart_field
     module procedure fms_io_unstructured_register_restart_field_r_0d
     module procedure fms_io_unstructured_register_restart_field_r_1d
@@ -587,6 +617,7 @@ interface fms_io_unstructured_register_restart_field
     module procedure fms_io_unstructured_register_restart_field_i_2d
 end interface fms_io_unstructured_register_restart_field
 
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_read
     module procedure fms_io_unstructured_read_r_scalar
     module procedure fms_io_unstructured_read_r_1D
@@ -598,6 +629,8 @@ interface fms_io_unstructured_read
 end interface fms_io_unstructured_read
 !----------
 
+!> @addtogroup fms_io_mod
+!> @{
 contains
 
 ! <SUBROUTINE NAME="get_restart_io_mode">
@@ -8614,3 +8647,5 @@ end function get_great_circle_algorithm
 !----------
 
 end module fms_io_mod
+!> @}
+! close documentation grouping

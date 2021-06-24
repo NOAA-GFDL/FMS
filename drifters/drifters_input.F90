@@ -16,9 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup drifters_input_mod drifters_input_mod
+!> @ingroup drifters
+!> @brief Imports initial drifter positions from a netCDF file
 
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref drifters_input_mod
+
+!> @addtogroup drifters_input_mod
+!> @{
 module drifters_input_mod
   implicit none
   private
@@ -30,9 +36,13 @@ module drifters_input_mod
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
   character, parameter, private :: SEPARATOR = ' '
+  !> @}
 
-  !> @brief Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
-  !!   when adding members
+  !> @brief Input data type for drifters.
+  !!
+  !> @note Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
+  !! when adding members
+  !> @ingroup drifters_input_mod
   type drifters_input_type
      ! Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
      ! when adding members
@@ -48,10 +58,14 @@ module drifters_input_mod
      character(len=MAX_STR_LEN)               :: version
   end type drifters_input_type
 
+  !> @brief Assignment override for @ref drifters_input_type
+  !> @ingroup drifters_input_mod
   interface assignment(=)
      module procedure drifters_input_copy_new
   end interface
 
+!> @addtogroup drifters_input_mod
+!> @{
 
   contains
 
@@ -435,3 +449,5 @@ module drifters_input_mod
   end subroutine drifters_input_save
 
 end module drifters_input_mod
+!> @}
+! close documentation grouping

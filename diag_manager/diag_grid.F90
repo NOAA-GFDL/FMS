@@ -17,12 +17,14 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @file
-!! @brief diag_grid_mod is a set of procedures to work with the
+!> @defgroup diag_grid_mod diag_grid_mod
+!> @ingroup diag_manager
+!> @brief diag_grid_mod is a set of procedures to work with the
 !!   model's global grid to allow regional output.
-!! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
-!! @description TT>diag_grid_mod</TT> contains useful utilities for dealing
+!!
+!> @author Seth Underwood seth.underwood@noaa.gov
+!!
+!! <TT>diag_grid_mod</TT> contains useful utilities for dealing
 !!   with, mostly, regional output for grids other than the standard
 !!   lat/lon grid.  This module contains three public procedures <TT>
 !!   diag_grid_init</TT>, which is shared globably in the <TT>
@@ -34,41 +36,12 @@
 !!   are registered that will output only regions.  <TT>get_local_indexes</TT>
 !!   is to be called by the <TT>diag_manager_mod</TT> to discover the
 !!   global indexes defining a subregion on the tile.
+
+!> @file
+!> @brief File for @ref diag_grid_mod
+
 MODULE diag_grid_mod
 use platform_mod
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/" />
-  ! <OVERVIEW>
-  !   <TT>diag_grid_mod</TT> is a set of procedures to work with the
-  !   model's global grid to allow regional output.
-  ! </OVERVIEW>
-  ! <DESCRIPTION>
-  !   <TT>diag_grid_mod</TT> contains useful utilities for dealing
-  !   with, mostly, regional output for grids other than the standard
-  !   lat/lon grid.  This module contains three public procedures <TT>
-  !   diag_grid_init</TT>, which is shared globably in the <TT>
-  !   diag_manager_mod</TT>, <TT>diag_grid_end</TT> which will free
-  !   up memory used during the register field calls, and
-  !   <TT>get_local_indexes</TT>.  The <TT>send_global_grid</TT>
-  !   procedure is called by the model that creates the global grid.
-  !   <TT>send_global_grid</TT> needs to be called before any fields
-  !   are registered that will output only regions.  <TT>get_local_indexes</TT>
-  !   is to be called by the <TT>diag_manager_mod</TT> to discover the
-  !   global indexes defining a subregion on the tile.
-  !
-  !   <B>Change Log</B>
-  !   <DL>
-  !     <DT>September 2009</DT>
-  !     <DD>
-  !       <UL>
-  !         <LI>Single point region in Cubed Sphere</LI>
-  !         <LI>Single tile regions in the cubed sphere</LI>
-  !       </UL>
-  !     </DD>
-  !   </DL>
-  ! </DESCRIPTION>
 
   ! <INFO>
   !   <FUTURE>
@@ -85,6 +58,7 @@ use platform_mod
   !     regional output to work on any current or future grid.
   !   </FUTURE>
   ! </INFO>
+
   USE constants_mod, ONLY: DEG_TO_RAD, RAD_TO_DEG, RADIUS
   USE fms_mod, ONLY: write_version_number, error_mesg, WARNING, FATAL,&
        & mpp_pe
@@ -94,12 +68,13 @@ use platform_mod
 
   IMPLICIT NONE
 
-  ! Parameters
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !> @brief Contains the model's global grid data, and other grid information.
-  TYPE :: diag_global_grid_type
+  !> @brief Private type to hold the model's global grid data, and other grid information for use
+  !! in this module.
+  !> @ingroup diag_grid_mod
+  type, private :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: aglo_lat !< The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
@@ -121,26 +96,20 @@ use platform_mod
      CHARACTER(len=128) :: grid_type !< The global grid type.
   END TYPE diag_global_grid_type
 
-  !> @brief Private point type to hold the (x,y,z) location for a (lat,lon)
-  !!   location.
-  TYPE :: point
+  !> @brief Private type to hold the corresponding (x,y,z) location for a (lat,lon)
+  !! location.
+  !> @ingroup diag_grid_mod
+  type, private :: point
      REAL :: x !< The x value of the (x,y,z) coordinates.
      REAL :: y !< The y value of the (x,y,z) coordinates.
      REAL :: z !< The z value of the (x,y,z) coordinates.
   END TYPE point
 
-  ! <PRIVATE>
-  ! <DATA NAME="diag_global_grid" TYPE="TYPE(diag_global_grid_type)">
-  !   Variable to hold the global grid data
-  ! </DATA>
-  ! </PRIVATE>
+!> @addtogroup diag_grid_mod
+!> @{
+
   TYPE(diag_global_grid_type) :: diag_global_grid !< Variable to hold the global grid data
 
-  ! <PRIVATE>
-  ! <DATA NAME="diag_grid_initialized" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   Indicates if the diag_grid_mod has been initialized.
-  ! </DATA>
-  ! </PRIVATE>
   LOGICAL :: diag_grid_initialized = .FALSE. !< Indicates if the diag_grid_mod has been initialized.
 
   PRIVATE
@@ -151,14 +120,16 @@ CONTAINS
 
   !> @brief Send the global grid to the <TT>diag_manager_mod</TT> for
   !!   regional output.
-  !! @description In order for the diag_manager to do regional output for grids
-  !!     other than the standard lat/lon grid, the <TT>
-  !!     diag_manager_mod</TT> needs to know the the latitude and
-  !!     longitude values for the entire global grid.  This procedure
-  !!     is the mechanism the models will use to share their grid with
-  !!     the diagnostic manager.
-  !!     This procedure needs to be called after the grid is created,
-  !!     and before the first call to register the fields.
+  !!
+  !> In order for the diag_manager to do regional output for grids
+  !! other than the standard lat/lon grid, the <TT>
+  !! diag_manager_mod</TT> needs to know the the latitude and
+  !! longitude values for the entire global grid.  This procedure
+  !! is the mechanism the models will use to share their grid with
+  !! the diagnostic manager.
+  !!
+  !! This procedure needs to be called after the grid is created,
+  !! and before the first call to register the fields.
   SUBROUTINE diag_grid_init(domain, glo_lat, glo_lon, aglo_lat, aglo_lon)
     TYPE(domain2d), INTENT(in) :: domain !< The domain to which the grid data corresponds.
     REAL, INTENT(in), DIMENSION(:,:) :: glo_lat !< The latitude information for the grid tile.
@@ -318,11 +289,12 @@ CONTAINS
   END SUBROUTINE diag_grid_init
 
   !> @brief Unallocate the diag_global_grid variable.
-  !! @description The <TT>diag_global_grid</TT> variable is only needed during
-  !!     the register field calls, and then only if there are fields
-  !!     requestion regional output.  Once all the register fields
-  !!     calls are complete (before the first <TT>send_data</TT> call
-  !!     this procedure can be called to free up memory.
+  !!
+  !> The <TT>diag_global_grid</TT> variable is only needed during
+  !! the register field calls, and then only if there are fields
+  !! requestion regional output.  Once all the register fields
+  !! calls are complete (before the first <TT>send_data</TT> call
+  !! this procedure can be called to free up memory.
   SUBROUTINE diag_grid_end()
 
     IF ( diag_grid_initialized ) THEN
@@ -361,7 +333,8 @@ CONTAINS
 
   !> @brief Find the local start and local end indexes on the local PE
   !!   for regional output.
-  !! @description Given a defined region, find the local indexes on the local
+  !!
+  !> Given a defined region, find the local indexes on the local
   !!   PE surrounding the region.
   SUBROUTINE get_local_indexes(latStart, latEnd, lonStart, lonEnd,&
        & istart, iend, jstart, jend)
@@ -648,12 +621,14 @@ CONTAINS
 
   END SUBROUTINE get_local_indexes2
 
+  !> @fn pure elemental real rad2deg(real angle)
   !> @brief Convert an angle in radian to degrees.
-  !! @description Given a scalar, or an array of angles in radians this
-  !!   function will return a scalar or array (of the same
-  !!   dimension) of angles in degrees.
+  !!
+  !> Given a scalar, or an array of angles in radians this
+  !! function will return a scalar or array (of the same
+  !! dimension) of angles in degrees.
   !! @return Scalar or array (depending on the size of angle) of angles in
-  !!   degrees.
+  !! degrees.
   PURE ELEMENTAL REAL FUNCTION rad2deg(angle)
     REAL, INTENT(in) :: angle !< Scalar or array of angles in radians.
 
@@ -661,7 +636,8 @@ CONTAINS
   END FUNCTION rad2deg
 
   !> @brief Convert an angle in degrees to radians.
-  !! @description Given a scalar, or an array of angles in degrees this
+  !!
+  !> Given a scalar, or an array of angles in degrees this
   !!   function will return a scalar or array (of the same
   !!   dimension) of angles in radians.
   !! @return Scalar or array (depending on the size of angle) of angles in
@@ -673,7 +649,8 @@ CONTAINS
   END FUNCTION deg2rad
 
   !> @brief Return the closest index (i,j) to the given (lat,lon) point.
-  !! @description This function searches a pole a-grid tile looking for the grid point
+  !!
+  !> This function searches a pole a-grid tile looking for the grid point
   !!   closest to the give (lat, lon) location, and returns the i
   !!   and j indexes of the point.
   !! @return The (i, j) location of the closest grid to the given (lat,
@@ -836,7 +813,8 @@ CONTAINS
   END FUNCTION find_pole_index_agrid
 
   !> @brief Return the closest index (i,j) to the given (lat,lon) point.
-  !! @description This function searches a equator grid tile looking for the grid point
+  !!
+  !> This function searches a equator grid tile looking for the grid point
   !!   closest to the give (lat, lon) location, and returns the i
   !!   and j indexes of the point.
   !! @return The (i, j) location of the closest grid to the given (lat,
@@ -978,7 +956,8 @@ CONTAINS
   END FUNCTION find_equator_index_agrid
 
   !> @brief Return the (x,y,z) position of a given (lat,lon) point.
-  !! @description Given a specific (lat, lon) point on the Earth, return the
+  !!
+  !> Given a specific (lat, lon) point on the Earth, return the
   !!   corresponding (x,y,z) location.  The return of latlon2xyz
   !!   will be either a scalar or an array of the same size as lat
   !!   and lon.
@@ -1014,7 +993,8 @@ CONTAINS
 
   !> @brief Find the distance between two points in the Cartesian
   !!   coordinate space.
-  !! @description <TT>distanceSqrd</TT> will find the distance squared between
+  !!
+  !> <TT>distanceSqrd</TT> will find the distance squared between
   !!   two points in the xyz coordinate space.  <TT>pt1</TT> and <TT>
   !!   pt2</TT> can either be both scalars, both arrays of the same
   !!   size, or one a scalar and one an array.  The return value
@@ -1029,7 +1009,8 @@ CONTAINS
   END FUNCTION distanceSqrd
 
   !> @brief Find the distance, along the geodesic, between two points.
-  !> @description <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined
+  !!
+  !> <TT>gCirDistance</TT> will find the distance, along the geodesic, between two points defined
   !!   by the (lat,lon) position of each point.
   !! @return real
   PURE ELEMENTAL REAL FUNCTION gCirDistance(lat1, lon1, lat2, lon2)
@@ -1048,7 +1029,7 @@ CONTAINS
   END FUNCTION gCirDistance
 
   !> @brief Find the i,j indices and distance of the a-grid point nearest to
-  !!   the inputted lat,lon point.
+  !! the inputted lat,lon point.
   SUBROUTINE find_nearest_agrid_index(lat, &
                                       lon, &
                                       minI, &
@@ -1123,3 +1104,5 @@ CONTAINS
   END SUBROUTINE find_nearest_agrid_index
 
 END MODULE diag_grid_mod
+!> @}
+! close documentation grouping

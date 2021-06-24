@@ -18,6 +18,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup mpp
+!> @brief Imports checksum, gather, and scatter routines used for communications and calculations
+!! between PE's in @ref mpp_mod
 
 #if defined(use_libMPI)
 #include <mpp_comm_mpi.inc>
