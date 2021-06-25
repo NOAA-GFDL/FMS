@@ -166,7 +166,7 @@ integer,parameter :: do_nearest = 1
 !> @brief Type to represent amounts of time.
 !> Implemented as seconds and days to allow for larger intervals.
 !> @ingroup time_manager_mod
-type, public :: time_type
+type :: time_type
    private
    integer:: seconds
    integer:: days

@@ -227,7 +227,7 @@ module mpp_domains_mod
 
   !> @brief Private type for axis specification data for an unstructured grid
   !> @ingroup mpp_domains_mod
-  type, private :: unstruct_axis_spec
+  type :: unstruct_axis_spec
      private
      integer :: begin, end, size, max_size
      integer :: begin_index, end_index
@@ -235,7 +235,7 @@ module mpp_domains_mod
 
   !> Private type for axis specification data for an unstructured domain
   !> @ingroup mpp_domains_mod
-  type, private :: unstruct_domain_spec
+  type :: unstruct_domain_spec
      private
      type(unstruct_axis_spec) :: compute
      integer :: pe
@@ -245,7 +245,7 @@ module mpp_domains_mod
 
   !> Private type
   !> @ingroup mpp_domains_mod
-  type, private :: unstruct_overlap_type
+  type :: unstruct_overlap_type
      private
      integer :: count = 0
      integer :: pe
@@ -255,7 +255,7 @@ module mpp_domains_mod
 
   !> Private type
   !> @ingroup mpp_domains_mod
-  type, private :: unstruct_pass_type
+  type :: unstruct_pass_type
      private
      integer :: nsend, nrecv
      type(unstruct_overlap_type), pointer :: recv(:)=>NULL()
@@ -264,7 +264,7 @@ module mpp_domains_mod
 
   !> Domain information for managing data on unstructured grids
   !> @ingroup mpp_domains_mod
-  type, public :: domainUG
+  type :: domainUG
      private
      type(unstruct_axis_spec) :: compute, global !< axis specifications
      type(unstruct_domain_spec), pointer :: list(:)=>NULL() !<
@@ -285,7 +285,7 @@ module mpp_domains_mod
 
   !> Used to specify index limits along an axis of a domain
   !> @ingroup mpp_domains_mod
-  type, public :: domain_axis_spec
+  type :: domain_axis_spec
      private
      integer :: begin !< start of domain axis
      integer :: end !< end of domain axis
@@ -296,7 +296,7 @@ module mpp_domains_mod
 
   !> One dimensional domain used to manage shared data access between pes
   !> @ingroup mpp_domains_mod
-  type, public :: domain1D
+  type :: domain1D
      private
      type(domain_axis_spec) :: compute, data, global, memory !> index limits for different domains
      logical :: cyclic
@@ -308,7 +308,7 @@ module mpp_domains_mod
 
   !> Private type used to specify index limits for a domain decomposition
   !> @ingroup mpp_domains_mod
-  type, private :: domain1D_spec
+  type :: domain1D_spec
      private
      type(domain_axis_spec) :: compute
      type(domain_axis_spec) :: global
@@ -317,7 +317,7 @@ module mpp_domains_mod
 
   !> @brief Private type to specify multiple index limits and pe information for a 2D domain
   !> @ingroup mpp_domains_mod
-  type, private :: domain2D_spec
+  type :: domain2D_spec
      private
      type(domain1D_spec), pointer :: x(:)       => NULL() !< x-direction domain decomposition
      type(domain1D_spec), pointer :: y(:)       => NULL() !< y-direction domain decomposition
@@ -350,7 +350,7 @@ module mpp_domains_mod
 
   !> Private type for overlap specifications
   !> @ingroup mpp_domains_mod
-  type, private :: overlapSpec
+  type :: overlapSpec
      private
      integer                     :: whalo, ehalo, shalo, nhalo !< halo size
      integer                     :: xbegin, xend, ybegin, yend
@@ -363,7 +363,7 @@ module mpp_domains_mod
 
   !> @brief Upper and lower x and y bounds for a tile
   !> @ingroup mpp_domains_mod
-  type, private :: tile_type
+  type :: tile_type
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
 
@@ -376,7 +376,7 @@ module mpp_domains_mod
   !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
   !! some elements are repeated below if they are needed once per domain, not once per axis
   !> @ingroup mpp_domains_mod
-  TYPE, PUBLIC :: domain2D
+  TYPE :: domain2D
      private
      character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
      integer(i8_kind)            :: id
@@ -431,14 +431,14 @@ module mpp_domains_mod
 
   !> index bounds for use in @ref nestSpec
   !> @ingroup mpp_domains_mod
-  type, private :: index_type
+  type :: index_type
      integer :: is_me, ie_me, js_me, je_me
      integer :: is_you, ie_you, js_you, je_you
   end type index_type
 
   !> Used to specify bounds and index information for nested tiles as a linked list
   !> @ingroup mpp_domains_mod
-  type, private :: nestSpec
+  type :: nestSpec
      private
      integer                     :: xbegin, xend, ybegin, yend
      integer                     :: xbegin_c, xend_c, ybegin_c, yend_c
@@ -455,7 +455,7 @@ module mpp_domains_mod
 
   !> @brief domain with nested fine and course tiles
   !> @ingroup mpp_domains_mod
-  type, public :: nest_domain_type
+  type :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
      type(nest_level_type), pointer :: nest(:) => NULL()
@@ -467,7 +467,7 @@ module mpp_domains_mod
 
   !> Private type to hold data for each level of nesting
   !> @ingroup mpp_domains_mod
-  type, private :: nest_level_type
+  type :: nest_level_type
      private
      logical                    :: on_level
      logical                    :: is_fine, is_coarse
@@ -497,7 +497,7 @@ module mpp_domains_mod
 
   !> Used for sending domain data between pe's
   !> @ingroup mpp_domains_mod
-  type, public :: domaincommunicator2D
+  type :: domaincommunicator2D
      private
      logical            :: initialized=.false.
      integer(i8_kind) :: id=-9999
@@ -547,7 +547,7 @@ module mpp_domains_mod
 
   !> Used for nonblocking data transfer
   !> @ingroup mpp_domains_mod
-  type, private :: nonblock_type
+  type :: nonblock_type
      integer                         :: recv_pos
      integer                         :: send_pos
      integer                         :: recv_msgsize
@@ -574,7 +574,7 @@ module mpp_domains_mod
 
   !> used for updates on a group
   !> @ingroup mpp_domains_mod
-  type, public :: mpp_group_update_type
+  type :: mpp_group_update_type
      private
      logical            :: initialized = .FALSE.
      logical            :: k_loop_inside = .TRUE.

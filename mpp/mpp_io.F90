@@ -402,7 +402,7 @@ integer FILE_TYPE_USED
 integer, parameter :: MAX_ATT_LENGTH = 1280
 !> @}
 !> @ingroup mpp_io_mod
-type, public :: atttype
+type :: atttype
      private
      integer             :: type, len
      character(len=128)  :: name
@@ -411,7 +411,7 @@ type, public :: atttype
   end type atttype
 
   !> @ingroup mpp_io_mod
-  type, public :: axistype
+  type :: axistype
      private
      character(len=128) :: name
      character(len=128) :: name_bounds
@@ -432,14 +432,14 @@ type, public :: atttype
   end type axistype
 
   !> @ingroup mpp_io_mod
-  type, public :: validtype
+  type :: validtype
      private
      logical :: is_range ! if true, then the data represent the valid range
      real    :: min,max  ! boundaries of the valid range or missing value
   end type validtype
 
   !> @ingroup mpp_io_mod
-  type, public :: fieldtype
+  type :: fieldtype
      private
      character(len=128)      :: name
      character(len=128)      :: units
@@ -459,7 +459,7 @@ type, public :: atttype
   end type fieldtype
 
   !> @ingroup mpp_io_mod
-  type, public :: filetype
+  type :: filetype
      private
      character(len=256) :: name
      integer            :: action, format, access, threading, fileset, record, ncid
