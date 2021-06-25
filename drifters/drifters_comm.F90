@@ -59,7 +59,7 @@ module drifters_comm_mod
 
   !> Type for drifter communication between PE's
   !> @ingroup drifters_comm_mod
-  type, public :: drifters_comm_type
+  type :: drifters_comm_type
      real           :: xcmin !< compute domain
      real           :: xcmax !< compute domain
      real           :: ycmin !< compute domain
