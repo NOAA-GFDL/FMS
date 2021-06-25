@@ -323,7 +323,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;<span class="comment">  !&gt; @brief Private type for axis specification data for an unstructured grid</span></div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00230"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__axis__spec.html">  230</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__axis__spec.html">unstruct_axis_spec</a></div>
+<div class="line"><a name="l00230"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__axis__spec.html">  230</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__axis__spec.html">unstruct_axis_spec</a></div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;     <span class="keywordtype">integer</span> :: begin, end, size, max_size</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;     <span class="keywordtype">integer</span> :: begin_index, end_index</div>
@@ -331,7 +331,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="comment">  !&gt; Private type for axis specification data for an unstructured domain</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00238"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__domain__spec.html">  238</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__domain__spec.html">unstruct_domain_spec</a></div>
+<div class="line"><a name="l00238"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__domain__spec.html">  238</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__domain__spec.html">unstruct_domain_spec</a></div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;     <span class="keywordtype">type</span>(unstruct_axis_spec) :: compute</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;     <span class="keywordtype">integer</span> :: pe</div>
@@ -341,7 +341,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="comment">  !&gt; Private type</span></div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00248"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__overlap__type.html">  248</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__overlap__type.html">unstruct_overlap_type</a></div>
+<div class="line"><a name="l00248"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__overlap__type.html">  248</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__overlap__type.html">unstruct_overlap_type</a></div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;     <span class="keywordtype">integer</span> :: count = 0</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;     <span class="keywordtype">integer</span> :: pe</div>
@@ -351,7 +351,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="comment">  !&gt; Private type</span></div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00258"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__pass__type.html">  258</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__pass__type.html">unstruct_pass_type</a></div>
+<div class="line"><a name="l00258"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1unstruct__pass__type.html">  258</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1unstruct__pass__type.html">unstruct_pass_type</a></div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;     <span class="keywordtype">integer</span> :: nsend, nrecv</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;     <span class="keywordtype">type</span>(unstruct_overlap_type), <span class="keywordtype">pointer</span> :: recv(:)=&gt;null()</div>
@@ -360,7 +360,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="comment">  !&gt; Domain information for managing data on unstructured grids</span></div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00267"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domainug.html">  267</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">public</span> :: <a class="code" href="structmpp__domains__mod_1_1domainug.html">domainug</a></div>
+<div class="line"><a name="l00267"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domainug.html">  267</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1domainug.html">domainug</a></div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00269"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domainug.html#abad0f65728de4e6f2c0c4b9db7c9fd11">  269</a></span>&#160;     <span class="keywordtype">type</span>(<a class="code" href="structmpp__domains__mod_1_1unstruct__axis__spec.html">unstruct_axis_spec</a>) :: compute, global<span class="comment"> !&lt; axis specifications</span></div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;     <span class="keywordtype">type</span>(<a class="code" href="structmpp__domains__mod_1_1unstruct__domain__spec.html">unstruct_domain_spec</a>), <span class="keywordtype">pointer</span> :: list(:)=&gt;null() <span class="comment">!&lt;</span></div>
@@ -381,7 +381,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="comment">  !&gt; Used to specify index limits along an axis of a domain</span></div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00288"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domain__axis__spec.html">  288</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">public</span> :: <a class="code" href="structmpp__domains__mod_1_1domain__axis__spec.html">domain_axis_spec</a></div>
+<div class="line"><a name="l00288"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domain__axis__spec.html">  288</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1domain__axis__spec.html">domain_axis_spec</a></div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00290"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domain__axis__spec.html#a88e49475748526c3b64450b6a6093e31">  290</a></span>&#160;     <span class="keywordtype">integer</span> :: begin<span class="comment"> !&lt; start of domain axis</span></div>
 <div class="line"><a name="l00291"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domain__axis__spec.html#a7196112fa51ac7a2ed25086d2090f208">  291</a></span>&#160;     <span class="keywordtype">integer</span> :: end<span class="comment"> !&lt; end of domain axis</span></div>
@@ -392,7 +392,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="comment">  !&gt; One dimensional domain used to manage shared data access between pes</span></div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00299"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domain1d.html">  299</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">public</span> :: <a class="code" href="structmpp__domains__mod_1_1domain1d.html">domain1d</a></div>
+<div class="line"><a name="l00299"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1domain1d.html">  299</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1domain1d.html">domain1d</a></div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;     <span class="keywordtype">type</span>(domain_axis_spec) :: compute, data, global, memory<span class="comment"> !&gt; index limits for different domains</span></div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;     <span class="keywordtype">logical</span> :: cyclic</div>
@@ -404,7 +404,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;<span class="comment">  !&gt; Private type used to specify index limits for a domain decomposition</span></div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: domain1d_spec</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  <span class="keyword">type</span> :: domain1d_spec</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;     <span class="keywordtype">type</span>(domain_axis_spec) :: compute</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;     <span class="keywordtype">type</span>(domain_axis_spec) :: global</div>
@@ -413,7 +413,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="comment">  !&gt; @brief Private type to specify multiple index limits and pe information for a 2D domain</span></div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: domain2d_spec</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="keyword">type</span> :: domain2d_spec</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;     <span class="keywordtype">type</span>(domain1D_spec), <span class="keywordtype">pointer</span> :: x(:)       =&gt; null() <span class="comment">!&lt; x-direction domain decomposition</span></div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;     <span class="keywordtype">type</span>(domain1D_spec), <span class="keywordtype">pointer</span> :: y(:)       =&gt; null() <span class="comment">!&lt; y-direction domain decomposition</span></div>
@@ -446,7 +446,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="comment">  !&gt; Private type for overlap specifications</span></div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: overlapspec</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="keyword">type</span> :: overlapspec</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;     <span class="keywordtype">integer</span>                     :: whalo, ehalo, shalo, nhalo<span class="comment"> !&lt; halo size</span></div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;     <span class="keywordtype">integer</span>                     :: xbegin, xend, ybegin, yend</div>
@@ -459,7 +459,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="comment">  !&gt; @brief Upper and lower x and y bounds for a tile</span></div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: tile_type</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="keyword">type</span> :: tile_type</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;     <span class="keywordtype">integer</span> :: xbegin, xend, ybegin, yend</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;  <span class="keyword">end type </span>tile_type</div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="comment"></span> </div>
@@ -472,7 +472,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;<span class="comment">  !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)</span></div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;<span class="comment">  !! some elements are repeated below if they are needed once per domain, not once per axis</span></div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  <span class="keyword">TYPE</span>, <span class="keyword">PUBLIC</span> :: domain2d</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  <span class="keyword">TYPE</span> :: domain2d</div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;     <span class="keywordtype">character(len=NAME_LENGTH)</span>  :: name=<span class="stringliteral">&#39;unnamed&#39;</span><span class="comment"> !&lt; name of the domain, default is &quot;unspecified&quot;</span></div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;     <span class="keywordtype">integer(i8_kind)</span>            :: id</div>
@@ -527,14 +527,14 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;<span class="comment">  !&gt; index bounds for use in @ref nestSpec</span></div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: index_type</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;  <span class="keyword">type</span> :: index_type</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;     <span class="keywordtype">integer</span> :: is_me, ie_me, js_me, je_me</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;     <span class="keywordtype">integer</span> :: is_you, ie_you, js_you, je_you</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;  <span class="keyword">end type </span>index_type</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;<span class="comment">  !&gt; Used to specify bounds and index information for nested tiles as a linked list</span></div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: nestspec</div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;  <span class="keyword">type</span> :: nestspec</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;     <span class="keywordtype">integer</span>                     :: xbegin, xend, ybegin, yend</div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;     <span class="keywordtype">integer</span>                     :: xbegin_c, xend_c, ybegin_c, yend_c</div>
@@ -551,7 +551,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;<span class="comment">  !&gt; @brief domain with nested fine and course tiles</span></div>
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;  <span class="keyword">type</span>, <span class="keyword">public</span> :: nest_domain_type</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;  <span class="keyword">type</span> :: nest_domain_type</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;     <span class="keywordtype">character(len=NAME_LENGTH)</span>     :: name</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;     <span class="keywordtype">integer</span>                        :: num_level</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;     <span class="keywordtype">type</span>(nest_level_type), <span class="keywordtype">pointer</span> :: nest(:) =&gt; null()</div>
@@ -563,7 +563,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;<span class="comment">  !&gt; Private type to hold data for each level of nesting</span></div>
 <div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: nest_level_type</div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;  <span class="keyword">type</span> :: nest_level_type</div>
 <div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;     <span class="keywordtype">logical</span>                    :: on_level</div>
 <div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;     <span class="keywordtype">logical</span>                    :: is_fine, is_coarse</div>
@@ -593,7 +593,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;<span class="comment">  !&gt; Used for sending domain data between pe&#39;s</span></div>
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;  <span class="keyword">type</span>, <span class="keyword">public</span> :: domaincommunicator2d</div>
+<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;  <span class="keyword">type</span> :: domaincommunicator2d</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;     <span class="keywordtype">logical</span>            :: initialized=.false.</div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;     <span class="keywordtype">integer(i8_kind)</span> :: id=-9999</div>
@@ -643,7 +643,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;<span class="comment">  !&gt; Used for nonblocking data transfer</span></div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00550"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1nonblock__type.html">  550</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">private</span> :: <a class="code" href="structmpp__domains__mod_1_1nonblock__type.html">nonblock_type</a></div>
+<div class="line"><a name="l00550"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1nonblock__type.html">  550</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1nonblock__type.html">nonblock_type</a></div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;     <span class="keywordtype">integer</span>                         :: recv_pos</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;     <span class="keywordtype">integer</span>                         :: send_pos</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;     <span class="keywordtype">integer</span>                         :: recv_msgsize</div>
@@ -670,7 +670,7 @@ $(document).ready(function(){initNavTree('mpp__domains_8F90_source.html',''); in
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;<span class="comment">  !&gt; used for updates on a group</span></div>
 <div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;<span class="comment">  !&gt; @ingroup mpp_domains_mod</span></div>
-<div class="line"><a name="l00577"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1mpp__group__update__type.html">  577</a></span>&#160;  <span class="keyword">type</span>, <span class="keyword">public</span> :: <a class="code" href="structmpp__domains__mod_1_1mpp__group__update__type.html">mpp_group_update_type</a></div>
+<div class="line"><a name="l00577"></a><span class="lineno"><a class="line" href="structmpp__domains__mod_1_1mpp__group__update__type.html">  577</a></span>&#160;  <span class="keyword">type</span> :: <a class="code" href="structmpp__domains__mod_1_1mpp__group__update__type.html">mpp_group_update_type</a></div>
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;     <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;     <span class="keywordtype">logical</span>            :: initialized = .false.</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;     <span class="keywordtype">logical</span>            :: k_loop_inside = .true.</div>
