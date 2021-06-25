@@ -32,13 +32,13 @@ implicit none
 
 public block_control_type
 
-!> Private type to dereference packed index from global index.
+!> Type to dereference packed index from global index.
 !> @ingroup block_control_mod
 type :: ix_type
   integer, dimension(:,:), allocatable :: ix
 end type ix_type
 
-!> Private type to dereference packed index from global indices.
+!> Type to dereference packed index from global indices.
 !> @ingroup block_control_mod
 type :: pk_type
   integer, dimension(:), allocatable :: ii
