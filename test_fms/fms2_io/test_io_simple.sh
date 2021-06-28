@@ -30,6 +30,9 @@
 # make an input.nml for mpp_init to read
 rm -f input.nml && touch input.nml
 
+echo "Test the filename_appendix functionality"
+run_test test_file_appendix 1
+
 # run the tests
 test_expect_success "Simple IO test" '
   mpirun -n 6 ./test_io_simple

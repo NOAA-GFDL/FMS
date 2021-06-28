@@ -16,6 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup mpp
+!> @brief @ref mpp_alltoall routine implementations without MPI
 
 subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
     MPP_TYPE_, dimension(:), intent(in) :: sbuf

@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms_netcdf_domain_io_mod
 
 !> @brief I/O domain root reads in  a domain decomposed variable at a
 !!        specific unlimited dimension level and scatters the data to the
@@ -36,14 +38,10 @@ subroutine domain_read_0d(fileobj, variable_name, vdata, unlim_dim_level, corner
                                           !! where the data
                                           !! will be written to.
 
-  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true.)) then
-    call netcdf_read_data(fileobj, variable_name, vdata, &
+  call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           broadcast=.true.)
-    return
-  else
-    call error("this branch should never be reached.")
-  endif
+
 end subroutine domain_read_0d
 
 
@@ -71,14 +69,10 @@ subroutine domain_read_1d(fileobj, variable_name, vdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true.)) then
-    call netcdf_read_data(fileobj, variable_name, vdata, &
+  call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
-    return
-  else
-    call error("this branch should never be reached.")
-  endif
+
 end subroutine domain_read_1d
 
 

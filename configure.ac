@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2020.04],
+  [2021.03.0-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -314,6 +314,7 @@ AC_CONFIG_FILES([
   tracer_manager/Makefile
   topography/Makefile
   mosaic/Makefile
+  mosaic2/Makefile
   monin_obukhov/Makefile
   memutils/Makefile
   interpolator/Makefile
@@ -349,6 +350,8 @@ AC_CONFIG_FILES([
   test_fms/mpp_io/Makefile
   test_fms/mpp/Makefile
   test_fms/mpp/create_input.sh
+  test_fms/mosaic/Makefile
+  test_fms/coupler/Makefile
   FMS.pc
   ])
 

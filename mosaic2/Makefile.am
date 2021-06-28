@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,34 +17,30 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms directory.
+# This is an automake file for the mosaic directory of the FMS
+# package.
 
-# Ed Hartnett 11/29/19
+# Ed Hartnett 2/22/19
 
-# Set common test settings.
-. ../test-lib.sh
+# Include .h and .mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/mosaic
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-setup_test () {
-  rm -rf RESTART && mkdir -p RESTART
+# Build these uninstalled convenience libraries.
 
-  cat <<_EOF > input.nml
-&test_fms_io_nml
-  io_layout = 1,1
-/
-_EOF
-}
+noinst_LTLIBRARIES = libmosaic2.la
 
-# Test the structured grid
-setup_test
-test_expect_success "test structured grid" '
-  mpirun -n 6 ./test_fms_io
-'
+libmosaic2_la_SOURCES = \
+mosaic2.F90 \
+grid2.F90
 
-# Ensure the restart directory is empty
-setup_test
-test_expect_success "test unstructured grid" '
-  mpirun -n 6 ./test_unstructured_fms_io
-'
+# Some mods are dependant on other mods in this dir.
+grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
 
-test_done
+MODFILES = \
+  mosaic2_mod.$(FC_MODEXT) \
+  grid2_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
+
+include $(top_srcdir)/mkmods.mk

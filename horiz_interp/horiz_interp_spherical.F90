@@ -16,24 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_spherical_mod horiz_interp_spherical_mod
+!> @ingroup horiz_interp
+!> @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
+!> This module can interpolate data from rectangular/tripolar grid
+!! to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
+!! scheme.    There is an optional mask field for missing input data.
+!! An optional output mask field may be used in conjunction with
+!! the input mask to show where output data exists.
+
+!> @file
+!> @brief File for @ref horiz_interp_spherical_mod
+
+!> @addtogroup horiz_interp_spherical_mod
+!> @{
 module horiz_interp_spherical_mod
-
-  ! <CONTACT EMAIL="Matthew.Harrison@noaa.gov"> Matthew Harrison </CONTACT>
-  ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
-
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-  ! <OVERVIEW>
-  !   Performs spatial interpolation between grids using inverse-distance-weighted scheme.
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !     This module can interpolate data from rectangular/tripolar grid
-  !     to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
-  !     scheme.    There is an optional mask field for missing input data.
-  !     An optional output mask field may be used in conjunction with
-  !     the input mask to show where output data exists.
-  ! </DESCRIPTION>
 
   use mpp_mod,               only : mpp_error, FATAL, WARNING, stdout
   use mpp_mod,               only : mpp_root_pe, mpp_pe
@@ -59,22 +56,19 @@ module horiz_interp_spherical_mod
   integer            :: pe, root_pe
 
 
-  !--- namelist interface
-  !<NAMELIST NAME="horiz_interp_spherical_nml">
-  ! <DATA NAME="search_method" TYPE="character(len=32)">
-  !  indicate the searching method to find the nearest neighbor points. Its value
-  !  can be "radial_search" and "full_search", with default value "radial_search".
-  !  when search_method is "radial_search", the search may be not quite accurate for some cases.
-  !  Normally the search will be ok if you chose suitable max_dist.
-  !  When search_method is "full_search", it will be always accurate, but will be slower
-  !  comparing to "radial_search". Normally these two search algorithm will produce same
-  !  results other than order of operation. "radial_search" are recommended to use.
-  !  The purpose to add "full_search" is in case you think you interpolation results is
-  !  not right, you have other option to verify.
-  ! </DATA>
-  !</NAMELIST>
+  character(len=32) :: search_method = "radial_search" !< Namelist variable to indicate the searching
+                    !! method to find the
+                    !! nearest neighbor points. Its value can be "radial_search" and "full_search",
+                    !! with default value "radial_search". when search_method is "radial_search",
+                    !! the search may be not quite accurate for some cases. Normally the search will
+                    !! be ok if you chose suitable max_dist. When search_method is "full_search",
+                    !! it will be always accurate, but will be slower comparing to "radial_search".
+                    !! Normally these two search algorithm will produce same results other than
+                    !! order of operation. "radial_search" are recommended to use. The purpose to
+                    !! add "full_search" is in case you think you interpolation results is
+                    !! not right, you have other option to verify.
 
-  character(len=32) :: search_method = "radial_search" ! or "full_search"
+!or "full_search"
   namelist /horiz_interp_spherical_nml/ search_method
 
   !-----------------------------------------------------------------------
@@ -85,14 +79,8 @@ module horiz_interp_spherical_mod
 contains
 
   !#######################################################################
-  !  <SUBROUTINE NAME="horiz_interp_spherical_init">
-  !  <OVERVIEW>
-  !     writes version number to logfile.out
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !     writes version number to logfile.out
-  !  </DESCRIPTION>
 
+  !> Initializes module and writes version number to logfile.out
   subroutine horiz_interp_spherical_init
     integer :: unit, ierr, io
 
@@ -108,68 +96,34 @@ contains
 
 end subroutine horiz_interp_spherical_init
 
-  !  </SUBROUTINE>
-
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_spherical_new">
 
-  !   <OVERVIEW>
-  !      Initialization routine.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !      Allocates space and initializes a derived-type variable
-  !      that contains pre-computed interpolation indices and weights.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_spherical_new(Interp, lon_in,lat_in,lon_out,lat_out, num_nbrs, max_dist, src_modulo)
-  !   </TEMPLATE>
-  !
-  !   <IN NAME="lon_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="lat_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Latitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="lon_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="lat_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="num_nbrs" TYPE="integer, optional">
-  !     Number of nearest neighbors for regridding. When number of neighbors within
-  !     the radius max_dist ( namelist variable) is less than num_nbrs, All the neighbors
-  !     will be used to interpolate onto destination grid. when number of neighbors within
-  !     the radius max_dist ( namelist variable) is greater than num_nbrs, at least "num_nbrs"
-  !     neighbors will be used to remap onto destination grid.
-  !   </IN>
-
-  !   <IN NAME="max_dist" TYPE="real, optional" UNITS="radians">
-  !      Maximum region of influence around destination grid points.
-  !   </IN>
-
-  !   <IN NAME="src_modulo" TYPE="logical, optional">
-  !      logical variable to indicate if the boundary condition along zonal boundary
-  !      is cyclic or not. When true, the zonal boundary condition is cyclic.
-  !   </IN>
-
-  !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)">
-  !      A derived-type variable containing indices and weights used for subsequent
-  !      interpolations. To reinitialize this variable for a different grid-to-grid
-  !      interpolation you must first use the "horiz_interp_del" interface.
-  !   </INOUT>
-
+  !> Initialization routine.
+  !!
+  !> Allocates space and initializes a derived-type variable
+  !! that contains pre-computed interpolation indices and weights.
   subroutine horiz_interp_spherical_new(Interp, lon_in,lat_in,lon_out,lat_out, &
        num_nbrs, max_dist, src_modulo)
-    type(horiz_interp_type), intent(inout) :: Interp
-    real, intent(in),       dimension(:,:) :: lon_in, lat_in, lon_out, lat_out
-    integer, intent(in),        optional   :: num_nbrs
-    real, optional,             intent(in) :: max_dist
-    logical,          intent(in), optional :: src_modulo
+
+    type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
+                                          !! and weights for subsequent interpolations. To
+                                          !! reinitialize for different grid-to-grid interpolation
+                                          !! @ref horiz_interp_del must be used first.
+    real, intent(in),  dimension(:,:)      :: lon_in !< Latitude (radians) for source data grid
+    real, intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
+    real, intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
+    real, intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
+    logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition
+                                          !! along zonal boundary is cyclic or not. Cyclic when true
+    integer, intent(in),        optional   :: num_nbrs !< Number of nearest neighbors for regridding
+                                           !! When number of neighbors within the radius max_dist
+                                           !! is less than num_nbrs, All the neighbors will be used
+                                           !! to interpolate onto destination grid. when number of
+                                           !! neighbors within the radius max_dist is greater than
+                                           !! num_nbrs, at least "num_nbrs"
+  !     neighbors will be used to remap onto destination grid
+    real, optional,             intent(in) :: max_dist !< Maximum region of influence around
+                                                       !! destination grid points
 
     !------local variables ---------------------------------------
     integer :: i, j, n
@@ -314,56 +268,24 @@ end subroutine horiz_interp_spherical_init
     return
 
   end subroutine horiz_interp_spherical_new
-  ! </SUBROUTINE>
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_spherical">
 
-  !   <OVERVIEW>
-  !      Subroutine for performing the horizontal interpolation between two grids.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     Subroutine for performing the horizontal interpolation between two grids.
-  !     horiz_interp_spherical_new must be called before calling this routine.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_spherical( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
-  !   </TEMPLATE>
-  !
-  !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
-  !     Derived-type variable containing interpolation indices and weights.
-  !     Returned by a previous call to horiz_interp_spherical_new.
-  !   </IN>
-  !   <IN NAME="data_in" TYPE="real, dimension(:,:)">
-  !      Input data on source grid.
-  !   </IN>
-  !   <IN NAME="verbose" TYPE="integer, optional">
-  !      flag for the amount of print output.
-  !               verbose = 0, no output; = 1, min,max,means; = 2, still more
-  !   </IN>
-  !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
-  !      Input mask, must be the same size as the input data. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
-  !      that should not be used or have missing data.
-  !   </IN>
-  !   <IN NAME="missing_value" TYPE="real, optional">
-  !      Use the missing_value to indicate missing data.
-  !   </IN>
-  !   <OUT NAME="data_out" TYPE="real, dimension(:,:)">
-  !      Output data on destination grid.
-  !   </OUT>
-  !   <OUT NAME="mask_out" TYPE="real, dimension(:,:),optional">
-  !      Output mask that specifies whether data was computed.
-  !   </OUT>
-
+  !> Subroutine for performing the horizontal interpolation between two grids.
+  !! horiz_interp_spherical_new must be called before calling this routine.
   subroutine horiz_interp_spherical( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
-    type (horiz_interp_type), intent(in)        :: Interp
-    real, intent(in),  dimension(:,:)           :: data_in
-    real, intent(out), dimension(:,:)           :: data_out
-    integer, intent(in),               optional :: verbose
-    real, intent(in), dimension(:,:),  optional :: mask_in
-    real, intent(out), dimension(:,:), optional :: mask_out
-    real, intent(in),                  optional :: missing_value
+    type(horiz_interp_type), intent(in) :: Interp !< A derived type variable containing indices
+                                          !! and weights for subsequent interpolations. Returned
+                                          !! by a previous call to horiz_interp_spherical_new
+    real, intent(in),  dimension(:,:)           :: data_in !< Input data on source grid
+    real, intent(out), dimension(:,:)           :: data_out !< Output data on destination grid
+    integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 = most output
+    real, intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
+                                             !! the input data. The real value of mask_in must be
+                                             !! in the range (0.,1.). Set mask_in=0.0 for data points
+                                             !! that should not be used or have missing data
+    real, intent(out), dimension(:,:), optional :: mask_out !< Output mask that specifies whether data was computed.
+    real, intent(in),                  optional :: missing_value !< Used to indicate missing data
 
     !--- some local variables ----------------------------------------
     real, dimension(Interp%nlon_dst, Interp%nlat_dst,size(Interp%src_dist,3)) :: wt
@@ -490,7 +412,6 @@ end subroutine horiz_interp_spherical_init
     return
   end subroutine horiz_interp_spherical
 
-  ! </SUBROUTINE>
   !#######################################################################
   subroutine horiz_interp_spherical_wght( Interp, wt, verbose, mask_in, mask_out, missing_value)
     type (horiz_interp_type), intent(in)        :: Interp
@@ -573,34 +494,17 @@ end subroutine horiz_interp_spherical_init
 
     return
   end subroutine horiz_interp_spherical_wght
-  ! </SUBROUTINE>
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_spherical_del">
 
-  !   <OVERVIEW>
-  !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_spherical_new.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_spherical_new.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_spherical_del ( Interp )
-  !   </TEMPLATE>
-
-  !   <INOUT NAME="Interp" TYPE="horiz_interp_type">
-  !     A derived-type variable returned by previous call
-  !     to horiz_interp_spherical_new. The input variable must have
-  !     allocated arrays. The returned variable will contain
-  !     deallocated arrays.
-  !   </INOUT>
-
-
+  !> Deallocates memory used by "horiz_interp_type" variables.
+  !! Must be called before reinitializing with horiz_interp_spherical_new.
   subroutine horiz_interp_spherical_del( Interp )
 
-    type (horiz_interp_type), intent(inout) :: Interp
+    type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by previous
+                                           !! call to horiz_interp_spherical_new. The input variable
+                                           !! must have allocated arrays. The returned variable will
+                                           !! contain deallocated arrays.
 
     if(associated(Interp%src_dist))  deallocate(Interp%src_dist)
     if(associated(Interp%num_found)) deallocate(Interp%num_found)
@@ -608,10 +512,8 @@ end subroutine horiz_interp_spherical_init
     if(associated(Interp%j_lat))     deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_spherical_del
-  ! </SUBROUTINE>
 
   !#######################################################################
-
 
   subroutine radial_search(theta_src,phi_src,theta_dst,phi_dst, map_src_xsize, map_src_ysize, &
        map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
@@ -1001,3 +903,5 @@ end subroutine horiz_interp_spherical_init
 
 
 end module horiz_interp_spherical_mod
+!> @}
+! close documentation grouping

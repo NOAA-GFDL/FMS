@@ -40,12 +40,8 @@ rm -f input.nml &&  touch input.nml
 # . ----- . ----- .
 # | (3,1) | (3,2) |
 # . ----- . ----- .
-cat <<_EOF > the_mask
 
-1
-2,3
-1,1
-_EOF
+printf "1\n2,3\n1,1" | cat > the_mask
 
 # For example, if you have a grid that is 60 by 60 and a layout of 2,3
 # You are going to need 6 ranks:

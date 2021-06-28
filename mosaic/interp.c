@@ -23,6 +23,11 @@
 #include "interp.h"
 #include "create_xgrid.h"
 
+/** \file
+ *  \ingroup mosaic
+ *  \brief Grid interpolation functions for use in @ref mosaic_mod
+ */
+
 /*********************************************************************
    void cublic_spline_sp(size1, size2, grid1, grid2, data1, data2)
 

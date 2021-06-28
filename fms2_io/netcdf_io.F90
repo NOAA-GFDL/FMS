@@ -16,11 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup netcdf_io_mod netcdf_io_mod
+!> @ingroup fms2_io
+!> @brief Creates a basic netcdf type and routines to extend for other uses
+!!
+!> Handles type definitions and interfaces for netcdf I/O.
 
 !> @file
+!> @brief File for @ref netcdf_io_mod
 
-!> @brief Create a netcdf type, which can be extended to meet
-!!        our various I/O needs.
+!> @addtogroup netcdf_io_mod
+!> @{
 module netcdf_io_mod
 use, intrinsic :: iso_fortran_env
 use netcdf
@@ -50,8 +56,32 @@ integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used i
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
+!> @}
+
+!> @brief information needed fr regional restart variables
+!> @ingroup netcdf_io_mod
+type, private :: bc_information
+  integer, dimension(:), allocatable :: indices !< Indices for the halo region for the variable
+                                                !! (starting x, ending x, starting y, ending y)
+  integer, dimension(:), allocatable :: global_size !< Size of the variable for each dimension
+  integer, dimension(:), allocatable :: pelist !< List of pelist that have the data for the variable
+  logical :: is_root_pe !< Flag indicating if this is the root_pe from the pelist
+  integer :: x_halo !< Number of halos in x
+  integer :: y_halo !< Number of halos in y
+  integer :: jshift !< Shift in the x axis (from center)
+  integer :: ishift !< Shift in the y axis (from center)
+  real(kind=r4_kind), dimension(:,:), allocatable :: globaldata2d_r4 !< 2d data pointer.
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: globaldata3d_r4 !< 3d data pointer.
+  real(kind=r8_kind), dimension(:,:), allocatable :: globaldata2d_r8 !< 2d data pointer.
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: globaldata3d_r8 !< 3d data pointer.
+  character(len=32) :: chksum !< The variable's checksum
+  logical :: data_on_file_root !< Flag indicating if the file root is part of the pelist that
+                               !!contains data
+endtype bc_information
+
 !> @brief Restart variable.
-type :: RestartVariable_t
+!> @ingroup netcdf_io_mod
+type, private :: RestartVariable_t
   character(len=256) :: varname !< Variable name.
   class(*), pointer :: data0d => null() !< Scalar data pointer.
   class(*), dimension(:), pointer :: data1d => null() !< 1d data pointer.
@@ -61,11 +91,13 @@ type :: RestartVariable_t
   class(*), dimension(:,:,:,:,:), pointer :: data5d => null() !< 5d data pointer.
   logical :: was_read !< Flag to support legacy "query_initialized" feature, which
                       !! keeps track if a file was read.
+  logical :: is_bc_variable !< Flag indicating if variable is a bc_variable
+  type(bc_information) :: bc_info !< information about the boundary condition variable
 endtype RestartVariable_t
 
-
 !> @brief Compressed dimension.
-type :: CompressedDimension_t
+!> @ingroup netcdf_io_mod
+type, private :: CompressedDimension_t
   character(len=256) :: dimname !< Dimension name.
   integer, dimension(:), allocatable :: npes_corner !< Array of starting
                                                     !! indices for each rank.
@@ -75,8 +107,20 @@ type :: CompressedDimension_t
   integer :: nelems !< Total size of the dimension.
 endtype CompressedDimension_t
 
+!> @brief information about the current dimensions for regional restart variables
+!> @ingroup netcdf_io_mod
+type, private :: dimension_information
+  integer, dimension(5) :: xlen !> The size of each unique x dimension
+  integer, dimension(5) :: ylen !> The size of each unique y dimension
+  integer, dimension(5) :: zlen !> The size of each unique z dimension
+  integer, dimension(3) :: cur_dim_len !> Number of unique:
+                                       !! cur_dim_len(1) : x dimensions
+                                       !! cur_dim_len(2) : y dimensions
+                                       !! cur_dim_len(3) : z dimensions
+endtype dimension_information
 
 !> @brief Netcdf file type.
+!> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=256) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
@@ -98,10 +142,13 @@ type, public :: FmsNetcdfFile_t
   integer :: num_compressed_dims !< Number of compressed dimensions.
   logical :: is_diskless !< Flag telling whether this is a diskless file.
   character (len=20) :: time_name
+  type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional restart variables
+
 endtype FmsNetcdfFile_t
 
 
 !> @brief Range type for a netcdf variable.
+!> @ingroup netcdf_io_mod
 type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_min !< Flag that's true if min exists for a variable.
@@ -170,6 +217,8 @@ public :: netcdf_add_restart_variable_2d_wrap
 public :: netcdf_add_restart_variable_3d_wrap
 public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
+public :: register_restart_region_2d
+public :: register_restart_region_3d
 public :: compressed_start_and_count
 public :: get_fill_value
 public :: get_variable_sense
@@ -181,7 +230,10 @@ public :: set_netcdf_mode
 public :: check_netcdf_code
 public :: check_if_open
 public :: set_fileobj_time_name
+public :: write_restart_bc
+public :: read_restart_bc
 
+!> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
   module procedure netcdf_add_restart_variable_1d
@@ -191,7 +243,7 @@ interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_5d
 end interface netcdf_add_restart_variable
 
-
+!> @ingroup netcdf_io_mod
 interface netcdf_read_data
   module procedure netcdf_read_data_0d
   module procedure netcdf_read_data_1d
@@ -202,6 +254,7 @@ interface netcdf_read_data
 end interface netcdf_read_data
 
 
+!> @ingroup netcdf_io_mod
 interface netcdf_write_data
   module procedure netcdf_write_data_0d
   module procedure netcdf_write_data_1d
@@ -212,6 +265,7 @@ interface netcdf_write_data
 end interface netcdf_write_data
 
 
+!> @ingroup netcdf_io_mod
 interface compressed_write
   module procedure compressed_write_0d
   module procedure compressed_write_1d
@@ -222,29 +276,55 @@ interface compressed_write
 end interface compressed_write
 
 
+!> @ingroup netcdf_io_mod
 interface register_global_attribute
   module procedure register_global_attribute_0d
   module procedure register_global_attribute_1d
 end interface register_global_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface register_variable_attribute
   module procedure register_variable_attribute_0d
   module procedure register_variable_attribute_1d
 end interface register_variable_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface get_global_attribute
   module procedure get_global_attribute_0d
   module procedure get_global_attribute_1d
 end interface get_global_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface get_variable_attribute
   module procedure get_variable_attribute_0d
   module procedure get_variable_attribute_1d
 end interface get_variable_attribute
 
+
+!> @ingroup netcdf_io_mod
+interface scatter_data_bc
+  module procedure scatter_data_bc_2d
+  module procedure scatter_data_bc_3d
+end interface scatter_data_bc
+
+!> @ingroup netcdf_io_mod
+interface gather_data_bc
+  module procedure gather_data_bc_2d
+  module procedure gather_data_bc_3d
+end interface gather_data_bc
+
+!> The interface is needed to accomodate pgi because it can't handle class * and there was no other way around it
+!> @ingroup netcdf_io_mod
+interface is_valid
+  module procedure is_valid_r8
+  module procedure is_valid_r4
+end interface is_valid
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 contains
 
@@ -456,7 +536,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   integer :: nc_format_param
   integer :: err
-  character(len=256) :: buf
+  character(len=256) :: buf !< Filename with .res in the filename if it is a restart
+  character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
@@ -483,17 +564,24 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     call string_copy(buf, trim(path))
   endif
 
+  !< If it is a restart add the filename_appendix to the filename
+  if (is_res) then
+     call get_instance_filename(trim(buf), buf2)
+  else
+     call string_copy(buf2, trim(buf))
+  endif
+
   !Check if the file exists.
   success = .true.
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
-    success = file_exists(buf)
+    success = file_exists(buf2)
     if (.not. success) then
       return
     endif
   endif
 
   !Store properties in the derived type.
-  call string_copy(fileobj%path, trim(buf))
+  call string_copy(fileobj%path, trim(buf2))
   if (present(pelist)) then
     allocate(fileobj%pelist(size(pelist)))
     fileobj%pelist(:) = pelist(:)
@@ -556,6 +644,12 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   ! Set the is_open flag to true for this file object.
   if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
   fileobj%is_open = .true.
+
+  fileobj%bc_dimensions%xlen = 0
+  fileobj%bc_dimensions%ylen = 0
+  fileobj%bc_dimensions%zlen = 0
+  fileobj%bc_dimensions%cur_dim_len = 0
+
 end function netcdf_file_open
 
 
@@ -1668,28 +1762,44 @@ function get_valid(fileobj, variable_name) &
 
 end function get_valid
 
-
-!> @brief Determine if a piece of data is "valid" (in the correct range.)
+!> @brief Determine if a piece of (r4) data is "valid" (in the correct range.)
 !! @return A flag telling if the data element is "valid."
-elemental function is_valid(datum, validobj) &
+elemental function is_valid_r8(datum, validobj) &
   result(valid_data)
 
-  class(*), intent(in) :: datum !< Unpacked data element.
+  real(kind=r8_kind), intent(in) :: datum !< Unpacked data element.
+  type(Valid_t), intent(in) :: validobj !< Valid object.
+  logical :: valid_data
+
+  valid_data = check_if_valid(datum, validobj)
+
+end function is_valid_r8
+
+!> @brief Determine if a piece of (r8) data is "valid" (in the correct range.)
+!! @return A flag telling if the data element is "valid."
+elemental function is_valid_r4(datum, validobj) &
+  result(valid_data)
+
+  real(kind=r4_kind), intent(in) :: datum !< Unpacked data element.
   type(Valid_t), intent(in) :: validobj !< Valid object.
   logical :: valid_data
 
   real(kind=r8_kind) :: rdatum
 
-  select type (datum)
-    type is (integer(kind=i4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r8_kind))
-      rdatum = real(datum, kind=r8_kind)
- !  class default
- !    call error("unsupported type.")
-  end select
+  !< Convert the data to r8 so it can be compared correctly since validobj%*_val are defined as r8
+  rdatum = real(datum, kind=r8_kind)
+  valid_data = check_if_valid(rdatum, validobj)
+
+end function is_valid_r4
+
+!> @brief Determine if a piece of data is "valid" (in the correct range.)
+!! @return A flag telling if the data element is "valid."
+elemental function check_if_valid(rdatum, validobj) &
+  result(valid_data)
+
+  real(kind=r8_kind), intent(in) :: rdatum !< packed data element.
+  type(Valid_t), intent(in) :: validobj !< Valid object.
+  logical :: valid_data
 
   valid_data = .true.
   ! If the variable has a range (open or closed), valid values must be in that
@@ -1714,7 +1824,7 @@ elemental function is_valid(datum, validobj) &
       valid_data = .not. (rdatum .eq. validobj%missing_val .or. rdatum .eq. validobj%fill_val)
     endif
   endif
-end function is_valid
+end function check_if_valid
 
 
 !> @brief Gathers a compressed arrays size and offset for each pe.
@@ -1756,7 +1866,8 @@ include "get_global_attribute.inc"
 include "get_variable_attribute.inc"
 include "compressed_write.inc"
 include "compressed_read.inc"
-
+include "scatter_data_bc.inc"
+include "gather_data_bc.inc"
 
 !> @brief Wrapper to distinguish interfaces.
 function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
@@ -1810,7 +1921,6 @@ subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimen
 
   call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
 end subroutine netcdf_add_variable_wrap
-
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level)
@@ -1891,15 +2001,20 @@ function get_variable_missing(fileobj, variable_name) &
   character(len=*), intent(in) :: variable_name
   real(kind=r8_kind) :: variable_missing
 
+  real(kind=r8_kind) :: variable_missing_1d(1) !< Workaround for pgi
+
   if (variable_att_exists(fileobj, variable_name, "_FillValue")) then
-    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing_value")) then
-    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing")) then
-    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing_1d)
   else
-    variable_missing = MPP_FILL_DOUBLE
+    variable_missing_1d = MPP_FILL_DOUBLE
   endif
+
+  variable_missing = variable_missing_1d(1)
+
 end function get_variable_missing
 
 
@@ -1991,4 +2106,101 @@ subroutine set_fileobj_time_name (fileobj,time_name)
 !  endif
 end subroutine set_fileobj_time_name
 
+!> @brief Loop through the registered restart variables (including regional
+!! variables) and read them from the netcdf file
+subroutine read_restart_bc(fileobj, unlim_dim_level)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+  integer :: i !< No description
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+
+  do i = 1, fileobj%num_restart_vars
+    !> Go away if you are not in the pelist!
+    if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
+
+    !> The file's root pe reads the file and scatters it to the rest of the pes
+    if (associated(fileobj%restart_vars(i)%data2d)) then
+       call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
+                                fileobj%restart_vars(i)%data2d, &
+                                fileobj%restart_vars(i)%bc_info)
+    else if (associated(fileobj%restart_vars(i)%data3d)) then
+       call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
+                                fileobj%restart_vars(i)%data3d, &
+                                fileobj%restart_vars(i)%bc_info)
+    endif
+  end do
+
+
+end subroutine read_restart_bc
+
+!> @brief Loop through the registered restart variables (including regional
+!! variables) and write them to the netcdf file
+subroutine write_restart_bc(fileobj, unlim_dim_level)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+  integer :: i !< No description
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+
+ !> Loop through the variables, root pe gathers the data from the other pes and writes out the checksum.
+ !! Then loop through the variables again to write the data to the netcdf file.
+ !! All the metadata should be written before the data to prevent netcdf from rewriting the file
+ !! if the header is not big enough. That is why the two do loops are needed.
+
+ do i = 1, fileobj%num_restart_vars
+    !> Go away if you are not in the pelist!
+    if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
+
+    !> Go away if this is not a BC variable
+    if (.not. fileobj%restart_vars(i)%is_bc_variable) cycle
+
+    !> Root pe gathers the data from the other ranks, saves it in a buffer, and writes out the checksum.
+    if (associated(fileobj%restart_vars(i)%data2d)) then
+        call gather_data_bc(fileobj, fileobj%restart_vars(i)%data2d, fileobj%restart_vars(i)%bc_info)
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, "checksum", &
+             fileobj%restart_vars(i)%bc_info%chksum, str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
+    else if (associated(fileobj%restart_vars(i)%data3d)) then
+        call gather_data_bc(fileobj, fileobj%restart_vars(i)%data3d, fileobj%restart_vars(i)%bc_info)
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, "checksum", &
+             fileobj%restart_vars(i)%bc_info%chksum, str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
+    endif
+ enddo
+
+ !> Write the data to the netcdf file
+ do i = 1, fileobj%num_restart_vars
+    if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_r8 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata2d_r8 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_r8)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_r4 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata2d_r4 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_r4)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_r8 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata3d_r8 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_r8)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_r4 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata3d_r4 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_r4 )
+    endif
+
+ enddo
+
+end subroutine write_restart_bc
+
 end module netcdf_io_mod
+!> @}
+! close documentation grouping

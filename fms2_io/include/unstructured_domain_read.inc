@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms_netcdf_unstructured_domain_io_mod
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine unstructured_domain_read_0d(fileobj, &

@@ -27,6 +27,7 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build these test programs.
 check_PROGRAMS = test_mpp \
+  test_super_grid \
   test_mpp_domains \
   test_redistribute_int \
   test_mpp_memuse \
@@ -126,6 +127,7 @@ test_mpp_global_sum_ad_SOURCES = test_mpp_global_sum_ad.F90
 test_stdin_SOURCES=test_stdin.F90
 test_mpp_init_logfile_SOURCES=test_mpp_init_logfile.F90
 test_mpp_clock_begin_end_id_SOURCES=test_mpp_clock_begin_end_id.F90
+test_super_grid_SOURCES = test_super_grid.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
@@ -162,7 +164,8 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh \
   test_mpp_init_logfile.sh \
-  test_mpp_clock_begin_end_id.sh
+  test_mpp_clock_begin_end_id.sh \
+  test_super_grid.sh
 
 # Define test file extensions and log driver
 TEST_EXTENSIONS = .sh
@@ -208,7 +211,8 @@ EXTRA_DIST = create_input.sh.in \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh \
   test_mpp_init_logfile.sh \
-  test_mpp_clock_begin_end_id.sh
+  test_mpp_clock_begin_end_id.sh \
+  test_super_grid.sh
 
 fill_halo.mod: fill_halo.$(OBJEXT)
 compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)

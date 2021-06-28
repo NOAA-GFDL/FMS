@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !> @brief Get the value of a variable's attribute.
 subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &

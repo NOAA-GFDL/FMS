@@ -17,76 +17,82 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! Fortran-95 implementation of the Mersenne Twister 19937, following
-!   the C implementation described below (code mt19937ar-cok.c, dated 2002/2/10),
-!   adapted cosmetically by making the names more general.
-! Users must declare one or more variables of type randomNumberSequence in the calling
-!   procedure which are then initialized using a required seed. If the
-!   variable is not initialized the random numbers will all be 0.
-! For example:
-! program testRandoms
-!   use RandomNumbers
-!   type(randomNumberSequence) :: randomNumbers
-!   integer                    :: i
-!
-!   randomNumbers = new_RandomNumberSequence(seed = 100)
-!   do i = 1, 10
-!     print ('(f12.10, 2x)'), getRandomReal(randomNumbers)
-!   end do
-! end program testRandoms
-!
-! Fortran-95 implementation by
-!   Robert Pincus
-!   NOAA-CIRES Climate Diagnostics Center
-!   Boulder, CO 80305
-!   email: Robert.Pincus@colorado.edu
-!
-! This documentation in the original C program reads:
-! -------------------------------------------------------------
-!    A C-program for MT19937, with initialization improved 2002/2/10.
-!    Coded by Takuji Nishimura and Makoto Matsumoto.
-!    This is a faster version by taking Shawn Cokus's optimization,
-!    Matthe Bellew's simplification, Isaku Wada's real version.
-!
-!    Before using, initialize the state by using init_genrand(seed)
-!    or init_by_array(init_key, key_length).
-!
-!    Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
-!    All rights reserved.
-!
-!    Redistribution and use in source and binary forms, with or without
-!    modification, are permitted provided that the following conditions
-!    are met:
-!
-!      1. Redistributions of source code must retain the above copyright
-!         notice, this list of conditions and the following disclaimer.
-!
-!      2. Redistributions in binary form must reproduce the above copyright
-!         notice, this list of conditions and the following disclaimer in the
-!         documentation and/or other materials provided with the distribution.
-!
-!      3. The names of its contributors may not be used to endorse or promote
-!         products derived from this software without specific prior written
-!         permission.
-!
-!    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-!    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-!    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-!    A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-!    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-!    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-!    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-!    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-!    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-!    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-!    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
-!
-!    Any feedback is very welcome.
-!    http://www.math.keio.ac.jp/matumoto/emt.html
-!    email: matumoto@math.keio.ac.jp
-! -------------------------------------------------------------
+!> @defgroup mersennetwister_mod MersenneTwister_mod
+!> @ingroup random_numbers
+!> @brief Fortran-95 implementation of the Mersenne Twister 19937 algorithm
+!> @author Robert Pincus
+!!
+!! Users must declare one or more variables of type randomNumberSequence in the calling
+!! procedure which are then initialized using a required seed. If the
+!! variable is not initialized the random numbers will all be 0.
+!! For example:
+!! program testRandoms
+!!   use RandomNumbers
+!!   type(randomNumberSequence) :: randomNumbers
+!!   integer                    :: i
+!!
+!!   randomNumbers = new_RandomNumberSequence(seed = 100)
+!!   do i = 1, 10
+!!     print ('(f12.10, 2x)'), getRandomReal(randomNumbers)
+!!   end do
+!! end program testRandoms
+!!
+!! Fortran-95 implementation by
+!!   Robert Pincus
+!!   NOAA-CIRES Climate Diagnostics Center
+!!   Boulder, CO 80305
+!!   email: Robert.Pincus@colorado.edu
+!!
+!! This documentation in the original C program reads:
+!! -------------------------------------------------------------
+!!    A C-program for MT19937, with initialization improved 2002/2/10.
+!!    Coded by Takuji Nishimura and Makoto Matsumoto.
+!!    This is a faster version by taking Shawn Cokus's optimization,
+!!    Matthe Bellew's simplification, Isaku Wada's real version.
+!!
+!!    Before using, initialize the state by using init_genrand(seed)
+!!    or init_by_array(init_key, key_length).
+!!
+!!    Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
+!!    All rights reserved.
+!!
+!!    Redistribution and use in source and binary forms, with or without
+!!    modification, are permitted provided that the following conditions
+!!    are met:
+!!
+!!      1. Redistributions of source code must retain the above copyright
+!!         notice, this list of conditions and the following disclaimer.
+!!
+!!      2. Redistributions in binary form must reproduce the above copyright
+!!         notice, this list of conditions and the following disclaimer in the
+!!         documentation and/or other materials provided with the distribution.
+!!
+!!      3. The names of its contributors may not be used to endorse or promote
+!!         products derived from this software without specific prior written
+!!         permission.
+!!
+!!    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+!!    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+!!    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+!!    A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+!!    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+!!    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+!!    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+!!    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+!!    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+!!    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+!!    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+!!
+!!
+!!    Any feedback is very welcome.
+!!    http://www.math.keio.ac.jp/matumoto/emt.html
+!!    email: matumoto@math.keio.ac.jp
 
+!> @file
+!> @brief File for @ref MersenneTwister_mod
+
+!> @addtogroup mersennetwister_mod
+!> @{
 module MersenneTwister_mod
 ! -------------------------------------------------------------
   implicit none
@@ -97,20 +103,23 @@ module MersenneTwister_mod
   ! Period parameters
   integer, parameter :: blockSize = 624,         &
                         M         = 397,         &
-                        MATRIX_A  = -1727483681, & ! constant vector a         (0x9908b0dfUL)
-                        UMASK     = -2147483648_8, & ! most significant w-r bits (0x80000000UL)
-                        LMASK     =  2147483647    ! least significant r bits  (0x7fffffffUL)
-  ! Tempering parameters
-  integer, parameter :: TMASKB= -1658038656, & ! (0x9d2c5680UL)
-                        TMASKC= -272236544     ! (0xefc60000UL)
+                        MATRIX_A  = -1727483681, & !< constant vector a         (0x9908b0dfUL)
+                        UMASK     = -2147483648_8, & !< most significant w-r bits (0x80000000UL)
+                        LMASK     =  2147483647    !< least significant r bits  (0x7fffffffUL)
+  !> Tempering parameters
+  integer, parameter :: TMASKB= -1658038656, & !< (0x9d2c5680UL)
+                        TMASKC= -272236544     !< (0xefc60000UL)
   ! -------
+  !> @}
 
-  ! The type containing the state variable
+  !> The type containing the state variable
+  !> @ingroup mersennetwister_mod
   type randomNumberSequence
     integer                            :: currentElement ! = blockSize
     integer, dimension(0:blockSize -1) :: state ! = 0
   end type randomNumberSequence
 
+  !> @ingroup mersennetwister_mod
   interface new_RandomNumberSequence
     module procedure initialize_scalar, initialize_vector
   end interface new_RandomNumberSequence
@@ -118,6 +127,8 @@ module MersenneTwister_mod
   public :: randomNumberSequence
   public :: new_RandomNumberSequence, finalize_RandomNumberSequence, &
             getRandomInt, getRandomPositiveInt, getRandomReal
+!> @addtogroup mersennetwister_mod
+!> @{
 ! -------------------------------------------------------------
 contains
   ! -------------------------------------------------------------
@@ -250,15 +261,16 @@ contains
   ! -------------------------------------------------------------
   ! Public functions
   ! --------------------
+   !> Generate a random integer on the interval [0,0xffffffff]
+   !!
+   !> Equivalent to genrand_int32 in the C code.
+   !! Fortran doesn't have a type that's unsigned like C does,
+   !! so this is integers in the range -2**31 - 2**31
+   !! All functions for getting random numbers call this one,
+   !! then manipulate the result
   function getRandomInt(twister)
     type(randomNumberSequence), intent(inout) :: twister
     integer                      :: getRandomInt
-    ! Generate a random integer on the interval [0,0xffffffff]
-    !   Equivalent to genrand_int32 in the C code.
-    !   Fortran doesn't have a type that's unsigned like C does,
-    !   so this is integers in the range -2**31 - 2**31
-    ! All functions for getting random numbers call this one,
-    !   then manipulate the result
 
     if(twister%currentElement >= blockSize) call nextState(twister)
 
@@ -267,12 +279,12 @@ contains
 
   end function getRandomInt
   ! --------------------
+  !> Generate a random integer on the interval [0,0x7fffffff]
+  !! or [0,2**31].
+  !! Equivalent to genrand_int31 in the C code.
   function getRandomPositiveInt(twister)
     type(randomNumberSequence), intent(inout) :: twister
     integer                      :: getRandomPositiveInt
-    ! Generate a random integer on the interval [0,0x7fffffff]
-    !   or [0,2**31]
-    !   Equivalent to genrand_int31 in the C code.
 
     ! Local integers
     integer :: localInt
@@ -282,12 +294,12 @@ contains
 
   end function getRandomPositiveInt
   ! --------------------
+  !> Generate a random number on [0,1]
+  !! Equivalent to genrand_real1 in the C code.
+  !! The result is stored as double precision but has 32 bit resolution
   function getRandomReal(twister)
     type(randomNumberSequence), intent(inout) :: twister
     double precision             :: getRandomReal
-    ! Generate a random number on [0,1]
-    !   Equivalent to genrand_real1 in the C code
-    !   The result is stored as double precision but has 32 bit resolution
 
     integer :: localInt
 
@@ -307,3 +319,5 @@ contains
   end subroutine finalize_RandomNumberSequence
   ! --------------------
 end module MersenneTwister_mod
+!> @}
+! close documentation grouping

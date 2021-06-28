@@ -32,7 +32,6 @@ noinst_LTLIBRARIES = libmosaic.la
 
 libmosaic_la_SOURCES = \
 mosaic.F90 \
-mosaic2.F90 \
 grid.F90 \
 gradient.F90 \
 create_xgrid.c \
@@ -53,7 +52,6 @@ grid_mod.$(FC_MODEXT): mosaic_mod.$(FC_MODEXT)
 # Mod files are built and then installed as headers.
 MODFILES = \
   mosaic_mod.$(FC_MODEXT) \
-  mosaic2_mod.$(FC_MODEXT) \
   grid_mod.$(FC_MODEXT) \
   gradient_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)

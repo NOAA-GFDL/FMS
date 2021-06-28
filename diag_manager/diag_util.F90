@@ -16,32 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-
-!> @file
+!> @defgroup diag_util_mod diag_util_mod
+!> @ingroup diag_manager
 !! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
 !! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
+
+!> @file
+!> @brief File for @ref diag_util_mod
+
 MODULE diag_util_mod
 
 use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-  ! <HISTORY SRC="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager/"/>
 
-  ! <OVERVIEW>
-  !   Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !   <TT>diag_util_mod</TT> is a set of Fortran functions and subroutines used by the <TT>diag_manager_mod</TT>.
-  ! </DESCRIPTION>
-
-  ! <INFO>
   !   <FUTURE>
   !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT> and
   !     <TT>check_bounds_are_exact_dynamic</TT>.
@@ -52,7 +41,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   !       END INTERFACE check_bounds_are_exact
   !     </PRE>
   !   </FUTURE>
-  ! </INFO>
+
   USE diag_data_mod, ONLY: output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
        & VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, EVERY_TIME,&
        & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, base_time,&
@@ -76,7 +65,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
-  USE fms_io_mod, ONLY: get_tile_string, return_domain, string, get_instance_filename
+  USE fms_io_mod, ONLY: get_tile_string, return_domain, string
+  USE fms2_io_mod, ONLY: fms2_io_get_instance_filename => get_instance_filename
+  USE fms_io_mod, ONLY: mpp_io_get_instance_filename => get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
@@ -86,7 +77,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
   USE mpp_io_mod, ONLY: mpp_close
   USE mpp_mod, ONLY: mpp_npes
-  USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
+  USE fms_io_mod, ONLY: get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 use fms2_io_mod
 #ifdef use_netCDF
@@ -101,18 +92,23 @@ use fms2_io_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
        & prepend_attribute, attribute_init, diag_util_init
 
-  !> @brief prepend a value to a string attribute in the output field or output file
+
+  !> @brief Prepend a value to a string attribute in the output field or output file.
+  !> @ingroup diag_util_mod
   INTERFACE prepend_attribute
      MODULE PROCEDURE prepend_attribute_field
      MODULE PROCEDURE prepend_attribute_file
   END INTERFACE prepend_attribute
 
-  !> @brief Allocates the atttype in out_file
+  !> @brief Allocates the atttype in out_file.
+  !> @ingroup diag_util_mod
   INTERFACE attribute_init
      MODULE PROCEDURE attribute_init_field
      MODULE PROCEDURE attribute_init_file
   END INTERFACE attribute_init
-  ! </INTERFACE>
+
+!> @addtogroup diag_util_mod
+!> @{
 
   ! Include variable "version" to be written to log file.
 #include <file_version.h>
@@ -546,8 +542,8 @@ CONTAINS
 
   !> @brief Find index <TT>i</TT> of array such that <TT>array(i)</TT> is closest to number.
   INTEGER FUNCTION get_index(number, array)
-    REAL, INTENT(in) :: number
-    REAL, INTENT(in), DIMENSION(:) :: array
+    REAL, INTENT(in) :: number !<
+    REAL, INTENT(in), DIMENSION(:) :: array !<
 
     INTEGER :: i, n
     LOGICAL :: found
@@ -1601,7 +1597,11 @@ CONTAINS
 
     ! Add ensemble ID to filename
     fname=base_name
-    call get_instance_filename(fname, base_name)
+    if (use_mpp_io) then
+        call mpp_io_get_instance_filename(fname, base_name)
+    else
+        call fms2_io_get_instance_filename(fname, base_name)
+    endif
 
     ! Set the filename
     filename = TRIM(base_name)//TRIM(suffix)
@@ -2141,7 +2141,7 @@ CONTAINS
    if (.not. use_mpp_io) then
     ! Clean up pointer
     if (associated(fileob)) nullify(fileob)
-   endif !< use_mpp_io
+   endif ! use_mpp_io
   END SUBROUTINE opening_file
 
   !> @brief This function determines a string based on current time.
@@ -2837,5 +2837,7 @@ CONTAINS
        out_file%attributes(this_attribute)%len = length
     END IF
   END SUBROUTINE prepend_attribute_file
-  ! </SUBROUTINE>
+
 END MODULE diag_util_mod
+!> @}
+! close documentation grouping

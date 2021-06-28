@@ -16,15 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-module get_cal_time_mod
+!> @defgroup get_cal_time_mod get_cal_time_mod
+!> @ingroup time_manager
+!> @brief Given a time increment as a real number, and base time and calendar
+!!  as a character strings, returns time as a time_type variable.
 
-!   <CONTACT EMAIL="fms@gfdl.noaa.gov">
-!     fms
-!   </CONTACT>
-!   <OVERVIEW>
-!      Given a time increment as a real number, and base time and calendar
-!      as a character strings, returns time as a time_type variable.
-!   </OVERVIEW>
+!> @file
+!> @brief File for @ref get_cal_time_mod
+
+!> @addtogroup get_cal_time_mod
+!> @{
+module get_cal_time_mod
 
 use          fms_mod, only: error_mesg, FATAL, write_version_number, lowercase, &
                             open_namelist_file, check_nml_error, stdlog, close_file, &
@@ -41,9 +43,9 @@ private
 
 public :: get_cal_time
 
-logical :: module_is_initialized=.false. ! This module is initialized on
-                                         ! the first call to get_cal_time
-                                         ! because there is no constructor.
+logical :: module_is_initialized=.false. !> This module is initialized on
+                                         !! the first call to get_cal_time
+                                         !! because there is no constructor.
 ! <NAMELIST NAME="get_cal_time_nml">
 ! <DATA NAME="allow_calendar_conversion" TYPE="logical"  DEFAULT=".true.">
 !   This sets the default value of the optional argument named "permit_calendar_conversion" of get_cal_time.
@@ -61,109 +63,96 @@ namelist / get_cal_time_nml / allow_calendar_conversion
 #include<file_version.h>
 
 contains
-!------------------------------------------------------------------------
-! <FUNCTION NAME="get_cal_time">
-!   <TEMPLATE>
-!     get_cal_time(time_increment, units, calendar, permit_calendar_conversion)
-!   </TEMPLATE>
-!   <IN NAME="time_increment" TYPE="real"> A time interval.</IN>
-!   <IN NAME="units" TYPE="character">
-!
-! Examples of acceptable values of units:
-!
-! 'days since 1980-01-01 00:00:00',
-! 'hours since 1980-1-1 0:0:0',
-! 'minutes since 0001-4-12'
-!
-! The first word in the string must be
-! 'years', 'months', 'days', 'hours', 'minutes' or 'seconds'.
-! The second word must be 'since'
-!
-! year number must occupy 4 spaces.
-! Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces
-! year, month and day must be separated by a '-'
-! hour, minute, second must be separated by a ':'
-! hour, minute, second are optional. If not present then zero is assumed.
-!
-! Because months are not equal increments of time, and, for julian calendar,
-! neither are years, the 'years since' and 'month since' cases deserve
-! further explaination.
-!
-! When 'years since' is used:
-! The year number is increased by floor(time_increment)   to obtain a time T1.
-! The year number is increased by floor(time_increment)+1 to obtain a time T2.
-! The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).
-!
-! When 'months since' is used:
-! The month number is increased by floor(time_increment). If it falls outside
-! to range 1 to 12 then it is adjusted along with the year number to convert
-! to a valid date. The number of days in the month of this date is used to
-! compute the time interval of the fraction.
-! That is:
-! The month number is increased by floor(time_increment) to obtain a time T1.
-! delt = the number of days in the month in which T1 falls.
-! The time returned is T1 + ((time_increment-floor(time_increment))*delt.
-! Two of the consequences of this scheme should be kept in mind.
-! -- The time since should not be from the 29'th to 31'st of a month,
-!    since an invalid date is likely to result, triggering an error stop.
-! -- When time since is from the begining of a month, the fraction of a month
-!    will never advance into the month after that which results from only
-!    the whole number.
-!
-! When NO_CALENDAR is in effect, units attribute must specify a starting
-! day and second, with day number appearing first
-!
-! Example: 'days since 100 0' Indicates 100 days 0 seconds
-! </IN>
-!
-! <IN NAME="calendar" TYPE="character">
-! Acceptable values of calendar are:
-! 'noleap'
-! '365_day'
-! '360_day'
-! 'julian'
-! 'thirty_day_months'
-! 'no_calendar'
-! </IN>
-!
-! <IN NAME="permit_calendar_conversion" TYPE="logical, optional" DEFAULT="allow_calendar_conversion">
-! It is sometimes desirable to allow the value of the intent(in) argument
-! "calendar" to be different than the calendar in use by time_manager_mod.
-! If this is not desirable, then the optional variable "permit_calendar_conversion"
-! should be set to .false. so as to allow an error check.
-! When calendar conversion is done, the time returned is the time in the
-! time_manager's calendar, but corresponds to the date computed using the input calendar.
-! For example, suppose the time_manager is using the julian calendar and
-! the values of the input arguments of get_cal_time are:
-! time_increment = 59.0
-! units = 'days since 1980-1-1 00:00:00'
-! calendar = 'noleap'
-! Because it will use the noleap calendar to calculate the date, get_cal_time will return
-! value of time for midnight March 1 1980, but it will be time in the julian calendar
-! rather than the noleap calendar. It will never return a value of time corresponding
-! to anytime during the day Feb 29.
-!
-! Another example:
-! Suppose the time_manager is using either the noleap or julian calendars,
-! and the values of the input arguments are:
-! time_increment = 30.0
-! units = 'days since 1980-1-1'
-! calendar = 'thirty_day_months'
-! In this case get_cal_time will return the value of time for Feb 1 1980 00:00:00,
-! but in the time_manager's calendar.
-
-! Calendar conversion may result in a fatal error when the input calendar type is
-! a calendar that has more days per year than that of the time_manager's calendar.
-! For example, if the input calendar type is julian and the time_manager's calendar
-! is thirty_day_months, then get_cal_time will try to convert Jan 31 to a time in
-! the thirty_day_months calendar, resulting in a fatal error.
-
-! Note: this option was originally coded to allow noleap calendar as input when
-! the julian calendar was in effect by the time_manager.
-! </IN>
-!
-!---------------------------------------------------------------------------------------------
-
+!> @brief Calculates what a given calendar time would be after a interval of time
+!!
+!! @param time_increment A time interval
+!! @param units
+!! Examples of acceptable values of units:
+!! - 'days since 1980-01-01 00:00:00'
+!! - 'hours since 1980-1-1 0:0:0'
+!! - 'minutes since 0001-4-12'
+!! The first word in the string must be
+!! 'years', 'months', 'days', 'hours', 'minutes' or 'seconds'.
+!! The second word must be 'since'.
+!! year number must occupy 4 spaces.
+!! Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces
+!! year, month and day must be separated by a '-'
+!! hour, minute, second must be separated by a ':'
+!! hour, minute, second are optional. If not present then zero is assumed.
+!!
+!! Because months are not equal increments of time, and, for julian calendar,
+!! neither are years, the 'years since' and 'month since' cases deserve
+!! further explaination.
+!!
+!! When 'years since' is used:
+!! The year number is increased by floor(time_increment)   to obtain a time T1.
+!! The year number is increased by floor(time_increment)+1 to obtain a time T2.
+!! The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).
+!!
+!! When 'months since' is used:
+!! The month number is increased by floor(time_increment). If it falls outside
+!! to range 1 to 12 then it is adjusted along with the year number to convert
+!! to a valid date. The number of days in the month of this date is used to
+!! compute the time interval of the fraction.
+!! That is:
+!! The month number is increased by floor(time_increment) to obtain a time T1.
+!! delt = the number of days in the month in which T1 falls.
+!! The time returned is T1 + ((time_increment-floor(time_increment))*delt.
+!! Two of the consequences of this scheme should be kept in mind.
+!! -- The time since should not be from the 29'th to 31'st of a month,
+!!    since an invalid date is likely to result, triggering an error stop.
+!! -- When time since is from the begining of a month, the fraction of a month
+!!    will never advance into the month after that which results from only
+!!    the whole number.
+!!
+!! When NO_CALENDAR is in effect, units attribute must specify a starting
+!! day and second, with day number appearing first
+!!
+!! Example: 'days since 100 0' Indicates 100 days 0 seconds
+!!
+!! @param calendar
+!! Acceptable values of calendar are:
+!! 'noleap'
+!! '365_day'
+!! '360_day'
+!! 'julian'
+!! 'thirty_day_months'
+!! 'no_calendar'
+!!
+!! @param optional permit_calendar_conversion
+!! It is sometimes desirable to allow the value of the intent(in) argument
+!! "calendar" to be different than the calendar in use by time_manager_mod.
+!! If this is not desirable, then the optional variable "permit_calendar_conversion"
+!! should be set to .false. so as to allow an error check.
+!! When calendar conversion is done, the time returned is the time in the
+!! time_manager's calendar, but corresponds to the date computed using the input calendar.
+!! For example, suppose the time_manager is using the julian calendar and
+!! the values of the input arguments of get_cal_time are:
+!! time_increment = 59.0
+!! units = 'days since 1980-1-1 00:00:00'
+!! calendar = 'noleap'
+!! Because it will use the noleap calendar to calculate the date, get_cal_time will return
+!! value of time for midnight March 1 1980, but it will be time in the julian calendar
+!! rather than the noleap calendar. It will never return a value of time corresponding
+!! to anytime during the day Feb 29.
+!!
+!! Another example:
+!! Suppose the time_manager is using either the noleap or julian calendars,
+!! and the values of the input arguments are:
+!! time_increment = 30.0
+!! units = 'days since 1980-1-1'
+!! calendar = 'thirty_day_months'
+!! In this case get_cal_time will return the value of time for Feb 1 1980 00:00:00,
+!! but in the time_manager's calendar.
+!!
+!! Calendar conversion may result in a fatal error when the input calendar type is
+!! a calendar that has more days per year than that of the time_manager's calendar.
+!! For example, if the input calendar type is julian and the time_manager's calendar
+!! is thirty_day_months, then get_cal_time will try to convert Jan 31 to a time in
+!! the thirty_day_months calendar, resulting in a fatal error.
+!!
+!! @note This option was originally coded to allow noleap calendar as input when
+!! the julian calendar was in effect by the time_manager.
 function get_cal_time(time_increment, units, calendar, permit_calendar_conversion)
 real, intent(in) :: time_increment
 character(len=*), intent(in) :: units
@@ -362,7 +351,6 @@ else
 endif
 
 end function get_cal_time
-! </FUNCTION>
 !------------------------------------------------------------------------
 function cut0(string)
 character(len=256) :: cut0
@@ -381,3 +369,5 @@ return
 end function cut0
 !------------------------------------------------------------------------
 end module get_cal_time_mod
+!> @}
+! close documentation grouping

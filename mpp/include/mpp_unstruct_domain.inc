@@ -17,6 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_domains_mod
+!> @brief Routines for defining and managing unstructured grids
+
   !#####################################################################
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
@@ -571,8 +575,8 @@ return
   end subroutine mpp_define_null_UG_domain
 
 !##############################################################################
+    !> @brief Broadcast domain (useful only outside the context of its own pelist)
     subroutine mpp_broadcast_domain_ug( domain )
-!broadcast domain (useful only outside the context of its own pelist)
       type(domainUG), intent(inout) :: domain
       integer, allocatable :: pes(:)
       logical :: native         !true if I'm on the pelist of this domain

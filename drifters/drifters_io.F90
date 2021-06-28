@@ -16,9 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup drifters_io_mod drifters_io_mod
+!> @ingroup drifters
+!> @brief Saves drifter data for postprocessing and restarts
 
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref drifters_io_mod
+
+!> @addtogroup drifters_io_mod
+!> @{
 module drifters_io_mod
 
   use netcdf
@@ -40,7 +46,9 @@ module drifters_io_mod
 
   real :: drfts_eps_t = 10.*epsilon(1.)
 
-
+!> @}
+  !> @brief IO data for drifters.
+  !> @ingroup drifters_input_mod
   type drifters_io_type
      real                 :: time
      integer              :: it !< time index
@@ -49,7 +57,8 @@ module drifters_io_mod
      integer              :: nc_positions, nc_fields, nc_ids, nc_time, nc_index_time
      logical              :: enddef
   end type drifters_io_type
-
+!> @addtogroup drifters_io_mod
+!> @{
 contains
 
 !###############################################################################
@@ -303,3 +312,5 @@ contains
   end subroutine drifters_io_write
 
 end module drifters_io_mod
+!> @}
+! close documentation grouping

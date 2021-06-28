@@ -1,3 +1,4 @@
+@ingroup diag_manager
 # The Diagnostic Manager Table
 
 The _diagnostics table_ (`diag_table`) allows users to specify output fields and

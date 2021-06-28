@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -15,35 +17,15 @@
 #*
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
-#**********************************************************************
+#***********************************************************************
 
-.SUFFIXES:
-.SUFFIXES: .F90 .f90 .F .f .o .c
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
 
-.F90.f90:
-	$(CPP) $(CPPFLAGS) $< > $*.f90
-
-.F.f:
-	$(CPP) $(CPPFLAGS) $< > $*.f
-
-.f.o:
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.f90.o:
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.F.o:
-	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.F90.o:
-	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-
-.c.o:
-	$(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) $(OTHER_CFLAGS) -c $< -o $@
-
-depend: $(DEPEND_FILES) makefile
-	@echo "Building dependencies ..."
-	@ls -1 $(DEPEND_FILES) > Srcfiles
-	@echo "." > Filepath
-	@$(MKDEPENDS) -m Filepath Srcfiles > depend
-	@$(RM) -f Filepath Srcfiles
+# Set common test settings.
+. ../test_common.sh
+# make an input.nml for mpp_init to read
+printf "EOF\n&dummy\nEOF" | cat > input.nml
+printf "5, 14   \n23\n\"forlendula\"" | cat > ascii_test1
+# run the tests
+run_test test_read_ascii_file 6 $netcdf_version_skip

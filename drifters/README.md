@@ -1,3 +1,4 @@
+@ingroup drifters
 # Drifters
 
 Alexander.Pletzer@noaa.gov

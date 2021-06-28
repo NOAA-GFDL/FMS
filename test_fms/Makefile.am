@@ -44,8 +44,6 @@ SUBDIRS = \
 #  time_interp
 #  fms2_io
 
-
-
 # This input file must be distributed, it is turned into
 # test_common.sh by configure.
 EXTRA_DIST = test-lib.sh.in
