@@ -231,7 +231,7 @@ private
   !!
   !> peset hold communicators as SHMEM-compatible triads (start, log2(stride), num)
   !> @ingroup mpp_mod
-  type, public :: communicator
+  type :: communicator
      private
      character(len=32) :: name
      integer, pointer  :: list(:) =>NULL()
@@ -242,7 +242,7 @@ private
 
   !> Communication event profile
   !> @ingroup mpp_mod
-  type, public :: event
+  type :: event
      private
      character(len=16)                         :: name
      integer(i8_kind), dimension(MAX_EVENTS)   :: ticks, bytes
@@ -251,7 +251,7 @@ private
 
   !> a clock contains an array of event profiles for a region
   !> @ingroup mpp_mod
-  type, public :: clock
+  type :: clock
      private
      character(len=32)    :: name
      integer(i8_kind)     :: hits
@@ -267,7 +267,7 @@ private
 
   !> Summary of information from a clock run
   !> @ingroup mpp_mod
-  type, public :: Clock_Data_Summary
+  type :: Clock_Data_Summary
      private
      character(len=16)  :: name
      real(r8_kind)      :: msg_size_sums(MAX_BINS)
@@ -280,7 +280,7 @@ private
 
   !> holds name and clock data for use in @ref mpp_util.h
   !> @ingroup mpp_mod
-  type, public :: Summary_Struct
+  type :: Summary_Struct
      private
      character(len=16)         :: name
      type (Clock_Data_Summary) :: event(MAX_EVENT_TYPES)
@@ -288,7 +288,7 @@ private
 
   !> Data types for generalized data transfer (e.g. MPI_Type)
   !> @ingroup mpp_mod
-  type, public :: mpp_type
+  type :: mpp_type
      private
      integer :: counter !> Number of instances of this type
      integer :: ndims
@@ -304,7 +304,7 @@ private
 
   !> Persisent elements for linked list interaction
   !> @ingroup mpp_mod
-  type, public :: mpp_type_list
+  type :: mpp_type_list
       private
       type(mpp_type), pointer :: head => null()
       type(mpp_type), pointer :: tail => null()
