@@ -486,7 +486,7 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   if (fileobj%is_readonly .or. (fileobj%mode_is_append .and. dimension_exists(fileobj, dim_name))) then
     call get_dimension_size(fileobj, dim_name, dim_size, broadcast=.true.)
     if (dim_size .lt. domain_size) then
-      call error("dimension "//trim(dim_name)//" is smaller than the size of" &
+      call error("dimension "//trim(dim_name)//" in the file "//trim(fileobj%path)//" is smaller than the size of" &
                  //" the associated domain "//trim(xory)//" axis.")
     endif
   else
@@ -693,7 +693,8 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
         endif
       endif
     else
-      call error("this branch should not be reached.")
+      call error("There is no data associated with the variable: "//trim(fileobj%restart_vars(i)%varname)//&
+                 &" and the file: "//trim(fileobj%path)//". Check your register_restart_variable call")
     endif
   enddo
 end subroutine restore_domain_state
@@ -832,7 +833,8 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_global_domain(io_domain, ybegin=is, yend=ie, position=dpos)
     else
-      call error("input dimension is not associated with the domain.")
+      call error("get_global_io_domain_indices: the dimension "//trim(dimname)//" in the file: "//trim(fileobj%path)//&
+                 &" is not domain decomposed. Check your register_axis call")
     endif
   endif
 

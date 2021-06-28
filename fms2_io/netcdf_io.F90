@@ -1179,10 +1179,11 @@ subroutine get_dimension_names(fileobj, names, broadcast)
     ndims = get_num_dimensions(fileobj, broadcast=.false.)
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("incorrect size of names array.")
+        call error("'names' has to be the same size of the number of dimensions."&
+                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no dimensions in this file.")
+      call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
     endif
     names(:) = ""
     do i = 1, ndims
@@ -1199,10 +1200,11 @@ subroutine get_dimension_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("incorrect size of names array.")
+        call error("'names' has to be the same size of the number of dimensions."&
+                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no dimensions in this file.")
+      call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
     endif
     names(:) = ""
   endif
@@ -1401,10 +1403,11 @@ subroutine get_variable_names(fileobj, names, broadcast)
     nvars = get_num_variables(fileobj, broadcast=.false.)
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("names array has incorrect size.")
+        call error("'names' has to be the same size of the number of variables."&
+                   &" Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no variables in this file.")
+      call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
     endif
     names(:) = ""
     do i = 1, nvars
@@ -1421,10 +1424,11 @@ subroutine get_variable_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("names array has incorrect size.")
+        call error("'names' has to be the same size of the number of variables."&
+                   &" Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no variables in this file.")
+      call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
     endif
     names(:) = ""
   endif
@@ -1533,10 +1537,13 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
     call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("incorrect size of dim_names array.")
+        call error("'names' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
     dim_names(:) = ""
     do i = 1, ndims
@@ -1553,10 +1560,13 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("incorrect size of dim_names array.")
+        call error("'names' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
     dim_names(:) = ""
   endif
@@ -1593,10 +1603,13 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
     call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("incorrect size of dim_sizes array.")
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
     do i = 1, ndims
       err = nf90_inquire_dimension(fileobj%ncid, dimids(i), len=dim_sizes(i))
@@ -1612,10 +1625,13 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("incorrect size of dim_names array.")
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
   endif
   call mpp_broadcast(dim_sizes, ndims, fileobj%io_root, pelist=fileobj%pelist)
@@ -2106,7 +2122,8 @@ function is_registered_to_restart(fileobj, variable_name) &
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("file "//trim(fileobj%path)//" is not a restart file. "&
+               "Add is_restart=.true. to your open_file call")
   endif
   is_registered = .false.
   do i = 1, fileobj%num_restart_vars
@@ -2192,7 +2209,8 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
   integer :: i !< No description
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("file "//trim(fileobj%path)//" is not a restart file. "&
+               &"Add is_restart=.true. to your open_file call")
   endif
 
  !> Loop through the variables, root pe gathers the data from the other pes and writes out the checksum.

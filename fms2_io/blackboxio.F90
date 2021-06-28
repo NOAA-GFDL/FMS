@@ -149,7 +149,7 @@ function create_diskless_netcdf_file(fileobj, pelist, path) &
   fileobj%is_diskless = .true.
   cmode = ior(nf90_noclobber, nf90_classic_model)
   cmode = ior(cmode, nf90_diskless)
-  if (fms2_ncchksz == -1) call error("create_diskless_netcdf_file :: fms2_ncchksz not set.")
+  if (fms2_ncchksz == -1) call error("create_diskless_netcdf_file :: fms2_ncchksz not set. Call fms2_io init first")
   err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid, chunksize=fms2_ncchksz)
   success = err .eq. nf90_noerr
   if (.not. success) then
@@ -271,7 +271,9 @@ subroutine copy_metadata(fileobj, new_fileobj)
               err = nf90_put_var(new_fileobj%ncid, varid, buf_double)
               deallocate(buf_double)
             else
-              call error("this branch should not be reached.")
+              call error(append_error_msg//" "//trim(varname)//" has an unsupported type, "&
+                         "only nf90_int, nf90_float, and nf90_double are currently supported")
+
             endif
             call check_netcdf_code(err, append_error_msg)
             call set_netcdf_mode(fileobj%ncid, define_mode)
@@ -464,7 +466,7 @@ function create_diskless_domain_file(fileobj, domain, path) &
 
   io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
-    call error("input domain does not have an io_domain.")
+    call error("The domain associated with the file: "//trim(fileobj%path)//" does not have an io_domain.")
   endif
   pelist_size = mpp_get_domain_npes(io_domain)
   allocate(pelist(pelist_size))
@@ -605,7 +607,7 @@ function create_diskless_unstructured_domain_file(fileobj, domain, path) &
 
   io_domain => mpp_get_ug_io_domain(domain)
   if (.not. associated(io_domain)) then
-    call error("input domain does not have an io_domain.")
+    call error("The domain associated with the file: "//trim(fileobj%path)//" does have an io_domain.")
   endif
   pelist_size = mpp_get_ug_domain_npes(io_domain)
   allocate(pelist(pelist_size))

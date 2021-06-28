@@ -46,8 +46,6 @@ subroutine compressed_write_0d(fileobj, variable_name, cdata, unlim_dim_level, &
     call netcdf_write_data(fileobj, variable_name, cdata, &
                            unlim_dim_level=unlim_dim_level, corner=corner)
     return
-  else
-    call error("this branch should never be reached.")
   endif
 end subroutine compressed_write_0d
 
