@@ -5,7 +5,7 @@ Before the FMS2_io module, subroutines and functions in fms_io and mpp_io module
 ### A. FMS2_io Fileobjs
 FMS2_io provides three new derived types, which target the different I/O paradigms used in GFDL models.
 
-**1. FmsNetcdfFile_t:** This type provides a thin wrapper over the netCDF4 library, but allows the user to assign a “pelist” to the file. If a pelist is assigned, only the first rank on the list directly interacts with the netCDF library, and performs broadcasts to relay the information read to the rest of the ranks on the list. When writting netcdf files, only the first rank in the pelist will perform the writes.
+**1. FmsNetcdfFile_t:** This type provides a thin wrapper over the netCDF4 library, but allows the user to assign a “pelist” to the file. If a pelist is assigned, only the first rank on the list directly interacts with the netCDF library, and performs broadcasts to relay the information read to the rest of the ranks on the list. When writing netcdf files, only the first rank in the pelist will perform the writes.
 
 **2. FmsNetcdfDomainFile_t:** This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes. Here domain decomposed refers to data that is on the user-defined mpp_domains two-dimensional lon-lat or cubed-sphere grid, which means that each MPI rank has its own section of the data. This requires a [domain](https://github.com/NOAA-GFDL/FMS/blob/main/mpp/mpp_domains.F90#L379-L415) to be associated with the fileobj.
 
@@ -65,7 +65,7 @@ dim_names(4) = "Time"
 !> Create domain !<
 !> Create an io_domain !<
 
-if (open_file(fileobj, "filename", "ovewrite", domain, is_restart=.true.)) then
+if (open_file(fileobj, "filename", "overwrite", domain, is_restart=.true.)) then
   call register_axis(fileobj, dim_names(1), "x", position=center)
   call register_axis(fileobj, dim_names(2), "y", position=center)
   call register_axis(fileobj, dim_names(3), dimsize)
@@ -121,7 +121,7 @@ dim_names(3) = "Time"
 !> Create an io_domain !<
 !> Create an unstructured domain !<
 
-if (open_file(fileobj, "filename", "ovewrite", domain, is_restart=.true.)) then
+if (open_file(fileobj, "filename", "overwrite", domain, is_restart=.true.)) then
   call register_axis(fileobj, dim_names(1))
   call register_axis(fileobj, dim_names(2), dimsize)
   call register_axis(fileobj, dim_names(3), unlimited)
@@ -177,7 +177,7 @@ dim_names(2) = "yaxis_1"
 dim_names(3) = "zaxis_1"
 dim_names(4) = "Time"
 
-if (open_file(fileobj, "filename", "ovewrite", pelist=pes, is_restart=.true.)) then
+if (open_file(fileobj, "filename", "overwrite", pelist=pes, is_restart=.true.)) then
   call register_axis(fileobj, dim_names(1), 96)
   call register_axis(fileobj, dim_names(2), 96)
   call register_axis(fileobj, dim_names(3), dimsize)
@@ -323,7 +323,7 @@ dim_names(2) = "yaxis_1"
 dim_names(3) = "zaxis_1"
 dim_names(4) = "Time"
 
-if (open_file(fileobj, "filename", "ovewrite", domain)) then
+if (open_file(fileobj, "filename", "overwrite", domain)) then
   call register_axis(fileobj, dim_names(1), "x", position=center)
   call register_axis(fileobj, dim_names(2), "y", position=center)
   call register_axis(fileobj, dim_names(3), dimsize)
@@ -334,7 +334,7 @@ if (open_file(fileobj, "filename", "ovewrite", domain)) then
   call close_file(fileobj)
 endif
 ```
-Difference from writting restarts:
+Difference from writing restarts:
 - `open_file` does not have is_restart=.true., so the `write_restart` functionality cannot be used'
 - [register_field](https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/fms_netcdf_domain_io.F90#L527) is basically a wrapper for `nf90_def_var` which just adds the variable metadata to the file.
   - "variable_type" is a string which indicates the type you want the variable to be written as. The acceptable values are "int", "int64", "double", "float", and "char"
@@ -376,7 +376,7 @@ dim_names(3) = "Time"
 !> Create an io_domain !<
 !> Create an unstructured domain !<
 
-if (open_file(fileobj, "filename", "ovewrite", domain, is_restart=.true.)) then
+if (open_file(fileobj, "filename", "overwrite", domain, is_restart=.true.)) then
   call register_axis(fileobj, dim_names(1))
   call register_axis(fileobj, dim_names(2), dimsize)
   call register_axis(fileobj, dim_names(3), unlimited)
@@ -386,7 +386,7 @@ if (open_file(fileobj, "filename", "ovewrite", domain, is_restart=.true.)) then
   call close_file(fileobj)
 endif
 ```
-Difference from writting restarts:
+Difference from writing restarts:
 - `open_file` does not have is_restart=.true., so the `write_restart` functionality cannot be used'
 - [register_field](https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_unstructured_domain_io.F90#L178-L179) is basically a wrapper for `nf90_def_var` which just adds the variable metadata to the file.
   - "variable_type" is a string which indicates the type you want the variable to be written as. The acceptable values are "int", "int64", "double", "float", and "char"
@@ -429,7 +429,7 @@ dim_names(2) = "yaxis_1"
 dim_names(3) = "zaxis_1"
 dim_names(4) = "Time"
 
-if (open_file(fileobj, "filename", "ovewrite", pelist=pes, is_restart=.true.)) then
+if (open_file(fileobj, "filename", "overwrite", pelist=pes, is_restart=.true.)) then
   call register_axis(fileobj, dim_names(1), 96)
   call register_axis(fileobj, dim_names(2), 96)
   call register_axis(fileobj, dim_names(3), dimsize)
@@ -467,7 +467,7 @@ Here the code is going to start reading at x=10, y=2, z=2, t=3 and read 2, 3, 4,
 Additionally, it is possible to do "compressed" reads and writes. Here "compressed" is when different ranks have different numbers of points for a specific
 axis. For example:
 ```F90
-if (open_file(fileobj, "filename", "ovewrite", pelist=pes, is_restart=.true.)) then
+if (open_file(fileobj, "filename", "overwrite", pelist=pes, is_restart=.true.)) then
   call register_axis(fileobj, "xaxis_1", mpp_pe()+1, is_compressed=.true.)
   call register_axis(fileobj, "yaxis_1", mpp_pe()+1, is_compressed=.true.)
 
