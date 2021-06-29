@@ -539,7 +539,7 @@ type(FmsNetcdfFile_t)       :: fileobj        !< Fms2_io fileobj
 
 if (open_file(fileobj, "filename", "overwrite", is_restart=.true., pelist=all_pelist)) then
     call register_restart_field(fileobj, "variable_name", variable_data, indices, global_size, pelist, is_root_pe)
-    call write_restart(fileobj)
+    call write_restart_bc(fileobj)
     call close_file(fileobj)
 endif
 ```
