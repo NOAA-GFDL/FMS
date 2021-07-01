@@ -272,16 +272,6 @@ if test -n "$fc_version_info"; then
   FC_VERSION="$FC_VERSION ( $fc_version_info )"
 fi
 
-# Check if gcc is 11.1 for class(*) select type bug
-AC_MSG_CHECKING([if gcc 11.1 is loaded])
-if [ test -n "`$FC --version | grep GNU | grep 11.1`" ]; then
-  AC_MSG_RESULT([yes])
-  AC_MSG_RESULT([Warning: Compilation with GNU compilers version 11.1 is unsupported by this version\
- of FMS. Please use another compiler version])
-else
-  AC_MSG_RESULT([no])
-fi
-
 # Check if netcdf is version 4.7.4 to skip failing fms2_io tests
 AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
 if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
@@ -375,4 +365,10 @@ AC_OUTPUT()
 ## if tests are being skipped, output warning at end of output
 if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
   AC_MSG_RESULT([Warning: netCDF v4.7.4 is loaded. Incompatible fms2_io tests will be skipped and there may be netCDF issues with model runs.])
+fi
+
+# Check if gcc is 11.1 for class(*) select type bug
+if [ test -n "`$FC --version | grep GNU | grep 11.1`" ]; then
+  AC_MSG_RESULT([Warning: Compilation with GNU compilers version 11.1 is unsupported by this version\
+ of FMS. Please use another compiler version])
 fi
