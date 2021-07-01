@@ -272,16 +272,6 @@ if test -n "$fc_version_info"; then
   FC_VERSION="$FC_VERSION ( $fc_version_info )"
 fi
 
-# Check if netcdf is version 4.7.4 to skip failing fms2_io tests
-AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
-if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
-  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], true )
-  AC_MSG_RESULT([yes])
-else
-  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], false )
-  AC_MSG_RESULT([no])
-fi
-
 #####
 # Create output variables from various
 # shell variables, for use in generating
