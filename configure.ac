@@ -272,6 +272,16 @@ if test -n "$fc_version_info"; then
   FC_VERSION="$FC_VERSION ( $fc_version_info )"
 fi
 
+# Check if gcc is 11.1 for class(*) select type bug
+AC_MSG_CHECKING([if gcc 11 is loaded])
+if [ test -n "`$FC --version | grep GNU | grep 11\..\..`" ]; then
+  AC_MSG_RESULT([yes])
+  AC_MSG_ERROR([Compilation with gcc and gfortran 11 is unsupported by this version\
+ of FMS. Please use another compiler version])
+else
+  AC_MSG_RESULT([no])
+fi
+
 # Check if netcdf is version 4.7.4 to skip failing fms2_io tests
 AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
 if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
