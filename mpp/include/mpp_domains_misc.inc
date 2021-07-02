@@ -601,7 +601,7 @@ end subroutine init_nonblock_type
                 domain%ntiles = msg(12)
              else
                 domain%x(1)%data  %begin = msg(2) - msg(7)
-                domain%x(1)%data  %end   = msg(3) + msg(9)
+                domain%x(1)%data  %end   = msg(3) + msg(8)
                 domain%y(1)%data  %begin = msg(4) - msg(9)
                 domain%y(1)%data  %end   = msg(5) + msg(10)
                 domain%x(1)%global%begin = min(domain%x(1)%global%begin, msg(2))
@@ -734,7 +734,7 @@ end subroutine init_nonblock_type
                 domain_out%ntiles            = msg(12)
              else
                 domain_out%x(1)%data  %begin = msg(2) - msg(7)
-                domain_out%x(1)%data  %end   = msg(3) + msg(9)
+                domain_out%x(1)%data  %end   = msg(3) + msg(8)
                 domain_out%y(1)%data  %begin = msg(4) - msg(9)
                 domain_out%y(1)%data  %end   = msg(5) + msg(10)
                 domain_out%x(1)%global%begin = min(domain_out%x(1)%global%begin, msg(2))
