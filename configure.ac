@@ -376,4 +376,3 @@ AC_OUTPUT()
 if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
   AC_MSG_RESULT([Warning: netCDF v4.7.4 is loaded. Incompatible fms2_io tests will be skipped and there may be netCDF issues with model runs.])
 fi
-
