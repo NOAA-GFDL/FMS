@@ -368,7 +368,7 @@ if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
 fi
 
 # Check if gcc is 11.1 for class(*) select type bug
-if [ test -n "`$FC --version | grep GNU | grep 11.1`" ]; then
-  AC_MSG_RESULT([Warning: Compilation with GNU compilers version 11.1 is unsupported by this version\
+if [ test -n "`$FC --version | grep GNU | grep 11\..\..`" ]; then
+  AC_MSG_RESULT([Warning: Compilation with gcc and gfortran 11 is unsupported by this version\
  of FMS. Please use another compiler version])
 fi
