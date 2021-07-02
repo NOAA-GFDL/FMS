@@ -61,7 +61,6 @@ program test_mpp_global_field_ug
 
   !> initialize mpp domain(s)
   call mpp_domains_init()
-  call mpp_domains_set_stack_size(stackmax)
 
   call setup_domains()
 

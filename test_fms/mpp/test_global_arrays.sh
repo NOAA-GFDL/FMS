@@ -52,5 +52,5 @@ then
     # Need to oversubscribe the MPI
     run_test test_global_arrays 8 $skip_test "true"
 fi
-
+touch input.nml
 run_test test_global_arrays 8 $skip_test

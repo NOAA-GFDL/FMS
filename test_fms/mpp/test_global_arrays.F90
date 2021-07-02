@@ -191,9 +191,8 @@ program test_global_arrays
   call mpp_error(NOTE, "----------Testing 32-bit real mpp_global_sum with 5 ranks and reordering----------")
   call mpp_update_domains(dataR4_5d, domain)
   sumR4_5d = mpp_global_sum(domain, dataR4_5d)
-
   ! check that shuffled array results are approximately the same as the original array
-  if(abs((sumR4-sumR4_5d)/sumR4) .gt. 1e-4) then
+  if(abs(sumR4-sumR4_5d) .gt. 1E-4 ) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumR4_5d
     write(strTmp2,*) sumR4
@@ -205,11 +204,10 @@ program test_global_arrays
   call mpp_update_domains(dataR8_5d, domain)
   sumR8_5d = mpp_global_sum(domain, dataR8_5d)
   ! check that shuffled array results are approximately the same as the original array
-  !> @note This test fails with gcc 9.3.0
-  if(abs((sumR8-sumR8_5d)/sumR8) .gt. 1e-7) then
+  if(abs(sumR8-sumR8_5d) .gt. 1E-7) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumR8_5d
-     write(strTmp2,*) sumR8
+    write(strTmp2,*) sumR8
     call mpp_error(FATAL,"test_global_arrays: invalid 64-bit real answer after reordering"// &
                    NEW_LINE('a')//"Sum: "// strTmp1// " ne "//strTmp2)
   endif
