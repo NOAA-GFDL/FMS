@@ -285,6 +285,7 @@ function checkResultInt4(res)
     call mpp_recv(tres,2, root)
     checkResultInt4 = checkResultInt4 .and. res(1) .EQ. tres(1) .and. res(2) .eq. tres(2)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultInt4
 
@@ -309,6 +310,7 @@ function checkResultInt8(res)
     call mpp_recv(tres,2, root)
     checkResultInt8 = checkResultInt8 .and. res(1) .EQ. tres(1) .and. res(2) .eq. tres(2)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultInt8
 
@@ -334,6 +336,7 @@ function checkResultReal4(res)
     checkResultReal4 = checkResultReal4 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-4) .and. &
                        (abs((res(2)-tres(2))/res(2)) .lt. 1e-4)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultReal4
 
@@ -359,6 +362,7 @@ function checkResultReal8(res)
     checkResultReal8 = checkResultReal8 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-7) .and. &
                        (abs((res(2)-tres(2))/res(2)) .lt. 1e-7)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultReal8
 
@@ -392,6 +396,7 @@ function checkSumReal4(gsum)
     call mpp_send(recv, 2, root)
     checkSumReal4 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumReal4
 
@@ -425,6 +430,7 @@ function checkSumReal8(gsum)
     call mpp_send(recv, 2, root)
     checkSumReal8 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumReal8
 
@@ -458,6 +464,7 @@ function checkSumInt4(gsum)
     call mpp_send(recv, 2, root)
     checkSumInt4 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumInt4
 
@@ -491,6 +498,7 @@ function checkSumInt8(gsum)
     call mpp_send(recv, 2, root)
     checkSumInt8 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumInt8
 
