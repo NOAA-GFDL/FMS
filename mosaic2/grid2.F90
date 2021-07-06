@@ -161,6 +161,7 @@ function get_great_circle_algorithm()
    logical :: get_great_circle_algorithm
 
    get_great_circle_algorithm = .false.
+   if (.not. grid_spec_exists) return .false.
    if (global_att_exists(gridfileobj, "great_circle_algorithm")) then
       call get_global_attribute(gridfileobj, "great_circle_algorithm", attvalue)
       if(trim(attvalue) == "TRUE") then
@@ -187,6 +188,9 @@ subroutine open_mosaic_file(mymosaicfileobj, component)
   character(len=3), intent(in)        :: component !< Component (atm, lnd, etc.)
 
   character(len=MAX_FILE) :: mosaicfilename
+  if (.not. grid_spec_exists) then
+    call mpp_error(FATAL, 'grid2_mod(open_mosaic_file): grid_spec does not exist')
+  end if
   call read_data(gridfileobj,trim(lowercase(component))//'_mosaic_file', mosaicfilename)
   call open_grid_file(mymosaicfileobj, grid_dir//trim(mosaicfilename))
 end subroutine open_mosaic_file
@@ -232,6 +236,9 @@ end function get_grid_version
 
 !> @brief Assign the component mosaic files if grid_spec is Version 3
 subroutine assign_component_mosaics
+    if (.not. grid_spec_exists) then
+      call mpp_error(FATAL, 'grid2_mod(assign_component_mosaics): grid_spec does not exist')
+    end if
     mosaic_fileobj(1) = gridfileobj
     mosaic_fileobj(2) = gridfileobj
     mosaic_fileobj(3) = gridfileobj
@@ -239,6 +246,9 @@ end subroutine assign_component_mosaics
 
 !> @brief Open the component mosaic files for atm, lnd, and ocn
 subroutine open_component_mosaics
+    if (.not. grid_spec_exists) then
+      call mpp_error(FATAL, 'grid2_mod(open_component_mosaics): grid_spec does not exist')
+    end if
     if (variable_exists(gridfileobj, 'atm_mosaic_file')) call open_mosaic_file(mosaic_fileobj(1), 'atm')
     if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call open_mosaic_file(mosaic_fileobj(2), 'ocn')
     if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call open_mosaic_file(mosaic_fileobj(3), 'lnd')
@@ -246,6 +256,9 @@ end subroutine open_component_mosaics
 
 !> @brief Close the component mosaic files for atm, lnd, and ocn
 subroutine close_component_mosaics
+    if (.not. grid_spec_exists) then
+      call mpp_error(FATAL, 'grid2_mod(close_component_mosaics): grid_spec does not exist')
+    end if
     if (variable_exists(gridfileobj, 'atm_mosaic_file')) call close_file(mosaic_fileobj(1))
     if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call close_file(mosaic_fileobj(2))
     if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call close_file(mosaic_fileobj(3))
@@ -292,6 +305,9 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
 
   select case (grid_version)
   case(VERSION_0,VERSION_1)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_size_for_all_tiles): grid_spec does not exist')
+     end if
      call get_variable_size(gridfileobj, varname1, siz)
      nx(1) = siz(1); ny(1)=siz(2)
   case(VERSION_2, VERSION_3) ! mosaic file
@@ -334,6 +350,9 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
 
   select case(grid_version)
   case(VERSION_0,VERSION_1)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_area_SG): grid_spec does not exist')
+     end if
      select case(trim(component))
      case('LND')
         call read_data(gridfileobj, 'AREA_LND_CELL', cellarea)
@@ -395,6 +414,9 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
 
   select case (grid_version)
   case(VERSION_0,VERSION_1)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
+     end if
      select case(component)
      case('ATM')
         call read_data(gridfileobj,'AREA_ATM',area)
@@ -418,10 +440,16 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         return
      case ('LND')
         xgrid_name = 'aXl_file'
+        if (.not. grid_spec_exists) then
+          call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
+        end if
         call read_data(gridfileobj, 'lnd_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case ('OCN')
         xgrid_name = 'aXo_file'
+        if (.not. grid_spec_exists) then
+          call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
+        end if
         call read_data(gridfileobj, 'ocn_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case default
@@ -442,6 +470,9 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         'size of the output argument "area" is not consistent with the domain')
 
      ! find the nest tile
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
+     end if
      call read_data(gridfileobj, 'atm_mosaic', mosaic_name)
      call get_grid_ntiles('atm', ntiles)
      allocate(nest_tile_name(ntiles))
@@ -462,6 +493,9 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         call close_file(tilefileobj)
      end do
      area(:,:) = 0.
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
+     end if
      if(variable_exists(gridfileobj,xgrid_name)) then
         ! get the number of the exchange-grid files
         call get_variable_size(gridfileobj,xgrid_name,siz)
@@ -587,6 +621,9 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 
   select case(grid_version)
   case(VERSION_0)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_1D): grid_spec does not exist')
+     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
@@ -596,6 +633,9 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
         call read_data(gridfileobj, "gridlat_vert_t", glatb)
      end select
   case(VERSION_1)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_1D): grid_spec does not exist')
+     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
@@ -684,6 +724,9 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
 
   select case(grid_version)
   case(VERSION_0)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
+     end if
      select case(component)
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)+1))
@@ -714,6 +757,9 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
          endif
      end select
   case(VERSION_1)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
+     end if
      select case(component)
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)+1))
@@ -853,6 +899,9 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
 
   select case(grid_version)
   case(VERSION_0)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_1D): grid_spec does not exist')
+     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
@@ -862,6 +911,9 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
         call read_data(gridfileobj, "gridlat_t", glat)
      end select
   case(VERSION_1)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_1D): grid_spec does not exist')
+     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
@@ -935,6 +987,9 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
 
   select case(grid_version)
   case(VERSION_0)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_2D): grid_spec does not exist')
+     end if
      select case (trim(component))
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
@@ -957,6 +1012,9 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         call read_data(gridfileobj, 'geolat_t', lat)
      end select
   case(VERSION_1)
+     if (.not. grid_spec_exists) then
+       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_2D): grid_spec does not exist')
+     end if
      select case(trim(component))
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
