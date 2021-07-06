@@ -1,13 +1,15 @@
+@ingroup fms2_io_mod
+
 ### FMS_io/mpp_io to FMS2_io conversion guide
 
-Before the FMS2_io module, subroutines and functions in fms_io and mpp_io modules were used to mainly handle read/writes to NetCDF files. However, there were duplicate routines present in both modules that led to redundancy; and the blackbox-like I/O processes restricted user flexibility. The FMS2_io module has thus been implemented for a cleaner set of I/O tools and to give users more control over the information being written/read to NetCDF files. This guide helps convert fms_io/mpp_io code to FMS2_io
+Before introducing the FMS2_io module, subroutines and functions in fms_io and mpp_io modules were used to mainly handle read/writes to NetCDF files. However, there were duplicate routines present in both modules that led to redundancy, and the blackbox-like I/O processes restricted user flexibility. The FMS2_io module has thus been implemented for a cleaner set of I/O tools and to give users more control over the information being written/read to NetCDF files. This guide helps convert fms_io/mpp_io code to FMS2_io
 
 ### A. FMS2_io Fileobjs
 FMS2_io provides three new derived types, which target the different I/O paradigms used in GFDL models.
 
 **1. FmsNetcdfFile_t:** This type provides a thin wrapper over the netCDF4 library, but allows the user to assign a “pelist” to the file. If a pelist is assigned, only the first rank on the list directly interacts with the netCDF library, and performs broadcasts to relay the information read to the rest of the ranks on the list. When writing netcdf files, only the first rank in the pelist will perform the writes.
 
-**2. FmsNetcdfDomainFile_t:** This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes. Here domain decomposed refers to data that is on the user-defined mpp_domains two-dimensional lon-lat or cubed-sphere grid, which means that each MPI rank has its own section of the data. This requires a [domain](https://github.com/NOAA-GFDL/FMS/blob/main/mpp/mpp_domains.F90#L379-L415) to be associated with the fileobj.
+**2. FmsNetcdfDomainFile_t:** This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes. Here, "domain decomposed" refers to data that is on the user-defined mpp_domains two-dimensional lon-lat or cubed-sphere grid, which means that each MPI rank has its own section of the data. This requires a [domain](https://github.com/NOAA-GFDL/FMS/blob/main/mpp/mpp_domains.F90#L379-L415) to be associated with the fileobj.
 
 **3. FmsNetcdfUnstructuredDomainFile_t:** This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes on a user defined mpp_domains **unstructured** grid. This requires a [unstructured domain](https://github.com/NOAA-GFDL/FMS/blob/3329625ea48bc3a10a5726c9f251d6d47b33516d/mpp/mpp_domains.F90#L267-L284) to be associated with the fileobj.
 
@@ -88,7 +90,7 @@ endif
   - The "x" and "y" argument indicate that that dimension is domain decomposed in x/y. The only acceptable values are "x" and "y".
   - The `position=center` indicates the position of the axis (this is the default). The other acceptable values are `position=east` for "x" and`position=north` for "y", in this cases the axis will have an extra point.
   - The "unlimited" indicates that the dimension is unlimited (`nf90_unlimited`)
-  - The integer "dimsize" indicates that this is a not a domain decomposed dimension with a length equal to dimsize
+  - The integer "dimsize" indicates that this is not a domain decomposed dimension with a length equal to dimsize
 - [register_restart_field](https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/register_domain_restart_variable.inc)
   - Writes the variable metadata to the file (a `nf90_def_var` call)
   - Saves the data as pointers, which will be written to the netcdf file later
@@ -276,7 +278,7 @@ endif
  ```
  *A similar thing can be accomplished with fms_io with [mpp_get_info](https://github.com/NOAA-GFDL/FMS/blob/main/mpp/include/mpp_io_util.inc#L41)*
 
-- **Reading variable metada**
+- **Reading variable metadata**
   - [get_num_variables](https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1295) can be used to get the number of variables in a file
   - [get_variable_names](https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1323) can be used to get the variables names in a file
   - [variable_exists](https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1377) is a logical function that can be used to check if a variable exists
@@ -408,7 +410,7 @@ endif
 
 #### 3. Non-domain decomposed read/writes
 
-Writing non-domain decomposed files can be accomplished similarly to with domain decomposed files:
+Writing non-domain decomposed files is similar to writing domain decomposed files:
 
 ```F90
 use fms2_io_mod,        only: FmsNetcdfFile_t, register_restart_field, register_axis, unlimited
@@ -479,7 +481,7 @@ endif
 - Because [is_compressed=.true.](https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L747-L768), the root pe is going to gather the dimension size of each rank and add them to get the total length of the dimension. In the example above, rank 0 has a x/y axis of 1, rank 1 has a x/y of 2. The total dimension size of x/y is equal to 3 (the sum for all pes).
 
 ### E. Coupler Type Restarts
-With the functionality in `coupler_type_register_restarts`, one can loop through a list of variables in the coupler_type and register each variable to the corresponding restart file and then read/write the file.
+`coupler_type_register_restarts` permits interating a list of variables in the coupler_type and register each variable to the corresponding restart file and then read/write the file.
 
 #### 1. Reading coupler_type restarts
 In FMS_io, this was accomplished as:
@@ -586,7 +588,7 @@ With fms_io:
 - Reading an ascii file was accomplished with `read_data`, `read_distributed` or `read` calls.
 - Closing an ascii file was sometimes done with `mpp_close`, `close_file` or `close` calls.
 
-With FMS2_io, ascii reads can be accomplished using `ascii_writes`. In `ascii_writes`, the root_pe opens and reads the file into a a string buffer and broadcasts it to the other ranks. Each rank can then read from the buffer. For example:
+With FMS2_io, ascii reads can be accomplished using `ascii_reads`. In `ascii_reads`, the root_pe opens and reads the file into a a string buffer and broadcasts it to the other ranks. Each rank can then read from the buffer. For example:
 ```F90
 character(len=:), dimension(:), allocatable :: restart_file !< Restart file saved as a string
 
