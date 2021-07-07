@@ -161,7 +161,7 @@ function get_great_circle_algorithm()
    logical :: get_great_circle_algorithm
 
    get_great_circle_algorithm = .false.
-   if (.not. grid_spec_exists) return .false.
+   if (.not. grid_spec_exists) return
    if (global_att_exists(gridfileobj, "great_circle_algorithm")) then
       call get_global_attribute(gridfileobj, "great_circle_algorithm", attvalue)
       if(trim(attvalue) == "TRUE") then
