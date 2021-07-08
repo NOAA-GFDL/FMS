@@ -191,9 +191,8 @@ program test_global_arrays
   call mpp_error(NOTE, "----------Testing 32-bit real mpp_global_sum with 5 ranks and reordering----------")
   call mpp_update_domains(dataR4_5d, domain)
   sumR4_5d = mpp_global_sum(domain, dataR4_5d)
-
   ! check that shuffled array results are approximately the same as the original array
-  if(abs((sumR4-sumR4_5d)/sumR4) .gt. 1e-4) then
+  if(abs(sumR4-sumR4_5d) .gt. 1E-4 ) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumR4_5d
     write(strTmp2,*) sumR4
@@ -205,11 +204,10 @@ program test_global_arrays
   call mpp_update_domains(dataR8_5d, domain)
   sumR8_5d = mpp_global_sum(domain, dataR8_5d)
   ! check that shuffled array results are approximately the same as the original array
-  !> @note This test fails with gcc 9.3.0
-  if(abs((sumR8-sumR8_5d)/sumR8) .gt. 1e-7) then
+  if(abs(sumR8-sumR8_5d) .gt. 1E-7) then
     strTmp1 = ""; strTmp2=""
     write(strTmp1,*) sumR8_5d
-     write(strTmp2,*) sumR8
+    write(strTmp2,*) sumR8
     call mpp_error(FATAL,"test_global_arrays: invalid 64-bit real answer after reordering"// &
                    NEW_LINE('a')//"Sum: "// strTmp1// " ne "//strTmp2)
   endif
@@ -287,6 +285,7 @@ function checkResultInt4(res)
     call mpp_recv(tres,2, root)
     checkResultInt4 = checkResultInt4 .and. res(1) .EQ. tres(1) .and. res(2) .eq. tres(2)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultInt4
 
@@ -311,6 +310,7 @@ function checkResultInt8(res)
     call mpp_recv(tres,2, root)
     checkResultInt8 = checkResultInt8 .and. res(1) .EQ. tres(1) .and. res(2) .eq. tres(2)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultInt8
 
@@ -336,6 +336,7 @@ function checkResultReal4(res)
     checkResultReal4 = checkResultReal4 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-4) .and. &
                        (abs((res(2)-tres(2))/res(2)) .lt. 1e-4)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultReal4
 
@@ -361,6 +362,7 @@ function checkResultReal8(res)
     checkResultReal8 = checkResultReal8 .and. (abs((res(1)-tres(1))/res(1)) .lt. 1e-7) .and. &
                        (abs((res(2)-tres(2))/res(2)) .lt. 1e-7)
   end if
+  call mpp_sync()
   deallocate(tres)
 end function checkResultReal8
 
@@ -394,6 +396,7 @@ function checkSumReal4(gsum)
     call mpp_send(recv, 2, root)
     checkSumReal4 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumReal4
 
@@ -427,6 +430,7 @@ function checkSumReal8(gsum)
     call mpp_send(recv, 2, root)
     checkSumReal8 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumReal8
 
@@ -460,6 +464,7 @@ function checkSumInt4(gsum)
     call mpp_send(recv, 2, root)
     checkSumInt4 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumInt4
 
@@ -493,6 +498,7 @@ function checkSumInt8(gsum)
     call mpp_send(recv, 2, root)
     checkSumInt8 = .true.
   endif
+  call mpp_sync()
   deallocate(recv)
 end function checkSumInt8
 
