@@ -30,7 +30,7 @@ use mpp_domains_mod, only: mpp_define_domains, mpp_define_io_domain, mpp_get_com
 use fms2_io_mod,     only: fms2_io_init
 use platform_mod
 
-use get_grid_version_fms2io_mod, only : get_grid_version_1, deg_to_radian
+use get_grid_version_mod, only : get_grid_version_1, deg_to_radian
 
 implicit none
 

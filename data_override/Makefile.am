@@ -32,17 +32,15 @@ noinst_LTLIBRARIES = libdata_override.la
 # The convenience library depends on its source.
 libdata_override_la_SOURCES = \
   data_override.F90 \
-  get_grid_version_mpp.F90 \
-  get_grid_version_fms2io.F90
+  get_grid_version.F90
 
 # Some mods are dependent on other mods in this dir.
-data_override_mod.$(FC_MODEXT): get_grid_version_mpp_mod.$(FC_MODEXT) get_grid_version_fms2io_mod.$(FC_MODEXT)
+data_override_mod.$(FC_MODEXT): get_grid_version_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
   data_override_mod.$(FC_MODEXT) \
-  get_grid_version_mpp_mod.$(FC_MODEXT) \
-  get_grid_version_fms2io_mod.$(FC_MODEXT)
+  get_grid_version_mod.$(FC_MODEXT)
 
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
