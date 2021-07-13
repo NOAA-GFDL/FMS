@@ -106,6 +106,7 @@ var group__fms2__io__mod =
       [ "netcdf_restore_state_wrap", "interfacefms2__io__mod_1_1read__new__restart.html#afe62bbd4de1baf00258798028d916cea", null ],
       [ "restore_domain_state_wrap", "interfacefms2__io__mod_1_1read__new__restart.html#ab542fa8553c3c94e57f4d8fdd683259f", null ]
     ] ],
+    [ "readme", "group__fms2__io__mod.html#md_fms2_io_readme", null ],
     [ "fms2_io_init", "group__fms2__io__mod.html#gab2efb88539d9a05da43d95a501ed7e4c", null ],
     [ "fms2_io_is_initialized", "group__fms2__io__mod.html#ga6f86d86f58a066cbe83458b34a14e1b4", null ],
     [ "header_buffer_val", "group__fms2__io__mod.html#ga6a6e9d8fc157d60fba739ab572e55b7b", null ],

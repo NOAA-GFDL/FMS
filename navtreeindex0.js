@@ -50,13 +50,14 @@ var NAVTREEINDEX0 =
 ".html":[6,0,50],
 ".html":[6,0,51],
 ".html":[6,0,52],
-".html":[6,0,54],
+".html":[6,0,53],
 ".html":[6,0,55],
 ".html":[6,0,56],
 ".html":[6,0,57],
 ".html":[6,0,58],
 ".html":[6,0,59],
 ".html":[6,0,60],
+".html":[6,0,61],
 "affinity_8c.html":[7,0,0,0],
 "affinity_8c.html#a3afc273b2ff17b5c36bcbe39fbcf5363":[7,0,0,0,2],
 "affinity_8c.html#a71b5b491d6c8960803adf60a9b7d173a":[7,0,0,0,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX0 =
 "astronomy_8F90.html#ga89a3171b8c7d4c50c5c41fbaaca576e3":[7,0,2,0,59],
 "astronomy_8F90.html#ga8a9bd207af7b8495bb6768ab44b5a3f6":[7,0,2,0,17],
 "astronomy_8F90.html#ga8dccd51b88c5f26258bcaab0b250675d":[7,0,2,0,27],
-"astronomy_8F90.html#ga8f512a99427f419c16fe39c389ead097":[7,0,2,0,55],
-"astronomy_8F90.html#ga950d13661623d081cc81a387b6cc0b77":[7,0,2,0,45]
+"astronomy_8F90.html#ga8f512a99427f419c16fe39c389ead097":[7,0,2,0,55]
 };

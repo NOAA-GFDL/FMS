@@ -175,7 +175,540 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>An updated library for parallel IO to replace <a class="el" href="group__mpp__io__mod.html">mpp_io_mod</a>. This module contains the public API for fms2 I/O interfaces and routines defined throughout this directory. </p>
 <p>Provides public interfaces for routines within <a class="el" href="group__fms2__io.html">FMS2 IO</a>. Interfaces and example usages are listed below, see individual routine documentation for more specific argument information. </p>
-<h2 class="groupheader">Function/Subroutine Documentation</h2>
+
+
+<h3><a id="md_fms2_io_readme"></a>readme</h3><div class="textblock"><h3>FMS_io/mpp_io to FMS2_io conversion guide</h3>
+Before introducing the FMS2_io module, subroutines and functions in fms_io and mpp_io modules were used to mainly handle read/writes to NetCDF files. However, there were duplicate routines present in both modules that led to redundancy, and the blackbox-like I/O processes restricted user flexibility. The FMS2_io module has thus been implemented for a cleaner set of I/O tools and to give users more control over the information being written/read to NetCDF files. This guide helps convert fms_io/mpp_io code to FMS2_io<h3>A. FMS2_io Fileobjs</h3>
+FMS2_io provides three new derived types, which target the different I/O paradigms used in GFDL models.<b>1. FmsNetcdfFile_t:</b> This type provides a thin wrapper over the netCDF4 library, but allows the user to assign a “pelist” to the file. If a pelist is assigned, only the first rank on the list directly interacts with the netCDF library, and performs broadcasts to relay the information read to the rest of the ranks on the list. When writing netcdf files, only the first rank in the pelist will perform the writes.<b>2. FmsNetcdfDomainFile_t:</b> This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes. Here, "domain decomposed" refers to data that is on a user-defined mpp_domain and is decomposed in two dimensions, in which each MPI rank has its own section of the global data. This requires a <a href="https://github.com/NOAA-GFDL/FMS/blob/main/mpp/mpp_domains.F90#L379-L415">domain</a> to be associated with the fileobj.<b>3. FmsNetcdfUnstructuredDomainFile_t:</b> This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes on a user defined mpp_domains <b>unstructured</b> grid. This requires a <a href="https://github.com/NOAA-GFDL/FMS/blob/3329625ea48bc3a10a5726c9f251d6d47b33516d/mpp/mpp_domains.F90#L267-L284">unstructured domain</a> to be associated with the fileobj.<em>The FMS_io equivalent to these derived types is <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms/fms_io.F90#L297-L323">restart_file_type</a></em><h3>B. Writing Restarts</h3>
+<h4>1. Domain Decomposed Restarts</h4>
+When writing domain decomposed restarts, FMS sets the filename for domain decomposed restarts in the following way:</p><ul>
+<li>If the domain is a cubesphere (6 tiles) and the io_layout is (/1,1/), it will create restart files: "RESTART/filename.tile{tile_number}.res.nc"</li>
+<li>If the domain is a cubesphere (6 tiles) and the io_layout is (/x_layout,y_layout/), it write <code>x_layout*y_layout</code> restart files: "RESTART/filename.tile{tile_number}.res.nc.????"</li>
+<li>If the domain has only 1 tile and the tile number is 1, "tile{tile_number}" will not be added</li>
+</ul>
+Additionally, the user can append an appendix (i.e "nest{nest_number}" or ens{ensemble_number}") to the filename by calling `set_filename_appendix (appendix)`
+- If the domain has more than 1 tile, the appendix will be added as "RESTART/filename.appendix.tile{tile_number}.res.nc"
+- If the domain has 1 tile, the appendix will added as "RESTART/filename.res.appendix.nc"<b>This is how a restart file can be written with FMS_io:</b> </p><div class="fragment"><div class="line"><span class="keywordtype">use </span>fms_io_mod,         <span class="keywordtype">only</span>: <a class="code" href="structfms__io__mod_1_1restart__file__type.html">restart_file_type</a>, <a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>, save_restart</div>
+<div class="line"><span class="keywordtype">use </span>mpp_domains_mod,    <span class="keywordtype">only</span>: domain</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">integer</span>                 :: id_restart<span class="comment">     !&lt; Id for restart variable</span></div>
+<div class="line"><span class="keywordtype">type</span>(restart_file_type) :: fileobj<span class="comment">        !&lt; Fms_io fileobj</span></div>
+<div class="line"><span class="keywordtype">real</span>, <span class="keywordtype">dimension(:,:,:)</span>  :: variable_data<span class="comment">  !&lt; Variable data in the compute or data domain</span></div>
+<div class="line"><span class="keywordtype">type</span> (domain2d)         :: domain<span class="comment">         !&lt; 2d mpp domain</span></div>
+<div class="line"> </div>
+<div class="line">id_restart = <a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;variable_name&quot;</span>, variable_data, domain=domain)</div>
+<div class="line"><span class="keyword">call </span>save_restart(atm_restart)</div>
+</div><!-- fragment -->Metadata:</p><ul>
+<li>FMS_io named the dimensions: "xaxis_1", "yaxis_1", zaxis_1" and "Time". With FMS2_io the user can name the axis whatever they like.</li>
+<li>FMS_io wrote the dimensions as variables as well. FMS2_io does not do this by default, the user can do this if they like.</li>
+<li>FMS_io wrote variable attribute: "longname = {same as variable} and "units = {"none"} to all variables by default. FMS2_io does not do this by default, the user can add real meta data if they like.</li>
+</ul>
+<b>This is how a restart file can be written with FMS2-io:</b> </p><div class="fragment"><div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: fmsnetcdfdomainfile_t, <a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>, <a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>, unlimited</div>
+<div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: <a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>, <a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>, <a class="code" href="interfacefms2__io__mod_1_1write__restart.html">write_restart</a></div>
+<div class="line"><span class="keywordtype">use </span>mpp_domains_mod,    <span class="keywordtype">only</span>: domain2d, center</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">type</span>(FmsNetcdfDomainFile_t) :: fileobj<span class="comment">        !&lt; Fms2_io domain decomposed fileobj</span></div>
+<div class="line"><span class="keywordtype">real</span>, <span class="keywordtype">dimension(:,:,:,:)</span>    :: variable_data<span class="comment">  !&lt; Variable data in the compute or data domain</span></div>
+<div class="line"><span class="keywordtype">type</span> (domain2d)             :: domain<span class="comment">         !&lt; 2d mpp domain</span></div>
+<div class="line"><span class="keywordtype">character(len=8)</span>            :: dim_names(4)<span class="comment">   !&lt; Array of dimension names</span></div>
+<div class="line"> </div>
+<div class="line">dim_names(1) = <span class="stringliteral">&quot;xaxis_1&quot;</span></div>
+<div class="line">dim_names(2) = <span class="stringliteral">&quot;yaxis_1&quot;</span></div>
+<div class="line">dim_names(3) = <span class="stringliteral">&quot;zaxis_1&quot;</span></div>
+<div class="line">dim_names(4) = <span class="stringliteral">&quot;Time&quot;</span></div>
+<div class="line"><span class="comment"></span> </div>
+<div class="line"><span class="comment">!&gt; Create domain !&lt;</span></div>
+<div class="line"><span class="comment">!&gt; Create an io_domain !&lt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, domain, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1), <span class="stringliteral">&quot;x&quot;</span>, position=center)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(2), <span class="stringliteral">&quot;y&quot;</span>, position=center)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(3), dimsize)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(4), unlimited)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data, dim_names)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1write__restart.html">write_restart</a>(fileobj)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_domain_io.F90#L321">open_file</a><ul>
+<li>a logical function, outputs .true. if the file was opened successfully and .false. if it failed.</li>
+<li>Mangles the filename in the same manner as fms_io</li>
+<li>Opens the netcdf file to write (a <code>nf90_create</code> call)</li>
+<li>Set ups the pelist for each io_domain</li>
+<li><code>is_restart</code> indicates that this is a restart file, so it adds ".res" to the filename and it allows user to use the <code>write_restart</code> and <code>register_restart_field</code> functionality</li>
+<li><b>NOTE</b>: The filename needs to include the full path to the file, including the directory.</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_domain_io.F90#L437">register_axis</a><ul>
+<li>writes the dimension metadata in the netcdf file (a <code>nf90_def_dim</code> call)</li>
+<li>The "x" and "y" argument indicate that that dimension is domain decomposed in x/y. The only acceptable values are "x" and "y".</li>
+<li>The <code>position=center</code> indicates the position of the axis (this is the default). The other acceptable values are position=east for "x" andposition=north for "y", in this cases the data is staggered, which may be on the volume face or corner instead of at the centroid.</li>
+<li>The "unlimited" indicates that the dimension is unlimited (<code>nf90_unlimited</code>)</li>
+<li>The integer "dimsize" indicates that this is not a domain decomposed dimension with a length equal to dimsize</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/register_domain_restart_variable.inc">register_restart_field</a><ul>
+<li>Writes the variable metadata to the file (a <code>nf90_def_var</code> call)</li>
+<li>Saves the data as pointers, which will be written to the netcdf file later</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_domain_io.F90#L549">write_restart</a><ul>
+<li>Loops through the restart variables that were registered</li>
+<li>Calculates and writes a global checksum for each variables</li>
+<li>Writes the data to the file (a <code>nf90_put_var</code> call)</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_domain_io.F90#L424">close_file</a><ul>
+<li>Cleans up the fileobj (deallocates any arrays)</li>
+<li>Closes the netcdf file (a <code>nf90_close</code> call)</li>
+</ul>
+</li>
+</ul>
+<h4>2. Unstructured Domain Restarts</h4>
+Restart files with domain decomposed variables in the unstructured domain can be written using the <code>FmsNetcdfUnstructuredDomainFile_t</code> fileobj.<div class="fragment"><div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: fmsnetcdfunstructureddomainfile_t, <a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>, <a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>, unlimited</div>
+<div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: <a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>, <a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>, <a class="code" href="interfacefms2__io__mod_1_1write__restart.html">write_restart</a></div>
+<div class="line"><span class="keywordtype">use </span>mpp_domains_mod,    <span class="keywordtype">only</span>: <a class="code" href="structmpp__domains__mod_1_1domainug.html">domainug</a>, center</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">type</span>(FmsNetcdfUnstructuredDomainFile_t) :: fileobj<span class="comment">        !&lt; Fms2_io domain decomposed fileobj</span></div>
+<div class="line"><span class="keywordtype">real</span>, <span class="keywordtype">dimension(:,:)</span>        :: variable_data<span class="comment">  !&lt; Variable data in the unstructured domain</span></div>
+<div class="line"><span class="keywordtype">type</span> (domainug)             :: domain<span class="comment">         !&lt; 2d mpp domain</span></div>
+<div class="line"><span class="keywordtype">character(len=8)</span>            :: dim_names(3)<span class="comment">   !&lt; Array of dimension names</span></div>
+<div class="line"> </div>
+<div class="line">dim_names(1) = <span class="stringliteral">&quot;ucdim&quot;</span></div>
+<div class="line">dim_names(2) = <span class="stringliteral">&quot;zaxis_1&quot;</span></div>
+<div class="line">dim_names(3) = <span class="stringliteral">&quot;Time&quot;</span></div>
+<div class="line"><span class="comment"></span> </div>
+<div class="line"><span class="comment">!&gt; Create domain !&lt;</span></div>
+<div class="line"><span class="comment">!&gt; Create an io_domain !&lt;</span></div>
+<div class="line"><span class="comment">!&gt; Create an unstructured domain !&lt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, domain, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1))</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(2), dimsize)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(3), unlimited)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data, dim_names)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1write__restart.html">write_restart</a>(fileobj)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/fms_netcdf_unstructured_domain_io.F90#L69-L70">open_file</a><ul>
+<li>a logical function, outputs .true. if the file was opened successfully and .false. if it failed.</li>
+<li>Mangles the filename: (1) Adds ".tileXX" if you are on multiple tiles (2) Adds .XXXX to the end of the file if uncombined.</li>
+<li>Opens the netcdf file to write (a <code>nf90_create</code> call)</li>
+<li>Set ups the pelist for each io_domain</li>
+<li><code>is_restart</code> indicates that this is a restart file, so it adds ".res" to the filename and it allows user to use the <code>write_restart</code> and <code>register_restart_field</code> functionality</li>
+<li><b>NOTE</b>: The filename needs to include the full path to the file, including the directory.</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_unstructured_domain_io.F90#L155">register_axis</a><ul>
+<li>writes the dimension metadata in the netcdf file (a <code>nf90_def_dim</code> call)</li>
+<li>The lack of the third argument in the <code>register_axis</code> calls indicates that this dimension is in the unstructured domain</li>
+<li>The "unlimited" indicates that the dimension is unlimited (<code>nf90_unlimited</code>)</li>
+<li>The integer "dimsize" indicates that this is a normal dimension of length equal to dimsize</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/register_unstructured_domain_restart_variable.inc">register_restart_field</a><ul>
+<li>Writes the variable metadata to the file (a <code>nf90_def_var</code> call)</li>
+<li>Saves the data as pointers, which will be written to the netcdf file later</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_unstructured_domain_io.F90#L193">write_restart</a><ul>
+<li>Loops through the restart variables that were registered</li>
+<li>Calculates and writes a global checksum for each variables</li>
+<li>Writes the data to the file (a <code>nf90_put_var</code> call)</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_unstructured_domain_io.F90#L146">close_file</a><ul>
+<li>Cleans up the fileobj and deallocated any variables</li>
+<li>Closes the netcdf file (a <code>nf90_close</code> call)</li>
+</ul>
+</li>
+</ul>
+<h4>3. Non-domain Decomposed Restarts</h4>
+Restart files without domain decomposed variables can be written using the <code>FmsNetcdfFile_t</code> fileobj.<div class="fragment"><div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: fmsnetcdffile_t, <a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>, <a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>, unlimited</div>
+<div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: <a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>, <a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>, <a class="code" href="interfacefms2__io__mod_1_1write__restart.html">write_restart</a></div>
+<div class="line"><span class="keywordtype">use </span>mpp_mod,            <span class="keywordtype">only</span>: <a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>, mpp_get_current_pelist</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">type</span>(FmsNetcdfFile_t)       :: fileobj<span class="comment">        !&lt; Fms2_io fileobj</span></div>
+<div class="line"><span class="keywordtype">real</span>, <span class="keywordtype">dimension(:,:,:,:)</span>    :: variable_data<span class="comment">  !&lt; Variable data</span></div>
+<div class="line"><span class="keywordtype">character(len=8)</span>            :: dim_names(4)<span class="comment">   !&lt; Array of dimension names</span></div>
+<div class="line"><span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>,       :: pes(:)<span class="comment">         !&lt; Array of the pes in the current pelist</span></div>
+<div class="line"> </div>
+<div class="line"><span class="comment">!&lt; Get the current pelist</span></div>
+<div class="line"><span class="keyword">allocate</span>(pes(<a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()))</div>
+<div class="line"><span class="keyword">call </span>mpp_get_current_pelist(pes)</div>
+<div class="line"> </div>
+<div class="line">dim_names(1) = <span class="stringliteral">&quot;xaxis_1&quot;</span></div>
+<div class="line">dim_names(2) = <span class="stringliteral">&quot;yaxis_1&quot;</span></div>
+<div class="line">dim_names(3) = <span class="stringliteral">&quot;zaxis_1&quot;</span></div>
+<div class="line">dim_names(4) = <span class="stringliteral">&quot;Time&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, pelist=pes, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1), 96)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(2), 96)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(3), dimsize)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(4), unlimited)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data, dim_names)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1write__restart.html">write_restart</a>(fileobj)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1845">open_file</a><ul>
+<li>a logical function, outputs .true. if the file was opened successfully and .false. if it failed.</li>
+<li>Mangles the filename: ".res" is the only thing that is added to the filename</li>
+<li>Opens the netcdf file to write (a <code>nf90_create</code> call)</li>
+<li><code>is_restart</code> indicates that this is a restart file, so it adds ".res" to the filename and it allows user to use the <code>write_restart</code> and <code>register_restart_field</code> functionality</li>
+<li>With the <em>optional</em> pelist argument, only the first rank interacts with the file (opens, writes, closes) and broadcasts the information to the rest of the ranks on the list.</li>
+<li><b>NOTE</b>: The filename needs to include the full path to the file, including the directory.</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/netcdf_io.F90#L727-L728">register_axis</a><ul>
+<li>writes the dimension metadata in the netcdf file (a <code>nf90_def_dim</code> call)</li>
+<li>The "unlimited" indicates that the dimension is unlimited (<code>nf90_unlimited</code>)</li>
+<li>The integer "dimsize" indicates that this is a normal dimension of length equal to dimsize</li>
+<li>"x" and "y" cannot be added to the <code>register_axis</code> calls</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms2_io.F90#L135-L140">register_restart_field</a><ul>
+<li>Writes the variable metadata to the file (a <code>nf90_def_var</code> call)</li>
+<li>Saves the data as pointers, which will be written to the netcdf file later</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1898">write_restart</a><ul>
+<li>Loops through the restart variables that were registered</li>
+<li>Calculates and writes a global checksum for each variables</li>
+<li>Writes the data to the file (a <code>nf90_put_var</code> call)</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1876">close_file</a><ul>
+<li>Cleans up the fileobj</li>
+<li>Closes the netcdf file (a <code>nf90_close</code> call)</li>
+</ul>
+</li>
+</ul>
+<h4>4. Other helpful information:</h4>
+<ul>
+<li>By default, FMS2_io writes the file as <code>nf90_64bit_offset</code>, the user can change the netcdf file type by adding <code>nc_format="64bit", "classic", or "netcdf4"</code> to the <code>open_file</code> call (which will change the type for that file only) or by adding <code>netcdf_default_format="64bit", "classic", or "netcdf4"</code> to the fms2_io_nml (which will change the type for all files that don't have the nc_format in the open_file call)</li>
+<li>If the user wishes to not add ".res" to filename, the user can add <code>dont_add_res_to_filename=.true.</code> to the <code>open_file</code> call</li>
+<li><b>Variable attributes</b> can be written by calling <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/register_variable_attribute.inc">register_variable_attribute</a>. Scalar and 1d real and integers (32 and 64 bit) and string values are supported <div class="fragment"><div class="line"><span class="keyword">call </span>register_variable_attribute(fileobj, <span class="stringliteral">&quot;varname&quot;</span>, <span class="stringliteral">&quot;attribute_name&quot;</span>, <span class="keywordtype">value</span>)</div>
+</div><!-- fragment --></li>
+</ul>
+This interface can be used with any FMS2_io fileobj, but the open_file needs to be called before using it.<em>A similar thing can be accomplished in fms_io with <a href="https://github.com/NOAA-GFDL/FMS/blob/main/mpp/include/mpp_io_write.inc#L22-L135">mpp_write_meta</a></em><ul>
+<li><b>Global attributes</b> can be written by calling <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/register_global_attribute.inc">register_global_attribute</a>. Scalar and 1d real and integers (32 and 64 bit) and scalar string values are supported <div class="fragment"><div class="line"><span class="keyword">call </span>register_global_attribute(fileobj, <span class="stringliteral">&quot;global_attribute_name&quot;</span>, <span class="keywordtype">value</span>)</div>
+</div><!-- fragment --></li>
+</ul>
+This interface can be used with any FMS2_io fileobj, but the open_file needs to be called before using it.<em>A similar thing can be accomplished in fms_io with <a href="https://github.com/NOAA-GFDL/FMS/blob/main/mpp/include/mpp_io_write.inc#L22-L135">mpp_write_meta</a></em><h3>C. Reading Restarts</h3>
+The restarts can be read the same way as the writes. The only difference is that "read" is used in the <code>open_file</code> call and <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/fms2_io.F90#L216-L219">read_restart</a> is used instead of write restart.Additionally, the <code>register_restart_field</code> has the optional argument, <code>is_optional</code>, where is .true. the code will not crash if the variable does not exist in the file when reading. *This argument is the same as <code>mandatory</code> in fms_io.<h4>Other helpful information:</h4>
+The following subroutines can be used with any of any of the FMS2_io fileobj.</p><ul>
+<li><b>Variable attributes</b> can be read by calling <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/get_variable_attribute.inc">get_variable_attribute</a>. Scalar and 1d real and integers (32 and 64 bit) and string values are supported. To check if a variable attribute exists before reading, the logical function <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/netcdf_io.F90#L1046-L1047">variable_att_exists</a> can be used <div class="fragment"><div class="line"><span class="keywordflow">if</span> (variable_att_exists(fileobj, <span class="stringliteral">&quot;varname&quot;</span>, <span class="stringliteral">&quot;attribute_name&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line">   <span class="keyword">call </span>get_variable_attribute(fileobj, <span class="stringliteral">&quot;varname&quot;</span>, <span class="stringliteral">&quot;attribute_name&quot;</span>, <span class="keywordtype">value</span>)</div>
+<div class="line">endif</div>
+</div><!-- fragment --></li>
+</ul>
+<em>A similar thing can be accomplished in fms_io with <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms/fms_io.F90#L466-L468">get_vart_att_value</a></em></p><ul>
+<li><b>Global attributes</b> can be read by calling <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/get_global_attribute.inc">get_global_attribute</a>. Scalar and 1d real and integers (32 and 64 bit) and scalar string values are supported. To check if a global attribute exist before reading, the logical function <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1019">global_att_exists</a> can be used. <div class="fragment"><div class="line"><span class="keywordflow">if</span> (global_att_exists(fileobj, <span class="stringliteral">&quot;global_attribute_name)) then</span></div>
+<div class="line"><span class="stringliteral"></span><span class="stringliteral">   call get_global_attribute(fileobj, &quot;</span>global_attribute_name<span class="stringliteral">&quot;, value)</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+</div><!-- fragment --></li>
+</ul>
+<em>A similar thing can be accomplished in fms_io with <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms/fms_io.F90#L461-L464">get_global_att_value</a></em><ul>
+<li><p class="startli"><b>Reading dimension metadata</b></p><ul>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1079">get_num_dimensions</a> can be used to get the total number of dimensions in a file</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1107">get_dimension_names</a> can be used to get the dimension names in a file</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1161">dimension_exists</a> is a logical function that can be used to check if a dimension exists</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1229">get_unlimited_dimension_name</a> can be used to get the name of the unlimited dimension in a file</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1196">is_dimension_unlimited</a> is a logical function that can be used to determine if a dimension is unlimited</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1264">get_dimension_size</a> can be used to get the size of a dimension</li>
+</ul>
+<p class="startli">Sample usage: </p><div class="fragment"><div class="line">ndims_file = get_num_dimensions(fileobj)</div>
+<div class="line"><span class="keyword">allocate</span>(dim_names_file(ndims_file))</div>
+<div class="line"><span class="keyword">call </span>get_dimension_names(fileobj, dim_names_file)</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">call </span>get_unlimited_dimension_name(fileobj, dimension_name)</div>
+<div class="line"><span class="keywordflow">if</span> (is_dimension_unlimited(fileobj, <span class="stringliteral">&quot;dimension_name&quot;</span>)) <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, <span class="stringliteral">&quot;dimension_name is not an unlimited dimension&quot;</span>)</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (dimension_exists(fileobj, <span class="stringliteral">&quot;dimension_name&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line">    <span class="keyword">call </span>get_dimension_size(fileobj, <span class="stringliteral">&quot;dimension_name&quot;</span>, dimsize)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><p class="startli"><em>A similar thing can be accomplished with fms_io with <a href="https://github.com/NOAA-GFDL/FMS/blob/main/mpp/include/mpp_io_util.inc#L41">mpp_get_info</a></em></p>
+</li>
+<li><b>Reading variable metadata</b><ul>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1295">get_num_variables</a> can be used to get the number of variables in a file</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1323">get_variable_names</a> can be used to get the variables names in a file</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1377">variable_exists</a> is a logical function that can be used to check if a variable exists</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1408">get_variable_num_dimensions</a> can be used to get the number of dimensions in a variable</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1500">get_variable_size</a> can be used to get the size of the variable.</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L1439">get_variable_dimension_names</a> can be used to get the names of the dimensions in a variable</li>
+</ul>
+</li>
+</ul>
+Sample usage: </p><div class="fragment"><div class="line">nvar = get_num_variables(fileobj)</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">allocate</span>(var_names(nvar))</div>
+<div class="line"><span class="keyword">call </span>get_variable_names(fileobj, var_names)</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (variable_exists(fileobj, <span class="stringliteral">&quot;varname&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line">   ndims = get_variable_num_dimensions(fileobj, <span class="stringliteral">&quot;varname&quot;</span>)</div>
+<div class="line"> </div>
+<div class="line">   <span class="keyword">allocate</span>(dim_sizes(ndims))</div>
+<div class="line">   <span class="keyword">call </span>get_variable_size(fileobj, <span class="stringliteral">&quot;varname&quot;</span>, dim_sizes)</div>
+<div class="line"> </div>
+<div class="line">   <span class="keyword">allocate</span>(dim_names(ndims))</div>
+<div class="line">   <span class="keyword">call </span>get_variable_dimension_names(fileobj, <span class="stringliteral">&quot;varname&quot;</span>, dim_names)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><em>A similar thing can be accomplished with fms_io with <a href="https://github.com/NOAA-GFDL/FMS/blob/main/mpp/include/mpp_io_util.inc#L41">mpp_get_info</a> and/or <a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms/fms_io.F90#L4965">field_size</a></em> </p><h3>D. Reading/Writting Non-restarts</h3>
+Reading and writing netcdf files that are not restarts can be done using <code>read_data</code> and <code>write_data</code> calls.<h4>1. Domain decomposed read/write:</h4>
+<div class="fragment"><div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: fmsnetcdfdomainfile_t, <a class="code" href="interfacefms2__io__mod_1_1register__field.html">register_field</a>, <a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>, unlimited</div>
+<div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: <a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>, <a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>, <a class="code" href="interfacefms__io__mod_1_1write__data.html">write_data</a></div>
+<div class="line"><span class="keywordtype">use </span>mpp_domains_mod,    <span class="keywordtype">only</span>: domain2d, center</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">type</span>(FmsNetcdfDomainFile_t) :: fileobj<span class="comment">        !&lt; Fms2_io domain decomposed fileobj</span></div>
+<div class="line"><span class="keywordtype">real</span>, <span class="keywordtype">dimension(:,:,:,:)</span>    :: variable_data<span class="comment">  !&lt; Variable data in the compute or data domain</span></div>
+<div class="line"><span class="keywordtype">type</span> (domain2d)             :: domain<span class="comment">         !&lt; 2d mpp domain</span></div>
+<div class="line"><span class="keywordtype">character(len=8)</span>            :: dim_names(4)<span class="comment">   !&lt; Array of dimension names</span></div>
+<div class="line"> </div>
+<div class="line">dim_names(1) = <span class="stringliteral">&quot;xaxis_1&quot;</span></div>
+<div class="line">dim_names(2) = <span class="stringliteral">&quot;yaxis_1&quot;</span></div>
+<div class="line">dim_names(3) = <span class="stringliteral">&quot;zaxis_1&quot;</span></div>
+<div class="line">dim_names(4) = <span class="stringliteral">&quot;Time&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, domain)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1), <span class="stringliteral">&quot;x&quot;</span>, position=center)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(2), <span class="stringliteral">&quot;y&quot;</span>, position=center)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(3), dimsize)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(4), unlimited)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__field.html">register_field</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, <span class="stringliteral">&#39;variable_type&#39;</span>, dim_names)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1write__data.html">write_data</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment -->Difference from writing restarts:</p><ul>
+<li><code>open_file</code> does not have is_restart=.true., so the <code>write_restart</code> functionality cannot be used'</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/fms_netcdf_domain_io.F90#L527">register_field</a> is basically a wrapper for <code>nf90_def_var</code> which just adds the variable metadata to the file.<ul>
+<li>"variable_type" is a string which indicates the type you want the variable to be written as. The acceptable values are "int", "int64", "double", "float", and "char"</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/domain_write.inc">write_data</a><ul>
+<li>The ranks send their data to the io_root pe. The io_root pe receives the data and writes it to the file.</li>
+</ul>
+</li>
+</ul>
+Similarly for domain reads: </p><div class="fragment"><div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;read&quot;</span>, domain)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1), <span class="stringliteral">&quot;x&quot;</span>, position=center)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(2), <span class="stringliteral">&quot;y&quot;</span>, position=center)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1read__data.html">read_data</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li><code>register_axis</code> is required for the domain decomposed dimensions so the code knows which dimensions and therefore variables are domain decomposed.</li>
+<li><code>register_field</code> is not required because the code can get the dimensions information from the file.</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/domain_read.inc">read_data</a><ul>
+<li>The io_root pe reads the data and sends it to the other pes.</li>
+</ul>
+</li>
+</ul>
+<h4>2. Unstructured Domain non-restart read/writes</h4>
+<div class="fragment"><div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: fmsnetcdfunstructureddomainfile_t, <a class="code" href="interfacefms2__io__mod_1_1register__field.html">register_field</a>, <a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>, unlimited</div>
+<div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: <a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>, <a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>, <a class="code" href="interfacefms__io__mod_1_1write__data.html">write_data</a></div>
+<div class="line"><span class="keywordtype">use </span>mpp_domains_mod,    <span class="keywordtype">only</span>: <a class="code" href="structmpp__domains__mod_1_1domainug.html">domainug</a>, center</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">type</span>(FmsNetcdfUnstructuredDomainFile_t) :: fileobj<span class="comment">        !&lt; Fms2_io domain decomposed fileobj</span></div>
+<div class="line"><span class="keywordtype">real</span>, <span class="keywordtype">dimension(:,:)</span>        :: variable_data<span class="comment">  !&lt; Variable data in the unstructured domain</span></div>
+<div class="line"><span class="keywordtype">type</span> (domainug)             :: domain<span class="comment">         !&lt; 2d mpp domain</span></div>
+<div class="line"><span class="keywordtype">character(len=8)</span>            :: dim_names(3)<span class="comment">   !&lt; Array of dimension names</span></div>
+<div class="line"> </div>
+<div class="line">dim_names(1) = <span class="stringliteral">&quot;ucdim&quot;</span></div>
+<div class="line">dim_names(2) = <span class="stringliteral">&quot;zaxis_1&quot;</span></div>
+<div class="line">dim_names(3) = <span class="stringliteral">&quot;Time&quot;</span></div>
+<div class="line"><span class="comment"></span> </div>
+<div class="line"><span class="comment">!&gt; Create domain !&lt;</span></div>
+<div class="line"><span class="comment">!&gt; Create an io_domain !&lt;</span></div>
+<div class="line"><span class="comment">!&gt; Create an unstructured domain !&lt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, domain, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1))</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(2), dimsize)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(3), unlimited)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__field.html">register_field</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, <span class="stringliteral">&#39;variable_type&#39;</span>, dim_names)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1write__data.html">write_data</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment -->Difference from writing restarts:</p><ul>
+<li><code>open_file</code> does not have is_restart=.true., so the <code>write_restart</code> functionality cannot be used'</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_unstructured_domain_io.F90#L178-L179">register_field</a> is basically a wrapper for <code>nf90_def_var</code> which just adds the variable metadata to the file.<ul>
+<li>"variable_type" is a string which indicates the type you want the variable to be written as. The acceptable values are "int", "int64", "double", "float", and "char"</li>
+</ul>
+</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/unstructured_domain_write.inc">write_data</a><ul>
+<li>The ranks send their data to the io_root pe. The io_root pe receives the data and writes it to the file.</li>
+</ul>
+</li>
+</ul>
+Similarly for reads: </p><div class="fragment"><div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;read&quot;</span>, domain, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1))</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1write__data.html">write_data</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li><code>register_axis</code> is required for the dimensions that are on the unstructured domain, so the code knows which dimensions and therefore variables are in the unstructured domain</li>
+<li><code>register_field</code> is not required because the code can get the dimensions information from the file.</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/unstructured_domain_read.inc">read_data</a><ul>
+<li>The io_root pe reads the data and sends it to the other pes.</li>
+</ul>
+</li>
+</ul>
+<h4>3. Non-domain decomposed read/writes</h4>
+Writing non-domain decomposed files is similar to writing domain decomposed files:<div class="fragment"><div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: fmsnetcdffile_t, <a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>, <a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>, unlimited</div>
+<div class="line"><span class="keywordtype">use </span>fms2_io_mod,        <span class="keywordtype">only</span>: <a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>, <a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>, <a class="code" href="interfacefms2__io__mod_1_1write__restart.html">write_restart</a></div>
+<div class="line"><span class="keywordtype">use </span>mpp_mod,            <span class="keywordtype">only</span>: <a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>, mpp_get_current_pelist</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">type</span>(FmsNetcdfFile_t)       :: fileobj<span class="comment">        !&lt; Fms2_io fileobj</span></div>
+<div class="line"><span class="keywordtype">real</span>, <span class="keywordtype">dimension(:,:,:,:)</span>    :: variable_data<span class="comment">  !&lt; Variable data</span></div>
+<div class="line"><span class="keywordtype">character(len=8)</span>            :: dim_names(4)<span class="comment">   !&lt; Array of dimension names</span></div>
+<div class="line"><span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>,       :: pes(:)<span class="comment">         !&lt; Array of the pes in the current pelist</span></div>
+<div class="line"> </div>
+<div class="line"><span class="comment">!&lt; Get the current pelist</span></div>
+<div class="line"><span class="keyword">allocate</span>(pes(<a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()))</div>
+<div class="line"><span class="keyword">call </span>mpp_get_current_pelist(pes)</div>
+<div class="line"> </div>
+<div class="line">dim_names(1) = <span class="stringliteral">&quot;xaxis_1&quot;</span></div>
+<div class="line">dim_names(2) = <span class="stringliteral">&quot;yaxis_1&quot;</span></div>
+<div class="line">dim_names(3) = <span class="stringliteral">&quot;zaxis_1&quot;</span></div>
+<div class="line">dim_names(4) = <span class="stringliteral">&quot;Time&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, pelist=pes, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(1), 96)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(2), 96)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(3), dimsize)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, dim_names(4), unlimited)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__field.html">register_field</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, <span class="stringliteral">&#39;variable_type&#39;</span>, dim_names)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1write__data.html">write_data</a>(fileobj)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li><code>open_file</code> - the pelist argument is needed so that only the root pe writes the file</li>
+<li><code>register_axis</code> is needed so that the code knows the size of each dimension</li>
+<li><code>register_field</code> is needed so that the code knows what dimensions the variable is a function of</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/netcdf_read_data.inc">write_data</a>: the root pe in the pelist writes the data</li>
+</ul>
+To read non-domain decomposed restarts:<div class="fragment"><div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;read&quot;</span>, pelist=pes, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1read__data.html">read_data</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li>Here the <code>register_axis</code> and <code>register_field</code> calls are not needed because the code can get the dimensions from the file</li>
+</ul>
+Additionally, the <code>corner</code> and <code>edge_lengths</code> optional arguments in the <code>read_data</code> calls can be used to read only a section of a file. </p><div class="fragment"><div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;read&quot;</span>, pelist=pes, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1read__data.html">read_data</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, variable_data, corner=(/10,2,2,3/), edge_lengths=(/2, 3, 4, 1/))</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment -->Here the code is going to start reading at x=10, y=2, z=2, t=3 and read 2, 3, 4, 1 points in each direction. Note that <code>variable_data</code> must be the correct size or the code will fail.Additionally, it is possible to do "compressed" reads and writes. Here "compressed" is when different ranks have different numbers of points for a specific axis. For example: </p><div class="fragment"><div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, pelist=pes, is_restart=.true.)) <span class="keywordflow">then</span></div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, <span class="stringliteral">&quot;xaxis_1&quot;</span>, <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()+1, is_compressed=.true.)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__axis.html">register_axis</a>(fileobj, <span class="stringliteral">&quot;yaxis_1&quot;</span>, <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()+1, is_compressed=.true.)</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1register__field.html">register_field</a>(fileobj, <span class="stringliteral">&#39;variable_name&#39;</span>, <span class="stringliteral">&#39;variable_type&#39;</span>, dim_names)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1write__data.html">write_data</a>(fileobj)</div>
+<div class="line">  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li>Because <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L747-L768">is_compressed=.true.</a>, the root pe is going to gather the dimension size of each rank and add them to get the total length of the dimension. In the example above, rank 0 has a x/y axis of 1, rank 1 has a x/y of 2. The total dimension size of x/y is equal to 3 (the sum for all pes).</li>
+</ul>
+<h3>E. Coupler Type Restarts</h3>
+<code>coupler_type_register_restarts</code> permits interating a list of variables in the coupler_type and register each variable to the corresponding restart file and then read/write the file.<h4>1. Reading coupler_type restarts</h4>
+In FMS_io, this was accomplished as:<div class="fragment"><div class="line"><span class="keywordtype">type</span>(coupler_2d_bc_type)              :: bc_type</div>
+<div class="line"><span class="keywordtype">type</span>(restart_file_type), <span class="keywordtype">pointer</span>  :: bc_rest_files(:)=&gt; null() <span class="comment">!&lt; Array of fms2_io fileobjs</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">call </span>coupler_type_register_restarts(bc_type, bc_rest_files, num_rest_files, domain)</div>
+<div class="line"><span class="keywordflow">do</span> l = 1, num_rest_files</div>
+<div class="line">   <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1restore__state.html">restore_state</a>(bc_rest_files(l), directory=<span class="stringliteral">&#39;INPUT&#39;</span>, &amp;</div>
+<div class="line">                           nonfatal_missing_files=.true.)</div>
+<div class="line">enddo</div>
+</div><!-- fragment -->In FMS2_io, this can be accomplished as:<div class="fragment"><div class="line"><span class="keywordtype">type</span>(coupler_2d_bc_type)              :: bc_type</div>
+<div class="line"><span class="keywordtype">type</span>(FmsNetcdfDomainFile_t), <span class="keywordtype">pointer</span>  :: bc_rest_files(:)=&gt; null() <span class="comment">!&lt; Array of fms2_io fileobjs</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">call </span>coupler_type_register_restarts(bc_type, bc_rest_files, num_rest_files, domain, to_read=.true.)</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">do</span> l = 1, num_rest_files</div>
+<div class="line">   <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__restart.html">read_restart</a>(bc_rest_files(l))</div>
+<div class="line">   <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(bc_rest_files(l))</div>
+<div class="line">enddo</div>
+</div><!-- fragment -->Note: <code>num_rest_files</code> is set inside <code>coupler_type_register_restarts</code>Difference from fms_io</p><ul>
+<li><code>to_read</code> was added to the coupler_type_register_restarts subroutine</li>
+<li><a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/coupler/coupler_types.F90#L3096">coupler_type_register_restarts</a> loops through the variables in the coupler_type, opens the file needed, register the axis, and registers the restart_variables.</li>
+<li>The file should be closed after writing it by calling <code>close_file</code></li>
+<li>It is required that the <code>domain</code> has an io_domain or the code will fail</li>
+</ul>
+<h4>2. Writting coupler type restarts</h4>
+This is done the same way as the reads expect <code>write_restart</code> is used instead of <code>read_restart</code>.<h3>F. Boundary Conditions Restarts</h3>
+Both FMS_io and FMS2_io have the functionality where one can read or write data where only some pes have a section of the data (i.e halos).In FMS_io this was accomplished as: </p><div class="fragment"><div class="line"><span class="keywordtype">type</span>(restart_file_type) :: fileobj<span class="comment">        !&lt; Fms_io fileobj</span></div>
+<div class="line"> </div>
+<div class="line">id_restart = <a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;variable_name&quot;</span>, variable_data, indices, global_size, pelist, is_root_pe)</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">call </span>save_restart_border(fileobj)</div>
+<div class="line"><span class="keyword">call </span>free_restart_type(fileobj)</div>
+</div><!-- fragment -->In FMS2_io this can be accomplished as: </p><div class="fragment"><div class="line"><span class="keywordtype">type</span>(FmsNetcdfFile_t)       :: fileobj<span class="comment">        !&lt; Fms2_io fileobj</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> (<a class="code" href="interfacefms2__io__mod_1_1open__file.html">open_file</a>(fileobj, <span class="stringliteral">&quot;filename&quot;</span>, <span class="stringliteral">&quot;overwrite&quot;</span>, is_restart=.true., pelist=all_pelist)) <span class="keywordflow">then</span></div>
+<div class="line">    <span class="keyword">call </span><a class="code" href="interfacefms__io__mod_1_1register__restart__field.html">register_restart_field</a>(fileobj, <span class="stringliteral">&quot;variable_name&quot;</span>, variable_data, indices, global_size, pelist, is_root_pe)</div>
+<div class="line">    <span class="keyword">call </span>write_restart_bc(fileobj)</div>
+<div class="line">    <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(fileobj)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li><code>indices</code> are the starting and indices of the region for that pe (starting x, ending x, starting y, ending y)</li>
+<li><code>global_size</code> is the size of the variable in (x,y,<em>z</em>)</li>
+<li><code>pelist</code> is the list of pelist that have the data for the variable</li>
+<li><code>is_root_pe</code> is a flag indicating if this is the root_pe from the pelist</li>
+</ul>
+Difference between FMS2_io and FMS_io:</p><ul>
+<li>In fms_io, <code>register_restart_field</code> is a integer function while in FMS2_io it is a subroutine</li>
+<li>In fms_io, the first two arguments of <code>register_restart_field</code> were <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms/fms_io.F90#L2376-L2377">fileobj and filename</a> and in FMS2_io it is just the <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/include/netcdf_add_restart_variable.inc#L350">fileobj</a></li>
+<li>In FMS2_io, <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms/fms_io.F90#L3668">restore_state_border</a> was renamed to renamed to <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L2083">read_restart_bc</a></li>
+<li>In FMS2_io, <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms/fms_io.F90#L3378">save_restart_border</a> was renamed to <a href="https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/netcdf_io.F90#L2114">write_restart_bc</a></li>
+<li>In FMS2_io, it is required for the file to be opened before registering the restarts.</li>
+</ul>
+<h3>G. Ascii_io</h3>
+<h4>1. Writing ascii files</h4>
+With fms_io, ascii writes can be accomplished with a combination of <code>mpp_open</code>, <code>mpp_close</code> from <code>mpp_io</code> and <code>write</code>. </p><div class="fragment"><div class="line"><span class="keywordtype">integer</span> :: unit_number</div>
+<div class="line"><span class="keyword">call </span>mpp_open( unit_number, <span class="stringliteral">&#39;filename&#39;</span>, nohdrs=.true. )</div>
+<div class="line"><span class="keywordflow">if</span> ( <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>().EQ.mpp_root_pe() ) <span class="keyword">write</span> (unit_number, *) <span class="stringliteral">&#39;FMS2_io is flawless and works as inteded&#39;</span></div>
+<div class="line"><span class="keyword">call </span>mpp_close(unit_number)</div>
+</div><!-- fragment -->With FMS2_io, there is no real support for ascii writes. The user can use fortran's <code>open</code>, <code>write</code> and <code>close</code>. For example, </p><div class="fragment"><div class="line"><span class="keywordtype">integer</span> :: unit_number</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">if</span> ( <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>().EQ.mpp_root_pe() ) <span class="keywordflow">then</span></div>
+<div class="line">   <span class="keyword">open</span>(newunit = unit_number, file=<span class="stringliteral">&#39;filename&#39;</span>, status=<span class="stringliteral">&#39;replace&#39;</span>, form=<span class="stringliteral">&#39;formatted&#39;</span>)</div>
+<div class="line">   <span class="keyword">write</span> (unit_number, *) <span class="stringliteral">&#39;FMS2_io is flawless and works as inteded&#39;</span></div>
+<div class="line">   <span class="keyword">close</span> (unit_number)</div>
+<div class="line">endif</div>
+</div><!-- fragment --><ul>
+<li>The <code>if ( <a class="el" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50" title="Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...">mpp_pe()</a>.EQ.mpp_root_pe() )</code> ensures that the file is only written once.</li>
+<li>The <code>newunit</code> ensures that an unused unit number is used.</li>
+</ul>
+<h4>2. Reading ascii files</h4>
+With fms_io:</p><ul>
+<li>Opening an ascii file was accomplished with <code>mpp_open</code>, <code>open_namelist_file</code> or <code>open</code> calls.</li>
+<li>Reading an ascii file was accomplished with <code>read_data</code>, <code>read_distributed</code> or <code>read</code> calls.</li>
+<li>Closing an ascii file was sometimes done with <code>mpp_close</code>, <code>close_file</code> or <code>close</code> calls.</li>
+</ul>
+With FMS2_io, ascii reads can be accomplished using <code>ascii_reads</code>. In <code>ascii_reads</code>, the root_pe opens and reads the file into a a string buffer and broadcasts it to the other ranks. Each rank can then read from the buffer. For example: </p><div class="fragment"><div class="line"><span class="keywordtype">character(len=:)</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">allocatable</span> :: restart_file<span class="comment"> !&lt; Restart file saved as a string</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">call </span>ascii_read(<span class="stringliteral">&#39;INPUT/coupler.res&#39;</span>, restart_file)</div>
+<div class="line"><span class="keyword">read</span>(restart_file(1), *) calendar_type</div>
+<div class="line"><span class="keyword">read</span>(restart_file(2), *) date_init</div>
+<div class="line"><span class="keyword">read</span>(restart_file(3), *) date</div>
+<div class="line"><span class="keyword">deallocate</span>(restart_file)</div>
+</div><!-- fragment --><h3>G. FMS2_io namelist</h3>
+<ul>
+<li><b>ncchksz:</b> Sets chunksize (in bytes) argument in netcdf file creation calls. The default is <code>64*1024</code>.</li>
+<li><b>netcdf_default_format:</b> Sets the netcdf file type. The acceptable values are "64bit", "classic", "netcdf4". This can be overwritten per file if you specify <code>nc_format</code> in the open_file call. The default is 64bit.</li>
+<li><b>header_buffer_val:</b> Sets the netCDF header buffer size(in bytes). The default is 16384 bytes. </li>
+</ul>
+</div><h2 class="groupheader">Function/Subroutine Documentation</h2>
 <a id="gab2efb88539d9a05da43d95a501ed7e4c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gab2efb88539d9a05da43d95a501ed7e4c">&#9670;&nbsp;</a></span>fms2_io_init()</h2>
 
@@ -201,6 +734,21 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 </div>
 </div><!-- contents -->
 </div><!-- doc-content -->
+<div class="ttc" id="ainterfacefms2__io__mod_1_1register__axis_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1register__axis.html">fms2_io_mod::register_axis</a></div><div class="ttdoc">Add a dimension to a given file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00182">fms2_io.F90:182</a></div></div>
+<div class="ttc" id="ainterfacefms__io__mod_1_1read__data_html"><div class="ttname"><a href="interfacefms__io__mod_1_1read__data.html">fms_io_mod::read_data</a></div><div class="ttdoc">Read data from a file.</div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00332">fms_io.F90:332</a></div></div>
+<div class="ttc" id="astructfms__io__mod_1_1restart__file__type_html"><div class="ttname"><a href="structfms__io__mod_1_1restart__file__type.html">fms_io_mod::restart_file_type</a></div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00302">fms_io.F90:302</a></div></div>
+<div class="ttc" id="ainterfacefms__io__mod_1_1write__data_html"><div class="ttname"><a href="interfacefms__io__mod_1_1write__data.html">fms_io_mod::write_data</a></div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00379">fms_io.F90:379</a></div></div>
+<div class="ttc" id="ainterfacefms__io__mod_1_1restore__state_html"><div class="ttname"><a href="interfacefms__io__mod_1_1restore__state.html">fms_io_mod::restore_state</a></div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00454">fms_io.F90:454</a></div></div>
+<div class="ttc" id="ainterfacefms2__io__mod_1_1open__file_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1open__file.html">fms2_io_mod::open_file</a></div><div class="ttdoc">Opens a given netcdf or domain file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00123">fms2_io.F90:123</a></div></div>
+<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00386">mpp.F90:386</a></div></div>
+<div class="ttc" id="ainterfacefms2__io__mod_1_1register__field_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1register__field.html">fms2_io_mod::register_field</a></div><div class="ttdoc">Defines a new field within the given file  Example usage:</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00200">fms2_io.F90:200</a></div></div>
+<div class="ttc" id="ainterfacefms__io__mod_1_1register__restart__field_html"><div class="ttname"><a href="interfacefms__io__mod_1_1register__restart__field.html">fms_io_mod::register_restart_field</a></div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00397">fms_io.F90:397</a></div></div>
+<div class="ttc" id="ainterfacefms2__io__mod_1_1close__file_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1close__file.html">fms2_io_mod::close_file</a></div><div class="ttdoc">Close a netcdf or domain file opened with open_file or open_virtual_file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00162">fms2_io.F90:162</a></div></div>
+<div class="ttc" id="ainterfacefms2__io__mod_1_1write__restart_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1write__restart.html">fms2_io_mod::write_restart</a></div><div class="ttdoc">Writes all restart fields registered within a given restart file  Example usage:</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00305">fms2_io.F90:305</a></div></div>
+<div class="ttc" id="ampp__util_8inc_html_abf546cd336d5c539e445fb884f98ab6b"><div class="ttname"><a href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div><div class="ttdeci">integer function mpp_npes()</div><div class="ttdoc">Returns processor count for current pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00467">mpp_util.inc:467</a></div></div>
+<div class="ttc" id="ainterfacefms2__io__mod_1_1read__restart_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1read__restart.html">fms2_io_mod::read_restart</a></div><div class="ttdoc">Reads in restart variables from a given file  Example usage: call read_restart(fileobj) Reads registe...</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00332">fms2_io.F90:332</a></div></div>
+<div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00442">mpp_util.inc:442</a></div></div>
+<div class="ttc" id="astructmpp__domains__mod_1_1domainug_html"><div class="ttname"><a href="structmpp__domains__mod_1_1domainug.html">mpp_domains_mod::domainug</a></div><div class="ttdoc">Domain information for managing data on unstructured grids.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__domains_8F90_source.html#l00267">mpp_domains.F90:267</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

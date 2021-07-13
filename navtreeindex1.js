@@ -1,5 +1,6 @@
 var NAVTREEINDEX1 =
 {
+"astronomy_8F90.html#ga950d13661623d081cc81a387b6cc0b77":[7,0,2,0,45],
 "astronomy_8F90.html#gaa2cc4e0964e5251d056c4f05c4a8ddf7":[7,0,2,0,34],
 "astronomy_8F90.html#gab0623c3af659b6b2bea0f17132597d9b":[7,0,2,0,31],
 "astronomy_8F90.html#gab5621931c46d03267c1c40f0f25d480d":[7,0,2,0,39],
@@ -248,6 +249,5 @@ var NAVTREEINDEX1 =
 "coupler__types_8F90.html#gaaa7fd013075c519a8d81a55a0c99d2ab":[7,0,7,1,9],
 "coupler__types_8F90.html#gaab6188c89b3fbaa0bfa6a46206dae89f":[7,0,7,1,56],
 "coupler__types_8F90.html#gaab944ecb7b11f3ba1e82c1c865c37608":[7,0,7,1,37],
-"coupler__types_8F90.html#gaabea46dbac78f2c88263f8c960f714b2":[7,0,7,1,21],
-"coupler__types_8F90.html#gaada2b90e88ea63f9497d6b86f99dfc6a":[7,0,7,1,7]
+"coupler__types_8F90.html#gaabea46dbac78f2c88263f8c960f714b2":[7,0,7,1,21]
 };
