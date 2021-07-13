@@ -34,7 +34,7 @@ use mpp_mod,           only : mpp_error, &
                               mpp_npes,  &
                               WARNING,   &
                               NOTE,      &
-                              input_nml_file
+                              input_nml_file, input_nml_filename
 use mpp_io_mod,        only : mpp_open,          &
                               mpp_close,         &
                               mpp_get_times,     &
@@ -468,7 +468,7 @@ if (.not. module_is_initialized) then
 ! namelist input
 !--------------------------------------------------------------------
 
-the_file_exists = fms2_io_file_exist('input.nml')
+the_file_exists = fms2_io_file_exist(input_nml_filename)
 
 if (the_file_exists) then
     read (input_nml_file, nml=interpolator_nml, iostat=io)

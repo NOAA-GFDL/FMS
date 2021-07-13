@@ -201,6 +201,7 @@ private
   public :: mpp_init_test_full_init, mpp_init_test_init_true_only, mpp_init_test_peset_allocated
   public :: mpp_init_test_clocks_init, mpp_init_test_datatype_list_init, mpp_init_test_logfile_init
   public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
+  public :: input_nml_filename
 
   !--- public data from mpp_data_mod ------------------------------
 !  public :: request
@@ -1282,6 +1283,8 @@ private
   integer, parameter :: INPUT_STR_LENGTH = 256
 ! public variable needed for reading input.nml from an internal file
   character(len=:), dimension(:), allocatable, target, public :: input_nml_file
+! public variable defining the default name of the input.nml filename
+  character(len=128) :: input_nml_filename='./input.nml'
   logical :: read_ascii_file_on = .FALSE.
 !***********************************************************************
 

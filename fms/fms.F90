@@ -136,7 +136,8 @@ use          mpp_mod, only:  mpp_error, NOTE, WARNING, FATAL,    &
                              mpp_set_stack_size,                 &
                              stdin, stdout, stderr, stdlog,      &
                              mpp_error_state, lowercase,         &
-                             uppercase, mpp_broadcast, input_nml_file, &
+                             uppercase, mpp_broadcast,           &
+                             input_nml_file, input_nml_filename, &
                              get_unit, read_input_nml
 
 use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
@@ -203,6 +204,7 @@ public :: mpp_error, NOTE, WARNING, FATAL, &
           stdin, stdout, stderr, stdlog,   &
           mpp_chksum, get_unit, read_input_nml
 public :: input_nml_file
+public :: input_nml_filename
 public :: mpp_clock_id, mpp_clock_begin, mpp_clock_end
 public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
@@ -321,19 +323,22 @@ contains
 !! The namelist variable clock_grain must be one of the following values:
 !! 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
 !! 'LOOP', or 'INFRA' (case-insensitive).
-subroutine fms_init (localcomm )
+subroutine fms_init (localcomm, nml_filename )
 
 !--- needed to output the version number of constants_mod to the logfile ---
  use constants_mod, only: constants_version=>version !pjp: PI not computed
  use fms_io_mod,    only: fms_io_version
+ use mpp_mod,       only: input_nml_filename
 
  integer, intent(in), optional :: localcomm
+ character(len=128), intent(in), optional :: nml_filename
  integer :: unit, ierr, io
  integer :: logunitnum
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
 !---- initialize mpp routines ----
+    if(present(namelist_filename)) input_nml_filename = nml_filename
     if(present(localcomm)) then
        call mpp_init(localcomm=localcomm)
     else
@@ -356,7 +361,7 @@ subroutine fms_init (localcomm )
       read (input_nml_file, fms_nml, iostat=io)
       ierr = check_nml_error(io,'fms_nml')
 #else
-    if (file_exist('input.nml')) then
+    if (file_exist(input_nml_filename)) then
        unit = open_namelist_file ( )
        ierr=1; do while (ierr /= 0)
           read  (unit, nml=fms_nml, iostat=io, end=10)
@@ -543,7 +548,7 @@ end subroutine fms_end
   !!       @code{.F90}
   !!         integer :: unit, ierr, io
   !!
-  !!         if ( file_exist('input.nml') ) then
+  !!         if ( file_exist(input_nml_file) ) then
   !!             unit = open_namelist_file ( )
   !!             ierr=1
   !!             do while (ierr > 0)

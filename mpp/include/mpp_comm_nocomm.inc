@@ -99,7 +99,7 @@ subroutine mpp_init( flags,localcomm )
      if( .NOT.opened )exit
   end do
 
-  open(unit_nml,file='input.nml', iostat=io_status)
+  open(unit_nml,file=input_nml_filename, iostat=io_status)
   read(unit_nml,mpp_nml,iostat=io_status)
   close(unit_nml)
 #endif

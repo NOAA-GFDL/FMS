@@ -197,6 +197,7 @@ use platform_mod
        & get_ticks_per_second
   USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
+  USE mpp_mod, ONLY: input_nml_filename
 
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
@@ -3585,7 +3586,7 @@ CONTAINS
 #ifdef INTERNAL_FILE_NML
     READ (input_nml_file, NML=diag_manager_nml, IOSTAT=mystat)
 #else
-    IF ( file_exist('input.nml') ) THEN
+    IF ( file_exist(input_nml_filename) ) THEN
        nml_unit = open_namelist_file()
        READ (nml_unit, diag_manager_nml, iostat=mystat)
        CALL close_file(nml_unit)

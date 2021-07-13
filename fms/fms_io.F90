@@ -111,7 +111,8 @@ use mpp_domains_mod, only: mpp_get_pelist, mpp_get_io_domain, mpp_get_domain_npe
 use mpp_domains_mod, only: domainUG, mpp_pass_SG_to_UG, mpp_get_UG_domain_ntiles, mpp_get_UG_domain_tile_id
 use mpp_mod,         only: mpp_error, FATAL, NOTE, WARNING, mpp_pe, mpp_root_pe, mpp_npes, stdlog, stdout
 use mpp_mod,         only: mpp_broadcast, ALL_PES, mpp_chksum, mpp_get_current_pelist, mpp_npes, lowercase
-use mpp_mod,         only: input_nml_file, mpp_get_current_pelist_name, uppercase
+use mpp_mod,         only: input_nml_file, input_nml_filename
+use mpp_mod,         only: mpp_get_current_pelist_name, uppercase
 use mpp_mod,         only: mpp_gather, mpp_scatter, mpp_send, mpp_recv, mpp_sync_self, COMM_TAG_1, EVENT_RECV
 use mpp_mod,         only: MPP_FILL_DOUBLE,MPP_FILL_INT
 
@@ -689,7 +690,7 @@ subroutine fms_io_init()
      call mpp_error(FATAL,'=>fms_io_init: Error reading input.nml')
   endif
 #else
-  call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
+  call mpp_open(unit, input_nml_filename,form=MPP_ASCII,action=MPP_RDONLY)
   read(unit,fms_io_nml,iostat=io_status)
   if (io_status > 0) then
      call mpp_error(FATAL,'=>fms_io_init: Error reading input.nml')
@@ -7279,7 +7280,7 @@ function open_namelist_file (file) result (unit)
      if ( file_exist('input_'//trim(pelist_name)//'.nml', no_domain=.true.) ) then
         filename='input_'//trim(pelist_name)//'.nml'
      else
-        filename='input.nml'
+        filename=input_nml_filename
      endif
      call mpp_open ( unit, trim(filename), form=MPP_ASCII, action=MPP_RDONLY, &
           access=MPP_SEQUENTIAL, threading=MPP_SINGLE )
