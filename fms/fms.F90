@@ -338,7 +338,7 @@ subroutine fms_init (localcomm, nml_filename )
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
 !---- initialize mpp routines ----
-    if(present(namelist_filename)) input_nml_filename = nml_filename
+    if(present(nml_filename)) input_nml_filename = nml_filename
     if(present(localcomm)) then
        call mpp_init(localcomm=localcomm)
     else
