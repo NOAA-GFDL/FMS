@@ -9,7 +9,7 @@ FMS2_io provides three new derived types, which target the different I/O paradig
 
 **1. FmsNetcdfFile_t:** This type provides a thin wrapper over the netCDF4 library, but allows the user to assign a “pelist” to the file. If a pelist is assigned, only the first rank on the list directly interacts with the netCDF library, and performs broadcasts to relay the information read to the rest of the ranks on the list. When writing netcdf files, only the first rank in the pelist will perform the writes.
 
-**2. FmsNetcdfDomainFile_t:** This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes. Here, "domain decomposed" refers to data that is on the user-defined mpp_domains two-dimensional lon-lat or cubed-sphere grid, which means that each MPI rank has its own section of the data. This requires a [domain](https://github.com/NOAA-GFDL/FMS/blob/main/mpp/mpp_domains.F90#L379-L415) to be associated with the fileobj.
+**2. FmsNetcdfDomainFile_t:** This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes. Here, "domain decomposed" refers to data that is on a user-defined mpp_domain and is decomposed in two dimensions, in which each MPI rank has its own section of the global data. This requires a [domain](https://github.com/NOAA-GFDL/FMS/blob/main/mpp/mpp_domains.F90#L379-L415) to be associated with the fileobj.
 
 **3. FmsNetcdfUnstructuredDomainFile_t:** This type does everything that the FmsNetcdfFile_t type does and it adds support for “domain-decomposed” reads/writes on a user defined mpp_domains **unstructured** grid. This requires a [unstructured domain](https://github.com/NOAA-GFDL/FMS/blob/3329625ea48bc3a10a5726c9f251d6d47b33516d/mpp/mpp_domains.F90#L267-L284) to be associated with the fileobj.
 
@@ -88,7 +88,7 @@ endif
 - [register_axis](https://github.com/NOAA-GFDL/FMS/blob/b9fc6515c7e729909e59a0f9a1efc6eb1d3e44d1/fms2_io/fms_netcdf_domain_io.F90#L437)
   - writes the dimension metadata in the netcdf file (a `nf90_def_dim` call)
   - The "x" and "y" argument indicate that that dimension is domain decomposed in x/y. The only acceptable values are "x" and "y".
-  - The `position=center` indicates the position of the axis (this is the default). The other acceptable values are `position=east` for "x" and`position=north` for "y", in this cases the axis will have an extra point.
+  - The `position=center` indicates the position of the axis (this is the default). The other acceptable values are position=east for "x" andposition=north for "y", in this cases the data is staggered, which may be on the volume face or corner instead of at the centroid.
   - The "unlimited" indicates that the dimension is unlimited (`nf90_unlimited`)
   - The integer "dimsize" indicates that this is not a domain decomposed dimension with a length equal to dimsize
 - [register_restart_field](https://github.com/NOAA-GFDL/FMS/blob/main/fms2_io/include/register_domain_restart_variable.inc)
