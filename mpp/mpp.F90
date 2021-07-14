@@ -1284,7 +1284,7 @@ private
 ! public variable needed for reading input.nml from an internal file
   character(len=:), dimension(:), allocatable, target, public :: input_nml_file
 ! public variable defining the default name of the input.nml filename
-  character(len=128) :: input_nml_filename='./input.nml'
+  character(len=1024) :: input_nml_filename='./input.nml'
   logical :: read_ascii_file_on = .FALSE.
 !***********************************************************************
 

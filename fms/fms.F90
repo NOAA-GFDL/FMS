@@ -331,7 +331,7 @@ subroutine fms_init (localcomm, nml_filename )
  use mpp_mod,       only: input_nml_filename
 
  integer, intent(in), optional :: localcomm
- character(len=128), intent(in), optional :: nml_filename
+ character(len=1024), intent(in), optional :: nml_filename
  integer :: unit, ierr, io
  integer :: logunitnum
 
