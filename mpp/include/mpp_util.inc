@@ -1468,7 +1468,7 @@ end function rarray_to_char
              do
                 read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
                 if ( status .lt. 0 ) then
-                  num_lines = num_lines + 1
+                  if ( num_lines .lt. 1 ) num_lines = 1
                   exit
                 end if
                 if ( status .gt. 0 ) then
@@ -1532,6 +1532,7 @@ end function rarray_to_char
 #include<file_version.h>
 
     character(len=5) :: text
+    character(len=len(Content(1))) :: this_line
     logical :: file_exist
     integer :: status, i, f_unit, log_unit
     integer :: from_pe
@@ -1574,10 +1575,10 @@ end function rarray_to_char
                         //trim(text)//'.')
                 else
                    ! A second 'sanity' check on the file
-                   pnum_lines = 1
+                   pnum_lines = 0
 
                    do
-                      read (UNIT=f_unit, FMT='(A)', IOSTAT=status) Content(pnum_lines)
+                      read (UNIT=f_unit, FMT='(A)', IOSTAT=status) this_line
 
                       if ( status .lt. 0 ) exit
                       if ( status .gt. 0 ) then
@@ -1588,14 +1589,15 @@ end function rarray_to_char
                          call mpp_error(FATAL, 'READ_ASCII_FILE: number of lines in file '//trim(FILENAME)// &
                                 ' is greater than size(Content(:)). ')
                       end if
-                      if ( len_trim(Content(pnum_lines)) == LENGTH ) then
+                      if ( len_trim(this_line) == LENGTH ) then
                          write(UNIT=text, FMT='(I5)') length
                          call mpp_error(FATAL, 'READ_ASCII_FILE: Length of output string ('//trim(text)//' is too small.&
                               & Increase the LENGTH value.')
                       end if
                       pnum_lines = pnum_lines + 1
+                      Content(pnum_lines) = this_line
                    end do
-                   if(num_lines .NE. pnum_lines) then
+                   if(num_lines .NE. pnum_lines .and. (num_lines .GT. 1 .or. (pnum_lines + 1) .NE. num_lines)) then
                       call mpp_error(FATAL, 'READ_ASCII_FILE: number of lines in file '//trim(FILENAME)// &
                           ' does not equal to size(Content(:)) ' )
                    end if
