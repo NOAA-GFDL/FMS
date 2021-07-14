@@ -69,7 +69,7 @@ use time_manager_mod, only:  time_type, get_time, set_time,  &
                              operator(+),  operator(-),      &
                              operator(==), operator(>=),     &
                              operator(/=)
-use mpp_mod,          only:  input_nml_file, get_unit
+use mpp_mod,          only:  input_nml_file, input_nml_filename, get_unit
 use fms_mod,          only:  open_file, error_mesg, &
                              check_nml_error, &
                              fms_init, &
@@ -326,7 +326,7 @@ real,dimension(:,:), intent(in), optional :: area_in
 !-------------------------------------------------------------------------------
 !    read namelist.
 !-------------------------------------------------------------------------------
-    if ( file_exists('input.nml')) then
+    if ( file_exists(input_nml_filename)) then
         read (input_nml_file, nml=diag_integral_nml, iostat=io)
         ierr = check_nml_error(io,'diag_integral_nml')
     endif

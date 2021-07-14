@@ -1344,7 +1344,7 @@ end function rarray_to_char
     filename='input_'//trim(pelist_name)//'.nml'
     inquire(FILE=filename, EXIST=file_exist)
     if (.not. file_exist ) then
-       filename='input.nml'
+       filename=input_nml_filename
     endif
     lines_and_length = get_ascii_file_num_lines_and_length(filename)
     allocate(character(len=lines_and_length(2))::input_nml_file(lines_and_length(1)))

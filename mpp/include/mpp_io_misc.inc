@@ -82,7 +82,7 @@
          inquire( unit_nml,OPENED=opened )
          if( .NOT.opened )exit
       end do
-      open(unit_nml,file='input.nml')
+      open(unit_nml,file=input_nml_filename)
       read(unit_nml,mpp_io_nml,iostat=io_status)
       close(unit_nml)
 #endif
