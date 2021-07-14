@@ -1463,11 +1463,14 @@ end function rarray_to_char
              call mpp_error(FATAL, 'get_ascii_file_num_lines: Error opening file:' //trim(FILENAME)// &
                             '.  (IOSTAT = '//trim(text)//')')
           else
-             num_lines = 1
+             num_lines = 0
              max_length = 1
              do
                 read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
-                if ( status .lt. 0 ) exit
+                if ( status .lt. 0 ) then
+                  num_lines = num_lines + 1
+                  exit
+                end if
                 if ( status .gt. 0 ) then
                    write (UNIT=text, FMT='(I5)') num_lines
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Error reading line '//trim(text)// &
