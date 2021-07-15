@@ -39,7 +39,7 @@ test_time_interp_external_SOURCES = test_time_interp_external.F90
 TESTS = test_time_interp2.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_time_interp2.sh
+EXTRA_DIST = test_time_interp2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out*

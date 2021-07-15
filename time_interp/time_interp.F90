@@ -44,7 +44,7 @@ use time_manager_mod, only: time_type, get_date, set_date, set_time, &
 
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL, stdout, stdlog, &
-                            open_namelist_file, close_file, check_nml_error, &
+                            check_nml_error, &
                             fms_error_handler
 use          mpp_mod, only: input_nml_file
 
@@ -262,22 +262,12 @@ contains
 
 
  subroutine time_interp_init()
-   integer :: ierr, io, namelist_unit, logunit
+   integer :: ierr, io, logunit
 
    if ( module_is_initialized ) return
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, time_interp_nml, iostat=io)
-      ierr = check_nml_error (io, 'time_interp_nml')
-#else
-   namelist_unit = open_namelist_file()
-   ierr=1
-   do while (ierr /= 0)
-     read(namelist_unit, nml=time_interp_nml, iostat=io, end=20)
-     ierr = check_nml_error (io, 'time_interp_nml')
-   enddo
-   20 call close_file (namelist_unit)
-#endif
+   read (input_nml_file, time_interp_nml, iostat=io)
+   ierr = check_nml_error (io, 'time_interp_nml')
 
    call write_version_number("TIME_INTERP_MOD", version)
    logunit = stdlog()

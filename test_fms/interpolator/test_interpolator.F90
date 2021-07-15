@@ -35,12 +35,9 @@
 
 program test_interpolator
 
-#ifdef INTERNAL_FILE_NML
 use mpp_mod, only: input_nml_file
-#endif
 
 use mpp_mod
-use mpp_io_mod
 use mpp_domains_mod
 use fms_mod
 use time_manager_mod
@@ -63,7 +60,7 @@ integer :: delt_days, delt_secs
 integer, parameter :: max_fields = 20 ! maximum number of fields to be interpolated
 
 integer :: i,k,n,level
-integer :: unit, io_status
+integer :: io_status
 integer :: ndivs
 integer :: jscomp, jecomp, iscomp, iecomp, isd,ied,jsd,jed
 integer :: numfields, domain_layout(2)
@@ -77,12 +74,6 @@ character(len=1) :: dest_grid
 character(len=128) :: src_file, file_out, title, units, colaer
 logical :: vector_field=.false., result
 
-type(axistype), allocatable, dimension(:)  :: axes_out, axes_src
-type(axistype) :: time_axis
-type(fieldtype), allocatable, dimension(:) :: fields
-type(fieldtype) :: dest_field(max_fields), src_field(max_fields), field_geolon_t, &
-     field_geolat_t, field_geolon_c, field_geolat_c
-type(atttype), allocatable, dimension(:) :: global_atts
 type(domain2d) :: domain
 type(time_type) :: model_time
 
@@ -113,7 +104,6 @@ delt_secs = INT(delt*SECONDS_PER_DAY) - delt_days*SECONDS_PER_DAY
 write(*,*) delt, delt_days,delt_secs
 
 call mpp_init
-call mpp_io_init
 call mpp_domains_init
 call set_calendar_type(JULIAN)
 call diag_manager_init
@@ -137,17 +127,8 @@ model_time = set_date(1979,12,1,0,0,0)
 ! namelist input
 !--------------------------------------------------------------------
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, nml=interpolator_nml, iostat=io)
   ierr = check_nml_error(io, 'interpolator_nml')
-#else
-  call mpp_open(unit, 'input.nml',  action=MPP_RDONLY, form=MPP_ASCII)
-  read  (unit, interpolator_nml,iostat=io_status)
-  if (io_status .gt. 0) then
-    call mpp_error(FATAL,'=>Error reading interpolator_nml')
-  endif
-call mpp_close(unit)
-#endif
 
 ! decompose model grid points
 ! mapping can get expensive so we distribute the task at this level

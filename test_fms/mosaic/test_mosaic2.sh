@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test_common.sh
 
-# Copy files for test.
-#cp $top_srcdir/test_fms/mosaic/input_nml input_nml
-run_test test_mosaic 2 skip
+touch input.nml
+
+rm -rf INPUT
+mkdir INPUT
+run_test test_mosaic 2
+rm -rf INPUT

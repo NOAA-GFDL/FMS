@@ -54,7 +54,6 @@ program test_mpp_domains
   use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE, mpp_get_tile_id
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
   use fms_affinity_mod, only : fms_affinity_set
-  use mpp_io_mod,       only: mpp_io_init
   use compare_data_checksums
   use test_domains_utility_mod
   use platform_mod
@@ -63,7 +62,6 @@ program test_mpp_domains
   implicit none
   integer :: pe, npes
   integer :: nx=128, ny=128, nz=40, stackmax=4000000
-  integer :: unit=7
   integer :: stdunit = 6
   logical :: debug=.FALSE., opened
 
@@ -137,25 +135,11 @@ program test_mpp_domains
 
   call mpp_init(test_level=mpp_init_test_requests_allocated)
   call mpp_domains_init(MPP_DEBUG)
-  call mpp_io_init()
   call mpp_domains_set_stack_size(stackmax)
 
   outunit = stdout()
   errunit = stderr()
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, test_mpp_domains_nml, iostat=io_status)
-#else
-  do
-     inquire( unit=unit, opened=opened )
-     if( .NOT.opened )exit
-     unit = unit + 1
-     if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
-  end do
-
-  open( unit=unit, file='input.nml', iostat=io_status )
-  read( unit,test_mpp_domains_nml, iostat=io_status )
-  close(unit)
-#endif
 
   if (io_status > 0) then
      call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
