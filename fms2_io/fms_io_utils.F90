@@ -510,8 +510,9 @@ subroutine ascii_read(ascii_filename, ascii_var, out_dims)
   character(len=:), dimension(:), allocatable, intent(out) :: ascii_var !< The
                                                                         !! string
                                                                         !! array
-  integer, dimension(2), optional, intent(out) :: out_dims
+  integer, dimension(2), optional, intent(out) :: out_dims !< Optional argument to return number of lines and max_length of file
   integer, dimension(2) :: lines_and_length !< lines = 1, length = 2
+  if(allocated(ascii_var)) deallocate(ascii_var)
   lines_and_length = get_ascii_file_num_lines_and_length(ascii_filename)
   allocate(character(len=lines_and_length(2))::ascii_var(lines_and_length(1)))
   call read_ascii_file(ascii_filename, lines_and_length(2), ascii_var)

@@ -1541,7 +1541,7 @@ end function rarray_to_char
     integer :: status, i, f_unit, log_unit
     integer :: from_pe
     integer :: pnum_lines, num_lines
-    character(len=LENGTH) :: str_tmp
+    character(len=LENGTH) :: str_tmp !< Temporary variable to store line from file
 
     if( .NOT. read_ascii_file_on) then
        call mpp_error(FATAL,  &
