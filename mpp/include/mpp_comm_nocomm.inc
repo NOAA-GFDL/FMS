@@ -88,7 +88,7 @@ subroutine mpp_init( flags,localcomm, alt_input_nml_path )
 
   call mpp_init_logfile()
   if (present(alt_input_nml_path)) then
-     call read_input_nml(alt_input_nml_path)
+     call read_input_nml(alt_input_nml_path=alt_input_nml_path)
   else
      call read_input_nml
   end if
