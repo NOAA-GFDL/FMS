@@ -510,13 +510,15 @@ subroutine ascii_read(ascii_filename, ascii_var, out_dims)
   character(len=:), dimension(:), allocatable, intent(out) :: ascii_var !< The
                                                                         !! string
                                                                         !! array
-  integer, dimension(2), optional, intent(out) :: out_dims !< Optional argument to return number of lines and max_length of file
+  integer, optional, intent(out) :: num_lines !< Optional argument to return number of lines in file
+  integer, optional, intent(out) :: max_length !< Optional argument to return max_length of line in file
   integer, dimension(2) :: lines_and_length !< lines = 1, length = 2
   if(allocated(ascii_var)) deallocate(ascii_var)
   lines_and_length = get_ascii_file_num_lines_and_length(ascii_filename)
   allocate(character(len=lines_and_length(2))::ascii_var(lines_and_length(1)))
   call read_ascii_file(ascii_filename, lines_and_length(2), ascii_var)
-  if(present(out_dims)) out_dims = lines_and_length
+  if(present(num_lines)) num_lines = lines_and_length(1)
+  if(present(max_length)) max_length = lines_and_length(2)
 end subroutine ascii_read
 
 !> @brief Populate 2D maskmap from mask_table given a model
