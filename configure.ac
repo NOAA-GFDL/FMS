@@ -346,20 +346,18 @@ AC_CONFIG_FILES([
   test_fms/fms/Makefile
   test_fms/fms2_io/Makefile
   test_fms/horiz_interp/Makefile
+  test_fms/interpolator/Makefile
+  test_fms/time_interp/Makefile
   test_fms/time_manager/Makefile
   test_fms/mpp_io/Makefile
   test_fms/mpp/Makefile
   test_fms/mpp/create_input.sh
+  test_fms/monin_obukhov/Makefile
   test_fms/mosaic/Makefile
   test_fms/coupler/Makefile
   FMS.pc
   ])
 
-  # Commented out for now
-  # test_fms/mosaic/Makefile
-  # test_fms/monin_obukhov/Makefile
-  # test_fms/interpolator/Makefile
-  # test_fms/time_interp/Makefile
 AC_OUTPUT()
 
 ## if tests are being skipped, output warning at end of output

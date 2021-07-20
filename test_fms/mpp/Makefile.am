@@ -134,8 +134,8 @@ TESTS = test_mpp_domains2.sh \
   test_redistribute_int.sh \
   test_global_arrays.sh  \
   test_mpp2.sh \
-  test_mpp_memuse \
-  test_mpp_mem_dump \
+  test_mpp_memuse.sh \
+  test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
   test_read_ascii_file.sh \
   test_read_input_nml2.sh \

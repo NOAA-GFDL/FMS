@@ -27,24 +27,28 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# make an input.nml for mpp_init to read
-rm -f input.nml && touch input.nml
+# Create and enter output directory
+output_dir
 
-echo "Test the filename_appendix functionality"
-run_test test_file_appendix 1
+# make an input.nml for mpp_init to read
+touch input.nml
+
 
 # run the tests
+test_expect_success "Test the filename_appendix functionality" '
+  mpirun -n 1 ../test_file_appendix
+'
 test_expect_success "Simple IO test" '
-  mpirun -n 6 ./test_io_simple
+  mpirun -n 6 ../test_io_simple
 '
 test_expect_success "Test the get_mosaic_tile_grid functionality" '
-  mpirun -n 6 ./test_get_mosaic_tile_grid
+  mpirun -n 6 ../test_get_mosaic_tile_grid
 '
 test_expect_success "Test the get_valid is_valid functionality single PE" '
-  mpirun -n 1 ./test_get_is_valid
+  mpirun -n 1 ../test_get_is_valid
 '
 test_expect_success "Test the get_valid is_valid functionality multiple PE" '
-  mpirun -n 1 ./test_get_is_valid
+  mpirun -n 1 ../test_get_is_valid
 '
 
 test_done

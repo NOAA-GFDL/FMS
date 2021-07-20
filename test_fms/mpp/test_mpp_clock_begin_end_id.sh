@@ -67,19 +67,9 @@ test_expect_success "" '
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 8/" clock.nml
-#echo "Running test 8..."
-#err=0
 test_expect_failure "" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
-# 1 || err=1
-
-#if [ "$err" -ne 1 ]; then
-#  echo "ERROR: Test 8 was unsuccessful"
-#  exit 8
-#else
-#  echo "Test 8 has passed"
-#fi
 
 sed -i "s/test_number = [0-9]*/test_number = 9/" clock.nml
 test_expect_failure "" '

@@ -25,11 +25,13 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy file for test.
 cp $top_srcdir/test_fms/monin_obukhov/input_base.nml input.nml
 
-# Run test.
-run_test test_monin_obukhov 2
-
+# Run test
+test_expect_success "test monin_obukhov" '
+    mpirun -n 2 ./test_monin_obukhov
+'
+test_done

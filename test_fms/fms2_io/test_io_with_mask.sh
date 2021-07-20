@@ -27,8 +27,11 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# Create and enter output directory
+output_dir
+
 # make an input.nml for mpp_init to read
-rm -f input.nml &&  touch input.nml
+touch input.nml
 
 # make a masktable
 # This mask table masks out 1 rank (1st line), for a layout of 2,3 (2nd line)
@@ -56,7 +59,7 @@ printf "1\n2,3\n1,1" | cat > the_mask
 
 # run the tests
 test_expect_success "Test FMS2 IO using a mask" '
-  mpirun -n 5 ./test_io_with_mask
+  mpirun -n 5 ../test_io_with_mask
 '
 
 test_done

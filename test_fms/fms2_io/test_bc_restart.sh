@@ -25,9 +25,16 @@
 # Author: Uriel Ramirez 07/07/20
 #
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+# Create and enter output directory
+output_dir
 
 # make an input.nml for mpp_init to read
 touch input.nml
 
-run_test test_bc_restart 16
+test_expect_success "test bc restart" '
+  mpirun -n 16 ../test_bc_restart
+'
+
+test_done

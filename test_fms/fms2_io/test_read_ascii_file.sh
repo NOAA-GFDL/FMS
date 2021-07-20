@@ -23,9 +23,17 @@
 # execute tests in the test_fms/fms2_io directory.
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+# Create and enter output directory
+output_dir
+
 # make an input.nml for mpp_init to read
 printf "EOF\n&dummy\nEOF" | cat > input.nml
 printf "5, 14   \n23\n\"forlendula\"" | cat > ascii_test1
+
 # run the tests
-run_test test_read_ascii_file 6 $netcdf_version_skip
+test_expect_success "test ascii reads" '
+  mpirun -n 6 ../test_read_ascii_file
+'
+test_done

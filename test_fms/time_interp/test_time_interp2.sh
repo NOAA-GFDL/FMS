@@ -25,10 +25,14 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy file for test.
 cp $top_srcdir/test_fms/time_interp/input_base.nml input.nml
 
 # Run the test.
-run_test test_time_interp 2
+test_expect_success "test time interpolation" '
+  mpirun -n 2 ./test_time_interp
+'
+
+test_done

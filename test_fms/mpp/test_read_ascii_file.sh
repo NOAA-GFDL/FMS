@@ -28,9 +28,6 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# TODO test 5 passes with incorrect length
-SKIP_TESTS="$(basename $0 .sh).5"
-
 # create input with helper script
 . ./create_input.sh nml
 cat input_base.nml > input.nml

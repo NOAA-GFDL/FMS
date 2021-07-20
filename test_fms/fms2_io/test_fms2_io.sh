@@ -28,7 +28,8 @@
 # Set common test settings.
 . ../test-lib.sh
 
-test -n $netcdf_version_skip && SKIP_TESTS="$(basename $0 .sh).1"
+# Create and enter output directory
+output_dir
 
 # make a dummy input.nml file for mpp_init to read
 cat <<_EOF > input.nml
@@ -39,7 +40,7 @@ _EOF
 
 # run the tests
 test_expect_success "FMS2 IO Test" '
-  mpirun -n 6 ./test_fms2_io
+  mpirun -n 6 ../test_fms2_io
 '
 
 test_done

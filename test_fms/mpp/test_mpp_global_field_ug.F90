@@ -61,7 +61,6 @@ program test_mpp_global_field_ug
 
   !> initialize mpp domain(s)
   call mpp_domains_init()
-  call mpp_domains_set_stack_size(stackmax)
 
   call setup_domains()
 
@@ -392,7 +391,6 @@ contains
           x2(l,k) = int( gdata(i,j,tile) + k*1e6, kind=i4_kind )
        enddo
     enddo
-
     call mpp_pass_SG_to_UG(UG_domain, a1, x1)
     call compare_checksums_int(x1, x2, type//' SG2UG 3-D data domain')
     call mpp_pass_UG_to_SG(UG_domain, x1, a2)
@@ -579,7 +577,7 @@ contains
     allocate(ntiles_grid(ntotal_land))
     ntiles_grid = 1
     !--- define the unstructured grid domain
-    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), mpp_root_pe(), grid_index, name="LAND unstruct")
     call mpp_get_UG_compute_domain(UG_domain, istart, iend)
 
     !--- figure out lmask according to grid_index

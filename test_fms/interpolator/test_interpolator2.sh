@@ -25,13 +25,15 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy files for test.
 cp $top_srcdir/test_fms/interpolator/input_base.nml input.nml
 cp $top_srcdir/test_fms/interpolator/diag_table_base diag_table
 
-# Test is skipped in bats file.
-run_test test_interpolator 2 skip
+# Run test
+test_expect_success "test monin_obukhov" '
+    mpirun -n 2 ./test_interpolator
+'
 
-
+test_done

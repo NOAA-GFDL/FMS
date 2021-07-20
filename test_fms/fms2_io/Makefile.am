@@ -50,6 +50,9 @@ test_file_appendix_SOURCES=test_file_appendix.F90
 
 EXTRA_DIST = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh test_read_ascii_file.sh
 
+# fixes issue with make implicitly trying to use m2c for argparse
+%.o: %.mod
+
 argparse.mod: argparse.$(OBJEXT)
 setup.mod: setup.$(OBJEXT)
 setup.$(OBJEXT): argparse.mod

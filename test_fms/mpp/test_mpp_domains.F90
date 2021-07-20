@@ -80,7 +80,7 @@ program test_mpp_domains
   character(len=32) :: warn_level = "fatal"
   integer :: wide_halo_x = 0, wide_halo_y = 0
   integer :: nx_cubic = 0, ny_cubic = 0
-  ! namelist flags to run each test 
+  ! namelist flags to run each test
   logical :: test_nest = .false.
   logical :: test_performance = .false.
   logical :: test_interface = .false.
@@ -348,7 +348,8 @@ program test_mpp_domains
 
   if( check_parallel) then
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_check_parallel <-------------------'
-     call test_parallel( )
+     call test_parallel_3D( )
+     call test_parallel_2D( )
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finish test_check_parallel <-------------------'
   endif
 
@@ -5685,45 +5686,32 @@ end subroutine test_halosize_update
 
  !set up x array
     call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    call mpp_get_data_domain( domain, isd, ied, jsd, jed )
     allocate( x (isd:ied,jsd:jed,nz) )
     allocate( a (isd:ied,jsd:jed,nz) )
     allocate( x2 (isd:ied,jsd:jed,nz) )
     x2 (isd:ied,jsd:jed,:) = global(isd:ied,jsd:jed,:)
     call set_corner_zero(x2, isd, ied, jsd, jed, is, ie, js, je)
+
     x = 0
     x (is:ie,js:je,:) = global(is:ie,js:je,:)
 
 !full update
     id = mpp_clock_id( type, flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     call mpp_clock_begin(id)
-    !print *, "xs",x(isd,jsd,1)
     call mpp_update_domains( x, domain, flags=EDGEUPDATE)
-    !print *, "xe",x(isd,jsd,1)
     call mpp_clock_end(id)
     call compare_checksums( x, x2, type )
+    call mpp_sync()
     deallocate(x2)
 
     a = 0
     a(is:ie,js:je,:) = global(is:ie,js:je,:)
-    !print *,"as", a(isd,jsd,1)
     id_update = mpp_start_update_domains( a, domain, flags=EDGEUPDATE)
-    !call set_corner_zero(a, isd, ied, jsd, jed, is, ie, js, je)
-    !!!#ifdef GCC
-     !call mpp_update_domains( a, domain, flags=EDGEUPDATE)
-    !!!#else
-    !print *, mpp_pe(), isd, ied, jsd, jed, nz
-    !print *, "before", mpp_pe(), a
-    !call sleep(2) 
     call mpp_complete_update_domains(id_update, a, domain, flags=EDGEUPDATE)
-    !print *, "ae", a(isd,jsd,1)
-    !print *, "after", mpp_pe(), a
-    !!!#endif
-    !call compare_checksums( a, cpA, "did the update do anything")
-    !return
-    !call mpp_sync()
-
     call compare_checksums( x, a, type//" nonblock")
+    call mpp_sync()
+
         !--- test vector update for FOLDED and MASKED case.
     if( type == 'Cyclic' ) then
        deallocate(global, x, a)
@@ -6346,11 +6334,10 @@ end subroutine test_halosize_update
   end subroutine test_global_reduce
 
 
-  subroutine test_parallel ( )
+  subroutine test_parallel_2D ( )
 
     integer :: npes, layout(2), i, j, k,is, ie, js, je, isd, ied, jsd, jed
     real, dimension(:,:), allocatable :: field, lfield
-    real, dimension(:,:,:), allocatable :: field3d, lfield3d
     type(domain2d) :: domain
     integer, dimension(:), allocatable :: pelist1 , pelist2
     logical :: group1, group2
@@ -6374,15 +6361,13 @@ end subroutine test_halosize_update
        call mpp_set_current_pelist(pelist2)
        call mpp_define_layout( (/1,nx,1,ny/), mpes, layout )
     endif
-
     call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo)
 
-    call mpp_set_current_pelist()
+    call mpp_set_current_pelist( )
 
     call mpp_get_compute_domain(domain, is, ie, js, je)
     call mpp_get_data_domain(domain, isd, ied, jsd, jed)
     allocate(lfield(is:ie,js:je),field(isd:ied,jsd:jed))
-    allocate(lfield3d(is:ie,js:je,nz),field3d(isd:ied,jsd:jed,nz))
 
     do i = is, ie
       do j = js, je
@@ -6390,27 +6375,60 @@ end subroutine test_halosize_update
       enddo
     enddo
 
-    do i = is, ie
-      do j = js, je
-        do k = 1, nz
-          lfield3d(i,j,k) = real(i)+real(j)*0.001+real(k)*0.00001
-        enddo
-      enddo
-    enddo
-
     field = 0.0
     field(is:ie,js:je)= lfield(is:ie,js:je)
     call mpp_update_domains(field,domain)
+
     call mpp_check_field(field, pelist1, pelist2,domain, '2D '//mesg, w_halo = whalo, &
                            s_halo = shalo, e_halo = ehalo, n_halo = nhalo)
+  end subroutine test_parallel_2D
 
+  subroutine test_parallel_3D
+
+    integer :: nx=128,ny=128, nz=40
+    integer :: npes1, npes2, layout(2), i, j, k,is, ie, js, je, isd, ied, jsd, jed
+    real, dimension(:,:,:), allocatable :: field3d
+    type(domain2d) :: domain
+    integer, dimension(:), allocatable :: pelist1 , pelist2
+
+    !> define pelists
+    npes1 = mpp_npes()/2
+    npes2 = mpp_npes()
+    allocate(pelist1(npes1), pelist2(npes2-npes1))
+    pelist1 = (/(i, i = 0, npes1-1)/)
+    pelist2 = (/(i, i = npes1, npes2-1)/)
+    call mpp_declare_pelist(pelist1)
+    call mpp_declare_pelist(pelist2)
+
+    !> set pelists and domains
+    if(any(pelist1==mpp_pe())) then
+       call mpp_set_current_pelist(pelist1)
+       call mpp_define_layout( (/1,nx,1,ny/), 3, layout )
+    else if(any(pelist2==mpp_pe())) then
+       call mpp_set_current_pelist(pelist2)
+       call mpp_define_layout( (/1,nx,1,ny/), 3, layout )
+    endif
+
+    call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=ehalo, ehalo=2, shalo=2, nhalo=2)
+
+    !> define field values
+    call mpp_get_compute_domain(domain, is, ie, js, je)
+    call mpp_get_data_domain(domain, isd, ied, jsd, jed)
+    allocate(field3d(isd:ied,jsd:jed,nz))
     field3d = 0.0
-    field3d(is:ie,js:je,:) = lfield3d(is:ie,js:je,:)
+    do i = is, ie
+      do j = js, je
+        do k = 1, nz
+          field3d(i,j,k) = real(i)+real(j)*0.001+real(k)*0.00001
+        enddo
+      enddo
+    enddo
+    !> update and check field
     call mpp_update_domains(field3d,domain)
-    call mpp_check_field(field3d, pelist1, pelist2,domain, '3D '//mesg, w_halo = whalo, &
-                           s_halo = shalo, e_halo = ehalo, n_halo = nhalo)
-
-  end subroutine test_parallel
+    call mpp_check_field(field3d, pelist1, pelist2,domain, '3D', w_halo = 2, &
+                           s_halo = 2, e_halo = 2, n_halo = 2)
+    call mpp_set_current_pelist()
+  end subroutine test_parallel_3D
 
   subroutine test_modify_domain( )
 

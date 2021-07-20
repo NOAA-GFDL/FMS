@@ -172,17 +172,16 @@ program test_mpp_clock_begin_end_id
 
     end subroutine test7
 
+    !> tests failure on maximum amount of clocks
     subroutine test8()
-      integer :: clock_id
-      integer :: clock_num_tmp
-      integer :: bp
-      bp = 1
+      integer :: clock_id, i
+      character(len=12) :: buff
 
       call mpp_init()!test_level=bp)
-      clock_num_tmp = clock_num
-      clock_num = MAX_CLOCKS + 1
-      clock_id = mpp_clock_id("Ultraclock")
-      clock_num = clock_num_tmp
+      do i=1, MAX_CLOCKS + 1
+        write(buff,'(i12)') i
+        clock_id = mpp_clock_id("Ultraclock"//buff)
+      enddo
       call mpp_exit()
 
     end subroutine test8
