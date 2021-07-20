@@ -30,10 +30,11 @@
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
   !> @brief Initialize the @ref mpp_mod module
-  subroutine mpp_init( flags, localcomm, test_level )
+  subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm
   integer, optional, intent(in) :: test_level
+  character(len=*), optional, intent(in) :: alt_input_nml_path
   integer                       :: my_pe, num_pes, len, i, iunit
   logical                       :: opened, existed
   integer                       :: unit_begin, unit_end, unit_nml, io_status
@@ -111,7 +112,11 @@
   if (t_level == 3) return
 
   call mpp_init_logfile()
-  call read_input_nml
+  if (present(alt_input_nml_path)) then
+     call read_input_nml(alt_input_nml_path)
+  else
+     call read_input_nml
+  end if
   if (t_level == 4) return
 
   !--- read namelist
