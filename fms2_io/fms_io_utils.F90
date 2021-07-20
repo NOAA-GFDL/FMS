@@ -505,7 +505,7 @@ end subroutine open_check
 
 !> @brief Read the ascii text from filename `ascii_filename`into string array
 !! `ascii_var`
-subroutine ascii_read(ascii_filename, ascii_var, out_dims)
+subroutine ascii_read(ascii_filename, ascii_var, num_lines, max_length)
   character(len=*), intent(in) :: ascii_filename !< The file name to be read
   character(len=:), dimension(:), allocatable, intent(out) :: ascii_var !< The
                                                                         !! string
