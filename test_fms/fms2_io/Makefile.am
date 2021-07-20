@@ -77,4 +77,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
                     netcdf_version_skip=${skipflag}
 
+
 include $(top_srcdir)/mkmods.mk
+
+CLEANFILES = *.nc *.nc.* input.nml logfile.000000.out the_mask ascii_test1

@@ -30,5 +30,4 @@
 test_expect_success "global array functions with mixed precision" '
     mpirun -n 8 ./test_global_arrays
 '
-
 test_done

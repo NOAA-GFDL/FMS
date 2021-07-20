@@ -19,14 +19,6 @@
  * License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
 
-/**
- * \file
- * \author @bensonr
- *
- * \section DESCRIPTION
- *
- * Routines to set and get thread CPU affinity
- */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif

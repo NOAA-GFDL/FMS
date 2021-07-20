@@ -33,7 +33,6 @@ output_dir
 # make an input.nml for mpp_init to read
 touch input.nml
 
-
 # run the tests
 test_expect_success "Test the filename_appendix functionality" '
   mpirun -n 1 ../test_file_appendix

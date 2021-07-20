@@ -33,6 +33,7 @@ touch input.nml
 
 rm -rf RESTART
 mkdir RESTART
+
 test_expect_success "2D coupler" '
   mpirun -n 1 ./test_coupler_2d
 '
