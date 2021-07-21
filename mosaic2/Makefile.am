@@ -15,35 +15,32 @@
 #*
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
-#**********************************************************************
+#***********************************************************************
 
-.SUFFIXES:
-.SUFFIXES: .F90 .f90 .F .f .o .c
+# This is an automake file for the mosaic directory of the FMS
+# package.
 
-.F90.f90:
-	$(CPP) $(CPPFLAGS) $< > $*.f90
+# Ed Hartnett 2/22/19
 
-.F.f:
-	$(CPP) $(CPPFLAGS) $< > $*.f
+# Include .h and .mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/mosaic
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-.f.o:
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
+# Build these uninstalled convenience libraries.
 
-.f90.o:
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
+noinst_LTLIBRARIES = libmosaic2.la
 
-.F.o:
-	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
+libmosaic2_la_SOURCES = \
+mosaic2.F90 \
+grid2.F90
 
-.F90.o:
-	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
+# Some mods are dependant on other mods in this dir.
+grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
 
-.c.o:
-	$(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) $(OTHER_CFLAGS) -c $< -o $@
+MODFILES = \
+  mosaic2_mod.$(FC_MODEXT) \
+  grid2_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
 
-depend: $(DEPEND_FILES) makefile
-	@echo "Building dependencies ..."
-	@ls -1 $(DEPEND_FILES) > Srcfiles
-	@echo "." > Filepath
-	@$(MKDEPENDS) -m Filepath Srcfiles > depend
-	@$(RM) -f Filepath Srcfiles
+include $(top_srcdir)/mkmods.mk

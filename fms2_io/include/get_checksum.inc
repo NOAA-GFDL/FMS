@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms_io_utils_mod
 
 !> @brief Given a data array, return a string containing the mpp_checksum
 !!        in hex.
@@ -29,13 +31,13 @@ function get_checksum_0d(data) result(chksum)
   myrank(1) = mpp_pe()
   chksum = ""
   select type(data)
-    type is (integer(int32))
+    type is (integer(i4_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (integer(int64))
+    type is (integer(i8_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real32))
+    type is (real(r4_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real64))
+    type is (real(r8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
   end select
 
@@ -52,13 +54,13 @@ function get_checksum_1d(data) result(chksum)
   myrank(1) = mpp_pe()
   chksum = ""
   select type(data)
-    type is (integer(int32))
+    type is (integer(i4_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (integer(int64))
+    type is (integer(i8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real32))
+    type is (real(r4_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real64))
+    type is (real(r8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
   end select
 
@@ -75,13 +77,13 @@ function get_checksum_2d(data) result(chksum)
   myrank(1) = mpp_pe()
   chksum = ""
   select type(data)
-    type is (integer(int32))
+    type is (integer(i4_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (integer(int64))
+    type is (integer(i8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real32))
+    type is (real(r4_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real64))
+    type is (real(r8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
   end select
 
@@ -98,13 +100,13 @@ function get_checksum_3d(data) result(chksum)
   myrank(1) = mpp_pe()
   chksum = ""
   select type(data)
-    type is (integer(int32))
+    type is (integer(i4_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (integer(int64))
+    type is (integer(i8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real32))
+    type is (real(r4_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real64))
+    type is (real(r8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
   end select
 
@@ -121,13 +123,13 @@ function get_checksum_4d(data) result(chksum)
   myrank(1) = mpp_pe()
   chksum = ""
   select type(data)
-    type is (integer(int32))
+    type is (integer(i4_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (integer(int64))
+    type is (integer(i8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real32))
+    type is (real(r4_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real64))
+    type is (real(r8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
   end select
 
@@ -144,13 +146,13 @@ function get_checksum_5d(data) result(chksum)
   myrank(1) = mpp_pe()
   chksum = ""
   select type(data)
-    type is (integer(int32))
+    type is (integer(i4_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (integer(int64))
+    type is (integer(i8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real32))
+    type is (real(r4_kind))
 !     write(chksum, "(Z16)") mpp_chksum(data, myrank)
-    type is (real(real64))
+    type is (real(r8_kind))
       write(chksum, "(Z16)") mpp_chksum(data, myrank)
   end select
 

@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,10 +19,13 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the include directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
 
-# Ed Hartnett 2/26/19
-
-EXTRA_DIST = file_version.h fms_platform.h
-include_HEADERS = file_version.h fms_platform.h
+# Set common test settings.
+. ../test_common.sh
+# make an input.nml for mpp_init to read
+printf "EOF\n&dummy\nEOF" | cat > input.nml
+printf "5, 14   \n23\n\"forlendula\"" | cat > ascii_test1
+# run the tests
+run_test test_read_ascii_file 6 $netcdf_version_skip

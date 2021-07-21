@@ -16,10 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup monin_obukhov_inter monin_obukhov_inter
+!> @ingroup monin_obukhov
+!> @brief Utility routines to be used in @ref monin_obukhov_mod
 
+!> @file
+!> @brief File for @ref monin_obukhov_inter
 
+!> @addtogroup monin_obukhov_inter
+!> @{
 module monin_obukhov_inter
-#include <fms_platform.h>
 implicit none
 private
 
@@ -38,13 +44,13 @@ public :: monin_obukhov_stable_mix
 contains
 
 
-_PURE subroutine monin_obukhov_diff(vonkarm,                &
+pure subroutine monin_obukhov_diff(vonkarm,                &
      & ustar_min,                                     &
      & neutral, stable_option,new_mo_option,rich_crit, zeta_trans, &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
   real   , intent(in   )                        :: vonkarm
-  real   , intent(in   )                        :: ustar_min ! = 1.e-10
+  real   , intent(in   )                        :: ustar_min !< = 1.e-10
   logical, intent(in   )                        :: neutral
   integer, intent(in   )                        :: stable_option
   logical, intent(in   )                        :: new_mo_option !miz
@@ -86,7 +92,7 @@ _PURE subroutine monin_obukhov_diff(vonkarm,                &
 end subroutine monin_obukhov_diff
 
 
-_PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
+pure subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
      & error, zeta_min, max_iter, small,                         &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans,&
      & drag_min_heat, drag_min_moist, drag_min_mom,              &
@@ -95,10 +101,10 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
 
   real   , intent(in   )                :: grav
   real   , intent(in   )                :: vonkarm
-  real   , intent(in   )                :: error    ! = 1.e-04
-  real   , intent(in   )                :: zeta_min ! = 1.e-06
-  integer, intent(in   )                :: max_iter ! = 20
-  real   , intent(in   )                :: small    ! = 1.e-04
+  real   , intent(in   )                :: error    !< = 1.e-04
+  real   , intent(in   )                :: zeta_min !< = 1.e-06
+  integer, intent(in   )                :: max_iter !< = 20
+  real   , intent(in   )                :: small    !< = 1.e-04
   logical, intent(in   )                :: neutral
   integer, intent(in   )                :: stable_option
   logical, intent(in   )                :: new_mo_option
@@ -107,8 +113,8 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
   integer, intent(in   )                :: n
   real   , intent(in   ), dimension(n)  :: pt, pt0, z, z0, zt, zq, speed
   real   , intent(inout), dimension(n)  :: drag_m, drag_t, drag_q, u_star, b_star
-  logical, intent(in   )                :: lavail ! whether to use provided mask or not
-  logical, intent(in   ), dimension(n)  :: avail  ! provided mask
+  logical, intent(in   )                :: lavail !< whether to use provided mask or not
+  logical, intent(in   ), dimension(n)  :: avail  !< provided mask
   integer, intent(out  )                :: ier
 
   real   , dimension(n) :: rich, fm, ft, fq, zz
@@ -197,14 +203,14 @@ _PURE subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
 end subroutine monin_obukhov_drag_1d
 
 
-_PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
+pure subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
      & stable_option, new_mo_option, rich_crit, zeta_trans,        & !miz
      & n, rich, z, z0, zt, zq, f_m, f_t, f_q, mask, ier)
 
-  real   , intent(in   )                :: error    ! = 1.e-04
-  real   , intent(in   )                :: zeta_min ! = 1.e-06
-  integer, intent(in   )                :: max_iter ! = 20
-  real   , intent(in   )                :: small    ! = 1.e-04
+  real   , intent(in   )                :: error    !< = 1.e-04
+  real   , intent(in   )                :: zeta_min !< = 1.e-06
+  integer, intent(in   )                :: max_iter !< = 20
+  real   , intent(in   )                :: small    !< = 1.e-04
   integer, intent(in   )                :: stable_option
   logical, intent(in   )                :: new_mo_option
   real   , intent(in   )                :: rich_crit, zeta_trans
@@ -312,9 +318,9 @@ _PURE subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
 end subroutine monin_obukhov_solve_zeta
 
 
-! the differential similarity function for buoyancy and tracers
-! Note: seems to be the same as monin_obukhov_derivative_m?
-_PURE subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
+!> The differential similarity function for buoyancy and tracers
+! seems to be the same as monin_obukhov_derivative_m?
+pure subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
      & n, phi_t, zeta, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -370,7 +376,7 @@ end subroutine monin_obukhov_derivative_t
 
 
 ! the differential similarity function for momentum
-_PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
+pure subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
      & n, phi_m, zeta, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -418,7 +424,7 @@ _PURE subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans
 end subroutine monin_obukhov_derivative_m
 
 
-_PURE subroutine monin_obukhov_profile_1d(vonkarm, &
+pure subroutine monin_obukhov_profile_1d(vonkarm, &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
      & del_m, del_t, del_q, lavail, avail, ier)
@@ -432,8 +438,8 @@ _PURE subroutine monin_obukhov_profile_1d(vonkarm, &
   real,    intent(in   )                :: zref, zref_t
   real,    intent(in   ), dimension(n)  :: z, z0, zt, zq, u_star, b_star, q_star
   real,    intent(  out), dimension(n)  :: del_m, del_t, del_q
-  logical, intent(in   )                :: lavail ! whether to use provided mask or not
-  logical, intent(in   ), dimension(n)  :: avail  ! provided mask
+  logical, intent(in   )                :: lavail !< whether to use provided mask or not
+  logical, intent(in   ), dimension(n)  :: avail  !< provided mask
   integer, intent(out  )                :: ier
 
   real, dimension(n) :: zeta, zeta_0, zeta_t, zeta_q, zeta_ref, zeta_ref_t, &
@@ -501,8 +507,8 @@ _PURE subroutine monin_obukhov_profile_1d(vonkarm, &
 end subroutine monin_obukhov_profile_1d
 
 
-!  the integral similarity function for momentum
-_PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
+!> The integral similarity function for momentum
+pure subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
      & n, psi_m, zeta, zeta_0, ln_z_z0, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -577,8 +583,8 @@ _PURE subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, 
 end subroutine monin_obukhov_integral_m
 
 
-! the integral similarity function for moisture and tracers
-_PURE subroutine monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
+!> The integral similarity function for moisture and tracers
+pure subroutine monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, psi_t, psi_q, zeta, zeta_t, zeta_q, &
      & ln_z_zt, ln_z_zq, mask, ier)
 
@@ -676,7 +682,7 @@ end if
 end subroutine monin_obukhov_integral_tq
 
 
-_PURE subroutine monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
+pure subroutine monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
      &                              n, rich, mix, ier)
 
   integer, intent(in   )                 :: stable_option
@@ -726,3 +732,5 @@ end if
 end subroutine monin_obukhov_stable_mix
 
 end module monin_obukhov_inter
+!> @}
+! close documentation grouping

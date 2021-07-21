@@ -33,7 +33,8 @@ indent_style = space
 indent_size = 2
 trim_trailing_whitespace = true
 
-# Settings for specific files, or file patterns.  [{Makefile,*.am}]
+# Settings for specific files, or file patterns.
+[{Makefile,*.am}]
 indent_style = tab
 indent_size = 1
 

@@ -18,6 +18,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup mpp_io_mod
+!> @brief Handles opening and closing files in @ref mpp_io_mod
 
 ! <SUBROUTINE NAME="mpp_open">
 
@@ -188,8 +191,8 @@
 !ug support
       type(domain2d),pointer :: io_domain
       type(domainUG),pointer :: io_domain_ug
-      integer(INT_KIND)      :: io_layout_ug
-      integer(INT_KIND)      :: tile_id_ug
+      integer(i4_kind)      :: io_layout_ug
+      integer(i4_kind)      :: tile_id_ug
 !----------
       integer*8                             :: lenp
       integer                               :: comm

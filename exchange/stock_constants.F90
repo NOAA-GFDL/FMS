@@ -16,7 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup stock_constants_mod stock_constants_mod
+!> @ingroup exchange
+!> @brief Parameters, routines, and types for computing stocks in @ref xgrid_mod
 
+!> @file
+!> @brief File for @ref stock_constants_mod
+
+!> @addtogroup stock_constants_mod
+!> @{
 module stock_constants_mod
 
   use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_sum
@@ -39,20 +47,25 @@ module stock_constants_mod
   ! Shallow (no constructor) data structures holding the starting stock values (per PE) and
   ! flux integrated increments at present time.
 
-  integer, parameter :: NSIDES  = 3         ! top, bottom, side
+  integer, parameter :: NSIDES  = 3         !< top, bottom, side
+  !> @}
 
-  type stock_type ! per PE values
-     real  :: q_start = 0.0    ! total stocks at start time
-     real  :: q_now   = 0.0    ! total stocks at time t
+  !> @brief Holds stocks amounts per PE values
+  !> @ingroup stock_constants_mod
+  type stock_type
+     real  :: q_start = 0.0    !< total stocks at start time
+     real  :: q_now   = 0.0    !< total stocks at time t
 
      ! The dq's below are the stocks increments at the present time
      ! delta_t * surf integr of flux
      ! one for each side (ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE)
-     real  :: dq(NSIDES)    = 0.0    ! stock increments at present time on the Ice   grid
-     real  :: dq_IN(NSIDES) = 0.0    ! stock increments at present time on the Ocean grid
+     real  :: dq(NSIDES)    = 0.0    !< stock increments at present time on the Ice   grid
+     real  :: dq_IN(NSIDES) = 0.0    !< stock increments at present time on the Ocean grid
   end type stock_type
+  !> @addtogroup stock_constants_mod
+  !> @{
 
-  type(stock_type), save, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
+  type(stock_type), save, public, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
   type(time_type), save :: init_time
 
   public stocks_report
@@ -70,9 +83,9 @@ module stock_constants_mod
 
 contains
 
-
+    !> Starts a stock report
     subroutine stocks_report_init(Time)
-    type(time_type)               , intent(in) :: Time
+    type(time_type)               , intent(in) :: Time !< Model time
 
     character(len=80) :: formatString,space
     integer :: i,s
@@ -155,9 +168,9 @@ contains
 
   end subroutine stocks_report_init
 
-
+  !> Writes update to stock report
   subroutine stocks_report(Time)
-    type(time_type)               , intent(in) :: Time
+    type(time_type)               , intent(in) :: Time !< Model time
 
     type(time_type) :: timeSinceStart
     type(stock_type) :: stck
@@ -166,9 +179,9 @@ contains
     integer :: iday0, isec0, iday, isec, hours
     real    :: days
     integer :: diagID , comp,elem,i
-    integer, parameter :: initID = -2 ! initial value for diag IDs. Must not be equal to the value
-    ! that register_diag_field returns when it can't register the filed -- otherwise the registration
-    ! is attempted every time this subroutine is called
+    integer, parameter :: initID = -2 !< initial value for diag IDs. Must not be equal to the value
+                                      !! that register_diag_field returns when it can't register the filed -- otherwise the registration
+                                      !! is attempted every time this subroutine is called
 
     integer, dimension(NCOMPS,NELEMS), save :: f_valueDiagID = initID
     integer, dimension(NCOMPS,NELEMS), save :: c_valueDiagID = initID
@@ -319,9 +332,11 @@ contains
   end subroutine stocks_report
 
   subroutine stocks_set_init_time(Time)
-    type(time_type)     , intent(in) :: Time
+    type(time_type)     , intent(in) :: Time !< init time to set for stock report
     init_time = Time
 
   end subroutine stocks_set_init_time
 
 end module stock_constants_mod
+!> @}
+! close documentation grouping

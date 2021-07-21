@@ -22,7 +22,7 @@
 !> \author Ed Hartnett, 6/10/20
 
 program test_io_simple
-  use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64, error_unit, output_unit
+  use, intrinsic :: iso_fortran_env, only : error_unit, output_unit
   use mpi
   use fms2_io_mod
   use netcdf_io_mod
@@ -30,6 +30,7 @@ program test_io_simple
   use mpp_mod
   use setup
   use netcdf
+  use platform_mod
   implicit none
 
   type(Params) :: test_params  !> Some test parameters.
@@ -59,7 +60,7 @@ program test_io_simple
   integer :: ncid                        !> File ID for checking file.
   character (len = 80) :: testfile       !> Base name for file created in test.
   integer :: numfilesatt                 !> Value for global att in test file.
-  real (kind=real64) :: att1             !> Value for global att in test file.
+  real (kind=r8_kind) :: att1             !> Value for global att in test file.
   character (len = 120), dimension(3) :: my_format !> Array of formats to try.
   character (len = 6), dimension(4) :: names !> Dim name.
   character (len = 6) :: dimname !> Dim name we will read in.
@@ -69,8 +70,8 @@ program test_io_simple
   integer, dimension(1) :: dimids !> More var info we will read in.
   integer :: nAtts !> More var info we will read in.
   integer, dimension(4) :: domain_decomposition !> Domain decomposition we will read.
-  real (kind = real64), dimension(96) :: double_buffer !> Data we will write.
-  real (kind = real64), dimension(96) :: double_buffer_in !> Data we will read to check.
+  real (kind = r8_kind), dimension(96) :: double_buffer !> Data we will write.
+  real (kind = r8_kind), dimension(96) :: double_buffer_in !> Data we will read to check.
   integer :: i    !> Index for do loop.
   integer :: j    !> Index for do loop.
   integer :: err  !> Return code.
@@ -113,7 +114,7 @@ program test_io_simple
           domain, nc_format=my_format(1), is_restart=.false.))
 
      ! Add a global attribute.
-     call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
+     call register_global_attribute(fileobj, "globalatt1", real(7., kind=r8_kind))
 
      ! Add a dimension.
      call register_axis(fileobj, "lon", "x")
@@ -155,11 +156,7 @@ program test_io_simple
         if (varname .ne. "lon") stop 31
         if (xtype .ne. NF90_DOUBLE) stop 32
         if (ndims .ne. 1 .or. dimids(1) .ne. 1) stop 33
-        if (nAtts .ne. 1) stop 34
-        err = nf90_get_att(ncid, 1, "domain_decomposition", domain_decomposition)
-        if (err .ne. NF90_NOERR) stop 35
-        if (domain_decomposition(1) .ne. 1 .or. domain_decomposition(2) .ne. 96) stop 36
-        if (domain_decomposition(3) .ne. 1 .or. domain_decomposition(4) .ne. 96) stop 37
+        if (nAtts .ne. 0) stop 34
         err = nf90_get_var(ncid, 1, double_buffer_in)
         if (err .ne. NF90_NOERR) stop 38
         do j = 1, 96

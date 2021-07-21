@@ -5,6 +5,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0),
 and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is released,
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
+
+## [2021.02] - 2021-05-20
+### Added
+- FMS2_IO: Added fms2_io support for boundary condition restarts. `register_restart_region_2d` and `register_restart_region_3d` were added to fms2_io’s `register_restart_field` interface and `read_restart_bc` and `write_restart_bc` subroutines were added to read and write boundary conditions restarts. See [test_fms/fms2_io/test_bc_restart.F90](https://github.com/NOAA-GFDL/FMS/blob/9d55115a331685e4c6e01f2dfb3b770a9f80fa37/test_fms/fms2_io/test_bc_restart.F90) for sample usage.
+- FMS2_IO: Added fms2_io’s version of set_filename_appendix. The string sent in will be appended to the filename of a restart/history file before the *.nc or before *.tile if tile is in the filename.
+- FMS2_IO: Added workarounds to get fms2_io code working with pgi
+- COUPLER_TYPES: Added fms2_io’s version of `register_restarts_2/3d` and `CT_restore_state_2/3d` to the `coupler_type_register_restarts` and `coupler_type_restore_state` interfaces in coupler_types. The fms_io’s versions were renamed as mpp_io_* and both versions may still be used. See [test_fms/coupler/test_coupler_*d.F90](https://github.com/NOAA-GFDL/FMS/tree/9d55115a331685e4c6e01f2dfb3b770a9f80fa37/test_fms/coupler) for sample usage.
+- MPP_DOMAINS: Added a subroutine `mpp_create_super_grid_domain`, which sets the indices of the input domain to match the supergrid domain.
+- MOSAIC2/GRID2: Added a version of grid.F90 that is suitable for use with fms2_io called grid2.F90, and moved it into the mosaic2 folder along with mosaic2.F90
+- FMS_MOD: Added grid_init and grid_end calls for use with grid2.F90
+- TIME_MANAGER: New `set_date_gregorian` and `get_date_gregorian` function/subroutine that do not use coded_date and date_to_day arrays are added and set as default.  The original get_date_gregorian and set_date_gregorian have been renamed to `get_date_gregorian_old` and `set_date_gregorian_old` and can be used by adding `old_method=.true.` optional argument to set_date and get_date subroutine calls.  This is the first step out of three to remove the memory-consuming `coded_date` and `date_to_day` arrays from the time_manager_mod.
+- FMS GLOBAL MODULE: Adds a new module (libFMS.F90) to be used as a global import for all supported routines/types/variables within FMS. Also adds a separate module (fmsconstants.F90) to be used for constant values from `constants_mod`.
+### Changed
+- FMS2_IO: Adds logic so that the domain decomposition variable attribute is only added if the io_layout is not 1,1.
+- FMS_IO: Moved get_great_circle_algorithm from fms_io to grid2.F90
+- FMS_IO: Moved routines and submodules that were not IO related to fms_mod
+###Removed
+- DIAG_MANAGER: Removed the variable attributes `_FillValue` and `missing_value` from the `time_bounds` variable to be cf compliant
+- FV3GFS: Removes the unused fv3gfs directory
+- MOSAIC/GRID: Removed references in grid.F90 to fms_mod(replaced with mpp_mod direct calls)
+- MOSAIC/GRID: Moved mosaic/mosaic2.F90 to mosaic2 folder
+###Fixed
+- DIAG_MANAGER: Fixed a bug where the variable type of `Time` and `Time_bounds` were different (float vs double) when compiling with 32 bit reals
+- FMS2_IO: Fixed a bug where the code was crashing when you were trying to read/write scalar variables with the domain decomposed fileobj
+### Tag Commit Hashes
+- 2021.02-alpha1 (1a653fcb86a826251e6c8d0a90db897377acc49e)
+- 2021.02-alpha2 (81a5b6ea2559e2c31edbcab32a3230dfc31287be)
+- 2021.02-beta1 (d7e564adee07073febeb263b89158f768d665689)
+- 2021.02-beta2 (9d55115a331685e4c6e01f2dfb3b770a9f80fa37)
+
+## [2021.01] - 2021-03-08
+### Added
+- MPP: A counter for timers to report how many times a timer section is run
+- MPP: Adds missing interfaces to be consistent with interfaces that use the OVERLOAD and no_8byte_integer macros in order to allow building without MPI
+- MPP: Extends interfaces for read and write routines to include 32-bit and 64-bit real data arrays
+- MPP: Adds unit tests for mpp and mpp_io for all public routines with mixed-precision interfaces and expands on existing tests for mixed-precision
+- Adds an .editorconfig file with the project's preferred editor configuration
+- A variable MODDIR in configure.ac for use in Makefiles to find required Fortran module files
+- Adds FMS description web page as a markdown file
+### Changed
+- DOCS: Updates various modules to doxygen style comments and makes adjustments to correctly generate doxygen documentation through the build system
+- PLATFORM: changes usage of platform.h to platform_mod and it's associated data types
+- Changes all previous uses of flush subroutine calls to function calls
+- Changes travis CI to Github actions CI and removed all trailing whitespace
+### Removed
+### Fixed
+- MPP: Fixed a bug causing mpp_get_UG_domain_tile_pe_inf to seg fault from the incorrect assignment of an optional argument
+- FMS: Fixes issues with FMS unit tests failing from pointer allocations by reworking deallocate_unstruct_pass_type 
+- MPP_IO: Fixes unintentional printing of file attributes
+- An issue with the automake build system causing unnecessary rebuilds of source files
+- Fixes CMake build of the FMS library to install configuration files in the appropriate directories; and for OpenMP dependencies to the private
+### Tag Commit Hashes
+- 2021.01-alpha1 (dbe8a1060fb33167c2d12239484226b40fb01fd0)
+- 2021.01-alpha2 (b94eb18fe8e686c5958cbbacc4cf9130873afc85)
+- 2021.01-beta1  (4dcc9a795d9ba0cc959ebd93dda5be5f8473545c)
+
+
 ## [2020.04] - 2020-12-07
 ### Added
 - DIAG_MANAGER: A namelist flag called `use_mpp_io` if set to .true. will use mpp_io. The default is .false. and will use fms2_io.

@@ -21,6 +21,7 @@
 # subdirectory.
 
 # Ed Hartnett 6/25/20
+# Ryan Mulhall 12/1/20
 
 # Run doxygen.
 all:
@@ -31,6 +32,4 @@ all:
 
 check: all
 
-CLEANFILES = *.log
-
-EXTRA_DIST = Doxyfile.in
+EXTRA_DIST = Doxyfile.in grouping.h

@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.7...3.15 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2020.04
+  VERSION 2021.02.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -139,7 +139,8 @@ list(APPEND fms_fortran_src_files
   mosaic/gradient.F90
   mosaic/grid.F90
   mosaic/mosaic.F90
-  mosaic/mosaic2.F90
+  mosaic2/grid2.F90
+  mosaic2/mosaic2.F90
   mpp/mpp.F90
   mpp/mpp_data.F90
   mpp/mpp_domains.F90
@@ -162,6 +163,7 @@ list(APPEND fms_fortran_src_files
   topography/topography.F90
   tracer_manager/tracer_manager.F90
   tridiagonal/tridiagonal.F90
+  libFMS.F90
 )
 
 # Collect FMS C source files

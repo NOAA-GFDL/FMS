@@ -19,15 +19,15 @@
 !***********************************************************************
 subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke, wb_addrs, eb_addrs, &
                                    sb_addrs, nb_addrs, flags, xbegin, xend, ybegin, yend)
-  integer(LONG_KIND),         intent(in) :: f_addrs(:)
+  integer(i8_kind),         intent(in) :: f_addrs(:)
   type(nest_level_type),      intent(in) :: nest_domain
   type(nestSpec),          intent(in) :: update
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
   integer,                    intent(in) :: ke
-  integer(LONG_KIND),         intent(in) :: wb_addrs(:)
-  integer(LONG_KIND),         intent(in) :: eb_addrs(:)
-  integer(LONG_KIND),         intent(in) :: sb_addrs(:)
-  integer(LONG_KIND),         intent(in) :: nb_addrs(:)
+  integer(i8_kind),         intent(in) :: wb_addrs(:)
+  integer(i8_kind),         intent(in) :: eb_addrs(:)
+  integer(i8_kind),         intent(in) :: sb_addrs(:)
+  integer(i8_kind),         intent(in) :: nb_addrs(:)
   integer,                    intent(in) :: flags
   integer,                    intent(in) :: xbegin, xend, ybegin, yend
 
@@ -260,15 +260,15 @@ end subroutine MPP_DO_UPDATE_NEST_FINE_3D_
 #ifdef VECTOR_FIELD_
 subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update_x, update_y, d_type, ke, wb_addrsx, wb_addrsy, &
                                    eb_addrsx, eb_addrsy, sb_addrsx, sb_addrsy, nb_addrsx, nb_addrsy, flags)
-  integer(LONG_KIND),         intent(in) :: f_addrsx(:), f_addrsy(:)
+  integer(i8_kind),         intent(in) :: f_addrsx(:), f_addrsy(:)
   type(nest_level_type),      intent(in) :: nest_domain
   type(nestSpec),             intent(in) :: update_x, update_y
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
   integer,                    intent(in) :: ke
-  integer(LONG_KIND),         intent(in) :: wb_addrsx(:), wb_addrsy(:)
-  integer(LONG_KIND),         intent(in) :: eb_addrsx(:), eb_addrsy(:)
-  integer(LONG_KIND),         intent(in) :: sb_addrsx(:), sb_addrsy(:)
-  integer(LONG_KIND),         intent(in) :: nb_addrsx(:), nb_addrsy(:)
+  integer(i8_kind),         intent(in) :: wb_addrsx(:), wb_addrsy(:)
+  integer(i8_kind),         intent(in) :: eb_addrsx(:), eb_addrsy(:)
+  integer(i8_kind),         intent(in) :: sb_addrsx(:), sb_addrsy(:)
+  integer(i8_kind),         intent(in) :: nb_addrsx(:), nb_addrsy(:)
   integer,                    intent(in) :: flags
 
   character(len=8)            :: text
@@ -672,13 +672,13 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
 
 end subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_
 
-#endif   !VECTOR_FIELD_
+#endif
 
 
 !###############################################################################
 subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs_in, f_addrs_out, nest_domain, update, d_type, ke)
-  integer(LONG_KIND),         intent(in) :: f_addrs_in(:)
-  integer(LONG_KIND),         intent(in) :: f_addrs_out(:)
+  integer(i8_kind),         intent(in) :: f_addrs_in(:)
+  integer(i8_kind),         intent(in) :: f_addrs_out(:)
   type(nest_domain_type),     intent(in) :: nest_domain
   type(nestSpec),             intent(in) :: update
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
@@ -854,8 +854,8 @@ end subroutine MPP_DO_UPDATE_NEST_COARSE_3D_
 !###############################################################################
 subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_out, f_addrsy_out, &
                                            nest_domain, nest, update_x, update_y, d_type, ke, flags)
-  integer(LONG_KIND),         intent(in) :: f_addrsx_in(:), f_addrsy_in(:)
-  integer(LONG_KIND),         intent(in) :: f_addrsx_out(:), f_addrsy_out(:)
+  integer(i8_kind),         intent(in) :: f_addrsx_in(:), f_addrsy_in(:)
+  integer(i8_kind),         intent(in) :: f_addrsx_out(:), f_addrsy_out(:)
   type(nest_domain_type),     intent(in) :: nest_domain
   type(nest_level_type),      intent(in) :: nest
   type(nestSpec),             intent(in) :: update_x, update_y
@@ -1156,4 +1156,4 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
 
 end subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_
 
-#endif   !VECTOR_FIELD_
+#endif

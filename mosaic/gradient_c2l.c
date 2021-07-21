@@ -23,6 +23,11 @@
 #include "gradient_c2l.h"
 #include <stdio.h>
 
+/** \file
+ *  \ingroup mosaic
+ *  \ Grid utility functions for use in @ref mosaic_mod
+ */
+
 /*------------------------------------------------------------------------------
   Routine to compute gradient terms for SCRIP:
   SJL: Oct 5, 2007

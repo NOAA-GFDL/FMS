@@ -19,11 +19,16 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_data_mod
+!> @brief Holds dummy constants and stack data for @ref mpp_mod and @ref mpp_domains_mod.
+!! Accessible through @ref mpp_data_mod
+
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
 !----------------------------------------------------------------!
 integer :: stat(MPI_STATUS_SIZE)
-real(DOUBLE_KIND), allocatable :: mpp_stack(:)
+real(r8_kind), allocatable :: mpp_stack(:)
 
 !--- some dummy variables with dummy values that will never be used
 integer, parameter :: ptr_stack = -999
@@ -35,8 +40,8 @@ integer, parameter :: mpp_from_pe = -999, ptr_from = -999
 !-------------------------------------------------------------------!
 ! The following data is used in mpp_domains_mod and its components  !
 !-------------------------------------------------------------------!
-real(DOUBLE_KIND), allocatable :: mpp_domains_stack(:)
-real(DOUBLE_KIND), allocatable :: mpp_domains_stack_nonblock(:)
+real(r8_kind), allocatable :: mpp_domains_stack(:)
+real(r8_kind), allocatable :: mpp_domains_stack_nonblock(:)
 !--- some dummy variables with dummy values that will never be used
 integer, parameter :: ptr_domains_stack = -999
 integer, parameter :: ptr_domains_stack_nonblock = -999

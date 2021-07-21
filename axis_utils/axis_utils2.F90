@@ -16,38 +16,26 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup axis_utils2_mod axis_utils2_mod
+!> @ingroup axis_utils
+!> @brief A set of utilities for manipulating axes and extracting axis attributes.
+!!
+!> FMS2_IO equivalent version of @ref axis_utils_mod.
+!> @author M.J. Harrison
 
+!> @file
+!> @brief File for @ref axis_utils2_mod
+
+!> @addtogroup axis_utils2_mod
+!> @{
 module axis_utils2_mod
-  !
-  !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
-  !
-  !<REVIEWER EMAIL="Bruce.Wyman@noaa.gov">Bruce Wyman</REVIEWER>
-  !
-
-  !<OVERVIEW>
-  ! A set of utilities for manipulating axes and extracting axis
-  ! attributes
-  !</OVERVIEW>
-
-  !<DESCRIPTION>
-  !
-  ! subroutine get_axis_cart(axis,cart) : Returns X,Y,Z or T cartesian attribute
-  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of
-  !                                                    available axes, or defined based on axis mid-points
-  ! function get_axis_modulo : Returns true if axis has the modulo attribute
-  ! function get_axis_fold   : Returns is axis is folded at a boundary (non-standard meta-data)
-  ! function lon_in_range    : Returns lon_strt <= longitude <= lon_strt+360
-  ! subroutine tranlon       : Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
-  ! subroutine nearest_index : Return index of nearest point along axis
-  !
-  !</DESCRIPTION>
-  !
   use, intrinsic :: iso_fortran_env
   use mpp_mod,    only: mpp_error, FATAL, stdout
   use fms_mod,    only: lowercase, uppercase, string_array_index, fms_error_handler
   use fms2_io_mod, only: FmsNetcdfDomainFile_t, variable_att_exists, FmsNetcdfFile_t, &
                          get_variable_num_dimensions, get_variable_attribute,  &
                          get_variable_size, read_data, variable_exists
+  use platform_mod
 
   implicit none
 
@@ -59,23 +47,35 @@ module axis_utils2_mod
   integer, parameter :: maxatts = 100
   real, parameter    :: epsln= 1.e-10
   real, parameter    :: fp5 = 0.5, f360 = 360.0
-
+!> @}
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+  !> Perform 1D interpolation between grids.
+  !!
+  !> Data and grids can have 1, 2, or 3 dimensions.
+  !! @param grid1 grid for data1
+  !! @param grid2 grid for data2
+  !! @param data1 Data to interpolate
+  !! @param [inout] data2 Interpolated data
+  !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
+  !! @ingroup axis_utils2_mod
   interface interp_1d
      module procedure interp_1d_1d
      module procedure interp_1d_2d
      module procedure interp_1d_3d
   end interface
 
+!> @addtogroup axis_utils2_mod
+!> @{
+
 contains
 
-
+  !> @brief Returns X,Y,Z or T cartesian attribute
   subroutine get_axis_cart(fileobj, axisname, cart)
-    type(FmsNetcdfFile_t), intent(in) :: fileobj
-    character(len=*), intent(in) :: axisname
-    character(len=1), intent(out) :: cart
+    type(FmsNetcdfFile_t), intent(in) :: fileobj !< file object to read from
+    character(len=*), intent(in) :: axisname !< name of axis to retrieve
+    character(len=1), intent(out) :: cart !< Returned attribute axis
 
     character(len=1) :: axis_cart
     character(len=16), dimension(2) :: lon_names, lat_names
@@ -99,9 +99,9 @@ contains
     cart = "N"
     if (variable_exists(fileobj, axisname)) then
       if (variable_att_exists(fileobj, axisname, "cartesian_axis")) then
-        call get_variable_attribute(fileobj, axisname, "cartesian_axis", cart)
+        call get_variable_attribute(fileobj, axisname, "cartesian_axis", cart(1:1))
       elseif (variable_att_exists(fileobj, axisname, "axis")) then
-        call get_variable_attribute(fileobj, axisname, "axis", cart)
+        call get_variable_attribute(fileobj, axisname, "axis", cart(1:1))
       endif
       axis_cart = uppercase(cart)
       if (axis_cart .eq. 'X' .or. axis_cart .eq. 'Y' .or. axis_cart .eq. 'Z' &
@@ -144,11 +144,12 @@ contains
     end if
   end subroutine get_axis_cart
 
+  !> get axis edge data from a given file
   subroutine axis_edges(fileobj, name, edge_data, reproduce_null_char_bug_flag)
 
-  class(FmsNetcdfFile_t), intent(in) :: fileobj
-  character(len=*), intent(in) :: name
-  class(*), dimension(:), intent(out) :: edge_data
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object to read from
+  character(len=*), intent(in) :: name !< Name of a given axis
+  class(*), dimension(:), intent(out) :: edge_data !< Returned edge data from given axis name
   logical, intent(in), optional :: reproduce_null_char_bug_flag !< Flag indicating to reproduce
                                      !! the mpp_io bug where the null characters were not removed
                                      !! after reading a string attribute
@@ -156,10 +157,10 @@ contains
   integer :: ndims
   character(len=128) :: buffer
   integer, dimension(:), allocatable :: dim_sizes
-  real(kind=real32), dimension(:), allocatable :: r32
-  real(kind=real32), dimension(:,:), allocatable :: r322d
-  real(kind=real64), dimension(:), allocatable :: r64
-  real(kind=real64), dimension(:,:), allocatable :: r642d
+  real(kind=r4_kind), dimension(:), allocatable :: r32
+  real(kind=r4_kind), dimension(:,:), allocatable :: r322d
+  real(kind=r8_kind), dimension(:), allocatable :: r64
+  real(kind=r8_kind), dimension(:,:), allocatable :: r642d
   integer :: i
   integer :: n
   logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
@@ -207,14 +208,7 @@ contains
       if (dim_sizes(1) .ne. n+1) then
         call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
       endif
-      select type (edge_data)
-        type is (real(kind=real32))
-          call read_data(fileobj, buffer, edge_data)
-        type is (real(kind=real64))
-          call read_data(fileobj, buffer, edge_data)
-        class default
-          call mpp_error(FATAL, "axis_edges: unsupported kind.")
-      end select
+      call read_data(fileobj, buffer, edge_data)
     elseif (size(dim_sizes) .eq. 2) then
       if (dim_sizes(1) .ne. 2) then
         call mpp_error(FATAL, "axis_edges: first dimension of edge must be of size 2")
@@ -223,13 +217,13 @@ contains
         call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
       endif
       select type (edge_data)
-        type is (real(kind=real32))
+        type is (real(kind=r4_kind))
           allocate(r322d(dim_sizes(1), dim_sizes(2)))
           call read_data(fileobj, buffer, r322d)
           edge_data(1:dim_sizes(2)) = r322d(1,:)
           edge_data(dim_sizes(2)+1) = r322d(2,dim_sizes(2))
           deallocate(r322d)
-        type is (real(kind=real64))
+        type is (real(kind=r8_kind))
           allocate(r642d(dim_sizes(1), dim_sizes(2)))
           call read_data(fileobj, buffer, r642d)
           edge_data(1:dim_sizes(2)) = r642d(1,:)
@@ -242,29 +236,29 @@ contains
     deallocate(dim_sizes)
   else
     select type (edge_data)
-      type is (real(kind=real32))
+      type is (real(kind=r4_kind))
         allocate(r32(n))
         call read_data(fileobj, name, r32)
         do i = 2, n
-          edge_data(i) = r32(i-1) + 0.5_real32*(r32(i) - r32(i-1))
+          edge_data(i) = r32(i-1) + 0.5_r4_kind*(r32(i) - r32(i-1))
         enddo
-        edge_data(1) = r32(1) - 0.5_real32*(r32(2) - r32(1))
+        edge_data(1) = r32(1) - 0.5_r4_kind*(r32(2) - r32(1))
         if (abs(edge_data(1)) .lt. 1.e-10) then
-          edge_data(1) = 0._real32
+          edge_data(1) = 0._r4_kind
         endif
-        edge_data(n+1) = r32(n) + 0.5_real32*(r32(n) - r32(n-1))
+        edge_data(n+1) = r32(n) + 0.5_r4_kind*(r32(n) - r32(n-1))
         deallocate(r32)
-      type is (real(kind=real64))
+      type is (real(kind=r8_kind))
         allocate(r64(n))
         call read_data(fileobj, name, r64)
         do i = 2, n
-          edge_data(i) = r64(i-1) + 0.5_real64*(r64(i) - r64(i-1))
+          edge_data(i) = r64(i-1) + 0.5_r8_kind*(r64(i) - r64(i-1))
         enddo
-        edge_data(1) = r64(1) - 0.5_real64*(r64(2) - r64(1))
+        edge_data(1) = r64(1) - 0.5_r8_kind*(r64(2) - r64(1))
         if (abs(edge_data(1)) .lt. 1.d-10) then
-          edge_data(1) = 0._real64
+          edge_data(1) = 0._r8_kind
         endif
-        edge_data(n+1) = r64(n) + 0.5_real64*(r64(n) - r64(n-1))
+        edge_data(n+1) = r64(n) + 0.5_r8_kind*(r64(n) - r64(n-1))
         deallocate(r64)
       class default
         call mpp_error(FATAL, "axis_edges: unsupported kind.")
@@ -272,7 +266,9 @@ contains
   endif
 end subroutine axis_edges
 
-
+  !> @brief Checks if 'modulo' variable exists for a given axis.
+  !!
+  !> @return true if modulo variable exists in fileobj for the given axis name.
   function get_axis_modulo(fileobj, axisname)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
     character(len=*), intent(in) :: axisname
@@ -281,6 +277,8 @@ end subroutine axis_edges
     get_axis_modulo = variable_att_exists(fileobj, axisname, "modulo")
   end function get_axis_modulo
 
+  !> @return true if modulo_beg and modulo_end exist in fileobj with the given
+  !! axis, and returns their values in tbeg and tend.
   function get_axis_modulo_times(fileobj, axisname, tbeg, tend)
     type(FmsNetcdfFile_t), intent(in) :: fileobj
     character(len=*), intent(in) :: axisname
@@ -308,6 +306,8 @@ end subroutine axis_edges
     get_axis_modulo_times = found_tbeg
   end function get_axis_modulo_times
 
+  !> @brief Returns lon_strt <= longitude <= lon_strt+360
+  !! @return real lon_in_range
   function lon_in_range(lon, l_strt)
     real, intent(in) :: lon, l_strt
     real :: lon_in_range
@@ -338,6 +338,13 @@ end subroutine axis_edges
 
   end function lon_in_range
 
+  !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
+  !!
+  !> <br>The first istrt-1 entries are moved to the end of the array:
+  !!
+  !! e.g.
+  !!        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
+  !!        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
   subroutine tranlon(lon, lon_start, istrt)
 
     ! returns array of longitudes s.t.  lon_strt <= lon < lon_strt+360.
@@ -387,47 +394,46 @@ end subroutine axis_edges
     return
   end subroutine tranlon
 
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!   be the nearest data point to 0.0
+  !!
+  !!   @return real frac_index
   function frac_index (value, array)
-    !=======================================================================
-    !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
-    !
-    !=======================================================================
 
     integer :: ia, i, ii, unit
-    real :: value, frac_index
-    real, dimension(:) :: array
+    real :: value !< arbitrary data...same units as elements in "array"
+    real :: frac_index
+    real, dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))
@@ -462,48 +468,49 @@ end subroutine axis_edges
     endif
   end function frac_index
 
+  !> @brief Return index of nearest point along axis
+  !!
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!     ia     = dimension of "array"
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!     be the nearest data point to 0.0
+  !! @return integer nearest_index
   function nearest_index (value, array)
-    !=======================================================================
-    !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !     ia     = dimension of "array"
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
-    !
-    !=======================================================================
 
-    integer :: nearest_index, ia, i, ii, unit
-    real :: value
-    real, dimension(:) :: array
+    integer :: nearest_index
+    integer :: ia !< dimension of "array"
+    integer :: i, ii, unit
+    real :: value !< arbitrary data...same units as elements in "array"
+    real, dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))
@@ -802,3 +809,5 @@ end subroutine axis_edges
   end subroutine find_index
 
 end module axis_utils2_mod
+!> @}
+! close documentation grouping

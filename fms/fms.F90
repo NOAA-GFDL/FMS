@@ -16,38 +16,35 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_mod fms_mod
+!> @ingroup fms
+!! @brief The fms module provides routines that are commonly used
+!!   by most FMS modules.
+!> @author Bruce Wyman
+!!
+!> Here is a summary of the functions performed by routines
+!!     in the fms module.
+!!
+!! 1. Output module version numbers to a common (<TT>log</TT>) file
+!!     using a common format.<BR/>
+!! 2. Open specific types of files common to many FMS modules.
+!!     These include namelist files, restart files, and 32-bit IEEE
+!!     data files. There also is a matching interface to close the files.
+!!     If other file types are needed the <TT>mpp_open</TT> and <TT>mpp_close</TT>
+!!     interfaces in module @ref mpp_io_mod must be used.<BR/>
+!! 3. Read and write distributed data to simple native unformatted files.
+!!     This type of file (called a restart file) is used to checkpoint
+!!     model integrations for a subsequent restart of the run.<BR/>
+!! 4. For convenience there are several routines published from
+!!     the @ref mpp module. These are routines for getting processor
+!!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
 
+!> @file
+!> @brief File for @ref fms_mod
+
+!> @addtogroup fms_mod
+!> @{
 module fms_mod
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   The fms module provides routines that are commonly used
-!   by most FMS modules.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   Here is a summary of the functions performed by routines
-!     in the fms module.
-!
-!   1. Output module version numbers to a common (<TT>log</TT>) file
-!     using a common format.<BR/>
-!   2. Open specific types of files common to many FMS modules.
-!     These include namelist files, restart files, and 32-bit IEEE
-!     data files. There also is a matching interface to close the files.
-!     If other file types are needed the <TT>mpp_open</TT> and <TT>mpp_close</TT>
-!     interfaces in module <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp_io.html">mpp_io</LINK> must be used.<BR/>
-!    3. Read and write distributed data to simple native unformatted files.
-!     This type of file (called a restart file) is used to checkpoint
-!     model integrations for a subsequent restart of the run.<BR/>
-!    4. For convenience there are several routines published from
-!     the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">mpp</LINK> module. These are routines for getting processor
-!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
-! </DESCRIPTION>
 
 !-----------------------------------------------------------------------
 !
@@ -160,12 +157,13 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
 use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        read_data, write_data, read_compressed, read_distributed, &
                        open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
-                       set_domain, get_domain_decomp, nullify_domain, &
-                       open_file, open_direct_file, string, get_mosaic_tile_grid, &
+                       get_domain_decomp, &
+                       open_file, open_direct_file, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
-                       write_version_number
+                       set_domain, nullify_domain
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
+use grid2_mod, only: grid_init, grid_end
 
 
 implicit none
@@ -180,8 +178,8 @@ public :: open_namelist_file, open_restart_file, &
           open_file, open_direct_file
 
 ! routines for reading/writing distributed data
-public :: set_domain, read_data, write_data, read_compressed, read_distributed
-public :: get_domain_decomp, field_size, nullify_domain
+public :: read_data, write_data, read_compressed, read_distributed
+public :: get_domain_decomp, field_size
 public :: get_global_att_value
 
 ! routines for get mosaic information
@@ -190,12 +188,13 @@ public :: get_mosaic_tile_grid, get_mosaic_tile_file
 ! miscellaneous i/o routines
 public :: file_exist, check_nml_error, field_exist,     &
           error_mesg, fms_error_handler
-! i/o routines from fms_io
+! version logging routine (originally from fms_io)
 public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
-public :: lowercase, uppercase, string,        &
-          string_array_index, monotonic_array
+public :: lowercase, uppercase,        &
+          string_array_index, monotonic_array, &
+          set_domain, nullify_domain
 
 ! public mpp interfaces
 public :: mpp_error, NOTE, WARNING, FATAL, &
@@ -209,6 +208,9 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+!public from the old fms_io but not exists here
+public :: string
+
 ! public mpp-io interfaces
 public :: do_cf_compliance
 
@@ -216,8 +218,9 @@ public :: do_cf_compliance
 !this is published by fms and applied to any initialized clocks
 !of course you can go and set the flag to SYNC or DETAILED by hand
 integer, public :: clock_flag_default
-
-! Namelist read error values
+!> @}
+  !> Namelist read error values
+  !> @ingroup fms_mod
   TYPE nml_errors_type
      INTEGER :: multipleNMLSinFile
      INTEGER :: badType1
@@ -226,69 +229,45 @@ integer, public :: clock_flag_default
      INTEGER :: NotInFile
   END TYPE nml_errors_type
   TYPE(nml_errors_type), SAVE :: nml_errors
-
+!> @addtogroup fms_mod
+!> @{
 
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
 
-  logical           :: read_all_pe   = .true.
-  character(len=16) :: clock_grain = 'NONE', clock_flags='NONE'
-  character(len=8)  :: warning_level = 'warning'
-  integer           :: stack_size = 0
-  integer           :: domains_stack_size = 0
-  logical, public   :: print_memory_usage = .FALSE.
+  logical           :: read_all_pe   = .true. !< Read global data on all processors extracting local
+                       !! part needed (TRUE) or read global data on PE0 and broadcast to all
+                       !! PEs(FALSE).
+  character(len=16) :: clock_grain = 'NONE' !< The level of clock granularity used for performance
+                       !! timing sections of code. Possible values in order of increasing detail
+                       !! are: 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE',
+                       !! 'ROUTINE', 'LOOP', and 'INFRA'.  Code sections are defined using routines
+                       !! in MPP module: mpp_clock_id, mpp_clock_begin, and mpp_clock_end. The fms
+                       !! module makes these routines public. A list of timed code sections will be
+                       !! printed to STDOUT. See the @ref mpp_mod module for more details.
+  character(len=16) :: clock_flags='NONE' !< Possible values are 'NONE', 'SYNC', or 'DETAILED'.
+                       !! SYNC will give accurate information on load balance of the clocked
+                       !! portion of code. DETAILED also turns on detailed message-passing
+                       !! performance diagnosis. Both SYNC and DETAILED will  work correctly on
+                       !! innermost clock nest and distort outer clocks, and possibly the overall
+                       !! code time. See the @ref mpp_mod module for more details.
+  character(len=8)  :: warning_level = 'warning' !< Sets the termination condition for the WARNING
+                       !! flag to interfaces error_mesg/mpp_error. set warning_level = 'fatal'
+                       !! (program crashes for warning messages) or 'warning' (prints warning
+                       !! message and continues).
+  integer           :: stack_size = 0 !< The size in words of the MPP user stack. If stack_size > 0,
+                       !! the following MPP routine is called: call mpp_set_stack_size (stack_size).
+                       !! If stack_size = 0 (default) then the default size set by mpp_mod is used.
+  integer           :: domains_stack_size = 0 !< The size in words of the MPP_DOMAINS user stack. If
+                       !! domains_stack_size > 0, the following MPP_DOMAINS routine is called:
+                       !! call mpp_domains_set_stack_size (domains_stack_size). If
+                       !! domains_stack_size = 0 (default) then the default size set by
+                       !! @ref mpp_domains_mod is used.
+  logical, public   :: print_memory_usage = .FALSE. !< If set to .TRUE., memory usage statistics
+                       !! will be printed at various points in the code. It is used to study memory
+                       !! usage, e.g to detect memory leaks.
 
 !------ namelist interface -------
-
-! <NAMELIST NAME="fms_nml">
-!   <DATA NAME="clock_grain"  TYPE="character"  DEFAULT="'NONE'">
-!     The level of clock granularity used for performance timing sections
-!     of code. Possible values in order of increasing detail are:
-!     'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
-!     'LOOP', and 'INFRA'.  Code sections are defined using routines in MPP
-!     module: mpp_clock_id, mpp_clock_begin, and mpp_clock_end.
-!     The fms module makes these routines public.
-!     A list of timed code sections will be printed to STDOUT.
-!     See the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">MPP</LINK>
-!     module for more details.
-!   </DATA>
-!   <DATA NAME="clock_flags"  TYPE="character"  DEFAULT="'NONE'">
-!     Possible values are 'NONE', 'SYNC', or 'DETAILED'.
-!     SYNC will give accurate information on load balance of the clocked
-!     portion of code.
-!     DETAILED also turns on detailed message-passing performance diagnosis.
-!     Both SYNC and DETAILED will  work correctly on innermost clock nest
-!     and distort outer clocks, and possibly the overall code time.
-!     See the <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/mpp/mpp.html">MPP</LINK>
-!     module for more details.
-!   </DATA>
-!   <DATA NAME="read_all_pe"  TYPE="logical"  DEFAULT="true">
-!     Read global data on all processors extracting local part needed (TRUE) or
-!     read global data on PE0 and broadcast to all PEs (FALSE).
-!   </DATA>
-!   <DATA NAME="warning_level"  TYPE="character"  DEFAULT="'warning'">
-!     Sets the termination condition for the WARNING flag to interfaces
-!     error_mesg/mpp_error. set warning_level = 'fatal' (program crashes for
-!     warning messages) or 'warning' (prints warning message and continues).
-!   </DATA>
-!   <DATA NAME="stack_size"  TYPE="integer"  DEFAULT="0">
-!     The size in words of the MPP user stack. If stack_size > 0, the following
-!     MPP routine is called: call mpp_set_stack_size (stack_size). If stack_size
-!     = 0 (default) then the default size set by mpp_mod is used.
-!   </DATA>
-!   <DATA NAME="domains_stack_size" TYPE="integer"  DEFAULT="0">
-!     The size in words of the MPP_DOMAINS user stack. If
-!     domains_stack_size > 0, the following MPP_DOMAINS routine is called:
-!     call mpp_domains_set_stack_size (domains_stack_size). If
-!     domains_stack_size = 0 (default) then the default size set by
-!     mpp_domains_mod is used.
-!   </DATA>
-!   <DATA NAME="print_memory_usage"  TYPE="logical"  DEFAULT=".FALSE.">
-!     If set to .TRUE., memory usage statistics will be printed at various
-!     points in the code. It is used to study memory usage, e.g to detect
-!     memory leaks.
-!   </DATA>
-! </NAMELIST>
 
   namelist /fms_nml/  read_all_pe, clock_grain, clock_flags,         &
                       warning_level, stack_size, domains_stack_size, &
@@ -308,47 +287,45 @@ integer, public :: clock_flag_default
 
   logical :: module_is_initialized = .FALSE.
 
+  logical, private :: fms_io_initialized = .FALSE.!> used to make sure fms_io version is only
+                                                  !! written to log once
 
+!> @}
+
+!> Converts a number to a string
+!> @ingroup fms_mod
+interface string
+   module procedure string_from_integer
+   module procedure string_from_real
+end interface
+
+!> @addtogroup fms_mod
+!> @{
 contains
 
 !#######################################################################
 
-! <SUBROUTINE NAME="fms_init">
-
-!   <OVERVIEW>
-!     Initializes the FMS module and also calls the initialization routines for all
-!     modules in the MPP package. Will be called automatically if the user does
-!     not call it.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Initialization routine for the fms module. It also calls initialization routines
-!      for the mpp, mpp_domains, and mpp_io modules. Although this routine
-!      will be called automatically by other fms_mod routines, users should
-!      explicitly call fms_init. If this routine is called more than once it will
-!      return silently. There are no arguments.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call fms_init ( )
-!   </TEMPLATE>
-
-
-!   <ERROR MSG="invalid entry for namelist variable warning_level" STATUS="FATAL">
-!     The namelist variable warning_level must be either 'fatal' or 'warning'
-!     (case-insensitive).
-!   </ERROR>
-!   <ERROR MSG="invalid entry for namelist variable clock_grain" STATUS="FATAL">
-!     The namelist variable clock_grain must be one of the following values:
-!     'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
-!     'LOOP', or 'INFRA' (case-insensitive).
-!   </ERROR>
-
-! initializes the fms module/package
-! also calls mpp initialization routines and reads fms namelist
-
+!> @brief Initializes the FMS module and also calls the initialization routines for all
+!!     modules in the MPP package. Will be called automatically if the user does
+!!     not call it.
+!! @details Initialization routine for the fms module. It also calls initialization routines
+!!      for the mpp, mpp_domains, and mpp_io modules. Although this routine
+!!      will be called automatically by other fms_mod routines, users should
+!!      explicitly call fms_init. If this routine is called more than once it will
+!!      return silently. There are no arguments.
+!!
+!> @throws FATAL, invalid entry for namelist variable warning_level
+!! The namelist variable warning_level must be either 'fatal' or 'warning'(case-insensitive)
+!!
+!> @throws FATAL, invalid entry for namelist variable clock_grain
+!! The namelist variable clock_grain must be one of the following values:
+!! 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
+!! 'LOOP', or 'INFRA' (case-insensitive).
 subroutine fms_init (localcomm )
 
 !--- needed to output the version number of constants_mod to the logfile ---
  use constants_mod, only: constants_version=>version !pjp: PI not computed
+ use fms_io_mod,    only: fms_io_version
 
  integer, intent(in), optional :: localcomm
  integer :: unit, ierr, io
@@ -362,13 +339,18 @@ subroutine fms_init (localcomm )
     else
        call mpp_init()
     endif
-    call mpp_domains_init
-    call fms_io_init
-    call fms2_io_init ()
+    call mpp_domains_init()
+    call fms_io_init()
+    !! write_version_number is inaccesible from fms_io_mod so write it from here if not written
+    if(.not.fms_io_initialized) then
+      call write_version_number("FMS_IO_MOD", fms_io_version)
+      fms_io_initialized = .true.
+    endif
+    call fms2_io_init()
     logunitnum = stdlog()
 !---- read namelist input ----
 
-    call nml_error_init  ! first initialize namelist iostat error codes
+    call nml_error_init()  ! first initialize namelist iostat error codes
 
 #ifdef INTERNAL_FILE_NML
       read (input_nml_file, fms_nml, iostat=io)
@@ -451,86 +433,49 @@ subroutine fms_init (localcomm )
 
 !--- output version information constants to the logfile
     call write_version_number("CONSTANTS_MOD", constants_version)
+    call grid_init
 
 end subroutine fms_init
-! </SUBROUTINE>
 
 !#######################################################################
 
-
-! <SUBROUTINE NAME="fms_end">
-
-!   <OVERVIEW>
-!     Calls the termination routines for all modules in the MPP package.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Termination routine for the fms module. It also calls destructor routines
-!      for the mpp, mpp_domains, and mpp_io modules. If this routine is called
-!      more than once it will return silently. There are no arguments.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call fms_end ( )
-!   </TEMPLATE>
-
-! terminates the fms module/package
-! also calls mpp destructor routines
-
+!> @brief Calls the termination routines for all modules in the MPP package.
+!!
+!> Termination routine for the fms module. It also calls destructor routines
+!! for the mpp, mpp_domains, and mpp_io modules. If this routine is called
+!! more than once it will return silently. There are no arguments.
 subroutine fms_end ( )
 
     if (.not.module_is_initialized) return  ! return silently
 !    call fms_io_exit  ! now called from coupler_end
+    call grid_end
     call mpp_io_exit
     call mpp_domains_exit
     call mpp_exit
     module_is_initialized =.FALSE.
 
 end subroutine fms_end
-! </SUBROUTINE>
-
 
 !#######################################################################
-! <SUBROUTINE NAME="error_mesg">
 
-!   <OVERVIEW>
-!     Print notes, warnings and error messages; terminates program for warning
-!     and error messages. (use error levels NOTE,WARNING,FATAL, see example below)
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Print notes, warnings and error messages; and terminates the program for
-!     error messages. This routine is a wrapper around mpp_error, and is provided
-!     for backward compatibility. This module also publishes mpp_error,
-!      <B>users should try to use the mpp_error interface</B>.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call error_mesg ( routine, message, level )
-!   </TEMPLATE>
-
-!   <IN NAME="routine"  TYPE="character" >
-!     Routine name where the warning or error has occurred.
-!   </IN>
-!   <IN NAME="message"  TYPE="character" >
-!     Warning or error message to be printed.
-!   </IN>
-!   <IN NAME="level"  TYPE="integer" >
-!     Level of severity; set to NOTE, WARNING, or FATAL Termination always occurs
-!     for FATAL, never for NOTE, and is settable for WARNING (see namelist).
-!   </IN>
-!   <NOTE>
-!
-!     Examples:
-!     <PRE>
-!        use fms_mod, only: error_mesg, FATAL, NOTE
-
-!        call error_mesg ('fms_mod', 'initialization not called', FATAL)
-!        call error_mesg ('fms_mod', 'fms_mod message', NOTE)
-!     </PRE>
-!   </NOTE>
-! wrapper for the mpp error handler
-! users should try to use the mpp_error interface
-
+ !> @brief Print notes, warnings and error messages; terminates program for warning
+ !!     and error messages. Usage of @ref mpp_error is preferable. (use error levels NOTE,WARNING,FATAL, see example below)
+ !! @details Print notes, warnings and error messages; and terminates the program for
+ !!     error messages. This routine is a wrapper around mpp_error, and is provided
+ !!     for backward compatibility. This module also publishes mpp_error,
+ !!      <B>users should try to use the mpp_error interface</B>.
+ !!
+ !! <br>Example usage:
+ !! @code{.F90}
+ !! use fms_mod, only: error_mesg, FATAL, NOTE
+ !! call error_mesg ('fms_mod', 'initialization not called', FATAL)
+ !! call error_mesg ('fms_mod', 'fms_mod message', NOTE)
+ !! @endcode
  subroutine error_mesg (routine, message, level)
-  character(len=*), intent(in) :: routine, message
-  integer,          intent(in) :: level
+  character(len=*), intent(in) :: routine !< Routine name where the warning or error has occurred.
+  character(len=*), intent(in) :: message !< Warning or error message to be printed.
+  integer,          intent(in) :: level !< Level of severity; set to NOTE, WARNING, or FATAL Termination always occurs
+                                        !! for FATAL, never for NOTE, and is settable for WARNING (see namelist).
 
 !  input:
 !      routine   name of the calling routine (character string)
@@ -541,42 +486,24 @@ end subroutine fms_end
     call mpp_error ( routine, message, level )
 
  end subroutine error_mesg
-! </SUBROUTINE>
 
 !#######################################################################
-! <FUNCTION NAME="fms_error_handler">
 
-!   <OVERVIEW>
-!     Facilitates the control of fatal error conditions
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     When err_msg is present, message is copied into err_msg
-!     and the function returns a value of .true.
-!     Otherwise calls mpp_error to terminate execution.
-!     The intended use is as shown below.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     if(fms_error_handler(routine, message, err_msg)) return
-!   </TEMPLATE>
-!   <IN NAME="routine"  TYPE="character">
-!     Routine name where the fatal error has occurred.
-!   </IN>
-!   <IN NAME="message"  TYPE="character">
-!     fatal error message to be printed.
-!   </IN>
-!   <OUT NAME="fms_error_handler"  TYPE="logical">
-!     .true.  when err_msg is present
-!     .false. when err_msg is not present
-!   </OUT>
-!   <OUT NAME="err_msg"  TYPE="character">
-!     When err_msg is present: err_msg = message
-!   </OUT>
-
+ !> @brief Facilitates the control of fatal error conditions
+ !! @details When err_msg is present, message is copied into err_msg
+ !!     and the function returns a value of .true.
+ !!     Otherwise calls mpp_error to terminate execution.
+ !!     The intended use is as shown below.
+ !! @returns true when err_msg is present
+ !! @code{.F90}
+ !! if(fms_error_handler(routine, message, err_msg)) return
+ !! @endcode
  function fms_error_handler(routine, message, err_msg)
 
  logical :: fms_error_handler
- character(len=*), intent(in) :: routine, message
- character(len=*), intent(out), optional :: err_msg
+ character(len=*), intent(in) :: routine !< Routine name where the fatal error has occurred.
+ character(len=*), intent(in) :: message !< fatal error message to be printed.
+ character(len=*), intent(out), optional :: err_msg !< When err_msg is present: err_msg = message
 
  fms_error_handler = .false.
  if(present(err_msg)) then
@@ -587,79 +514,56 @@ end subroutine fms_end
  endif
 
  end function fms_error_handler
-! </FUNCTION>
-
-!#######################################################################
-! <FUNCTION NAME="check_nml_error">
-
-!   <OVERVIEW>
-!     Checks the iostat argument that is returned after reading a namelist
-!     and determines if the error code is valid.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     The FMS allows multiple namelist records to reside in the same file.
-!     Use this interface to check the iostat argument that is returned after
-!     reading a record from the namelist file. If an invalid iostat value
-!     is detected this routine will produce a fatal error. See the NOTE below.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     check_nml_error ( iostat, nml_name )
-!   </TEMPLATE>
-
-!   <IN NAME="iostat"  TYPE="integer" >
-!     The iostat value returned when reading a namelist record.
-!   </IN>
-!   <IN NAME="nml_name"  TYPE="character" >
-!     The name of the namelist. This name will be printed if an error is
-!     encountered, otherwise the name is not used.
-!   </IN>
-!   <OUT NAME=""  TYPE="integer" >
-!     This function returns the input iostat value (integer) if it is an
-!     allowable error code. If the iostat error code is not
-!     allowable, an error message is printed and the program terminated.
-!   </OUT>
-!   <NOTE>
-!     Some compilers will return non-zero iostat values when reading through
-!     files with multiple namelist. This routine
-!     will try skip these errors and only terminate for true namelist errors.
-!
-!     Examples
-!
-!       The following example checks if a file exists, reads a namelist input
-!       from that file, and checks for errors in that
-!       namelist. When the correct namelist is read and it has no errors the
-!       routine check_nml_error will return zero and the while loop will exit.
-!       This code segment should be used to read namelist files.
-!       <PRE>
-!          integer :: unit, ierr, io
-!
-!          if ( file_exist('input.nml') ) then
-!              unit = open_namelist_file ( )
-!              ierr=1
-!              do while (ierr > 0)
-!                read  (unit, nml=moist_processes_nml, iostat=io)
-!                ierr = check_nml_error(io,'moist_processes_nml')
-!              enddo
-!              call close_file (unit)
-!          endif
-!       </PRE>
-!   </NOTE>
-
-!   <ERROR MSG="Unknown error while reading namelist ...., (IOSTAT = ####)" STATUS="FATAL">
-!     There was an error reading the namelist specified. Carefully examine all namelist and variables
-!     for anything incorrect (e.g. malformed, hidden characters).
-!   </ERROR>
-!   <ERROR MSG="Unknown namelist, or mistyped namelist variable in namelist ...., (IOSTAT = ####)" STATUS="FATAL">
-!     The name list given doesn't exist in the namelist file, or a variable in the namelist is mistyped or isn't a
-!     namelist variable.
-!   </ERROR>
 
 ! used to check the iostat argument that is
 ! returned after reading a namelist
 ! see the online documentation for how this routine might be used
+
+  !> @brief Checks the iostat argument that is returned after reading a namelist
+  !!     and determines if the error code is valid.
+  !! @return This function returns the input iostat value (integer) if it is an
+  !!     allowable error code. If the iostat error code is not
+  !!     allowable, an error message is printed and the program terminated.
+  !! @details The FMS allows multiple namelist records to reside in the same file.
+  !!     Use this interface to check the iostat argument that is returned after
+  !!     reading a record from the namelist file. If an invalid iostat value
+  !!     is detected this routine will produce a fatal error. See the NOTE below.
+  !!
+  !!     Some compilers will return non-zero iostat values when reading through
+  !!     files with multiple namelist. This routine
+  !!     will try skip these errors and only terminate for true namelist errors.
+  !!
+  !!     <br>Examples<br>
+  !!
+  !!       The following example checks if a file exists, reads a namelist input
+  !!       from that file, and checks for errors in that
+  !!       namelist. When the correct namelist is read and it has no errors the
+  !!       routine check_nml_error will return zero and the while loop will exit.
+  !!       This code segment should be used to read namelist files.
+  !!       @code{.F90}
+  !!         integer :: unit, ierr, io
+  !!
+  !!         if ( file_exist('input.nml') ) then
+  !!             unit = open_namelist_file ( )
+  !!             ierr=1
+  !!             do while (ierr > 0)
+  !!               read  (unit, nml=moist_processes_nml, iostat=io)
+  !!               ierr = check_nml_error(io,'moist_processes_nml')
+  !!             enddo
+  !!             call close_file (unit)
+  !!         endif
+  !!       @endcode
+  !! @throws FATAL, Unknown error while reading namelist ...., (IOSTAT = ####)
+  !! There was an error reading the namelist specified. Carefully examine all namelist and variables
+  !! for anything incorrect (e.g. malformed, hidden characters).
+  !!
+  !! @throws FATAL, Unknown namelist, or mistyped namelist variable in namelist ...., (IOSTAT = ####)
+  !! The name list given doesn't exist in the namelist file, or a variable in the namelist is
+  !! mistyped or isn't a namelist variable.
   INTEGER FUNCTION check_nml_error(IOSTAT, NML_NAME)
-    INTEGER, INTENT(in) :: IOSTAT
-    CHARACTER(len=*), INTENT(in) :: NML_NAME
+    INTEGER, INTENT(in) :: IOSTAT !< The iostat value returned when reading a namelist record.
+    CHARACTER(len=*), INTENT(in) :: NML_NAME !< The name of the namelist. This name will be printed if an error is
+                                             !! encountered, otherwise the name is not used.
 
     CHARACTER(len=256) :: err_str
 
@@ -683,11 +587,13 @@ end subroutine fms_end
        CALL mpp_sync()
     END IF
   END FUNCTION check_nml_error
-! </FUNCTION>
 
 !-----------------------------------------------------------------------
 !   private routine for initializing allowable error codes
 
+  !> @brief Determines the IOSTAT error value for some common Namelist errors.
+  !!   Also checks if the compiler returns a non-zero status if there are
+  !!   multiple namelist records in a single file.
   SUBROUTINE nml_error_init
     ! Determines the IOSTAT error value for some common Namelist errors.
     ! Also checks if the compiler returns a non-zero status if there are
@@ -698,7 +604,8 @@ end subroutine fms_end
     LOGICAL :: opened
 
     ! Variables for sample namelists
-    INTEGER :: i1, i2
+    INTEGER :: i1 !< Variables for sample namelists
+    INTEGER :: i2 !< Variables for sample namelists
     REAL :: r1, r2
     LOGICAL :: l1
     NAMELIST /a_nml/ i1, r1
@@ -787,53 +694,27 @@ end subroutine fms_end
 
 !#######################################################################
 
-
-! <FUNCTION NAME="string_array_index">
-
-!   <OVERVIEW>
-!     match the input character string to a string
-!     in an array/list of character strings
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Tries to find a match for a character string in a list of character strings.
-!      The match is case sensitive and disregards blank characters to the right of
-!      the string.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!      string_array_index ( string, string_array [, index] )
-!   </TEMPLATE>
-
-!   <IN NAME="string"  TYPE="character(len=*), scalar" >
-!     Character string of arbitrary length.
-!   </IN>
-!   <IN NAME="string_array"  TYPE="character(len=*)" DIM="(:)">
-!     Array/list of character strings.
-!   </IN>
-!   <OUT NAME="index"  TYPE="integer" >
-!     The index of string_array where the first match was found. If
-!            no match was found then index = 0.
-!   </OUT>
-!   <OUT NAME="string_array_index"  TYPE="logical" >
-!     If an exact match was found then TRUE is returned, otherwise FALSE is returned.
-!   </OUT>
-!   <NOTE>
-!     Examples
-!      <PRE>
-!       string = "def"
-!       string_array = (/ "abcd", "def ", "fghi" /)
-
-!       string_array_index ( string, string_array, index )
-
-!       Returns: TRUE, index = 2
-!      </PRE>
-!   </NOTE>
-! match the input character string to a string
-! in an array/list of character strings
-
+!> @brief match the input character string to a string
+!!     in an array/list of character strings
+!! @return If an exact match was found then true is returned, otherwise false is returned.
+!! @details Tries to find a match for a character string in a list of character strings.
+!!      The match is case sensitive and disregards blank characters to the right of
+!!      the string.
+!!
+!!      <br>Examples<br>
+!!      @code{.F90}
+!!       string = "def"
+!!       string_array = (/ "abcd", "def ", "fghi" /)
+!!
+!!       string_array_index ( string, string_array, index )
+!!      @endcode
+!!       Returns: TRUE, index = 2
 function string_array_index ( string, string_array, index ) result (found)
-character(len=*),  intent(in)  :: string, string_array(:)
-integer, optional, intent(out) :: index
-logical :: found
+character(len=*),  intent(in)  :: string !< Character string of arbitrary length.
+character(len=*),  intent(in)  :: string_array(:) !< Array/list of character strings.
+integer, optional, intent(out) :: index !< The index of string_array where the first match was found. If
+                                        !! no match was found then index = 0.
+logical :: found !< If an exact match was found then TRUE is returned, otherwise FALSE is returned.
 integer :: i
 
 ! initialize this function to false
@@ -852,45 +733,22 @@ integer :: i
   enddo
 
 end function string_array_index
-! </FUNCTION>
 
 !#######################################################################
 
-! <FUNCTION NAME="monotonic_array">
-
-!   <OVERVIEW>
-!     Determines if a real input array has monotonically increasing or
-!     decreasing values.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Determines if the real input array has monotonically increasing or
-!     decreasing values.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     monotonic_array ( array [, direction] )
-!   </TEMPLATE>
-
-!   <IN NAME="array"  TYPE="real" DIM="(:)">
-!     An array of real values. If the size(array) < 2 this function
-!     assumes the array is not monotonic, no fatal error will occur.
-!   </IN>
-!   <OUT NAME="direction"  TYPE="integer" >
-!     If the input array is:
-!                >> monotonic (small to large) then direction = +1.
-!                >> monotonic (large to small) then direction = -1.
-!                >> not monotonic then direction = 0.
-!   </OUT>
-!   <OUT NAME="monotonic_array"  TYPE="logical" >
-!     If the input array of real values either increases or decreases monotonically
-!      then TRUE is returned, otherwise FALSE is returned.
-!   </OUT>
-! determines if the real input array has
-! monotonically increasing or decreasing values
-
+!> @brief Determines if a real input array has monotonically increasing or
+!!     decreasing values.
+!! @return If the input array of real values either increases or decreases monotonically then true
+!! is returned, otherwise false is returned.
 function monotonic_array ( array, direction )
-real,    intent(in)            :: array(:)
-integer, intent(out), optional :: direction
-logical :: monotonic_array
+real,    intent(in)            :: array(:) !< An array of real values. If the size(array) < 2 this function
+                                           !! assumes the array is not monotonic, no fatal error will occur.
+integer, intent(out), optional :: direction !< If the input array is:
+                                            !! >> monotonic (small to large) then direction = +1.
+                                            !! >> monotonic (large to small) then direction = -1.
+                                            !! >> not monotonic then direction = 0.
+logical :: monotonic_array !< If the input array of real values either increases or decreases monotonically
+                           !! then TRUE is returned, otherwise FALSE is returned.
 integer :: i
 
 ! initialize
@@ -920,7 +778,61 @@ integer :: i
   endif
 
 end function monotonic_array
-! </FUNCTION>
+
+!! Functions from the old fms_io
+  !> @brief Converts an integer to a string
+  !!
+  !> This has been updated from the fms_io function.
+  function string_from_integer(i) result (res)
+    integer, intent(in) :: i !< Integer to be converted to a string
+    character(:),allocatable :: res !< String converted frominteger
+    character(range(i)+2) :: tmp !< Temp string that is set to correct size
+    write(tmp,'(i0)') i
+    res = trim(tmp)
+   return
+
+  end function string_from_integer
+
+  !#######################################################################
+  !> @brief Converts a real to a string
+  function string_from_real(a)
+    real, intent(in) :: a
+    character(len=32) :: string_from_real
+
+    write(string_from_real,*) a
+
+    return
+
+  end function string_from_real
+
+!#######################################################################
+!> @brief Prints to the log file (or a specified unit) the version id string and
+!!  tag name.
+subroutine write_version_number (version, tag, unit)
+  character(len=*), intent(in) :: version !> string that contains routine name
+  character(len=*), intent(in), optional :: tag !> tag name that code was checked out with
+  integer,          intent(in), optional :: unit !> alternate unit number to direct output,
+                                                 !! defaults to stdlog
+  integer :: logunit
+
+  if (.not.module_is_initialized) call fms_init ( )
+
+  logunit = stdlog()
+
+  if (present(unit)) then
+    logunit = unit
+  else
+    ! only allow stdlog messages on root pe
+    if ( mpp_pe() /= mpp_root_pe() ) return
+  endif
+
+  if (present(tag)) then
+    write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
+  else
+    write (logunit,'(/,80("="),/(a))') trim(version)
+  endif
+
+end subroutine write_version_number
 
 end module fms_mod
 ! <INFO>
@@ -986,3 +898,5 @@ end module fms_mod
 !     ii.I/O utilities (FMS_IO_MOD)
 !    </FUTURE>
 ! </INFO>
+!> @}
+! close documentation grouping

@@ -16,10 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_netcdf_domain_io_mod fms_netcdf_domain_io_mod
+!> @ingroup fms2_io
+!> @brief Domain-specific I/O wrappers.
 
 !> @file
+!> @brief File for @ref fms_netcdf_domain_io_mod
 
-!> @brief Domain-specific I/O wrappers.
+!> @addtogroup fms_netcdf_domain_io_mod
+!> @{
 module fms_netcdf_domain_io_mod
 use, intrinsic :: iso_fortran_env
 use netcdf
@@ -27,6 +32,7 @@ use mpp_mod
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
+use platform_mod
 implicit none
 private
 
@@ -41,15 +47,18 @@ character(len=16), parameter :: domain_axis_att_name = "domain_axis"
 character(len=16), parameter :: x = "x"
 character(len=16), parameter :: y = "y"
 
+!> @}
 
 !> @brief Domain variable.
-type :: DomainDimension_t
+!> @ingroup fms_netcdf_domain_io_mod
+type, private :: DomainDimension_t
   character(len=nf90_max_name) :: varname !< Variable name.
   integer :: pos !< Domain position.
 endtype DomainDimension_t
 
 
 !> @brief netcdf domain file type.
+!> @ingroup fms_netcdf_domain_io_mod
 type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
   type(domain2d) :: domain !< Two-dimensional domain.
   type(DomainDimension_t), dimension(:), allocatable :: xdims !< Dimensions associated
@@ -95,12 +104,15 @@ public :: get_global_io_domain_indices
 public :: is_dimension_registered
 public :: get_mosaic_tile_grid
 
+!> @ingroup fms_netcdf_domain_io_mod
 interface compute_global_checksum
   module procedure compute_global_checksum_2d
   module procedure compute_global_checksum_3d
   module procedure compute_global_checksum_4d
 end interface compute_global_checksum
 
+!> @addtogroup fms_netcdf_domain_io_mod
+!> @{
 
 contains
 
@@ -480,7 +492,7 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
 end subroutine register_domain_decomposed_dimension
 
 
-!> @brief Add a "domain_decomposed" attribute to certain variables because it is
+!> @brief Add a "domain_decomposed" attribute to the axis variables because it is
 !!        required by mppnccombine.
 !! @internal
 subroutine add_domain_attribute(fileobj, variable_name)
@@ -494,6 +506,12 @@ subroutine add_domain_attribute(fileobj, variable_name)
   integer :: eg
   integer :: s
   integer :: e
+  integer, dimension(2) :: io_layout !< Io_layout in the fileobj's domain
+
+  !< Don't add the "domain_decomposition" variable attribute if the io_layout is
+  !! 1,1, to avoid frecheck "failures"
+  io_layout = mpp_get_io_domain_layout(fileobj%domain)
+  if (io_layout(1)  .eq. 1 .and. io_layout(2) .eq. 1) return
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(variable_name, fileobj%xdims, fileobj%nx)
@@ -596,7 +614,8 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
       call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
     else
-      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d.  The data sent in has an unsupported dimensionality")
+      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d."//&
+                 " The data sent in has an unsupported dimensionality")
     endif
   enddo
 
@@ -858,4 +877,5 @@ include "domain_write.inc"
 
 
 end module fms_netcdf_domain_io_mod
-
+!> @}
+! close documentation grouping

@@ -16,8 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!!#include <fms_platform.h>
+!> @defgroup drifters_io_mod drifters_io_mod
+!> @ingroup drifters
+!> @brief Saves drifter data for postprocessing and restarts
 
+!> @file
+!> @brief File for @ref drifters_io_mod
+
+!> @addtogroup drifters_io_mod
+!> @{
 module drifters_io_mod
 
   use netcdf
@@ -39,24 +46,27 @@ module drifters_io_mod
 
   real :: drfts_eps_t = 10.*epsilon(1.)
 
-
+!> @}
+  !> @brief IO data for drifters.
+  !> @ingroup drifters_input_mod
   type drifters_io_type
      real                 :: time
-     integer              :: it ! time index
-     integer              :: it_id  ! infinite axis index
+     integer              :: it !< time index
+     integer              :: it_id !< infinite axis index
      integer              :: ncid
      integer              :: nc_positions, nc_fields, nc_ids, nc_time, nc_index_time
      logical              :: enddef
   end type drifters_io_type
-
+!> @addtogroup drifters_io_mod
+!> @{
 contains
 
 !###############################################################################
   subroutine drifters_io_new(self, filename, nd, nf, ermesg)
     type(drifters_io_type)        :: self
     character(len=*), intent(in)  :: filename
-    integer, intent(in)           :: nd  ! number of dims
-    integer, intent(in)           :: nf  ! number of fields
+    integer, intent(in)           :: nd  !< number of dims
+    integer, intent(in)           :: nf  !< number of fields
     character(len=*), intent(out) :: ermesg
 
     integer ier, nc_it_id, nc_nd, nc_nf
@@ -234,12 +244,12 @@ contains
   subroutine drifters_io_write(self, time, np, nd, nf, ids, positions, fields, ermesg)
     type(drifters_io_type)        :: self
     real, intent(in)              :: time
-    integer, intent(in)           :: np    ! number of dirfters
-    integer, intent(in)           :: nd    ! number of dimensions
-    integer, intent(in)           :: nf    ! number of fields
-    integer, intent(in)           :: ids(np)          ! of size np
-    real, intent(in)              :: positions(nd,np) ! nd times np
-    real, intent(in)              :: fields(nf,np)    ! nf times np
+    integer, intent(in)           :: np    !< number of dirfters
+    integer, intent(in)           :: nd    !< number of dimensions
+    integer, intent(in)           :: nf    !< number of fields
+    integer, intent(in)           :: ids(np)          !< of size np
+    real, intent(in)              :: positions(nd,np) !< nd times np
+    real, intent(in)              :: fields(nf,np)    !< nf times np
     character(len=*), intent(out) :: ermesg
 
     integer ier, i
@@ -302,5 +312,5 @@ contains
   end subroutine drifters_io_write
 
 end module drifters_io_mod
- !###############################################################################
- !###############################################################################
+!> @}
+! close documentation grouping

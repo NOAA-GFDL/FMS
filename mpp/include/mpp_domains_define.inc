@@ -20,14 +20,19 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_domains_mod
+!> @brief Various routines handling domains in @ref mpp_domains_mod
+
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
   !  <IN NAME="global_indices" TYPE="integer" DIM="(4)"></IN>
   !  <IN NAME="ndivs" TYPE="integer"></IN>
   !  <OUT NAME="layout" TYPE="integer" DIM="(2)"></OUT>
   ! </SUBROUTINE>
+  !> @brief Instantiates a layout with the given indices and divisions
   subroutine mpp_define_layout2D( global_indices, ndivs, layout )
-    integer, intent(in) :: global_indices(:) !(/ isg, ieg, jsg, jeg /)
-    integer, intent(in) :: ndivs !number of divisions to divide global domain
+    integer, intent(in) :: global_indices(:) !< (/ isg, ieg, jsg, jeg /); Defines the global domain.
+    integer, intent(in) :: ndivs !< number of divisions to divide global domain
     integer, intent(out) :: layout(:)
 
     integer :: isg, ieg, jsg, jeg, isz, jsz, idiv, jdiv
@@ -276,43 +281,33 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !                                                                             !
-  !              MPP_DEFINE_DOMAINS: define layout and decomposition            !
+  !>@brief MPP_DEFINE_DOMAINS: define layout and decomposition                  !
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! <SUBROUTINE NAME="mpp_define_domains1D" INTERFACE="mpp_define_domains">>
-  !   <IN NAME="global_indices" TYPE="integer" DIM="(2)"> </IN>
-  !   <IN NAME="ndivs" TYPE="integer">  </IN>
-  !   <INOUT NAME="domain" TYPE="type(domain1D)"> </INOUT>
-  !   <IN NAME="pelist" TYPE="integer" DIM="(0:)">  </IN>
-  !   <IN NAME="flags" TYPE="integer">  </IN>
-  !   <IN NAME="halo" TYPE="integer">  </IN>
-  !   <IN NAME="extent" TYPE="integer" DIM="(0:)">  </IN>
-  !   <IN NAME="maskmap" TYPE="logical" DIM="(0:)"> </IN>
-  ! </SUBROUTINE>
-    !routine to divide global array indices among domains, and assign domains to PEs
-    !domain is of type domain1D
-    !ARGUMENTS:
-    !      global_indices(2)=(isg,ieg) gives the extent of global domain
-    !      ndivs is number of divisions of domain: even divisions unless extent is present.
-    !      domain is the returned domain1D
-    !      pelist (optional) list of PEs to which domains are to be assigned (default 0...npes-1)
-    !                 size of pelist must correspond to number of mask=.TRUE. divisions
-    !      flags define whether compute and data domains are global (undecomposed) and whether global domain has periodic boundaries
-    !      halo (optional) defines halo width (currently the same on both sides)
-    !      extent (optional) array defines width of each division (used for non-uniform domain decomp, for e.g load-balancing)
-    !      maskmap (optional) a division whose maskmap=.FALSE. is not assigned to any domain
-    !  By default we assume decomposition of compute and data domains, non-periodic boundaries, no halo, as close to uniform extents
-    !  as the input parameters permit
+  !> @brief MPP_DEFINE_DOMAINS: define layout and decomposition                  !
+  !!
+  !> Routine to divide global array indices among domains, and assign domains to PEs
   subroutine mpp_define_domains1D( global_indices, ndivs, domain, pelist, flags, halo, extent, maskmap, &
                                    memory_size, begin_halo, end_halo )
-    integer,           intent(in) :: global_indices(:) !(/ isg, ieg /)
-    integer,           intent(in) :: ndivs
-    type(domain1D), intent(inout) :: domain !declared inout so that existing links, if any, can be nullified
-    integer, intent(in), optional :: pelist(0:)
-    integer, intent(in), optional :: flags, halo
-    integer, intent(in), optional :: extent(0:)
-    logical, intent(in), optional :: maskmap(0:)
+    integer,           intent(in) :: global_indices(:) !< (/ isg, ieg /) gives the extent of global domain
+    integer,           intent(in) :: ndivs !< number of divisions of domain: even divisions unless extent is present.
+    type(domain1D), intent(inout) :: domain !< the returned domain1D; declared inout so that
+                                            !! existing links, if any, can be nullified
+    integer, intent(in), optional :: pelist(0:) !< list of PEs to which domains are to be assigned
+                                                !! (default 0...npes-1); size of pelist must
+                                                !! correspond to number of mask=.TRUE. divisions
+    integer, intent(in), optional :: flags, halo !< flags define whether compute and data domains
+                                                 !! are global (undecomposed) and whether the global
+                                                 !! domain has periodic boundaries.
+                                                 !! halo defines halo width (currently the same on both sides)
+    integer, intent(in), optional :: extent(0:) !< array extent; defines width of each division
+                                                !! (used for non-uniform domain decomp, for e.g load-balancing)
+    logical, intent(in), optional :: maskmap(0:) !< a division whose maskmap=.FALSE. is not
+                                                 !! assigned to any domain. By default we assume
+                                                 !! decomposition of compute and data domains, non-periodic boundaries,
+                                                 !! no halo, as close to uniform extents as the
+                                                 !! input parameters permit
     integer, intent(in), optional :: memory_size
     integer, intent(in), optional :: begin_halo, end_halo
 
@@ -465,7 +460,7 @@
   end subroutine mpp_define_domains1D
 
   !################################################################################
-  !--- define the IO domain.
+  !> define the IO domain.
   subroutine mpp_define_io_domain(domain, io_layout)
     type(domain2D), intent(inout) :: domain
     integer,        intent(in   ) :: io_layout(2)
@@ -623,7 +618,7 @@
          xhalo, yhalo, xextent, yextent, maskmap, name, symmetry,  memory_size,               &
          whalo, ehalo, shalo, nhalo, is_mosaic, tile_count, tile_id, complete, x_cyclic_offset, y_cyclic_offset )
     !define 2D data and computational domain on global rectilinear cartesian domain (isg:ieg,jsg:jeg) and assign them to PEs
-    integer,          intent(in)           :: global_indices(:) !(/ isg, ieg, jsg, jeg /)
+    integer,          intent(in)           :: global_indices(:) !<(/ isg, ieg, jsg, jeg /)
     integer,          intent(in)           :: layout(:)
     type(domain2D),   intent(inout)        :: domain
     integer,          intent(in), optional :: pelist(0:)
@@ -632,23 +627,23 @@
     logical,          intent(in), optional :: maskmap(0:,0:)
     character(len=*), intent(in), optional :: name
     logical,          intent(in), optional :: symmetry
-    logical,          intent(in), optional :: is_mosaic                  ! indicate if calling mpp_define_domains from mpp_define_mosaic.
+    logical,          intent(in), optional :: is_mosaic                  !< indicate if calling mpp_define_domains from mpp_define_mosaic.
     integer,          intent(in), optional :: memory_size(:)
-    integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! halo size for West, East, South and North direction.
-                                                                         ! if whalo and ehalo is not present,
-                                                                         ! will take the value of xhalo
-                                                                         ! if shalo and nhalo is not present,
-                                                                         ! will take the value of yhalo
-    integer, intent(in),          optional :: tile_count                 ! tile number on current pe, default value is 1
-                                                                         ! this is for the situation that multiple tiles on one processor.
-    integer, intent(in),          optional :: tile_id                    ! tile id
-    logical, intent(in),          optional :: complete                   ! true indicate mpp_define_domain is completed for mosaic definition.
-    integer, intent(in),          optional :: x_cyclic_offset            ! offset for x-cyclic boundary condition,
-                                                                         ! (0,j) = (ni, mod(j+x_cyclic_offset,nj))
-                                                                         ! (ni+1,j) = ( 1, mod(j+nj-x_cyclic_offset,nj) )
-    integer, intent(in),          optional :: y_cyclic_offset            ! offset for y-cyclic boundary condition
-                                                                         ! (i,0)    = (mod(i+y_cyclic_offset,ni), nj))
-                                                                         ! (i,nj+1) = (mod(mod(i+ni-y_cyclic_offset,ni), 1) )
+    integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo !< halo size for West, East, South and North direction.
+                                                                         !< if whalo and ehalo is not present,
+                                                                         !< will take the value of xhalo
+                                                                         !< if shalo and nhalo is not present,
+                                                                         !< will take the value of yhalo
+    integer, intent(in),          optional :: tile_count                 !< tile number on current pe, default value is 1
+                                                                         !< this is for the situation that multiple tiles on one processor.
+    integer, intent(in),          optional :: tile_id                    !< tile id
+    logical, intent(in),          optional :: complete                   !< true indicate mpp_define_domain is completed for mosaic definition.
+    integer, intent(in),          optional :: x_cyclic_offset            !< offset for x-cyclic boundary condition,
+                                                                         !< (0,j) = (ni, mod(j+x_cyclic_offset,nj))
+                                                                         !< (ni+1,j) = ( 1, mod(j+nj-x_cyclic_offset,nj) )
+    integer, intent(in),          optional :: y_cyclic_offset            !< offset for y-cyclic boundary condition
+                                                                         !< (i,0)    = (mod(i+y_cyclic_offset,ni), nj))
+                                                                         !< (i,nj+1) = (mod(mod(i+ni-y_cyclic_offset,ni), 1) )
 
     integer              :: i, j, m, n, xhalosz, yhalosz, memory_xsize, memory_ysize
     integer              :: whalosz, ehalosz, shalosz, nhalosz
@@ -874,8 +869,8 @@
 
        domain%pe  = mpp_pe()
        domain%pos  = pos
-       domain_cnt = domain_cnt + INT(1,KIND=LONG_KIND)
-       domain%id = domain_cnt*DOMAIN_ID_BASE  ! Must be LONG_KIND arithmetic
+       domain_cnt = domain_cnt + INT(1,KIND=i8_kind)
+       domain%id = domain_cnt*DOMAIN_ID_BASE  ! Must be i8_kind arithmetic
 
        !do domain decomposition using 1D versions in X and Y,
        call mpp_define_domains( global_indices(1:2), ndivx, domain%x(tile), &
@@ -2125,7 +2120,7 @@ end subroutine check_message_size
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) call flush(unit)
+       if(nsend >0) flush(unit)
     endif
 
     ! copy the overlapping information into domain data structure
@@ -2702,7 +2697,7 @@ end subroutine check_message_size
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) call flush(unit)
+       if(nrecv >0) flush(unit)
     endif
 
     ! copy the overlapping information into domain
@@ -3290,7 +3285,7 @@ end subroutine check_message_size
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if( nsend > 0) call flush(unit)
+       if( nsend > 0) flush(unit)
     endif
 
     ! copy the overlapping information into domain data structure
@@ -3560,7 +3555,7 @@ end subroutine check_message_size
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) call flush(unit)
+       if(nrecv >0) flush(unit)
     endif
 
     ! copy the overlapping information into domain
@@ -3921,7 +3916,7 @@ end subroutine check_message_size
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) call flush(unit)
+       if(nsend >0) flush(unit)
     endif
 
    ! copy the overlapping information into domain data structure
@@ -4184,7 +4179,7 @@ end subroutine check_message_size
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) call flush(unit)
+       if(nrecv >0) flush(unit)
     endif
 
     ! copy the overlapping information into domain
@@ -5703,7 +5698,7 @@ end subroutine check_message_size
                   overlapSend(m)%dir(n), overlapSend(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) call flush(unit)
+       if(nsend >0) flush(unit)
     endif
 
     dirlist(1) = 1; dirlist(2) = 3; dirlist(3) = 5; dirlist(4) = 7
@@ -5773,7 +5768,7 @@ end subroutine check_message_size
                   overlapRecv(m)%dir(n), overlapRecv(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) call flush(unit)
+       if(nrecv >0) flush(unit)
     endif
 
     if(nrecv >0) then
@@ -7449,11 +7444,13 @@ end subroutine check_alignment
 ! <PUBLICROUTINE>
 subroutine mpp_modify_domain1D(domain_in,domain_out,cbegin,cend,gbegin,gend, hbegin, hend)
   ! </PUBLICROUTINE>
-type(domain1D), intent(in)    :: domain_in
-type(domain1D), intent(inout) :: domain_out
-integer, intent(in), optional :: hbegin, hend             ! halo size
-integer, intent(in), optional :: cbegin, cend             ! extent of compute_domain
-integer, intent(in), optional :: gbegin, gend             ! extent of global domain
+type(domain1D), intent(in)    :: domain_in !< The source domain.
+type(domain1D), intent(inout) :: domain_out !< The returned domain.
+integer, intent(in), optional :: hbegin, hend !< halo size
+integer, intent(in), optional :: cbegin, cend !< Axis specifications associated with the compute
+                                              !! domain of the returned 1D domain.
+integer, intent(in), optional :: gbegin, gend !< Axis specifications associated with the global
+                                              !! domain of the returned 1D domain.
 integer :: ndivs, global_indices(2) !(/ isg, ieg /)
 integer                       :: flag
 ! get the global indices of the input domain
@@ -7495,11 +7492,13 @@ end subroutine mpp_modify_domain1D
 ! <PUBLICROUTINE>
 subroutine mpp_modify_domain2D(domain_in, domain_out, isc, iec, jsc, jec, isg, ieg, jsg, jeg, whalo, ehalo, shalo, nhalo)
   ! </PUBLICROUTINE>
-type(domain2D), intent(in)    :: domain_in
-type(domain2D), intent(inout) :: domain_out
-integer, intent(in), optional :: isc, iec, jsc, jec
-integer, intent(in), optional :: isg, ieg, jsg, jeg
-integer, intent(in), optional :: whalo, ehalo, shalo, nhalo
+type(domain2D), intent(in)    :: domain_in !< The source domain.
+type(domain2D), intent(inout) :: domain_out !< The returned domain.
+integer, intent(in), optional :: isc, iec, jsc, jec !< Zonal and meridional axis specifications
+                                 !! associated with the global domain of the returned 2D domain.
+integer, intent(in), optional :: isg, ieg, jsg, jeg !<  Zonal axis specifications associated with
+                                 !! the global domain of the returned 2D domain.
+integer, intent(in), optional :: whalo, ehalo, shalo, nhalo !< halo size in x- and y- directions
 integer                       :: global_indices(4), layout(2)
 integer                       :: xflag, yflag, nlist, i
 

@@ -1,3 +1,30 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @defgroup get_grid_version_mpp_mod get_grid_version_mpp_mod
+!> @ingroup data_override
+!! @brief mpp_io implementations of grid routines
+
+!> @file
+!> @brief File for @ref get_grid_version_mpp_mod
+
+!> @addtogroup get_grid_version_mpp_mod
+!> @{
 module get_grid_version_mpp_mod
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,WARNING,NOTE, mpp_min, mpp_max
@@ -12,8 +39,8 @@ implicit none
 
 real, parameter    :: deg_to_radian=PI/180.
 contains
-! Get lon and lat of three model (target) grids from grid_spec.nc
 
+!> Get lon and lat of three model (target) grids from grid_spec.nc
 subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
 character(len=12), intent(in) :: domain_name
 type (domain2d),   intent(in) :: Domain
@@ -37,14 +64,15 @@ if(nlon .NE. xsize .OR. nlat .NE. ysize) then
 endif
 end subroutine check_grid_sizes
 
+!> Get global lon and lat of three model (target) grids, with a given file name
 subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
-  character(len=*),            intent(in) :: grid_file
-  character(len=*),            intent(in) :: mod_name
-  type(domain2d),              intent(in) :: domain
+  character(len=*),            intent(in) :: grid_file !< Grid file name
+  character(len=*),            intent(in) :: mod_name !< module name
+  type(domain2d),              intent(in) :: domain !< 2D domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon
-  logical,           intent(in), optional :: grid_center_bug
+  logical,           intent(in), optional :: grid_center_bug !< Enables legacy behaviour
 
   integer                                      :: i, j, siz(4)
   integer                                      :: nlon, nlat         ! size of global lon and lat
@@ -158,12 +186,12 @@ subroutine get_grid_version_classic_1(grid_file, mod_name, domain, isc, iec, jsc
 
 end subroutine get_grid_version_classic_1
 
-! Get global lon and lat of three model (target) grids from mosaic.nc
-! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
+!> Get global lon and lat of three model (target) grids from mosaic.nc.
+!! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine get_grid_version_classic_2(mosaic_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  character(len=*),            intent(in) :: mosaic_file
-  character(len=*),            intent(in) :: mod_name
-  type(domain2d),              intent(in) :: domain
+  character(len=*),            intent(in) :: mosaic_file !< Mosaic file name
+  character(len=*),            intent(in) :: mod_name !< module name
+  type(domain2d),              intent(in) :: domain !< 2D domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon

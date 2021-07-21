@@ -16,7 +16,15 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup blackboxio blackboxio
+!> @ingroup fms2_io
+!> @brief File utility functions for use within @ref fms2_io
 
+!> @file
+!> @brief File for @ref blackboxio
+
+!> @addtogroup blackboxio
+!> @{
 module blackboxio
 use netcdf
 use mpp_domains_mod
@@ -25,7 +33,8 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use mpp_mod, only: mpp_pe
-use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
+use, intrinsic :: iso_fortran_env, only: error_unit
+use platform_mod
 implicit none
 private
 
@@ -178,9 +187,9 @@ subroutine copy_metadata(fileobj, new_fileobj)
   integer :: i
   integer :: j
   integer :: k
-  integer(kind=int32), dimension(:), allocatable :: buf_int
-  real(kind=real32), dimension(:), allocatable :: buf_float
-  real(kind=real64), dimension(:), allocatable :: buf_double
+  integer(kind=i4_kind), dimension(:), allocatable :: buf_int
+  real(kind=r4_kind), dimension(:), allocatable :: buf_float
+  real(kind=r8_kind), dimension(:), allocatable :: buf_double
 
   if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
     !Copy global attributes to the new file.
@@ -347,7 +356,8 @@ end subroutine new_netcdf_file
 
 
 !> @brief Wrapper to distinguish interfaces.
-!! @return Flag telling whether the creation of the buffer was successful.
+!!
+!> @return Flag telling whether the creation of the buffer was successful.
 function create_diskless_netcdf_file_wrap(fileobj, pelist, path) &
   result(success)
 
@@ -663,3 +673,5 @@ end subroutine unstructured_write_restart_wrap
 
 
 end module blackboxio
+!> @}
+! close documentation grouping
