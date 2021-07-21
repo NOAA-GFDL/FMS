@@ -90,6 +90,7 @@ used = send_data(id_z, z, Time)
 ! Increase the time and send data
 do i=1,23
 Time = set_date(2,1,1,i,0,0)
+sst = real(i)
 if(id_sst > 0) used = send_data(id_sst, sst, Time)
 enddo
 
