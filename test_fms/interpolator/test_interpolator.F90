@@ -35,29 +35,19 @@
 
 program test_interpolator
 
-#ifdef INTERNAL_FILE_NML
-use mpp_mod, only: input_nml_file
-#endif
-
 use mpp_mod
 use mpp_io_mod
 use mpp_domains_mod
 use fms_mod
 use time_manager_mod
-use diag_manager_mod!, only : diag_axis_init, file_exist, MPP_NPES, &
-                    !  MPP_PE, REGISTER_DIAG_FIELD, SEND_DATA, SET_DATE,&
-                    !  SET_TIME
-
+use diag_manager_mod
 use interpolator_mod
-!use sulfate_mod
-!use ozone_mod
-use constants_mod !, only : grav, constants_init, PI
+use constants_mod
 use time_interp_mod, only : time_interp_init
 
 implicit none
 integer, parameter :: nsteps_per_day = 8, ndays = 16
 real, parameter :: delt = 1.0/nsteps_per_day
-! integer, parameter :: nxd = 144, nyd = 90, ntsteps = 240, two_delt = 2*delt
 integer, parameter :: nxd = 20, nyd = 40, ntsteps = nsteps_per_day*ndays, two_delt = 2*delt
 integer :: delt_days, delt_secs
 integer, parameter :: max_fields = 20 ! maximum number of fields to be interpolated
@@ -100,8 +90,7 @@ data names(:) /"so4_anthro","so4_natural","organic_carbon","black_carbon","sea_s
 "natural_dust_0.2","natural_dust_0.8","natural_dust_2.0","natural_dust_8.0"/
 
 integer :: out_of_bounds(1)
-data out_of_bounds / CONSTANT/!, CONSTANT/!, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT, &
-!ZERO, ZERO, ZERO, ZERO /
+data out_of_bounds / CONSTANT/
 
 namelist /interpolator_nml/ src_file
 
@@ -129,25 +118,12 @@ src_file = 'src_file'  ! input file containing fields to be interpolated
 
 model_time = set_date(1979,12,1,0,0,0)
 
-!if (numfields.ne.2.and.vector_field) call mpp_error(FATAL,'2 components of vector field not specified')
-!if (numfields.gt.1.and..not.vector_field) call mpp_error(FATAL,'only 1 scalar at a time')
-!if (numfields .gt. max_fields) call mpp_error(FATAL,'max num fields exceeded')
-
 !--------------------------------------------------------------------
 ! namelist input
 !--------------------------------------------------------------------
 
-#ifdef INTERNAL_FILE_NML
-  read (input_nml_file, nml=interpolator_nml, iostat=io)
-  ierr = check_nml_error(io, 'interpolator_nml')
-#else
-  call mpp_open(unit, 'input.nml',  action=MPP_RDONLY, form=MPP_ASCII)
-  read  (unit, interpolator_nml,iostat=io_status)
-  if (io_status .gt. 0) then
-    call mpp_error(FATAL,'=>Error reading interpolator_nml')
-  endif
-call mpp_close(unit)
-#endif
+read (input_nml_file, nml=interpolator_nml, iostat=io)
+ierr = check_nml_error(io, 'interpolator_nml')
 
 ! decompose model grid points
 ! mapping can get expensive so we distribute the task at this level

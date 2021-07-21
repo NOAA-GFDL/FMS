@@ -39,10 +39,7 @@ program test_io_mosaic_R4_R8
   use mpp_io_mod,      only : MPP_NETCDF, MPP_MULTI, mpp_get_atts, mpp_write, mpp_close
   use mpp_io_mod,      only : mpp_get_info, mpp_get_axes, mpp_get_fields, mpp_get_times
   use mpp_io_mod,      only : mpp_read, mpp_io_exit, MPP_APPEND
-
-#ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
-#endif
 
   implicit none
 
@@ -95,9 +92,9 @@ program test_io_mosaic_R4_R8
   read( unit,test_io_mosaic_nml, iostat=io_status )
   close(unit)
 
-      if (io_status > 0) then
-         call mpp_error(FATAL,'=>test_io_mosaic_R4_R8: Error reading input.nml')
-      endif
+  if (io_status > 0) then
+    call mpp_error(FATAL,'=>test_io_mosaic_R4_R8: Error reading input.nml')
+  endif
 
   call SYSTEM_CLOCK( count_rate=tks_per_sec )
   if( debug )then

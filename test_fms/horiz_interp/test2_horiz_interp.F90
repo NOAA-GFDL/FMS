@@ -40,7 +40,7 @@ program test2_horiz_interp
   use axis_utils_mod,   only : get_axis_cart
   use fms_io_mod,       only : read_data, write_data
   use fms_io_mod,       only : field_size, fms_io_exit, get_mosaic_tile_file
-  use fms_mod,          only : fms_init, fms_end, file_exist, field_exist, open_namelist_file
+  use fms_mod,          only : fms_init, fms_end, file_exist, field_exist
   use fms_mod,          only : check_nml_error, write_version_number, lowercase, close_file
   use constants_mod,    only : constants_init, PI
   use horiz_interp_mod, only : horiz_interp_new, horiz_interp, horiz_interp_end, horiz_interp_type
@@ -76,20 +76,8 @@ implicit none
   call horiz_interp_init
   call constants_init
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, test2_horiz_interp_nml, iostat=io)
   ierr = check_nml_error(io, 'test2_horiz_interp_nml')
-#else
-  if (file_exist('input.nml')) then
-     unit = open_namelist_file ( )
-     ierr=1
-     do while (ierr /= 0)
-        read(unit, nml=test2_horiz_interp_nml, iostat=io, end=10)
-        ierr = check_nml_error(io, 'test2_horiz_interp_nml')
-     enddo
-10   call close_file (unit)
-  endif
-#endif
 
   if( .not. file_exist(src_file) ) call mpp_error(FATAL, &
        "test2_horiz_interp: src_file = "//trim(src_file)//" does not exist")

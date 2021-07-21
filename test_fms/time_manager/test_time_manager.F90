@@ -21,7 +21,7 @@ program test_time_manager
 
  use          mpp_mod, only: input_nml_file, mpp_error, NOTE, FATAL
  use          fms_mod, only: fms_init, fms_end, stderr
- use          fms_mod, only: open_namelist_file, check_nml_error, close_file, open_file
+ use          fms_mod, only: check_nml_error, open_file
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
  use       fms_io_mod, only: fms_io_exit
  use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
@@ -60,18 +60,8 @@ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
  call fms_init
  call constants_init
 
-#ifdef INTERNAL_FILE_NML
-   read (input_nml_file, test_nml, iostat=io)
-   ierr = check_nml_error (io, 'test_nml')
-#else
- nmlunit = open_namelist_file()
- ierr=1
- do while (ierr /= 0)
-   read(nmlunit, nml=test_nml, iostat=io, end=12)
-   ierr = check_nml_error (io, 'test_nml')
- enddo
- 12 call close_file (nmlunit)
-#endif
+ read (input_nml_file, test_nml, iostat=io)
+ ierr = check_nml_error (io, 'test_nml')
 
  outunit = open_file(file='test_time_manager.out', form='formatted', action='write')
  errunit = stderr()

@@ -226,11 +226,7 @@ PROGRAM test
   USE mpp_domains_mod, ONLY: mpp_domains_init, mpp_domains_set_stack_size
   USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, stdout
-#ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
-#else
-  USE fms_mod, ONLY:  open_namelist_file, close_file
-#endif
   USE fms_io_mod, ONLY: fms_io_init
   USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
@@ -349,20 +345,8 @@ PROGRAM test
   CALL constants_init
   CALL set_calendar_type(JULIAN)
   npes = mpp_npes()
-#ifdef INTERNAL_FILE_NML
   READ (input_nml_file, NML=test_diag_manager_nml, IOSTAT=ierr)
   READ (input_nml_file, NML=utest_nml, IOSTAT=i)
-#else
-  IF ( file_exist('input.nml') ) THEN
-     nml_unit = open_namelist_file()
-     READ(nml_unit, nml=test_diag_manager_nml, iostat=ierr)
-     READ(nml_unit, nml=utest_nml, iostat=i)
-     CALL close_file(nml_unit)
-  ELSE
-     ! Set ierr to an arbitrary positive number if input.nml does not exist.
-     ierr = 100
-  END IF
-#endif
   ! Check the status of reading the diag_manager_nml
   IF ( check_nml_error(IOSTAT=ierr, NML_NAME='DIAG_MANAGER_NML') < 0 ) THEN
      IF ( mpp_pe() == mpp_root_pe() ) THEN

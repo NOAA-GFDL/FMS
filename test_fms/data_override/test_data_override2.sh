@@ -25,7 +25,7 @@
 . ../test-lib.sh
 
 # Tests to skip
-SKIP_TESTS="$(basename $0 .sh).[1-2]"
+SKIP_TESTS="test_data_override2.[1-2]"
 
 setup_test_dir () {
   local halo_size

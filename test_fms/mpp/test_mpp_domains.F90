@@ -57,7 +57,6 @@ program test_mpp_domains
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
-  use fms_mod,         only : check_nml_error
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
   use fms_affinity_mod, only : fms_affinity_set, fms_affinity_init
   use mpp_io_mod,       only: mpp_io_init
@@ -153,21 +152,8 @@ program test_mpp_domains
 
   outunit = stdout()
   errunit = stderr()
-#ifdef INTERNAL_FILE_NML
+
   read (input_nml_file, test_mpp_domains_nml, iostat=io_status)
-#else
-  do
-     inquire( unit=unit, opened=opened )
-     if( .NOT.opened )exit
-     unit = unit + 1
-     if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
-  end do
-
-  open( unit=unit, file='input.nml', iostat=io_status )
-  read( unit,test_mpp_domains_nml, iostat=io_status )
-  close(unit)
-#endif
-
   if (io_status > 0) then
      call mpp_error(FATAL,'=>test_mpp_domains: Error reading input.nml')
   endif

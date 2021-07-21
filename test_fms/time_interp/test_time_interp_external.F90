@@ -21,7 +21,7 @@
 program test_time_interp_external
 
 use constants_mod, only: constants_init
-use fms_mod,       only: open_namelist_file, check_nml_error, close_file
+use fms_mod,       only: check_nml_error
 use mpp_mod, only : mpp_init, mpp_exit, mpp_npes, stdout, stdlog, FATAL, mpp_error
 use mpp_mod, only : input_nml_file
 use mpp_io_mod, only : mpp_io_init, mpp_io_exit, mpp_open, MPP_RDONLY, MPP_ASCII, mpp_close, &
@@ -69,17 +69,8 @@ call time_interp_external_init
 call time_manager_init
 call horiz_interp_init
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, test_time_interp_ext_nml, iostat=io_status)
-      ierr = check_nml_error(io_status, 'test_time_interp_ext_nml')
-#else
-      unit = open_namelist_file ()
-      ierr=1; do while (ierr /= 0)
-      read  (unit, nml=test_time_interp_ext_nml, iostat=io_status, end=10)
-      ierr = check_nml_error(io_status, 'test_time_interp_ext_nml')
-      enddo
-10    call close_file (unit)
-#endif
+read (input_nml_file, test_time_interp_ext_nml, iostat=io_status)
+ierr = check_nml_error(io_status, 'test_time_interp_ext_nml')
 
 outunit = stdlog()
 write(outunit,test_time_interp_ext_nml)
