@@ -278,8 +278,8 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${moduleDir}>
     $<INSTALL_INTERFACE:${includeDir}>)
 
-  target_compile_definitions(${libTgt} PUBLIC "${fms_defs}")
-  target_compile_definitions(${libTgt} PUBLIC "${${kind}_defs}")
+  target_compile_definitions(${libTgt} PRIVATE "${fms_defs}")
+  target_compile_definitions(${libTgt} PRIVATE "${${kind}_defs}")
 
   target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
