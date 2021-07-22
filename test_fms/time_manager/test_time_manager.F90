@@ -618,9 +618,9 @@ program test_time_manager
 
   if(test20) then
     write(outunit,'(/,a)') '#################################  test20  #################################'
-    write(errunit,'(/,a)') ' ====================================================='
-    write(errunit,'(a)')   '  Test get/set_date_gregorian with get/set_date_gregorian_old'
-    write(errunit,'(a,/)') ' ====================================================='
+    write(outunit,'(/,a)') ' ====================================================='
+    write(outunit,'(a)')   '  Test get/set_date_gregorian with get/set_date_gregorian_old'
+    write(outunit,'(a,/)') ' ====================================================='
     call set_calendar_type(GREGORIAN)
     call get_coded_date( coded_date, date_to_day ) ! assign coded_date and date_to_day used by get/set_date_gregorian_old
 

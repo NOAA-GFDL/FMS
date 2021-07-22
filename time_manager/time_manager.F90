@@ -156,10 +156,10 @@ integer, parameter :: max_type = 4
 ! Define number of days per month
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
 integer, parameter :: seconds_per_day = rseconds_per_day  ! This should automatically cast real to integer
-integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregorian
-integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian, to be removed soon
-integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian, to be removed soon
-integer, parameter :: invalid_date=-1                     ! Used only for gregorian, to be removed soon
+integer, parameter :: days_in_400_year_period = 146097    !> Used only for gregorian
+integer, dimension(days_in_400_year_period) :: coded_date !> Used only for gregorian, to be removed soon
+integer, dimension(400,12,31) :: date_to_day              !> Used only for gregorian, to be removed soon
+integer, parameter :: invalid_date=-1                     !> Used only for gregorian, to be removed soon
 integer,parameter :: do_floor = 0
 integer,parameter :: do_nearest = 1
 
