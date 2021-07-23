@@ -191,7 +191,6 @@ use    mpp_mod, only : mpp_error,   &
                        stdlog,      &
                        stdout,      &
                        get_unit
-use mpp_io_mod, only : mpp_io_init
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
@@ -651,8 +650,6 @@ call mpp_error(NOTE,trim(note_header)//"Preserving the unit's case is experiment
 
 num_fields = 0
 call initialize
-
-call mpp_io_init()
 
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table'
