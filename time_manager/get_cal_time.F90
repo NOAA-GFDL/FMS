@@ -29,7 +29,7 @@
 module get_cal_time_mod
 
 use          fms_mod, only: error_mesg, FATAL, write_version_number, lowercase, &
-                            open_namelist_file, check_nml_error, stdlog, close_file, &
+                            check_nml_error, stdlog, &
                             mpp_pe, mpp_root_pe
 
 use time_manager_mod, only: time_type, operator(+), operator(-), set_time, get_time, &
@@ -162,7 +162,7 @@ type(time_type) :: get_cal_time
 integer :: year, month, day, hour, minute, second
 integer :: i1, i2, i3, i4, i5, i6, increment_seconds, increment_days, increment_years, increment_months
 real    :: month_fraction
-integer :: calendar_tm_i, calendar_in_i, namelist_unit, ierr, io, logunit
+integer :: calendar_tm_i, calendar_in_i, ierr, io, logunit
 logical :: correct_form
 character(len=32) :: calendar_in_c
 character(len=64) :: err_msg
@@ -172,18 +172,8 @@ real :: dt
 logical :: permit_conversion_local
 
 if(.not.module_is_initialized) then
-#ifdef INTERNAL_FILE_NML
-    read (input_nml_file, get_cal_time_nml, iostat=io)
-    ierr = check_nml_error (io, 'get_cal_time_nml')
-#else
-  namelist_unit = open_namelist_file()
-  ierr=1
-  do while (ierr /= 0)
-    read(namelist_unit, nml=get_cal_time_nml, iostat=io, end=20)
-    ierr = check_nml_error (io, 'get_cal_time_nml')
-  enddo
-  20 call close_file (namelist_unit)
-#endif
+  read (input_nml_file, get_cal_time_nml, iostat=io)
+  ierr = check_nml_error (io, 'get_cal_time_nml')
 
   call write_version_number("GET_CAL_TIME_MOD", version)
   logunit = stdlog()

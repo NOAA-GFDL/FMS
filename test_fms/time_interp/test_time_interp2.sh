@@ -28,7 +28,13 @@
 . ../test_common.sh
 
 # Copy file for test.
-cp $top_srcdir/test_fms/time_interp/input_base.nml input.nml
+touch input.nml
 
 # Run the test.
 run_test test_time_interp 2
+
+# Run the time_interp_external test
+rm -rf INPUT
+mkdir INPUT
+run_test test_time_interp_external 2
+rm -rf INPUT

@@ -328,8 +328,9 @@ subroutine fms_init (localcomm )
  use fms_io_mod,    only: fms_io_version
 
  integer, intent(in), optional :: localcomm
- integer :: unit, ierr, io
+ integer :: ierr, io
  integer :: logunitnum
+ integer :: stdout_unit !< Unit number for the stdout file
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
@@ -352,19 +353,8 @@ subroutine fms_init (localcomm )
 
     call nml_error_init()  ! first initialize namelist iostat error codes
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, fms_nml, iostat=io)
-      ierr = check_nml_error(io,'fms_nml')
-#else
-    if (file_exist('input.nml')) then
-       unit = open_namelist_file ( )
-       ierr=1; do while (ierr /= 0)
-          read  (unit, nml=fms_nml, iostat=io, end=10)
-          ierr = check_nml_error(io,'fms_nml')  ! also initializes nml error codes
-       enddo
- 10    call mpp_close (unit)
-    endif
-#endif
+    read (input_nml_file, fms_nml, iostat=io)
+    ierr = check_nml_error(io,'fms_nml')
 
 !---- define mpp stack sizes if non-zero -----
 
@@ -423,9 +413,9 @@ subroutine fms_init (localcomm )
 
     call write_version_number("FMS_MOD", version)
     if (mpp_pe() == mpp_root_pe()) then
-      unit = stdlog()
-      write (unit, nml=fms_nml)
-      write (unit,*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
+      stdout_unit = stdlog()
+      write (stdout_unit, nml=fms_nml)
+      write (stdout_unit,*) 'nml_error_codes=', nml_error_codes(1:num_nml_error_codes)
     endif
 
     call memutils_init( print_memory_usage )

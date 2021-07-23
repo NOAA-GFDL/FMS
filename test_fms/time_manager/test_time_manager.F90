@@ -21,9 +21,8 @@ program test_time_manager
 
  use          mpp_mod, only: input_nml_file, mpp_error, NOTE, FATAL
  use          fms_mod, only: fms_init, fms_end, stderr
- use          fms_mod, only: open_namelist_file, check_nml_error, close_file, open_file
+ use          fms_mod, only: check_nml_error
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
- use       fms_io_mod, only: fms_io_exit
  use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
  use time_manager_mod, only: length_of_year, leap_year, days_in_month, days_in_year, print_time
  use time_manager_mod, only: set_ticks_per_second, get_ticks_per_second
@@ -42,7 +41,7 @@ program test_time_manager
  integer :: year, month, dday, days_this_month
  integer :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
  logical :: leap
- integer :: nr, icode, nmlunit, ierr, io, nn, errunit, outunit
+ integer :: nr, icode, ierr, io, nn, errunit, outunit
  character(len=256) :: err_msg, char_date
  character(len=8),  allocatable, dimension(:) :: test_time
  character(len=23), allocatable, dimension(:) :: test_date
@@ -65,20 +64,11 @@ program test_time_manager
  call fms_init
  call constants_init
 
-#ifdef INTERNAL_FILE_NML
-   read (input_nml_file, test_nml, iostat=io)
-   ierr = check_nml_error (io, 'test_nml')
-#else
- nmlunit = open_namelist_file()
- ierr=1
- do while (ierr /= 0)
-   read(nmlunit, nml=test_nml, iostat=io, end=12)
-   ierr = check_nml_error (io, 'test_nml')
- enddo
- 12 call close_file (nmlunit)
-#endif
+ read (input_nml_file, test_nml, iostat=io)
+ ierr = check_nml_error (io, 'test_nml')
 
- outunit = open_file(file='test_time_manager.out', form='formatted', action='write')
+ open(newunit = outunit, file='test_time_manager.out', status='replace', form='formatted')
+
  errunit = stderr()
  call set_ticks_per_second(10)
 
@@ -740,7 +730,6 @@ program test_time_manager
     write(outunit,'(a)') 'set_date_gregorian and get_date_gregorian tests successful'
  endif
 
-  call fms_io_exit
   call fms_end
 
 contains
@@ -835,7 +824,7 @@ contains
     day1 = day1 + days_in_400_year_period*((year-1)/400)
 
     set_date_gregorian_old = set_time(seconds=second1, days=day1, ticks=tick)
-
+    
   end function set_date_gregorian_old
 
 end program test_time_manager

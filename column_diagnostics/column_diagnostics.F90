@@ -27,7 +27,6 @@
 !> @{
 module column_diagnostics_mod
 
-use mpp_io_mod,             only:  mpp_io_init
 use fms_mod,                only:  fms_init, mpp_pe, mpp_root_pe, &
                                    mpp_npes, check_nml_error, &
                                    error_mesg, FATAL, NOTE, WARNING, &
@@ -143,7 +142,6 @@ subroutine column_diagnostics_init
 !---------------------------------------------------------------------
 !    verify that all modules used by this module have been initialized.
 !----------------------------------------------------------------------
-      call mpp_io_init
       call fms_init
       call time_manager_init
       call constants_init
