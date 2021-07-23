@@ -275,7 +275,7 @@ integer, parameter, public :: fm_field_name_len = 48
 !> The length of a character string representing the field path.
 integer, parameter, public :: fm_path_name_len  = 512
 !> The length of a character string representing character values for the field.
-integer, parameter, public :: fm_string_len     = 128
+integer, parameter, public :: fm_string_len     = 1024
 !> The length of a character string representing the various types that the values of the field can take.
 integer, parameter, public :: fm_type_name_len  = 8
 !> Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).

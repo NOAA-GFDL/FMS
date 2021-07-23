@@ -1310,12 +1310,13 @@ end function rarray_to_char
 ! read(input_nml_file, nml=<name_nml>, iostat=status)
 !
 !
-  subroutine read_input_nml(pelist_name_in)
+  subroutine read_input_nml(pelist_name_in, alt_input_nml_path)
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
     character(len=*), intent(in), optional :: pelist_name_in
+    character(len=*), intent(in), optional :: alt_input_nml_path
 ! private variables
     integer :: log_unit
     integer :: i
@@ -1344,7 +1345,11 @@ end function rarray_to_char
     filename='input_'//trim(pelist_name)//'.nml'
     inquire(FILE=filename, EXIST=file_exist)
     if (.not. file_exist ) then
-       filename='input.nml'
+       if (present(alt_input_nml_path)) then
+          filename = alt_input_nml_path
+       else
+          filename = 'input.nml'
+       end if
     endif
     lines_and_length = get_ascii_file_num_lines_and_length(filename)
     allocate(character(len=lines_and_length(2))::input_nml_file(lines_and_length(1)))

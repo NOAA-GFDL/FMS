@@ -321,13 +321,14 @@ contains
 !! The namelist variable clock_grain must be one of the following values:
 !! 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
 !! 'LOOP', or 'INFRA' (case-insensitive).
-subroutine fms_init (localcomm )
+subroutine fms_init (localcomm, alt_input_nml_path)
 
 !--- needed to output the version number of constants_mod to the logfile ---
  use constants_mod, only: constants_version=>version !pjp: PI not computed
  use fms_io_mod,    only: fms_io_version
 
  integer, intent(in), optional :: localcomm
+ character(len=*), intent(in), optional :: alt_input_nml_path
  integer :: unit, ierr, io
  integer :: logunitnum
 
@@ -335,9 +336,17 @@ subroutine fms_init (localcomm )
     module_is_initialized = .true.
 !---- initialize mpp routines ----
     if(present(localcomm)) then
-       call mpp_init(localcomm=localcomm)
+       if(present(alt_input_nml_path)) then
+          call mpp_init(localcomm=localcomm, alt_input_nml_path=alt_input_nml_path)
+       else
+          call mpp_init(localcomm=localcomm)
+       endif
     else
-       call mpp_init()
+       if(present(alt_input_nml_path)) then
+          call mpp_init(alt_input_nml_path=alt_input_nml_path)
+       else
+          call mpp_init()
+       endif
     endif
     call mpp_domains_init()
     call fms_io_init()
