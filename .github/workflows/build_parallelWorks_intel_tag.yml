@@ -1,0 +1,15 @@
+name: Build testing libFMS with intel
+  
+on: 
+   push:
+        tags:
+             - '*alpha*'
+             - '*beta*'
+jobs:
+     intelBuild:
+           runs-on: [self-hosted, pw-platform]
+           steps:
+                - name: Spinning up cluster
+                  run: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/FMStestStartClusters.py azcluster_noaa
+                - name: Turn off cluster
+                  run: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/stopClusters.py azcluster_noaa
