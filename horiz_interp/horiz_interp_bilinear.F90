@@ -16,23 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_bilinear_mod horiz_interp_bilinear_mod
+!> @ingroup horiz_interp
+!> @brief Performs spatial interpolation between grids using bilinear interpolation
+!!
+!> @author Zhi Liang <Zhi.Liang@noaa.gov>
+!> This module can interpolate data from regular rectangular grid
+!! to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
+!! There is an optional mask field for missing input data.
+!! An optional output mask field may be used in conjunction with
+!! the input mask to show where output data exists.
+
+!> @file
+!> @brief File for @ref horiz_interp_bilinear_mod
+
 module horiz_interp_bilinear_mod
-
-  ! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
-
-  ! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-  ! <OVERVIEW>
-  !   Performs spatial interpolation between grids using bilinear interpolation
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !     This module can interpolate data from regular rectangular grid
-  !     to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
-  !     There is an optional mask field for missing input data.
-  !     An optional output mask field may be used in conjunction with
-  !     the input mask to show where output data exists.
-  ! </DESCRIPTION>
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
   use fms_mod,               only: write_version_number
@@ -46,12 +44,15 @@ module horiz_interp_bilinear_mod
   public :: horiz_interp_bilinear_new, horiz_interp_bilinear, horiz_interp_bilinear_del
   public :: horiz_interp_bilinear_init
 
-  !--- public interface
+  !> Creates a @ref horiz_interp_type for bilinear interpolation.
+  !> @ingroup horiz_interp_bilinear_mod
   interface horiz_interp_bilinear_new
     module procedure horiz_interp_bilinear_new_1d
     module procedure horiz_interp_bilinear_new_2d
   end interface
 
+!> @addtogroup horiz_interp_bilinear_mod
+!> @{
 
   real, parameter :: epsln=1.e-10
   integer, parameter :: DUMMY = -999
@@ -63,15 +64,7 @@ module horiz_interp_bilinear_mod
 
 contains
 
-  !#######################################################################
-  !  <SUBROUTINE NAME="horiz_interp_bilinear_init">
-  !  <OVERVIEW>
-  !     writes version number to logfile.out
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !     writes version number to logfile.out
-  !  </DESCRIPTION>
-
+  !> Initialize this module and writes version number to logfile.
   subroutine horiz_interp_bilinear_init
 
     if(module_is_initialized) return
@@ -80,7 +73,6 @@ contains
 
   end subroutine horiz_interp_bilinear_init
 
-  !  </SUBROUTINE>
 
   !########################################################################
 
@@ -237,60 +229,26 @@ contains
   end subroutine horiz_interp_bilinear_new_1d
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_bilinear_new">
 
-  !   <OVERVIEW>
-  !      Initialization routine.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !      Allocates space and initializes a derived-type variable
-  !      that contains pre-computed interpolation indices and weights.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, src_modulo )
-
-  !   </TEMPLATE>
-  !
-  !   <IN NAME="lon_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Longitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="lat_in" TYPE="real, dimension(:,:)" UNITS="radians">
-  !      Latitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="lon_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Longitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="lat_out" TYPE="real, dimension(:,:)" UNITS="radians" >
-  !      Latitude (in radians) for source data grid.
-  !   </IN>
-
-  !   <IN NAME="src_modulo" TYPE="logical, optional">
-  !      logical variable to indicate if the boundary condition along zonal boundary
-  !      is cyclic or not. When true, the zonal boundary condition is cyclic.
-  !   </IN>
-
-  !   <IN NAME="verbose" TYPE="integer, optional" >
-  !      flag for the amount of print output.
-  !   </IN>
-
-  !   <INOUT NAME="Interp" TYPE="type(horiz_interp_type)" >
-  !      A derived-type variable containing indices and weights used for subsequent
-  !      interpolations. To reinitialize this variable for a different grid-to-grid
-  !      interpolation you must first use the "horiz_interp_del" interface.
-  !   </INOUT>
-
+  !> Initialization routine.
+  !!
+  !> Allocates space and initializes a derived-type variable
+  !! that contains pre-computed interpolation indices and weights.
   subroutine horiz_interp_bilinear_new_2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo, new_search, no_crash_when_not_found )
 
     !-----------------------------------------------------------------------
-    type(horiz_interp_type), intent(inout) :: Interp
-    real, intent(in),  dimension(:,:)      :: lon_in , lat_in
-    real, intent(in),  dimension(:,:)      :: lon_out, lat_out
-    integer, intent(in),          optional :: verbose
-    logical, intent(in),          optional :: src_modulo
+    type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
+                                          !! and weights for subsequent interpolations. To
+                                          !! reinitialize for different grid-to-grid interpolation
+                                          !! @ref horiz_interp_del must be used first.
+    real, intent(in),  dimension(:,:)      :: lon_in !< Latitude (radians) for source data grid
+    real, intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
+    real, intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
+    real, intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
+    integer, intent(in),          optional :: verbose !< flag for amount of print output
+    logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition
+                                          !! along zonal boundary is cyclic or not. Cyclic when true
     logical, intent(in),          optional :: new_search
     logical, intent(in),          optional :: no_crash_when_not_found
     integer                                :: warns
@@ -467,11 +425,10 @@ contains
     enddo
 
   end subroutine horiz_interp_bilinear_new_2d
-  ! </SUBROUTINE>
 
   !#######################################################################
-  ! this routine will search the source grid to fine the grid box that encloses
-  ! each destination grid.
+  !> this routine will search the source grid to fine the grid box that encloses
+  !! each destination grid.
   subroutine find_neighbor( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo )
     type(horiz_interp_type), intent(inout) :: Interp
     real, intent(in),       dimension(:,:) :: lon_in , lat_in
@@ -712,19 +669,15 @@ contains
   end subroutine find_neighbor
 
   !#######################################################################
-  !
-  ! The function will return true if the point x,y is inside a polygon, or
-  ! NO if it is not.  If the point is exactly on the edge of a polygon,
-  ! the function will return .true.
-  !
-  ! real polyx(:) : longitude coordinates of corners
-  ! real polyx(:) : latitude  coordinates of corners
-  ! real x,y      : point to be tested
-  ! ??? How to deal with truncation error.
-  !
+
+  !> The function will return true if the point x,y is inside a polygon, or
+  !! false if it is not.  If the point is exactly on the edge of a polygon,
+  !! the function will return .true.
   function inside_polygon(polyx, polyy, x, y)
-     real, dimension(:), intent(in) :: polyx, polyy
-     real,               intent(in) :: x, y
+     real, dimension(:), intent(in) :: polyx !< longitude coordinates of corners
+     real, dimension(:), intent(in) :: polyy !< latitude coordinates of corners
+     real,               intent(in) :: x !< x coordinate of point to be tested
+     real,               intent(in) :: y !< y coordinate of point to be tested
      logical                        :: inside_polygon
      integer                        :: i, j, nedges
      real                           :: xx
@@ -750,8 +703,8 @@ contains
   end function inside_polygon
 
   !#######################################################################
-  ! this routine will search the source grid to fine the grid box that encloses
-  ! each destination grid.
+  !> this routine will search the source grid to fine the grid box that encloses
+  !! each destination grid.
   subroutine find_neighbor_new( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo, no_crash )
     type(horiz_interp_type), intent(inout) :: Interp
     real, intent(in),       dimension(:,:) :: lon_in , lat_in
@@ -965,60 +918,26 @@ contains
   end function intersect
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_bilinear">
 
-  !   <OVERVIEW>
-  !      Subroutine for performing the horizontal interpolation between two grids.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     Subroutine for performing the horizontal interpolation between two grids.
-  !     horiz_interp_bilinear_new must be called before calling this routine.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_bilinear ( Interp, data_in, data_out, verbose, mask_in,mask_out, missing_value, missing_permit)
-  !   </TEMPLATE>
-  !
-  !   <IN NAME="Interp" TYPE="type(horiz_interp_type)">
-  !     Derived-type variable containing interpolation indices and weights.
-  !     Returned by a previous call to horiz_interp_bilinear_new.
-  !   </IN>
-  !   <IN NAME="data_in" TYPE="real, dimension(:,:)">
-  !      Input data on source grid.
-  !   </IN>
-  !   <IN NAME="verbose" TYPE="integer, optional">
-  !      flag for the amount of print output.
-  !               verbose = 0, no output; = 1, min,max,means; = 2, still more
-  !   </IN>
-  !   <IN NAME="mask_in" TYPE="real, dimension(:,:),optional">
-  !      Input mask, must be the same size as the input data. The real value of
-  !      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
-  !      that should not be used or have missing data.
-  !   </IN>
-  !   <IN NAME="missing_value" TYPE="real, optional">
-  !      Use the missing_value to indicate missing data.
-  !   </IN>
-
-  !   <IN NAME="missing_permit" TUPE="integer, optional">
-  !      numbers of points allowed to miss for the bilinear interpolation. The value
-  !      should be between 0 and 3.
-  !   </IN>
-
-  !   <OUT NAME="data_out" TYPE="real, dimension(:,:)">
-  !      Output data on destination grid.
-  !   </OUT>
-  !   <OUT NAME="mask_out" TYPE="real, dimension(:,:),optional">
-  !      Output mask that specifies whether data was computed.
-  !   </OUT>
-
+  !> Subroutine for performing the horizontal interpolation between two grids
+  !!
+  !! @ref horiz_interp_bilinear_new must be called before calling this routine.
   subroutine horiz_interp_bilinear ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
        missing_value, missing_permit, new_handle_missing )
     !-----------------------------------------------------------------------
-    type (horiz_interp_type), intent(in)        :: Interp
-    real, intent(in),  dimension(:,:)           :: data_in
-    real, intent(out), dimension(:,:)           :: data_out
-    integer, intent(in),               optional :: verbose
-    real, intent(in), dimension(:,:),  optional :: mask_in
-    real, intent(out), dimension(:,:), optional :: mask_out
+    type (horiz_interp_type), intent(in)        :: Interp !< Derived type variable containing
+                                               !! interpolation indices and weights. Returned by a
+                                               !! previous call to horiz_interp_bilinear_new
+    real, intent(in),  dimension(:,:)           :: data_in !< input data on source grid
+    real, intent(out), dimension(:,:)           :: data_out !< output data on source grid
+    integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 =
+                                                           !! all output
+    real, intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
+                                    !! the input data. The real value of mask_in must be in the
+                                    !! range (0.,1.). Set mask_in=0.0 for data points
+                                    !! that should not be used or have missing data
+    real, intent(out), dimension(:,:), optional :: mask_out !< output mask that specifies whether
+                                                            !! data was computed
     real, intent(in),                  optional :: missing_value
     integer, intent(in),               optional :: missing_permit
     logical, intent(in),               optional :: new_handle_missing
@@ -1311,33 +1230,18 @@ contains
     return
 
   end subroutine horiz_interp_bilinear
-  ! </SUBROUTINE>
 
   !#######################################################################
-  ! <SUBROUTINE NAME="horiz_interp_bilinear_del">
 
-  !   <OVERVIEW>
-  !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_bilinear_new.
-  !   </OVERVIEW>
-  !   <DESCRIPTION>
-  !     Deallocates memory used by "horiz_interp_type" variables.
-  !     Must be called before reinitializing with horiz_interp_bilinear_new.
-  !   </DESCRIPTION>
-  !   <TEMPLATE>
-  !     call horiz_interp_bilinear_del ( Interp )
-  !   </TEMPLATE>
-
-  !   <INOUT NAME="Interp" TYPE="horiz_interp_type">
-  !     A derived-type variable returned by previous call
-  !     to horiz_interp_bilinear_new. The input variable must have
-  !     allocated arrays. The returned variable will contain
-  !     deallocated arrays.
-  !   </INOUT>
-
+  !> @brief Deallocates memory used by "horiz_interp_type" variables.
+  !!
+  !> Must be called before reinitializing with horiz_interp_bilinear_new.
   subroutine horiz_interp_bilinear_del( Interp )
 
-    type (horiz_interp_type), intent(inout) :: Interp
+    type (horiz_interp_type), intent(inout) :: Interp!< A derived-type variable returned by previous
+                                   !! call to horiz_interp_bilinear_new. The input variable must
+                                   !! have allocated arrays. The returned variable will contain
+                                   !! deallocated arrays
 
     if(associated(Interp%wti))   deallocate(Interp%wti)
     if(associated(Interp%wtj))   deallocate(Interp%wtj)
@@ -1345,31 +1249,20 @@ contains
     if(associated(Interp%j_lat)) deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_bilinear_del
-  ! </SUBROUTINE>
 
   !#######################################################################
-
+  !> @returns index of nearest data point to "value"
+  !! if "value" is outside the domain of "array" then indp = 1
+  !! or "ia" depending on whether array(1) or array(ia) is
+  !! closest to "value"
   function indp (value, array)
-    integer                        :: indp
-    real, dimension(:), intent(in) :: array
-    real, intent(in)               :: value
-    !
-    !=======================================================================
-    !
-    !     indp = index of nearest data point within "array" corresponding to
-    !            "value".
+    integer                        :: indp !< index of nearest data point within "array"
+                                           !! corresponding to "value".
+    real, dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
+    real, intent(in)               :: value !< arbitrary data, same units as elements in 'array'
 
-    !     inputs:
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-
-    !     output:
-    !     indp =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then indp = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
     !=======================================================================
-    !
+
     integer i, ia, unit
     logical keep_going
     !
@@ -1406,3 +1299,5 @@ contains
   !######################################################################
 
 end module horiz_interp_bilinear_mod
+!> @}
+! close documentation grouping

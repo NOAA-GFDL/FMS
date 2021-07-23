@@ -1,3 +1,4 @@
+\ingroup libfms
 # Supported Public Interfaces for FMS
 
 List of supported public interfaces and associated types meant for external use through the 'fms' module.

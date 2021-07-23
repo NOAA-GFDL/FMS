@@ -16,9 +16,13 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @author Jessica Liptak
+!> @file
 !> @brief Test mpp_update_domains on arrays of integers using different layouts and data precision
+!!
+!> @author Jessica Liptak
+!!
 !> @note This test is an extension of the routine test_halo_upate in test_mpp_domains.
+
 module test_mpp_update_domains_int
 
 !  use compare_data_checksums, only : compare_checksums

@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !> @brief For variables without a compressed dimension, this routine simply wraps
 !!        netcdf_write data.  If the variable does have a compressed axis, the I/O root

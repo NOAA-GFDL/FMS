@@ -16,26 +16,23 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup gaussian_topog_mod gaussian_topog_mod
+!> @ingroup topography
+!> @brief Routines for creating Gaussian-shaped land surface topography
+!! for latitude-longitude grids.
+!> @author Bruce Wyman
+!!
+!! Interfaces generate simple Gaussian-shaped mountains from
+!! parameters specified by either argument list or namelist input.
+!! The mountain shapes are controlled by the height, half-width,
+!! and ridge-width parameters.
 
+!> @file
+!> @brief File for @ref gaussian_topog_mod
+
+!> @addtogroup gaussian_topog_mod
+!> @{
 module gaussian_topog_mod
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Routines for creating Gaussian-shaped land surface topography
-!   for latitude-longitude grids.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!   Interfaces generate simple Gaussian-shaped mountains from
-!   parameters specified by either argument list or namelist input.
-!   The mountain shapes are controlled by the height, half-width,
-!   and ridge-width parameters.
-! </DESCRIPTION>
 
 use  fms_mod, only: check_nml_error,                 &
                     stdlog, write_version_number,    &
@@ -102,37 +99,18 @@ contains
 
 !#######################################################################
 
-! <SUBROUTINE NAME="gaussian_topog_init">
-
-!   <OVERVIEW>
-!     Returns a surface height field that consists
-!     of the sum of one or more Gaussian-shaped mountains.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns a land surface topography that consists of a "set" of
-!     simple Gaussian-shaped mountains.  The height, position,
-!     width, and elongation of the mountains can be controlled
-!     by variables in namelist <LINK SRC="#NAMELIST">&#38;gaussian_topog_nml</LINK>.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     <B>call gaussian_topog_init</B> ( lon, lat, zsurf )
-!   </TEMPLATE>
-
-!   <IN NAME="lon" UNITS="radians" TYPE="real" DIM="(:)">
-!     The mean grid box longitude in radians.
-!   </IN>
-!   <IN NAME="lat" UNITS="radians" TYPE="real" DIM="(:)">
-!     The mean grid box latitude in radians.
-!   </IN>
-!   <OUT NAME="zsurf" UNITS="meter" TYPE="real" DIM="(:,:)">
-!     The surface height (in meters).
-!     The size of this field must be size(lon) by size(lat).
-!   </OUT>
-
+!> Returns a surface height field that consists
+!! of the sum of one or more Gaussian-shaped mountains.
+!!
+!> Returns a land surface topography that consists of a "set" of
+!! simple Gaussian-shaped mountains.  The height, position,
+!! width, and elongation of the mountains can be controlled
+!! by variables in the namelist.
 subroutine gaussian_topog_init ( lon, lat, zsurf )
 
-real, intent(in)  :: lon(:), lat(:)
-real, intent(out) :: zsurf(:,:)
+real, intent(in)  :: lon(:) !< The mean grid box longitude in radians
+real, intent(in)  :: lat(:) !< The mean grid box latitude in radians
+real, intent(out) :: zsurf(:,:) !< The surface height (meters). Size must be size(lon) by size(lat)
 
 integer :: n
 
@@ -157,58 +135,36 @@ integer :: n
  module_is_initialized = .TRUE.
 
 end subroutine gaussian_topog_init
-! </SUBROUTINE>
 
 !#######################################################################
 
-! <FUNCTION NAME="get_gaussian_topog">
-
-!   <OVERVIEW>
-!     Returns a simple surface height field that consists of a single
-!     Gaussian-shaped mountain.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns a single Gaussian-shaped mountain.
-!     The height, position, width, and elongation of the mountain
-!     is controlled by optional arguments.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
-!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )
-!   </TEMPLATE>
-
-!   <IN NAME="lon" UNITS="radians" TYPE="real" DIM="(:)">
-!     The mean grid box longitude in radians.
-!   </IN>
-!   <IN NAME="lat" UNITS="radians" TYPE="real" DIM="(:)">
-!     The mean grid box latitude in radians.
-!   </IN>
-!   <IN NAME="height" UNITS="meter" TYPE="real" DIM="(scalar)">
-!     Maximum surface height in meters.
-!   </IN>
-!   <IN NAME="olond, olatd" UNITS="degrees" TYPE="real" DIM="(scalar)">
-!     Position/origin of mountain in degrees longitude and latitude.
-!     This is the location of the maximum height.
-!   </IN>
-!   <IN NAME="wlond, wlatd" UNITS="degrees" TYPE="real" DIM="(scalar)" DEFAULT="15.">
-!     Gaussian half-width of mountain in degrees longitude and latitude.
-!   </IN>
-!   <IN NAME="rlond, rlatd" UNITS="degrees" TYPE="real" DIM="(scalar)" DEFAULT="0.">
-!     Ridge half-width of mountain in degrees longitude and latitude.
-!                    This is the elongation of the maximum height.
-!   </IN>
-!   <OUT NAME="zsurf" UNITS="meter" TYPE="real" DIM="(:,:)">
-!     The surface height (in meters).
-!              The size of the returned field is size(lon) by size(lat).
-!   </OUT>
-!   <ERROR MSG="shape(zsurf) is not equal to (/size(lon),size(lat)/)" STATUS="FATAL">
-!     Check the input grid size and output field size.
-!     The input grid is defined at the midpoint of grid boxes.
-!   </ERROR>
-!   <NOTE>
-!     Mountains do not wrap around the poles.
-!   </NOTE>
-
+!> @brief Returns a simple surface height field that consists of a single
+!! Gaussian-shaped mountain.
+!!
+!> The height, position, width, and elongation of the mountain
+!! is controlled by optional arguments.
+!! @param real lon The mean grid box longitude in radians.
+!! @param real lat The mean grid box latitude in radians.
+!! @param real height Maximum surface height in meters.
+!! @param real olond, olatd Position/origin of mountain in degrees longitude and latitude.
+!! This is the location of the maximum height.
+!! @param real wlond, wlatd Gaussian half-width of mountain in degrees longitude and latitude.
+!! @param real rlond, rlatd Ridge half-width of mountain in degrees longitude and latitude.
+!! This is the elongation of the maximum height.
+!! @param real zsurf The surface height (in meters).
+!! The size of the returned field is size(lon) by size(lat).
+!!   </OUT>
+!!
+!! @throws FATAL shape(zsurf) is not equal to (/size(lon),size(lat)/)
+!!     Check the input grid size and output field size.
+!!     The input grid is defined at the midpoint of grid boxes.
+!!
+!! @note
+!!     Mountains do not wrap around the poles.
+!
+!! <br>Example usage:
+!! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
+!!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
 function get_gaussian_topog ( lon, lat, height,                          &
                               olond, olatd, wlond, wlatd, rlond, rlatd ) &
                      result ( zsurf )
@@ -254,7 +210,6 @@ real    :: tpi, dtr, dx, dy, xx, yy
     enddo
 
 end function get_gaussian_topog
-! </FUNCTION>
 
 !#######################################################################
 
@@ -263,12 +218,12 @@ subroutine read_namelist
    integer :: unit, ierr, io
    real    :: dtr
 
-!  read namelist
+!>  read namelist
 
    read (input_nml_file, gaussian_topog_nml, iostat=io)
    ierr = check_nml_error(io,'gaussian_topog_nml')
 
-!  write version and namelist to log file
+!>  write version and namelist to log file
 
    if (mpp_pe() == mpp_root_pe()) then
       unit = stdlog()
@@ -318,3 +273,5 @@ end module gaussian_topog_mod
 !See the <LINK SRC="topography.html#TEST PROGRAM">topography </LINK>module documentation for a test program.
 !   </NOTE>
 ! </INFO>
+!> @}
+! close documentation grouping

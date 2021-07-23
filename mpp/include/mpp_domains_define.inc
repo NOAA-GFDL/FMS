@@ -20,11 +20,16 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_domains_mod
+!> @brief Various routines handling domains in @ref mpp_domains_mod
+
   ! <SUBROUTINE NAME="mpp_define_layout2D" INTERFACE="mpp_define_layout">
   !  <IN NAME="global_indices" TYPE="integer" DIM="(4)"></IN>
   !  <IN NAME="ndivs" TYPE="integer"></IN>
   !  <OUT NAME="layout" TYPE="integer" DIM="(2)"></OUT>
   ! </SUBROUTINE>
+  !> @brief Instantiates a layout with the given indices and divisions
   subroutine mpp_define_layout2D( global_indices, ndivs, layout )
     integer, intent(in) :: global_indices(:) !< (/ isg, ieg, jsg, jeg /); Defines the global domain.
     integer, intent(in) :: ndivs !< number of divisions to divide global domain
@@ -280,7 +285,9 @@
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @detailed routine to divide global array indices among domains, and assign domains to PEs
+  !> @brief MPP_DEFINE_DOMAINS: define layout and decomposition                  !
+  !!
+  !> Routine to divide global array indices among domains, and assign domains to PEs
   subroutine mpp_define_domains1D( global_indices, ndivs, domain, pelist, flags, halo, extent, maskmap, &
                                    memory_size, begin_halo, end_halo )
     integer,           intent(in) :: global_indices(:) !< (/ isg, ieg /) gives the extent of global domain
@@ -453,7 +460,7 @@
   end subroutine mpp_define_domains1D
 
   !################################################################################
-  !--- define the IO domain.
+  !> define the IO domain.
   subroutine mpp_define_io_domain(domain, io_layout)
     type(domain2D), intent(inout) :: domain
     integer,        intent(in   ) :: io_layout(2)
@@ -611,7 +618,7 @@
          xhalo, yhalo, xextent, yextent, maskmap, name, symmetry,  memory_size,               &
          whalo, ehalo, shalo, nhalo, is_mosaic, tile_count, tile_id, complete, x_cyclic_offset, y_cyclic_offset )
     !define 2D data and computational domain on global rectilinear cartesian domain (isg:ieg,jsg:jeg) and assign them to PEs
-    integer,          intent(in)           :: global_indices(:) !(/ isg, ieg, jsg, jeg /)
+    integer,          intent(in)           :: global_indices(:) !<(/ isg, ieg, jsg, jeg /)
     integer,          intent(in)           :: layout(:)
     type(domain2D),   intent(inout)        :: domain
     integer,          intent(in), optional :: pelist(0:)
@@ -620,23 +627,23 @@
     logical,          intent(in), optional :: maskmap(0:,0:)
     character(len=*), intent(in), optional :: name
     logical,          intent(in), optional :: symmetry
-    logical,          intent(in), optional :: is_mosaic                  ! indicate if calling mpp_define_domains from mpp_define_mosaic.
+    logical,          intent(in), optional :: is_mosaic                  !< indicate if calling mpp_define_domains from mpp_define_mosaic.
     integer,          intent(in), optional :: memory_size(:)
-    integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! halo size for West, East, South and North direction.
-                                                                         ! if whalo and ehalo is not present,
-                                                                         ! will take the value of xhalo
-                                                                         ! if shalo and nhalo is not present,
-                                                                         ! will take the value of yhalo
-    integer, intent(in),          optional :: tile_count                 ! tile number on current pe, default value is 1
-                                                                         ! this is for the situation that multiple tiles on one processor.
-    integer, intent(in),          optional :: tile_id                    ! tile id
-    logical, intent(in),          optional :: complete                   ! true indicate mpp_define_domain is completed for mosaic definition.
-    integer, intent(in),          optional :: x_cyclic_offset            ! offset for x-cyclic boundary condition,
-                                                                         ! (0,j) = (ni, mod(j+x_cyclic_offset,nj))
-                                                                         ! (ni+1,j) = ( 1, mod(j+nj-x_cyclic_offset,nj) )
-    integer, intent(in),          optional :: y_cyclic_offset            ! offset for y-cyclic boundary condition
-                                                                         ! (i,0)    = (mod(i+y_cyclic_offset,ni), nj))
-                                                                         ! (i,nj+1) = (mod(mod(i+ni-y_cyclic_offset,ni), 1) )
+    integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo !< halo size for West, East, South and North direction.
+                                                                         !< if whalo and ehalo is not present,
+                                                                         !< will take the value of xhalo
+                                                                         !< if shalo and nhalo is not present,
+                                                                         !< will take the value of yhalo
+    integer, intent(in),          optional :: tile_count                 !< tile number on current pe, default value is 1
+                                                                         !< this is for the situation that multiple tiles on one processor.
+    integer, intent(in),          optional :: tile_id                    !< tile id
+    logical, intent(in),          optional :: complete                   !< true indicate mpp_define_domain is completed for mosaic definition.
+    integer, intent(in),          optional :: x_cyclic_offset            !< offset for x-cyclic boundary condition,
+                                                                         !< (0,j) = (ni, mod(j+x_cyclic_offset,nj))
+                                                                         !< (ni+1,j) = ( 1, mod(j+nj-x_cyclic_offset,nj) )
+    integer, intent(in),          optional :: y_cyclic_offset            !< offset for y-cyclic boundary condition
+                                                                         !< (i,0)    = (mod(i+y_cyclic_offset,ni), nj))
+                                                                         !< (i,nj+1) = (mod(mod(i+ni-y_cyclic_offset,ni), 1) )
 
     integer              :: i, j, m, n, xhalosz, yhalosz, memory_xsize, memory_ysize
     integer              :: whalosz, ehalosz, shalosz, nhalosz
@@ -7603,6 +7610,10 @@ do i = 1, ntileMe
 enddo
 deallocate(domain%x, domain%y, domain%tile_id)
 
+! TODO: Check if these are always allocated
+if(ASSOCIATED(domain%tileList)) deallocate(domain%tileList)
+if(ASSOCIATED(domain%tile_id_all)) deallocate(domain%tile_id_all)
+
 if(ASSOCIATED(domain%list)) then
  do i = 0, size(domain%list(:))-1
     deallocate(domain%list(i)%x, domain%list(i)%y, domain%list(i)%tile_id)
@@ -7610,16 +7621,55 @@ if(ASSOCIATED(domain%list)) then
  deallocate(domain%list)
 endif
 
-if(ASSOCIATED(domain%check_C))  call deallocate_overlapSpec(domain%check_C)
-if(ASSOCIATED(domain%check_E))  call deallocate_overlapSpec(domain%check_E)
-if(ASSOCIATED(domain%check_N))  call deallocate_overlapSpec(domain%check_N)
-if(ASSOCIATED(domain%bound_C))  call deallocate_overlapSpec(domain%bound_C)
-if(ASSOCIATED(domain%bound_E))  call deallocate_overlapSpec(domain%bound_E)
-if(ASSOCIATED(domain%bound_N))  call deallocate_overlapSpec(domain%bound_N)
-if(ASSOCIATED(domain%update_T)) call deallocate_overlapSpec(domain%update_T)
-if(ASSOCIATED(domain%update_E)) call deallocate_overlapSpec(domain%update_E)
-if(ASSOCIATED(domain%update_C)) call deallocate_overlapSpec(domain%update_C)
-if(ASSOCIATED(domain%update_N)) call deallocate_overlapSpec(domain%update_N)
+if(ASSOCIATED(domain%check_C)) then
+  call deallocate_overlapSpec(domain%check_C)
+  deallocate(domain%check_C)
+endif
+
+if(ASSOCIATED(domain%check_E)) then
+  call deallocate_overlapSpec(domain%check_E)
+  deallocate(domain%check_E)
+endif
+
+if(ASSOCIATED(domain%check_N)) then
+  call deallocate_overlapSpec(domain%check_N)
+  deallocate(domain%check_N)
+endif
+
+if(ASSOCIATED(domain%bound_C)) then
+  call deallocate_overlapSpec(domain%bound_C)
+  deallocate(domain%bound_C)
+endif
+
+if(ASSOCIATED(domain%bound_E)) then
+  call deallocate_overlapSpec(domain%bound_E)
+  deallocate(domain%bound_E)
+endif
+
+if(ASSOCIATED(domain%bound_N)) then
+  call deallocate_overlapSpec(domain%bound_N)
+  deallocate(domain%bound_N)
+endif
+
+if(ASSOCIATED(domain%update_T)) then
+  call deallocate_overlapSpec(domain%update_T)
+  deallocate(domain%update_T)
+endif
+
+if(ASSOCIATED(domain%update_E)) then
+  call deallocate_overlapSpec(domain%update_E)
+  deallocate(domain%update_E)
+endif
+
+if(ASSOCIATED(domain%update_C)) then
+  call deallocate_overlapSpec(domain%update_C)
+  deallocate(domain%update_C)
+endif
+
+if(ASSOCIATED(domain%update_N)) then
+  call deallocate_overlapSpec(domain%update_N)
+  deallocate(domain%update_N)
+endif
 
 end subroutine deallocate_domain2D_local
 
@@ -7863,6 +7913,7 @@ subroutine deallocate_overlap_type( overlap)
   if(ASSOCIATED(overlap%js)) deallocate(overlap%js)
   if(ASSOCIATED(overlap%je)) deallocate(overlap%je)
   if(ASSOCIATED(overlap%dir)) deallocate(overlap%dir)
+  if(ASSOCIATED(overlap%index)) deallocate(overlap%index)
   if(ASSOCIATED(overlap%rotation)) deallocate(overlap%rotation)
   if(ASSOCIATED(overlap%from_contact)) deallocate(overlap%from_contact)
   if(ASSOCIATED(overlap%msgsize)) deallocate(overlap%msgsize)

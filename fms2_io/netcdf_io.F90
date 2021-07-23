@@ -16,11 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup netcdf_io_mod netcdf_io_mod
+!> @ingroup fms2_io
+!> @brief Creates a basic netcdf type and routines to extend for other uses
+!!
+!> Handles type definitions and interfaces for netcdf I/O.
 
 !> @file
+!> @brief File for @ref netcdf_io_mod
 
-!> @brief Create a netcdf type, which can be extended to meet
-!!        our various I/O needs.
+!> @addtogroup netcdf_io_mod
+!> @{
 module netcdf_io_mod
 use, intrinsic :: iso_fortran_env
 use netcdf
@@ -50,8 +56,11 @@ integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used i
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
+!> @}
+
 !> @brief information needed fr regional restart variables
-type :: bc_information
+!> @ingroup netcdf_io_mod
+type, private :: bc_information
   integer, dimension(:), allocatable :: indices !< Indices for the halo region for the variable
                                                 !! (starting x, ending x, starting y, ending y)
   integer, dimension(:), allocatable :: global_size !< Size of the variable for each dimension
@@ -71,7 +80,8 @@ type :: bc_information
 endtype bc_information
 
 !> @brief Restart variable.
-type :: RestartVariable_t
+!> @ingroup netcdf_io_mod
+type, private :: RestartVariable_t
   character(len=256) :: varname !< Variable name.
   class(*), pointer :: data0d => null() !< Scalar data pointer.
   class(*), dimension(:), pointer :: data1d => null() !< 1d data pointer.
@@ -86,7 +96,8 @@ type :: RestartVariable_t
 endtype RestartVariable_t
 
 !> @brief Compressed dimension.
-type :: CompressedDimension_t
+!> @ingroup netcdf_io_mod
+type, private :: CompressedDimension_t
   character(len=256) :: dimname !< Dimension name.
   integer, dimension(:), allocatable :: npes_corner !< Array of starting
                                                     !! indices for each rank.
@@ -97,7 +108,8 @@ type :: CompressedDimension_t
 endtype CompressedDimension_t
 
 !> @brief information about the current dimensions for regional restart variables
-type :: dimension_information
+!> @ingroup netcdf_io_mod
+type, private :: dimension_information
   integer, dimension(5) :: xlen !> The size of each unique x dimension
   integer, dimension(5) :: ylen !> The size of each unique y dimension
   integer, dimension(5) :: zlen !> The size of each unique z dimension
@@ -108,6 +120,7 @@ type :: dimension_information
 endtype dimension_information
 
 !> @brief Netcdf file type.
+!> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=256) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
@@ -135,6 +148,7 @@ endtype FmsNetcdfFile_t
 
 
 !> @brief Range type for a netcdf variable.
+!> @ingroup netcdf_io_mod
 type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_min !< Flag that's true if min exists for a variable.
@@ -219,6 +233,7 @@ public :: set_fileobj_time_name
 public :: write_restart_bc
 public :: read_restart_bc
 
+!> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
   module procedure netcdf_add_restart_variable_1d
@@ -228,6 +243,7 @@ interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_5d
 end interface netcdf_add_restart_variable
 
+!> @ingroup netcdf_io_mod
 interface netcdf_read_data
   module procedure netcdf_read_data_0d
   module procedure netcdf_read_data_1d
@@ -238,6 +254,7 @@ interface netcdf_read_data
 end interface netcdf_read_data
 
 
+!> @ingroup netcdf_io_mod
 interface netcdf_write_data
   module procedure netcdf_write_data_0d
   module procedure netcdf_write_data_1d
@@ -248,6 +265,7 @@ interface netcdf_write_data
 end interface netcdf_write_data
 
 
+!> @ingroup netcdf_io_mod
 interface compressed_write
   module procedure compressed_write_0d
   module procedure compressed_write_1d
@@ -258,45 +276,55 @@ interface compressed_write
 end interface compressed_write
 
 
+!> @ingroup netcdf_io_mod
 interface register_global_attribute
   module procedure register_global_attribute_0d
   module procedure register_global_attribute_1d
 end interface register_global_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface register_variable_attribute
   module procedure register_variable_attribute_0d
   module procedure register_variable_attribute_1d
 end interface register_variable_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface get_global_attribute
   module procedure get_global_attribute_0d
   module procedure get_global_attribute_1d
 end interface get_global_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface get_variable_attribute
   module procedure get_variable_attribute_0d
   module procedure get_variable_attribute_1d
 end interface get_variable_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface scatter_data_bc
   module procedure scatter_data_bc_2d
   module procedure scatter_data_bc_3d
 end interface scatter_data_bc
 
+!> @ingroup netcdf_io_mod
 interface gather_data_bc
   module procedure gather_data_bc_2d
   module procedure gather_data_bc_3d
 end interface gather_data_bc
 
-!< The interface is needed to accomodate pgi because it can't handle class * and there was no other way around it
+!> The interface is needed to accomodate pgi because it can't handle class * and there was no other way around it
+!> @ingroup netcdf_io_mod
 interface is_valid
   module procedure is_valid_r8
   module procedure is_valid_r4
 end interface is_valid
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 contains
 
@@ -2174,3 +2202,5 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
 end subroutine write_restart_bc
 
 end module netcdf_io_mod
+!> @}
+! close documentation grouping

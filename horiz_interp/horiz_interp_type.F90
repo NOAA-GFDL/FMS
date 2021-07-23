@@ -16,26 +16,18 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup horiz_interp_type_mod horiz_interp_type_mod
+!> @ingroup horiz_interp
+!> @brief define derived data type that contains indices and weights used for subsequent
+!! interpolations.
+!> @author Zhi Liang
+
 !> @file
-!! @brief define derived data type that contains indices and weights used for subsequent
-!!      interpolations.
-!! @author Zhi Liang
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref horiz_interp_type_mod
+
+!> @addtogroup
+!> @{
 module horiz_interp_type_mod
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov"> Zhi Liang </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!     define derived data type that contains indices and weights used for subsequent
-!      interpolations.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     define derived data type that contains indices and weights used for subsequent
-!      interpolations.
-! </DESCRIPTION>
-
 
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
 use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_npes
@@ -54,11 +46,15 @@ private
 public :: CONSERVE, BILINEAR, SPHERICA, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
 
+!> @}
+
+!> @ingroup horiz_interp_type_mod
 interface assignment(=)
   module procedure horiz_interp_type_eq
 end interface
 
 !<PUBLICTYPE >
+!> @ingroup horiz_interp_type_mod
  type horiz_interp_type
    real,    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
    real,    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
@@ -108,6 +104,8 @@ end interface
  end type
 !</PUBLICTYPE>
 
+!> @addtogroup horiz_interp_type_mod
+!> @{
 contains
 
 !#######################################################################
@@ -228,3 +226,5 @@ contains
 !#################################################################################################################################
 
 end module horiz_interp_type_mod
+!> @}
+! close documentation grouping

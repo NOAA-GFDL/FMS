@@ -16,28 +16,26 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!
-!                                    Michael Winton (Michael.Winton@noaa.gov) Oct 2001
-!
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!> @file
-!! @brief <TT>xgrid_mod</TT> implements exchange grids for coupled models running on
-!!     multiple processors.  An exchange grid is formed from the union of
-!!     the bounding lines of the two (logically rectangular) participating
-!!     grids.  The exchange grid is therefore the coarsest grid that is a
-!!     refinement of both participating grids.  Exchange grids are used for
-!!     two purposes by coupled models:  (1) conservative interpolation of fields
-!!     between models uses the exchange grid cell areas as weights and
-!!     (2) the surface flux calculation takes place on the exchange grid thereby
-!!     using the finest scale data available.  <TT>xgrid_mod</TT> uses a NetCDF grid
-!!     specification file containing the grid cell overlaps in combination with
-!!     the <LINK SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90">
-!!     <TT>mpp_domains</TT></LINK> domain decomposition information to determine
-!!     the grid and processor connectivities.
-!! @author Michael Winton, Zhi Liang
-!! @email gfdl.climate.model.info@noaa.gov
+!> @defgroup xgrid_mod xgrid_mod
+!> @ingroup exchange
+!> @brief Implements exchange grids for coupled models running on multiple processors
+!> @author Michael Winton, Zhi Liang
+!!
+!! An exchange grid is formed from the union of
+!! the bounding lines of the two (logically rectangular) participating
+!! grids.  The exchange grid is therefore the coarsest grid that is a
+!! refinement of both participating grids.  Exchange grids are used for
+!! two purposes by coupled models:
+!! 1. conservative interpolation of fields
+!! between models uses the exchange grid cell areas as weights and
+!! 2. the surface flux calculation takes place on the exchange grid thereby
+!! using the finest scale data available.
+!! <TT>xgrid_mod</TT> uses a NetCDF grid
+!! specification file containing the grid cell overlaps in combination with
+!! the @link ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90 @endlink domain
+!! decomposition information to determine
+!! the grid and processor connectivities.
+!!
 !!
 !! xgrid_mod - implements exchange grids.  An exchange grid is the grid whose
 !!             boundary set is the union of the boundaries of the participating
@@ -77,66 +75,26 @@
 !!             PE.  For the make_exchange_reproduce option, a special side 1 get
 !!             is used.  This get communicates individual exchange cells.  The
 !!             cells are summed in the order they appear in the grid spec. file.
+!!
+!!     <TT>xgrid_mod</TT> reads a NetCDF grid specification file to determine the
+!!     grid and processor connectivities.  The exchange grids are defined
+!!     by a sequence of quintuples:  the <TT>i/j</TT> indices of the intersecting
+!!     cells of the two participating grids and their areal overlap.
+!!     The names of the five fields are generated automatically from the
+!!     three character ids of the participating grids.  For example, if
+!!     the side one grid id is "ATM" and the side two grid id is "OCN",
+!!     <TT>xgrid_mod</TT> expects to find the following five fields in the grid
+!!     specification file:  <TT>I_ATM_ATMxOCN, J_ATM_ATMxOCN, I_OCN_ATMxOCN,
+!!     J_OCN_ATMxOCN, and AREA_ATMxOCN</TT>.  These fields may be generated
+!!     by the <TT>make_xgrids</TT> utility.
+
+!> @file
+!> @brief File for @ref xgrid_mod
+
+!> @addtogroup xgrid_mod
+!> @{
 module xgrid_mod
-! <CONTACT EMAIL="Michael.Winton@noaa.gov">
-!   Michael Winton
-! </CONTACT>
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-!   Zhi Liang
-! </CONTACT>
 
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!    <TT>xgrid_mod</TT> implements exchange grids for coupled models running on
-!     multiple processors.  An exchange grid is formed from the union of
-!     the bounding lines of the two (logically rectangular) participating
-!     grids.  The exchange grid is therefore the coarsest grid that is a
-!     refinement of both participating grids.  Exchange grids are used for
-!     two purposes by coupled models:  (1) conservative interpolation of fields
-!     between models uses the exchange grid cell areas as weights and
-!     (2) the surface flux calculation takes place on the exchange grid thereby
-!     using the finest scale data available.  <TT>xgrid_mod</TT> uses a NetCDF grid
-!     specification file containing the grid cell overlaps in combination with
-!     the <LINK SRC="ftp://ftp.gfdl.gov/pub/vb/mpp/mpp_domains.F90">
-!     <TT>mpp_domains</TT></LINK> domain decomposition information to determine
-!     the grid and processor connectivities.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     <TT>xgrid_mod</TT> is initialized with a list of model identifiers (three characters
-!     each), a list of <TT>mpp_domains</TT> domain data structures, and a grid specification
-!     file name.  The first element in the lists refers to the "side one" grid.
-!     The remaining elements are on "side two".  Thus, there may only be a single
-!     side one grid and it is further restricted to have no partitions (sub-grid
-!     areal divisions).  In standard usage, the atmosphere model is on side one
-!     and the land and sea ice models are on side two.  <TT>xgrid_mod</TT> performs
-!     interprocessor communication on the side one grid.  Exchange grid variables
-!     contain no data for zero sized partitions.  The size and format of exchange
-!     grid variables change every time the partition sizes or number of partitions
-!     are modified with a <TT>set_frac_area</TT> call on a participating side two grid.
-!     Existing exchange grid variables cannot be properly interpreted after
-!     that time; new ones must be allocated and assigned with the <TT>put_to_xgrid</TT>
-!     call.
-! </DESCRIPTION>
-
-! <DATA NAME="xmap_type"  TYPE=""  >
-!   The fields of xmap_type are all private.
-! </DATA>
-
-! <DATASET NAME="">
-!     <TT>xgrid_mod</TT> reads a NetCDF grid specification file to determine the
-!     grid and processor connectivities.  The exchange grids are defined
-!     by a sequence of quintuples:  the <TT>i/j</TT> indices of the intersecting
-!     cells of the two participating grids and their areal overlap.
-!     The names of the five fields are generated automatically from the
-!     three character ids of the participating grids.  For example, if
-!     the side one grid id is "ATM" and the side two grid id is "OCN",
-!     <TT>xgrid_mod</TT> expects to find the following five fields in the grid
-!     specification file:  <TT>I_ATM_ATMxOCN, J_ATM_ATMxOCN, I_OCN_ATMxOCN,
-!     J_OCN_ATMxOCN, and AREA_ATMxOCN</TT>.  These fields may be generated
-!     by the <TT>make_xgrids</TT> utility.
-! </DATASET>
 
 #include <fms_platform.h>
 
@@ -213,145 +171,125 @@ integer, parameter :: VERSION1           = 1 !< grid spec file
 integer, parameter :: VERSION2           = 2 !< mosaic grid file
 integer, parameter :: MAX_FIELDS         = 80
 
-! <NAMELIST NAME="xgrid_nml">
-!   <DATA NAME="make_exchange_reproduce" TYPE="logical"  DEFAULT=".false.">
-!     Set to .true. to make <TT>xgrid_mod</TT> reproduce answers on different
-!     numbers of PEs.  This option has a considerable performance impact.
-!   </DATA>
-!   <DATA NAME="interp_method" TYPE="character(len=64)"  DEFAULT=" 'first_order' ">
-!     exchange grid interpolation method. It has two options:
-!     "first_order", "second_order".
-!   </DATA>
-!   <DATA NAME="nsubset" TYPE="integer" DEFAULT="0">
-!     number of processors to read exchange grid information. Those processors that read
-!     the exchange grid information will send data to other processors to prepare for flux exchange.
-!     Default value is 0. When nsubset is 0, each processor will read part of the exchange grid
-!     information. The purpose of this namelist is to improve performance of setup_xmap when running
-!     on highr processor count and solve receiving size mismatch issue on high processor count.
-!     Try to set nsubset = mpp_npes/MPI_rank_per_node.
-!   </DATA>
-logical :: make_exchange_reproduce = .false. !< exactly same on different # PEs
+logical :: make_exchange_reproduce = .false. !< Set to .true. to make <TT>xgrid_mod</TT> reproduce answers on different
+                                             !! numbers of PEs.  This option has a considerable performance impact.
+!< exactly same on different # PEs
 logical :: xgrid_log = .false.
-character(len=64) :: interp_method = 'first_order'
+character(len=64) :: interp_method = 'first_order' !< Exchange grid interpolation method.
+                                              !! It has two options: "first_order", "second_order".
 logical :: debug_stocks = .false.
 logical :: xgrid_clocks_on = .false.
 logical :: monotonic_exchange = .false.
-integer :: nsubset = 0 !< 0 means mpp_npes()
+integer :: nsubset = 0 !< Number of processors to read exchange grid information. Those processors
+                       !! that read the exchange grid information will send data to other processors
+                       !! to prepare for flux exchange. Default value is 0. When nsubset is 0, each
+                       !! processor will read part of the exchange grid information. The purpose of
+                       !! this namelist is to improve performance of setup_xmap when running on
+                       !! higher processor count and solve receiving size mismatch issue on high
+                       !! processor count. Try to set nsubset = mpp_npes/MPI_rank_per_node.
 logical :: do_alltoall = .true.
 logical :: do_alltoallv = .false.
 logical :: use_mpp_io = .false.!< use_mpp_io Default = .false. When true, uses mpp_io for IO.
-                               !< When false, uses fms2_io for IO.
+                               !! When false, uses fms2_io for IO.
+!> @brief xgrid nml
 namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid_clocks_on, &
     monotonic_exchange, nsubset, do_alltoall, do_alltoallv, &
     use_mpp_io
-! </NAMELIST>
+
 logical :: init = .true.
 integer :: remapping_method
 
-! Area elements used inside each model
+!> Area elements used inside each model
 real, allocatable, dimension(:,:) :: AREA_ATM_MODEL, AREA_LND_MODEL, AREA_OCN_MODEL
-! Area elements based on a the spherical model used by the ICE layer
+!> Area elements based on a the spherical model used by the ICE layer
 real, allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_SPHERE
 
-! <INTERFACE NAME="put_to_xgrid">
+!> @}
 
-!   <OVERVIEW>
-!     Scatters data from model grid onto exchange grid.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Scatters data from model grid onto exchange grid.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call put_to_xgrid(d, grid_id, x, xmap, remap_order)
-!   </TEMPLATE>
-!   <IN NAME="d"  TYPE="real"  > </IN>
-!   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <INOUT NAME="x"  TYPE="real"  > </INOUT>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <IN NAME="remap_method" TYPE="integer,optional">
-!     exchange grid interpolation method. It has four possible values:
-!     FIRST_ORDER (=1), SECOND_ORDER(=2). Default value is FIRST_ORDER.
-!   </IN>
 !> @brief Scatters data from model grid onto exchange grid.
+!!
+!> Example usage:
+!! @code{.F90}
+!! call put_to_xgrid(d, grid_id, x, xmap, remap_order)
+!! @endcode
+!!
+!> @ingroup xgrid_mod
 interface put_to_xgrid
   module procedure put_side1_to_xgrid
   module procedure put_side2_to_xgrid
 end interface
-! </INTERFACE>
 
-! <INTERFACE NAME="get_from_xgrid">
-
-!   <OVERVIEW>
-!     Sums data from exchange grid to model grid.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Sums data from exchange grid to model grid.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_from_xgrid(d, grid_id, x, xmap)
-!   </TEMPLATE>
-!   <IN NAME="x"  TYPE="real"  > </IN>
-!   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <OUT NAME="d"  TYPE="real"  > </OUT>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !> @brief Sums data from exchange grid to model grid.
+!!
+!> <br>Example usage:
+!! @code{.F90}
+!! call get_from_xgrid(d, grid_id, x, xmap)
+!! @endcode
+!> @ingroup xgrid_mod
 interface get_from_xgrid
   module procedure get_side1_from_xgrid
   module procedure get_side2_from_xgrid
 end interface
-! </INTERFACE>
 
+!> @brief @ref put_to_xgrid for unstructured grids.
+!!
+!> Scatters data from unstructured grid onto exchange grid.
+!> @ingroup xgrid_mod
 interface put_to_xgrid_ug
   module procedure put_side1_to_xgrid_ug
   module procedure put_side2_to_xgrid_ug
 end interface
 
+!> @brief @ref get_from_xgrid for unstructured grids.
+!!
+!> Sums data from exchange grid to model grid.
+!> @ingroup xgrid_mod
 interface get_from_xgrid_ug
   module procedure get_side2_from_xgrid_ug
   module procedure get_side1_from_xgrid_ug
 end interface
 
+!> @brief Sets sub-grid area and numbering in the given exchange grid.
+!> @ingroup xgrid_mod
 interface set_frac_area
   module procedure set_frac_area_sg
   module procedure set_frac_area_ug
 end interface
 
-! <INTERFACE NAME="conservation_check">
-
-!   <OVERVIEW>
-!     Returns three numbers which are the global sum of a variable.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns three numbers which are the global sum of a
-!     variable (1) on its home model grid, (2) after interpolation to the other
-!     side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!     Conservation_check must be called by all PEs to work properly.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call conservation_check(d, grid_id, xmap,remap_order)
-!   </TEMPLATE>
-!   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <OUT NAME="" TYPE="real" DIM="3">The global sum of a variable.</OUT>
-!   <IN NAME="remap_method" TYPE="integer,optional">
-!   </IN>
 !> @brief Returns three numbers which are the global sum of a variable.
 !! @details Returns three numbers which are the global sum of a
 !!     variable (1) on its home model grid, (2) after interpolation to the other
 !!     side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !!     Conservation_check must be called by all PEs to work properly.
+!!
+!! @param d real data
+!! @param grid_id 3 character grid ID
+!! @param[inout] xmap exchange grid
+!! @param[out] global sum of a variable on home model grid, after side grid interpolation and after
+!!  reinterpolation
+!!
+!! <br>Example usage:
+!! @code{.F90}
+!! call conservation_check(d, grid_id, xmap,remap_order)
+!! @endcode
+!> @ingroup xgrid_mod
 interface conservation_check
   module procedure conservation_check_side1
   module procedure conservation_check_side2
 end interface
-! </INTERFACE>
+
+!> For an unstructured grid, returns three numbers which are the global sum of a
+!! variable (1) on its home model grid, (2) after interpolation to the other
+!! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
+!> @ingroup xgrid_mod
 interface conservation_check_ug
   module procedure conservation_check_ug_side1
   module procedure conservation_check_ug_side2
 end interface
 
 
+!> Private type for cell indices and data in the exchange grid
+!> @ingroup xgrid_mod
 type xcell_type
   integer :: i1 !< indices of cell in model arrays on both sides
   integer :: j1 !< indices of cell in model arrays on both sides
@@ -369,6 +307,8 @@ type xcell_type
   real    :: scale
 end type xcell_type
 
+!> Type to hold pointers for grid boxes
+!> @ingroup xgrid_mod
 type grid_box_type
    real, dimension(:,:),   pointer :: dx     => NULL()
    real, dimension(:,:),   pointer :: dy     => NULL()
@@ -383,6 +323,8 @@ type grid_box_type
    real, dimension(:,:,:), pointer :: vlat   => NULL()
 end type grid_box_type
 
+!> Private type to hold all data needed from given grid for an exchange grid
+!> @ingroup xgrid_mod
 type grid_type
   character(len=3)                :: id                               !< grid identifier
   integer                         :: npes                             !< number of processor on this grid.
@@ -445,6 +387,8 @@ type grid_type
 
 end type grid_type
 
+!> Private type for exchange grid data
+!> @ingroup xgrid_mod
 type x1_type
   integer :: i, j
   real    :: area   !< (= geographic area * frac_area)
@@ -455,12 +399,16 @@ type x1_type
   integer :: pos
 end type x1_type
 
+!> Private type for exchange grid data
+!> @ingroup xgrid_mod
 type x2_type
   integer :: i, j, l, k, pos
   real    :: area   !< geographic area of exchange cell
 !  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
+!> Private type for overlap exchange grid data
+!> @ingroup xgrid_mod
 type overlap_type
    integer          :: count
    integer          :: pe
@@ -474,6 +422,8 @@ type overlap_type
    real,    allocatable :: dj(:)
 end type overlap_type
 
+!> Private type used for exchange grid communication
+!> @ingroup xgrid_mod
 type comm_type
   integer                         :: nsend, nrecv
   integer                         :: sendsize, recvsize
@@ -482,6 +432,8 @@ type comm_type
   type(overlap_type), pointer, dimension(:) :: recv=>NULL()
 end type comm_type
 
+!> @brief Type for an exchange grid, holds pointers to included grids and any necessary data.
+!> @ingroup xgrid_mod
 type xmap_type
   private
   integer :: size            !< # of exchange grid cells with area > 0 on this pe
@@ -522,6 +474,8 @@ type xmap_type
   type(comm_type), pointer       :: get1_repro =>NULL()!< for get_1_from_xgrid_repro
 end type xmap_type
 
+!> @addtogroup stock_constants_mod
+!> @{
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -546,12 +500,15 @@ end type xmap_type
  integer :: is_nest=0, ie_nest=0, js_nest=0, je_nest=0
  integer :: is_parent=0, ie_parent=0, js_parent=0, je_parent=0
 
+!> @}
  ! The following is required to compute stocks of water, heat, ...
 
+  !> @ingroup xgrid_mod
   interface stock_move
      module procedure stock_move_3d, stock_move_2d
   end interface
 
+  !> @ingroup xgrid_mod
   interface stock_move_ug
      module procedure stock_move_ug_3d
   end interface
@@ -559,10 +516,12 @@ end type xmap_type
   public stock_move, stock_type, stock_print, get_index_range, stock_integrate_2d
   public FIRST_ORDER, SECOND_ORDER, stock_move_ug
 
+  !> @ingroup xgrid_mod
   interface get_area_elements !< for use with use_mpp_io
      module procedure get_area_elements_fms2_io
      module procedure get_area_elements_use_mpp_io
   end interface
+  !> @ingroup xgrid_mod
   interface get_nest_contact
      module procedure get_nest_contact_fms2_io
      module procedure get_nest_contact_use_mpp_io
@@ -572,6 +531,9 @@ end type xmap_type
   private load_xgrid_use_mpp_io, get_grid, get_ocean_model_area_elements_use_mpp_io
 
 contains
+
+!> @addtogroup xgrid_mod
+!> @{
 
 !#######################################################################
 !> @return logical in_box
@@ -583,22 +545,6 @@ end function in_box
 
 !#######################################################################
 
-! <SUBROUTINE NAME="xgrid_init">
-
-!   <OVERVIEW>
-!     Initialize the xgrid_mod.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Initialization routine for the xgrid module. It reads the xgrid_nml,
-!     writes the version information and xgrid_nml to the log file.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call xgrid_init ( )
-!   </TEMPLATE>
-!   <OUT NAME="remap_method" TYPE="integer">
-!     exchange grid interpolation method. It has four possible values:
-!     FIRST_ORDER (=1), SECOND_ORDER(=2).
-!   </OUT>
 !> @brief Initialize the xgrid_mod.
 !! @details Initialization routine for the xgrid module. It reads the xgrid_nml,
 !!     writes the version information and xgrid_nml to the log file.
@@ -675,7 +621,6 @@ subroutine xgrid_init(remap_method)
   remapping_method = remap_method
 
 end subroutine xgrid_init
-! </SUBROUTINE>
 
 !#######################################################################
 
@@ -1388,15 +1333,10 @@ logical,        intent(in)             :: use_higher_order
 end subroutine load_xgrid
 
 !#######################################################################
-!
-! get_grid - read the center point of the grid from version 1 grid file.
-!          - only the grid at the side 1 is needed, so we only read
-!          - atm and land grid
-!
 
 !> @brief read the center point of the grid from version 1 grid file.
 !!   only the grid at the side 1 is needed, so we only read
-!!   atm and land grid
+!!   atm and land grid.
 subroutine get_grid_version1(grid, grid_id, grid_file)
   type(grid_type), intent(inout)          :: grid
   character(len=3), intent(in)            :: grid_id
@@ -1461,14 +1401,7 @@ subroutine get_grid_version1(grid, grid_id, grid_file)
 
 end subroutine get_grid_version1
 
-
 !#######################################################################
-!
-! get_grid - read the center point of the grid from version 2 grid file.
-!          - only the grid at the side 1 is needed, so we only read
-!          - atm and land grid
-!
-!
 
 !> @brief read the center point of the grid from version 1 grid file.
 !!   only the grid at the side 1 is needed, so we only read
@@ -1576,25 +1509,8 @@ subroutine get_area_elements_fms2_io(fileobj, name, data)
 end subroutine get_area_elements_fms2_io
 
 !#######################################################################
-! Read the OCN model area elements from NetCDF file
-! <SUBROUTINE NAME="get_ocean_model_area_elements">
 
-!   <OVERVIEW>
-!      Read Ocean area element data.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      If available in the NetCDF file, this routine will read the
-!      AREA_OCN_MODEL field and load the data into global AREA_OCN_MODEL.
-!      If not available, then the array AREA_OCN_MODEL will be left
-!      unallocated. Must be called by all PEs.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_ocean_model_area_elements(ocean_domain, grid_file)
-!   </TEMPLATE>
-
-!   <IN NAME="ocean_domain" TYPE="type(Domain2d)"> </IN>
-!   <IN NAME="grid_file" TYPE="character(len=*)" > </IN>
-!> @brief Read Ocean area element data.
+!> @brief Read Ocean area element data from netCDF file.
 !! @details If available in the NetCDF file, this routine will read the
 !!      AREA_OCN_MODEL field and load the data into global AREA_OCN_MODEL.
 !!      If not available, then the array AREA_OCN_MODEL will be left
@@ -1632,28 +1548,8 @@ subroutine get_ocean_model_area_elements(domain, grid_file)
 
 
 end subroutine get_ocean_model_area_elements
-! </SUBROUTINE>
+
 !#######################################################################
-
-! <SUBROUTINE NAME="setup_xmap">
-
-!   <OVERVIEW>
-!      Sets up exchange grid connectivity using grid specification file and
-!      processor domain decomposition.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Sets up exchange grid connectivity using grid specification file and
-!      processor domain decomposition. Initializes xmap.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid)
-!   </TEMPLATE>
-
-!   <IN NAME="grid_ids" TYPE="character(len=3)" DIM="(:)"> </IN>
-!   <IN NAME="grid_domains" TYPE="type(Domain2d)" DIM="(:)"> </IN>
-!   <IN NAME="grid_file" TYPE="character(len=*)" > </IN>
-!   <IN NAME="atmos_grid" TYPE="type(grid_box_type),optional" > </IN>
-!   <OUT NAME="xmap" TYPE="xmap_type"  > </OUT>
 
 !> @brief Sets up exchange grid connectivity using grid specification file and
 !!      processor domain decomposition.
@@ -2194,9 +2090,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   call mpp_clock_end(id_setup_xmap)
 
 end subroutine setup_xmap
-! </SUBROUTINE>
 
 !----------------------------------------------------------------------------
+
 !> @brief currently we are assuming there is only one nest region
 !! @return integer get_nest_contact
 function get_nest_contact_fms2_io(fileobj, tile_nest_out, tile_parent_out, is_nest_out, &
@@ -3201,27 +3097,11 @@ end subroutine regen
 
 !#######################################################################
 
-! <SUBROUTINE NAME="set_frac_area">
-
-!   <OVERVIEW>
-!     Changes sub-grid portion areas and/or number.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Changes sub-grid portion areas and/or number.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call set_frac_area(f, grid_id, xmap)
-!   </TEMPLATE>
-
-!   <IN NAME="f" TYPE="real" DIM="(:,:,:)"> </IN>
-!   <IN NAME="grid_id" TYPE="character(len=3)" > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-
 !> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_sg(f, grid_id, xmap)
-real, dimension(:,:,:), intent(in   ) :: f
-character(len=3),       intent(in   ) :: grid_id
-type (xmap_type),       intent(inout) :: xmap
+real, dimension(:,:,:), intent(in   ) :: f !< fraction area to be set
+character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
+type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid ID
 
   integer :: g
   type(grid_type), pointer, save :: grid =>NULL()
@@ -3246,31 +3126,14 @@ type (xmap_type),       intent(inout) :: xmap
   call error_mesg ('xgrid_mod', 'set_frac_area: could not find grid id', FATAL)
 
 end subroutine  set_frac_area_sg
-! </SUBROUTINE>
 
 !#######################################################################
 
-! <SUBROUTINE NAME="set_frac_area_ug">
-
-!   <OVERVIEW>
-!     Changes sub-grid portion areas and/or number.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Changes sub-grid portion areas and/or number.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call set_frac_area_ug(f, grid_id, xmap)
-!   </TEMPLATE>
-
-!   <IN NAME="f" TYPE="real" DIM="(:,:,:)"> </IN>
-!   <IN NAME="grid_id" TYPE="character(len=3)" > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-
 !> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_ug(f, grid_id, xmap)
-real, dimension(:,:),   intent(in   ) :: f
-character(len=3),       intent(in   ) :: grid_id
-type (xmap_type),       intent(inout) :: xmap
+real, dimension(:,:),   intent(in   ) :: f !< fractional area to set
+character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
+type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid ID
 
   integer :: g
   type(grid_type), pointer, save :: grid =>NULL()
@@ -3296,50 +3159,27 @@ type (xmap_type),       intent(inout) :: xmap
   call error_mesg ('xgrid_mod', 'set_frac_area_ug: could not find grid id', FATAL)
 
 end subroutine  set_frac_area_ug
-! </SUBROUTINE>
-
-
 
 !#######################################################################
 
-! <FUNCTION NAME="xgrid_count">
-
-!   <OVERVIEW>
-!     Returns current size of exchange grid variables.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns current size of exchange grid variables.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     xgrid_count(xmap)
-!   </TEMPLATE>
-
-!   <IN NAME="xmap" TYPE="xmap_type" > </IN>
-!   <OUT NAME="xgrid_count"  TYPE="integer"  > </OUT>
-
 !> @brief Returns current size of exchange grid variables.
-!! @return integer xgrid_count
+!! @return size of given exchange grid's variable
 integer function xgrid_count(xmap)
 type (xmap_type), intent(inout) :: xmap
 
   xgrid_count = xmap%size
 end function xgrid_count
-! </FUNCTION>
 
 !#######################################################################
 
-! <SUBROUTINE NAME="put_side1_to_xgrid" INTERFACE="put_to_xgrid">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <IN NAME="remap_method" TYPE="integer,optional"></IN>
+!> Scatters data to exchange grid
 subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
-  real, dimension(:,:), intent(in   )    :: d
-  character(len=3),     intent(in   )    :: grid_id
-  real, dimension(:),   intent(inout)    :: x
-  type (xmap_type),     intent(inout)    :: xmap
-  integer, intent(in), optional          :: remap_method
+  real, dimension(:,:), intent(in   )    :: d !< data to send
+  character(len=3),     intent(in   )    :: grid_id !< 3 character grid ID
+  real, dimension(:),   intent(inout)    :: x !< xgrid data
+  type (xmap_type),     intent(inout)    :: xmap !< exchange grid
+  integer, intent(in), optional          :: remap_method !< exchange grid interpolation method can
+                                                         !! be FIRST_ORDER(=1) or SECOND_ORDER(=2)
   logical, intent(in), optional          :: complete
 
   logical                                         :: is_complete, set_mismatch
@@ -3420,21 +3260,15 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   call error_mesg ('xgrid_mod', 'put_to_xgrid: could not find grid id', FATAL)
 
 end subroutine put_side1_to_xgrid
-! </SUBROUTINE>
 
 !#######################################################################
 
-! <SUBROUTINE NAME="put_side2_to_xgrid" INTERFACE="put_to_xgrid">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-
+!> Scatters data to exchange grid
 subroutine put_side2_to_xgrid(d, grid_id, x, xmap)
-real, dimension(:,:,:), intent(in   ) :: d
-character(len=3),       intent(in   ) :: grid_id
-real, dimension(:),     intent(inout) :: x
-type (xmap_type),       intent(inout) :: xmap
+real, dimension(:,:,:), intent(in   ) :: d !< data to send
+character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
+real, dimension(:),     intent(inout) :: x !< xgrid data
+type (xmap_type),       intent(inout) :: xmap !< exchange grid
 
   integer :: g
 
@@ -3452,21 +3286,14 @@ type (xmap_type),       intent(inout) :: xmap
   call error_mesg ('xgrid_mod', 'put_to_xgrid: could not find grid id', FATAL)
 
 end subroutine put_side2_to_xgrid
-! </SUBROUTINE>
 
 !#######################################################################
 
-! <SUBROUTINE NAME="get_side1_from_xgrid" INTERFACE="get_from_xgrid">
-!   <IN NAME="x"  TYPE="real" DIM="(:)" > </IN>
-!   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <OUT NAME="d"  TYPE="real" DIM="(:,:)" > </OUT>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-
 subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
-  real, dimension(:,:), intent(  out) :: d
-  character(len=3),     intent(in   ) :: grid_id
-  real, dimension(:),   intent(in   ) :: x
-  type (xmap_type),     intent(inout) :: xmap
+  real, dimension(:,:), intent(  out) :: d !< recieved xgrid data
+  character(len=3),     intent(in   ) :: grid_id !< 3 character grid ID
+  real, dimension(:),   intent(in   ) :: x !< xgrid data
+  type (xmap_type),     intent(inout) :: xmap !< exchange grid
   logical, intent(in), optional     :: complete
 
   logical                                         :: is_complete, set_mismatch
@@ -3534,21 +3361,14 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   call error_mesg ('xgrid_mod', 'get_from_xgrid: could not find grid id', FATAL)
 
 end subroutine get_side1_from_xgrid
-! </SUBROUTINE>
 
 !#######################################################################
 
-! <SUBROUTINE NAME="get_side2_from_xgrid" INTERFACE="get_from_xgrid">
-!   <IN NAME="x"  TYPE="real" DIM="(:)" > </IN>
-!   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <OUT NAME="d"  TYPE="real" DIM="(:,:,:)" > </OUT>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-
 subroutine get_side2_from_xgrid(d, grid_id, x, xmap)
-real, dimension(:,:,:), intent(  out) :: d
-character(len=3),       intent(in   ) :: grid_id
-real, dimension(:),     intent(in   ) :: x
-type (xmap_type),       intent(in   ) :: xmap
+real, dimension(:,:,:), intent(  out) :: d !< received xgrid data
+character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
+real, dimension(:),     intent(in   ) :: x !< xgrid data
+type (xmap_type),       intent(in   ) :: xmap !< exchange grid
 
   integer :: g
 
@@ -3566,27 +3386,8 @@ type (xmap_type),       intent(in   ) :: xmap
   call error_mesg ('xgrid_mod', 'get_from_xgrid: could not find grid id', FATAL)
 
 end subroutine get_side2_from_xgrid
-! </SUBROUTINE>
 
 !#######################################################################
-
-! <SUBROUTINE NAME="some">
-
-!   <OVERVIEW>
-!     Returns logical associating exchange grid cells with given side two grid.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Returns logical associating exchange grid cells with given side two grid.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call some(xmap, some_arr, grid_id)
-!   </TEMPLATE>
-
-!   <IN NAME="xmap"  TYPE="xmap_type"  ></IN>
-!   <IN NAME="grid_id"  TYPE="character(len=3)"  ></IN>
-!   <OUT NAME="some_arr"  TYPE="logical" DIM="(xmap%size)" >
-!     logical associating exchange grid cells with given side 2 grid.
-!   </OUT>
 
 !> @brief Returns logical associating exchange grid cells with given side two grid.
 subroutine some(xmap, some_arr, grid_id)
@@ -3620,7 +3421,6 @@ logical, dimension(:), intent(out) :: some_arr !< logical associating exchange g
   call error_mesg ('xgrid_mod', 'some could not find grid id', FATAL)
 
 end subroutine some
-! </SUBROUTINE>
 
 !#######################################################################
 
@@ -4229,20 +4029,14 @@ end subroutine get_1_from_xgrid_repro
 
 !#######################################################################
 
-! <FUNCTION NAME="conservation_check_side1" INTERFACE="conservation_check">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <OUT NAME="conservation_check_side1" TYPE="real" DIM="dimension(3)" > </OUT>
-!   <IN NAME="remap_method" TYPE="integer,optional"></IN>
 !> @brief conservation_check - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real conservation_check_side1
 function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
-real, dimension(:,:),    intent(in   ) :: d
-character(len=3),        intent(in   ) :: grid_id
-type (xmap_type),        intent(inout) :: xmap
+real, dimension(:,:),    intent(in   ) :: d !< model data to check
+character(len=3),        intent(in   ) :: grid_id !< 3 character grid id
+type (xmap_type),        intent(inout) :: xmap !< exchange grid
 real, dimension(3)                     :: conservation_check_side1
 integer, intent(in), optional :: remap_method
 
@@ -4279,28 +4073,17 @@ integer, intent(in), optional :: remap_method
   call mpp_sum(conservation_check_side1,3)
 
 end function conservation_check_side1
-! </FUNCTION>
 
 !#######################################################################
-!
-! conservation_check - returns three numbers which are the global sum of a
-! variable (1) on its home model grid, (2) after interpolation to the other
-! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!
-! <FUNCTION NAME="conservation_check_side2" INTERFACE="conservation_check">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <OUT NAME="conservation_check_side2" TYPE="real" DIM="dimension(3)" > </OUT>
 
 !> @brief conservation_check - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real conservation_check_side2
 function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
-real, dimension(:,:,:), intent(in   )  :: d
-character(len=3),       intent(in   )  :: grid_id
-type (xmap_type),       intent(inout)  :: xmap
+real, dimension(:,:,:), intent(in   )  :: d !< model data to check
+character(len=3),       intent(in   )  :: grid_id !< 3 character grid ID
+type (xmap_type),       intent(inout)  :: xmap !< exchange grid
 real, dimension(3)                     :: conservation_check_side2
 integer, intent(in), optional :: remap_method
 
@@ -4349,27 +4132,16 @@ end function conservation_check_side2
 
 !#######################################################################
 
-! <FUNCTION NAME="conservation_check_ug_side1" INTERFACE="conservation_check_ug">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <OUT NAME="conservation_check_ug_side1" TYPE="real" DIM="dimension(3)" > </OUT>
-!   <IN NAME="remap_method" TYPE="integer,optional"></IN>
-! conservation_check_ug - returns three numbers which are the global sum of a
-! variable (1) on its home model grid, (2) after interpolation to the other
-! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!
 !> @brief conservation_check_ug - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real conservation_check_ug_side1
 function conservation_check_ug_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
-real, dimension(:,:),    intent(in   ) :: d
-character(len=3),        intent(in   ) :: grid_id
-type (xmap_type),        intent(inout) :: xmap
+real, dimension(:,:),    intent(in   ) :: d !< model data to check
+character(len=3),        intent(in   ) :: grid_id !< 3 character grid ID
+type (xmap_type),        intent(inout) :: xmap !< exchange grid
 real, dimension(3)                     :: conservation_check_ug_side1
 integer, intent(in), optional :: remap_method
-
 
   real, dimension(xmap%size) :: x_over, x_back
   real, dimension(size(d,1),size(d,2)) :: d1
@@ -4429,28 +4201,17 @@ integer, intent(in), optional :: remap_method
   call mpp_sum(conservation_check_ug_side1,3)
 
 end function conservation_check_ug_side1
-! </FUNCTION>
 
 !#######################################################################
-!
-! conservation_check_ug - returns three numbers which are the global sum of a
-! variable (1) on its home model grid, (2) after interpolation to the other
-! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!
-! <FUNCTION NAME="conservation_check_ug_side2" INTERFACE="conservation_check_ug">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:,:)" > </IN>
-!   <IN NAME="grid_id"  TYPE="character(len=3)"  > </IN>
-!   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
-!   <OUT NAME="conservation_check_ug_side2" TYPE="real" DIM="dimension(3)" > </OUT>
 
 !> @brief conservation_check_ug - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real conservation_check_ug_side2
 function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
-real, dimension(:,:,:), intent(in   )  :: d
-character(len=3),       intent(in   )  :: grid_id
-type (xmap_type),       intent(inout)  :: xmap
+real, dimension(:,:,:), intent(in   )  :: d !< model data to check
+character(len=3),       intent(in   )  :: grid_id !< 3 character grid ID
+type (xmap_type),       intent(inout)  :: xmap !< exchange grid
 real, dimension(3)                     :: conservation_check_ug_side2
 integer, intent(in),   optional :: remap_method
 
@@ -5087,9 +4848,10 @@ end subroutine get_side1_from_xgrid_ug
 !   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
+
 !> @brief Currently only support first order.
 subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
-  real, dimension(:),   intent(in   )    :: d
+  real, dimension(:),   intent(in   )    :: d !<
   character(len=3),     intent(in   )    :: grid_id
   real, dimension(:),   intent(inout)    :: x
   type (xmap_type),     intent(inout)    :: xmap
@@ -6328,6 +6090,9 @@ end subroutine load_xgrid_use_mpp_io
 !
 !
 
+!> @brief Reads the center point of the grid from grid_spec.nc.
+!!
+!> Only the grid at side 1 is needed, so we only read atm and land grid.
 subroutine get_grid(grid, grid_id, grid_file, grid_version) !< use_mpp_io
   type(grid_type), intent(inout) :: grid
   character(len=3), intent(in)   :: grid_id
@@ -7153,3 +6918,5 @@ integer, allocatable, dimension(:) :: istart2, iend2, jstart2, jend2
 end function get_nest_contact_use_mpp_io
 
 end module xgrid_mod
+!> @}
+! close documentation grouping

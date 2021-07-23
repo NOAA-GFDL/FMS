@@ -19,6 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_domains_mod
+!> @brief Routines for calculating data from distributed arrays
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !              MPP_GLOBAL_REDUCE: get global max/min of field                 !

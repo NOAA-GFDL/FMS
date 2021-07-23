@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms_io_utils_mod
 
 !> @brief Given a data array, return a string containing the mpp_checksum
 !!        in hex.

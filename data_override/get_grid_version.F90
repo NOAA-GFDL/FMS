@@ -16,22 +16,30 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup get_grid_version_fms2_io_mod get_grid_version_fms2_io_mod
+!> @ingroup data_override
+!> @brief fms2_io implementations of grid routines for @ref data_override_mod
+
 !> @file
-!! @brief fms2_io implementations of grid routines 
-module get_grid_version_fms2io_mod
+!> @brief File for @ref get_grid_version_mod
+
+!> @addtogroup get_grid_version_mod
+!> @{
+module get_grid_version_mod
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,NOTE, mpp_min, mpp_max
 use mpp_domains_mod, only : domain2d, operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
 use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file, &
                             variable_exists, read_data, get_variable_size, get_variable_num_dimensions
-use mosaic2_mod,      only : get_mosaic_tile_grid
+use mosaic2_mod,     only : get_mosaic_tile_grid
 
 implicit none
 
 real, parameter    :: deg_to_radian=PI/180.
 contains
-! Get lon and lat of three model (target) grids from grid_spec.nc
+
+!> Get lon and lat of three model (target) grids from grid_spec.nc
 subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
 character(len=12), intent(in) :: domain_name
 type (domain2d),   intent(in) :: Domain
@@ -55,19 +63,20 @@ if(nlon .NE. xsize .OR. nlat .NE. ysize) then
 endif
 end subroutine check_grid_sizes
 
+!> Get global lon and lat of three model (target) grids, with a given file name
 subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
-  character(len=*),            intent(in) :: grid_file
-  character(len=*),            intent(in) :: mod_name
-  type(domain2d),              intent(in) :: domain
+  character(len=*),            intent(in) :: grid_file !< name of grid file
+  character(len=*),            intent(in) :: mod_name !< module name
+  type(domain2d),              intent(in) :: domain !< 2D domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon
-  logical,           intent(in), optional :: grid_center_bug
+  logical,           intent(in), optional :: grid_center_bug !< Enables legacy behaviour
 
   integer                                      :: i, j, siz(4)
-  integer                                      :: nlon, nlat         ! size of global lon and lat
-  real,          dimension(:,:,:), allocatable :: lon_vert, lat_vert !of OCN grid vertices
-  real,          dimension(:),     allocatable :: glon, glat         ! lon and lat of 1-D grid of atm/lnd
+  integer                                      :: nlon, nlat !< size of global lon and lat
+  real,          dimension(:,:,:), allocatable :: lon_vert, lat_vert !< of OCN grid vertices
+  real,          dimension(:),     allocatable :: glon, glat  !< lon and lat of 1-D grid of atm/lnd
   logical                                      :: is_new_grid
   integer                                      :: is, ie, js, je
   integer                                      :: isd, ied, jsd, jed
@@ -75,8 +84,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   character(len=3)                             :: xname, yname
   integer                                      :: start(2), nread(2)
   type(FmsNetcdfDomainFile_t)                  :: fileobj
-  integer                                      :: ndims  !> Number of dimensions
-  logical                                      :: gc_bug !> local grid_center_bug variable, default is .false.
+  integer                                      :: ndims  !< Number of dimensions
+  logical                                      :: gc_bug !< local grid_center_bug variable, default is .false.
 
   if(.not. open_file(fileobj, grid_file, 'read', domain )) then
      call mpp_error(FATAL, 'data_override_mod(get_grid_version_1): Error in opening file '//trim(grid_file))
@@ -198,12 +207,12 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
 
 end subroutine get_grid_version_1
 
-! Get global lon and lat of three model (target) grids from mosaic.nc
-! z1l: currently we assume the refinement ratio is 2 and there is one tile on each pe.
+!> Get global lon and lat of three model (target) grids from mosaic.nc.
+!! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  type(FmsNetcdfFile_t),       intent(in) :: fileobj
-  character(len=*),            intent(in) :: mod_name
-  type(domain2d),              intent(in) :: domain
+  type(FmsNetcdfFile_t),       intent(in) :: fileobj !< file object for grid file
+  character(len=*),            intent(in) :: mod_name !< module name
+  type(domain2d),              intent(in) :: domain !< 2D domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon
@@ -301,5 +310,6 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
 
 end subroutine get_grid_version_2
 
-end module get_grid_version_fms2io_mod
-
+end module get_grid_version_mod
+!> @}
+! close documentation grouping

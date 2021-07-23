@@ -34,6 +34,10 @@
 #define R2D (180/M_PI)
 #define TPI (2.0*M_PI)
 
+/** \file
+ *  \ingroup mosaic
+ *  \brief Grid creation and calculation functions for use in @ref mosaic_mod
+ * /
 
 /*******************************************************************************
   int get_maxxgrid

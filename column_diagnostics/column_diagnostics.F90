@@ -16,14 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup column_diagnostics_mod column_diagnostics_mod
+!> @ingroup column_diagnostics
+!! @brief Module to locate and mark desired diagnostic columns
 
 !> @file
-!! @brief Module to locate and mark desired diagnostic columns
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref column_diagnostics_mod
 
-               module column_diagnostics_mod
-
-
+!> @addtogroup column_diagnostics_mod
+!> @{
+module column_diagnostics_mod
 
 use fms_mod,                only:  fms_init, mpp_pe, mpp_root_pe, &
                                    mpp_npes, check_nml_error, &
@@ -65,9 +67,7 @@ public    column_diagnostics_init,  &
           column_diagnostics_header,   &
           close_column_diagnostics_units
 
-
 !private
-
 
 !--------------------------------------------------------------------
 !----    namelist -----
@@ -108,7 +108,9 @@ logical    :: module_is_initialized = .false.
 
 !####################################################################
 
-!> @brief column_diagnostics_init is the constructor for column_diagnostics_mod.
+!> @brief Initialization routine for column_diagnostics_mod.
+!!
+!> Reads namelist and writes to log.
 subroutine column_diagnostics_init
 
 !--------------------------------------------------------------------
@@ -594,3 +596,5 @@ end subroutine close_column_diagnostics_units
 
 
                end module column_diagnostics_mod
+!@}
+! close documentation grouping
