@@ -80,7 +80,7 @@
       send    = recv
 
       if(debug_message_passing) then
-         nlist = size(domain%list(:))  
+         nlist = size(domain%list(:))
          allocate(msg1(0:nlist-1), msg2(0:nlist-1), msg3(0:nlist-1) )
          msg1 = 0
          msg2 = 0
@@ -154,7 +154,7 @@
 
       ! send info
       !----------------------------------------------------------------------
-      buffer_pos = buffer_recv_size 
+      buffer_pos = buffer_recv_size
       ! pack
       do m = 1, update%nsend
          send_msgsize(m) = 0
@@ -183,7 +183,7 @@
          send_msgsize(m) = pos-buffer_pos
          buffer_pos = pos
       end do ! end do m = 1, nsend
- 
+
       !backward communication
       !----------------------------------------------------------------------
       !recv
