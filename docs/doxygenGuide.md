@@ -7,7 +7,7 @@ Best practices for documenting FMS code with Doxygen.
 For .F90 files:
 - `!>` Starts or continues a multi-line doxygen comment
 - `!!` Continues a comment
-- `!<` Starts a comment(usually used after variables/parameters)
+- `!<` Starts a same-line comment (used for documenting variable/parameter declarations)
 - `@commandname` to use a given doxygen command
 
 For .c files, javadoc-style comments are used (`///` or multi-line with `/**` and `*/`), and the command specifier is instead `\commandname`.
