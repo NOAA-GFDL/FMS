@@ -28,4 +28,4 @@
 printf "EOF\n&dummy\nEOF" | cat > input.nml
 printf "5, 14   \n23\n\"forlendula\"" | cat > ascii_test1
 # run the tests
-run_test test_read_ascii_file 6 $netcdf_version_skip
+run_test test_read_ascii_file 6

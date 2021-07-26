@@ -55,7 +55,6 @@ public :: allocate_array
 public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
-public :: get_checksum
 public :: string2
 public :: open_check
 public :: string_compare
@@ -187,16 +186,6 @@ interface get_data_type_string
   module procedure get_data_type_string_4d
   module procedure get_data_type_string_5d
 end interface get_data_type_string
-
-!> @ingroup fms_io_utils_mod
-interface get_checksum
-  module procedure get_checksum_0d
-  module procedure get_checksum_1d
-  module procedure get_checksum_2d
-  module procedure get_checksum_3d
-  module procedure get_checksum_4d
-  module procedure get_checksum_5d
-end interface get_checksum
 
 !> @addtogroup fms_io_utils_mod
 !> @{
@@ -402,11 +391,11 @@ subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
   integer :: i
 
   if (has_domain_tile_string(source)) then
-    call error("this file has already had a domain tile id added.")
+    call error("The file "//trim(source)//" has a domain tile id (tileX) added. Check your open_file call")
   endif
   i = index(trim(source), ".nc", back=.true.)
   if (i .eq. 0) then
-    call error("file "//trim(source)//" does not contain .nc")
+    call error("The file "//trim(source)//" does not contain .nc. Check your open_file call")
   endif
   write(dest, '(a,i0,a)') source(1:i-1)//".tile", &
                           domain_tile_id, source(i:len_trim(source))
@@ -448,7 +437,7 @@ subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
   integer, intent(in) :: io_domain_tile_id !< I/O domain tile id.
 
   if (has_io_domain_tile_string(source)) then
-    call error("this file has already had a domain tile id added.")
+    call error("The file "//trim(source)//" has already had a domain tile id (.nc.XXXX) added. Check your open_file call.")
   endif
   write(dest,'(a,i4.4)') trim(source)//".", io_domain_tile_id
 end subroutine io_domain_tile_filepath_mangle
@@ -483,7 +472,7 @@ subroutine restart_filepath_mangle(dest, source)
   else
     i = index(trim(source), ".nc", back=.true.)
     if (i .eq. 0) then
-      call error("file "//trim(source)//" does not contain .nc")
+      call error("The file "//trim(source)//" does not contain .nc. Check your open_file call")
     endif
   endif
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
@@ -505,15 +494,20 @@ end subroutine open_check
 
 !> @brief Read the ascii text from filename `ascii_filename`into string array
 !! `ascii_var`
-subroutine ascii_read(ascii_filename, ascii_var)
+subroutine ascii_read(ascii_filename, ascii_var, num_lines, max_length)
   character(len=*), intent(in) :: ascii_filename !< The file name to be read
   character(len=:), dimension(:), allocatable, intent(out) :: ascii_var !< The
                                                                         !! string
                                                                         !! array
+  integer, optional, intent(out) :: num_lines !< Optional argument to return number of lines in file
+  integer, optional, intent(out) :: max_length !< Optional argument to return max_length of line in file
   integer, dimension(2) :: lines_and_length !< lines = 1, length = 2
+  if(allocated(ascii_var)) deallocate(ascii_var)
   lines_and_length = get_ascii_file_num_lines_and_length(ascii_filename)
   allocate(character(len=lines_and_length(2))::ascii_var(lines_and_length(1)))
   call read_ascii_file(ascii_filename, lines_and_length(2), ascii_var)
+  if(present(num_lines)) num_lines = lines_and_length(1)
+  if(present(max_length)) max_length = lines_and_length(2)
 end subroutine ascii_read
 
 !> @brief Populate 2D maskmap from mask_table given a model
@@ -735,7 +729,7 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
   else
      lens = len_trim(file_in)
      if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
-          'fms_io_mod: .nc should be at the end of file '//trim(file_in))
+          'get_mosaic_tile_file_sg: .nc should be at the end of file '//trim(file_in))
      basefile = file_in(1:lens-3)
   end if
 
@@ -916,7 +910,6 @@ end function string_from_real2
 include "array_utils.inc"
 include "array_utils_char.inc"
 include "get_data_type_string.inc"
-include "get_checksum.inc"
 
 
 end module fms_io_utils_mod
