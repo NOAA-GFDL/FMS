@@ -2214,18 +2214,34 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           iy = iy + 1
        else if ( rank_x < rank_y ) then
           n = n+1
-          ind_x (nrecv) = ix
-          ind_y (nrecv) = -1
-          cur_pos = cur_pos + update_x%recv(ix)%totsize
-          pelist(nrecv) = update_x%recv(ix)%pe
-          ix = ix + 1
+          if (nrecv > nrecv_x) then
+             ind_x (nrecv) = -1
+             ind_y (nrecv) = iy
+             cur_pos = cur_pos + update_y%recv(iy)%totsize
+             pelist(nrecv) = update_y%recv(iy)%pe
+             iy = iy+1
+          else
+             ind_x (nrecv) = ix
+             ind_y (nrecv) = -1
+             cur_pos = cur_pos + update_x%recv(ix)%totsize
+             pelist(nrecv) = update_x%recv(ix)%pe
+             ix = ix + 1
+          endif
        else if ( rank_y < rank_x ) then
           n = n+1
-          ind_x (nrecv) = -1
-          ind_y (nrecv) = iy
-          cur_pos = cur_pos + update_y%recv(iy)%totsize
-          pelist(nrecv) = update_y%recv(iy)%pe
-          iy = iy+1
+          if (nrecv > nrecv_y) then
+             ind_x (nrecv) = ix
+             ind_y (nrecv) = -1
+             cur_pos = cur_pos + update_x%recv(ix)%totsize
+             pelist(nrecv) = update_x%recv(ix)%pe
+             ix = ix + 1
+          else
+             ind_x (nrecv) = -1
+             ind_y (nrecv) = iy
+             cur_pos = cur_pos + update_y%recv(iy)%totsize
+             pelist(nrecv) = update_y%recv(iy)%pe
+             iy = iy+1
+          endif
        endif
     end do
 
@@ -2284,18 +2300,33 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           iy = iy + 1
        else if ( rank_x < rank_y ) then
           n = n+1
-          ind_x (nsend) = ix
-          ind_y (nsend) = -1
-          cur_pos = cur_pos + update_x%send(ix)%totsize
-          pelist(nsend) = update_x%send(ix)%pe
-          ix = ix + 1
+          if (nsend > nsend_x) then
+             ind_x (nsend) = -1
+             ind_y (nsend) = iy
+             cur_pos = cur_pos + update_y%send(iy)%totsize
+             pelist(nsend) = update_y%send(iy)%pe
+          else
+             ind_x (nsend) = ix
+             ind_y (nsend) = -1
+             cur_pos = cur_pos + update_x%send(ix)%totsize
+             pelist(nsend) = update_x%send(ix)%pe
+             ix = ix + 1
+          endif
        else if ( rank_y < rank_x ) then
           n = n+1
-          ind_x (nsend) = -1
-          ind_y (nsend) = iy
-          cur_pos = cur_pos + update_y%send(iy)%totsize
-          pelist(nsend) = update_y%send(iy)%pe
-          iy = iy+1
+          if (nsend > nsend_y) then
+             ind_x (nsend) = ix
+             ind_y (nsend) = -1
+             cur_pos = cur_pos + update_x%send(ix)%totsize
+             pelist(nsend) = update_x%send(ix)%pe
+             ix = ix + 1
+          else
+             ind_x (nsend) = -1
+             ind_y (nsend) = iy
+             cur_pos = cur_pos + update_y%send(iy)%totsize
+             pelist(nsend) = update_y%send(iy)%pe
+             iy = iy+1
+          endif
        endif
     end do
 
