@@ -31,7 +31,6 @@ program xgrid_test
   use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug, mpp_define_io_domain, center
   use fms_mod,         only : fms_init
   use fms_mod,         only : check_nml_error, stdout, fms_end
-  use fms_io_mod,      only : fms_io_exit
   use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file
   use fms2_io_mod,     only : read_data, write_data, variable_exists, get_dimension_size
   use fms2_io_mod,     only : get_variable_size, register_field, register_axis
@@ -774,7 +773,6 @@ implicit none
   write(out_unit,*) "***********      Finish running program test_xgrid         *************"
   write(out_unit,*) "************************************************************************"
 
-  call fms_io_exit
   call fms_end
 
 contains

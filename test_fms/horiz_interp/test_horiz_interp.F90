@@ -23,7 +23,6 @@ use mpp_mod,          only : mpp_init, mpp_exit, mpp_error, FATAL, stdout, mpp_n
 use mpp_mod,          only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,          only : mpp_pe, mpp_root_pe, NOTE, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 use mpp_mod,          only : input_nml_file
-use mpp_io_mod,       only : mpp_io_init, mpp_io_exit
 use mpp_domains_mod,  only : mpp_define_layout, mpp_define_domains, mpp_get_compute_domain
 use mpp_domains_mod,  only : mpp_domains_init, domain2d
 use fms_mod,          only : check_nml_error, fms_init
@@ -49,7 +48,7 @@ implicit none
   type(horiz_interp_type)           :: Interp
   integer                           :: id1, id2, id3, id4
   integer                           :: isc, iec, jsc, jec, i, j
-  integer                           :: nml_unit, io, ierr, layout(2)
+  integer                           :: io, ierr, layout(2)
   real                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
   real, allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
   real, allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
@@ -58,7 +57,6 @@ implicit none
   call constants_init
   call mpp_init
   call mpp_domains_init
-  call mpp_io_init
   call fms_init
   call horiz_interp_init
 
@@ -211,7 +209,6 @@ implicit none
   if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
        "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
 
-  call mpp_io_exit
   call mpp_exit
 
 end program horiz_interp_test

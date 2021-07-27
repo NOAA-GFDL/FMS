@@ -29,9 +29,10 @@
 
 # Copy files for test.
 touch input.nml
-
+rm -rf INPUT
+mkdir INPUT
 test_expect_success "test mosaic" '
   mpirun -n 2 ./test_mosaic
 '
-
+rm -rf INPUT
 test_done

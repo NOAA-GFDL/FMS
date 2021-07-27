@@ -1400,7 +1400,11 @@ end function rarray_to_char
              num_lines = 1
              do
                 read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
-                if ( status .lt. 0 ) exit
+                if ( status .lt. 0 ) then
+                   ! deprecate num_lines by 1 and ensure num_lines is at least 1
+                   num_lines = max (num_lines - 1, 1)
+                   exit
+                endif
                 if ( status .gt. 0 ) then
                    write (UNIT=text, FMT='(I5)') num_lines
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Error reading line '//trim(text)// &
@@ -1467,7 +1471,11 @@ end function rarray_to_char
              max_length = 1
              do
                 read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
-                if ( status .lt. 0 ) exit
+                if ( status .lt. 0 ) then
+                   ! deprecate num_lines by 1 and ensure num_lines is at least 1
+                   num_lines = max (num_lines - 1, 1)
+                   exit
+                endif
                 if ( status .gt. 0 ) then
                    write (UNIT=text, FMT='(I5)') num_lines
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Error reading line '//trim(text)// &
@@ -1533,6 +1541,7 @@ end function rarray_to_char
     integer :: status, i, f_unit, log_unit
     integer :: from_pe
     integer :: pnum_lines, num_lines
+    character(len=LENGTH) :: str_tmp !< Temporary variable to store line from file
 
     if( .NOT. read_ascii_file_on) then
        call mpp_error(FATAL,  &
@@ -1574,9 +1583,13 @@ end function rarray_to_char
                    pnum_lines = 1
 
                    do
-                      read (UNIT=f_unit, FMT='(A)', IOSTAT=status) Content(pnum_lines)
+                      read (UNIT=f_unit, FMT='(A)', IOSTAT=status) str_tmp
 
-                      if ( status .lt. 0 ) exit
+                      if ( status .lt. 0 ) then
+                         ! deprecate pnum_lines by 1 and ensure pnum_lines is at least 1
+                         pnum_lines = max (pnum_lines - 1, 1)
+                         exit
+                      endif
                       if ( status .gt. 0 ) then
                          write (UNIT=text, FMT='(I5)') pnum_lines
                          call mpp_error(FATAL, 'READ_ASCII_FILE: Error reading line '//trim(text)//' in file '//trim(FILENAME)//'.')
@@ -1585,11 +1598,12 @@ end function rarray_to_char
                          call mpp_error(FATAL, 'READ_ASCII_FILE: number of lines in file '//trim(FILENAME)// &
                                 ' is greater than size(Content(:)). ')
                       end if
-                      if ( len_trim(Content(pnum_lines)) == LENGTH ) then
+                      if ( len_trim(str_tmp) == LENGTH ) then
                          write(UNIT=text, FMT='(I5)') length
                          call mpp_error(FATAL, 'READ_ASCII_FILE: Length of output string ('//trim(text)//' is too small.&
                               & Increase the LENGTH value.')
                       end if
+                      Content(pnum_lines) = str_tmp
                       pnum_lines = pnum_lines + 1
                    end do
                    if(num_lines .NE. pnum_lines) then

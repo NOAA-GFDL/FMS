@@ -28,11 +28,14 @@
 . ../test-lib.sh
 
 # Copy file for test.
-cp $top_srcdir/test_fms/time_interp/input_base.nml input.nml
+touch input.nml
 
+rm -rf INPUT
+mkdir INPUT
 # Run the test.
 test_expect_success "test time interpolation" '
   mpirun -n 2 ./test_time_interp
 '
+rm -rf INPUT
 
 test_done

@@ -58,8 +58,7 @@ program test_mpp_domains
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-  use fms_affinity_mod, only : fms_affinity_set, fms_affinity_init
-  use mpp_io_mod,       only: mpp_io_init
+  use fms_affinity_mod, only : fms_affinity_set
   use compare_data_checksums
   use test_domains_utility_mod
   use platform_mod
@@ -68,7 +67,6 @@ program test_mpp_domains
   implicit none
   integer :: pe, npes
   integer :: nx=128, ny=128, nz=40, stackmax=4000000
-  integer :: unit=7
   integer :: stdunit = 6
   logical :: debug=.FALSE., opened
 
@@ -147,7 +145,6 @@ program test_mpp_domains
 
   call mpp_init(test_level=mpp_init_test_requests_allocated)
   call mpp_domains_init(MPP_DEBUG)
-  call mpp_io_init()
   call mpp_domains_set_stack_size(stackmax)
 
   outunit = stdout()

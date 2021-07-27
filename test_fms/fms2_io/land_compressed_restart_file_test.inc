@@ -92,13 +92,6 @@ subroutine land_compressed_restart_file(nz, nt, debug_flag)
   call open_check(open_file(fileobj, "land_compressed.nc", "overwrite", &
                             pelist=pelist, nc_format="netcdf4", is_restart=.true.))
 
-  !Add some global attributes to the restart file.
-  call register_global_attribute(fileobj, "globalatt1", real(7., kind=r8_kind))
-  call register_global_attribute(fileobj, "globalatt2", real(4., kind=r4_kind))
-  call register_global_attribute(fileobj, "globalatt3", int(3, kind=i4_kind))
-  call register_global_attribute(fileobj, "globalatt4", int(2, kind=i8_kind))
-  call register_global_attribute(fileobj, "globalatt5", "some text", str_len=len_trim("some text"))
-
   !Add dimensions and corresponding variables to the file.
   !cdim (compressed dimension).
   call register_axis(fileobj, "cdim", npes_corner=npes_corner, npes_nelems=npes_nelems)

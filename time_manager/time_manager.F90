@@ -154,10 +154,10 @@ integer, parameter :: max_type = 4
 ! Define number of days per month
 integer, private :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
 integer, parameter :: seconds_per_day = rseconds_per_day  ! This should automatically cast real to integer
-integer, parameter :: days_in_400_year_period = 146097    ! Used only for gregorian
-integer, dimension(days_in_400_year_period) :: coded_date ! Used only for gregorian
-integer, dimension(400,12,31) :: date_to_day              ! Used only for gregorian
-integer, parameter :: invalid_date=-1                     ! Used only for gregorian
+integer, parameter :: days_in_400_year_period = 146097    !< Used only for gregorian
+integer, dimension(days_in_400_year_period) :: coded_date !< Used only for gregorian, to be removed soon
+integer, dimension(400,12,31) :: date_to_day              !< Used only for gregorian, to be removed soon
+integer, parameter :: invalid_date=-1                     !< Used only for gregorian, to be removed soon
 integer,parameter :: do_floor = 0
 integer,parameter :: do_nearest = 1
 
@@ -1492,6 +1492,7 @@ endif
 
 calendar_type = type
 
+! this part is to be removed soon with set/get_date_gregorian
 if(type == GREGORIAN) then
   date_to_day = invalid_date
   iday = 0
@@ -1629,10 +1630,10 @@ end function get_ticks_per_second
  logical, intent(in), optional  :: old_method !< option to choose betw the new and old ver of get_date_gregorian subroutine.
                                               !! When .true., call get_date_gregorian_old to retrieve the date
                                               !! from the array coded_date.  When .false., call get_date_gregorian to
-                                              !! compute the date on the fly.
+                                              !! compute the date on the fly.  Will be removed with set/get_date_gregorian_old
  character(len=128) :: err_msg_local
  integer :: tick1
- logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
+ logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.  Will be removed
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
@@ -1755,7 +1756,7 @@ end function get_ticks_per_second
 
 !> @brief Gets the date on a Gregorian calendar.  This is the original/old subroutine.
 !! Looks up the year, month, day from the coded_date array
-!! This subroutine is kept in order to test the new get_date_gregorian
+!! This subroutine will be removed soon
  subroutine get_date_gregorian_old(time, year, month, day, hour, minute, second, tick)
 
 ! Computes date corresponding to time for gregorian calendar
@@ -2008,8 +2009,8 @@ end function get_ticks_per_second
  logical, intent(in), optional ::old_method !< option to choose betw the new and old ver of get_date_gregorian subroutine.
                                             !! When .true., call set_date_gregorian_old to retrieve the time%days
                                             !! from the array date_to_day.  When .false., call set_date_gregorian to
-                                            !! compute the time%days on the fly.
- logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
+                                            !! compute the time%days on the fly.  This option will be removed with get/set_date_gregorian_old
+ logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.  Will be removed
 
  if(.not.module_is_initialized) call time_manager_init
 
@@ -2053,11 +2054,11 @@ end function get_ticks_per_second
  logical, intent(in), optional :: old_method !< option to choose betw the new and old ver of get_date_gregorian subroutine.
                                              !! When .true., call set_date_gregorian_old to retrieve the time%days
                                              !! from the array date_to_day.  When .false., call set_date_gregorian to
-                                             !! compute the time%days on the fly.
+                                             !! compute the time%days on the fly. This ption will be removed with get/set_date_gregorian_old
  character(len=*), intent(out), optional :: err_msg
  integer :: osecond, ominute, ohour, otick
  character(len=128) :: err_msg_local
- logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
+ logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.  Will be removed
 
  if(.not.module_is_initialized) call time_manager_init
  if(present(err_msg)) err_msg = ''
@@ -2109,7 +2110,7 @@ end function get_ticks_per_second
  logical,          intent(in),  optional :: old_method  !< option to choose betw the new and old ver of set_date_gregorian.
                                                         !! When .true., call set_date_gregorian_old to retrieve the days
                                                         !! from the array date_to_day.  When .false., call set_date_gregorian to
-                                                        !! compute the days on the fly.
+                                                        !! compute the days on the fly.  Will be removed with set/get_date_gregorian_old
  character(len=4) :: formt='(i )'
  logical :: correct_form, zero_year_warning_local, allow_rounding_local
  logical :: old_method_local !< set as .false..  Takes on the value of old_method if old_method is present.
@@ -2296,7 +2297,7 @@ end function get_ticks_per_second
 
 !> @brief Sets Time_out%days on a Gregorian calendar.  This is the original/old subroutine.
 !! Look up the total number of days between 1/1/0001 to the current month/day/year in the array date_to_day
-!! This function is kept in order to test the new set_date_gregorian
+!! This function will be removed soon.
  function set_date_gregorian_old(year, month, day, hour, minute, second, tick, Time_out, err_msg)
  logical :: set_date_gregorian_old
 
