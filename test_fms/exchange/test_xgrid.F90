@@ -28,13 +28,13 @@ program xgrid_test
   use mpp_domains_mod, only : mpp_define_mosaic_pelist, mpp_define_mosaic, mpp_global_sum
   use mpp_domains_mod, only : mpp_get_data_domain, mpp_get_global_domain, mpp_update_domains
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_ug_compute_domain
-  use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug, mpp_define_io_domain
+  use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug, mpp_define_io_domain, center
   use fms_mod,         only : fms_init
   use fms_mod,         only : check_nml_error, stdout, fms_end
   use fms_io_mod,      only : fms_io_exit
   use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file
   use fms2_io_mod,     only : read_data, write_data, variable_exists, get_dimension_size
-  use fms2_io_mod,     only : get_variable_size
+  use fms2_io_mod,     only : get_variable_size, register_field, register_axis
   use constants_mod,   only : DEG_TO_RAD
   use xgrid_mod,       only : xgrid_init, setup_xmap, put_to_xgrid, get_from_xgrid
   use xgrid_mod,       only : xmap_type, xgrid_count, grid_box_type, SECOND_ORDER
@@ -42,7 +42,7 @@ program xgrid_test
   use xgrid_mod,       only : get_from_xgrid_ug, put_to_xgrid_ug
   use mosaic2_mod,     only : get_mosaic_ntiles, get_mosaic_grid_sizes
   use mosaic2_mod,     only : get_mosaic_ncontacts, get_mosaic_contact, get_mosaic_tile_grid
-  use grid_mod,        only : get_grid_comp_area
+  use grid2_mod,       only : get_grid_comp_area
   use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
   use ensemble_manager_mod, only : get_ensemble_size
@@ -134,6 +134,7 @@ implicit none
   call mpp_domains_init
 
   call xgrid_init(remap_method)
+
   call ensemble_manager_init()
 
   npes     = mpp_npes()
@@ -532,6 +533,7 @@ implicit none
   if( atm_input_file_exist ) then
      if(trim(atm_input_file) == trim(atm_output_file) ) call mpp_error(FATAL, &
           "test_xgrid: atm_input_file should have a different name from atm_output_file")
+     allocate(siz(4))
      call get_variable_size(atminputfileobj, atm_field_name, siz)
      if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(atm_field_name) &
             //" in file "//trim(atm_input_file) //" does not compabile with the grid size" )
@@ -591,19 +593,29 @@ implicit none
      if(ANY(atm_data_out .NE. atm_data_out_3)) &
         call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_3 are not equal")
 
+      
      !--- write out data
      if(.not. open_file(outputfileobj, atm_output_file, 'write', atm_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open atm_output_file "//trim(atm_output_file) )
+     call register_axis(outputfileobj, "xaxis", "x")
+     call register_axis(outputfileobj, "yaxis", "y") 
+     call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, atm_data_out)
      call close_file(outputfileobj)
 
      if(.not. open_file(outputfileobj, lnd_output_file, 'write', lnd_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open lnd_output_file "//trim(lnd_output_file) )
+     call register_axis(outputfileobj, "xaxis", "x")
+     call register_axis(outputfileobj, "yaxis", "y") 
+     call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, lnd_data_out)
      call close_file(outputfileobj)
 
      if(.not. open_file(outputfileobj, ice_output_file, 'write', ice_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open ice_output_file "//trim(ice_output_file) )
+     call register_axis(outputfileobj, "xaxis", "x")
+     call register_axis(outputfileobj, "yaxis", "y") 
+     call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, ice_data_out)
      call close_file(outputfileobj)
      !--- print out checksum

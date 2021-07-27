@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# create and enter directory for in/output
+output_dir
+
 # Copy file for test.
 cat <<_EOF > input.nml
 &test_mpp_io_nml
@@ -44,7 +47,7 @@ cat <<_EOF > input.nml
 _EOF
 
 test_expect_success "mpp_io functionality" '
-    mpirun -n 12 ./test_mpp_io
+    mpirun -n 12 ../test_mpp_io
 '
 
 test_done

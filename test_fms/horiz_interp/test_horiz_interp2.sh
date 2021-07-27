@@ -27,6 +27,14 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# Tests to skip if input files not present
+if [ test -z "$test_input_path" ]; then
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).2"
+else
+  rm -rf INPUT && mkdir INPUT
+  cp $test_input_path/horiz_interp/INPUT/* INPUT
+fi
+
 # Copy file for test.
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
@@ -42,6 +50,10 @@ _EOF
 
 test_expect_success "Horiz_interp test" '
   mpirun -n 2 ./test_horiz_interp
+'
+
+test_expect_success "horiz_interp input test" '
+  mpirun -n 6 ./test2_horiz_interp
 '
 
 test_done

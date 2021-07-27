@@ -74,8 +74,27 @@ AS_IF([test ${enable_setting_flags:-yes} = yes],
   [enable_setting_flags=yes],
   [enable_setting_flags=no])
 
+# user enabled testing with input files
+AC_MSG_CHECKING([whether to test with input files])
+AC_ARG_ENABLE([input],
+            [AS_HELP_STRING([--enable-test-input="path/to/input"],
+            [Enable tests using input netcdf files, if present in "./INPUT" or a given directory.])])
+AC_MSG_RESULT([$enable_input])
+
+# check for input if enabled, fail if enabled and not found
+AS_IF([test "x$enable_input" = "xyes"],
+    [TEST_INPUT_PATH="./INPUT"],
+    [AS_IF([test "x$enable_input" != "xno"],
+        [TEST_INPUT_PATH="$enable_input"],[])]
+)
+AS_IF([test "$TEST_INPUT_PATH" != "" -a -d "$TEST_INPUT_PATH"],
+  [], [AC_MSG_ERROR([Test input enabled, but directory not found in $TEST_INPUT_PATH])])
+
+AC_SUBST([TEST_INPUT_PATH]) 
+#AM_CONDITIONAL(TEST_WITH_INPUT, [test "x$testing_input" = xyes])
+
 # Does the user want to build documentation?
-AC_MSG_CHECKING([whether documentation should be build (requires doxygen)])
+AC_MSG_CHECKING([whether documentation should be built (requires doxygen)])
 AC_ARG_ENABLE([docs],
               [AS_HELP_STRING([--enable-docs],
                               [enable building of documentation with doxygen.])])
@@ -93,6 +112,7 @@ fi
 if test "x$enable_docs" = xyes; then
    AC_CONFIG_FILES([docs/Doxyfile])
 fi
+
 
 # Find the C compiler.
 AC_PROG_CC

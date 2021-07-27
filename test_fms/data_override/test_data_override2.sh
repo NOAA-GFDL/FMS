@@ -24,8 +24,10 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# Tests to skip
-SKIP_TESTS="test_data_override2.[1-2]"
+# Tests to skip if input files not present
+if [ test -z "$test_input_path" ]; then
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).[1-2]"
+fi
 
 setup_test_dir () {
   local halo_size
@@ -42,9 +44,12 @@ cat <<_EOF > input.nml
   nhaloy=${halo_size}
 /
 _EOF
+  mkdir INPUT
+  [ ! test -z "$test_input_path" ] && cp $test_input_path/data_override/INPUT/* ./INPUT
 }
 
 setup_test_dir 2
+
 test_expect_success "data_override on grid with 2 halos in x and y" '
   mpirun -n 6 ./test_data_override_ongrid
 '

@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # Copy files for test.
-cp $top_srcdir/test_fms/mosaic/input_nml input_nml
+touch input.nml
 
 test_expect_success "test mosaic" '
   mpirun -n 2 ./test_mosaic

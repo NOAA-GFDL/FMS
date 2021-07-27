@@ -27,7 +27,16 @@
 # Set common test settings.
 . ../test-lib.sh
 
-SKIP_TESTS="$(basename $0 .sh).1"
+# create directory for output
+#output_dir
+
+# Tests to skip if input files not present
+if [ test -z "$test_input_path" ]; then
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
+else
+  rm -rf INPUT && mkdir INPUT
+  cp $test_input_path/exchange/INPUT/* INPUT
+fi
 
 # Copy file for test.
 cat <<_EOF > input.nml
@@ -49,7 +58,8 @@ cat <<_EOF > input.nml
 _EOF
 
 test_expect_success "Test exchange grid" '
-  mpirun -n 2 ./test_xgrid
+  mpirun -n 12 ./test_xgrid
 '
+rm *.nc
 
 test_done

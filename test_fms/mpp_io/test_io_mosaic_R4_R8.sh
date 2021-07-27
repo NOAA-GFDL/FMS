@@ -27,8 +27,12 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# create and enter directory for in/output
+output_dir
+touch input.nml
+
 test_expect_success "mpp_io mosaics with mixed precision" '
-    mpirun -n 12 ./test_io_mosaic_R4_R8
+    mpirun -n 12 ../test_io_mosaic_R4_R8
 '
 
 test_done

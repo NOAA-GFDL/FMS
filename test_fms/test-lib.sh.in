@@ -228,19 +228,20 @@ match_pattern_list_ () {
   for pattern_
   do
     # modified original logic to be able to work with more than one digit test numbers
+    # check test name matches
+    pInd=`expr index $arg '.'`
+    tNameArg=`expr substr $arg 1 $pInd`
+    tNamePattern=`expr substr $pattern_ 1 $pInd`
+    [ "$tNameArg" != "$tNamePattern" ] && break
     isRange="`expr index $pattern_ '-'`"
-    # individual test names
-    if [[ $isRange == "" || $isRange -eq 0 ]]; then
-      if [[ "$pattern_" == "$arg" ]]; then
+    # individual test num
+    if [ $isRange -eq 0 ]; then
+      say "is range.."
+      if [ "$pattern_" == "$arg" ]; then
           return 0
       fi
-    # ranges
+    # num range
     else
-      # check test name
-      pInd=`expr index $arg '.'`
-      tNameArg=`expr substr $arg 1 $pInd`
-      tNamePattern=`expr substr $pattern_ 1 $pInd`
-      [[ $tNameArg != $tNamePattern ]] && break
       # get numbers from range and arg
       num=${arg##*.}
       range=${pattern_##*.}
@@ -254,12 +255,11 @@ match_pattern_list_ () {
       len=`expr $len - $beg`
       last="`expr substr $range $beg $len`"
       # check range is valid
-      if [[ $num == *[!0-9]* || $first == *[!0-9]* || $last == *[!0-9]* ||
-            $first -ge last ]]; then
+      if [ $num == *[!0-9]* || $first == *[!0-9]* || $last == *[!0-9]* || $first -ge $last ]; then
           say "Warning: SKIP_TESTS contains an invalid range in $pattern_"
           break
       fi
-      if [[ $num -ge $first ]] && [[ $num -le $last ]]; then
+      if [ $num -ge $first ] && [ $num -le $last ]; then
           return 0
       fi
     fi

@@ -35,6 +35,10 @@ check_PROGRAMS = test_coupler_2d test_coupler_3d
 test_coupler_2d_SOURCES = test_coupler_2d.F90
 test_coupler_3d_SOURCES = test_coupler_3d.F90
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # Run the test program.
 TESTS = test_coupler.sh
 

@@ -25,6 +25,10 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# create and enter directory for in/output
+output_dir
+touch input.nml
+
 fprefix="logfile.00000"
 file0="${fprefix}""0.out"
 file1="${fprefix}""1.out"
@@ -45,7 +49,7 @@ fi
 
 #Have mpp re-initialize the two log files created above:
 test_expect_success "initialize mpp logfile" '
-    mpirun -n 4 ./test_mpp_init_logfile
+    mpirun -n 4 ../test_mpp_init_logfile
 '
 
 # Return sucess (0) only if the two "old" files have been replaced and the

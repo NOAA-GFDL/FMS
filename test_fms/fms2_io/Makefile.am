@@ -79,5 +79,3 @@ TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"; \
 
 
 include $(top_srcdir)/mkmods.mk
-
-CLEANFILES = *.nc *.nc.* input.nml logfile.000000.out the_mask ascii_test1

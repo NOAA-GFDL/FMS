@@ -27,12 +27,19 @@
 # Set common test settings.
 . ../test-lib.sh
 
+
+# Tests to skip if input files not present
+#if [ ! test -z "$test_input_path" ]; then
+#  rm -rf INPUT && mkdir INPUT
+#  cp $test_input_path/interpolator/INPUT/* INPUT
+#fi
+
 # Copy files for test.
 cp $top_srcdir/test_fms/interpolator/input_base.nml input.nml
 cp $top_srcdir/test_fms/interpolator/diag_table_base diag_table
 
 # Run test
-test_expect_success "test monin_obukhov" '
+test_expect_success "test interpolator" '
     mpirun -n 2 ./test_interpolator
 '
 

@@ -27,8 +27,6 @@
 # Set common test settings.
 . ../test-lib.sh
 
-SKIP_TESTS=""
-
 touch input.nml
 test_expect_success "mpp_redistribute w/ mixed precision" '
     mpirun -n 6 ./test_redistribute_int

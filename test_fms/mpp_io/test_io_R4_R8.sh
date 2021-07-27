@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# create and enter directory for in/output
+output_dir
+
 #Create file for test.
 cat <<_EOF > input.nml
 &test_mpp_io_nml
@@ -44,7 +47,7 @@ cat <<_EOF > input.nml
 _EOF
 
 test_expect_success "mpp_io functionality with mixed prec reals" '
-    mpirun -n 12 ./test_io_R4_R8
+    mpirun -n 12 ../test_io_R4_R8
 '
 
 test_done

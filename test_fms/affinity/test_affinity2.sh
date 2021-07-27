@@ -30,7 +30,7 @@ cat <<_EOF > input.nml
 _EOF
 
 if test "x$mpi_launcher" != "xsrun"; then
-  SKIP_TESTS="test_affinity2.1"
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
 fi
 
 test_expect_success "FMS affinity places MPI processes correctly on slurm" '
