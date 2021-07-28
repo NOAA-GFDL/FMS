@@ -137,7 +137,11 @@ program test_mpp_domains
 
 
   call mpp_init()
-  call mpp_domains_init(MPP_DEBUG)
+  if (debug) then
+    call mpp_domains_init(MPP_DEBUG)
+  else
+    call mpp_domains_init()
+  endif
   call mpp_domains_set_stack_size(stackmax)
 
   outunit = stdout()
