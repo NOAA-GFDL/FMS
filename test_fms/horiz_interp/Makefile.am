@@ -29,11 +29,10 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_horiz_interp test2_horiz_interp
+check_PROGRAMS = test_horiz_interp
 
 # These are the sources for the tests.
 test_horiz_interp_SOURCES = test_horiz_interp.F90
-test2_horiz_interp_SOURCES = test2_horiz_interp.F90
 
 # Run the test programs.
 TESTS = test_horiz_interp2.sh

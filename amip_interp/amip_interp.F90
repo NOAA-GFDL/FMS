@@ -94,11 +94,6 @@ use      platform_mod, only: R4_KIND, I2_KIND
 use mpp_mod,           only: input_nml_file
 use fms2_io_mod,       only: FmsNetcdfFile_t, fms2_io_file_exists=>file_exists, open_file, close_file, &
                              get_dimension_size, fms2_io_read_data=>read_data
-!! These are fms_io specific:
-use        fms_io_mod, only: mpp_io_read_data=>read_data, field_size
-use        mpp_io_mod, only : mpp_open, mpp_read, MPP_RDONLY, MPP_NETCDF, &
-                       MPP_MULTI, MPP_SINGLE, mpp_close, mpp_get_times
-use           fms_mod, only: fms_io_file_exists=>file_exist
 
 implicit none
 private
@@ -533,15 +528,7 @@ else
     call horiz_interp_new ( Interp%Hintrp2, lon_bnd, lat_bnd, &
                              lon_model, lat_model, interp_method="bilinear" )
 
-    if (use_mpp_io) then
-            !! USE_MPP_IO_WARNING
-            call mpp_error ('amip_interp_mod', &
-             'MPP_IO is no longer supported.  Please remove from namelist',&
-              WARNING)
-            the_file_exists = fms_io_file_exists(ncfilename)
-    else
-       the_file_exists = fms2_io_file_exists(ncfilename)
-    endif !if (use_mpp_io)
+    the_file_exists = fms2_io_file_exists(ncfilename)
 
     if ( (.NOT. the_file_exists)  ) then
         call mpp_error ('amip_interp_mod', &
@@ -550,17 +537,6 @@ else
         if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
              'Reading NetCDF formatted daily SST from: '//trim(ncfilename), NOTE)
 
-        if (use_mpp_io) then
-            call field_size(ncfilename, 'TIME', siz)
-            nrecords = siz (1)
-            if (nrecords < 1) call mpp_error('amip_interp_mod', &
-                           'Invalid number of SST records in daily SST data file: '//trim(ncfilename), FATAL)
-            allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
-
-            call mpp_open( unit, ncfilename, MPP_RDONLY, MPP_NETCDF, MPP_MULTI, MPP_SINGLE )
-            call mpp_get_times(unit, timeval)
-            call mpp_close(unit)
-        else
             if(.not. open_file(fileobj, trim(ncfilename), 'read')) &
                 call error_mesg ('get_amip_sst', 'Error in opening file '//trim(ncfilename), FATAL)
 
@@ -569,7 +545,6 @@ else
                            'Invalid number of SST records in daily SST data file: '//trim(ncfilename), FATAL)
             allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
             call fms2_io_read_data(fileobj, 'TIME', timeval)
-        endif !if (use_mpp_io)
 !!! DEBUG CODE
         if(DEBUG) then
           if (mpp_pe() == 0) then
@@ -607,12 +582,8 @@ else
      if ( .not. allocated(tempamip) ) allocate (tempamip(mobs_sst,nobs_sst))
 
      if (the_file_exists) then
-          if (use_mpp_io) then
-             call mpp_io_read_data(ncfilename, 'SST', tempamip, timelevel=k, no_domain=.true.)
-          else
-             call fms2_io_read_data(fileobj, 'SST', tempamip, unlim_dim_level=k)
-             call close_file(fileobj)
-          endif !if (use_mpp_io)
+          call fms2_io_read_data(fileobj, 'SST', tempamip, unlim_dim_level=k)
+          call close_file(fileobj)
           tempamip = tempamip + TFREEZE
 
 !!! DEBUG CODE
@@ -910,6 +881,12 @@ endif
         write (unit,nml=amip_interp_nml)
     endif
 
+    if (use_mpp_io) then
+            !! USE_MPP_IO_WARNING
+            call mpp_error ('amip_interp_mod', &
+             'MPP_IO is no longer supported.  Please remove use_mpp_io from amip_interp_nml',&
+              FATAL)
+    endif
     if ( .not. use_ncep_sst ) interp_oi_sst = .false.
 
 !   ---- freezing point of sea water in deg K ---
@@ -1005,30 +982,19 @@ endif
     file_name_sst = trim(file_name_sst)//'.nc'
     file_name_ice = trim(file_name_ice)//'.nc'
 
-    if (use_mpp_io) then
-       if (.not. fms_io_file_exists(trim(file_name_sst)) ) then
-           call error_mesg ('amip_interp_init', &
-               'file '//trim(file_name_sst)//' does not exist', FATAL)
-       endif
-       if (.not. fms_io_file_exists(trim(file_name_ice)) ) then
-           call error_mesg ('amip_interp_init', &
-               'file '//trim(file_name_ice)//' does not exist', FATAL)
-       endif
-    else
-       if (.not. fms2_io_file_exists(trim(file_name_sst)) ) then
-           call error_mesg ('amip_interp_init', &
-               'file '//trim(file_name_sst)//' does not exist', FATAL)
-       endif
-       if (.not. fms2_io_file_exists(trim(file_name_ice)) ) then
-           call error_mesg ('amip_interp_init', &
-               'file '//trim(file_name_ice)//' does not exist', FATAL)
-       endif
+    if (.not. fms2_io_file_exists(trim(file_name_sst)) ) then
+        call error_mesg ('amip_interp_init', &
+             'file '//trim(file_name_sst)//' does not exist', FATAL)
+    endif
+    if (.not. fms2_io_file_exists(trim(file_name_ice)) ) then
+        call error_mesg ('amip_interp_init', &
+             'file '//trim(file_name_ice)//' does not exist', FATAL)
+    endif
 
-       if (.not. open_file(fileobj_sst, trim(file_name_sst), 'read')) &
-           call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_sst), FATAL)
-       if (.not. open_file(fileobj_ice, trim(file_name_ice), 'read')) &
-           call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_ice), FATAL)
-    endif !if (use_mpp_io)
+    if (.not. open_file(fileobj_sst, trim(file_name_sst), 'read')) &
+        call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_sst), FATAL)
+    if (.not. open_file(fileobj_ice, trim(file_name_ice), 'read')) &
+        call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_ice), FATAL)
     module_is_initialized = .true.
 
  end subroutine amip_interp_init
@@ -1326,10 +1292,10 @@ endif
         ncfieldname = 'sst'
      if(type(1:3) == 'sst') then
         ncfilename = trim(file_name_sst)
-        if (.not. use_mpp_io) fileobj => fileobj_sst
+        fileobj => fileobj_sst
      else if(type(1:3) == 'ice') then
         ncfilename = trim(file_name_ice)
-        if (.not. use_mpp_io) fileobj => fileobj_ice
+        fileobj => fileobj_ice
         if (lowercase(trim(data_set)) == 'amip2' .or. &
             lowercase(trim(data_set)) == 'hurrell' .or. &
             lowercase(trim(data_set)) == 'daily') ncfieldname = 'ice' ! modified by JHC
@@ -1344,15 +1310,6 @@ endif
      if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
           'Reading NetCDF formatted input data file: '//trim(ncfilename), NOTE)
 
-     if (use_mpp_io) then
-        call mpp_io_read_data (ncfilename, 'nrecords', nrecords, no_domain=.true.)
-        if (nrecords < 1) call mpp_error('amip_interp_mod', &
-                           'Invalid number of SST records in SST datafile: '//trim(ncfilename), FATAL)
-        allocate(ryr(nrecords), rmo(nrecords), rdy(nrecords))
-        call mpp_io_read_data(ncfilename, 'yr', ryr, no_domain=.true.)
-        call mpp_io_read_data(ncfilename, 'mo', rmo, no_domain=.true.)
-        call mpp_io_read_data(ncfilename, 'dy', rdy, no_domain=.true.)
-     else
         call fms2_io_read_data (fileobj, 'nrecords', nrecords)
         if (nrecords < 1) call mpp_error('amip_interp_mod', &
                            'Invalid number of SST records in SST datafile: '//trim(ncfilename), FATAL)
@@ -1360,7 +1317,6 @@ endif
         call fms2_io_read_data(fileobj, 'yr', ryr)
         call fms2_io_read_data(fileobj, 'mo', rmo)
         call fms2_io_read_data(fileobj, 'dy', rdy)
-     endif !if (use_mpp_io)
 
      ierr = 1
      do k = 1, nrecords
@@ -1393,11 +1349,7 @@ endif
    !---- read NETCDF data ----
 
      if ( interp_oi_sst ) then
-          if (use_mpp_io) then
-             call mpp_io_read_data(ncfilename, ncfieldname, tmp_dat, timelevel=k, no_domain=.true.)
-          else
-             call fms2_io_read_data(fileobj, ncfieldname, tmp_dat, unlim_dim_level=k)
-          endif !if (use_mpp_io)
+          call fms2_io_read_data(fileobj, ncfieldname, tmp_dat, unlim_dim_level=k)
 !     interpolate tmp_dat(360, 180) ---> dat(mobs,nobs) (to enable SST anom computation)
           if ( mobs/=360 .or. nobs/=180 ) then
                call a2a_bilinear(360, 180, tmp_dat, mobs, nobs, dat)
@@ -1405,17 +1357,9 @@ endif
                dat(:,:) = tmp_dat(:,:)
           endif
      else
-          if (use_mpp_io) then
-              call mpp_io_read_data(ncfilename, ncfieldname, dat, timelevel=k, no_domain=.true.)
-          else
-              call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
-          endif !if (use_mpp_io)
+          call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-    if (use_mpp_io) then
-        idat =  nint(dat*100.) ! reconstruct packed data for reproducibility
-    else
-        idat =  nint(dat) ! reconstruct packed data for reproducibility
-    endif !(use_mpp_io)
+     idat =  nint(dat) ! reconstruct packed data for reproducibility
 
    !---- unpacking of data ----
 

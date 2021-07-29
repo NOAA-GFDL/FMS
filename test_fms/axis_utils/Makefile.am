@@ -38,7 +38,7 @@ test_axis_utils_SOURCES = test_axis_utils.F90
 TESTS = test_axis_utils2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input_base.nml test_axis_utils2.sh
+EXTRA_DIST = test_axis_utils2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml *.out* *.nc*
