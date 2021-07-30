@@ -326,10 +326,8 @@ real,dimension(:,:), intent(in), optional :: area_in
 !-------------------------------------------------------------------------------
 !    read namelist.
 !-------------------------------------------------------------------------------
-    if ( file_exists('input.nml')) then
-        read (input_nml_file, nml=diag_integral_nml, iostat=io)
-        ierr = check_nml_error(io,'diag_integral_nml')
-    endif
+      read (input_nml_file, nml=diag_integral_nml, iostat=io)
+      ierr = check_nml_error(io,'diag_integral_nml')
 
 !-------------------------------------------------------------------------------
 !    write version number and namelist to logfile.

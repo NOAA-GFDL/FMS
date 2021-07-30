@@ -1295,7 +1295,7 @@ end function rarray_to_char
 !
 ! ! parameter defining length of character variables
 !   integer, parameter :: INPUT_STR_LENGTH = 256
-! ! public variable needed for reading input.nml from an internal file
+! ! public variable needed for reading an input nml file from an internal file
 !   character(len=INPUT_STR_LENGTH), dimension(:), allocatable, public :: input_nml_file
 !
 
@@ -1303,7 +1303,7 @@ end function rarray_to_char
 ! subroutine READ_INPUT_NML
 !
 !
-! Reads an existing input.nml into a character array and broadcasts
+! Reads an existing input nml file into a character array and broadcasts
 ! it to the non-root mpi-tasks. This allows the use of reads from an
 ! internal file for namelist settings (requires 2003 compliant compiler)
 !
