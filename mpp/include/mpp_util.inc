@@ -1293,10 +1293,8 @@ end function rarray_to_char
 !
 ! THESE LINES MUST BE PRESENT IN MPP.F90
 !
-! ! parameter defining length of character variables
-!   integer, parameter :: INPUT_STR_LENGTH = 256
 ! ! public variable needed for reading an input nml file from an internal file
-!   character(len=INPUT_STR_LENGTH), dimension(:), allocatable, public :: input_nml_file
+!   character(len=:), dimension(:), allocatable, public :: input_nml_file
 !
 
 !-----------------------------------------------------------------------
