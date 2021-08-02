@@ -3252,19 +3252,18 @@ CONTAINS
 
        if (output_fields(out_num)%n_diurnal_samples > 1) then
           CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io, filename_time=filename_time)
+                 & filename_time=filename_time)
        else
           CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io, filename_time=filename_time)
+                 & filename_time=filename_time)
        endif
     ELSE
        if (output_fields(out_num)%n_diurnal_samples > 1) then
             CALL diag_data_out(file_num, out_num, &
-                 & diurnal_buffer, output_fields(out_num)%next_output, use_mpp_io_arg=use_mpp_io)
+                 & diurnal_buffer, output_fields(out_num)%next_output)
        else
             CALL diag_data_out(file_num, out_num, &
-                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output,&
-                 & use_mpp_io_arg=use_mpp_io)
+                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
        endif
     END IF
 !output_fields(out_num)%last_output = output_fields(out_num)%next_output
@@ -3329,8 +3328,7 @@ CONTAINS
                & (input_fields(in_num)%active_omp_level.LE.1) ) CYCLE
           file_num = output_fields(out_num)%output_file
           CALL diag_data_out(file_num, out_num, &
-               & output_fields(out_num)%buffer, time, &
-               & use_mpp_io_arg=use_mpp_io)
+               & output_fields(out_num)%buffer, time)
         END DO
       END IF
     END DO
@@ -3413,12 +3411,10 @@ CONTAINS
     DO file = 1, num_files
        CALL closing_file(file, time)
     END DO
-  if (.not.use_mpp_io) then
     if (allocated(fileobjU)) deallocate(fileobjU)
     if (allocated(fileobj)) deallocate(fileobj)
     if (allocated(fileobjND)) deallocate(fileobjND)
-  if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
-  endif
+    if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
   END SUBROUTINE diag_manager_end
 
   !> @brief Replaces diag_manager_end; close just one file: files(file)
@@ -3492,14 +3488,14 @@ CONTAINS
                     diurnal_buffer(:,:,loop1,loop2) = output_fields(i)%buffer(:,:,loop2,loop1)
                enddo
                enddo
-               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
+               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE.)
           else
-          CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
+          CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)
           endif
        END IF
     END DO
     ! Now it's time to output static fields
-    CALL write_static(file, use_mpp_io)
+    CALL write_static(file)
 
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
@@ -3641,10 +3637,8 @@ CONTAINS
                & 'diag_manager is using fms2_io', NOTE)
     else
        CALL error_mesg('diag_manager_mod::diag_manager_init',&
-               & 'diag_manager is using mpp_io', NOTE)
-       CALL error_mesg('diag_manager_mod::diag_manager_init',&
-             &'MPP_IO is no longer supported.  Please remove from namelist',&
-              &WARNING)
+             &'MPP_IO is no longer supported.  Please remove use_mpp_io from diag_manager_nml namelist',&
+              &FATAL)
     endif
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
