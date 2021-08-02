@@ -18,7 +18,7 @@
 !***********************************************************************
 
 program test_get_ascii_lines
-  use mpp_mod, only: mpp_init, mpp_init_test_logfile_init, get_ascii_file_num_lines, read_ascii_file, INPUT_STR_LENGTH
+  use mpp_mod, only: mpp_init, mpp_init_test_logfile_init, get_ascii_file_num_lines, read_ascii_file
   use mpp_mod, only: input_nml_file
   use, intrinsic ::  iso_fortran_env, only: INT8
 
@@ -28,6 +28,7 @@ program test_get_ascii_lines
      procedure assertEquals_int_int
   end interface assertEquals
 
+  integer, parameter :: str_length = 256
   integer, parameter :: num_tests = 5
   integer(KIND=INT8) :: test_number
   integer, dimension(num_tests) :: my_num_lines=(/5,25,0,5,5/)
@@ -43,7 +44,7 @@ program test_get_ascii_lines
                                                          "0 line test    ",&
                                                          "blank line test",&
                                                          "long line test "/)
-  character(len=INPUT_STR_LENGTH), allocatable :: file_contents(:)
+  character(len=str_length), allocatable :: file_contents(:)
   namelist /test_mpp_get_ascii_lines_nml/ test_number
 
   open(30, file="test_numb2.nml", form="formatted", status="old")
@@ -52,7 +53,7 @@ program test_get_ascii_lines
 
   call mpp_init(test_level=mpp_init_test_logfile_init)
   my_num_lines(test_number) = my_num_lines(test_number)+1 !!!!! Please See Note At End of File
-  f_num_lines = get_ascii_file_num_lines(trim(file_name(test_number)), INPUT_STR_LENGTH)
+  f_num_lines = get_ascii_file_num_lines(trim(file_name(test_number)), str_length)
   call assertEquals(f_num_lines, my_num_lines(test_number), trim(test_name(test_number)))
   call MPI_FINALIZE(ierr)
 

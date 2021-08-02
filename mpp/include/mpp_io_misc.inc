@@ -49,7 +49,7 @@
 
     subroutine mpp_io_init( flags, maxunit )
       integer, intent(in), optional :: flags, maxunit
-      integer                       :: unit_nml, io_status, iunit
+      integer                       :: io_status, iunit
       integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
       real(r8_kind)             :: doubledata = 0
@@ -75,20 +75,9 @@
       call mpp_set_unit_range( 103, maxunits )
 
       !--- namelist
-#ifdef INTERNAL_FILE_NML
       read (input_nml_file, mpp_io_nml, iostat=io_status)
-#else
-      do unit_nml = unit_begin, unit_end
-         inquire( unit_nml,OPENED=opened )
-         if( .NOT.opened )exit
-      end do
-      open(unit_nml,file='input.nml')
-      read(unit_nml,mpp_io_nml,iostat=io_status)
-      close(unit_nml)
-#endif
-
       if (io_status > 0) then
-         call mpp_error(FATAL,'=>mpp_io_init: Error reading input.nml')
+         call mpp_error(FATAL,'=>mpp_io_init: Error reading mpp_io_nml')
       endif
 
 

@@ -273,7 +273,7 @@ module fms
                      mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv, &
                      mpp_sum_ad, mpp_broadcast, mpp_init, mpp_exit, mpp_gather, &
                      mpp_scatter, mpp_alltoall, mpp_type, mpp_byte, mpp_type_create, &
-                     mpp_type_free, input_nml_file, INPUT_STR_LENGTH
+                     mpp_type_free, input_nml_file
   use mpp_parameter_mod,only:MAXPES, MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, &
                      NOTE, WARNING, FATAL, MPP_WAIT, MPP_READY, MAX_CLOCKS, &
                      MAX_EVENT_TYPES, MAX_EVENTS, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, &
