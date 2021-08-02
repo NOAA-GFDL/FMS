@@ -29,7 +29,7 @@ program test_read_ascii_file
   use mpp_mod, only : read_ascii_file, get_ascii_file_num_lines
   use mpp_mod, only : mpp_get_current_pelist, mpp_npes
 
-  integer, parameter :: str_length
+  integer, parameter :: str_length = 256
   character(len=256), dimension(:), allocatable :: test_array !< Content array
   character(len=256) :: filename !< Name of ascii file to be read
   character(len=256) :: filename2 !< Name of alternative ascii file to be read
