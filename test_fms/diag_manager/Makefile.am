@@ -38,6 +38,6 @@ test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 TESTS = test_diag_manager2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml_base input.nml_base_mppio diagTables test_diag_manager2.sh
+EXTRA_DIST = input.nml_base diagTables test_diag_manager2.sh
 
 CLEANFILES = input.nml *.nc *.out diag_table
