@@ -19,7 +19,7 @@
 
 # Copyright (c) GFDL, @underwoo
 
-cmake_minimum_required(VERSION 3.7...3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
@@ -93,11 +93,11 @@ list(APPEND fms_fortran_src_files
   block_control/block_control.F90
   column_diagnostics/column_diagnostics.F90
   constants/constants.F90
+  constants/fmsconstants.F90
   coupler/atmos_ocean_fluxes.F90
   coupler/coupler_types.F90
   coupler/ensemble_manager.F90
-  data_override/get_grid_version_fms2io.F90
-  data_override/get_grid_version_mpp.F90
+  data_override/get_grid_version.F90
   data_override/data_override.F90
   diag_integral/diag_integral.F90
   diag_manager/diag_axis.F90

@@ -329,7 +329,7 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
- integer :: ierr, io
+ integer :: unit, ierr, io
  integer :: logunitnum
  integer :: stdout_unit !< Unit number for the stdout file
 
@@ -540,17 +540,10 @@ end subroutine fms_end
   !!       routine check_nml_error will return zero and the while loop will exit.
   !!       This code segment should be used to read namelist files.
   !!       @code{.F90}
-  !!         integer :: unit, ierr, io
+  !!         integer :: ierr, io
   !!
-  !!         if ( file_exist('input.nml') ) then
-  !!             unit = open_namelist_file ( )
-  !!             ierr=1
-  !!             do while (ierr > 0)
-  !!               read  (unit, nml=moist_processes_nml, iostat=io)
-  !!               ierr = check_nml_error(io,'moist_processes_nml')
-  !!             enddo
-  !!             call close_file (unit)
-  !!         endif
+  !!         read (input_nml_file, fms_nml, iostat=io)
+  !!         ierr = check_nml_error(io,'fms_nml')
   !!       @endcode
   !! @throws FATAL, Unknown error while reading namelist ...., (IOSTAT = ####)
   !! There was an error reading the namelist specified. Carefully examine all namelist and variables

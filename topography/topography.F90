@@ -880,7 +880,7 @@ end module topography_mod
 !   <TESTPROGRAM NAME="">
 !
 !  To run this program you will need the topography and percent water
-!  data sets and use the following namelist (in file input.nml).
+!  data sets and use the following namelist (in the input nml file).
 !
 !   &amp;gaussian_topog_nml
 !     height = 5000., 3000., 3000., 3000.,

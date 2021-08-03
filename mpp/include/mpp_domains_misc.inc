@@ -53,7 +53,7 @@
     subroutine mpp_domains_init(flags)
       integer, intent(in), optional :: flags
       integer                       :: n
-      integer                       :: unit_begin, unit_end, unit_nml, io_status, unit
+      integer                       :: io_status, unit
       logical                       :: opened
 
       if( module_is_initialized )return
@@ -70,23 +70,9 @@
       end if
 
       !--- namelist
-#ifdef INTERNAL_FILE_NML
       read (input_nml_file, mpp_domains_nml, iostat=io_status)
-#else
-      unit_begin = 103
-      unit_end   = 512
-      do unit_nml = unit_begin, unit_end
-         inquire( unit_nml,OPENED=opened )
-         if( .NOT.opened )exit
-      end do
-
-      open(unit_nml,file='input.nml', iostat=io_status)
-      read(unit_nml,mpp_domains_nml,iostat=io_status)
-      close(unit_nml)
-#endif
-
       if (io_status > 0) then
-         call mpp_error(FATAL,'=>mpp_domains_init: Error reading input.nml')
+         call mpp_error(FATAL,'=>mpp_domains_init: Error reading mpp_domains_nml')
       endif
 
 
