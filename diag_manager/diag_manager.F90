@@ -198,11 +198,7 @@ use platform_mod
   USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
-#ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
-#else
-  USE fms_mod, ONLY: open_namelist_file, close_file
-#endif
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
@@ -3502,9 +3498,6 @@ CONTAINS
     INTEGER, ALLOCATABLE, DIMENSION(:) :: pelist
     INTEGER :: stdlog_unit, stdout_unit
     integer :: j
-#ifndef INTERNAL_FILE_NML
-    INTEGER :: nml_unit
-#endif
     CHARACTER(len=256) :: err_msg_local
 
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
@@ -3553,23 +3546,12 @@ CONTAINS
        END IF
     END IF
 
-#ifdef INTERNAL_FILE_NML
     READ (input_nml_file, NML=diag_manager_nml, IOSTAT=mystat)
-#else
-    IF ( file_exist('input.nml') ) THEN
-       nml_unit = open_namelist_file()
-       READ (nml_unit, diag_manager_nml, iostat=mystat)
-       CALL close_file(nml_unit)
-    ELSE
-       ! Set mystat to an arbitrary positive number if input.nml does not exist.
-       mystat = 100
-    END IF
-#endif
     ! Check the status of reading the diag_manager_nml
 
     IF ( check_nml_error(IOSTAT=mystat, NML_NAME='DIAG_MANAGER_NML') < 0 ) THEN
        IF ( mpp_pe() == mpp_root_pe() ) THEN
-          CALL error_mesg('diag_manager_mod::diag_manager_init', 'DIAG_MANAGER_NML not found in input.nml.  Using defaults.',&
+          CALL error_mesg('diag_manager_mod::diag_manager_init', 'DIAG_MANAGER_NML not found in input nml file.  Using defaults.',&
                & WARNING)
        END IF
     END IF

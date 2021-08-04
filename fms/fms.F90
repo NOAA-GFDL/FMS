@@ -321,14 +321,15 @@ contains
 !! The namelist variable clock_grain must be one of the following values:
 !! 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE',
 !! 'LOOP', or 'INFRA' (case-insensitive).
-subroutine fms_init (localcomm )
+subroutine fms_init (localcomm, alt_input_nml_path)
 
 !--- needed to output the version number of constants_mod to the logfile ---
  use constants_mod, only: constants_version=>version !pjp: PI not computed
  use fms_io_mod,    only: fms_io_version
 
  integer, intent(in), optional :: localcomm
- integer :: ierr, io
+ character(len=*), intent(in), optional :: alt_input_nml_path
+ integer :: unit, ierr, io
  integer :: logunitnum
  integer :: stdout_unit !< Unit number for the stdout file
 
@@ -336,9 +337,17 @@ subroutine fms_init (localcomm )
     module_is_initialized = .true.
 !---- initialize mpp routines ----
     if(present(localcomm)) then
-       call mpp_init(localcomm=localcomm)
+       if(present(alt_input_nml_path)) then
+          call mpp_init(localcomm=localcomm, alt_input_nml_path=alt_input_nml_path)
+       else
+          call mpp_init(localcomm=localcomm)
+       endif
     else
-       call mpp_init()
+       if(present(alt_input_nml_path)) then
+          call mpp_init(alt_input_nml_path=alt_input_nml_path)
+       else
+          call mpp_init()
+       endif
     endif
     call mpp_domains_init()
     call fms_io_init()
@@ -531,17 +540,10 @@ end subroutine fms_end
   !!       routine check_nml_error will return zero and the while loop will exit.
   !!       This code segment should be used to read namelist files.
   !!       @code{.F90}
-  !!         integer :: unit, ierr, io
+  !!         integer :: ierr, io
   !!
-  !!         if ( file_exist('input.nml') ) then
-  !!             unit = open_namelist_file ( )
-  !!             ierr=1
-  !!             do while (ierr > 0)
-  !!               read  (unit, nml=moist_processes_nml, iostat=io)
-  !!               ierr = check_nml_error(io,'moist_processes_nml')
-  !!             enddo
-  !!             call close_file (unit)
-  !!         endif
+  !!         read (input_nml_file, fms_nml, iostat=io)
+  !!         ierr = check_nml_error(io,'fms_nml')
   !!       @endcode
   !! @throws FATAL, Unknown error while reading namelist ...., (IOSTAT = ####)
   !! There was an error reading the namelist specified. Carefully examine all namelist and variables

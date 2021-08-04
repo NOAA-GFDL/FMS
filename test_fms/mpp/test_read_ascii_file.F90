@@ -26,9 +26,10 @@ program test_read_ascii_file
 
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
-  use mpp_mod, only : read_ascii_file, INPUT_STR_LENGTH, get_ascii_file_num_lines
+  use mpp_mod, only : read_ascii_file, get_ascii_file_num_lines
   use mpp_mod, only : mpp_get_current_pelist, mpp_npes
 
+  integer, parameter :: str_length = 256
   character(len=256), dimension(:), allocatable :: test_array !< Content array
   character(len=256) :: filename !< Name of ascii file to be read
   character(len=256) :: filename2 !< Name of alternative ascii file to be read
@@ -49,21 +50,21 @@ program test_read_ascii_file
   if (test_numb == 1 .or. test_numb == 7 .or. test_numb == 8) then
     if (test_numb == 1) then
       filename = "input.nml"
-      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
+      num_lines = get_ascii_file_num_lines(filename, str_length)
       allocate(test_array(num_lines))
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
+      call read_ascii_file(filename, str_length, test_array)
     else if (test_numb == 7) then
       filename = "input.nml"
-      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
+      num_lines = get_ascii_file_num_lines(filename, str_length)
       allocate(test_array(num_lines))
       allocate(cur_pelist(0:mpp_npes()-1))
       call mpp_get_current_pelist(cur_pelist)
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array, PELIST=cur_pelist)
+      call read_ascii_file(filename, str_length, test_array, PELIST=cur_pelist)
     else if (test_numb == 8) then
       filename = "empty.nml"
-      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
+      num_lines = get_ascii_file_num_lines(filename, str_length)
       allocate(test_array(num_lines))
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
+      call read_ascii_file(filename, str_length, test_array)
     end if
     ! Content check
     open(2, file=filename, iostat=stat)
@@ -82,31 +83,31 @@ program test_read_ascii_file
     if (test_numb == 2) then
       filename = "input.nml"
       allocate(test_array(20))
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
+      call read_ascii_file(filename, str_length, test_array)
     else if (test_numb == 3) then
       filename = "doesnotexist.txt"
       ! Need to pass in an exist file name below to avoid raising error on
       ! get_ascii_file_num_lines call in order to get to the error in read_ascii_file
       filename2 = "input.nml"
-      num_lines = get_ascii_file_num_lines(filename2, INPUT_STR_LENGTH)
+      num_lines = get_ascii_file_num_lines(filename2, str_length)
       allocate(test_array(num_lines))
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
+      call read_ascii_file(filename, str_length, test_array)
     else if (test_numb == 4) then
       filename = "input.nml"
       filename2 = "empty.nml"
-      num_lines = get_ascii_file_num_lines(filename2, INPUT_STR_LENGTH)
+      num_lines = get_ascii_file_num_lines(filename2, str_length)
       allocate(test_array(num_lines))
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
+      call read_ascii_file(filename, str_length, test_array)
     else if (test_numb == 5) then
       filename = "input.nml"
-      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
+      num_lines = get_ascii_file_num_lines(filename, str_length)
       allocate(test_array(num_lines))
       call read_ascii_file(filename, 0, test_array)
     else if (test_numb == 6) then
       filename = "input.nml"
-      num_lines = get_ascii_file_num_lines(filename, INPUT_STR_LENGTH)
+      num_lines = get_ascii_file_num_lines(filename, str_length)
       allocate(test_array(num_lines-1))
-      call read_ascii_file(filename, INPUT_STR_LENGTH, test_array)
+      call read_ascii_file(filename, str_length, test_array)
     end if
   end if
   call MPI_FINALIZE(ierr)
