@@ -3238,21 +3238,11 @@ CONTAINS
            filename_time = output_fields(out_num)%next_output
        endif
 
-       if (output_fields(out_num)%n_diurnal_samples > 1) then
-          CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
+       CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
                  & filename_time=filename_time)
-       else
-          CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
-                 & filename_time=filename_time)
-       endif
     ELSE
-       if (output_fields(out_num)%n_diurnal_samples > 1) then
-            CALL diag_data_out(file_num, out_num, &
+       CALL diag_data_out(file_num, out_num, &
                  & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
-       else
-            CALL diag_data_out(file_num, out_num, &
-                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
-       endif
     END IF
 !output_fields(out_num)%last_output = output_fields(out_num)%next_output
 ! endif
@@ -3463,11 +3453,7 @@ CONTAINS
                & TRIM(output_fields(i)%output_name)//' NOT available,'//&
                & ' check if output interval > runlength. Netcdf fill_values are written', NOTE)
           output_fields(i)%buffer = FILL_VALUE
-          if (output_fields(i)%n_diurnal_samples > 1) then
-               CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)
-          else
           CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)
-          endif
        END IF
     END DO
     ! Now it's time to output static fields

@@ -1243,7 +1243,8 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     character(len=2), intent(in), optional :: fnum_for_domain
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
-    real(kind=4),allocatable :: local_buffer(:,:,:,:)
+    real,allocatable :: local_buffer(:,:,:,:)
+
 !> Set up the time.  Static field and default time is 0
      if (present(static) .and. static) then
           time = 0
@@ -1253,6 +1254,8 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           time = 0
      endif
 
+     !> If the variable is 2D, switch the n_diurnal_samples and nz dimension, so local_buffer has
+     !! dimension (nx, ny, n_diurnal_samples, nz).
      if (size(buffer,3) .eq. 1) then
         allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,4),size(buffer,3)))
         local_buffer(:,:,:,1) = buffer(:,:,1,:)
