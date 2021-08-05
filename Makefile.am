@@ -65,6 +65,7 @@ SUBDIRS = \
   tracer_manager \
   sat_vapor_pres \
   random_numbers \
+  . \
   libFMS \
   test_fms \
   ${DOCS}
