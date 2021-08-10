@@ -176,6 +176,8 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = create_input.sh.in \
   test_mpp_domains2.sh \
   test_mpp2.sh \
+  test_mpp_memuse.sh \
+  test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
   test_read_ascii_file.sh \
   test_read_input_nml2.sh \
@@ -231,4 +233,4 @@ test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_
 test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
 
 # Clean up
-CLEANFILES = *.nml *.out* *.tst* ascii* test_numb* *.mod
+CLEANFILES = *-files/* *.nml *.out* *.tst* ascii* test_numb* *.mod

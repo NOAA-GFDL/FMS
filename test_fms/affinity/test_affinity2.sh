@@ -36,5 +36,5 @@ fi
 test_expect_success "FMS affinity places MPI processes correctly on slurm" '
   mpirun -n 6 ./test_affinity
 '
- 
+
 test_done

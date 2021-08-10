@@ -29,7 +29,7 @@
 . ../test-lib.sh
 
 # TODO edge update, fails on non-blocking with gnu
-SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).6"
+#SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).6"
 
 # create and enter directory for in/output
 output_dir
@@ -106,7 +106,6 @@ sed "s/test_interface = .false./test_interface = .true./" input_base.nml > input
 test_expect_success "interface" '
     mpirun -n 2 ../test_mpp_domains
 '
-# TODO this wasn't run at all previously
 sed "s/check_parallel = .false./check_parallel = .true./" input_base.nml > input.nml
 test_expect_success "check_parallel" '
     mpirun -n 6 ../test_mpp_domains

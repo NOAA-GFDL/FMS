@@ -322,9 +322,9 @@ test_done () {
 }
 # creates and enters output dir and deletes previous if present
 output_dir () {
-  if [ -d "$TEST_NAME-output" ]; then
-    rm -r "$TEST_NAME-output"
+  if [ -d "$TEST_NAME-files" ]; then
+    rm -r "$TEST_NAME-files"
   fi
-  mkdir "$TEST_NAME-output"
-  cd "$TEST_NAME-output"
+  mkdir "$TEST_NAME-files"
+  cd "$TEST_NAME-files"
 }

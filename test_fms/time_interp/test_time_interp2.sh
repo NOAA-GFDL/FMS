@@ -37,5 +37,10 @@ test_expect_success "test time interpolation" '
   mpirun -n 2 ./test_time_interp
 '
 rm -rf INPUT
+mkdir INPUT
+
+test_expect_success "test time interpolation external" '
+  mpirun -n 2 ./test_time_interp_external
+'
 
 test_done

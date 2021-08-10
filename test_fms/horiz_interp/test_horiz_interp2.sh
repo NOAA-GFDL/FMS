@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # Tests to skip if input files not present
-if [ test -z "$test_input_path" ]; then
+if [ -z "$test_input_path" ]; then
   SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).2"
 else
   rm -rf INPUT && mkdir INPUT

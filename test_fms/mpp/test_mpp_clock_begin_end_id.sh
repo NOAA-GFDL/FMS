@@ -37,7 +37,7 @@ test_expect_success "test 1" '
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 2/" clock.nml
-test_expect_success "test 2" ' 
+test_expect_success "test 2" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 

@@ -592,12 +592,12 @@ implicit none
      if(ANY(atm_data_out .NE. atm_data_out_3)) &
         call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_3 are not equal")
 
-      
+
      !--- write out data
      if(.not. open_file(outputfileobj, atm_output_file, 'write', atm_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open atm_output_file "//trim(atm_output_file) )
      call register_axis(outputfileobj, "xaxis", "x")
-     call register_axis(outputfileobj, "yaxis", "y") 
+     call register_axis(outputfileobj, "yaxis", "y")
      call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, atm_data_out)
      call close_file(outputfileobj)
@@ -605,7 +605,7 @@ implicit none
      if(.not. open_file(outputfileobj, lnd_output_file, 'write', lnd_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open lnd_output_file "//trim(lnd_output_file) )
      call register_axis(outputfileobj, "xaxis", "x")
-     call register_axis(outputfileobj, "yaxis", "y") 
+     call register_axis(outputfileobj, "yaxis", "y")
      call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, lnd_data_out)
      call close_file(outputfileobj)
@@ -613,7 +613,7 @@ implicit none
      if(.not. open_file(outputfileobj, ice_output_file, 'write', ice_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open ice_output_file "//trim(ice_output_file) )
      call register_axis(outputfileobj, "xaxis", "x")
-     call register_axis(outputfileobj, "yaxis", "y") 
+     call register_axis(outputfileobj, "yaxis", "y")
      call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, ice_data_out)
      call close_file(outputfileobj)

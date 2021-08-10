@@ -36,7 +36,6 @@ test_mosaic_SOURCES = test_mosaic.F90
 
 # Run the test program.
 TESTS = test_mosaic2.sh
-TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

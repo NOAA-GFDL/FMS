@@ -37,7 +37,6 @@ test_time_interp_external_SOURCES = test_time_interp_external.F90
 
 # Run the test programs.
 TESTS = test_time_interp2.sh
-TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
@@ -46,4 +45,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = test_time_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = INPUT/* input.nml *.out*

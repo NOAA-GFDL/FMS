@@ -70,3 +70,5 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
 include $(top_srcdir)/mkmods.mk
+
+CLEANFILES = *-files/* *.mod

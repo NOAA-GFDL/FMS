@@ -44,4 +44,4 @@ TESTS = test_diag_manager2.sh
 # Copy over other needed files to the srcdir
 EXTRA_DIST = input.nml_base input.nml_base_mppio test_diag_manager2.sh
 
-CLEANFILES = input.nml *.nc *.out diag_table
+CLEANFILES = input.nml *.nc *.out diag_table *-files/*

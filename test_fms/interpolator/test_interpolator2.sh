@@ -27,12 +27,13 @@
 # Set common test settings.
 . ../test-lib.sh
 
-
 # Tests to skip if input files not present
-#if [ ! test -z "$test_input_path" ]; then
-#  rm -rf INPUT && mkdir INPUT
-#  cp $test_input_path/interpolator/INPUT/* INPUT
-#fi
+if [ ! -z "$test_input_path" ]; then
+  rm -rf INPUT && mkdir INPUT
+  cp $test_input_path/interpolator/INPUT/* INPUT
+else
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
+fi
 
 # Copy files for test.
 cp $top_srcdir/test_fms/interpolator/input_base.nml input.nml

@@ -74,9 +74,6 @@ call time_interp_external_init
 call time_manager_init
 call horiz_interp_init
 
-read (input_nml_file, test_time_interp_ext_nml, iostat=io_status)
-ierr = check_nml_error(io_status, 'test_time_interp_ext_nml')
-
 !< Create a file to test with:
 if (mpp_pe() .eq. mpp_root_pe()) then
     if (open_file(fileobj, filename, "overwrite")) then
@@ -95,7 +92,7 @@ if (mpp_pe() .eq. mpp_root_pe()) then
         call register_variable_attribute(fileobj, "lat", "cartesian_axis", "Y", str_len=1)
 
         call register_variable_attribute(fileobj, "time", "cartesian_axis", "T", str_len=1)
-        call register_variable_attribute(fileobj, "time", "units", "days since 1800-01-01 00:00:00", str_len=34)
+        call register_variable_attribute(fileobj, "time", "units", "days since 1800-01-01 00:00:00", str_len=30)
         call register_variable_attribute(fileobj, "time", "calendar", "julian", str_len=6)
 
         call write_data(fileobj, "lat", (/(-90+i*2.0,i=1,89)/))

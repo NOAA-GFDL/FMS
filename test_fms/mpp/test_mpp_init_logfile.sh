@@ -56,7 +56,7 @@ test_expect_success "initialize mpp logfile" '
 # the two possible new ones are not present. Otherwise retun failure (1).
 # Replacement is checked by the absence of the fcontent line.
 if [ $(grep  ${fcontent}  ${file0} | wc -l ) -ge 1 ] ||
-   [ $(grep  ${fcontent}  ${file1} | wc -l ) -ge 1 ] ||       
+   [ $(grep  ${fcontent}  ${file1} | wc -l ) -ge 1 ] ||
    [ -f ${file1} ] ||
    [ -f ${file3} ]
 then

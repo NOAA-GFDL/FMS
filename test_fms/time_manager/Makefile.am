@@ -45,4 +45,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = test_time_manager2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = *.nml *.out*

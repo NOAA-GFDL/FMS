@@ -824,7 +824,7 @@ contains
     day1 = day1 + days_in_400_year_period*((year-1)/400)
 
     set_date_gregorian_old = set_time(seconds=second1, days=day1, ticks=tick)
-    
+
   end function set_date_gregorian_old
 
 end program test_time_manager

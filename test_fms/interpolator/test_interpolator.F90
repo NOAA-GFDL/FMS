@@ -257,7 +257,6 @@ integer,                intent(in), optional  :: vert_interp(:)
 character(len=*),       intent(out),optional  :: units(:)
 
 if (.not. file_exist("INPUT/aerosol.climatology.nc") ) return
-print *, "input found"
 call interpolator_init( aerosol, "aerosol.climatology.nc", lonb, latb, &
                         data_names=names, data_out_of_bounds=data_out_of_bounds, &
                         vert_interp=vert_interp, clim_units=units )
@@ -290,7 +289,6 @@ integer,               intent(in)           :: data_out_of_bounds(:)
 integer,               intent(in), optional :: vert_interp(:)
 
 if (.not. file_exist("INPUT/o3.climatology.nc") ) return
-print *, "input found"
 call interpolator_init( o3, "o3.climatology.nc", lonb, latb, &
                         data_out_of_bounds=data_out_of_bounds, vert_interp=vert_interp )
 
