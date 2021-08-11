@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # Tests to skip if input files not present
-if [ ! -z "$test_input_path" ]; then
+if test ! -z "$test_input_path" ; then
   rm -rf INPUT && mkdir INPUT
   cp $test_input_path/interpolator/INPUT/* INPUT
 else

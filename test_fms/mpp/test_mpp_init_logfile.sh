@@ -55,10 +55,10 @@ test_expect_success "initialize mpp logfile" '
 # Return sucess (0) only if the two "old" files have been replaced and the
 # the two possible new ones are not present. Otherwise retun failure (1).
 # Replacement is checked by the absence of the fcontent line.
-if [ $(grep  ${fcontent}  ${file0} | wc -l ) -ge 1 ] ||
-   [ $(grep  ${fcontent}  ${file1} | wc -l ) -ge 1 ] ||
-   [ -f ${file1} ] ||
-   [ -f ${file3} ]
+if test $(grep  ${fcontent}  ${file0} | wc -l ) -ge 1 ||
+   test $(grep  ${fcontent}  ${file1} | wc -l ) -ge 1 ||
+   test -f ${file1} ||
+   test -f ${file3} ;
 then
   echo "ERROR: Test was unsuccessful."
   exit 1

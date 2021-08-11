@@ -58,7 +58,7 @@ function test_next() {
   testNum=$((testNum + 1))
   sed "s/test$testNum *=.false./test$testNum =.true./" input_base.nml > input.nml
   # test #8 must set calendar type for #9 to pass
-  [ $testNum -eq 9 ] && sed -i "s/test8 =.false./test8 =.true./" input.nml
+  test $testNum -eq 9 && sed -i "s/test8 =.false./test8 =.true./" input.nml
   test_expect_success "$1" '
       mpirun -n 1 ./test_time_manager
   '

@@ -25,7 +25,7 @@
 . ../test-lib.sh
 
 # Skip test if input not present
-[ -z "$test_input_path" ] && SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).4"
+test -z "$test_input_path" && SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).4"
 
 setup_test_dir () {
   local halo_size
@@ -61,7 +61,7 @@ test_expect_success "data_override get_grid_v1" '
 '
 
 # Run tests with input if enabled
-if [ ! -z "$test_input_path" ]; then
+if test ! -z "$test_input_path" ; then
   cp $test_input_path/data_override/INPUT/* ./INPUT
   cat <<_EOF > diag_table
 test_data_override
