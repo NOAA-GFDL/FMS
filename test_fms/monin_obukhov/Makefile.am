@@ -42,7 +42,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_monin_obukhov2.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_monin_obukhov2.sh
+EXTRA_DIST = test_monin_obukhov2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out

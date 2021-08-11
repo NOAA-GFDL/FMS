@@ -35,9 +35,22 @@ else
   SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
 fi
 
-# Copy files for test.
-cp $top_srcdir/test_fms/interpolator/input_base.nml input.nml
-cp $top_srcdir/test_fms/interpolator/diag_table_base diag_table
+# Create files for test.
+cat <<_EOF  > diag_table
+test_diag_manager_01
+1 3 1 0 0 0
+
+#output files
+ "diag_test_01",  1, "days", 1, "days", "time"
+
+#output variables
+ "test_diag_manager_mod", "dat1", "dat1", "diag_test_01",  "all", .false., "none", 2
+_EOF
+
+cat <<_EOF > input.nml
+&interpolator_nml
+/
+_EOF
 
 # Run test
 test_expect_success "test interpolator" '

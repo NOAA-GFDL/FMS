@@ -44,7 +44,7 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 TESTS = test_horiz_interp2.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_horiz_interp2.sh
+EXTRA_DIST = test_horiz_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml *.out* INPUT/*

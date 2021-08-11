@@ -185,11 +185,6 @@ EXTRA_DIST = create_input.sh.in \
   test_stderr.sh \
   test_stdin.sh \
   test_mpp_get_ascii_lines2.sh \
-  base_ascii_5 \
-  base_ascii_25 \
-  base_ascii_0 \
-  base_ascii_skip \
-  base_ascii_long \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
   test_clock_init.sh \

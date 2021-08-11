@@ -27,8 +27,8 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# Copy file for test.
-cp $top_srcdir/test_fms/monin_obukhov/input_base.nml input.nml
+# Create file for test.
+touch input.nml
 
 # Run test
 test_expect_success "test monin_obukhov" '

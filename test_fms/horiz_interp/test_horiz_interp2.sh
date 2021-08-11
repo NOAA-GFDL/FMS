@@ -35,7 +35,7 @@ else
   cp $test_input_path/horiz_interp/INPUT/* INPUT
 fi
 
-# Copy file for test.
+# Create file for test.
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
   ni_src = 360

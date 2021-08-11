@@ -45,8 +45,7 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 TESTS = test_data_override2.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = input_base.nml diag_table_base data_table_base	\
-test_data_override2.sh
+EXTRA_DIST = test_data_override2.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out diag_table data_table INPUT/*
