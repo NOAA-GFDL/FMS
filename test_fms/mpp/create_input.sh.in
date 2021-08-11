@@ -2,7 +2,7 @@
 # Ryan Mulhall
 # Creates input files(nml or ascii) for mpp unit testing
 
-if [[ "$1" = "nml" ]]; then
+if test "$1" = "nml" ; then
 cat <<_EOF > input_base.nml
 &test_mpp_get_ascii_lines_nml
 test_number = <test_num>
@@ -77,7 +77,7 @@ strict = .false.
 _EOF
 shift
 fi
-if [[ "$1" = "ascii" ]]; then
+if test "$1" = "ascii" ; then
 
 cat <<_EOF > ascii_5
 "this is an ascii file with 5 lines"
