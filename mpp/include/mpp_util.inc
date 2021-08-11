@@ -1293,29 +1293,28 @@ end function rarray_to_char
 !
 ! THESE LINES MUST BE PRESENT IN MPP.F90
 !
-! ! parameter defining length of character variables
-!   integer, parameter :: INPUT_STR_LENGTH = 256
-! ! public variable needed for reading input.nml from an internal file
-!   character(len=INPUT_STR_LENGTH), dimension(:), allocatable, public :: input_nml_file
+! ! public variable needed for reading an input nml file from an internal file
+!   character(len=:), dimension(:), allocatable, public :: input_nml_file
 !
 
 !-----------------------------------------------------------------------
 ! subroutine READ_INPUT_NML
 !
 !
-! Reads an existing input.nml into a character array and broadcasts
+! Reads an existing input nml file into a character array and broadcasts
 ! it to the non-root mpi-tasks. This allows the use of reads from an
 ! internal file for namelist settings (requires 2003 compliant compiler)
 !
 ! read(input_nml_file, nml=<name_nml>, iostat=status)
 !
 !
-  subroutine read_input_nml(pelist_name_in)
+  subroutine read_input_nml(pelist_name_in, alt_input_nml_path)
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
     character(len=*), intent(in), optional :: pelist_name_in
+    character(len=*), intent(in), optional :: alt_input_nml_path
 ! private variables
     integer :: log_unit
     integer :: i
@@ -1344,7 +1343,11 @@ end function rarray_to_char
     filename='input_'//trim(pelist_name)//'.nml'
     inquire(FILE=filename, EXIST=file_exist)
     if (.not. file_exist ) then
-       filename='input.nml'
+       if (present(alt_input_nml_path)) then
+          filename = alt_input_nml_path
+       else
+          filename = 'input.nml'
+       end if
     endif
     lines_and_length = get_ascii_file_num_lines_and_length(filename)
     allocate(character(len=lines_and_length(2))::input_nml_file(lines_and_length(1)))

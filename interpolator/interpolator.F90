@@ -436,12 +436,8 @@ if (.not. module_is_initialized) then
 ! namelist input
 !--------------------------------------------------------------------
 
-the_file_exists = fms2_io_file_exist('input.nml')
-
-if (the_file_exists) then
-    read (input_nml_file, nml=interpolator_nml, iostat=io)
-    ierr = check_nml_error(io,'interpolator_nml')
-end if
+  read (input_nml_file, nml=interpolator_nml, iostat=io)
+  ierr = check_nml_error(io,'interpolator_nml')
 
 !---------------------------------------------------------------------
 !    write version number and namelist to logfile.

@@ -27,7 +27,7 @@ program test_read_input_nml
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
   use mpp_mod, only : read_input_nml, mpp_get_current_pelist_name
-  use mpp_mod, only : input_nml_file, INPUT_STR_LENGTH
+  use mpp_mod, only : input_nml_file
 #include<file_version.h>
 
 character(len=200) :: line !< Storage location of lines read from the input nml

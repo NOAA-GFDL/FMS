@@ -57,6 +57,11 @@ sed -i "s/npes_nest_tile = 2, 2, 2, 2, 2, 2, 2, 1, 1/npes_nest_tile = 2, 2, 2, 1
 test_expect_success "update single face nest domain" '
     mpirun -n 7 ../test_mpp_domains
 '
+sed -i "s/test_nest_regional = .false./test_nest_regional = .true./" input.nml
+test_expect_success "nested with regional top level domain" '
+    mpirun -n 7 ../test_mpp_domains
+'
+
 sed "s/test_subset = .false./test_subset = .true./" input_base.nml > input.nml
 test_expect_success "subset update" '
     mpirun -n 25 ../test_mpp_domains

@@ -2,7 +2,7 @@
 # Ryan Mulhall
 # Creates input files(nml or ascii) for mpp unit testing
 
-if [[ "$1" = "nml" ]] && [[ ! -f input_base.nml ]]; then
+if [[ "$1" = "nml" ]]; then
 cat <<_EOF > input_base.nml
 &test_mpp_get_ascii_lines_nml
 test_number = <test_num>
@@ -35,6 +35,7 @@ do_sleep = .false.
 num_iter = 1
 ! NEST inputs
 test_nest = .false.
+test_nest_regional = .false.
 num_nest = 3
 tile_coarse =    1,  3,  7
 tile_fine   =    7 , 8,  9

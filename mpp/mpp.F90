@@ -191,7 +191,7 @@ private
   public :: MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, NOTE, WARNING, FATAL
   public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT
   public :: CLOCK_MODULE_DRIVER, CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
-  public :: MAXPES, EVENT_RECV, EVENT_SEND, INPUT_STR_LENGTH
+  public :: MAXPES, EVENT_RECV, EVENT_SEND
   public :: COMM_TAG_1,  COMM_TAG_2,  COMM_TAG_3,  COMM_TAG_4
   public :: COMM_TAG_5,  COMM_TAG_6,  COMM_TAG_7,  COMM_TAG_8
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
@@ -1278,9 +1278,7 @@ private
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)
 !
-! parameter defining length of character variables
-  integer, parameter :: INPUT_STR_LENGTH = 256
-! public variable needed for reading input.nml from an internal file
+! public variable needed for reading input nml file from an internal file
   character(len=:), dimension(:), allocatable, target, public :: input_nml_file
   logical :: read_ascii_file_on = .FALSE.
 !***********************************************************************

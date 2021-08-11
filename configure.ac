@@ -50,7 +50,7 @@ LT_INIT()
 # is, then disable building shared libraries.  Note, the user can still override
 # this by using --enable-shared when running the configure script.
 AS_IF([test x${CRAYPE_VERSION:+yes} = "xyes"],[
-  AS_IF([test x${CRAYPE_LINK_TYP} = "xstatic"],
+  AS_IF([test x${CRAYPE_LINK_TYPE} = "xstatic"],
         [AC_DISABLE_SHARED])])
 
 

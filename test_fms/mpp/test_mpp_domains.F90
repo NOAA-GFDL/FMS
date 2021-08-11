@@ -19,12 +19,11 @@
 program test_mpp_domains
   use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_set_warn_level
-  use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
+  use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
   use mpp_mod,         only : input_nml_file
   use mpp_mod,         only : mpp_get_current_pelist, mpp_broadcast
-  use mpp_mod,         only : mpp_init_test_requests_allocated
 
   use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE, AGRID
   use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
@@ -59,6 +58,7 @@ program test_mpp_domains
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
   use fms_affinity_mod, only : fms_affinity_set
+
   use compare_data_checksums
   use test_domains_utility_mod
   use platform_mod
@@ -79,6 +79,7 @@ program test_mpp_domains
   integer :: nx_cubic = 0, ny_cubic = 0
   ! namelist flags to run each test
   logical :: test_nest = .false.
+  logical :: test_nest_regional = .false.
   logical :: test_performance = .false.
   logical :: test_interface = .false.
   logical :: test_edge_update = .false.
@@ -119,6 +120,7 @@ program test_mpp_domains
   integer :: istart_coarse(MAX_NNEST) = 0, icount_coarse(MAX_NNEST) = 0
   integer :: jstart_coarse(MAX_NNEST) = 0, jcount_coarse(MAX_NNEST) = 0
   integer :: extra_halo = 0
+  integer :: layout_nest(2,MAX_NNEST) = 0
   character :: cyclic_nest(MAX_NCONTACT) = 'N'
   logical :: test_edge_nonblock = .false. !< enables non-blocking domain updates in edge update test
                                           !! currently fails with gcc
@@ -135,7 +137,8 @@ program test_mpp_domains
                                test_cubic_grid_redistribute, ensemble_size, layout_cubic, &
                                layout_ensemble, nthreads, test_boundary, layout_tripolar, &
                                test_group, test_global_sum, test_subset, test_nonsym_edge, &
-                               test_halosize_performance, test_adjoint, wide_halo, test_unstruct, test_edge_nonblock
+                               test_halosize_performance, test_adjoint, wide_halo, &
+                               test_nest_regional, test_unstruct, test_edge_nonblock
   integer :: i, j, k, n
   integer :: layout(2)
   integer :: id
@@ -145,8 +148,12 @@ program test_mpp_domains
 
 !!----------------------------------------
 
-  call mpp_init(test_level=mpp_init_test_requests_allocated)
-  call mpp_domains_init(MPP_DEBUG)
+  call mpp_init()
+  if (debug) then
+    call mpp_domains_init(MPP_DEBUG)
+  else
+    call mpp_domains_init()
+  endif
   call mpp_domains_set_stack_size(stackmax)
 
   outunit = stdout()
@@ -159,6 +166,7 @@ program test_mpp_domains
 
   pe = mpp_pe()
   npes = mpp_npes()
+
 
   if( pe.EQ.mpp_root_pe() ) then
      print '(a,9i6)', 'npes, mpes, nx, ny, nz, whalo, ehalo, shalo, nhalo =', &
@@ -177,7 +185,7 @@ program test_mpp_domains
      "test_mpp_domain: nx_cubic and ny_cubic should be both zero or both positive")
 
   if( test_nest .and. (num_nest>0) ) then
-    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain (cubic-grid)<-------------------'
+    if (mpp_pe() == mpp_root_pe())  print *, '-----------------> Calling test_update_nest_domain Cubic <----------------'
      do n = 1, num_nest
         if( istart_coarse(n) == 0 .OR. jstart_coarse(n) == 0 ) call mpp_error(FATAL, &
         "test_mpp_domain: check the setting of namelist variable istart_coarse, jstart_coarse")
@@ -188,9 +196,32 @@ program test_mpp_domains
      enddo
      if(ANY(refine_ratio(:).LT.1)) call  mpp_error(FATAL, &
         "test_mpp_domain: check the setting of namelist variable refine_ratio")
+    if (mpp_pe() == mpp_root_pe())  print *, '-----------------> Starting test_update_nest_domain_r8 Cubic <----------------'
      call test_update_nest_domain_r8('Cubic-Grid')
+    if (mpp_pe() == mpp_root_pe())  print *, '-----------------> Finished test_update_nest_domain_r8 Cubic <----------------'
+    if (mpp_pe() == mpp_root_pe())  print *, '-----------------> Starting test_update_nest_domain_r4 Cubic <----------------'
      call test_update_nest_domain_r4('Cubic-Grid')
-    if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_update_nest_domain <-------------------'
+    if (mpp_pe() == mpp_root_pe())  print *, '-----------------> Finished test_update_nest_domain_r4 Cubic <----------------'
+  endif
+
+  if( test_nest_regional .and. (num_nest>0) ) then
+    if (mpp_pe() == mpp_root_pe())  print *, '---------------> Calling test_update_nest_domain Regional <--------------'
+     do n = 1, num_nest
+        if( istart_coarse(n) == 0 .OR. jstart_coarse(n) == 0 ) call mpp_error(FATAL, &
+        "test_mpp_domain: check the setting of namelist variable istart_coarse, jstart_coarse")
+        if( icount_coarse(n) == 0 .OR. jcount_coarse(n) == 0 ) call mpp_error(FATAL, &
+        "test_mpp_domain: check the setting of namelist variable icount_coarse, jcount_coarse")
+        if( tile_coarse(n) .LE. 0) call mpp_error(FATAL, &
+            "test_mpp_domain: check the setting of namelist variable tile_coarse")
+     enddo
+     if(ANY(refine_ratio(:).LT.1)) call  mpp_error(FATAL, &
+        "test_mpp_domain: check the setting of namelist variable refine_ratio")
+    if (mpp_pe() == mpp_root_pe())  print *, '---------------> Starting test_update_nest_domain_r8 Regional <--------------'
+     call test_update_nest_domain_r8('Regional')
+    if (mpp_pe() == mpp_root_pe())  print *, '---------------> Finished test_update_nest_domain_r8 Regional <--------------'
+    if (mpp_pe() == mpp_root_pe())  print *, '---------------> Starting test_update_nest_domain_r4 Regional <--------------'
+     call test_update_nest_domain_r4('Regional')
+    if (mpp_pe() == mpp_root_pe())  print *, '---------------> Finished test_update_nest_domain_r4 Regional <--------------'
   endif
   !> determine to run by if namelist values set
   if(ntiles_nest_all == 4 .and. num_nest > 0) then
@@ -352,7 +383,7 @@ program test_mpp_domains
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finish test_get_nbr <-------------------'
   endif
 
-  call MPI_finalize(ierr)
+  call mpp_exit()
 
 contains
   subroutine test_openmp()
@@ -7152,6 +7183,7 @@ end subroutine test_halosize_update
         ny = ny_cubic
         ntiles_nest_top = 6
         cubic_grid = .true.
+
       case ( 'Cubed-sphere, single face' )
         if( nx_cubic == 0 ) then
           call mpp_error(NOTE,'test_update_nest_domain: for Cubic_grid mosaic, nx_cubic is zero, '//&
@@ -7168,8 +7200,23 @@ end subroutine test_halosize_update
         ntiles_nest_top = 1
         cubic_grid = .false.
 
-      case default
-        call mpp_error(FATAL, 'test_update_nest_domain: no such test: '//type)
+    case ( 'Regional' )
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_update_nest_domain: for Regional grid mosaic, nx_cubic is zero, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_update_nest_domain: for Regional grid mosaic, nx_cubic does not equal ny_cubic, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles_nest_top = 1
+       cubic_grid = .false.
+    case default
+       call mpp_error(FATAL, 'test_update_nest_domain: no such test: '//type)
     end select
 
     if(ntiles_nest_all > MAX_NTILE) call mpp_error(FATAL, 'test_update_nest_domain: ntiles_nest_all > MAX_NTILE')
@@ -7231,10 +7278,15 @@ end subroutine test_halosize_update
        allocate(layout2D(2,ntiles_nest_top), global_indices(4,ntiles_nest_top), pe_start(ntiles_nest_top), pe_end(ntiles_nest_top) )
        npes_per_tile = npes_nest_tile(1)
 
+
        call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
        do n = 1, ntiles_nest_top
-         global_indices(:,n) = (/1,nx,1,ny/)
-         layout2D(:,n)         = layout
+          global_indices(:,n) = (/1,nx,1,ny/)
+          if (ANY(layout_cubic == 0)) then
+             layout2D(:,n)         = layout
+          else
+             layout2D(:,n)         = layout_cubic(:)
+           endif
        end do
        do n = 1, ntiles_nest_top
           pe_start(n) = (n-1)*npes_per_tile
@@ -7245,10 +7297,9 @@ end subroutine test_halosize_update
          call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
                                    global_indices, layout2D, pe_start, pe_end )
        else
-         call mpp_define_mosaic(global_indices(:,1:1),layout2D(:,1:1),domain,1,0, dummy, dummy, &
-                 dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, &
-                 pe_start=pe_start, pe_end=pe_end, symmetry=.true., &
-                 shalo = 0, nhalo = 0, whalo = 0, ehalo = 0, tile_id=(/1/), name = type)
+          call mpp_define_domains(global_indices(:,ntiles_nest_top), layout2D(:,ntiles_nest_top), domain, &
+                          whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                          symmetry=.true., name=trim(type)//' top level grid', tile_id=1  )
        endif
        call mpp_get_compute_domain(domain, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
        call mpp_get_data_domain(domain, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -7268,7 +7319,11 @@ end subroutine test_halosize_update
           call mpp_set_current_pelist(my_pelist)
           nx_fine = iend_fine(n) - istart_fine(n) + 1
           ny_fine = jend_fine(n) - jstart_fine(n) + 1
-          call mpp_define_layout( (/1,nx_fine,1,ny_fine/), my_npes, layout )
+          if (ANY(layout_nest(:,n) == 0)) then
+             call mpp_define_layout( (/1,nx_fine,1,ny_fine/), my_npes, layout )
+          else
+             layout(:)         = layout_nest(:,n)
+          endif
           call mpp_define_domains((/1,nx_fine,1,ny_fine/), layout, domain, &
                           whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
                           symmetry=.true., name=trim(type)//' fine grid', tile_id = tile_fine(n) )
@@ -7400,6 +7455,7 @@ end subroutine test_halosize_update
           if(allocated(x))       deallocate(x)
           if(allocated(x1))      deallocate(x1)
           if(allocated(x2))      deallocate(x2)
+
        !---------------------------------------------------------------------------
        !
        !                    fine to coarse CGRID scalar pair update
@@ -7681,13 +7737,11 @@ end subroutine test_halosize_update
        if(allocated(y1))      deallocate(y1)
        if(allocated(y2))      deallocate(y2)
 
-
        !---------------------------------------------------------------------------
        !
        !                 Coarse to Fine scalar field, position = CENTER
        !
        !---------------------------------------------------------------------------
-
        !--- first check the index is correct or not
        !--- The index from nest domain
        call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, l)
@@ -8181,7 +8235,6 @@ end subroutine test_halosize_update
        !                 Coarse to Fine scalar field, position = CORNER
        !
        !---------------------------------------------------------------------------
-
        if(is_coarse_pe) then
           call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
           call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -8290,7 +8343,6 @@ end subroutine test_halosize_update
        endif
        deallocate(x)
 
-
        !---------------------------------------------------------------------------
        !
        !                    coarse to fine CGRID scalar pair update
@@ -8346,7 +8398,7 @@ end subroutine test_halosize_update
              isw_cy2 = istart_coarse(my_fine_id)-whalo
              iew_cy2 = istart_coarse(my_fine_id)
              jsw_cy2 = jstart_coarse(my_fine_id) + (jsc_fine - jstart_fine(my_fine_id))/y_refine(my_fine_id) - shalo
-             jew_cy2 = jstart_coarse(my_fine_id) + (jec_fine + shift - jstart_fine(my_fine_id))/y_refine(my_fine_id) + nhalo
+             jew_cy2 = jstart_coarse(my_fine_id) + (jec_fine - jstart_fine(my_fine_id))/y_refine(my_fine_id) + nhalo + shift
           endif
           !--- east
           if( iec_fine == nx_fine ) then
@@ -8592,7 +8644,6 @@ end subroutine test_halosize_update
        !                    coarse to fine CGRID vector update
        !
        !---------------------------------------------------------------------------
-
        if(is_coarse_pe) then
           call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
           call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -8699,7 +8750,6 @@ end subroutine test_halosize_update
           deallocate(wbuffery, ebuffery, sbuffery, nbuffery)
           deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
        endif
-
 
        !---------------------------------------------------------------------------
        !
@@ -8878,7 +8928,8 @@ end subroutine test_halosize_update
 
     enddo
 
-    call mpp_set_current_pelist()
+    call mpp_set_current_pelist(pelist)
+    call mpp_sync(pelist)
     deallocate(pelist)
 
   end subroutine test_update_nest_domain_r8
@@ -9245,6 +9296,21 @@ end subroutine test_halosize_update
       ntiles_nest_top = 1
       cubic_grid = .false.
 
+    case ( 'Regional' )
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_update_nest_domain: for Regional grid mosaic, nx_cubic is zero, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_update_nest_domain: for Regional grid mosaic, nx_cubic does not equal ny_cubic, '//&
+                  'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles_nest_top = 1
+       cubic_grid = .false.
     case default
        call mpp_error(FATAL, 'test_update_nest_domain: no such test: '//type)
     end select
@@ -9312,7 +9378,11 @@ end subroutine test_halosize_update
        call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
        do n = 1, ntiles_nest_top
           global_indices(:,n) = (/1,nx,1,ny/)
-          layout2D(:,n)         = layout
+          if (ANY(layout_cubic == 0)) then
+             layout2D(:,n)         = layout
+          else
+             layout2D(:,n)         = layout_cubic(:)
+           endif
        end do
        do n = 1, ntiles_nest_top
           pe_start(n) = (n-1)*npes_per_tile
@@ -9323,10 +9393,9 @@ end subroutine test_halosize_update
          call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
                                    global_indices, layout2D, pe_start, pe_end )
        else
-         call mpp_define_mosaic(global_indices(:,1:1),layout2D(:,1:1),domain, 1, 0, dummy, dummy, &
-                 dummy, dummy, dummy, dummy, dummy, dummy, dummy, dummy, &
-                 pe_start=pe_start, pe_end=pe_end, symmetry=.true., &
-                 shalo = 0, nhalo = 0, whalo = 0, ehalo = 0, tile_id=(/1/), name = type)
+          call mpp_define_domains(global_indices(:,ntiles_nest_top), layout2D(:,ntiles_nest_top), domain, &
+                          whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                          symmetry=.true., name=trim(type)//' top level grid', tile_id=1  )
        endif
        call mpp_get_compute_domain(domain, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
        call mpp_get_data_domain(domain, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -9346,7 +9415,11 @@ end subroutine test_halosize_update
           call mpp_set_current_pelist(my_pelist)
           nx_fine = iend_fine(n) - istart_fine(n) + 1
           ny_fine = jend_fine(n) - jstart_fine(n) + 1
-          call mpp_define_layout( (/1,nx_fine,1,ny_fine/), my_npes, layout )
+          if (ANY(layout_nest(:,n) == 0)) then
+             call mpp_define_layout( (/1,nx_fine,1,ny_fine/), my_npes, layout )
+          else
+             layout(:)         = layout_nest(:,n)
+          endif
           call mpp_define_domains((/1,nx_fine,1,ny_fine/), layout, domain, &
                           whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
                           symmetry=.true., name=trim(type)//' fine grid', tile_id = tile_fine(n) )
@@ -9479,6 +9552,7 @@ end subroutine test_halosize_update
           if(allocated(x))       deallocate(x)
           if(allocated(x1))      deallocate(x1)
           if(allocated(x2))      deallocate(x2)
+
        !---------------------------------------------------------------------------
        !
        !                    fine to coarse CGRID scalar pair update
@@ -9760,13 +9834,11 @@ end subroutine test_halosize_update
        if(allocated(y1))      deallocate(y1)
        if(allocated(y2))      deallocate(y2)
 
-
        !---------------------------------------------------------------------------
        !
        !                 Coarse to Fine scalar field, position = CENTER
        !
        !---------------------------------------------------------------------------
-
        !--- first check the index is correct or not
        !--- The index from nest domain
        call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, l)
@@ -10260,7 +10332,6 @@ end subroutine test_halosize_update
        !                 Coarse to Fine scalar field, position = CORNER
        !
        !---------------------------------------------------------------------------
-
        if(is_coarse_pe) then
           call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
           call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -10369,7 +10440,6 @@ end subroutine test_halosize_update
        endif
        deallocate(x)
 
-
        !---------------------------------------------------------------------------
        !
        !                    coarse to fine CGRID scalar pair update
@@ -10425,7 +10495,7 @@ end subroutine test_halosize_update
              isw_cy2 = istart_coarse(my_fine_id)-whalo
              iew_cy2 = istart_coarse(my_fine_id)
              jsw_cy2 = jstart_coarse(my_fine_id) + (jsc_fine - jstart_fine(my_fine_id))/y_refine(my_fine_id) - shalo
-             jew_cy2 = jstart_coarse(my_fine_id) + (jec_fine + shift - jstart_fine(my_fine_id))/y_refine(my_fine_id) + nhalo
+             jew_cy2 = jstart_coarse(my_fine_id) + (jec_fine - jstart_fine(my_fine_id))/y_refine(my_fine_id) + nhalo + shift
           endif
           !--- east
           if( iec_fine == nx_fine ) then
@@ -10671,7 +10741,6 @@ end subroutine test_halosize_update
        !                    coarse to fine CGRID vector update
        !
        !---------------------------------------------------------------------------
-
        if(is_coarse_pe) then
           call mpp_get_compute_domain(domain_coarse, isc_coarse, iec_coarse, jsc_coarse, jec_coarse)
           call mpp_get_data_domain(domain_coarse, isd_coarse, ied_coarse, jsd_coarse, jed_coarse)
@@ -10778,7 +10847,6 @@ end subroutine test_halosize_update
           deallocate(wbuffery, ebuffery, sbuffery, nbuffery)
           deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
        endif
-
 
        !---------------------------------------------------------------------------
        !
@@ -10960,7 +11028,8 @@ end subroutine test_halosize_update
 
     enddo
 
-    call mpp_set_current_pelist()
+    call mpp_set_current_pelist(pelist)
+    call mpp_sync(pelist)
     deallocate(pelist)
 
   end subroutine test_update_nest_domain_r4

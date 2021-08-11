@@ -28,14 +28,6 @@ setup_test () {
   local tnum=$(printf "%2.2d" $my_test_count)
   # Clean up any remaining files from previous tests
   rm -f input.nml diag_test_${tnum}*.nc 2>&1 > /dev/null
-  # Are we running with mpp_io, expecting "true" or "false", defaults to "true"
-  local use_mpp_io=.true.
-  if $1
-  then
-    use_mpp_io=.true.
-  else
-    use_mpp_io=.false.
-  fi
   cat <<_EOF > input.nml
 &test_diag_manager_nml
    layout = 1,1
@@ -53,7 +45,7 @@ setup_test () {
 &diag_manager_nml
    max_field_attributes=3
    debug_diag_manager=.true.
-   use_mpp_io = ${use_mpp_io}
+   use_mpp_io = .false. 
 /
 
 &ensemble_nml
@@ -76,13 +68,8 @@ test_diag_manager_01
 #output variables
  "test_diag_manager_mod", "dat1", "dat1", "diag_test_01",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too large in x and y direction (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too large in x and y direction (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -97,13 +84,8 @@ test_diag_manager_02
 #output variables
  "test_diag_manager_mod", "dat1", "dat1", "diag_test_02",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too large in x direction (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too large in x direction (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -118,13 +100,8 @@ test_diag_manager_03
 #output variables
  "test_diag_manager_mod", "dat1", "dat1", "diag_test_03",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too large in y direction (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too large in y direction (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -141,13 +118,8 @@ test_diag_manager_04
  "test_diag_manager_mod", "dat2", "dat2", "diag_test_04_file1",  "all", .false., "none", 2
  "test_mod",              "dat2", "dat2", "diag_test_04_file2",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too small in x and y direction, checks for 2 time steps (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too small in x and y direction, checks for 2 time steps (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -164,13 +136,8 @@ test_diag_manager_05
  "test_diag_manager_mod", "dat2", "dat2", "diag_test_05_file1",  "all", .false., "none", 2
  "test_mod",              "dat2", "dat2", "diag_test_05_file2",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too small in x directions, checks for 2 time steps (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too small in x directions, checks for 2 time steps (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -187,13 +154,8 @@ test_diag_manager_06
  "test_diag_manager_mod", "dat2", "dat2", "diag_test_06_file1",  "all", .false., "none", 2
  "test_mod",              "dat2", "dat2", "diag_test_06_file2",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too small in y direction, checks for 2 time steps (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too small in y direction, checks for 2 time steps (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -208,13 +170,8 @@ test_diag_manager_07
 #output variables
  "test_diag_manager_mod", "dat1", "dat1", "diag_test_07",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too large in x and y, with halos, 2 time steps (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too large in x and y, with halos, 2 time steps (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -231,13 +188,8 @@ test_diag_manager_08
  "test_diag_manager_mod", "dat2", "dat2", "diag_test_08_file1",  "all", .false., "none", 2
  "test_mod",              "dat2", "dat2", "diag_test_08_file2",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too small in x and y, with halos, 2 time steps (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too small in x and y, with halos, 2 time steps (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -252,13 +204,8 @@ test_diag_manager_09
 #output variables
  "test_diag_manager_mod", "bk",   "bk",   "diag_test_09",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too small, 1D, static global data (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too small, 1D, static global data (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -273,13 +220,8 @@ test_diag_manager_10
 #output variables
  "test_diag_manager_mod", "bk",   "bk",   "diag_test_10",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Data array is too large, 1D, static global data (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Data array is too large, 1D, static global data (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -294,13 +236,8 @@ test_diag_manager_11
 #output variables
  "test_diag_manager_mod", "dat2", "dat2", "diag_test_11",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Missing je_in as an input (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Missing je_in as an input (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -318,13 +255,8 @@ test_diag_manager_12
 # Test of the error check that duplicate field names do not appear in same file
  "test_mod",              "dat2", "dat2", "diag_test_12",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Catch duplicate field in diag_table (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Catch duplicate field in diag_table (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -343,13 +275,8 @@ test_diag_manager_13
 # Test of WARNING message that no data is written when run length is less than output interval
  "test_mod",              "dat2", "dat2", "diag_test_13_file2",  "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Output interval greater than runlength (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Output interval greater than runlength (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -365,13 +292,8 @@ test_diag_manager_14
 # Test of check for invalid date. (Jan 29 1990 + one month = Feb 29 1990)
  "test_mod",              "dat2", "dat2", "diag_test_14", "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Catch invalid date in register_diag_field call (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Catch invalid date in register_diag_field call (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -387,13 +309,8 @@ test_diag_manager_15
  "test_diag_manager_mod", "dat1",           "dat1",           "diag_test_15", "all", .false., "none", 2
  "test_diag_manager_mod", "solar_constant", "solar_constant", "diag_test_15", "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "OpenMP thread test (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: OpenMP thread test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -409,13 +326,8 @@ test_diag_manager_16
 # Test for output file name to be modified with appended string
  "test_diag_manager_mod", "dat2", "dat2", "diag_test_16", "all", .false., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Filename appendix added (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Filename appendix added (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -431,13 +343,8 @@ test_diag_manager_17
  "test_diag_manager_mod", "dat2", "dat2_rms", "diag_test_17", "all", "rms",  "none", 2
  "test_diag_manager_mod", "dat2", "dat2",     "diag_test_17", "all", .true., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Root-mean-square (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Root-mean-square (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -456,13 +363,8 @@ test_diag_manager_18
 "test_diag_manager_mod", "dat2",    "dat2",    "diag_test_18_file1", "all", .true., "none", 2
 "test_mod",              "dat2h",   "dat2h",   "diag_test_18_file1", "all", .true., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Added attributes, and cell_measures (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Added attributes, and cell_measures (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -480,13 +382,8 @@ test_diag_manager_19
 "test_diag_manager_mod", "dat2",    "dat2",    "diag_test_19_file1", "all", .true., "none", 2
 "test_mod",              "dat2h",   "dat2h",   "diag_test_19_file1", "all", .true., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Area and Volume same field (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Area and Volume same field (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -504,13 +401,8 @@ test_diag_manager_20
 "test_diag_manager_mod", "dat2",    "dat2",    "diag_test_20_file1", "all", .true., "none", 2
 "test_mod",              "dat2h",   "dat2h",   "diag_test_20_file1", "all", .true., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Get diag_field_id, ID found and not found (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Get diag_field_id, ID found and not found (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -526,13 +418,8 @@ test_diag_manager_21
 "test_diag_manager_mod", "dat1",              "dat1",           "diag_test_21_file1", "all", .true., "none", 2
 "test_diag_manager_mod", "solar_constant",    "solar_constant", "diag_test_21_file1", "all", .true., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Add axis attributes (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Add axis attributes (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -548,13 +435,8 @@ test_diag_manager_22
 "test_diag_manager_mod", "dat1",              "dat1",           "diag_test_22_file1", "all", .true., "none", 2
 "test_diag_manager_mod", "solar_constant",    "solar_constant", "diag_test_22_file1", "all", .true., "none", 2
 _EOF
-setup_test false
+setup_test
 test_expect_success "Get 'nv' axis id (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Get 'nv' axis id (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
@@ -573,13 +455,8 @@ test_diag_manager_23
 "UG_unit_test", "lon", "grid_xt", "unstructured_diag_test", "all", .TRUE., "none", 1,
 "UG_unit_test", "lat", "grid_yt", "unstructured_diag_test", "all", .TRUE., "none", 1,
 _EOF
-setup_test false
+setup_test
 test_expect_success "Unstructured grid (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
-'
-
-setup_test true
-test_expect_success "mpp_io: Unstructured grid (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 

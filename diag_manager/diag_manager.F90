@@ -198,11 +198,7 @@ use platform_mod
   USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
-#ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
-#else
-  USE fms_mod, ONLY: open_namelist_file, close_file
-#endif
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
@@ -3256,19 +3252,18 @@ CONTAINS
 
        if (output_fields(out_num)%n_diurnal_samples > 1) then
           CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io, filename_time=filename_time)
+                 & filename_time=filename_time)
        else
           CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io, filename_time=filename_time)
+                 & filename_time=filename_time)
        endif
     ELSE
        if (output_fields(out_num)%n_diurnal_samples > 1) then
             CALL diag_data_out(file_num, out_num, &
-                 & diurnal_buffer, output_fields(out_num)%next_output, use_mpp_io_arg=use_mpp_io)
+                 & diurnal_buffer, output_fields(out_num)%next_output)
        else
             CALL diag_data_out(file_num, out_num, &
-                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output,&
-                 & use_mpp_io_arg=use_mpp_io)
+                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
        endif
     END IF
 !output_fields(out_num)%last_output = output_fields(out_num)%next_output
@@ -3333,8 +3328,7 @@ CONTAINS
                & (input_fields(in_num)%active_omp_level.LE.1) ) CYCLE
           file_num = output_fields(out_num)%output_file
           CALL diag_data_out(file_num, out_num, &
-               & output_fields(out_num)%buffer, time, &
-               & use_mpp_io_arg=use_mpp_io)
+               & output_fields(out_num)%buffer, time)
         END DO
       END IF
     END DO
@@ -3417,12 +3411,10 @@ CONTAINS
     DO file = 1, num_files
        CALL closing_file(file, time)
     END DO
-  if (.not.use_mpp_io) then
     if (allocated(fileobjU)) deallocate(fileobjU)
     if (allocated(fileobj)) deallocate(fileobj)
     if (allocated(fileobjND)) deallocate(fileobjND)
-  if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
-  endif
+    if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
   END SUBROUTINE diag_manager_end
 
   !> @brief Replaces diag_manager_end; close just one file: files(file)
@@ -3496,14 +3488,14 @@ CONTAINS
                     diurnal_buffer(:,:,loop1,loop2) = output_fields(i)%buffer(:,:,loop2,loop1)
                enddo
                enddo
-               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
+               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE.)
           else
-          CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
+          CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)
           endif
        END IF
     END DO
     ! Now it's time to output static fields
-    CALL write_static(file, use_mpp_io)
+    CALL write_static(file)
 
     ! Write out the number of bytes of data saved to this file
     IF ( write_bytes_in_file ) THEN
@@ -3531,9 +3523,6 @@ CONTAINS
     INTEGER, ALLOCATABLE, DIMENSION(:) :: pelist
     INTEGER :: stdlog_unit, stdout_unit
     integer :: j
-#ifndef INTERNAL_FILE_NML
-    INTEGER :: nml_unit
-#endif
     CHARACTER(len=256) :: err_msg_local
 
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
@@ -3582,23 +3571,12 @@ CONTAINS
        END IF
     END IF
 
-#ifdef INTERNAL_FILE_NML
     READ (input_nml_file, NML=diag_manager_nml, IOSTAT=mystat)
-#else
-    IF ( file_exist('input.nml') ) THEN
-       nml_unit = open_namelist_file()
-       READ (nml_unit, diag_manager_nml, iostat=mystat)
-       CALL close_file(nml_unit)
-    ELSE
-       ! Set mystat to an arbitrary positive number if input.nml does not exist.
-       mystat = 100
-    END IF
-#endif
     ! Check the status of reading the diag_manager_nml
 
     IF ( check_nml_error(IOSTAT=mystat, NML_NAME='DIAG_MANAGER_NML') < 0 ) THEN
        IF ( mpp_pe() == mpp_root_pe() ) THEN
-          CALL error_mesg('diag_manager_mod::diag_manager_init', 'DIAG_MANAGER_NML not found in input.nml.  Using defaults.',&
+          CALL error_mesg('diag_manager_mod::diag_manager_init', 'DIAG_MANAGER_NML not found in input nml file.  Using defaults.',&
                & WARNING)
        END IF
     END IF
@@ -3659,10 +3637,8 @@ CONTAINS
                & 'diag_manager is using fms2_io', NOTE)
     else
        CALL error_mesg('diag_manager_mod::diag_manager_init',&
-               & 'diag_manager is using mpp_io', NOTE)
-       CALL error_mesg('diag_manager_mod::diag_manager_init',&
-             &'MPP_IO is no longer supported.  Please remove from namelist',&
-              &WARNING)
+             &'MPP_IO is no longer supported.  Please remove use_mpp_io from diag_manager_nml namelist',&
+              &FATAL)
     endif
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
