@@ -54,7 +54,8 @@ _EOF
 
 # selects next test to run through nml
 testNum=0
-function test_next() {
+test_next()
+{
   testNum=$((testNum + 1))
   sed "s/test$testNum *=.false./test$testNum =.true./" input_base.nml > input.nml
   # test #8 must set calendar type for #9 to pass

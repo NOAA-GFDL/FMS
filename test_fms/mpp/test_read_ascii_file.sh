@@ -31,9 +31,12 @@
 # create and enter directory for in/output
 output_dir
 
-# create input with helper script
-. ../create_input.sh nml
-cat input_base.nml > input.nml
+# create input namelist
+cat <<_EOF > input.nml
+&test_mpp_get_ascii_lines_nml
+test_number = <test_num>
+/
+_EOF
 
 touch test_numb_base_ascii.nml
 echo "&test_read_ascii_file_nml" > test_numb_base_ascii.nml

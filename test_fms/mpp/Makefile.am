@@ -173,8 +173,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(top_srcdir)/tap-driver.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = create_input.sh.in \
-  test_mpp_domains2.sh \
+EXTRA_DIST = test_mpp_domains2.sh \
   test_mpp2.sh \
   test_mpp_memuse.sh \
   test_mpp_mem_dump.sh \
