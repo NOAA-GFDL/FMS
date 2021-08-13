@@ -33,6 +33,7 @@ if test -z "$test_input_path" ; then
 else
   rm -rf INPUT && mkdir INPUT
   cp $test_input_path/exchange/INPUT/* INPUT
+  rm *.nc
 fi
 
 # Copy file for test.

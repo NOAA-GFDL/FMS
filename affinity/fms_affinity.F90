@@ -156,7 +156,7 @@ contains
     !--- get cpuset for this MPI-rank
     retcode = get_cpuset(cpuset_sz, cpu_set, mpp_pe(), debug_cpuset)
     if (retcode == -1) then
-      call error_mesg('fms_affinity_set',trim(component)//' cpu_set size > allocated storage',MSG_TYPE)
+      call error_mesg('fms_affinity_set',trim(component)//' cpu_set size > allocated storage',FATAL)
     elseif ( (retcode == cpuset_sz/2) .and. (retcode == nthreads) ) then
       call error_mesg('fms_affinity_set',trim(component)//' affinity assumes hyper-threading hardware disabled',NOTE)
     elseif (retcode < cpuset_sz) then
