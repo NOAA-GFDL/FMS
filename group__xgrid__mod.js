@@ -190,19 +190,16 @@ var group__xgrid__mod =
       [ "stock_move_ug_3d", "interfacexgrid__mod_1_1stock__move__ug.html#ad12ab111d30e5af28a2080afd1409b15", null ]
     ] ],
     [ "get_area_elements", "interfacexgrid__mod_1_1get__area__elements.html", [
-      [ "get_area_elements_fms2_io", "interfacexgrid__mod_1_1get__area__elements.html#a11deb14ce07aa8b58463dd4449141f27", null ],
-      [ "get_area_elements_use_mpp_io", "interfacexgrid__mod_1_1get__area__elements.html#ae1dc0e25b43d7231a6223d09d3d661c4", null ]
+      [ "get_area_elements_fms2_io", "interfacexgrid__mod_1_1get__area__elements.html#a11deb14ce07aa8b58463dd4449141f27", null ]
     ] ],
     [ "get_nest_contact", "interfacexgrid__mod_1_1get__nest__contact.html", [
-      [ "get_nest_contact_fms2_io", "interfacexgrid__mod_1_1get__nest__contact.html#a5c74bed27ac14f28b0b6b237f180de9a", null ],
-      [ "get_nest_contact_use_mpp_io", "interfacexgrid__mod_1_1get__nest__contact.html#a9a01f2777f4c4abb1523c962c8a462b5", null ]
+      [ "get_nest_contact_fms2_io", "interfacexgrid__mod_1_1get__nest__contact.html#a5c74bed27ac14f28b0b6b237f180de9a", null ]
     ] ],
     [ "conservation_check_side1", "group__xgrid__mod.html#ga811ad4662ab1d522cbec5c85ab144af2", null ],
     [ "conservation_check_side2", "group__xgrid__mod.html#ga086805b918f635c0ddae0f0c3eb48b7a", null ],
     [ "conservation_check_ug_side1", "group__xgrid__mod.html#ga53320ba72f7624f5b884ba19ed48178a", null ],
     [ "conservation_check_ug_side2", "group__xgrid__mod.html#gabadeea9de74fb4182c1230e3c9b3917e", null ],
     [ "get_area_elements_fms2_io", "group__xgrid__mod.html#ga9a025f29d591523ac91a9b520d7aba81", null ],
-    [ "get_grid", "group__xgrid__mod.html#ga1c48c67b0a28c2599230b4e1b348ad63", null ],
     [ "get_grid_version1", "group__xgrid__mod.html#gab5142011a487ad8a7d99c2d8d9945012", null ],
     [ "get_grid_version2", "group__xgrid__mod.html#ga6ba78fb2030818b22013aa71cb806d10", null ],
     [ "get_nest_contact_fms2_io", "group__xgrid__mod.html#ga2ec0332146de519c430ff4a0d932f8c3", null ],

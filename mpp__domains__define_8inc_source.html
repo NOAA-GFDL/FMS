@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -7706,514 +7706,558 @@ $(document).ready(function(){initNavTree('mpp__domains__define_8inc_source.html'
 <div class="line"><a name="l07610"></a><span class="lineno"> 7610</span>&#160;<span class="keywordflow">enddo</span></div>
 <div class="line"><a name="l07611"></a><span class="lineno"> 7611</span>&#160;<span class="keyword">deallocate</span>(domain%x, domain%y, domain%tile_id)</div>
 <div class="line"><a name="l07612"></a><span class="lineno"> 7612</span>&#160; </div>
-<div class="line"><a name="l07613"></a><span class="lineno"> 7613</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%list)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07614"></a><span class="lineno"> 7614</span>&#160; <span class="keywordflow">do</span> i = 0, <span class="keyword">size</span>(domain%list(:))-1</div>
-<div class="line"><a name="l07615"></a><span class="lineno"> 7615</span>&#160;    <span class="keyword">deallocate</span>(domain%list(i)%x, domain%list(i)%y, domain%list(i)%tile_id)</div>
-<div class="line"><a name="l07616"></a><span class="lineno"> 7616</span>&#160;<span class="keywordflow"> enddo</span></div>
-<div class="line"><a name="l07617"></a><span class="lineno"> 7617</span>&#160; <span class="keyword">deallocate</span>(domain%list)</div>
-<div class="line"><a name="l07618"></a><span class="lineno"> 7618</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l07619"></a><span class="lineno"> 7619</span>&#160; </div>
-<div class="line"><a name="l07620"></a><span class="lineno"> 7620</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%check_C))  <span class="keyword">call </span>deallocate_overlapspec(domain%check_C)</div>
-<div class="line"><a name="l07621"></a><span class="lineno"> 7621</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%check_E))  <span class="keyword">call </span>deallocate_overlapspec(domain%check_E)</div>
-<div class="line"><a name="l07622"></a><span class="lineno"> 7622</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%check_N))  <span class="keyword">call </span>deallocate_overlapspec(domain%check_N)</div>
-<div class="line"><a name="l07623"></a><span class="lineno"> 7623</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%bound_C))  <span class="keyword">call </span>deallocate_overlapspec(domain%bound_C)</div>
-<div class="line"><a name="l07624"></a><span class="lineno"> 7624</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%bound_E))  <span class="keyword">call </span>deallocate_overlapspec(domain%bound_E)</div>
-<div class="line"><a name="l07625"></a><span class="lineno"> 7625</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%bound_N))  <span class="keyword">call </span>deallocate_overlapspec(domain%bound_N)</div>
-<div class="line"><a name="l07626"></a><span class="lineno"> 7626</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_T)) <span class="keyword">call </span>deallocate_overlapspec(domain%update_T)</div>
-<div class="line"><a name="l07627"></a><span class="lineno"> 7627</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_E)) <span class="keyword">call </span>deallocate_overlapspec(domain%update_E)</div>
-<div class="line"><a name="l07628"></a><span class="lineno"> 7628</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_C)) <span class="keyword">call </span>deallocate_overlapspec(domain%update_C)</div>
-<div class="line"><a name="l07629"></a><span class="lineno"> 7629</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_N)) <span class="keyword">call </span>deallocate_overlapspec(domain%update_N)</div>
-<div class="line"><a name="l07630"></a><span class="lineno"> 7630</span>&#160; </div>
-<div class="line"><a name="l07631"></a><span class="lineno"> 7631</span>&#160;<span class="keyword">end subroutine </span>deallocate_domain2d_local</div>
-<div class="line"><a name="l07632"></a><span class="lineno"> 7632</span>&#160; </div>
-<div class="line"><a name="l07633"></a><span class="lineno"> 7633</span>&#160;<span class="comment">!####################################################################</span></div>
-<div class="line"><a name="l07634"></a><span class="lineno"> 7634</span>&#160; </div>
-<div class="line"><a name="l07635"></a><span class="lineno"> 7635</span>&#160;<span class="keyword">subroutine </span>allocate_check_overlap(overlap, count)</div>
-<div class="line"><a name="l07636"></a><span class="lineno"> 7636</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07637"></a><span class="lineno"> 7637</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: count</div>
+<div class="line"><a name="l07613"></a><span class="lineno"> 7613</span>&#160;<span class="comment">! TODO: Check if these are always allocated</span></div>
+<div class="line"><a name="l07614"></a><span class="lineno"> 7614</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%tileList)) <span class="keyword">deallocate</span>(domain%tileList)</div>
+<div class="line"><a name="l07615"></a><span class="lineno"> 7615</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%tile_id_all)) <span class="keyword">deallocate</span>(domain%tile_id_all)</div>
+<div class="line"><a name="l07616"></a><span class="lineno"> 7616</span>&#160; </div>
+<div class="line"><a name="l07617"></a><span class="lineno"> 7617</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%list)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07618"></a><span class="lineno"> 7618</span>&#160; <span class="keywordflow">do</span> i = 0, <span class="keyword">size</span>(domain%list(:))-1</div>
+<div class="line"><a name="l07619"></a><span class="lineno"> 7619</span>&#160;    <span class="keyword">deallocate</span>(domain%list(i)%x, domain%list(i)%y, domain%list(i)%tile_id)</div>
+<div class="line"><a name="l07620"></a><span class="lineno"> 7620</span>&#160;<span class="keywordflow"> enddo</span></div>
+<div class="line"><a name="l07621"></a><span class="lineno"> 7621</span>&#160; <span class="keyword">deallocate</span>(domain%list)</div>
+<div class="line"><a name="l07622"></a><span class="lineno"> 7622</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07623"></a><span class="lineno"> 7623</span>&#160; </div>
+<div class="line"><a name="l07624"></a><span class="lineno"> 7624</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%check_C)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07625"></a><span class="lineno"> 7625</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%check_C)</div>
+<div class="line"><a name="l07626"></a><span class="lineno"> 7626</span>&#160;  <span class="keyword">deallocate</span>(domain%check_C)</div>
+<div class="line"><a name="l07627"></a><span class="lineno"> 7627</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07628"></a><span class="lineno"> 7628</span>&#160; </div>
+<div class="line"><a name="l07629"></a><span class="lineno"> 7629</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%check_E)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07630"></a><span class="lineno"> 7630</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%check_E)</div>
+<div class="line"><a name="l07631"></a><span class="lineno"> 7631</span>&#160;  <span class="keyword">deallocate</span>(domain%check_E)</div>
+<div class="line"><a name="l07632"></a><span class="lineno"> 7632</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07633"></a><span class="lineno"> 7633</span>&#160; </div>
+<div class="line"><a name="l07634"></a><span class="lineno"> 7634</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%check_N)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07635"></a><span class="lineno"> 7635</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%check_N)</div>
+<div class="line"><a name="l07636"></a><span class="lineno"> 7636</span>&#160;  <span class="keyword">deallocate</span>(domain%check_N)</div>
+<div class="line"><a name="l07637"></a><span class="lineno"> 7637</span>&#160;<span class="keywordflow">endif</span></div>
 <div class="line"><a name="l07638"></a><span class="lineno"> 7638</span>&#160; </div>
-<div class="line"><a name="l07639"></a><span class="lineno"> 7639</span>&#160;  overlap%count = 0</div>
-<div class="line"><a name="l07640"></a><span class="lineno"> 7640</span>&#160;  overlap%pe    = null_pe</div>
-<div class="line"><a name="l07641"></a><span class="lineno"> 7641</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07642"></a><span class="lineno"> 7642</span>&#160;       <span class="stringliteral">&quot;allocate_check_overlap(mpp_domains_define): overlap is already been allocated&quot;</span>)</div>
-<div class="line"><a name="l07643"></a><span class="lineno"> 7643</span>&#160;  <span class="keywordflow">if</span>(count &lt; 1)  <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07644"></a><span class="lineno"> 7644</span>&#160;       <span class="stringliteral">&quot;allocate_check_overlap(mpp_domains_define): count should be a positive integer&quot;</span>)</div>
-<div class="line"><a name="l07645"></a><span class="lineno"> 7645</span>&#160;  <span class="keyword">allocate</span>(overlap%tileMe  (count), overlap%dir(count) )</div>
-<div class="line"><a name="l07646"></a><span class="lineno"> 7646</span>&#160;  <span class="keyword">allocate</span>(overlap%is      (count), overlap%ie (count) )</div>
-<div class="line"><a name="l07647"></a><span class="lineno"> 7647</span>&#160;  <span class="keyword">allocate</span>(overlap%js      (count), overlap%je (count) )</div>
-<div class="line"><a name="l07648"></a><span class="lineno"> 7648</span>&#160;  <span class="keyword">allocate</span>(overlap%rotation(count)                     )</div>
-<div class="line"><a name="l07649"></a><span class="lineno"> 7649</span>&#160;  overlap%rotation     =  zero</div>
-<div class="line"><a name="l07650"></a><span class="lineno"> 7650</span>&#160; </div>
-<div class="line"><a name="l07651"></a><span class="lineno"> 7651</span>&#160;<span class="keyword">end subroutine </span>allocate_check_overlap</div>
-<div class="line"><a name="l07652"></a><span class="lineno"> 7652</span>&#160; </div>
-<div class="line"><a name="l07653"></a><span class="lineno"> 7653</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l07654"></a><span class="lineno"> 7654</span>&#160;<span class="keyword">subroutine </span>insert_check_overlap(overlap, pe, tileMe, dir, rotation, is, ie, js, je)</div>
-<div class="line"><a name="l07655"></a><span class="lineno"> 7655</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07656"></a><span class="lineno"> 7656</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: pe</div>
-<div class="line"><a name="l07657"></a><span class="lineno"> 7657</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: tileMe, dir, rotation</div>
-<div class="line"><a name="l07658"></a><span class="lineno"> 7658</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: is, ie, js, je</div>
-<div class="line"><a name="l07659"></a><span class="lineno"> 7659</span>&#160;  <span class="keywordtype">integer</span>                           :: count</div>
-<div class="line"><a name="l07660"></a><span class="lineno"> 7660</span>&#160; </div>
-<div class="line"><a name="l07661"></a><span class="lineno"> 7661</span>&#160;  overlap%count = overlap%count + 1</div>
-<div class="line"><a name="l07662"></a><span class="lineno"> 7662</span>&#160;  count = overlap%count</div>
-<div class="line"><a name="l07663"></a><span class="lineno"> 7663</span>&#160;  <span class="keywordflow">if</span>(.NOT. <span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07664"></a><span class="lineno"> 7664</span>&#160;     <span class="stringliteral">&quot;mpp_domains_define.inc(insert_check_overlap): overlap is not assigned any memory&quot;</span>)</div>
-<div class="line"><a name="l07665"></a><span class="lineno"> 7665</span>&#160;  <span class="keywordflow">if</span>(count &gt; <span class="keyword">size</span>(overlap%tileMe(:)) ) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07666"></a><span class="lineno"> 7666</span>&#160;     <span class="stringliteral">&quot;mpp_domains_define.inc(insert_check_overlap): overlap%count is greater than size(overlap%tileMe)&quot;</span>)</div>
-<div class="line"><a name="l07667"></a><span class="lineno"> 7667</span>&#160;  <span class="keywordflow">if</span>( overlap%pe == null_pe ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07668"></a><span class="lineno"> 7668</span>&#160;     overlap%pe = pe</div>
-<div class="line"><a name="l07669"></a><span class="lineno"> 7669</span>&#160;  <span class="keywordflow">else</span></div>
-<div class="line"><a name="l07670"></a><span class="lineno"> 7670</span>&#160;     <span class="keywordflow">if</span>(overlap%pe .NE. pe) <span class="keyword">call </span>mpp_error(fatal,  &amp;</div>
-<div class="line"><a name="l07671"></a><span class="lineno"> 7671</span>&#160;           <span class="stringliteral">&quot;mpp_domains_define.inc(insert_check_overlap): mismatch on pe&quot;</span>)</div>
-<div class="line"><a name="l07672"></a><span class="lineno"> 7672</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l07673"></a><span class="lineno"> 7673</span>&#160;  overlap%tileMe  (count) = tileme</div>
-<div class="line"><a name="l07674"></a><span class="lineno"> 7674</span>&#160;  overlap%dir     (count) = dir</div>
-<div class="line"><a name="l07675"></a><span class="lineno"> 7675</span>&#160;  overlap%rotation(count) = rotation</div>
-<div class="line"><a name="l07676"></a><span class="lineno"> 7676</span>&#160;  overlap%is      (count) = is</div>
-<div class="line"><a name="l07677"></a><span class="lineno"> 7677</span>&#160;  overlap%ie      (count) = ie</div>
-<div class="line"><a name="l07678"></a><span class="lineno"> 7678</span>&#160;  overlap%js      (count) = js</div>
-<div class="line"><a name="l07679"></a><span class="lineno"> 7679</span>&#160;  overlap%je      (count) = je</div>
-<div class="line"><a name="l07680"></a><span class="lineno"> 7680</span>&#160; </div>
-<div class="line"><a name="l07681"></a><span class="lineno"> 7681</span>&#160;<span class="keyword">end subroutine </span>insert_check_overlap</div>
-<div class="line"><a name="l07682"></a><span class="lineno"> 7682</span>&#160; </div>
-<div class="line"><a name="l07683"></a><span class="lineno"> 7683</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l07684"></a><span class="lineno"> 7684</span>&#160;<span class="comment">!--- this routine add the overlap_in into overlap_out</span></div>
-<div class="line"><a name="l07685"></a><span class="lineno"> 7685</span>&#160;<span class="keyword">subroutine </span>add_check_overlap( overlap_out, overlap_in)</div>
-<div class="line"><a name="l07686"></a><span class="lineno"> 7686</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap_out</div>
-<div class="line"><a name="l07687"></a><span class="lineno"> 7687</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(in   )</span> :: overlap_in</div>
-<div class="line"><a name="l07688"></a><span class="lineno"> 7688</span>&#160;  <span class="keywordtype">type</span>(overlap_type)                :: overlap</div>
-<div class="line"><a name="l07689"></a><span class="lineno"> 7689</span>&#160;  <span class="keywordtype">integer</span>                          :: count, count_in, count_out</div>
-<div class="line"><a name="l07690"></a><span class="lineno"> 7690</span>&#160; </div>
-<div class="line"><a name="l07691"></a><span class="lineno"> 7691</span>&#160;  <span class="comment">! if overlap_out%count == 0, then just copy overlap_in to overlap_out</span></div>
-<div class="line"><a name="l07692"></a><span class="lineno"> 7692</span>&#160;  count_in  = overlap_in %count</div>
-<div class="line"><a name="l07693"></a><span class="lineno"> 7693</span>&#160;  count_out = overlap_out%count</div>
-<div class="line"><a name="l07694"></a><span class="lineno"> 7694</span>&#160;  count     = count_in+count_out</div>
-<div class="line"><a name="l07695"></a><span class="lineno"> 7695</span>&#160;  <span class="keywordflow">if</span>(count_in == 0) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07696"></a><span class="lineno"> 7696</span>&#160;       <span class="stringliteral">&quot;add_check_overlap(mpp_domains_define): overlap_in%count is zero&quot;</span>)</div>
-<div class="line"><a name="l07697"></a><span class="lineno"> 7697</span>&#160; </div>
-<div class="line"><a name="l07698"></a><span class="lineno"> 7698</span>&#160;  <span class="keywordflow">if</span>(count_out == 0) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07699"></a><span class="lineno"> 7699</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap_out%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07700"></a><span class="lineno"> 7700</span>&#160;          <span class="stringliteral">&quot;add_check_overlap(mpp_domains_define): overlap is already been allocated but count=0&quot;</span>)</div>
-<div class="line"><a name="l07701"></a><span class="lineno"> 7701</span>&#160;     <span class="keyword">call </span>allocate_check_overlap(overlap_out, count_in)</div>
-<div class="line"><a name="l07702"></a><span class="lineno"> 7702</span>&#160;     overlap_out%pe  = overlap_in%pe</div>
-<div class="line"><a name="l07703"></a><span class="lineno"> 7703</span>&#160;  <span class="keywordflow">else</span>  <span class="comment">! need to expand the dimension size of overlap</span></div>
-<div class="line"><a name="l07704"></a><span class="lineno"> 7704</span>&#160;     <span class="keyword">call </span>allocate_check_overlap(overlap, count_out)</div>
-<div class="line"><a name="l07705"></a><span class="lineno"> 7705</span>&#160;     <span class="keywordflow">if</span>(overlap_out%pe .NE. overlap_in%pe) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07706"></a><span class="lineno"> 7706</span>&#160;         <span class="stringliteral">&quot;mpp_domains_define.inc(add_check_overlap): mismatch of pe between overlap_in and overlap_out&quot;</span>)</div>
-<div class="line"><a name="l07707"></a><span class="lineno"> 7707</span>&#160;     overlap%tileMe      (1:count_out) = overlap_out%tileMe      (1:count_out)</div>
-<div class="line"><a name="l07708"></a><span class="lineno"> 7708</span>&#160;     overlap%is          (1:count_out) = overlap_out%is          (1:count_out)</div>
-<div class="line"><a name="l07709"></a><span class="lineno"> 7709</span>&#160;     overlap%ie          (1:count_out) = overlap_out%ie          (1:count_out)</div>
-<div class="line"><a name="l07710"></a><span class="lineno"> 7710</span>&#160;     overlap%js          (1:count_out) = overlap_out%js          (1:count_out)</div>
-<div class="line"><a name="l07711"></a><span class="lineno"> 7711</span>&#160;     overlap%je          (1:count_out) = overlap_out%je          (1:count_out)</div>
-<div class="line"><a name="l07712"></a><span class="lineno"> 7712</span>&#160;     overlap%dir         (1:count_out) = overlap_out%dir         (1:count_out)</div>
-<div class="line"><a name="l07713"></a><span class="lineno"> 7713</span>&#160;     overlap%rotation    (1:count_out) = overlap_out%rotation    (1:count_out)</div>
-<div class="line"><a name="l07714"></a><span class="lineno"> 7714</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap_out)</div>
-<div class="line"><a name="l07715"></a><span class="lineno"> 7715</span>&#160;     <span class="keyword">call </span>allocate_check_overlap(overlap_out, count)</div>
-<div class="line"><a name="l07716"></a><span class="lineno"> 7716</span>&#160;     overlap_out%tileMe      (1:count_out) = overlap%tileMe      (1:count_out)</div>
-<div class="line"><a name="l07717"></a><span class="lineno"> 7717</span>&#160;     overlap_out%is          (1:count_out) = overlap%is          (1:count_out)</div>
-<div class="line"><a name="l07718"></a><span class="lineno"> 7718</span>&#160;     overlap_out%ie          (1:count_out) = overlap%ie          (1:count_out)</div>
-<div class="line"><a name="l07719"></a><span class="lineno"> 7719</span>&#160;     overlap_out%js          (1:count_out) = overlap%js          (1:count_out)</div>
-<div class="line"><a name="l07720"></a><span class="lineno"> 7720</span>&#160;     overlap_out%je          (1:count_out) = overlap%je          (1:count_out)</div>
-<div class="line"><a name="l07721"></a><span class="lineno"> 7721</span>&#160;     overlap_out%dir         (1:count_out) = overlap%dir         (1:count_out)</div>
-<div class="line"><a name="l07722"></a><span class="lineno"> 7722</span>&#160;     overlap_out%rotation    (1:count_out) = overlap%rotation    (1:count_out)</div>
-<div class="line"><a name="l07723"></a><span class="lineno"> 7723</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap)</div>
-<div class="line"><a name="l07724"></a><span class="lineno"> 7724</span>&#160;<span class="keywordflow">  end if</span></div>
-<div class="line"><a name="l07725"></a><span class="lineno"> 7725</span>&#160;  overlap_out%count                           = count</div>
-<div class="line"><a name="l07726"></a><span class="lineno"> 7726</span>&#160;  overlap_out%tileMe      (count_out+1:count) = overlap_in%tileMe      (1:count_in)</div>
-<div class="line"><a name="l07727"></a><span class="lineno"> 7727</span>&#160;  overlap_out%is          (count_out+1:count) = overlap_in%is          (1:count_in)</div>
-<div class="line"><a name="l07728"></a><span class="lineno"> 7728</span>&#160;  overlap_out%ie          (count_out+1:count) = overlap_in%ie          (1:count_in)</div>
-<div class="line"><a name="l07729"></a><span class="lineno"> 7729</span>&#160;  overlap_out%js          (count_out+1:count) = overlap_in%js          (1:count_in)</div>
-<div class="line"><a name="l07730"></a><span class="lineno"> 7730</span>&#160;  overlap_out%je          (count_out+1:count) = overlap_in%je          (1:count_in)</div>
-<div class="line"><a name="l07731"></a><span class="lineno"> 7731</span>&#160;  overlap_out%dir         (count_out+1:count) = overlap_in%dir         (1:count_in)</div>
-<div class="line"><a name="l07732"></a><span class="lineno"> 7732</span>&#160;  overlap_out%rotation    (count_out+1:count) = overlap_in%rotation    (1:count_in)</div>
+<div class="line"><a name="l07639"></a><span class="lineno"> 7639</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%bound_C)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07640"></a><span class="lineno"> 7640</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%bound_C)</div>
+<div class="line"><a name="l07641"></a><span class="lineno"> 7641</span>&#160;  <span class="keyword">deallocate</span>(domain%bound_C)</div>
+<div class="line"><a name="l07642"></a><span class="lineno"> 7642</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07643"></a><span class="lineno"> 7643</span>&#160; </div>
+<div class="line"><a name="l07644"></a><span class="lineno"> 7644</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%bound_E)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07645"></a><span class="lineno"> 7645</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%bound_E)</div>
+<div class="line"><a name="l07646"></a><span class="lineno"> 7646</span>&#160;  <span class="keyword">deallocate</span>(domain%bound_E)</div>
+<div class="line"><a name="l07647"></a><span class="lineno"> 7647</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07648"></a><span class="lineno"> 7648</span>&#160; </div>
+<div class="line"><a name="l07649"></a><span class="lineno"> 7649</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%bound_N)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07650"></a><span class="lineno"> 7650</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%bound_N)</div>
+<div class="line"><a name="l07651"></a><span class="lineno"> 7651</span>&#160;  <span class="keyword">deallocate</span>(domain%bound_N)</div>
+<div class="line"><a name="l07652"></a><span class="lineno"> 7652</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07653"></a><span class="lineno"> 7653</span>&#160; </div>
+<div class="line"><a name="l07654"></a><span class="lineno"> 7654</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_T)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07655"></a><span class="lineno"> 7655</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%update_T)</div>
+<div class="line"><a name="l07656"></a><span class="lineno"> 7656</span>&#160;  <span class="keyword">deallocate</span>(domain%update_T)</div>
+<div class="line"><a name="l07657"></a><span class="lineno"> 7657</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07658"></a><span class="lineno"> 7658</span>&#160; </div>
+<div class="line"><a name="l07659"></a><span class="lineno"> 7659</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_E)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07660"></a><span class="lineno"> 7660</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%update_E)</div>
+<div class="line"><a name="l07661"></a><span class="lineno"> 7661</span>&#160;  <span class="keyword">deallocate</span>(domain%update_E)</div>
+<div class="line"><a name="l07662"></a><span class="lineno"> 7662</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07663"></a><span class="lineno"> 7663</span>&#160; </div>
+<div class="line"><a name="l07664"></a><span class="lineno"> 7664</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_C)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07665"></a><span class="lineno"> 7665</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%update_C)</div>
+<div class="line"><a name="l07666"></a><span class="lineno"> 7666</span>&#160;  <span class="keyword">deallocate</span>(domain%update_C)</div>
+<div class="line"><a name="l07667"></a><span class="lineno"> 7667</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07668"></a><span class="lineno"> 7668</span>&#160; </div>
+<div class="line"><a name="l07669"></a><span class="lineno"> 7669</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(domain%update_N)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07670"></a><span class="lineno"> 7670</span>&#160;  <span class="keyword">call </span>deallocate_overlapspec(domain%update_N)</div>
+<div class="line"><a name="l07671"></a><span class="lineno"> 7671</span>&#160;  <span class="keyword">deallocate</span>(domain%update_N)</div>
+<div class="line"><a name="l07672"></a><span class="lineno"> 7672</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l07673"></a><span class="lineno"> 7673</span>&#160; </div>
+<div class="line"><a name="l07674"></a><span class="lineno"> 7674</span>&#160;<span class="keyword">end subroutine </span>deallocate_domain2d_local</div>
+<div class="line"><a name="l07675"></a><span class="lineno"> 7675</span>&#160; </div>
+<div class="line"><a name="l07676"></a><span class="lineno"> 7676</span>&#160;<span class="comment">!####################################################################</span></div>
+<div class="line"><a name="l07677"></a><span class="lineno"> 7677</span>&#160; </div>
+<div class="line"><a name="l07678"></a><span class="lineno"> 7678</span>&#160;<span class="keyword">subroutine </span>allocate_check_overlap(overlap, count)</div>
+<div class="line"><a name="l07679"></a><span class="lineno"> 7679</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
+<div class="line"><a name="l07680"></a><span class="lineno"> 7680</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: count</div>
+<div class="line"><a name="l07681"></a><span class="lineno"> 7681</span>&#160; </div>
+<div class="line"><a name="l07682"></a><span class="lineno"> 7682</span>&#160;  overlap%count = 0</div>
+<div class="line"><a name="l07683"></a><span class="lineno"> 7683</span>&#160;  overlap%pe    = null_pe</div>
+<div class="line"><a name="l07684"></a><span class="lineno"> 7684</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07685"></a><span class="lineno"> 7685</span>&#160;       <span class="stringliteral">&quot;allocate_check_overlap(mpp_domains_define): overlap is already been allocated&quot;</span>)</div>
+<div class="line"><a name="l07686"></a><span class="lineno"> 7686</span>&#160;  <span class="keywordflow">if</span>(count &lt; 1)  <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07687"></a><span class="lineno"> 7687</span>&#160;       <span class="stringliteral">&quot;allocate_check_overlap(mpp_domains_define): count should be a positive integer&quot;</span>)</div>
+<div class="line"><a name="l07688"></a><span class="lineno"> 7688</span>&#160;  <span class="keyword">allocate</span>(overlap%tileMe  (count), overlap%dir(count) )</div>
+<div class="line"><a name="l07689"></a><span class="lineno"> 7689</span>&#160;  <span class="keyword">allocate</span>(overlap%is      (count), overlap%ie (count) )</div>
+<div class="line"><a name="l07690"></a><span class="lineno"> 7690</span>&#160;  <span class="keyword">allocate</span>(overlap%js      (count), overlap%je (count) )</div>
+<div class="line"><a name="l07691"></a><span class="lineno"> 7691</span>&#160;  <span class="keyword">allocate</span>(overlap%rotation(count)                     )</div>
+<div class="line"><a name="l07692"></a><span class="lineno"> 7692</span>&#160;  overlap%rotation     =  zero</div>
+<div class="line"><a name="l07693"></a><span class="lineno"> 7693</span>&#160; </div>
+<div class="line"><a name="l07694"></a><span class="lineno"> 7694</span>&#160;<span class="keyword">end subroutine </span>allocate_check_overlap</div>
+<div class="line"><a name="l07695"></a><span class="lineno"> 7695</span>&#160; </div>
+<div class="line"><a name="l07696"></a><span class="lineno"> 7696</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l07697"></a><span class="lineno"> 7697</span>&#160;<span class="keyword">subroutine </span>insert_check_overlap(overlap, pe, tileMe, dir, rotation, is, ie, js, je)</div>
+<div class="line"><a name="l07698"></a><span class="lineno"> 7698</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
+<div class="line"><a name="l07699"></a><span class="lineno"> 7699</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: pe</div>
+<div class="line"><a name="l07700"></a><span class="lineno"> 7700</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: tileMe, dir, rotation</div>
+<div class="line"><a name="l07701"></a><span class="lineno"> 7701</span>&#160;  <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: is, ie, js, je</div>
+<div class="line"><a name="l07702"></a><span class="lineno"> 7702</span>&#160;  <span class="keywordtype">integer</span>                           :: count</div>
+<div class="line"><a name="l07703"></a><span class="lineno"> 7703</span>&#160; </div>
+<div class="line"><a name="l07704"></a><span class="lineno"> 7704</span>&#160;  overlap%count = overlap%count + 1</div>
+<div class="line"><a name="l07705"></a><span class="lineno"> 7705</span>&#160;  count = overlap%count</div>
+<div class="line"><a name="l07706"></a><span class="lineno"> 7706</span>&#160;  <span class="keywordflow">if</span>(.NOT. <span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07707"></a><span class="lineno"> 7707</span>&#160;     <span class="stringliteral">&quot;mpp_domains_define.inc(insert_check_overlap): overlap is not assigned any memory&quot;</span>)</div>
+<div class="line"><a name="l07708"></a><span class="lineno"> 7708</span>&#160;  <span class="keywordflow">if</span>(count &gt; <span class="keyword">size</span>(overlap%tileMe(:)) ) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07709"></a><span class="lineno"> 7709</span>&#160;     <span class="stringliteral">&quot;mpp_domains_define.inc(insert_check_overlap): overlap%count is greater than size(overlap%tileMe)&quot;</span>)</div>
+<div class="line"><a name="l07710"></a><span class="lineno"> 7710</span>&#160;  <span class="keywordflow">if</span>( overlap%pe == null_pe ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07711"></a><span class="lineno"> 7711</span>&#160;     overlap%pe = pe</div>
+<div class="line"><a name="l07712"></a><span class="lineno"> 7712</span>&#160;  <span class="keywordflow">else</span></div>
+<div class="line"><a name="l07713"></a><span class="lineno"> 7713</span>&#160;     <span class="keywordflow">if</span>(overlap%pe .NE. pe) <span class="keyword">call </span>mpp_error(fatal,  &amp;</div>
+<div class="line"><a name="l07714"></a><span class="lineno"> 7714</span>&#160;           <span class="stringliteral">&quot;mpp_domains_define.inc(insert_check_overlap): mismatch on pe&quot;</span>)</div>
+<div class="line"><a name="l07715"></a><span class="lineno"> 7715</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l07716"></a><span class="lineno"> 7716</span>&#160;  overlap%tileMe  (count) = tileme</div>
+<div class="line"><a name="l07717"></a><span class="lineno"> 7717</span>&#160;  overlap%dir     (count) = dir</div>
+<div class="line"><a name="l07718"></a><span class="lineno"> 7718</span>&#160;  overlap%rotation(count) = rotation</div>
+<div class="line"><a name="l07719"></a><span class="lineno"> 7719</span>&#160;  overlap%is      (count) = is</div>
+<div class="line"><a name="l07720"></a><span class="lineno"> 7720</span>&#160;  overlap%ie      (count) = ie</div>
+<div class="line"><a name="l07721"></a><span class="lineno"> 7721</span>&#160;  overlap%js      (count) = js</div>
+<div class="line"><a name="l07722"></a><span class="lineno"> 7722</span>&#160;  overlap%je      (count) = je</div>
+<div class="line"><a name="l07723"></a><span class="lineno"> 7723</span>&#160; </div>
+<div class="line"><a name="l07724"></a><span class="lineno"> 7724</span>&#160;<span class="keyword">end subroutine </span>insert_check_overlap</div>
+<div class="line"><a name="l07725"></a><span class="lineno"> 7725</span>&#160; </div>
+<div class="line"><a name="l07726"></a><span class="lineno"> 7726</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l07727"></a><span class="lineno"> 7727</span>&#160;<span class="comment">!--- this routine add the overlap_in into overlap_out</span></div>
+<div class="line"><a name="l07728"></a><span class="lineno"> 7728</span>&#160;<span class="keyword">subroutine </span>add_check_overlap( overlap_out, overlap_in)</div>
+<div class="line"><a name="l07729"></a><span class="lineno"> 7729</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap_out</div>
+<div class="line"><a name="l07730"></a><span class="lineno"> 7730</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(in   )</span> :: overlap_in</div>
+<div class="line"><a name="l07731"></a><span class="lineno"> 7731</span>&#160;  <span class="keywordtype">type</span>(overlap_type)                :: overlap</div>
+<div class="line"><a name="l07732"></a><span class="lineno"> 7732</span>&#160;  <span class="keywordtype">integer</span>                          :: count, count_in, count_out</div>
 <div class="line"><a name="l07733"></a><span class="lineno"> 7733</span>&#160; </div>
-<div class="line"><a name="l07734"></a><span class="lineno"> 7734</span>&#160;<span class="keyword">end subroutine </span>add_check_overlap</div>
-<div class="line"><a name="l07735"></a><span class="lineno"> 7735</span>&#160; </div>
-<div class="line"><a name="l07736"></a><span class="lineno"> 7736</span>&#160;<span class="comment">!####################################################################</span></div>
-<div class="line"><a name="l07737"></a><span class="lineno"> 7737</span>&#160;<span class="keyword">subroutine </span>init_overlap_type(overlap)</div>
-<div class="line"><a name="l07738"></a><span class="lineno"> 7738</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07739"></a><span class="lineno"> 7739</span>&#160; </div>
-<div class="line"><a name="l07740"></a><span class="lineno"> 7740</span>&#160;  overlap%count = 0</div>
-<div class="line"><a name="l07741"></a><span class="lineno"> 7741</span>&#160;  overlap%pe    = null_pe</div>
-<div class="line"><a name="l07742"></a><span class="lineno"> 7742</span>&#160; </div>
-<div class="line"><a name="l07743"></a><span class="lineno"> 7743</span>&#160;<span class="keyword">end subroutine </span>init_overlap_type</div>
-<div class="line"><a name="l07744"></a><span class="lineno"> 7744</span>&#160; </div>
-<div class="line"><a name="l07745"></a><span class="lineno"> 7745</span>&#160;<span class="comment">!####################################################################</span></div>
-<div class="line"><a name="l07746"></a><span class="lineno"> 7746</span>&#160; </div>
-<div class="line"><a name="l07747"></a><span class="lineno"> 7747</span>&#160;<span class="keyword">subroutine </span>allocate_update_overlap( overlap, count)</div>
-<div class="line"><a name="l07748"></a><span class="lineno"> 7748</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07749"></a><span class="lineno"> 7749</span>&#160;  <span class="keywordtype">integer</span>,           <span class="keywordtype">intent(in   )</span> :: count</div>
-<div class="line"><a name="l07750"></a><span class="lineno"> 7750</span>&#160; </div>
-<div class="line"><a name="l07751"></a><span class="lineno"> 7751</span>&#160;  overlap%count = 0</div>
-<div class="line"><a name="l07752"></a><span class="lineno"> 7752</span>&#160;  overlap%pe    = null_pe</div>
-<div class="line"><a name="l07753"></a><span class="lineno"> 7753</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07754"></a><span class="lineno"> 7754</span>&#160;       <span class="stringliteral">&quot;allocate_update_overlap(mpp_domains_define): overlap is already been allocated&quot;</span>)</div>
-<div class="line"><a name="l07755"></a><span class="lineno"> 7755</span>&#160;  <span class="keywordflow">if</span>(count &lt; 1)  <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07756"></a><span class="lineno"> 7756</span>&#160;       <span class="stringliteral">&quot;allocate_update_overlap(mpp_domains_define): count should be a positive integer&quot;</span>)</div>
-<div class="line"><a name="l07757"></a><span class="lineno"> 7757</span>&#160;  <span class="keyword">allocate</span>(overlap%tileMe      (count), overlap%tileNbr (count) )</div>
-<div class="line"><a name="l07758"></a><span class="lineno"> 7758</span>&#160;  <span class="keyword">allocate</span>(overlap%is          (count), overlap%ie      (count) )</div>
-<div class="line"><a name="l07759"></a><span class="lineno"> 7759</span>&#160;  <span class="keyword">allocate</span>(overlap%js          (count), overlap%je      (count) )</div>
-<div class="line"><a name="l07760"></a><span class="lineno"> 7760</span>&#160;  <span class="keyword">allocate</span>(overlap%dir         (count), overlap%rotation(count) )</div>
-<div class="line"><a name="l07761"></a><span class="lineno"> 7761</span>&#160;  <span class="keyword">allocate</span>(overlap%from_contact(count), overlap%msgsize (count) )</div>
-<div class="line"><a name="l07762"></a><span class="lineno"> 7762</span>&#160;  overlap%rotation     =  zero</div>
-<div class="line"><a name="l07763"></a><span class="lineno"> 7763</span>&#160;  overlap%from_contact = .false.</div>
-<div class="line"><a name="l07764"></a><span class="lineno"> 7764</span>&#160; </div>
-<div class="line"><a name="l07765"></a><span class="lineno"> 7765</span>&#160;<span class="keyword">end subroutine </span>allocate_update_overlap</div>
-<div class="line"><a name="l07766"></a><span class="lineno"> 7766</span>&#160; </div>
-<div class="line"><a name="l07767"></a><span class="lineno"> 7767</span>&#160;  <span class="comment">!#####################################################################################</span></div>
-<div class="line"><a name="l07768"></a><span class="lineno"> 7768</span>&#160;  <span class="keyword">subroutine </span>insert_update_overlap(overlap, pe, is1, ie1, js1, je1, is2, ie2, js2, je2, dir, reverse, symmetry)</div>
-<div class="line"><a name="l07769"></a><span class="lineno"> 7769</span>&#160;    <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07770"></a><span class="lineno"> 7770</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: pe</div>
-<div class="line"><a name="l07771"></a><span class="lineno"> 7771</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: is1, ie1, js1, je1, is2, ie2, js2, je2</div>
-<div class="line"><a name="l07772"></a><span class="lineno"> 7772</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: dir</div>
-<div class="line"><a name="l07773"></a><span class="lineno"> 7773</span>&#160;    <span class="keywordtype">logical</span>, <span class="keywordtype">optional</span>,  <span class="keywordtype">intent(in   )</span> :: reverse, symmetry</div>
-<div class="line"><a name="l07774"></a><span class="lineno"> 7774</span>&#160; </div>
-<div class="line"><a name="l07775"></a><span class="lineno"> 7775</span>&#160;    <span class="keywordtype">logical</span> :: is_reverse, is_symmetry, is_overlapped</div>
-<div class="line"><a name="l07776"></a><span class="lineno"> 7776</span>&#160;    <span class="keywordtype">integer</span> :: is, ie, js, je, count</div>
-<div class="line"><a name="l07777"></a><span class="lineno"> 7777</span>&#160; </div>
-<div class="line"><a name="l07778"></a><span class="lineno"> 7778</span>&#160;    is_reverse = .false.</div>
-<div class="line"><a name="l07779"></a><span class="lineno"> 7779</span>&#160;    <span class="keywordflow">if</span>(<span class="keyword">PRESENT</span>(reverse)) is_reverse = reverse</div>
-<div class="line"><a name="l07780"></a><span class="lineno"> 7780</span>&#160;    is_symmetry = .false.</div>
-<div class="line"><a name="l07781"></a><span class="lineno"> 7781</span>&#160;    <span class="keywordflow">if</span>(<span class="keyword">PRESENT</span>(symmetry)) is_symmetry = symmetry</div>
+<div class="line"><a name="l07734"></a><span class="lineno"> 7734</span>&#160;  <span class="comment">! if overlap_out%count == 0, then just copy overlap_in to overlap_out</span></div>
+<div class="line"><a name="l07735"></a><span class="lineno"> 7735</span>&#160;  count_in  = overlap_in %count</div>
+<div class="line"><a name="l07736"></a><span class="lineno"> 7736</span>&#160;  count_out = overlap_out%count</div>
+<div class="line"><a name="l07737"></a><span class="lineno"> 7737</span>&#160;  count     = count_in+count_out</div>
+<div class="line"><a name="l07738"></a><span class="lineno"> 7738</span>&#160;  <span class="keywordflow">if</span>(count_in == 0) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07739"></a><span class="lineno"> 7739</span>&#160;       <span class="stringliteral">&quot;add_check_overlap(mpp_domains_define): overlap_in%count is zero&quot;</span>)</div>
+<div class="line"><a name="l07740"></a><span class="lineno"> 7740</span>&#160; </div>
+<div class="line"><a name="l07741"></a><span class="lineno"> 7741</span>&#160;  <span class="keywordflow">if</span>(count_out == 0) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07742"></a><span class="lineno"> 7742</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap_out%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07743"></a><span class="lineno"> 7743</span>&#160;          <span class="stringliteral">&quot;add_check_overlap(mpp_domains_define): overlap is already been allocated but count=0&quot;</span>)</div>
+<div class="line"><a name="l07744"></a><span class="lineno"> 7744</span>&#160;     <span class="keyword">call </span>allocate_check_overlap(overlap_out, count_in)</div>
+<div class="line"><a name="l07745"></a><span class="lineno"> 7745</span>&#160;     overlap_out%pe  = overlap_in%pe</div>
+<div class="line"><a name="l07746"></a><span class="lineno"> 7746</span>&#160;  <span class="keywordflow">else</span>  <span class="comment">! need to expand the dimension size of overlap</span></div>
+<div class="line"><a name="l07747"></a><span class="lineno"> 7747</span>&#160;     <span class="keyword">call </span>allocate_check_overlap(overlap, count_out)</div>
+<div class="line"><a name="l07748"></a><span class="lineno"> 7748</span>&#160;     <span class="keywordflow">if</span>(overlap_out%pe .NE. overlap_in%pe) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07749"></a><span class="lineno"> 7749</span>&#160;         <span class="stringliteral">&quot;mpp_domains_define.inc(add_check_overlap): mismatch of pe between overlap_in and overlap_out&quot;</span>)</div>
+<div class="line"><a name="l07750"></a><span class="lineno"> 7750</span>&#160;     overlap%tileMe      (1:count_out) = overlap_out%tileMe      (1:count_out)</div>
+<div class="line"><a name="l07751"></a><span class="lineno"> 7751</span>&#160;     overlap%is          (1:count_out) = overlap_out%is          (1:count_out)</div>
+<div class="line"><a name="l07752"></a><span class="lineno"> 7752</span>&#160;     overlap%ie          (1:count_out) = overlap_out%ie          (1:count_out)</div>
+<div class="line"><a name="l07753"></a><span class="lineno"> 7753</span>&#160;     overlap%js          (1:count_out) = overlap_out%js          (1:count_out)</div>
+<div class="line"><a name="l07754"></a><span class="lineno"> 7754</span>&#160;     overlap%je          (1:count_out) = overlap_out%je          (1:count_out)</div>
+<div class="line"><a name="l07755"></a><span class="lineno"> 7755</span>&#160;     overlap%dir         (1:count_out) = overlap_out%dir         (1:count_out)</div>
+<div class="line"><a name="l07756"></a><span class="lineno"> 7756</span>&#160;     overlap%rotation    (1:count_out) = overlap_out%rotation    (1:count_out)</div>
+<div class="line"><a name="l07757"></a><span class="lineno"> 7757</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap_out)</div>
+<div class="line"><a name="l07758"></a><span class="lineno"> 7758</span>&#160;     <span class="keyword">call </span>allocate_check_overlap(overlap_out, count)</div>
+<div class="line"><a name="l07759"></a><span class="lineno"> 7759</span>&#160;     overlap_out%tileMe      (1:count_out) = overlap%tileMe      (1:count_out)</div>
+<div class="line"><a name="l07760"></a><span class="lineno"> 7760</span>&#160;     overlap_out%is          (1:count_out) = overlap%is          (1:count_out)</div>
+<div class="line"><a name="l07761"></a><span class="lineno"> 7761</span>&#160;     overlap_out%ie          (1:count_out) = overlap%ie          (1:count_out)</div>
+<div class="line"><a name="l07762"></a><span class="lineno"> 7762</span>&#160;     overlap_out%js          (1:count_out) = overlap%js          (1:count_out)</div>
+<div class="line"><a name="l07763"></a><span class="lineno"> 7763</span>&#160;     overlap_out%je          (1:count_out) = overlap%je          (1:count_out)</div>
+<div class="line"><a name="l07764"></a><span class="lineno"> 7764</span>&#160;     overlap_out%dir         (1:count_out) = overlap%dir         (1:count_out)</div>
+<div class="line"><a name="l07765"></a><span class="lineno"> 7765</span>&#160;     overlap_out%rotation    (1:count_out) = overlap%rotation    (1:count_out)</div>
+<div class="line"><a name="l07766"></a><span class="lineno"> 7766</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap)</div>
+<div class="line"><a name="l07767"></a><span class="lineno"> 7767</span>&#160;<span class="keywordflow">  end if</span></div>
+<div class="line"><a name="l07768"></a><span class="lineno"> 7768</span>&#160;  overlap_out%count                           = count</div>
+<div class="line"><a name="l07769"></a><span class="lineno"> 7769</span>&#160;  overlap_out%tileMe      (count_out+1:count) = overlap_in%tileMe      (1:count_in)</div>
+<div class="line"><a name="l07770"></a><span class="lineno"> 7770</span>&#160;  overlap_out%is          (count_out+1:count) = overlap_in%is          (1:count_in)</div>
+<div class="line"><a name="l07771"></a><span class="lineno"> 7771</span>&#160;  overlap_out%ie          (count_out+1:count) = overlap_in%ie          (1:count_in)</div>
+<div class="line"><a name="l07772"></a><span class="lineno"> 7772</span>&#160;  overlap_out%js          (count_out+1:count) = overlap_in%js          (1:count_in)</div>
+<div class="line"><a name="l07773"></a><span class="lineno"> 7773</span>&#160;  overlap_out%je          (count_out+1:count) = overlap_in%je          (1:count_in)</div>
+<div class="line"><a name="l07774"></a><span class="lineno"> 7774</span>&#160;  overlap_out%dir         (count_out+1:count) = overlap_in%dir         (1:count_in)</div>
+<div class="line"><a name="l07775"></a><span class="lineno"> 7775</span>&#160;  overlap_out%rotation    (count_out+1:count) = overlap_in%rotation    (1:count_in)</div>
+<div class="line"><a name="l07776"></a><span class="lineno"> 7776</span>&#160; </div>
+<div class="line"><a name="l07777"></a><span class="lineno"> 7777</span>&#160;<span class="keyword">end subroutine </span>add_check_overlap</div>
+<div class="line"><a name="l07778"></a><span class="lineno"> 7778</span>&#160; </div>
+<div class="line"><a name="l07779"></a><span class="lineno"> 7779</span>&#160;<span class="comment">!####################################################################</span></div>
+<div class="line"><a name="l07780"></a><span class="lineno"> 7780</span>&#160;<span class="keyword">subroutine </span>init_overlap_type(overlap)</div>
+<div class="line"><a name="l07781"></a><span class="lineno"> 7781</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
 <div class="line"><a name="l07782"></a><span class="lineno"> 7782</span>&#160; </div>
-<div class="line"><a name="l07783"></a><span class="lineno"> 7783</span>&#160;    is = max(is1,is2); ie = min(ie1,ie2)</div>
-<div class="line"><a name="l07784"></a><span class="lineno"> 7784</span>&#160;    js = max(js1,js2); je = min(je1,je2)</div>
-<div class="line"><a name="l07785"></a><span class="lineno"> 7785</span>&#160;    is_overlapped = .false.</div>
-<div class="line"><a name="l07786"></a><span class="lineno"> 7786</span>&#160;    <span class="comment">!--- to avoid unnecessary ( duplicate overlap ) for symmetry domain</span></div>
-<div class="line"><a name="l07787"></a><span class="lineno"> 7787</span>&#160;    <span class="keywordflow">if</span>(is_symmetry .AND. (dir == 1 .OR. dir == 5)) <span class="keywordflow">then</span>  <span class="comment">! x-direction</span></div>
-<div class="line"><a name="l07788"></a><span class="lineno"> 7788</span>&#160;       <span class="keywordflow">if</span>( ie .GE. is .AND. je .GT. js ) is_overlapped = .true.</div>
-<div class="line"><a name="l07789"></a><span class="lineno"> 7789</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(is_symmetry .AND. (dir == 3 .OR. dir == 7)) <span class="keywordflow">then</span> <span class="comment">! y-direction</span></div>
-<div class="line"><a name="l07790"></a><span class="lineno"> 7790</span>&#160;       <span class="keywordflow">if</span>( ie .GT. is .AND. je .GE. js ) is_overlapped = .true.</div>
-<div class="line"><a name="l07791"></a><span class="lineno"> 7791</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(ie.GE.is .AND. je.GE.js )<span class="keywordflow">then</span></div>
-<div class="line"><a name="l07792"></a><span class="lineno"> 7792</span>&#160;       is_overlapped = .true.</div>
-<div class="line"><a name="l07793"></a><span class="lineno"> 7793</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l07794"></a><span class="lineno"> 7794</span>&#160; </div>
-<div class="line"><a name="l07795"></a><span class="lineno"> 7795</span>&#160;    <span class="keywordflow">if</span>(is_overlapped) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07796"></a><span class="lineno"> 7796</span>&#160;     <span class="keywordflow">if</span>( overlap%count == 0 ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07797"></a><span class="lineno"> 7797</span>&#160;          overlap%pe = pe</div>
-<div class="line"><a name="l07798"></a><span class="lineno"> 7798</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l07799"></a><span class="lineno"> 7799</span>&#160;          <span class="keywordflow">if</span>(overlap%pe .NE. pe) <span class="keyword">call </span>mpp_error(fatal,  &amp;</div>
-<div class="line"><a name="l07800"></a><span class="lineno"> 7800</span>&#160;               <span class="stringliteral">&quot;mpp_domains_define.inc(insert_update_overlap): mismatch on pe&quot;</span>)</div>
-<div class="line"><a name="l07801"></a><span class="lineno"> 7801</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l07802"></a><span class="lineno"> 7802</span>&#160;       overlap%count = overlap%count+1</div>
-<div class="line"><a name="l07803"></a><span class="lineno"> 7803</span>&#160;       count = overlap%count</div>
-<div class="line"><a name="l07804"></a><span class="lineno"> 7804</span>&#160;       <span class="keywordflow">if</span>(count &gt; maxoverlap) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07805"></a><span class="lineno"> 7805</span>&#160;            <span class="stringliteral">&quot;mpp_domains_define.inc(insert_update_overlap): number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP&quot;</span>)</div>
-<div class="line"><a name="l07806"></a><span class="lineno"> 7806</span>&#160;       overlap%is(count) = is</div>
-<div class="line"><a name="l07807"></a><span class="lineno"> 7807</span>&#160;       overlap%ie(count) = ie</div>
-<div class="line"><a name="l07808"></a><span class="lineno"> 7808</span>&#160;       overlap%js(count) = js</div>
-<div class="line"><a name="l07809"></a><span class="lineno"> 7809</span>&#160;       overlap%je(count) = je</div>
-<div class="line"><a name="l07810"></a><span class="lineno"> 7810</span>&#160;       overlap%tileMe (count) = 1</div>
-<div class="line"><a name="l07811"></a><span class="lineno"> 7811</span>&#160;       overlap%tileNbr(count) = 1</div>
-<div class="line"><a name="l07812"></a><span class="lineno"> 7812</span>&#160;       overlap%dir(count) = dir</div>
-<div class="line"><a name="l07813"></a><span class="lineno"> 7813</span>&#160;       <span class="keywordflow">if</span>(is_reverse) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07814"></a><span class="lineno"> 7814</span>&#160;          overlap%rotation(count) = one_hundred_eighty</div>
-<div class="line"><a name="l07815"></a><span class="lineno"> 7815</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l07816"></a><span class="lineno"> 7816</span>&#160;          overlap%rotation(count) = zero</div>
-<div class="line"><a name="l07817"></a><span class="lineno"> 7817</span>&#160;<span class="keywordflow">       end if</span></div>
-<div class="line"><a name="l07818"></a><span class="lineno"> 7818</span>&#160;<span class="keywordflow">    end if</span></div>
-<div class="line"><a name="l07819"></a><span class="lineno"> 7819</span>&#160; </div>
-<div class="line"><a name="l07820"></a><span class="lineno"> 7820</span>&#160;  <span class="keyword">end subroutine </span>insert_update_overlap</div>
-<div class="line"><a name="l07821"></a><span class="lineno"> 7821</span>&#160; </div>
-<div class="line"><a name="l07822"></a><span class="lineno"> 7822</span>&#160;  <span class="comment">!#####################################################################################</span></div>
-<div class="line"><a name="l07823"></a><span class="lineno"> 7823</span>&#160;<span class="keyword">subroutine </span>insert_overlap_type(overlap, pe, tileMe, tileNbr, is, ie, js, je, dir, &amp;</div>
-<div class="line"><a name="l07824"></a><span class="lineno"> 7824</span>&#160;     rotation, from_contact)</div>
-<div class="line"><a name="l07825"></a><span class="lineno"> 7825</span>&#160;    <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07826"></a><span class="lineno"> 7826</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: tileMe, tileNbr, pe</div>
-<div class="line"><a name="l07827"></a><span class="lineno"> 7827</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: is, ie, js, je</div>
-<div class="line"><a name="l07828"></a><span class="lineno"> 7828</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: dir, rotation</div>
-<div class="line"><a name="l07829"></a><span class="lineno"> 7829</span>&#160;  <span class="keywordtype">logical</span>,            <span class="keywordtype">intent(in   )</span> :: from_contact</div>
-<div class="line"><a name="l07830"></a><span class="lineno"> 7830</span>&#160;    <span class="keywordtype">integer</span>                           :: count</div>
-<div class="line"><a name="l07831"></a><span class="lineno"> 7831</span>&#160; </div>
-<div class="line"><a name="l07832"></a><span class="lineno"> 7832</span>&#160;  <span class="keywordflow">if</span>( overlap%count == 0 ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07833"></a><span class="lineno"> 7833</span>&#160;       overlap%pe = pe</div>
-<div class="line"><a name="l07834"></a><span class="lineno"> 7834</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l07835"></a><span class="lineno"> 7835</span>&#160;       <span class="keywordflow">if</span>(overlap%pe .NE. pe) <span class="keyword">call </span>mpp_error(fatal,  &amp;</div>
-<div class="line"><a name="l07836"></a><span class="lineno"> 7836</span>&#160;          <span class="stringliteral">&quot;mpp_domains_define.inc(insert_overlap_type): mismatch on pe&quot;</span>)</div>
-<div class="line"><a name="l07837"></a><span class="lineno"> 7837</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l07838"></a><span class="lineno"> 7838</span>&#160;    overlap%count = overlap%count+1</div>
-<div class="line"><a name="l07839"></a><span class="lineno"> 7839</span>&#160;    count = overlap%count</div>
-<div class="line"><a name="l07840"></a><span class="lineno"> 7840</span>&#160;    <span class="keywordflow">if</span>(count &gt; maxoverlap) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07841"></a><span class="lineno"> 7841</span>&#160;       <span class="stringliteral">&quot;mpp_domains_define.inc(insert_overlap_type): number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP&quot;</span>)</div>
-<div class="line"><a name="l07842"></a><span class="lineno"> 7842</span>&#160;    overlap%tileMe      (count) = tileme</div>
-<div class="line"><a name="l07843"></a><span class="lineno"> 7843</span>&#160;    overlap%tileNbr     (count) = tilenbr</div>
-<div class="line"><a name="l07844"></a><span class="lineno"> 7844</span>&#160;    overlap%is          (count) = is</div>
-<div class="line"><a name="l07845"></a><span class="lineno"> 7845</span>&#160;    overlap%ie          (count) = ie</div>
-<div class="line"><a name="l07846"></a><span class="lineno"> 7846</span>&#160;    overlap%js          (count) = js</div>
-<div class="line"><a name="l07847"></a><span class="lineno"> 7847</span>&#160;    overlap%je          (count) = je</div>
-<div class="line"><a name="l07848"></a><span class="lineno"> 7848</span>&#160;    overlap%dir         (count) = dir</div>
-<div class="line"><a name="l07849"></a><span class="lineno"> 7849</span>&#160;    overlap%rotation    (count) = rotation</div>
-<div class="line"><a name="l07850"></a><span class="lineno"> 7850</span>&#160;    overlap%from_contact(count) = from_contact</div>
-<div class="line"><a name="l07851"></a><span class="lineno"> 7851</span>&#160;    overlap%msgsize     (count) = (ie-is+1)*(je-js+1)</div>
-<div class="line"><a name="l07852"></a><span class="lineno"> 7852</span>&#160; </div>
-<div class="line"><a name="l07853"></a><span class="lineno"> 7853</span>&#160;<span class="keyword">end subroutine </span>insert_overlap_type</div>
-<div class="line"><a name="l07854"></a><span class="lineno"> 7854</span>&#160; </div>
-<div class="line"><a name="l07855"></a><span class="lineno"> 7855</span>&#160; </div>
-<div class="line"><a name="l07856"></a><span class="lineno"> 7856</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l07857"></a><span class="lineno"> 7857</span>&#160;<span class="keyword">subroutine </span>deallocate_overlap_type( overlap)</div>
-<div class="line"><a name="l07858"></a><span class="lineno"> 7858</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07859"></a><span class="lineno"> 7859</span>&#160; </div>
-<div class="line"><a name="l07860"></a><span class="lineno"> 7860</span>&#160;  <span class="keywordflow">if</span>(overlap%count == 0) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07861"></a><span class="lineno"> 7861</span>&#160;     <span class="keywordflow">if</span>( .NOT. <span class="keyword">associated</span>(overlap%tileMe)) <span class="keywordflow">return</span></div>
-<div class="line"><a name="l07862"></a><span class="lineno"> 7862</span>&#160;  <span class="keywordflow">else</span></div>
-<div class="line"><a name="l07863"></a><span class="lineno"> 7863</span>&#160;     <span class="keywordflow">if</span>( .NOT. <span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07864"></a><span class="lineno"> 7864</span>&#160;          <span class="stringliteral">&quot;deallocate_overlap_type(mpp_domains_define): overlap is not been allocated&quot;</span>)</div>
-<div class="line"><a name="l07865"></a><span class="lineno"> 7865</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l07866"></a><span class="lineno"> 7866</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%tileMe)) <span class="keyword">deallocate</span>(overlap%tileMe)</div>
-<div class="line"><a name="l07867"></a><span class="lineno"> 7867</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%tileNbr)) <span class="keyword">deallocate</span>(overlap%tileNbr)</div>
-<div class="line"><a name="l07868"></a><span class="lineno"> 7868</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%is)) <span class="keyword">deallocate</span>(overlap%is)</div>
-<div class="line"><a name="l07869"></a><span class="lineno"> 7869</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%ie)) <span class="keyword">deallocate</span>(overlap%ie)</div>
-<div class="line"><a name="l07870"></a><span class="lineno"> 7870</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%js)) <span class="keyword">deallocate</span>(overlap%js)</div>
-<div class="line"><a name="l07871"></a><span class="lineno"> 7871</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%je)) <span class="keyword">deallocate</span>(overlap%je)</div>
-<div class="line"><a name="l07872"></a><span class="lineno"> 7872</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%dir)) <span class="keyword">deallocate</span>(overlap%dir)</div>
-<div class="line"><a name="l07873"></a><span class="lineno"> 7873</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%rotation)) <span class="keyword">deallocate</span>(overlap%rotation)</div>
-<div class="line"><a name="l07874"></a><span class="lineno"> 7874</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%from_contact)) <span class="keyword">deallocate</span>(overlap%from_contact)</div>
-<div class="line"><a name="l07875"></a><span class="lineno"> 7875</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%msgsize)) <span class="keyword">deallocate</span>(overlap%msgsize)</div>
-<div class="line"><a name="l07876"></a><span class="lineno"> 7876</span>&#160;  overlap%count = 0</div>
-<div class="line"><a name="l07877"></a><span class="lineno"> 7877</span>&#160; </div>
-<div class="line"><a name="l07878"></a><span class="lineno"> 7878</span>&#160;<span class="keyword">end subroutine </span>deallocate_overlap_type</div>
-<div class="line"><a name="l07879"></a><span class="lineno"> 7879</span>&#160; </div>
-<div class="line"><a name="l07880"></a><span class="lineno"> 7880</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l07881"></a><span class="lineno"> 7881</span>&#160;<span class="keyword">subroutine </span>deallocate_overlapspec(overlap)</div>
-<div class="line"><a name="l07882"></a><span class="lineno"> 7882</span>&#160;<span class="keywordtype">type</span>(overlapspec), <span class="keywordtype">intent(inout)</span> :: overlap</div>
-<div class="line"><a name="l07883"></a><span class="lineno"> 7883</span>&#160;<span class="keywordtype">integer</span>                          :: n</div>
-<div class="line"><a name="l07884"></a><span class="lineno"> 7884</span>&#160; </div>
-<div class="line"><a name="l07885"></a><span class="lineno"> 7885</span>&#160;   <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%send)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07886"></a><span class="lineno"> 7886</span>&#160;      <span class="keywordflow">do</span> n = 1, <span class="keyword">size</span>(overlap%send(:))</div>
-<div class="line"><a name="l07887"></a><span class="lineno"> 7887</span>&#160;         <span class="keyword">call </span>deallocate_overlap_type(overlap%send(n))</div>
-<div class="line"><a name="l07888"></a><span class="lineno"> 7888</span>&#160;<span class="keywordflow">      enddo</span></div>
-<div class="line"><a name="l07889"></a><span class="lineno"> 7889</span>&#160;      <span class="keyword">deallocate</span>(overlap%send)</div>
-<div class="line"><a name="l07890"></a><span class="lineno"> 7890</span>&#160;<span class="keywordflow">   endif</span></div>
-<div class="line"><a name="l07891"></a><span class="lineno"> 7891</span>&#160;   <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%recv)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07892"></a><span class="lineno"> 7892</span>&#160;      <span class="keywordflow">do</span> n = 1, <span class="keyword">size</span>(overlap%recv(:))</div>
-<div class="line"><a name="l07893"></a><span class="lineno"> 7893</span>&#160;         <span class="keyword">call </span>deallocate_overlap_type(overlap%recv(n))</div>
-<div class="line"><a name="l07894"></a><span class="lineno"> 7894</span>&#160;<span class="keywordflow">      enddo</span></div>
-<div class="line"><a name="l07895"></a><span class="lineno"> 7895</span>&#160;      <span class="keyword">deallocate</span>(overlap%recv)</div>
-<div class="line"><a name="l07896"></a><span class="lineno"> 7896</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l07783"></a><span class="lineno"> 7783</span>&#160;  overlap%count = 0</div>
+<div class="line"><a name="l07784"></a><span class="lineno"> 7784</span>&#160;  overlap%pe    = null_pe</div>
+<div class="line"><a name="l07785"></a><span class="lineno"> 7785</span>&#160; </div>
+<div class="line"><a name="l07786"></a><span class="lineno"> 7786</span>&#160;<span class="keyword">end subroutine </span>init_overlap_type</div>
+<div class="line"><a name="l07787"></a><span class="lineno"> 7787</span>&#160; </div>
+<div class="line"><a name="l07788"></a><span class="lineno"> 7788</span>&#160;<span class="comment">!####################################################################</span></div>
+<div class="line"><a name="l07789"></a><span class="lineno"> 7789</span>&#160; </div>
+<div class="line"><a name="l07790"></a><span class="lineno"> 7790</span>&#160;<span class="keyword">subroutine </span>allocate_update_overlap( overlap, count)</div>
+<div class="line"><a name="l07791"></a><span class="lineno"> 7791</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
+<div class="line"><a name="l07792"></a><span class="lineno"> 7792</span>&#160;  <span class="keywordtype">integer</span>,           <span class="keywordtype">intent(in   )</span> :: count</div>
+<div class="line"><a name="l07793"></a><span class="lineno"> 7793</span>&#160; </div>
+<div class="line"><a name="l07794"></a><span class="lineno"> 7794</span>&#160;  overlap%count = 0</div>
+<div class="line"><a name="l07795"></a><span class="lineno"> 7795</span>&#160;  overlap%pe    = null_pe</div>
+<div class="line"><a name="l07796"></a><span class="lineno"> 7796</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07797"></a><span class="lineno"> 7797</span>&#160;       <span class="stringliteral">&quot;allocate_update_overlap(mpp_domains_define): overlap is already been allocated&quot;</span>)</div>
+<div class="line"><a name="l07798"></a><span class="lineno"> 7798</span>&#160;  <span class="keywordflow">if</span>(count &lt; 1)  <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07799"></a><span class="lineno"> 7799</span>&#160;       <span class="stringliteral">&quot;allocate_update_overlap(mpp_domains_define): count should be a positive integer&quot;</span>)</div>
+<div class="line"><a name="l07800"></a><span class="lineno"> 7800</span>&#160;  <span class="keyword">allocate</span>(overlap%tileMe      (count), overlap%tileNbr (count) )</div>
+<div class="line"><a name="l07801"></a><span class="lineno"> 7801</span>&#160;  <span class="keyword">allocate</span>(overlap%is          (count), overlap%ie      (count) )</div>
+<div class="line"><a name="l07802"></a><span class="lineno"> 7802</span>&#160;  <span class="keyword">allocate</span>(overlap%js          (count), overlap%je      (count) )</div>
+<div class="line"><a name="l07803"></a><span class="lineno"> 7803</span>&#160;  <span class="keyword">allocate</span>(overlap%dir         (count), overlap%rotation(count) )</div>
+<div class="line"><a name="l07804"></a><span class="lineno"> 7804</span>&#160;  <span class="keyword">allocate</span>(overlap%from_contact(count), overlap%msgsize (count) )</div>
+<div class="line"><a name="l07805"></a><span class="lineno"> 7805</span>&#160;  overlap%rotation     =  zero</div>
+<div class="line"><a name="l07806"></a><span class="lineno"> 7806</span>&#160;  overlap%from_contact = .false.</div>
+<div class="line"><a name="l07807"></a><span class="lineno"> 7807</span>&#160; </div>
+<div class="line"><a name="l07808"></a><span class="lineno"> 7808</span>&#160;<span class="keyword">end subroutine </span>allocate_update_overlap</div>
+<div class="line"><a name="l07809"></a><span class="lineno"> 7809</span>&#160; </div>
+<div class="line"><a name="l07810"></a><span class="lineno"> 7810</span>&#160;  <span class="comment">!#####################################################################################</span></div>
+<div class="line"><a name="l07811"></a><span class="lineno"> 7811</span>&#160;  <span class="keyword">subroutine </span>insert_update_overlap(overlap, pe, is1, ie1, js1, je1, is2, ie2, js2, je2, dir, reverse, symmetry)</div>
+<div class="line"><a name="l07812"></a><span class="lineno"> 7812</span>&#160;    <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
+<div class="line"><a name="l07813"></a><span class="lineno"> 7813</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: pe</div>
+<div class="line"><a name="l07814"></a><span class="lineno"> 7814</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: is1, ie1, js1, je1, is2, ie2, js2, je2</div>
+<div class="line"><a name="l07815"></a><span class="lineno"> 7815</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: dir</div>
+<div class="line"><a name="l07816"></a><span class="lineno"> 7816</span>&#160;    <span class="keywordtype">logical</span>, <span class="keywordtype">optional</span>,  <span class="keywordtype">intent(in   )</span> :: reverse, symmetry</div>
+<div class="line"><a name="l07817"></a><span class="lineno"> 7817</span>&#160; </div>
+<div class="line"><a name="l07818"></a><span class="lineno"> 7818</span>&#160;    <span class="keywordtype">logical</span> :: is_reverse, is_symmetry, is_overlapped</div>
+<div class="line"><a name="l07819"></a><span class="lineno"> 7819</span>&#160;    <span class="keywordtype">integer</span> :: is, ie, js, je, count</div>
+<div class="line"><a name="l07820"></a><span class="lineno"> 7820</span>&#160; </div>
+<div class="line"><a name="l07821"></a><span class="lineno"> 7821</span>&#160;    is_reverse = .false.</div>
+<div class="line"><a name="l07822"></a><span class="lineno"> 7822</span>&#160;    <span class="keywordflow">if</span>(<span class="keyword">PRESENT</span>(reverse)) is_reverse = reverse</div>
+<div class="line"><a name="l07823"></a><span class="lineno"> 7823</span>&#160;    is_symmetry = .false.</div>
+<div class="line"><a name="l07824"></a><span class="lineno"> 7824</span>&#160;    <span class="keywordflow">if</span>(<span class="keyword">PRESENT</span>(symmetry)) is_symmetry = symmetry</div>
+<div class="line"><a name="l07825"></a><span class="lineno"> 7825</span>&#160; </div>
+<div class="line"><a name="l07826"></a><span class="lineno"> 7826</span>&#160;    is = max(is1,is2); ie = min(ie1,ie2)</div>
+<div class="line"><a name="l07827"></a><span class="lineno"> 7827</span>&#160;    js = max(js1,js2); je = min(je1,je2)</div>
+<div class="line"><a name="l07828"></a><span class="lineno"> 7828</span>&#160;    is_overlapped = .false.</div>
+<div class="line"><a name="l07829"></a><span class="lineno"> 7829</span>&#160;    <span class="comment">!--- to avoid unnecessary ( duplicate overlap ) for symmetry domain</span></div>
+<div class="line"><a name="l07830"></a><span class="lineno"> 7830</span>&#160;    <span class="keywordflow">if</span>(is_symmetry .AND. (dir == 1 .OR. dir == 5)) <span class="keywordflow">then</span>  <span class="comment">! x-direction</span></div>
+<div class="line"><a name="l07831"></a><span class="lineno"> 7831</span>&#160;       <span class="keywordflow">if</span>( ie .GE. is .AND. je .GT. js ) is_overlapped = .true.</div>
+<div class="line"><a name="l07832"></a><span class="lineno"> 7832</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(is_symmetry .AND. (dir == 3 .OR. dir == 7)) <span class="keywordflow">then</span> <span class="comment">! y-direction</span></div>
+<div class="line"><a name="l07833"></a><span class="lineno"> 7833</span>&#160;       <span class="keywordflow">if</span>( ie .GT. is .AND. je .GE. js ) is_overlapped = .true.</div>
+<div class="line"><a name="l07834"></a><span class="lineno"> 7834</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(ie.GE.is .AND. je.GE.js )<span class="keywordflow">then</span></div>
+<div class="line"><a name="l07835"></a><span class="lineno"> 7835</span>&#160;       is_overlapped = .true.</div>
+<div class="line"><a name="l07836"></a><span class="lineno"> 7836</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l07837"></a><span class="lineno"> 7837</span>&#160; </div>
+<div class="line"><a name="l07838"></a><span class="lineno"> 7838</span>&#160;    <span class="keywordflow">if</span>(is_overlapped) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07839"></a><span class="lineno"> 7839</span>&#160;     <span class="keywordflow">if</span>( overlap%count == 0 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07840"></a><span class="lineno"> 7840</span>&#160;          overlap%pe = pe</div>
+<div class="line"><a name="l07841"></a><span class="lineno"> 7841</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l07842"></a><span class="lineno"> 7842</span>&#160;          <span class="keywordflow">if</span>(overlap%pe .NE. pe) <span class="keyword">call </span>mpp_error(fatal,  &amp;</div>
+<div class="line"><a name="l07843"></a><span class="lineno"> 7843</span>&#160;               <span class="stringliteral">&quot;mpp_domains_define.inc(insert_update_overlap): mismatch on pe&quot;</span>)</div>
+<div class="line"><a name="l07844"></a><span class="lineno"> 7844</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l07845"></a><span class="lineno"> 7845</span>&#160;       overlap%count = overlap%count+1</div>
+<div class="line"><a name="l07846"></a><span class="lineno"> 7846</span>&#160;       count = overlap%count</div>
+<div class="line"><a name="l07847"></a><span class="lineno"> 7847</span>&#160;       <span class="keywordflow">if</span>(count &gt; maxoverlap) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07848"></a><span class="lineno"> 7848</span>&#160;            <span class="stringliteral">&quot;mpp_domains_define.inc(insert_update_overlap): number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP&quot;</span>)</div>
+<div class="line"><a name="l07849"></a><span class="lineno"> 7849</span>&#160;       overlap%is(count) = is</div>
+<div class="line"><a name="l07850"></a><span class="lineno"> 7850</span>&#160;       overlap%ie(count) = ie</div>
+<div class="line"><a name="l07851"></a><span class="lineno"> 7851</span>&#160;       overlap%js(count) = js</div>
+<div class="line"><a name="l07852"></a><span class="lineno"> 7852</span>&#160;       overlap%je(count) = je</div>
+<div class="line"><a name="l07853"></a><span class="lineno"> 7853</span>&#160;       overlap%tileMe (count) = 1</div>
+<div class="line"><a name="l07854"></a><span class="lineno"> 7854</span>&#160;       overlap%tileNbr(count) = 1</div>
+<div class="line"><a name="l07855"></a><span class="lineno"> 7855</span>&#160;       overlap%dir(count) = dir</div>
+<div class="line"><a name="l07856"></a><span class="lineno"> 7856</span>&#160;       <span class="keywordflow">if</span>(is_reverse) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07857"></a><span class="lineno"> 7857</span>&#160;          overlap%rotation(count) = one_hundred_eighty</div>
+<div class="line"><a name="l07858"></a><span class="lineno"> 7858</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l07859"></a><span class="lineno"> 7859</span>&#160;          overlap%rotation(count) = zero</div>
+<div class="line"><a name="l07860"></a><span class="lineno"> 7860</span>&#160;<span class="keywordflow">       end if</span></div>
+<div class="line"><a name="l07861"></a><span class="lineno"> 7861</span>&#160;<span class="keywordflow">    end if</span></div>
+<div class="line"><a name="l07862"></a><span class="lineno"> 7862</span>&#160; </div>
+<div class="line"><a name="l07863"></a><span class="lineno"> 7863</span>&#160;  <span class="keyword">end subroutine </span>insert_update_overlap</div>
+<div class="line"><a name="l07864"></a><span class="lineno"> 7864</span>&#160; </div>
+<div class="line"><a name="l07865"></a><span class="lineno"> 7865</span>&#160;  <span class="comment">!#####################################################################################</span></div>
+<div class="line"><a name="l07866"></a><span class="lineno"> 7866</span>&#160;<span class="keyword">subroutine </span>insert_overlap_type(overlap, pe, tileMe, tileNbr, is, ie, js, je, dir, &amp;</div>
+<div class="line"><a name="l07867"></a><span class="lineno"> 7867</span>&#160;     rotation, from_contact)</div>
+<div class="line"><a name="l07868"></a><span class="lineno"> 7868</span>&#160;    <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
+<div class="line"><a name="l07869"></a><span class="lineno"> 7869</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: tileMe, tileNbr, pe</div>
+<div class="line"><a name="l07870"></a><span class="lineno"> 7870</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: is, ie, js, je</div>
+<div class="line"><a name="l07871"></a><span class="lineno"> 7871</span>&#160;    <span class="keywordtype">integer</span>,            <span class="keywordtype">intent(in   )</span> :: dir, rotation</div>
+<div class="line"><a name="l07872"></a><span class="lineno"> 7872</span>&#160;  <span class="keywordtype">logical</span>,            <span class="keywordtype">intent(in   )</span> :: from_contact</div>
+<div class="line"><a name="l07873"></a><span class="lineno"> 7873</span>&#160;    <span class="keywordtype">integer</span>                           :: count</div>
+<div class="line"><a name="l07874"></a><span class="lineno"> 7874</span>&#160; </div>
+<div class="line"><a name="l07875"></a><span class="lineno"> 7875</span>&#160;  <span class="keywordflow">if</span>( overlap%count == 0 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07876"></a><span class="lineno"> 7876</span>&#160;       overlap%pe = pe</div>
+<div class="line"><a name="l07877"></a><span class="lineno"> 7877</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l07878"></a><span class="lineno"> 7878</span>&#160;       <span class="keywordflow">if</span>(overlap%pe .NE. pe) <span class="keyword">call </span>mpp_error(fatal,  &amp;</div>
+<div class="line"><a name="l07879"></a><span class="lineno"> 7879</span>&#160;          <span class="stringliteral">&quot;mpp_domains_define.inc(insert_overlap_type): mismatch on pe&quot;</span>)</div>
+<div class="line"><a name="l07880"></a><span class="lineno"> 7880</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l07881"></a><span class="lineno"> 7881</span>&#160;    overlap%count = overlap%count+1</div>
+<div class="line"><a name="l07882"></a><span class="lineno"> 7882</span>&#160;    count = overlap%count</div>
+<div class="line"><a name="l07883"></a><span class="lineno"> 7883</span>&#160;    <span class="keywordflow">if</span>(count &gt; maxoverlap) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07884"></a><span class="lineno"> 7884</span>&#160;       <span class="stringliteral">&quot;mpp_domains_define.inc(insert_overlap_type): number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP&quot;</span>)</div>
+<div class="line"><a name="l07885"></a><span class="lineno"> 7885</span>&#160;    overlap%tileMe      (count) = tileme</div>
+<div class="line"><a name="l07886"></a><span class="lineno"> 7886</span>&#160;    overlap%tileNbr     (count) = tilenbr</div>
+<div class="line"><a name="l07887"></a><span class="lineno"> 7887</span>&#160;    overlap%is          (count) = is</div>
+<div class="line"><a name="l07888"></a><span class="lineno"> 7888</span>&#160;    overlap%ie          (count) = ie</div>
+<div class="line"><a name="l07889"></a><span class="lineno"> 7889</span>&#160;    overlap%js          (count) = js</div>
+<div class="line"><a name="l07890"></a><span class="lineno"> 7890</span>&#160;    overlap%je          (count) = je</div>
+<div class="line"><a name="l07891"></a><span class="lineno"> 7891</span>&#160;    overlap%dir         (count) = dir</div>
+<div class="line"><a name="l07892"></a><span class="lineno"> 7892</span>&#160;    overlap%rotation    (count) = rotation</div>
+<div class="line"><a name="l07893"></a><span class="lineno"> 7893</span>&#160;    overlap%from_contact(count) = from_contact</div>
+<div class="line"><a name="l07894"></a><span class="lineno"> 7894</span>&#160;    overlap%msgsize     (count) = (ie-is+1)*(je-js+1)</div>
+<div class="line"><a name="l07895"></a><span class="lineno"> 7895</span>&#160; </div>
+<div class="line"><a name="l07896"></a><span class="lineno"> 7896</span>&#160;<span class="keyword">end subroutine </span>insert_overlap_type</div>
 <div class="line"><a name="l07897"></a><span class="lineno"> 7897</span>&#160; </div>
 <div class="line"><a name="l07898"></a><span class="lineno"> 7898</span>&#160; </div>
-<div class="line"><a name="l07899"></a><span class="lineno"> 7899</span>&#160;<span class="keyword">end subroutine </span>deallocate_overlapspec</div>
-<div class="line"><a name="l07900"></a><span class="lineno"> 7900</span>&#160; </div>
-<div class="line"><a name="l07901"></a><span class="lineno"> 7901</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l07902"></a><span class="lineno"> 7902</span>&#160;<span class="comment">!--- this routine add the overlap_in into overlap_out</span></div>
-<div class="line"><a name="l07903"></a><span class="lineno"> 7903</span>&#160;<span class="keyword">subroutine </span>add_update_overlap( overlap_out, overlap_in)</div>
-<div class="line"><a name="l07904"></a><span class="lineno"> 7904</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap_out</div>
-<div class="line"><a name="l07905"></a><span class="lineno"> 7905</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(in   )</span> :: overlap_in</div>
-<div class="line"><a name="l07906"></a><span class="lineno"> 7906</span>&#160;  <span class="keywordtype">type</span>(overlap_type)                :: overlap</div>
-<div class="line"><a name="l07907"></a><span class="lineno"> 7907</span>&#160;  <span class="keywordtype">integer</span>                          :: count, count_in, count_out, n</div>
-<div class="line"><a name="l07908"></a><span class="lineno"> 7908</span>&#160; </div>
-<div class="line"><a name="l07909"></a><span class="lineno"> 7909</span>&#160;  <span class="comment">! if overlap_out%count == 0, then just copy overlap_in to overlap_out</span></div>
-<div class="line"><a name="l07910"></a><span class="lineno"> 7910</span>&#160;  count_in  = overlap_in %count</div>
-<div class="line"><a name="l07911"></a><span class="lineno"> 7911</span>&#160;  count_out = overlap_out%count</div>
-<div class="line"><a name="l07912"></a><span class="lineno"> 7912</span>&#160;  count     = count_in+count_out</div>
-<div class="line"><a name="l07913"></a><span class="lineno"> 7913</span>&#160;  <span class="keywordflow">if</span>(count_in == 0) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07914"></a><span class="lineno"> 7914</span>&#160;       <span class="stringliteral">&quot;mpp_domains_define.inc(add_update_overlap): overlap_in%count is zero&quot;</span>)</div>
-<div class="line"><a name="l07915"></a><span class="lineno"> 7915</span>&#160; </div>
-<div class="line"><a name="l07916"></a><span class="lineno"> 7916</span>&#160;  <span class="keywordflow">if</span>(count_out == 0) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l07917"></a><span class="lineno"> 7917</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap_out%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07918"></a><span class="lineno"> 7918</span>&#160;          <span class="stringliteral">&quot;mpp_domains_define.inc(add_update_overlap): overlap is already been allocated but count=0&quot;</span>)</div>
-<div class="line"><a name="l07919"></a><span class="lineno"> 7919</span>&#160;     <span class="keyword">call </span>allocate_update_overlap(overlap_out, count_in)</div>
-<div class="line"><a name="l07920"></a><span class="lineno"> 7920</span>&#160;     overlap_out%pe  = overlap_in%pe</div>
-<div class="line"><a name="l07921"></a><span class="lineno"> 7921</span>&#160;  <span class="keywordflow">else</span>  <span class="comment">! need to expand the dimension size of overlap</span></div>
-<div class="line"><a name="l07922"></a><span class="lineno"> 7922</span>&#160;     <span class="keywordflow">if</span>(overlap_in%pe .NE. overlap_out%pe) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07923"></a><span class="lineno"> 7923</span>&#160;          <span class="stringliteral">&quot;mpp_domains_define.inc(add_update_overlap): mismatch of pe between overlap_in and overlap_out&quot;</span>)</div>
-<div class="line"><a name="l07924"></a><span class="lineno"> 7924</span>&#160; </div>
-<div class="line"><a name="l07925"></a><span class="lineno"> 7925</span>&#160;     <span class="keyword">call </span>allocate_update_overlap(overlap, count_out)</div>
-<div class="line"><a name="l07926"></a><span class="lineno"> 7926</span>&#160;     overlap%tileMe      (1:count_out) = overlap_out%tileMe      (1:count_out)</div>
-<div class="line"><a name="l07927"></a><span class="lineno"> 7927</span>&#160;     overlap%tileNbr     (1:count_out) = overlap_out%tileNbr     (1:count_out)</div>
-<div class="line"><a name="l07928"></a><span class="lineno"> 7928</span>&#160;     overlap%is          (1:count_out) = overlap_out%is          (1:count_out)</div>
-<div class="line"><a name="l07929"></a><span class="lineno"> 7929</span>&#160;     overlap%ie          (1:count_out) = overlap_out%ie          (1:count_out)</div>
-<div class="line"><a name="l07930"></a><span class="lineno"> 7930</span>&#160;     overlap%js          (1:count_out) = overlap_out%js          (1:count_out)</div>
-<div class="line"><a name="l07931"></a><span class="lineno"> 7931</span>&#160;     overlap%je          (1:count_out) = overlap_out%je          (1:count_out)</div>
-<div class="line"><a name="l07932"></a><span class="lineno"> 7932</span>&#160;     overlap%dir         (1:count_out) = overlap_out%dir         (1:count_out)</div>
-<div class="line"><a name="l07933"></a><span class="lineno"> 7933</span>&#160;     overlap%rotation    (1:count_out) = overlap_out%rotation    (1:count_out)</div>
-<div class="line"><a name="l07934"></a><span class="lineno"> 7934</span>&#160;     overlap%from_contact(1:count_out) = overlap_out%from_contact(1:count_out)</div>
-<div class="line"><a name="l07935"></a><span class="lineno"> 7935</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap_out)</div>
-<div class="line"><a name="l07936"></a><span class="lineno"> 7936</span>&#160;     <span class="keyword">call </span>allocate_update_overlap(overlap_out, count)</div>
-<div class="line"><a name="l07937"></a><span class="lineno"> 7937</span>&#160;     overlap_out%tileMe      (1:count_out) = overlap%tileMe      (1:count_out)</div>
-<div class="line"><a name="l07938"></a><span class="lineno"> 7938</span>&#160;     overlap_out%tileNbr     (1:count_out) = overlap%tileNbr     (1:count_out)</div>
-<div class="line"><a name="l07939"></a><span class="lineno"> 7939</span>&#160;     overlap_out%is          (1:count_out) = overlap%is          (1:count_out)</div>
-<div class="line"><a name="l07940"></a><span class="lineno"> 7940</span>&#160;     overlap_out%ie          (1:count_out) = overlap%ie          (1:count_out)</div>
-<div class="line"><a name="l07941"></a><span class="lineno"> 7941</span>&#160;     overlap_out%js          (1:count_out) = overlap%js          (1:count_out)</div>
-<div class="line"><a name="l07942"></a><span class="lineno"> 7942</span>&#160;     overlap_out%je          (1:count_out) = overlap%je          (1:count_out)</div>
-<div class="line"><a name="l07943"></a><span class="lineno"> 7943</span>&#160;     overlap_out%dir         (1:count_out) = overlap%dir         (1:count_out)</div>
-<div class="line"><a name="l07944"></a><span class="lineno"> 7944</span>&#160;     overlap_out%rotation    (1:count_out) = overlap%rotation    (1:count_out)</div>
-<div class="line"><a name="l07945"></a><span class="lineno"> 7945</span>&#160;     overlap_out%index       (1:count_out) = overlap%index       (1:count_out)</div>
-<div class="line"><a name="l07946"></a><span class="lineno"> 7946</span>&#160;     overlap_out%from_contact(1:count_out) = overlap%from_contact(1:count_out)</div>
-<div class="line"><a name="l07947"></a><span class="lineno"> 7947</span>&#160;     overlap_out%msgsize     (1:count_out) = overlap%msgsize     (1:count_out)</div>
-<div class="line"><a name="l07948"></a><span class="lineno"> 7948</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap)</div>
-<div class="line"><a name="l07949"></a><span class="lineno"> 7949</span>&#160;<span class="keywordflow">  end if</span></div>
-<div class="line"><a name="l07950"></a><span class="lineno"> 7950</span>&#160;  overlap_out%count                           = count</div>
-<div class="line"><a name="l07951"></a><span class="lineno"> 7951</span>&#160;  overlap_out%tileMe      (count_out+1:count) = overlap_in%tileMe      (1:count_in)</div>
-<div class="line"><a name="l07952"></a><span class="lineno"> 7952</span>&#160;  overlap_out%tileNbr     (count_out+1:count) = overlap_in%tileNbr     (1:count_in)</div>
-<div class="line"><a name="l07953"></a><span class="lineno"> 7953</span>&#160;  overlap_out%is          (count_out+1:count) = overlap_in%is          (1:count_in)</div>
-<div class="line"><a name="l07954"></a><span class="lineno"> 7954</span>&#160;  overlap_out%ie          (count_out+1:count) = overlap_in%ie          (1:count_in)</div>
-<div class="line"><a name="l07955"></a><span class="lineno"> 7955</span>&#160;  overlap_out%js          (count_out+1:count) = overlap_in%js          (1:count_in)</div>
-<div class="line"><a name="l07956"></a><span class="lineno"> 7956</span>&#160;  overlap_out%je          (count_out+1:count) = overlap_in%je          (1:count_in)</div>
-<div class="line"><a name="l07957"></a><span class="lineno"> 7957</span>&#160;  overlap_out%dir         (count_out+1:count) = overlap_in%dir         (1:count_in)</div>
-<div class="line"><a name="l07958"></a><span class="lineno"> 7958</span>&#160;  overlap_out%rotation    (count_out+1:count) = overlap_in%rotation    (1:count_in)</div>
-<div class="line"><a name="l07959"></a><span class="lineno"> 7959</span>&#160;  overlap_out%from_contact(count_out+1:count) = overlap_in%from_contact(1:count_in)</div>
-<div class="line"><a name="l07960"></a><span class="lineno"> 7960</span>&#160; </div>
-<div class="line"><a name="l07961"></a><span class="lineno"> 7961</span>&#160;  <span class="keywordflow">do</span> n = count_out+1, count</div>
-<div class="line"><a name="l07962"></a><span class="lineno"> 7962</span>&#160;     overlap_out%msgsize(n) = (overlap_out%ie(n)-overlap_out%is(n)+1)*(overlap_out%je(n)-overlap_out%js(n)+1)</div>
-<div class="line"><a name="l07963"></a><span class="lineno"> 7963</span>&#160;<span class="keywordflow">  enddo</span></div>
-<div class="line"><a name="l07964"></a><span class="lineno"> 7964</span>&#160; </div>
-<div class="line"><a name="l07965"></a><span class="lineno"> 7965</span>&#160; </div>
-<div class="line"><a name="l07966"></a><span class="lineno"> 7966</span>&#160;<span class="keyword">end subroutine </span>add_update_overlap</div>
-<div class="line"><a name="l07967"></a><span class="lineno"> 7967</span>&#160; </div>
-<div class="line"><a name="l07968"></a><span class="lineno"> 7968</span>&#160;<span class="comment">!##############################################################################</span></div>
-<div class="line"><a name="l07969"></a><span class="lineno"> 7969</span>&#160;<span class="keyword">subroutine </span>expand_update_overlap_list(overlapList, npes)</div>
-<div class="line"><a name="l07970"></a><span class="lineno"> 7970</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span> :: overlapList(:)</div>
-<div class="line"><a name="l07971"></a><span class="lineno"> 7971</span>&#160;  <span class="keywordtype">integer</span>,      <span class="keywordtype">intent(in   )</span> :: npes</div>
-<div class="line"><a name="l07972"></a><span class="lineno"> 7972</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span>,<span class="keywordtype">save</span>           :: newlist(:) =&gt; null()</div>
-<div class="line"><a name="l07973"></a><span class="lineno"> 7973</span>&#160;  <span class="keywordtype">integer</span>                                    :: nlist_old, nlist, m</div>
-<div class="line"><a name="l07974"></a><span class="lineno"> 7974</span>&#160; </div>
-<div class="line"><a name="l07975"></a><span class="lineno"> 7975</span>&#160;  nlist_old = <span class="keyword">size</span>(overlaplist(:))</div>
-<div class="line"><a name="l07976"></a><span class="lineno"> 7976</span>&#160;  <span class="keywordflow">if</span>(nlist_old .GE. npes) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l07977"></a><span class="lineno"> 7977</span>&#160;     <span class="stringliteral">&#39;mpp_domains_define.inc(expand_update_overlap_list): size of overlaplist should be smaller than npes&#39;</span>)</div>
-<div class="line"><a name="l07978"></a><span class="lineno"> 7978</span>&#160;  nlist = min(npes, 2*nlist_old)</div>
-<div class="line"><a name="l07979"></a><span class="lineno"> 7979</span>&#160;  <span class="keyword">allocate</span>(newlist(nlist))</div>
-<div class="line"><a name="l07980"></a><span class="lineno"> 7980</span>&#160;  <span class="keywordflow">do</span> m = 1, nlist_old</div>
-<div class="line"><a name="l07981"></a><span class="lineno"> 7981</span>&#160;     <span class="keyword">call </span>add_update_overlap(newlist(m), overlaplist(m))</div>
-<div class="line"><a name="l07982"></a><span class="lineno"> 7982</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlaplist(m))</div>
-<div class="line"><a name="l07983"></a><span class="lineno"> 7983</span>&#160;<span class="keywordflow">  enddo</span></div>
-<div class="line"><a name="l07984"></a><span class="lineno"> 7984</span>&#160; </div>
-<div class="line"><a name="l07985"></a><span class="lineno"> 7985</span>&#160;  <span class="keyword">deallocate</span>(overlaplist)</div>
-<div class="line"><a name="l07986"></a><span class="lineno"> 7986</span>&#160;  overlaplist =&gt; newlist</div>
-<div class="line"><a name="l07987"></a><span class="lineno"> 7987</span>&#160;  newlist =&gt; null()</div>
-<div class="line"><a name="l07988"></a><span class="lineno"> 7988</span>&#160; </div>
-<div class="line"><a name="l07989"></a><span class="lineno"> 7989</span>&#160;  <span class="keywordflow">return</span></div>
-<div class="line"><a name="l07990"></a><span class="lineno"> 7990</span>&#160; </div>
-<div class="line"><a name="l07991"></a><span class="lineno"> 7991</span>&#160;<span class="keyword">end subroutine </span>expand_update_overlap_list</div>
-<div class="line"><a name="l07992"></a><span class="lineno"> 7992</span>&#160; </div>
-<div class="line"><a name="l07993"></a><span class="lineno"> 7993</span>&#160;<span class="comment">!##################################################################################</span></div>
-<div class="line"><a name="l07994"></a><span class="lineno"> 7994</span>&#160;<span class="keyword">subroutine </span>expand_check_overlap_list(overlaplist, npes)</div>
-<div class="line"><a name="l07995"></a><span class="lineno"> 7995</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span> :: overlaplist(:)</div>
-<div class="line"><a name="l07996"></a><span class="lineno"> 7996</span>&#160;  <span class="keywordtype">integer</span>,         <span class="keywordtype">intent(in)</span> :: npes</div>
-<div class="line"><a name="l07997"></a><span class="lineno"> 7997</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span>,<span class="keywordtype">save</span>           :: newlist(:) =&gt; null()</div>
-<div class="line"><a name="l07998"></a><span class="lineno"> 7998</span>&#160;  <span class="keywordtype">integer</span>                                    :: nlist_old, nlist, m</div>
-<div class="line"><a name="l07999"></a><span class="lineno"> 7999</span>&#160; </div>
-<div class="line"><a name="l08000"></a><span class="lineno"> 8000</span>&#160;  nlist_old = <span class="keyword">size</span>(overlaplist(:))</div>
-<div class="line"><a name="l08001"></a><span class="lineno"> 8001</span>&#160;  <span class="keywordflow">if</span>(nlist_old .GE. npes) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08002"></a><span class="lineno"> 8002</span>&#160;     <span class="stringliteral">&#39;mpp_domains_define.inc(expand_check_overlap_list): size of overlaplist should be smaller than npes&#39;</span>)</div>
-<div class="line"><a name="l08003"></a><span class="lineno"> 8003</span>&#160;  nlist = min(npes, 2*nlist_old)</div>
-<div class="line"><a name="l08004"></a><span class="lineno"> 8004</span>&#160;  <span class="keyword">allocate</span>(newlist(nlist))</div>
-<div class="line"><a name="l08005"></a><span class="lineno"> 8005</span>&#160;  <span class="keywordflow">do</span> m = 1,<span class="keyword">size</span>(overlaplist(:))</div>
-<div class="line"><a name="l08006"></a><span class="lineno"> 8006</span>&#160;     <span class="keyword">call </span>add_check_overlap(newlist(m), overlaplist(m))</div>
-<div class="line"><a name="l08007"></a><span class="lineno"> 8007</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlaplist(m))</div>
-<div class="line"><a name="l08008"></a><span class="lineno"> 8008</span>&#160;<span class="keywordflow">  enddo</span></div>
-<div class="line"><a name="l08009"></a><span class="lineno"> 8009</span>&#160;  <span class="keyword">deallocate</span>(overlaplist)</div>
-<div class="line"><a name="l08010"></a><span class="lineno"> 8010</span>&#160;  overlaplist =&gt; newlist</div>
+<div class="line"><a name="l07899"></a><span class="lineno"> 7899</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l07900"></a><span class="lineno"> 7900</span>&#160;<span class="keyword">subroutine </span>deallocate_overlap_type( overlap)</div>
+<div class="line"><a name="l07901"></a><span class="lineno"> 7901</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap</div>
+<div class="line"><a name="l07902"></a><span class="lineno"> 7902</span>&#160; </div>
+<div class="line"><a name="l07903"></a><span class="lineno"> 7903</span>&#160;  <span class="keywordflow">if</span>(overlap%count == 0) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07904"></a><span class="lineno"> 7904</span>&#160;     <span class="keywordflow">if</span>( .NOT. <span class="keyword">associated</span>(overlap%tileMe)) <span class="keywordflow">return</span></div>
+<div class="line"><a name="l07905"></a><span class="lineno"> 7905</span>&#160;  <span class="keywordflow">else</span></div>
+<div class="line"><a name="l07906"></a><span class="lineno"> 7906</span>&#160;     <span class="keywordflow">if</span>( .NOT. <span class="keyword">associated</span>(overlap%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07907"></a><span class="lineno"> 7907</span>&#160;          <span class="stringliteral">&quot;deallocate_overlap_type(mpp_domains_define): overlap is not been allocated&quot;</span>)</div>
+<div class="line"><a name="l07908"></a><span class="lineno"> 7908</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l07909"></a><span class="lineno"> 7909</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%tileMe)) <span class="keyword">deallocate</span>(overlap%tileMe)</div>
+<div class="line"><a name="l07910"></a><span class="lineno"> 7910</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%tileNbr)) <span class="keyword">deallocate</span>(overlap%tileNbr)</div>
+<div class="line"><a name="l07911"></a><span class="lineno"> 7911</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%is)) <span class="keyword">deallocate</span>(overlap%is)</div>
+<div class="line"><a name="l07912"></a><span class="lineno"> 7912</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%ie)) <span class="keyword">deallocate</span>(overlap%ie)</div>
+<div class="line"><a name="l07913"></a><span class="lineno"> 7913</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%js)) <span class="keyword">deallocate</span>(overlap%js)</div>
+<div class="line"><a name="l07914"></a><span class="lineno"> 7914</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%je)) <span class="keyword">deallocate</span>(overlap%je)</div>
+<div class="line"><a name="l07915"></a><span class="lineno"> 7915</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%dir)) <span class="keyword">deallocate</span>(overlap%dir)</div>
+<div class="line"><a name="l07916"></a><span class="lineno"> 7916</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%index)) <span class="keyword">deallocate</span>(overlap%index)</div>
+<div class="line"><a name="l07917"></a><span class="lineno"> 7917</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%rotation)) <span class="keyword">deallocate</span>(overlap%rotation)</div>
+<div class="line"><a name="l07918"></a><span class="lineno"> 7918</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%from_contact)) <span class="keyword">deallocate</span>(overlap%from_contact)</div>
+<div class="line"><a name="l07919"></a><span class="lineno"> 7919</span>&#160;  <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%msgsize)) <span class="keyword">deallocate</span>(overlap%msgsize)</div>
+<div class="line"><a name="l07920"></a><span class="lineno"> 7920</span>&#160;  overlap%count = 0</div>
+<div class="line"><a name="l07921"></a><span class="lineno"> 7921</span>&#160; </div>
+<div class="line"><a name="l07922"></a><span class="lineno"> 7922</span>&#160;<span class="keyword">end subroutine </span>deallocate_overlap_type</div>
+<div class="line"><a name="l07923"></a><span class="lineno"> 7923</span>&#160; </div>
+<div class="line"><a name="l07924"></a><span class="lineno"> 7924</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l07925"></a><span class="lineno"> 7925</span>&#160;<span class="keyword">subroutine </span>deallocate_overlapspec(overlap)</div>
+<div class="line"><a name="l07926"></a><span class="lineno"> 7926</span>&#160;<span class="keywordtype">type</span>(overlapspec), <span class="keywordtype">intent(inout)</span> :: overlap</div>
+<div class="line"><a name="l07927"></a><span class="lineno"> 7927</span>&#160;<span class="keywordtype">integer</span>                          :: n</div>
+<div class="line"><a name="l07928"></a><span class="lineno"> 7928</span>&#160; </div>
+<div class="line"><a name="l07929"></a><span class="lineno"> 7929</span>&#160;   <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%send)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07930"></a><span class="lineno"> 7930</span>&#160;      <span class="keywordflow">do</span> n = 1, <span class="keyword">size</span>(overlap%send(:))</div>
+<div class="line"><a name="l07931"></a><span class="lineno"> 7931</span>&#160;         <span class="keyword">call </span>deallocate_overlap_type(overlap%send(n))</div>
+<div class="line"><a name="l07932"></a><span class="lineno"> 7932</span>&#160;<span class="keywordflow">      enddo</span></div>
+<div class="line"><a name="l07933"></a><span class="lineno"> 7933</span>&#160;      <span class="keyword">deallocate</span>(overlap%send)</div>
+<div class="line"><a name="l07934"></a><span class="lineno"> 7934</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l07935"></a><span class="lineno"> 7935</span>&#160;   <span class="keywordflow">if</span>(<span class="keyword">ASSOCIATED</span>(overlap%recv)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07936"></a><span class="lineno"> 7936</span>&#160;      <span class="keywordflow">do</span> n = 1, <span class="keyword">size</span>(overlap%recv(:))</div>
+<div class="line"><a name="l07937"></a><span class="lineno"> 7937</span>&#160;         <span class="keyword">call </span>deallocate_overlap_type(overlap%recv(n))</div>
+<div class="line"><a name="l07938"></a><span class="lineno"> 7938</span>&#160;<span class="keywordflow">      enddo</span></div>
+<div class="line"><a name="l07939"></a><span class="lineno"> 7939</span>&#160;      <span class="keyword">deallocate</span>(overlap%recv)</div>
+<div class="line"><a name="l07940"></a><span class="lineno"> 7940</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l07941"></a><span class="lineno"> 7941</span>&#160; </div>
+<div class="line"><a name="l07942"></a><span class="lineno"> 7942</span>&#160; </div>
+<div class="line"><a name="l07943"></a><span class="lineno"> 7943</span>&#160;<span class="keyword">end subroutine </span>deallocate_overlapspec</div>
+<div class="line"><a name="l07944"></a><span class="lineno"> 7944</span>&#160; </div>
+<div class="line"><a name="l07945"></a><span class="lineno"> 7945</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l07946"></a><span class="lineno"> 7946</span>&#160;<span class="comment">!--- this routine add the overlap_in into overlap_out</span></div>
+<div class="line"><a name="l07947"></a><span class="lineno"> 7947</span>&#160;<span class="keyword">subroutine </span>add_update_overlap( overlap_out, overlap_in)</div>
+<div class="line"><a name="l07948"></a><span class="lineno"> 7948</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(inout)</span> :: overlap_out</div>
+<div class="line"><a name="l07949"></a><span class="lineno"> 7949</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">intent(in   )</span> :: overlap_in</div>
+<div class="line"><a name="l07950"></a><span class="lineno"> 7950</span>&#160;  <span class="keywordtype">type</span>(overlap_type)                :: overlap</div>
+<div class="line"><a name="l07951"></a><span class="lineno"> 7951</span>&#160;  <span class="keywordtype">integer</span>                          :: count, count_in, count_out, n</div>
+<div class="line"><a name="l07952"></a><span class="lineno"> 7952</span>&#160; </div>
+<div class="line"><a name="l07953"></a><span class="lineno"> 7953</span>&#160;  <span class="comment">! if overlap_out%count == 0, then just copy overlap_in to overlap_out</span></div>
+<div class="line"><a name="l07954"></a><span class="lineno"> 7954</span>&#160;  count_in  = overlap_in %count</div>
+<div class="line"><a name="l07955"></a><span class="lineno"> 7955</span>&#160;  count_out = overlap_out%count</div>
+<div class="line"><a name="l07956"></a><span class="lineno"> 7956</span>&#160;  count     = count_in+count_out</div>
+<div class="line"><a name="l07957"></a><span class="lineno"> 7957</span>&#160;  <span class="keywordflow">if</span>(count_in == 0) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07958"></a><span class="lineno"> 7958</span>&#160;       <span class="stringliteral">&quot;mpp_domains_define.inc(add_update_overlap): overlap_in%count is zero&quot;</span>)</div>
+<div class="line"><a name="l07959"></a><span class="lineno"> 7959</span>&#160; </div>
+<div class="line"><a name="l07960"></a><span class="lineno"> 7960</span>&#160;  <span class="keywordflow">if</span>(count_out == 0) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l07961"></a><span class="lineno"> 7961</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">associated</span>(overlap_out%tileMe)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07962"></a><span class="lineno"> 7962</span>&#160;          <span class="stringliteral">&quot;mpp_domains_define.inc(add_update_overlap): overlap is already been allocated but count=0&quot;</span>)</div>
+<div class="line"><a name="l07963"></a><span class="lineno"> 7963</span>&#160;     <span class="keyword">call </span>allocate_update_overlap(overlap_out, count_in)</div>
+<div class="line"><a name="l07964"></a><span class="lineno"> 7964</span>&#160;     overlap_out%pe  = overlap_in%pe</div>
+<div class="line"><a name="l07965"></a><span class="lineno"> 7965</span>&#160;  <span class="keywordflow">else</span>  <span class="comment">! need to expand the dimension size of overlap</span></div>
+<div class="line"><a name="l07966"></a><span class="lineno"> 7966</span>&#160;     <span class="keywordflow">if</span>(overlap_in%pe .NE. overlap_out%pe) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l07967"></a><span class="lineno"> 7967</span>&#160;          <span class="stringliteral">&quot;mpp_domains_define.inc(add_update_overlap): mismatch of pe between overlap_in and overlap_out&quot;</span>)</div>
+<div class="line"><a name="l07968"></a><span class="lineno"> 7968</span>&#160; </div>
+<div class="line"><a name="l07969"></a><span class="lineno"> 7969</span>&#160;     <span class="keyword">call </span>allocate_update_overlap(overlap, count_out)</div>
+<div class="line"><a name="l07970"></a><span class="lineno"> 7970</span>&#160;     overlap%tileMe      (1:count_out) = overlap_out%tileMe      (1:count_out)</div>
+<div class="line"><a name="l07971"></a><span class="lineno"> 7971</span>&#160;     overlap%tileNbr     (1:count_out) = overlap_out%tileNbr     (1:count_out)</div>
+<div class="line"><a name="l07972"></a><span class="lineno"> 7972</span>&#160;     overlap%is          (1:count_out) = overlap_out%is          (1:count_out)</div>
+<div class="line"><a name="l07973"></a><span class="lineno"> 7973</span>&#160;     overlap%ie          (1:count_out) = overlap_out%ie          (1:count_out)</div>
+<div class="line"><a name="l07974"></a><span class="lineno"> 7974</span>&#160;     overlap%js          (1:count_out) = overlap_out%js          (1:count_out)</div>
+<div class="line"><a name="l07975"></a><span class="lineno"> 7975</span>&#160;     overlap%je          (1:count_out) = overlap_out%je          (1:count_out)</div>
+<div class="line"><a name="l07976"></a><span class="lineno"> 7976</span>&#160;     overlap%dir         (1:count_out) = overlap_out%dir         (1:count_out)</div>
+<div class="line"><a name="l07977"></a><span class="lineno"> 7977</span>&#160;     overlap%rotation    (1:count_out) = overlap_out%rotation    (1:count_out)</div>
+<div class="line"><a name="l07978"></a><span class="lineno"> 7978</span>&#160;     overlap%from_contact(1:count_out) = overlap_out%from_contact(1:count_out)</div>
+<div class="line"><a name="l07979"></a><span class="lineno"> 7979</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap_out)</div>
+<div class="line"><a name="l07980"></a><span class="lineno"> 7980</span>&#160;     <span class="keyword">call </span>allocate_update_overlap(overlap_out, count)</div>
+<div class="line"><a name="l07981"></a><span class="lineno"> 7981</span>&#160;     overlap_out%tileMe      (1:count_out) = overlap%tileMe      (1:count_out)</div>
+<div class="line"><a name="l07982"></a><span class="lineno"> 7982</span>&#160;     overlap_out%tileNbr     (1:count_out) = overlap%tileNbr     (1:count_out)</div>
+<div class="line"><a name="l07983"></a><span class="lineno"> 7983</span>&#160;     overlap_out%is          (1:count_out) = overlap%is          (1:count_out)</div>
+<div class="line"><a name="l07984"></a><span class="lineno"> 7984</span>&#160;     overlap_out%ie          (1:count_out) = overlap%ie          (1:count_out)</div>
+<div class="line"><a name="l07985"></a><span class="lineno"> 7985</span>&#160;     overlap_out%js          (1:count_out) = overlap%js          (1:count_out)</div>
+<div class="line"><a name="l07986"></a><span class="lineno"> 7986</span>&#160;     overlap_out%je          (1:count_out) = overlap%je          (1:count_out)</div>
+<div class="line"><a name="l07987"></a><span class="lineno"> 7987</span>&#160;     overlap_out%dir         (1:count_out) = overlap%dir         (1:count_out)</div>
+<div class="line"><a name="l07988"></a><span class="lineno"> 7988</span>&#160;     overlap_out%rotation    (1:count_out) = overlap%rotation    (1:count_out)</div>
+<div class="line"><a name="l07989"></a><span class="lineno"> 7989</span>&#160;     overlap_out%index       (1:count_out) = overlap%index       (1:count_out)</div>
+<div class="line"><a name="l07990"></a><span class="lineno"> 7990</span>&#160;     overlap_out%from_contact(1:count_out) = overlap%from_contact(1:count_out)</div>
+<div class="line"><a name="l07991"></a><span class="lineno"> 7991</span>&#160;     overlap_out%msgsize     (1:count_out) = overlap%msgsize     (1:count_out)</div>
+<div class="line"><a name="l07992"></a><span class="lineno"> 7992</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlap)</div>
+<div class="line"><a name="l07993"></a><span class="lineno"> 7993</span>&#160;<span class="keywordflow">  end if</span></div>
+<div class="line"><a name="l07994"></a><span class="lineno"> 7994</span>&#160;  overlap_out%count                           = count</div>
+<div class="line"><a name="l07995"></a><span class="lineno"> 7995</span>&#160;  overlap_out%tileMe      (count_out+1:count) = overlap_in%tileMe      (1:count_in)</div>
+<div class="line"><a name="l07996"></a><span class="lineno"> 7996</span>&#160;  overlap_out%tileNbr     (count_out+1:count) = overlap_in%tileNbr     (1:count_in)</div>
+<div class="line"><a name="l07997"></a><span class="lineno"> 7997</span>&#160;  overlap_out%is          (count_out+1:count) = overlap_in%is          (1:count_in)</div>
+<div class="line"><a name="l07998"></a><span class="lineno"> 7998</span>&#160;  overlap_out%ie          (count_out+1:count) = overlap_in%ie          (1:count_in)</div>
+<div class="line"><a name="l07999"></a><span class="lineno"> 7999</span>&#160;  overlap_out%js          (count_out+1:count) = overlap_in%js          (1:count_in)</div>
+<div class="line"><a name="l08000"></a><span class="lineno"> 8000</span>&#160;  overlap_out%je          (count_out+1:count) = overlap_in%je          (1:count_in)</div>
+<div class="line"><a name="l08001"></a><span class="lineno"> 8001</span>&#160;  overlap_out%dir         (count_out+1:count) = overlap_in%dir         (1:count_in)</div>
+<div class="line"><a name="l08002"></a><span class="lineno"> 8002</span>&#160;  overlap_out%rotation    (count_out+1:count) = overlap_in%rotation    (1:count_in)</div>
+<div class="line"><a name="l08003"></a><span class="lineno"> 8003</span>&#160;  overlap_out%from_contact(count_out+1:count) = overlap_in%from_contact(1:count_in)</div>
+<div class="line"><a name="l08004"></a><span class="lineno"> 8004</span>&#160; </div>
+<div class="line"><a name="l08005"></a><span class="lineno"> 8005</span>&#160;  <span class="keywordflow">do</span> n = count_out+1, count</div>
+<div class="line"><a name="l08006"></a><span class="lineno"> 8006</span>&#160;     overlap_out%msgsize(n) = (overlap_out%ie(n)-overlap_out%is(n)+1)*(overlap_out%je(n)-overlap_out%js(n)+1)</div>
+<div class="line"><a name="l08007"></a><span class="lineno"> 8007</span>&#160;<span class="keywordflow">  enddo</span></div>
+<div class="line"><a name="l08008"></a><span class="lineno"> 8008</span>&#160; </div>
+<div class="line"><a name="l08009"></a><span class="lineno"> 8009</span>&#160; </div>
+<div class="line"><a name="l08010"></a><span class="lineno"> 8010</span>&#160;<span class="keyword">end subroutine </span>add_update_overlap</div>
 <div class="line"><a name="l08011"></a><span class="lineno"> 8011</span>&#160; </div>
-<div class="line"><a name="l08012"></a><span class="lineno"> 8012</span>&#160; </div>
-<div class="line"><a name="l08013"></a><span class="lineno"> 8013</span>&#160;  <span class="keywordflow">return</span></div>
-<div class="line"><a name="l08014"></a><span class="lineno"> 8014</span>&#160; </div>
-<div class="line"><a name="l08015"></a><span class="lineno"> 8015</span>&#160;<span class="keyword">end subroutine </span>expand_check_overlap_list</div>
-<div class="line"><a name="l08016"></a><span class="lineno"> 8016</span>&#160; </div>
-<div class="line"><a name="l08017"></a><span class="lineno"> 8017</span>&#160; </div>
-<div class="line"><a name="l08018"></a><span class="lineno"> 8018</span>&#160;<span class="comment">!###############################################################################</span></div>
-<div class="line"><a name="l08019"></a><span class="lineno"> 8019</span>&#160;<span class="keyword">subroutine </span>check_overlap_pe_order(domain, overlap, name)</div>
-<div class="line"><a name="l08020"></a><span class="lineno"> 8020</span>&#160;  <span class="keywordtype">type</span>(domain2d),    <span class="keywordtype">intent(in)</span> :: domain</div>
-<div class="line"><a name="l08021"></a><span class="lineno"> 8021</span>&#160;  <span class="keywordtype">type</span>(overlapspec), <span class="keywordtype">intent(in)</span> :: overlap</div>
-<div class="line"><a name="l08022"></a><span class="lineno"> 8022</span>&#160;  <span class="keywordtype">character(len=*)</span>,  <span class="keywordtype">intent(in)</span> :: name</div>
-<div class="line"><a name="l08023"></a><span class="lineno"> 8023</span>&#160;  <span class="keywordtype">integer</span>                       :: m</div>
-<div class="line"><a name="l08024"></a><span class="lineno"> 8024</span>&#160;  <span class="keywordtype">integer</span>                       :: pe1, pe2</div>
-<div class="line"><a name="l08025"></a><span class="lineno"> 8025</span>&#160; </div>
-<div class="line"><a name="l08026"></a><span class="lineno"> 8026</span>&#160;  <span class="comment">!---make sure overlap%nsend and overlap%nrecv is no larger than MAXLIST</span></div>
-<div class="line"><a name="l08027"></a><span class="lineno"> 8027</span>&#160;  <span class="keywordflow">if</span>( overlap%nsend &gt; maxlist) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08028"></a><span class="lineno"> 8028</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): overlap%nsend &gt; MAXLIST, increase MAXLIST&quot;</span>)</div>
-<div class="line"><a name="l08029"></a><span class="lineno"> 8029</span>&#160;  <span class="keywordflow">if</span>( overlap%nrecv &gt; maxlist) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08030"></a><span class="lineno"> 8030</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): overlap%nrecv &gt; MAXLIST, increase MAXLIST&quot;</span>)</div>
-<div class="line"><a name="l08031"></a><span class="lineno"> 8031</span>&#160; </div>
-<div class="line"><a name="l08032"></a><span class="lineno"> 8032</span>&#160;  <span class="keywordflow">do</span> m = 2, overlap%nsend</div>
-<div class="line"><a name="l08033"></a><span class="lineno"> 8033</span>&#160;     pe1 = overlap%send(m-1)%pe</div>
-<div class="line"><a name="l08034"></a><span class="lineno"> 8034</span>&#160;     pe2 = overlap%send(m)%pe</div>
-<div class="line"><a name="l08035"></a><span class="lineno"> 8035</span>&#160;     <span class="comment">!-- when p1 == domain%pe, pe2 could be any value except domain%pe</span></div>
-<div class="line"><a name="l08036"></a><span class="lineno"> 8036</span>&#160;     <span class="keywordflow">if</span>( pe2 == domain%pe ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08037"></a><span class="lineno"> 8037</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: send pe is &quot;</span>, pe1, pe2</div>
-<div class="line"><a name="l08038"></a><span class="lineno"> 8038</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08039"></a><span class="lineno"> 8039</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): send pe2 can not equal to domain%pe&quot;</span>)</div>
-<div class="line"><a name="l08040"></a><span class="lineno"> 8040</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span>( (pe1 &gt; domain%pe .AND. pe2 &gt; domain%pe) .OR. (pe1 &lt; domain%pe .AND. pe2 &lt; domain%pe)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08041"></a><span class="lineno"> 8041</span>&#160;        <span class="keywordflow">if</span>( pe2 &lt; pe1 ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08042"></a><span class="lineno"> 8042</span>&#160;           print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: send pe is &quot;</span>, pe1, pe2</div>
-<div class="line"><a name="l08043"></a><span class="lineno"> 8043</span>&#160;           <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08044"></a><span class="lineno"> 8044</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 1&quot;</span>)</div>
-<div class="line"><a name="l08045"></a><span class="lineno"> 8045</span>&#160;<span class="keywordflow">        endif</span></div>
-<div class="line"><a name="l08046"></a><span class="lineno"> 8046</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( pe2 &gt; domain%pe .AND. pe1 &lt; domain%pe ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08047"></a><span class="lineno"> 8047</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: send pe is &quot;</span>, pe1, pe2</div>
-<div class="line"><a name="l08048"></a><span class="lineno"> 8048</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08049"></a><span class="lineno"> 8049</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 2&quot;</span>)</div>
-<div class="line"><a name="l08050"></a><span class="lineno"> 8050</span>&#160;<span class="keywordflow">     endif</span></div>
-<div class="line"><a name="l08051"></a><span class="lineno"> 8051</span>&#160;<span class="keywordflow">  enddo</span></div>
-<div class="line"><a name="l08052"></a><span class="lineno"> 8052</span>&#160; </div>
-<div class="line"><a name="l08053"></a><span class="lineno"> 8053</span>&#160; </div>
-<div class="line"><a name="l08054"></a><span class="lineno"> 8054</span>&#160;  <span class="keywordflow">do</span> m = 2, overlap%nrecv</div>
-<div class="line"><a name="l08055"></a><span class="lineno"> 8055</span>&#160;     pe1 = overlap%recv(m-1)%pe</div>
-<div class="line"><a name="l08056"></a><span class="lineno"> 8056</span>&#160;     pe2 = overlap%recv(m)%pe</div>
-<div class="line"><a name="l08057"></a><span class="lineno"> 8057</span>&#160;     <span class="comment">!-- when p1 == domain%pe, pe2 could be any value except domain%pe</span></div>
-<div class="line"><a name="l08058"></a><span class="lineno"> 8058</span>&#160;     <span class="keywordflow">if</span>( pe2 == domain%pe ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08059"></a><span class="lineno"> 8059</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: recv pe is &quot;</span>, pe1, pe2</div>
-<div class="line"><a name="l08060"></a><span class="lineno"> 8060</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08061"></a><span class="lineno"> 8061</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): recv pe2 can not equal to domain%pe&quot;</span>)</div>
-<div class="line"><a name="l08062"></a><span class="lineno"> 8062</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span>( (pe1 &gt; domain%pe .AND. pe2 &gt; domain%pe) .OR. (pe1 &lt; domain%pe .AND. pe2 &lt; domain%pe)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08063"></a><span class="lineno"> 8063</span>&#160;        <span class="keywordflow">if</span>( pe2 &gt; pe1 ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08064"></a><span class="lineno"> 8064</span>&#160;           print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: recv pe is &quot;</span>, pe1, pe2</div>
-<div class="line"><a name="l08065"></a><span class="lineno"> 8065</span>&#160;           <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08066"></a><span class="lineno"> 8066</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 1&quot;</span>)</div>
-<div class="line"><a name="l08067"></a><span class="lineno"> 8067</span>&#160;<span class="keywordflow">        endif</span></div>
-<div class="line"><a name="l08068"></a><span class="lineno"> 8068</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( pe2 &lt; domain%pe .AND. pe1 &gt; domain%pe ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08069"></a><span class="lineno"> 8069</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: recv pe is &quot;</span>, pe1, pe2</div>
-<div class="line"><a name="l08070"></a><span class="lineno"> 8070</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l08071"></a><span class="lineno"> 8071</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 2&quot;</span>)</div>
-<div class="line"><a name="l08072"></a><span class="lineno"> 8072</span>&#160;<span class="keywordflow">     endif</span></div>
-<div class="line"><a name="l08073"></a><span class="lineno"> 8073</span>&#160;<span class="keywordflow">  enddo</span></div>
-<div class="line"><a name="l08074"></a><span class="lineno"> 8074</span>&#160; </div>
+<div class="line"><a name="l08012"></a><span class="lineno"> 8012</span>&#160;<span class="comment">!##############################################################################</span></div>
+<div class="line"><a name="l08013"></a><span class="lineno"> 8013</span>&#160;<span class="keyword">subroutine </span>expand_update_overlap_list(overlapList, npes)</div>
+<div class="line"><a name="l08014"></a><span class="lineno"> 8014</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span> :: overlapList(:)</div>
+<div class="line"><a name="l08015"></a><span class="lineno"> 8015</span>&#160;  <span class="keywordtype">integer</span>,      <span class="keywordtype">intent(in   )</span> :: npes</div>
+<div class="line"><a name="l08016"></a><span class="lineno"> 8016</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span>,<span class="keywordtype">save</span>           :: newlist(:) =&gt; null()</div>
+<div class="line"><a name="l08017"></a><span class="lineno"> 8017</span>&#160;  <span class="keywordtype">integer</span>                                    :: nlist_old, nlist, m</div>
+<div class="line"><a name="l08018"></a><span class="lineno"> 8018</span>&#160; </div>
+<div class="line"><a name="l08019"></a><span class="lineno"> 8019</span>&#160;  nlist_old = <span class="keyword">size</span>(overlaplist(:))</div>
+<div class="line"><a name="l08020"></a><span class="lineno"> 8020</span>&#160;  <span class="keywordflow">if</span>(nlist_old .GE. npes) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08021"></a><span class="lineno"> 8021</span>&#160;     <span class="stringliteral">&#39;mpp_domains_define.inc(expand_update_overlap_list): size of overlaplist should be smaller than npes&#39;</span>)</div>
+<div class="line"><a name="l08022"></a><span class="lineno"> 8022</span>&#160;  nlist = min(npes, 2*nlist_old)</div>
+<div class="line"><a name="l08023"></a><span class="lineno"> 8023</span>&#160;  <span class="keyword">allocate</span>(newlist(nlist))</div>
+<div class="line"><a name="l08024"></a><span class="lineno"> 8024</span>&#160;  <span class="keywordflow">do</span> m = 1, nlist_old</div>
+<div class="line"><a name="l08025"></a><span class="lineno"> 8025</span>&#160;     <span class="keyword">call </span>add_update_overlap(newlist(m), overlaplist(m))</div>
+<div class="line"><a name="l08026"></a><span class="lineno"> 8026</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlaplist(m))</div>
+<div class="line"><a name="l08027"></a><span class="lineno"> 8027</span>&#160;<span class="keywordflow">  enddo</span></div>
+<div class="line"><a name="l08028"></a><span class="lineno"> 8028</span>&#160; </div>
+<div class="line"><a name="l08029"></a><span class="lineno"> 8029</span>&#160;  <span class="keyword">deallocate</span>(overlaplist)</div>
+<div class="line"><a name="l08030"></a><span class="lineno"> 8030</span>&#160;  overlaplist =&gt; newlist</div>
+<div class="line"><a name="l08031"></a><span class="lineno"> 8031</span>&#160;  newlist =&gt; null()</div>
+<div class="line"><a name="l08032"></a><span class="lineno"> 8032</span>&#160; </div>
+<div class="line"><a name="l08033"></a><span class="lineno"> 8033</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l08034"></a><span class="lineno"> 8034</span>&#160; </div>
+<div class="line"><a name="l08035"></a><span class="lineno"> 8035</span>&#160;<span class="keyword">end subroutine </span>expand_update_overlap_list</div>
+<div class="line"><a name="l08036"></a><span class="lineno"> 8036</span>&#160; </div>
+<div class="line"><a name="l08037"></a><span class="lineno"> 8037</span>&#160;<span class="comment">!##################################################################################</span></div>
+<div class="line"><a name="l08038"></a><span class="lineno"> 8038</span>&#160;<span class="keyword">subroutine </span>expand_check_overlap_list(overlaplist, npes)</div>
+<div class="line"><a name="l08039"></a><span class="lineno"> 8039</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span> :: overlaplist(:)</div>
+<div class="line"><a name="l08040"></a><span class="lineno"> 8040</span>&#160;  <span class="keywordtype">integer</span>,         <span class="keywordtype">intent(in)</span> :: npes</div>
+<div class="line"><a name="l08041"></a><span class="lineno"> 8041</span>&#160;  <span class="keywordtype">type</span>(overlap_type), <span class="keywordtype">pointer</span>,<span class="keywordtype">save</span>           :: newlist(:) =&gt; null()</div>
+<div class="line"><a name="l08042"></a><span class="lineno"> 8042</span>&#160;  <span class="keywordtype">integer</span>                                    :: nlist_old, nlist, m</div>
+<div class="line"><a name="l08043"></a><span class="lineno"> 8043</span>&#160; </div>
+<div class="line"><a name="l08044"></a><span class="lineno"> 8044</span>&#160;  nlist_old = <span class="keyword">size</span>(overlaplist(:))</div>
+<div class="line"><a name="l08045"></a><span class="lineno"> 8045</span>&#160;  <span class="keywordflow">if</span>(nlist_old .GE. npes) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08046"></a><span class="lineno"> 8046</span>&#160;     <span class="stringliteral">&#39;mpp_domains_define.inc(expand_check_overlap_list): size of overlaplist should be smaller than npes&#39;</span>)</div>
+<div class="line"><a name="l08047"></a><span class="lineno"> 8047</span>&#160;  nlist = min(npes, 2*nlist_old)</div>
+<div class="line"><a name="l08048"></a><span class="lineno"> 8048</span>&#160;  <span class="keyword">allocate</span>(newlist(nlist))</div>
+<div class="line"><a name="l08049"></a><span class="lineno"> 8049</span>&#160;  <span class="keywordflow">do</span> m = 1,<span class="keyword">size</span>(overlaplist(:))</div>
+<div class="line"><a name="l08050"></a><span class="lineno"> 8050</span>&#160;     <span class="keyword">call </span>add_check_overlap(newlist(m), overlaplist(m))</div>
+<div class="line"><a name="l08051"></a><span class="lineno"> 8051</span>&#160;     <span class="keyword">call </span>deallocate_overlap_type(overlaplist(m))</div>
+<div class="line"><a name="l08052"></a><span class="lineno"> 8052</span>&#160;<span class="keywordflow">  enddo</span></div>
+<div class="line"><a name="l08053"></a><span class="lineno"> 8053</span>&#160;  <span class="keyword">deallocate</span>(overlaplist)</div>
+<div class="line"><a name="l08054"></a><span class="lineno"> 8054</span>&#160;  overlaplist =&gt; newlist</div>
+<div class="line"><a name="l08055"></a><span class="lineno"> 8055</span>&#160; </div>
+<div class="line"><a name="l08056"></a><span class="lineno"> 8056</span>&#160; </div>
+<div class="line"><a name="l08057"></a><span class="lineno"> 8057</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l08058"></a><span class="lineno"> 8058</span>&#160; </div>
+<div class="line"><a name="l08059"></a><span class="lineno"> 8059</span>&#160;<span class="keyword">end subroutine </span>expand_check_overlap_list</div>
+<div class="line"><a name="l08060"></a><span class="lineno"> 8060</span>&#160; </div>
+<div class="line"><a name="l08061"></a><span class="lineno"> 8061</span>&#160; </div>
+<div class="line"><a name="l08062"></a><span class="lineno"> 8062</span>&#160;<span class="comment">!###############################################################################</span></div>
+<div class="line"><a name="l08063"></a><span class="lineno"> 8063</span>&#160;<span class="keyword">subroutine </span>check_overlap_pe_order(domain, overlap, name)</div>
+<div class="line"><a name="l08064"></a><span class="lineno"> 8064</span>&#160;  <span class="keywordtype">type</span>(domain2d),    <span class="keywordtype">intent(in)</span> :: domain</div>
+<div class="line"><a name="l08065"></a><span class="lineno"> 8065</span>&#160;  <span class="keywordtype">type</span>(overlapspec), <span class="keywordtype">intent(in)</span> :: overlap</div>
+<div class="line"><a name="l08066"></a><span class="lineno"> 8066</span>&#160;  <span class="keywordtype">character(len=*)</span>,  <span class="keywordtype">intent(in)</span> :: name</div>
+<div class="line"><a name="l08067"></a><span class="lineno"> 8067</span>&#160;  <span class="keywordtype">integer</span>                       :: m</div>
+<div class="line"><a name="l08068"></a><span class="lineno"> 8068</span>&#160;  <span class="keywordtype">integer</span>                       :: pe1, pe2</div>
+<div class="line"><a name="l08069"></a><span class="lineno"> 8069</span>&#160; </div>
+<div class="line"><a name="l08070"></a><span class="lineno"> 8070</span>&#160;  <span class="comment">!---make sure overlap%nsend and overlap%nrecv is no larger than MAXLIST</span></div>
+<div class="line"><a name="l08071"></a><span class="lineno"> 8071</span>&#160;  <span class="keywordflow">if</span>( overlap%nsend &gt; maxlist) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08072"></a><span class="lineno"> 8072</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): overlap%nsend &gt; MAXLIST, increase MAXLIST&quot;</span>)</div>
+<div class="line"><a name="l08073"></a><span class="lineno"> 8073</span>&#160;  <span class="keywordflow">if</span>( overlap%nrecv &gt; maxlist) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08074"></a><span class="lineno"> 8074</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): overlap%nrecv &gt; MAXLIST, increase MAXLIST&quot;</span>)</div>
 <div class="line"><a name="l08075"></a><span class="lineno"> 8075</span>&#160; </div>
-<div class="line"><a name="l08076"></a><span class="lineno"> 8076</span>&#160;<span class="keyword">end subroutine </span>check_overlap_pe_order</div>
-<div class="line"><a name="l08077"></a><span class="lineno"> 8077</span>&#160; </div>
-<div class="line"><a name="l08078"></a><span class="lineno"> 8078</span>&#160; </div>
-<div class="line"><a name="l08079"></a><span class="lineno"> 8079</span>&#160;<span class="comment">!###############################################################################</span></div>
-<div class="line"><a name="l08080"></a><span class="lineno"> 8080</span>&#160;<span class="keyword">subroutine </span>set_domain_comm_inf(update)</div>
-<div class="line"><a name="l08081"></a><span class="lineno"> 8081</span>&#160;  <span class="keywordtype">type</span>(overlapspec), <span class="keywordtype">intent(inout)</span> :: update</div>
-<div class="line"><a name="l08082"></a><span class="lineno"> 8082</span>&#160; </div>
-<div class="line"><a name="l08083"></a><span class="lineno"> 8083</span>&#160;  <span class="keywordtype">integer</span> :: m, totsize, n</div>
-<div class="line"><a name="l08084"></a><span class="lineno"> 8084</span>&#160; </div>
-<div class="line"><a name="l08085"></a><span class="lineno"> 8085</span>&#160; </div>
-<div class="line"><a name="l08086"></a><span class="lineno"> 8086</span>&#160;     <span class="comment">! first set the send and recv size</span></div>
-<div class="line"><a name="l08087"></a><span class="lineno"> 8087</span>&#160;     update%sendsize = 0</div>
-<div class="line"><a name="l08088"></a><span class="lineno"> 8088</span>&#160;     update%recvsize = 0</div>
-<div class="line"><a name="l08089"></a><span class="lineno"> 8089</span>&#160;     <span class="keywordflow">do</span> m = 1, update%nrecv</div>
-<div class="line"><a name="l08090"></a><span class="lineno"> 8090</span>&#160;        totsize = 0</div>
-<div class="line"><a name="l08091"></a><span class="lineno"> 8091</span>&#160;        <span class="keywordflow">do</span> n = 1, update%recv(m)%count</div>
-<div class="line"><a name="l08092"></a><span class="lineno"> 8092</span>&#160;           totsize = totsize + update%recv(m)%msgsize(n)</div>
-<div class="line"><a name="l08093"></a><span class="lineno"> 8093</span>&#160;<span class="keywordflow">        enddo</span></div>
-<div class="line"><a name="l08094"></a><span class="lineno"> 8094</span>&#160;        update%recv(m)%totsize = totsize</div>
-<div class="line"><a name="l08095"></a><span class="lineno"> 8095</span>&#160;        <span class="keywordflow">if</span>(m==1) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08096"></a><span class="lineno"> 8096</span>&#160;           update%recv(m)%start_pos = 0</div>
-<div class="line"><a name="l08097"></a><span class="lineno"> 8097</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l08098"></a><span class="lineno"> 8098</span>&#160;           update%recv(m)%start_pos = update%recv(m-1)%start_pos + update%recv(m-1)%totsize</div>
-<div class="line"><a name="l08099"></a><span class="lineno"> 8099</span>&#160;<span class="keywordflow">        endif</span></div>
-<div class="line"><a name="l08100"></a><span class="lineno"> 8100</span>&#160;        update%recvsize = update%recvsize + totsize</div>
-<div class="line"><a name="l08101"></a><span class="lineno"> 8101</span>&#160;<span class="keywordflow">     enddo</span></div>
-<div class="line"><a name="l08102"></a><span class="lineno"> 8102</span>&#160; </div>
-<div class="line"><a name="l08103"></a><span class="lineno"> 8103</span>&#160;     <span class="keywordflow">do</span> m = 1, update%nsend</div>
-<div class="line"><a name="l08104"></a><span class="lineno"> 8104</span>&#160;        totsize = 0</div>
-<div class="line"><a name="l08105"></a><span class="lineno"> 8105</span>&#160;        <span class="keywordflow">do</span> n = 1, update%send(m)%count</div>
-<div class="line"><a name="l08106"></a><span class="lineno"> 8106</span>&#160;           totsize = totsize + update%send(m)%msgsize(n)</div>
-<div class="line"><a name="l08107"></a><span class="lineno"> 8107</span>&#160;<span class="keywordflow">        enddo</span></div>
-<div class="line"><a name="l08108"></a><span class="lineno"> 8108</span>&#160;        update%send(m)%totsize = totsize</div>
-<div class="line"><a name="l08109"></a><span class="lineno"> 8109</span>&#160;        <span class="keywordflow">if</span>(m==1) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l08110"></a><span class="lineno"> 8110</span>&#160;           update%send(m)%start_pos = 0</div>
-<div class="line"><a name="l08111"></a><span class="lineno"> 8111</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l08112"></a><span class="lineno"> 8112</span>&#160;           update%send(m)%start_pos = update%send(m-1)%start_pos + update%send(m-1)%totsize</div>
-<div class="line"><a name="l08113"></a><span class="lineno"> 8113</span>&#160;<span class="keywordflow">        endif</span></div>
-<div class="line"><a name="l08114"></a><span class="lineno"> 8114</span>&#160;        update%sendsize = update%sendsize + totsize</div>
-<div class="line"><a name="l08115"></a><span class="lineno"> 8115</span>&#160;<span class="keywordflow">     enddo</span></div>
-<div class="line"><a name="l08116"></a><span class="lineno"> 8116</span>&#160; </div>
-<div class="line"><a name="l08117"></a><span class="lineno"> 8117</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l08076"></a><span class="lineno"> 8076</span>&#160;  <span class="keywordflow">do</span> m = 2, overlap%nsend</div>
+<div class="line"><a name="l08077"></a><span class="lineno"> 8077</span>&#160;     pe1 = overlap%send(m-1)%pe</div>
+<div class="line"><a name="l08078"></a><span class="lineno"> 8078</span>&#160;     pe2 = overlap%send(m)%pe</div>
+<div class="line"><a name="l08079"></a><span class="lineno"> 8079</span>&#160;     <span class="comment">!-- when p1 == domain%pe, pe2 could be any value except domain%pe</span></div>
+<div class="line"><a name="l08080"></a><span class="lineno"> 8080</span>&#160;     <span class="keywordflow">if</span>( pe2 == domain%pe ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08081"></a><span class="lineno"> 8081</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: send pe is &quot;</span>, pe1, pe2</div>
+<div class="line"><a name="l08082"></a><span class="lineno"> 8082</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08083"></a><span class="lineno"> 8083</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): send pe2 can not equal to domain%pe&quot;</span>)</div>
+<div class="line"><a name="l08084"></a><span class="lineno"> 8084</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span>( (pe1 &gt; domain%pe .AND. pe2 &gt; domain%pe) .OR. (pe1 &lt; domain%pe .AND. pe2 &lt; domain%pe)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08085"></a><span class="lineno"> 8085</span>&#160;        <span class="keywordflow">if</span>( pe2 &lt; pe1 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08086"></a><span class="lineno"> 8086</span>&#160;           print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: send pe is &quot;</span>, pe1, pe2</div>
+<div class="line"><a name="l08087"></a><span class="lineno"> 8087</span>&#160;           <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08088"></a><span class="lineno"> 8088</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 1&quot;</span>)</div>
+<div class="line"><a name="l08089"></a><span class="lineno"> 8089</span>&#160;<span class="keywordflow">        endif</span></div>
+<div class="line"><a name="l08090"></a><span class="lineno"> 8090</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( pe2 &gt; domain%pe .AND. pe1 &lt; domain%pe ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08091"></a><span class="lineno"> 8091</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: send pe is &quot;</span>, pe1, pe2</div>
+<div class="line"><a name="l08092"></a><span class="lineno"> 8092</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08093"></a><span class="lineno"> 8093</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 2&quot;</span>)</div>
+<div class="line"><a name="l08094"></a><span class="lineno"> 8094</span>&#160;<span class="keywordflow">     endif</span></div>
+<div class="line"><a name="l08095"></a><span class="lineno"> 8095</span>&#160;<span class="keywordflow">  enddo</span></div>
+<div class="line"><a name="l08096"></a><span class="lineno"> 8096</span>&#160; </div>
+<div class="line"><a name="l08097"></a><span class="lineno"> 8097</span>&#160; </div>
+<div class="line"><a name="l08098"></a><span class="lineno"> 8098</span>&#160;  <span class="keywordflow">do</span> m = 2, overlap%nrecv</div>
+<div class="line"><a name="l08099"></a><span class="lineno"> 8099</span>&#160;     pe1 = overlap%recv(m-1)%pe</div>
+<div class="line"><a name="l08100"></a><span class="lineno"> 8100</span>&#160;     pe2 = overlap%recv(m)%pe</div>
+<div class="line"><a name="l08101"></a><span class="lineno"> 8101</span>&#160;     <span class="comment">!-- when p1 == domain%pe, pe2 could be any value except domain%pe</span></div>
+<div class="line"><a name="l08102"></a><span class="lineno"> 8102</span>&#160;     <span class="keywordflow">if</span>( pe2 == domain%pe ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08103"></a><span class="lineno"> 8103</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: recv pe is &quot;</span>, pe1, pe2</div>
+<div class="line"><a name="l08104"></a><span class="lineno"> 8104</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08105"></a><span class="lineno"> 8105</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): recv pe2 can not equal to domain%pe&quot;</span>)</div>
+<div class="line"><a name="l08106"></a><span class="lineno"> 8106</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span>( (pe1 &gt; domain%pe .AND. pe2 &gt; domain%pe) .OR. (pe1 &lt; domain%pe .AND. pe2 &lt; domain%pe)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08107"></a><span class="lineno"> 8107</span>&#160;        <span class="keywordflow">if</span>( pe2 &gt; pe1 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08108"></a><span class="lineno"> 8108</span>&#160;           print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: recv pe is &quot;</span>, pe1, pe2</div>
+<div class="line"><a name="l08109"></a><span class="lineno"> 8109</span>&#160;           <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08110"></a><span class="lineno"> 8110</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 1&quot;</span>)</div>
+<div class="line"><a name="l08111"></a><span class="lineno"> 8111</span>&#160;<span class="keywordflow">        endif</span></div>
+<div class="line"><a name="l08112"></a><span class="lineno"> 8112</span>&#160;     <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( pe2 &lt; domain%pe .AND. pe1 &gt; domain%pe ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08113"></a><span class="lineno"> 8113</span>&#160;        print*, trim(name)//<span class="stringliteral">&quot; at pe = &quot;</span>, domain%pe, <span class="stringliteral">&quot;: recv pe is &quot;</span>, pe1, pe2</div>
+<div class="line"><a name="l08114"></a><span class="lineno"> 8114</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l08115"></a><span class="lineno"> 8115</span>&#160;             <span class="stringliteral">&quot;mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 2&quot;</span>)</div>
+<div class="line"><a name="l08116"></a><span class="lineno"> 8116</span>&#160;<span class="keywordflow">     endif</span></div>
+<div class="line"><a name="l08117"></a><span class="lineno"> 8117</span>&#160;<span class="keywordflow">  enddo</span></div>
 <div class="line"><a name="l08118"></a><span class="lineno"> 8118</span>&#160; </div>
 <div class="line"><a name="l08119"></a><span class="lineno"> 8119</span>&#160; </div>
-<div class="line"><a name="l08120"></a><span class="lineno"> 8120</span>&#160;<span class="keyword">end subroutine </span>set_domain_comm_inf</div>
+<div class="line"><a name="l08120"></a><span class="lineno"> 8120</span>&#160;<span class="keyword">end subroutine </span>check_overlap_pe_order</div>
+<div class="line"><a name="l08121"></a><span class="lineno"> 8121</span>&#160; </div>
+<div class="line"><a name="l08122"></a><span class="lineno"> 8122</span>&#160; </div>
+<div class="line"><a name="l08123"></a><span class="lineno"> 8123</span>&#160;<span class="comment">!###############################################################################</span></div>
+<div class="line"><a name="l08124"></a><span class="lineno"> 8124</span>&#160;<span class="keyword">subroutine </span>set_domain_comm_inf(update)</div>
+<div class="line"><a name="l08125"></a><span class="lineno"> 8125</span>&#160;  <span class="keywordtype">type</span>(overlapspec), <span class="keywordtype">intent(inout)</span> :: update</div>
+<div class="line"><a name="l08126"></a><span class="lineno"> 8126</span>&#160; </div>
+<div class="line"><a name="l08127"></a><span class="lineno"> 8127</span>&#160;  <span class="keywordtype">integer</span> :: m, totsize, n</div>
+<div class="line"><a name="l08128"></a><span class="lineno"> 8128</span>&#160; </div>
+<div class="line"><a name="l08129"></a><span class="lineno"> 8129</span>&#160; </div>
+<div class="line"><a name="l08130"></a><span class="lineno"> 8130</span>&#160;     <span class="comment">! first set the send and recv size</span></div>
+<div class="line"><a name="l08131"></a><span class="lineno"> 8131</span>&#160;     update%sendsize = 0</div>
+<div class="line"><a name="l08132"></a><span class="lineno"> 8132</span>&#160;     update%recvsize = 0</div>
+<div class="line"><a name="l08133"></a><span class="lineno"> 8133</span>&#160;     <span class="keywordflow">do</span> m = 1, update%nrecv</div>
+<div class="line"><a name="l08134"></a><span class="lineno"> 8134</span>&#160;        totsize = 0</div>
+<div class="line"><a name="l08135"></a><span class="lineno"> 8135</span>&#160;        <span class="keywordflow">do</span> n = 1, update%recv(m)%count</div>
+<div class="line"><a name="l08136"></a><span class="lineno"> 8136</span>&#160;           totsize = totsize + update%recv(m)%msgsize(n)</div>
+<div class="line"><a name="l08137"></a><span class="lineno"> 8137</span>&#160;<span class="keywordflow">        enddo</span></div>
+<div class="line"><a name="l08138"></a><span class="lineno"> 8138</span>&#160;        update%recv(m)%totsize = totsize</div>
+<div class="line"><a name="l08139"></a><span class="lineno"> 8139</span>&#160;        <span class="keywordflow">if</span>(m==1) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08140"></a><span class="lineno"> 8140</span>&#160;           update%recv(m)%start_pos = 0</div>
+<div class="line"><a name="l08141"></a><span class="lineno"> 8141</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l08142"></a><span class="lineno"> 8142</span>&#160;           update%recv(m)%start_pos = update%recv(m-1)%start_pos + update%recv(m-1)%totsize</div>
+<div class="line"><a name="l08143"></a><span class="lineno"> 8143</span>&#160;<span class="keywordflow">        endif</span></div>
+<div class="line"><a name="l08144"></a><span class="lineno"> 8144</span>&#160;        update%recvsize = update%recvsize + totsize</div>
+<div class="line"><a name="l08145"></a><span class="lineno"> 8145</span>&#160;<span class="keywordflow">     enddo</span></div>
+<div class="line"><a name="l08146"></a><span class="lineno"> 8146</span>&#160; </div>
+<div class="line"><a name="l08147"></a><span class="lineno"> 8147</span>&#160;     <span class="keywordflow">do</span> m = 1, update%nsend</div>
+<div class="line"><a name="l08148"></a><span class="lineno"> 8148</span>&#160;        totsize = 0</div>
+<div class="line"><a name="l08149"></a><span class="lineno"> 8149</span>&#160;        <span class="keywordflow">do</span> n = 1, update%send(m)%count</div>
+<div class="line"><a name="l08150"></a><span class="lineno"> 8150</span>&#160;           totsize = totsize + update%send(m)%msgsize(n)</div>
+<div class="line"><a name="l08151"></a><span class="lineno"> 8151</span>&#160;<span class="keywordflow">        enddo</span></div>
+<div class="line"><a name="l08152"></a><span class="lineno"> 8152</span>&#160;        update%send(m)%totsize = totsize</div>
+<div class="line"><a name="l08153"></a><span class="lineno"> 8153</span>&#160;        <span class="keywordflow">if</span>(m==1) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l08154"></a><span class="lineno"> 8154</span>&#160;           update%send(m)%start_pos = 0</div>
+<div class="line"><a name="l08155"></a><span class="lineno"> 8155</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l08156"></a><span class="lineno"> 8156</span>&#160;           update%send(m)%start_pos = update%send(m-1)%start_pos + update%send(m-1)%totsize</div>
+<div class="line"><a name="l08157"></a><span class="lineno"> 8157</span>&#160;<span class="keywordflow">        endif</span></div>
+<div class="line"><a name="l08158"></a><span class="lineno"> 8158</span>&#160;        update%sendsize = update%sendsize + totsize</div>
+<div class="line"><a name="l08159"></a><span class="lineno"> 8159</span>&#160;<span class="keywordflow">     enddo</span></div>
+<div class="line"><a name="l08160"></a><span class="lineno"> 8160</span>&#160; </div>
+<div class="line"><a name="l08161"></a><span class="lineno"> 8161</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l08162"></a><span class="lineno"> 8162</span>&#160; </div>
+<div class="line"><a name="l08163"></a><span class="lineno"> 8163</span>&#160; </div>
+<div class="line"><a name="l08164"></a><span class="lineno"> 8164</span>&#160;<span class="keyword">end subroutine </span>set_domain_comm_inf</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="ampp__util_8inc_html_a172901d39c9b0cf14aa83b1e94fdf21b"><div class="ttname"><a href="mpp__util_8inc.html#a172901d39c9b0cf14aa83b1e94fdf21b">stdout</a></div><div class="ttdeci">integer function stdout()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for output.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00065">mpp_util.inc:65</a></div></div>

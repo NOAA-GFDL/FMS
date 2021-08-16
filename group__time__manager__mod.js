@@ -96,5 +96,9 @@ var group__time__manager__mod =
     [ "time_real_divide", "group__time__manager__mod.html#gab0eb6ef695a956e0f7522a1f8879c967", null ],
     [ "time_scalar_divide", "group__time__manager__mod.html#ga2a56c17818481570d86051158811ed91", null ],
     [ "time_scalar_mult", "group__time__manager__mod.html#ga330ff6e3e8408cd8c0d3d703d56b3fa4", null ],
-    [ "valid_calendar_types", "group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3", null ]
+    [ "valid_calendar_types", "group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3", null ],
+    [ "coded_date", "group__time__manager__mod.html#gacb4370156f8591bf2d258f7b2271dbfd", null ],
+    [ "date_to_day", "group__time__manager__mod.html#gac4edb61a787d8b3ea4d5a7be9f8013a1", null ],
+    [ "days_in_400_year_period", "group__time__manager__mod.html#gaa90f23df128449b5f86be8cc0d1f5467", null ],
+    [ "invalid_date", "group__time__manager__mod.html#ga87b39cce73de9994764bed7563d348b8", null ]
 ];

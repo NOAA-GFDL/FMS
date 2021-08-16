@@ -5,7 +5,6 @@ var structinterpolator__mod_1_1interpolate__type =
     [ "climatology", "structinterpolator__mod_1_1interpolate__type.html#a352f1cb336be1e88222989aa64198008", null ],
     [ "data", "structinterpolator__mod_1_1interpolate__type.html#a368cb842650be6d3003fd60d3117aee2", null ],
     [ "field_name", "structinterpolator__mod_1_1interpolate__type.html#a22b2b1956daba4f47eae7bc2ab390bb4", null ],
-    [ "field_type", "structinterpolator__mod_1_1interpolate__type.html#a3bd48ab876c0268c3938c662047555d0", null ],
     [ "file_name", "structinterpolator__mod_1_1interpolate__type.html#a3c4cd0ac67e58d1e2903b8e159717885", null ],
     [ "fileobj", "structinterpolator__mod_1_1interpolate__type.html#af0fc1728211761011aff98b4daa1c3e3", null ],
     [ "halflevs", "structinterpolator__mod_1_1interpolate__type.html#a3e51e0c8c91bb688af32882dfeb550a3", null ],
@@ -39,7 +38,6 @@ var structinterpolator__mod_1_1interpolate__type =
     [ "tweight1", "structinterpolator__mod_1_1interpolate__type.html#afbce8c1bd5d750a15f3a9db4aeee89f5", null ],
     [ "tweight2", "structinterpolator__mod_1_1interpolate__type.html#a9c39f8bc3ce71555eef608437fe4e049", null ],
     [ "tweight3", "structinterpolator__mod_1_1interpolate__type.html#aba44fc6d3b8d4c2cd45b23974a4b5dba", null ],
-    [ "unit", "structinterpolator__mod_1_1interpolate__type.html#a30ee20f1f8152bc52c795fa8fea700d2", null ],
     [ "vert_interp", "structinterpolator__mod_1_1interpolate__type.html#aa561a86db0a2aefee6b39786ea91636c", null ],
     [ "vertical_indices", "structinterpolator__mod_1_1interpolate__type.html#af56a04972cb1b681ce857e9906fd9560", null ]
 ];

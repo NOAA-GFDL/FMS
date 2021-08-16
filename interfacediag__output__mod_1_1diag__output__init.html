@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -106,14 +106,11 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a9c0bd88b545fb1801d344b4795d8252c"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1diag__output__init.html#a9c0bd88b545fb1801d344b4795d8252c">diag_output_init_fms2_io</a> (file_name, FORMAT, file_title, file_unit, all_scalar_or_1d, domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, attributes)</td></tr>
 <tr class="memdesc:a9c0bd88b545fb1801d344b4795d8252c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers the time axis and opens the output file.  <a href="interfacediag__output__mod_1_1diag__output__init.html#a9c0bd88b545fb1801d344b4795d8252c">More...</a><br /></td></tr>
 <tr class="separator:a9c0bd88b545fb1801d344b4795d8252c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0b83af04798e7e05bd02879d0e27c14a"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1diag__output__init.html#a0b83af04798e7e05bd02879d0e27c14a">diag_output_init_use_mpp_io</a> (file_name, FORMAT, file_title, file_unit, all_scalar_or_1d, domain, domainU, attributes)</td></tr>
-<tr class="memdesc:a0b83af04798e7e05bd02879d0e27c14a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers the time axis and opens the output file.  <a href="interfacediag__output__mod_1_1diag__output__init.html#a0b83af04798e7e05bd02879d0e27c14a">More...</a><br /></td></tr>
-<tr class="separator:a0b83af04798e7e05bd02879d0e27c14a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Initialize output for writing. </p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00113">113</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00104">104</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 </div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
 <a id="a9c0bd88b545fb1801d344b4795d8252c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9c0bd88b545fb1801d344b4795d8252c">&#9670;&nbsp;</a></span>diag_output_init_fms2_io()</h2>
@@ -221,93 +218,7 @@ Private Member Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00149">149</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
-
-</div>
-</div>
-<a id="a0b83af04798e7e05bd02879d0e27c14a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0b83af04798e7e05bd02879d0e27c14a">&#9670;&nbsp;</a></span>diag_output_init_use_mpp_io()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine diag_output_init_use_mpp_io </td>
-          <td>(</td>
-          <td class="paramtype">character(len=*), intent(in)&#160;</td>
-          <td class="paramname"><em>file_name</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>FORMAT</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(len=*), intent(in)&#160;</td>
-          <td class="paramname"><em>file_title</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(out)&#160;</td>
-          <td class="paramname"><em>file_unit</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical, intent(in)&#160;</td>
-          <td class="paramname"><em>all_scalar_or_1d</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(domain2d), intent(in)&#160;</td>
-          <td class="paramname"><em>domain</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(<a class="el" href="structmpp__domains__mod_1_1domainug.html">domainug</a>), intent(in)&#160;</td>
-          <td class="paramname"><em>domainU</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(<a class="el" href="structdiag__data__mod_1_1diag__atttype.html">diag_atttype</a>), dimension(:), intent(in), optional&#160;</td>
-          <td class="paramname"><em>attributes</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Registers the time axis and opens the output file. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_name</td><td>Output file name </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_title</td><td>Descriptive title for the file </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">format</td><td>File format (currently only 'NETCDF' is valid) </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">file_unit</td><td>file unit number for output file </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">domainu</td><td>Unstructured domain </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01334">1334</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00136">136</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>

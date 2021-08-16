@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -140,7 +140,7 @@ $(document).ready(function(){initNavTree('mpp__reduce__mpi_8h_source.html',''); 
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;      integer :: n</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;      MPP_TYPE_ :: work(length)</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      if( .NOT.module_is_initialized )call mpp_error( FATAL, &#39;MPP_REDUCE_1D: You must first call <a class="code" href="mpp__comm__mpi_8inc.html#a889ed63075362dc3a3d3c12385d5a9c7">mpp_init</a>.&#39; )</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      if( .NOT.module_is_initialized )call mpp_error( FATAL, &#39;MPP_REDUCE_1D: You must first call <a class="code" href="mpp__comm__mpi_8inc.html#a271b4c9584f2b514df4439086add4198">mpp_init</a>.&#39; )</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;      n = <a class="code" href="mpp__util__mpi_8inc.html#a948898490a7d1d09fc1043dac561514d">get_peset</a>(pelist); if( <a class="code" href="group__mpp__mod.html#ga38f401fa0dd3a764c0fde248197eec15">peset</a>(n)%count.EQ.1 )return</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)</div>
@@ -155,9 +155,9 @@ $(document).ready(function(){initNavTree('mpp__reduce__mpi_8h_source.html',''); 
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="agroup__mpp__mod_html_ga38f401fa0dd3a764c0fde248197eec15"><div class="ttname"><a href="group__mpp__mod.html#ga38f401fa0dd3a764c0fde248197eec15">mpp_mod::peset</a></div><div class="ttdeci">type(communicator), dimension(:), allocatable peset</div><div class="ttdoc">Will be allocated starting from 0, 0 is a dummy used to hold single-PE &quot;self&quot; communicator.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l01213">mpp.F90:1213</a></div></div>
-<div class="ttc" id="agroup__amip__interp__mod_html_ga9e8dcf56a77b1b156ccc0fa7e082a46b"><div class="ttname"><a href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">amip_interp_mod::verbose</a></div><div class="ttdeci">integer verbose</div><div class="ttdoc">0 &lt;= verbose &lt;= 3</div><div class="ttdef"><b>Definition:</b> <a href="amip__interp_8F90_source.html#l00281">amip_interp.F90:281</a></div></div>
+<div class="ttc" id="agroup__amip__interp__mod_html_ga9e8dcf56a77b1b156ccc0fa7e082a46b"><div class="ttname"><a href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">amip_interp_mod::verbose</a></div><div class="ttdeci">integer verbose</div><div class="ttdoc">0 &lt;= verbose &lt;= 3</div><div class="ttdef"><b>Definition:</b> <a href="amip__interp_8F90_source.html#l00276">amip_interp.F90:276</a></div></div>
 <div class="ttc" id="ampp__util__mpi_8inc_html_a948898490a7d1d09fc1043dac561514d"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a948898490a7d1d09fc1043dac561514d">get_peset</a></div><div class="ttdeci">integer function get_peset(pelist)</div><div class="ttdoc">Makes a PE set out of a PE list. A PE list is an ordered list of PEs a PE set is a triad (start,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00091">mpp_util_mpi.inc:91</a></div></div>
-<div class="ttc" id="ampp__comm__mpi_8inc_html_a889ed63075362dc3a3d3c12385d5a9c7"><div class="ttname"><a href="mpp__comm__mpi_8inc.html#a889ed63075362dc3a3d3c12385d5a9c7">mpp_init</a></div><div class="ttdeci">subroutine mpp_init(flags, localcomm, test_level)</div><div class="ttdoc">Initialize the mpp_mod module.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__comm__mpi_8inc_source.html#l00034">mpp_comm_mpi.inc:34</a></div></div>
+<div class="ttc" id="ampp__comm__mpi_8inc_html_a271b4c9584f2b514df4439086add4198"><div class="ttname"><a href="mpp__comm__mpi_8inc.html#a271b4c9584f2b514df4439086add4198">mpp_init</a></div><div class="ttdeci">subroutine mpp_init(flags, localcomm, test_level, alt_input_nml_path)</div><div class="ttdoc">Initialize the mpp_mod module.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__comm__mpi_8inc_source.html#l00034">mpp_comm_mpi.inc:34</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

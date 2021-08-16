@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -152,27 +152,27 @@ Functions/Subroutines</h2></td></tr>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gab3d6f987c880c22ac2aefbd53897c2e2">netcdf_io_init</a> (chksz, header_buffer_val, netcdf_default_format)</td></tr>
 <tr class="memdesc:gab3d6f987c880c22ac2aefbd53897c2e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod. <br /></td></tr>
 <tr class="separator:gab3d6f987c880c22ac2aefbd53897c2e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga77f74eed23147247d108d331f9ae54b5"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga77f74eed23147247d108d331f9ae54b5">check_netcdf_code</a> (err)</td></tr>
-<tr class="memdesc:ga77f74eed23147247d108d331f9ae54b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check for errors returned by netcdf.  <a href="group__netcdf__io__mod.html#ga77f74eed23147247d108d331f9ae54b5">More...</a><br /></td></tr>
-<tr class="separator:ga77f74eed23147247d108d331f9ae54b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa1b08fcf27f57f5b3c064e8ba29305e5"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gaa1b08fcf27f57f5b3c064e8ba29305e5">check_netcdf_code</a> (err, msg)</td></tr>
+<tr class="memdesc:gaa1b08fcf27f57f5b3c064e8ba29305e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check for errors returned by netcdf.  <a href="group__netcdf__io__mod.html#gaa1b08fcf27f57f5b3c064e8ba29305e5">More...</a><br /></td></tr>
+<tr class="separator:gaa1b08fcf27f57f5b3c064e8ba29305e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga56db12e1a539a8e37929119a2796ecb3"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga56db12e1a539a8e37929119a2796ecb3">set_netcdf_mode</a> (ncid, mode)</td></tr>
 <tr class="memdesc:ga56db12e1a539a8e37929119a2796ecb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Switch to the correct netcdf mode.  <a href="group__netcdf__io__mod.html#ga56db12e1a539a8e37929119a2796ecb3">More...</a><br /></td></tr>
 <tr class="separator:ga56db12e1a539a8e37929119a2796ecb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga608c6d8a093d6770b23822ce4e85350c"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga608c6d8a093d6770b23822ce4e85350c">get_dimension_id</a> (ncid, dimension_name, allow_failure)</td></tr>
-<tr class="memdesc:ga608c6d8a093d6770b23822ce4e85350c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a dimension from its name.  <a href="group__netcdf__io__mod.html#ga608c6d8a093d6770b23822ce4e85350c">More...</a><br /></td></tr>
-<tr class="separator:ga608c6d8a093d6770b23822ce4e85350c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8e715b5af552ef9239dfe8878432fab1"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga8e715b5af552ef9239dfe8878432fab1">get_variable_id</a> (ncid, variable_name, allow_failure)</td></tr>
-<tr class="memdesc:ga8e715b5af552ef9239dfe8878432fab1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a variable from its name.  <a href="group__netcdf__io__mod.html#ga8e715b5af552ef9239dfe8878432fab1">More...</a><br /></td></tr>
-<tr class="separator:ga8e715b5af552ef9239dfe8878432fab1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabbbbf1555ba428cdf56af754ed158cf5"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gabbbbf1555ba428cdf56af754ed158cf5">attribute_exists</a> (ncid, varid, attribute_name)</td></tr>
-<tr class="memdesc:gabbbbf1555ba428cdf56af754ed158cf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine if an attribute exists.  <a href="group__netcdf__io__mod.html#gabbbbf1555ba428cdf56af754ed158cf5">More...</a><br /></td></tr>
-<tr class="separator:gabbbbf1555ba428cdf56af754ed158cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga46af95fa04dee943417ca900c20ad8ab"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga46af95fa04dee943417ca900c20ad8ab">get_attribute_type</a> (ncid, varid, attname)</td></tr>
-<tr class="memdesc:ga46af95fa04dee943417ca900c20ad8ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf attribute.  <a href="group__netcdf__io__mod.html#ga46af95fa04dee943417ca900c20ad8ab">More...</a><br /></td></tr>
-<tr class="separator:ga46af95fa04dee943417ca900c20ad8ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab0c965b1e2d15334ca7a3226910a753f"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gab0c965b1e2d15334ca7a3226910a753f">get_variable_type</a> (ncid, varid)</td></tr>
-<tr class="memdesc:gab0c965b1e2d15334ca7a3226910a753f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf variable.  <a href="group__netcdf__io__mod.html#gab0c965b1e2d15334ca7a3226910a753f">More...</a><br /></td></tr>
-<tr class="separator:gab0c965b1e2d15334ca7a3226910a753f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga80e0a307f11b5a5ba38b5993c9181c05"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga80e0a307f11b5a5ba38b5993c9181c05">get_dimension_id</a> (ncid, dimension_name, msg, allow_failure)</td></tr>
+<tr class="memdesc:ga80e0a307f11b5a5ba38b5993c9181c05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a dimension from its name.  <a href="group__netcdf__io__mod.html#ga80e0a307f11b5a5ba38b5993c9181c05">More...</a><br /></td></tr>
+<tr class="separator:ga80e0a307f11b5a5ba38b5993c9181c05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7a29d8e17393571d6e607fd3e135dc32"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga7a29d8e17393571d6e607fd3e135dc32">get_variable_id</a> (ncid, variable_name, msg, allow_failure)</td></tr>
+<tr class="memdesc:ga7a29d8e17393571d6e607fd3e135dc32"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a variable from its name.  <a href="group__netcdf__io__mod.html#ga7a29d8e17393571d6e607fd3e135dc32">More...</a><br /></td></tr>
+<tr class="separator:ga7a29d8e17393571d6e607fd3e135dc32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga106f4286e5106156ecc014984aa1392a"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga106f4286e5106156ecc014984aa1392a">attribute_exists</a> (ncid, varid, attribute_name, msg)</td></tr>
+<tr class="memdesc:ga106f4286e5106156ecc014984aa1392a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine if an attribute exists.  <a href="group__netcdf__io__mod.html#ga106f4286e5106156ecc014984aa1392a">More...</a><br /></td></tr>
+<tr class="separator:ga106f4286e5106156ecc014984aa1392a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae49a656fc7d6595b831cf4f716d25d88"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gae49a656fc7d6595b831cf4f716d25d88">get_attribute_type</a> (ncid, varid, attname, msg)</td></tr>
+<tr class="memdesc:gae49a656fc7d6595b831cf4f716d25d88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf attribute.  <a href="group__netcdf__io__mod.html#gae49a656fc7d6595b831cf4f716d25d88">More...</a><br /></td></tr>
+<tr class="separator:gae49a656fc7d6595b831cf4f716d25d88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabc769996854e84d7255806a233f0411f"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gabc769996854e84d7255806a233f0411f">get_variable_type</a> (ncid, varid, msg)</td></tr>
+<tr class="memdesc:gabc769996854e84d7255806a233f0411f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf variable.  <a href="group__netcdf__io__mod.html#gabc769996854e84d7255806a233f0411f">More...</a><br /></td></tr>
+<tr class="separator:gabc769996854e84d7255806a233f0411f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0f9b8d334fc47852bdf5c93c61b71cbc"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga0f9b8d334fc47852bdf5c93c61b71cbc">netcdf_file_open</a> (fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename)</td></tr>
 <tr class="memdesc:ga0f9b8d334fc47852bdf5c93c61b71cbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open a netcdf file.  <a href="group__netcdf__io__mod.html#ga0f9b8d334fc47852bdf5c93c61b71cbc">More...</a><br /></td></tr>
 <tr class="separator:ga0f9b8d334fc47852bdf5c93c61b71cbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -440,7 +440,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00934">934</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00956">956</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -501,12 +501,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00721">721</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00737">737</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
-<a id="gabbbbf1555ba428cdf56af754ed158cf5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gabbbbf1555ba428cdf56af754ed158cf5">&#9670;&nbsp;</a></span>attribute_exists()</h2>
+<a id="ga106f4286e5106156ecc014984aa1392a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga106f4286e5106156ecc014984aa1392a">&#9670;&nbsp;</a></span>attribute_exists()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -530,7 +530,13 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">character(len=*), intent(in)&#160;</td>
-          <td class="paramname"><em>attribute_name</em>&#160;</td>
+          <td class="paramname"><em>attribute_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in), optional&#160;</td>
+          <td class="paramname"><em>msg</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -552,11 +558,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
     <tr><td class="paramdir">[in]</td><td class="paramname">ncid</td><td>Netcdf file id. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">varid</td><td>Variable id. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">attribute_name</td><td>Attribute name. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>Error message </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00454">454</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00460">460</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -594,7 +601,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02076">2076</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02139">2139</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -642,12 +649,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01799">1799</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01861">1861</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga77f74eed23147247d108d331f9ae54b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga77f74eed23147247d108d331f9ae54b5">&#9670;&nbsp;</a></span>check_netcdf_code()</h2>
+<a id="gaa1b08fcf27f57f5b3c064e8ba29305e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaa1b08fcf27f57f5b3c064e8ba29305e5">&#9670;&nbsp;</a></span>check_netcdf_code()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -656,8 +663,18 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
           <td class="memname">subroutine, public netcdf_io_mod::check_netcdf_code </td>
           <td>(</td>
           <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>err</em></td><td>)</td>
+          <td class="paramname"><em>err</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">character(len=*), intent(in)&#160;</td>
+          <td class="paramname"><em>msg</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -666,11 +683,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">err</td><td>Code returned by netcdf. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>Error message to be appended to the FATAL </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00358">358</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00359">359</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -723,7 +741,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01832">1832</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01894">1894</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -770,12 +788,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01191">1191</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01220">1220</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga46af95fa04dee943417ca900c20ad8ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga46af95fa04dee943417ca900c20ad8ab">&#9670;&nbsp;</a></span>get_attribute_type()</h2>
+<a id="gae49a656fc7d6595b831cf4f716d25d88"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae49a656fc7d6595b831cf4f716d25d88">&#9670;&nbsp;</a></span>get_attribute_type()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -799,7 +817,13 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">character(len=*), intent(in)&#160;</td>
-          <td class="paramname"><em>attname</em>&#160;</td>
+          <td class="paramname"><em>attname</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in), optional&#160;</td>
+          <td class="paramname"><em>msg</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -821,11 +845,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
     <tr><td class="paramdir">[in]</td><td class="paramname">ncid</td><td>Netcdf file id. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">varid</td><td>Variable id. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">attname</td><td>Attribute name. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>Error message </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00477">477</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00485">485</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -873,12 +898,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00700">700</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00716">716</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga608c6d8a093d6770b23822ce4e85350c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga608c6d8a093d6770b23822ce4e85350c">&#9670;&nbsp;</a></span>get_dimension_id()</h2>
+<a id="ga80e0a307f11b5a5ba38b5993c9181c05"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga80e0a307f11b5a5ba38b5993c9181c05">&#9670;&nbsp;</a></span>get_dimension_id()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -897,6 +922,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
           <td></td>
           <td class="paramtype">character(len=*), intent(in)&#160;</td>
           <td class="paramname"><em>dimension_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in)&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -923,12 +954,13 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">ncid</td><td>Netcdf file id. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">dimension_name</td><td>Dimension name. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>Error message </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">allow_failure</td><td>Flag that prevents crash if dimension does not exist. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00402">402</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00404">404</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -974,7 +1006,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01136">1136</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01163">1163</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1027,7 +1059,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01293">1293</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01326">1326</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1081,7 +1113,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01940">1940</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02002">2002</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1121,7 +1153,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01109">1109</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01136">1136</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1161,7 +1193,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01325">1325</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01360">1360</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1207,7 +1239,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01258">1258</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01291">1291</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1247,7 +1279,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01631">1631</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01690">1690</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1302,7 +1334,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00889">889</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00911">911</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1355,12 +1387,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01469">1469</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01510">1510</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga8e715b5af552ef9239dfe8878432fab1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga8e715b5af552ef9239dfe8878432fab1">&#9670;&nbsp;</a></span>get_variable_id()</h2>
+<a id="ga7a29d8e17393571d6e607fd3e135dc32"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga7a29d8e17393571d6e607fd3e135dc32">&#9670;&nbsp;</a></span>get_variable_id()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1379,6 +1411,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
           <td></td>
           <td class="paramtype">character(len=*), intent(in)&#160;</td>
           <td class="paramname"><em>variable_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in)&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1405,12 +1443,13 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">ncid</td><td>Netcdf file object. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">variable_name</td><td>Variable name. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>Error message </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">allow_failure</td><td>Flag that prevents crash if variable does not exist. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00428">428</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00432">432</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1456,7 +1495,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01352">1352</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01387">1387</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1503,7 +1542,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01438">1438</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01476">1476</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1556,12 +1595,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01529">1529</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01580">1580</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
-<a id="gab0c965b1e2d15334ca7a3226910a753f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gab0c965b1e2d15334ca7a3226910a753f">&#9670;&nbsp;</a></span>get_variable_type()</h2>
+<a id="gabc769996854e84d7255806a233f0411f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gabc769996854e84d7255806a233f0411f">&#9670;&nbsp;</a></span>get_variable_type()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1579,7 +1618,13 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>varid</em>&#160;</td>
+          <td class="paramname"><em>varid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in), optional&#160;</td>
+          <td class="paramname"><em>msg</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -1600,11 +1645,12 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">ncid</td><td>Netcdf file id. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">varid</td><td>Variable id. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>Error message to append to netcdf error code </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00495">495</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00505">505</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1651,7 +1697,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01588">1588</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01647">1647</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1698,7 +1744,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01049">1049</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01071">1071</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1745,7 +1791,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01226">1226</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01256">1256</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1785,7 +1831,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02055">2055</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02117">2117</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1833,7 +1879,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01782">1782</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01844">1844</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1881,7 +1927,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01769">1769</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01831">1831</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1934,7 +1980,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00757">757</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00773">773</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1987,7 +2033,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00837">837</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00853">853</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2040,7 +2086,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01914">1914</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01976">1976</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2068,7 +2114,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00658">658</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00674">674</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2096,7 +2142,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01905">1905</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01967">1967</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2171,7 +2217,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00511">511</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00523">523</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2245,7 +2291,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01875">1875</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01937">1937</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2284,7 +2330,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01002">1002</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01024">1024</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2323,7 +2369,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00961">961</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00983">983</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2362,7 +2408,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01927">1927</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01989">1989</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2403,7 +2449,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <p>Go away if you are not in the pelist!</p>
 <p>The file's root pe reads the file and scatters it to the rest of the pes</p>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02112">2112</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02175">2175</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2456,7 +2502,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00809">809</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00825">825</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2495,7 +2541,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00373">373</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l00375">375</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2549,7 +2595,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01077">1077</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01100">1100</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2596,7 +2642,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01407">1407</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l01444">1444</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>
@@ -2640,7 +2686,7 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <p>Root pe gathers the data from the other ranks, saves it in a buffer, and writes out the checksum.</p>
 <p>Write the data to the netcdf file</p>
 
-<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02143">2143</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="netcdf__io_8F90_source.html#l02206">2206</a> of file <a class="el" href="netcdf__io_8F90_source.html">netcdf_io.F90</a>.</p>
 
 </div>
 </div>

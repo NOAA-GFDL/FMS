@@ -3,7 +3,7 @@ var fms__netcdf__domain__io_8F90 =
     [ "add_domain_attribute", "fms__netcdf__domain__io_8F90.html#ga1074b876833c4c30c72710594dc9a478", null ],
     [ "append_domain_decomposed_dimension", "fms__netcdf__domain__io_8F90.html#gacfd1c75462af10eb0f79e56594073c4b", null ],
     [ "close_domain_file", "fms__netcdf__domain__io_8F90.html#ga899d05494cbbe837adebdcb8e40944f3", null ],
-    [ "domain_offsets", "fms__netcdf__domain__io_8F90.html#ga105b672f94c92598c1c28d0254467f2c", null ],
+    [ "domain_offsets", "fms__netcdf__domain__io_8F90.html#ga4cd12c4a12cc9ceb8b15fa6873c7cda9", null ],
     [ "get_compute_domain_dimension_indices", "fms__netcdf__domain__io_8F90.html#gaf543117b7cf4700f0714b918f0b087e4", null ],
     [ "get_domain_decomposed_dimension_index", "fms__netcdf__domain__io_8F90.html#ga1d70660f1187f1e04975c13c0c06fc21", null ],
     [ "get_domain_decomposed_index", "fms__netcdf__domain__io_8F90.html#ga1e34db4585bb38a96c33ddcbf0cfc412", null ],

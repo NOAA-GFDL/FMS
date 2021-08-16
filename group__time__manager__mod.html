@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -273,7 +273,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
 <tr class="separator:ga598caa0b76f256ade3f0fe120f6a5c91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga20cf64e1cd18a3542e1339d2645c919c"><td class="memItemLeft" align="right" valign="top"><a id="ga20cf64e1cd18a3542e1339d2645c919c"></a>
 subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__manager__mod.html#ga20cf64e1cd18a3542e1339d2645c919c">get_date_gregorian_old</a> (time, year, month, day, hour, minute, second, tick)</td></tr>
-<tr class="memdesc:ga20cf64e1cd18a3542e1339d2645c919c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the date on a Gregorian calendar. This is the original/old subroutine. Looks up the year, month, day from the coded_date array This subroutine is kept in order to test the new get_date_gregorian. <br /></td></tr>
+<tr class="memdesc:ga20cf64e1cd18a3542e1339d2645c919c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the date on a Gregorian calendar. This is the original/old subroutine. Looks up the year, month, day from the coded_date array This subroutine will be removed soon. <br /></td></tr>
 <tr class="separator:ga20cf64e1cd18a3542e1339d2645c919c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa0e088352a4d5277a68760ba2483ba06"><td class="memItemLeft" align="right" valign="top"><a id="gaa0e088352a4d5277a68760ba2483ba06"></a>
 character(len=256) function&#160;</td><td class="memItemRight" valign="bottom"><b>cut0</b> (string)</td></tr>
@@ -309,7 +309,7 @@ logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <tr class="separator:ga7f34ca591384ab30f3451c2ee7e28d31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac33d06e47ab40f140cc813d6e494700f"><td class="memItemLeft" align="right" valign="top"><a id="gac33d06e47ab40f140cc813d6e494700f"></a>
 logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__manager__mod.html#gac33d06e47ab40f140cc813d6e494700f">set_date_gregorian_old</a> (year, month, day, hour, minute, second, tick, Time_out, err_msg)</td></tr>
-<tr class="memdesc:gac33d06e47ab40f140cc813d6e494700f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets Time_outdays on a Gregorian calendar. This is the original/old subroutine. Look up the total number of days between 1/1/0001 to the current month/day/year in the array date_to_day This function is kept in order to test the new set_date_gregorian. <br /></td></tr>
+<tr class="memdesc:gac33d06e47ab40f140cc813d6e494700f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets Time_outdays on a Gregorian calendar. This is the original/old subroutine. Look up the total number of days between 1/1/0001 to the current month/day/year in the array date_to_day This function will be removed soon. <br /></td></tr>
 <tr class="separator:gac33d06e47ab40f140cc813d6e494700f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga01c0a809fe5c930fd263bbcaaad7af94"><td class="memItemLeft" align="right" valign="top"><a id="ga01c0a809fe5c930fd263bbcaaad7af94"></a>
 logical function&#160;</td><td class="memItemRight" valign="bottom"><b>set_date_julian_private</b> (year, month, day, hour, minute, second, tick, Time_out, err_msg)</td></tr>
@@ -465,16 +465,20 @@ integer, dimension(12), private&#160;</td><td class="memItemRight" valign="botto
 integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>seconds_per_day</b> = rseconds_per_day</td></tr>
 <tr class="separator:ga6476fd8d4044f16399a460847d490ae0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa90f23df128449b5f86be8cc0d1f5467"><td class="memItemLeft" align="right" valign="top"><a id="gaa90f23df128449b5f86be8cc0d1f5467"></a>
-integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>days_in_400_year_period</b> = 146097</td></tr>
+integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__manager__mod.html#gaa90f23df128449b5f86be8cc0d1f5467">days_in_400_year_period</a> = 146097</td></tr>
+<tr class="memdesc:gaa90f23df128449b5f86be8cc0d1f5467"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used only for gregorian. <br /></td></tr>
 <tr class="separator:gaa90f23df128449b5f86be8cc0d1f5467"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gacb4370156f8591bf2d258f7b2271dbfd"><td class="memItemLeft" align="right" valign="top"><a id="gacb4370156f8591bf2d258f7b2271dbfd"></a>
-integer, dimension(days_in_400_year_period)&#160;</td><td class="memItemRight" valign="bottom"><b>coded_date</b></td></tr>
+integer, dimension(days_in_400_year_period)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__manager__mod.html#gacb4370156f8591bf2d258f7b2271dbfd">coded_date</a></td></tr>
+<tr class="memdesc:gacb4370156f8591bf2d258f7b2271dbfd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used only for gregorian, to be removed soon. <br /></td></tr>
 <tr class="separator:gacb4370156f8591bf2d258f7b2271dbfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac4edb61a787d8b3ea4d5a7be9f8013a1"><td class="memItemLeft" align="right" valign="top"><a id="gac4edb61a787d8b3ea4d5a7be9f8013a1"></a>
-integer, dimension(400, 12, 31)&#160;</td><td class="memItemRight" valign="bottom"><b>date_to_day</b></td></tr>
+integer, dimension(400, 12, 31)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__manager__mod.html#gac4edb61a787d8b3ea4d5a7be9f8013a1">date_to_day</a></td></tr>
+<tr class="memdesc:gac4edb61a787d8b3ea4d5a7be9f8013a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used only for gregorian, to be removed soon. <br /></td></tr>
 <tr class="separator:gac4edb61a787d8b3ea4d5a7be9f8013a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga87b39cce73de9994764bed7563d348b8"><td class="memItemLeft" align="right" valign="top"><a id="ga87b39cce73de9994764bed7563d348b8"></a>
-integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>invalid_date</b> =-1</td></tr>
+integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__manager__mod.html#ga87b39cce73de9994764bed7563d348b8">invalid_date</a> =-1</td></tr>
+<tr class="memdesc:ga87b39cce73de9994764bed7563d348b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used only for gregorian, to be removed soon. <br /></td></tr>
 <tr class="separator:ga87b39cce73de9994764bed7563d348b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga3c8383be7fa222dd7387837e438734d1"><td class="memItemLeft" align="right" valign="top"><a id="ga3c8383be7fa222dd7387837e438734d1"></a>
 integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>do_floor</b> = 0</td></tr>
@@ -527,7 +531,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ticks_per_second</
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03122">3122</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03123">3123</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -675,12 +679,12 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ticks_per_second</
 <p>Gets the date for different calendar types. The added optional argument old_method allows user to choose either the new or old version of get_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call get_date_gregorian_old to retrieve the date from the array coded_date. When .false., call get_date_gregorian to compute the date on the fly. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call get_date_gregorian_old to retrieve the date from the array coded_date. When .false., call get_date_gregorian to compute the date on the fly. Will be removed with set/get_date_gregorian_old </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l01622">1622</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l01623">1623</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -828,7 +832,7 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
 <p>Returns the mean length of the year in the default calendar setting. </p>
 <p>There are no arguments in this function. It returns the mean length of the year for the default calendar. </p>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03031">3031</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03032">3032</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -857,7 +861,7 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03207">3207</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03208">3208</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -903,7 +907,7 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03301">3301</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03302">3302</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -950,7 +954,7 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03266">3266</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03267">3267</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -1097,12 +1101,12 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
 <p>Calls set_date_private for different calendar types when given a string input. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of set_date_gregorian. When .true., call set_date_gregorian_old to retrieve the days from the array date_to_day. When .false., call set_date_gregorian to compute the days on the fly. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of set_date_gregorian. When .true., call set_date_gregorian_old to retrieve the days from the array date_to_day. When .false., call set_date_gregorian to compute the days on the fly. Will be removed with set/get_date_gregorian_old </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02084">2084</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02085">2085</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -1185,12 +1189,12 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
 <p>Calls set_date_private to set days for different calendar types. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call set_date_gregorian_old to retrieve the timedays from the array date_to_day. When .false., call set_date_gregorian to compute the timedays on the fly. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call set_date_gregorian_old to retrieve the timedays from the array date_to_day. When .false., call set_date_gregorian to compute the timedays on the fly. This ption will be removed with get/set_date_gregorian_old </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02050">2050</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02051">2051</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -1279,12 +1283,12 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
 <p>Sets days for different calendar types. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call set_date_gregorian_old to retrieve the timedays from the array date_to_day. When .false., call set_date_gregorian to compute the timedays on the fly. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call set_date_gregorian_old to retrieve the timedays from the array date_to_day. When .false., call set_date_gregorian to compute the timedays on the fly. This option will be removed with get/set_date_gregorian_old </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l01998">1998</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l01999">1999</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -1441,7 +1445,7 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
 <p>Allocate the string</p>
 <p>Write the integer to the string</p>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03381">3381</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03382">3382</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -1481,7 +1485,7 @@ Example usage: <div class="fragment"><div class="line">get_time(time, seconds, d
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03331">3331</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l03332">3332</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>

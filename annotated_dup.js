@@ -208,7 +208,6 @@ var annotated_dup =
       [ "allocate_array", "interfacefms__io__utils__mod_1_1allocate__array.html", "interfacefms__io__utils__mod_1_1allocate__array" ],
       [ "char_linked_list", "structfms__io__utils__mod_1_1char__linked__list.html", "structfms__io__utils__mod_1_1char__linked__list" ],
       [ "get_array_section", "interfacefms__io__utils__mod_1_1get__array__section.html", "interfacefms__io__utils__mod_1_1get__array__section" ],
-      [ "get_checksum", "interfacefms__io__utils__mod_1_1get__checksum.html", "interfacefms__io__utils__mod_1_1get__checksum" ],
       [ "get_data_type_string", "interfacefms__io__utils__mod_1_1get__data__type__string.html", "interfacefms__io__utils__mod_1_1get__data__type__string" ],
       [ "get_mosaic_tile_file", "interfacefms__io__utils__mod_1_1get__mosaic__tile__file.html", "interfacefms__io__utils__mod_1_1get__mosaic__tile__file" ],
       [ "parse_mask_table", "interfacefms__io__utils__mod_1_1parse__mask__table.html", "interfacefms__io__utils__mod_1_1parse__mask__table" ],
@@ -539,5 +538,6 @@ var annotated_dup =
     ] ],
     [ "assertequals", "interfaceassertequals.html", null ],
     [ "atm_type", "structatm__type.html", "structatm__type" ],
+    [ "data_type", "structdata__type.html", "structdata__type" ],
     [ "Node", "structNode.html", "structNode" ]
 ];

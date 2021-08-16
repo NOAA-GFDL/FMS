@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -240,7 +240,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;  io_domain =&gt; mpp_get_io_domain(fileobj%domain)</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="keyword">call </span>domain_offsets(<span class="keyword">size</span>(vdata, xdim_index), <span class="keyword">size</span>(vdata, ydim_index), fileobj%domain, &amp;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &amp;</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                      buffer_includes_halos)</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                      buffer_includes_halos, msg=<span class="stringliteral">&quot;file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; and variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  c(:) = 1</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  e(:) = shape(vdata)</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160; </div>
@@ -294,7 +294,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;            global_buf_r8_kind = fill_r8_kind</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="keywordflow">        endif</span></div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;      <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_2d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160; </div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordflow">do</span> i = 1, <span class="keyword">size</span>(fileobj%pelist)</div>
@@ -457,7 +457,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=event_send)</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;        <span class="keyword">deallocate</span>(buf_r8_kind)</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_2d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;<span class="keywordflow">  endif</span></div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="domain__write_8inc.html#a9d0c062fd46e3d6ad13e4fbca6d32b5c">domain_write_2d</a></div>
@@ -534,7 +534,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;  io_domain =&gt; mpp_get_io_domain(fileobj%domain)</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;  <span class="keyword">call </span>domain_offsets(<span class="keyword">size</span>(vdata, xdim_index), <span class="keyword">size</span>(vdata, ydim_index), fileobj%domain, &amp;</div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &amp;</div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;                      buffer_includes_halos)</div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;                      buffer_includes_halos, msg=<span class="stringliteral">&quot;file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; and variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;  c(:) = 1</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;  e(:) = shape(vdata)</div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160; </div>
@@ -588,7 +588,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;            global_buf_r8_kind = fill_r8_kind</div>
 <div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;<span class="keywordflow">        endif</span></div>
 <div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_3d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160; </div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;    <span class="keywordflow">do</span> i = 1, <span class="keyword">size</span>(fileobj%pelist)</div>
@@ -751,7 +751,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=event_send)</div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;        <span class="keyword">deallocate</span>(buf_r8_kind)</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_3d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;<span class="keywordflow">  endif</span></div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="domain__write_8inc.html#a3364c0bdbd92a2acb4fe1651d8900924">domain_write_3d</a></div>
@@ -828,7 +828,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;  io_domain =&gt; mpp_get_io_domain(fileobj%domain)</div>
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;  <span class="keyword">call </span>domain_offsets(<span class="keyword">size</span>(vdata, xdim_index), <span class="keyword">size</span>(vdata, ydim_index), fileobj%domain, &amp;</div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &amp;</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                      buffer_includes_halos)</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                      buffer_includes_halos, msg=<span class="stringliteral">&quot;file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; and variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;  c(:) = 1</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;  e(:) = shape(vdata)</div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160; </div>
@@ -882,7 +882,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;            global_buf_r8_kind = fill_r8_kind</div>
 <div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="keywordflow">        endif</span></div>
 <div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_4d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160; </div>
 <div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;    <span class="keywordflow">do</span> i = 1, <span class="keyword">size</span>(fileobj%pelist)</div>
@@ -1045,7 +1045,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=event_send)</div>
 <div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;        <span class="keyword">deallocate</span>(buf_r8_kind)</div>
 <div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_4d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;<span class="keywordflow">  endif</span></div>
 <div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="domain__write_8inc.html#a49dafd6294b8ecf1d6543462a9a75435">domain_write_4d</a></div>
@@ -1122,7 +1122,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;  io_domain =&gt; mpp_get_io_domain(fileobj%domain)</div>
 <div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;  <span class="keyword">call </span>domain_offsets(<span class="keyword">size</span>(vdata, xdim_index), <span class="keyword">size</span>(vdata, ydim_index), fileobj%domain, &amp;</div>
 <div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &amp;</div>
-<div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;                      buffer_includes_halos)</div>
+<div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;                      buffer_includes_halos, msg=<span class="stringliteral">&quot;file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; and variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;  c(:) = 1</div>
 <div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;  e(:) = shape(vdata)</div>
 <div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160; </div>
@@ -1176,7 +1176,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l01080"></a><span class="lineno"> 1080</span>&#160;            global_buf_r8_kind = fill_r8_kind</div>
 <div class="line"><a name="l01081"></a><span class="lineno"> 1081</span>&#160;<span class="keywordflow">        endif</span></div>
 <div class="line"><a name="l01082"></a><span class="lineno"> 1082</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l01083"></a><span class="lineno"> 1083</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l01083"></a><span class="lineno"> 1083</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_5d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l01084"></a><span class="lineno"> 1084</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l01085"></a><span class="lineno"> 1085</span>&#160; </div>
 <div class="line"><a name="l01086"></a><span class="lineno"> 1086</span>&#160;    <span class="keywordflow">do</span> i = 1, <span class="keyword">size</span>(fileobj%pelist)</div>
@@ -1339,7 +1339,7 @@ $(document).ready(function(){initNavTree('domain__write_8inc_source.html',''); i
 <div class="line"><a name="l01243"></a><span class="lineno"> 1243</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=event_send)</div>
 <div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;        <span class="keyword">deallocate</span>(buf_r8_kind)</div>
 <div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported type.&quot;</span>)</div>
+<div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported variable type: domain_write_5d: file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot; variable:&quot;</span>//trim(variable_name))</div>
 <div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;<span class="keywordflow">    end select</span></div>
 <div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;<span class="keywordflow">  endif</span></div>
 <div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="domain__write_8inc.html#a6f4a82d59156a41e49b3258dce564484">domain_write_5d</a></div>

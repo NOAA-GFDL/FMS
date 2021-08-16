@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -154,27 +154,27 @@ Functions/Subroutines</h2></td></tr>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gab3d6f987c880c22ac2aefbd53897c2e2">netcdf_io_init</a> (chksz, header_buffer_val, netcdf_default_format)</td></tr>
 <tr class="memdesc:gab3d6f987c880c22ac2aefbd53897c2e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod. <br /></td></tr>
 <tr class="separator:gab3d6f987c880c22ac2aefbd53897c2e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga77f74eed23147247d108d331f9ae54b5"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga77f74eed23147247d108d331f9ae54b5">check_netcdf_code</a> (err)</td></tr>
-<tr class="memdesc:ga77f74eed23147247d108d331f9ae54b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check for errors returned by netcdf.  <a href="group__netcdf__io__mod.html#ga77f74eed23147247d108d331f9ae54b5">More...</a><br /></td></tr>
-<tr class="separator:ga77f74eed23147247d108d331f9ae54b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa1b08fcf27f57f5b3c064e8ba29305e5"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gaa1b08fcf27f57f5b3c064e8ba29305e5">check_netcdf_code</a> (err, msg)</td></tr>
+<tr class="memdesc:gaa1b08fcf27f57f5b3c064e8ba29305e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check for errors returned by netcdf.  <a href="group__netcdf__io__mod.html#gaa1b08fcf27f57f5b3c064e8ba29305e5">More...</a><br /></td></tr>
+<tr class="separator:gaa1b08fcf27f57f5b3c064e8ba29305e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga56db12e1a539a8e37929119a2796ecb3"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga56db12e1a539a8e37929119a2796ecb3">set_netcdf_mode</a> (ncid, mode)</td></tr>
 <tr class="memdesc:ga56db12e1a539a8e37929119a2796ecb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Switch to the correct netcdf mode.  <a href="group__netcdf__io__mod.html#ga56db12e1a539a8e37929119a2796ecb3">More...</a><br /></td></tr>
 <tr class="separator:ga56db12e1a539a8e37929119a2796ecb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga608c6d8a093d6770b23822ce4e85350c"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga608c6d8a093d6770b23822ce4e85350c">get_dimension_id</a> (ncid, dimension_name, allow_failure)</td></tr>
-<tr class="memdesc:ga608c6d8a093d6770b23822ce4e85350c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a dimension from its name.  <a href="group__netcdf__io__mod.html#ga608c6d8a093d6770b23822ce4e85350c">More...</a><br /></td></tr>
-<tr class="separator:ga608c6d8a093d6770b23822ce4e85350c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8e715b5af552ef9239dfe8878432fab1"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga8e715b5af552ef9239dfe8878432fab1">get_variable_id</a> (ncid, variable_name, allow_failure)</td></tr>
-<tr class="memdesc:ga8e715b5af552ef9239dfe8878432fab1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a variable from its name.  <a href="group__netcdf__io__mod.html#ga8e715b5af552ef9239dfe8878432fab1">More...</a><br /></td></tr>
-<tr class="separator:ga8e715b5af552ef9239dfe8878432fab1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabbbbf1555ba428cdf56af754ed158cf5"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gabbbbf1555ba428cdf56af754ed158cf5">attribute_exists</a> (ncid, varid, attribute_name)</td></tr>
-<tr class="memdesc:gabbbbf1555ba428cdf56af754ed158cf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine if an attribute exists.  <a href="group__netcdf__io__mod.html#gabbbbf1555ba428cdf56af754ed158cf5">More...</a><br /></td></tr>
-<tr class="separator:gabbbbf1555ba428cdf56af754ed158cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga46af95fa04dee943417ca900c20ad8ab"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga46af95fa04dee943417ca900c20ad8ab">get_attribute_type</a> (ncid, varid, attname)</td></tr>
-<tr class="memdesc:ga46af95fa04dee943417ca900c20ad8ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf attribute.  <a href="group__netcdf__io__mod.html#ga46af95fa04dee943417ca900c20ad8ab">More...</a><br /></td></tr>
-<tr class="separator:ga46af95fa04dee943417ca900c20ad8ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab0c965b1e2d15334ca7a3226910a753f"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gab0c965b1e2d15334ca7a3226910a753f">get_variable_type</a> (ncid, varid)</td></tr>
-<tr class="memdesc:gab0c965b1e2d15334ca7a3226910a753f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf variable.  <a href="group__netcdf__io__mod.html#gab0c965b1e2d15334ca7a3226910a753f">More...</a><br /></td></tr>
-<tr class="separator:gab0c965b1e2d15334ca7a3226910a753f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga80e0a307f11b5a5ba38b5993c9181c05"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga80e0a307f11b5a5ba38b5993c9181c05">get_dimension_id</a> (ncid, dimension_name, msg, allow_failure)</td></tr>
+<tr class="memdesc:ga80e0a307f11b5a5ba38b5993c9181c05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a dimension from its name.  <a href="group__netcdf__io__mod.html#ga80e0a307f11b5a5ba38b5993c9181c05">More...</a><br /></td></tr>
+<tr class="separator:ga80e0a307f11b5a5ba38b5993c9181c05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7a29d8e17393571d6e607fd3e135dc32"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga7a29d8e17393571d6e607fd3e135dc32">get_variable_id</a> (ncid, variable_name, msg, allow_failure)</td></tr>
+<tr class="memdesc:ga7a29d8e17393571d6e607fd3e135dc32"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the id of a variable from its name.  <a href="group__netcdf__io__mod.html#ga7a29d8e17393571d6e607fd3e135dc32">More...</a><br /></td></tr>
+<tr class="separator:ga7a29d8e17393571d6e607fd3e135dc32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga106f4286e5106156ecc014984aa1392a"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga106f4286e5106156ecc014984aa1392a">attribute_exists</a> (ncid, varid, attribute_name, msg)</td></tr>
+<tr class="memdesc:ga106f4286e5106156ecc014984aa1392a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine if an attribute exists.  <a href="group__netcdf__io__mod.html#ga106f4286e5106156ecc014984aa1392a">More...</a><br /></td></tr>
+<tr class="separator:ga106f4286e5106156ecc014984aa1392a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae49a656fc7d6595b831cf4f716d25d88"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gae49a656fc7d6595b831cf4f716d25d88">get_attribute_type</a> (ncid, varid, attname, msg)</td></tr>
+<tr class="memdesc:gae49a656fc7d6595b831cf4f716d25d88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf attribute.  <a href="group__netcdf__io__mod.html#gae49a656fc7d6595b831cf4f716d25d88">More...</a><br /></td></tr>
+<tr class="separator:gae49a656fc7d6595b831cf4f716d25d88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabc769996854e84d7255806a233f0411f"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#gabc769996854e84d7255806a233f0411f">get_variable_type</a> (ncid, varid, msg)</td></tr>
+<tr class="memdesc:gabc769996854e84d7255806a233f0411f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a netcdf variable.  <a href="group__netcdf__io__mod.html#gabc769996854e84d7255806a233f0411f">More...</a><br /></td></tr>
+<tr class="separator:gabc769996854e84d7255806a233f0411f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0f9b8d334fc47852bdf5c93c61b71cbc"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html#ga0f9b8d334fc47852bdf5c93c61b71cbc">netcdf_file_open</a> (fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename)</td></tr>
 <tr class="memdesc:ga0f9b8d334fc47852bdf5c93c61b71cbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open a netcdf file.  <a href="group__netcdf__io__mod.html#ga0f9b8d334fc47852bdf5c93c61b71cbc">More...</a><br /></td></tr>
 <tr class="separator:ga0f9b8d334fc47852bdf5c93c61b71cbc"><td class="memSeparator" colspan="2">&#160;</td></tr>

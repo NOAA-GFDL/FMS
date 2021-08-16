@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -148,29 +148,8 @@ Functions/Subroutines</h2></td></tr>
 <tr class="memitem:gad53355722ce2fc05b2f0d319cc87274c"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gad53355722ce2fc05b2f0d319cc87274c">diag_write_time</a> (fileob, rtime_value, time_index, time_name)</td></tr>
 <tr class="memdesc:gad53355722ce2fc05b2f0d319cc87274c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes the time data to the history file.  <a href="group__diag__output__mod.html#gad53355722ce2fc05b2f0d319cc87274c">More...</a><br /></td></tr>
 <tr class="separator:gad53355722ce2fc05b2f0d319cc87274c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2f3e71bc3218a56febc5a5e295c8d5ef"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga2f3e71bc3218a56febc5a5e295c8d5ef">diag_output_init_use_mpp_io</a> (file_name, FORMAT, file_title, file_unit, all_scalar_or_1d, domain, domainU, attributes)</td></tr>
-<tr class="memdesc:ga2f3e71bc3218a56febc5a5e295c8d5ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers the time axis and opens the output file.  <a href="group__diag__output__mod.html#ga2f3e71bc3218a56febc5a5e295c8d5ef">More...</a><br /></td></tr>
-<tr class="separator:ga2f3e71bc3218a56febc5a5e295c8d5ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga9c554c99bcccf1bc4d83f584c67dc4ea"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga9c554c99bcccf1bc4d83f584c67dc4ea">write_axis_meta_data_use_mpp_io</a> (file_unit, axes, time_ops)</td></tr>
-<tr class="memdesc:ga9c554c99bcccf1bc4d83f584c67dc4ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the axes meta data to file.  <a href="group__diag__output__mod.html#ga9c554c99bcccf1bc4d83f584c67dc4ea">More...</a><br /></td></tr>
-<tr class="separator:ga9c554c99bcccf1bc4d83f584c67dc4ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gadafdffad723037f937faecd76cf48b05"><td class="memItemLeft" align="right" valign="top">type(diag_fieldtype) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gadafdffad723037f937faecd76cf48b05">write_field_meta_data_use_mpp_io</a> (file_unit, name, axes, units, long_name, range, pack, mval, avg_name, time_method, standard_name, interp_method, attributes, num_attributes, use_UGdomain)</td></tr>
-<tr class="memdesc:gadafdffad723037f937faecd76cf48b05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the field meta data to file.  <a href="group__diag__output__mod.html#gadafdffad723037f937faecd76cf48b05">More...</a><br /></td></tr>
-<tr class="separator:gadafdffad723037f937faecd76cf48b05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa92a228badc756d9e92191db47f8ac0d"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gaa92a228badc756d9e92191db47f8ac0d">write_attribute_meta_use_mpp_io</a> (file_unit, id, num_attributes, attributes, time_method, err_msg)</td></tr>
-<tr class="memdesc:gaa92a228badc756d9e92191db47f8ac0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write out attribute meta data to file.  <a href="group__diag__output__mod.html#gaa92a228badc756d9e92191db47f8ac0d">More...</a><br /></td></tr>
-<tr class="separator:gaa92a228badc756d9e92191db47f8ac0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7cdaa2bd01d7648ea9024d6568ebd35e"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga7cdaa2bd01d7648ea9024d6568ebd35e">done_meta_data_use_mpp_io</a> (file_unit)</td></tr>
-<tr class="memdesc:ga7cdaa2bd01d7648ea9024d6568ebd35e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes axis data to file.  <a href="group__diag__output__mod.html#ga7cdaa2bd01d7648ea9024d6568ebd35e">More...</a><br /></td></tr>
-<tr class="separator:ga7cdaa2bd01d7648ea9024d6568ebd35e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac82b47266e27589e21bcb66391937634"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gac82b47266e27589e21bcb66391937634">diag_field_out</a> (file_unit, Field, DATA, time)</td></tr>
-<tr class="memdesc:gac82b47266e27589e21bcb66391937634"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes field data to an output file.  <a href="group__diag__output__mod.html#gac82b47266e27589e21bcb66391937634">More...</a><br /></td></tr>
-<tr class="separator:gac82b47266e27589e21bcb66391937634"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2de34f36b12b02ac1df3fc36ad997807"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga2de34f36b12b02ac1df3fc36ad997807">diag_flush</a> (file_unit)</td></tr>
-<tr class="memdesc:ga2de34f36b12b02ac1df3fc36ad997807"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flush buffer and insure data is not lost.  <a href="group__diag__output__mod.html#ga2de34f36b12b02ac1df3fc36ad997807">More...</a><br /></td></tr>
-<tr class="separator:ga2de34f36b12b02ac1df3fc36ad997807"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga9574e293cd049b0e355df0f020e65ab5"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga9574e293cd049b0e355df0f020e65ab5">get_axis_index</a> (num)</td></tr>
-<tr class="memdesc:ga9574e293cd049b0e355df0f020e65ab5"><td class="mdescLeft">&#160;</td><td class="mdescRight">End of use_mpp_io = true routines/functions everything else is shared by both.  <a href="group__diag__output__mod.html#ga9574e293cd049b0e355df0f020e65ab5">More...</a><br /></td></tr>
+<tr class="memdesc:ga9574e293cd049b0e355df0f020e65ab5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the axis index number.  <a href="group__diag__output__mod.html#ga9574e293cd049b0e355df0f020e65ab5">More...</a><br /></td></tr>
 <tr class="separator:ga9574e293cd049b0e355df0f020e65ab5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4c8757ca8d742058a56776efb8e6b6b4"><td class="memItemLeft" align="right" valign="top">
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga4c8757ca8d742058a56776efb8e6b6b4">get_diag_global_att</a> (gAtt)</td></tr>
@@ -184,8 +163,7 @@ subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:aa98a679bb29f31bd4a342a9823835a60"><td class="memItemLeft" align="right" valign="top"><a id="aa98a679bb29f31bd4a342a9823835a60"></a>
-type(diag_global_att_type), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="diag__output_8F90.html#aa98a679bb29f31bd4a342a9823835a60">diag_global_att</a></td></tr>
-<tr class="memdesc:aa98a679bb29f31bd4a342a9823835a60"><td class="mdescLeft">&#160;</td><td class="mdescRight">2020.03 use_mpp_io <a class="el" href="interfacediag__output__mod_1_1diag__output__init.html" title="Initialize output for writing.">diag_output_init</a>, <a class="el" href="interfacediag__output__mod_1_1write__axis__meta__data.html" title="Writes axis metadata to a file.">write_axis_meta_data</a>, <a class="el" href="interfacediag__output__mod_1_1write__field__meta__data.html" title="Writes field metadata to a file.">write_field_meta_data</a>, <a class="el" href="interfacediag__output__mod_1_1write__attribute__meta.html" title="Private interface to write metadata for an attribute to a file.">write_attribute_meta</a> are interfaces for the two different routines supporting each IO <br /></td></tr>
+type(diag_global_att_type), save&#160;</td><td class="memItemRight" valign="bottom"><b>diag_global_att</b></td></tr>
 <tr class="separator:aa98a679bb29f31bd4a342a9823835a60"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab30b1133c14729a00bcf0dcef6d4bfa3"><td class="memItemLeft" align="right" valign="top">
 integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>netcdf1</b> = 1</td></tr>

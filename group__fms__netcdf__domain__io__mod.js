@@ -10,6 +10,7 @@ var group__fms__netcdf__domain__io__mod =
     ] ],
     [ "fmsnetcdfdomainfile_t", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html", [
       [ "adjust_indices", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a3dc45d24d87ab7862160b877e1363df6", null ],
+      [ "allow_int8", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a869f05f3559ab9587f8abd84077ab725", null ],
       [ "bc_dimensions", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a9d60e00cbf427c534425cb4d7818a2b5", null ],
       [ "compressed_dims", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a1e3999a940850b3e8a4781e148a01117", null ],
       [ "domain", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a44cfff2babb687954ffc79c677a82a4d", null ],
@@ -42,7 +43,7 @@ var group__fms__netcdf__domain__io__mod =
     [ "add_domain_attribute", "group__fms__netcdf__domain__io__mod.html#ga1074b876833c4c30c72710594dc9a478", null ],
     [ "append_domain_decomposed_dimension", "group__fms__netcdf__domain__io__mod.html#gacfd1c75462af10eb0f79e56594073c4b", null ],
     [ "close_domain_file", "group__fms__netcdf__domain__io__mod.html#ga899d05494cbbe837adebdcb8e40944f3", null ],
-    [ "domain_offsets", "group__fms__netcdf__domain__io__mod.html#ga105b672f94c92598c1c28d0254467f2c", null ],
+    [ "domain_offsets", "group__fms__netcdf__domain__io__mod.html#ga4cd12c4a12cc9ceb8b15fa6873c7cda9", null ],
     [ "get_compute_domain_dimension_indices", "group__fms__netcdf__domain__io__mod.html#gaf543117b7cf4700f0714b918f0b087e4", null ],
     [ "get_domain_decomposed_dimension_index", "group__fms__netcdf__domain__io__mod.html#ga1d70660f1187f1e04975c13c0c06fc21", null ],
     [ "get_domain_decomposed_index", "group__fms__netcdf__domain__io__mod.html#ga1e34db4585bb38a96c33ddcbf0cfc412", null ],

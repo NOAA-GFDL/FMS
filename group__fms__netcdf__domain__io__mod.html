@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -169,9 +169,9 @@ Functions/Subroutines</h2></td></tr>
 <tr class="memitem:gaf543117b7cf4700f0714b918f0b087e4"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__netcdf__domain__io__mod.html#gaf543117b7cf4700f0714b918f0b087e4">get_compute_domain_dimension_indices</a> (fileobj, dimname, indices)</td></tr>
 <tr class="memdesc:gaf543117b7cf4700f0714b918f0b087e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return an array of compute domain indices.  <a href="group__fms__netcdf__domain__io__mod.html#gaf543117b7cf4700f0714b918f0b087e4">More...</a><br /></td></tr>
 <tr class="separator:gaf543117b7cf4700f0714b918f0b087e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga105b672f94c92598c1c28d0254467f2c"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__netcdf__domain__io__mod.html#ga105b672f94c92598c1c28d0254467f2c">domain_offsets</a> (data_xsize, data_ysize, domain, xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, extra_x_point, extra_y_point)</td></tr>
-<tr class="memdesc:ga105b672f94c92598c1c28d0254467f2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility routine that retrieves domain indices.  <a href="group__fms__netcdf__domain__io__mod.html#ga105b672f94c92598c1c28d0254467f2c">More...</a><br /></td></tr>
-<tr class="separator:ga105b672f94c92598c1c28d0254467f2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4cd12c4a12cc9ceb8b15fa6873c7cda9"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__netcdf__domain__io__mod.html#ga4cd12c4a12cc9ceb8b15fa6873c7cda9">domain_offsets</a> (data_xsize, data_ysize, domain, xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, extra_x_point, extra_y_point, msg)</td></tr>
+<tr class="memdesc:ga4cd12c4a12cc9ceb8b15fa6873c7cda9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility routine that retrieves domain indices.  <a href="group__fms__netcdf__domain__io__mod.html#ga4cd12c4a12cc9ceb8b15fa6873c7cda9">More...</a><br /></td></tr>
+<tr class="separator:ga4cd12c4a12cc9ceb8b15fa6873c7cda9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga57fcb120b3d6f6c9ab45914c9f6ad930"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__netcdf__domain__io__mod.html#ga57fcb120b3d6f6c9ab45914c9f6ad930">get_global_io_domain_indices</a> (fileobj, dimname, is, ie, indices)</td></tr>
 <tr class="memdesc:ga57fcb120b3d6f6c9ab45914c9f6ad930"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get starting/ending global indices of the I/O domain for a domain decomposed file.  <a href="group__fms__netcdf__domain__io__mod.html#ga57fcb120b3d6f6c9ab45914c9f6ad930">More...</a><br /></td></tr>
 <tr class="separator:ga57fcb120b3d6f6c9ab45914c9f6ad930"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -249,7 +249,7 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00499">499</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00502">502</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>
@@ -342,8 +342,8 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
 
 </div>
 </div>
-<a id="ga105b672f94c92598c1c28d0254467f2c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga105b672f94c92598c1c28d0254467f2c">&#9670;&nbsp;</a></span>domain_offsets()</h2>
+<a id="ga4cd12c4a12cc9ceb8b15fa6873c7cda9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga4cd12c4a12cc9ceb8b15fa6873c7cda9">&#9670;&nbsp;</a></span>domain_offsets()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -433,7 +433,13 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">logical, intent(out), optional&#160;</td>
-          <td class="paramname"><em>extra_y_point</em>&#160;</td>
+          <td class="paramname"><em>extra_y_point</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in), optional&#160;</td>
+          <td class="paramname"><em>msg</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -463,11 +469,14 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
     <tr><td class="paramdir">[out]</td><td class="paramname">jsc</td><td>Starting index for y dimension of compute domain. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">yc_size</td><td>Size of y dimension of compute domain. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">buffer_includes_halos</td><td>Flag telling if input buffer includes space for halos. </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">extra_x_point</td><td>Flag indicating if data_array has an extra point in x </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">extra_y_point</td><td>Flag indicating if data_array has an extra point in y </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>Message appended to fatal error </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00736">736</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00746">746</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>
@@ -513,7 +522,7 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00695">695</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00705">705</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>
@@ -744,7 +753,7 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00801">801</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00814">814</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>
@@ -797,7 +806,7 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00845">845</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00859">859</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1101,7 +1110,7 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00539">539</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00542">542</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1140,7 +1149,7 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00628">628</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00631">631</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>
@@ -1179,7 +1188,7 @@ character(len=16), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00561">561</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__netcdf__domain__io_8F90_source.html#l00564">564</a> of file <a class="el" href="fms__netcdf__domain__io_8F90_source.html">fms_netcdf_domain_io.F90</a>.</p>
 
 </div>
 </div>

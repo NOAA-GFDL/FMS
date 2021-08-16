@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -2286,257 +2286,285 @@ $(document).ready(function(){initNavTree('mpp__define__nest__domains_8inc_source
 <div class="line"><a name="l02190"></a><span class="lineno"> 2190</span>&#160;    nrecv = 0</div>
 <div class="line"><a name="l02191"></a><span class="lineno"> 2191</span>&#160;    cur_pos = 0</div>
 <div class="line"><a name="l02192"></a><span class="lineno"> 2192</span>&#160;    <span class="keywordflow">do</span> <span class="keywordflow">while</span> (n&lt;=ntot)</div>
-<div class="line"><a name="l02193"></a><span class="lineno"> 2193</span>&#160;       <span class="keywordflow">if</span>(ix &lt;= nrecv_x ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02194"></a><span class="lineno"> 2194</span>&#160;          rank_x = update_x%recv(ix)%pe-<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
-<div class="line"><a name="l02195"></a><span class="lineno"> 2195</span>&#160;          <span class="keywordflow">if</span>(rank_x .LE. 0) rank_x = rank_x + nlist</div>
-<div class="line"><a name="l02196"></a><span class="lineno"> 2196</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l02197"></a><span class="lineno"> 2197</span>&#160;          rank_x = nlist+1</div>
-<div class="line"><a name="l02198"></a><span class="lineno"> 2198</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l02199"></a><span class="lineno"> 2199</span>&#160;       <span class="keywordflow">if</span>(iy &lt;= nrecv_y ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02200"></a><span class="lineno"> 2200</span>&#160;          rank_y = update_y%recv(iy)%pe-<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
-<div class="line"><a name="l02201"></a><span class="lineno"> 2201</span>&#160;          <span class="keywordflow">if</span>(rank_y .LE. 0) rank_y = rank_y + nlist</div>
-<div class="line"><a name="l02202"></a><span class="lineno"> 2202</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l02203"></a><span class="lineno"> 2203</span>&#160;          rank_y = nlist+1</div>
-<div class="line"><a name="l02204"></a><span class="lineno"> 2204</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l02205"></a><span class="lineno"> 2205</span>&#160;       nrecv = nrecv + 1</div>
-<div class="line"><a name="l02206"></a><span class="lineno"> 2206</span>&#160;       start_pos(nrecv) = cur_pos</div>
-<div class="line"><a name="l02207"></a><span class="lineno"> 2207</span>&#160;       <span class="keywordflow">if</span>( rank_x == rank_y ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02208"></a><span class="lineno"> 2208</span>&#160;          n = n+2</div>
-<div class="line"><a name="l02209"></a><span class="lineno"> 2209</span>&#160;          ind_x(nrecv) = ix</div>
-<div class="line"><a name="l02210"></a><span class="lineno"> 2210</span>&#160;          ind_y(nrecv) = iy</div>
-<div class="line"><a name="l02211"></a><span class="lineno"> 2211</span>&#160;          cur_pos = cur_pos + update_x%recv(ix)%totsize + update_y%recv(iy)%totsize</div>
-<div class="line"><a name="l02212"></a><span class="lineno"> 2212</span>&#160;          pelist(nrecv) = update_x%recv(ix)%pe</div>
-<div class="line"><a name="l02213"></a><span class="lineno"> 2213</span>&#160;          ix = ix + 1</div>
-<div class="line"><a name="l02214"></a><span class="lineno"> 2214</span>&#160;          iy = iy + 1</div>
-<div class="line"><a name="l02215"></a><span class="lineno"> 2215</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_x &lt; rank_y ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02216"></a><span class="lineno"> 2216</span>&#160;          n = n+1</div>
-<div class="line"><a name="l02217"></a><span class="lineno"> 2217</span>&#160;          ind_x(nrecv) = ix</div>
-<div class="line"><a name="l02218"></a><span class="lineno"> 2218</span>&#160;          ind_y(nrecv) = -1</div>
-<div class="line"><a name="l02219"></a><span class="lineno"> 2219</span>&#160;          cur_pos = cur_pos + update_x%recv(ix)%totsize</div>
-<div class="line"><a name="l02220"></a><span class="lineno"> 2220</span>&#160;          pelist(nrecv) = update_x%recv(ix)%pe</div>
-<div class="line"><a name="l02221"></a><span class="lineno"> 2221</span>&#160;          ix = ix + 1</div>
-<div class="line"><a name="l02222"></a><span class="lineno"> 2222</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_y &lt; rank_x ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02223"></a><span class="lineno"> 2223</span>&#160;          n = n+1</div>
-<div class="line"><a name="l02224"></a><span class="lineno"> 2224</span>&#160;          ind_x(nrecv) = -1</div>
-<div class="line"><a name="l02225"></a><span class="lineno"> 2225</span>&#160;          ind_y(nrecv) = iy</div>
-<div class="line"><a name="l02226"></a><span class="lineno"> 2226</span>&#160;          cur_pos = cur_pos + update_y%recv(iy)%totsize</div>
-<div class="line"><a name="l02227"></a><span class="lineno"> 2227</span>&#160;          pelist(nrecv) = update_y%recv(iy)%pe</div>
-<div class="line"><a name="l02228"></a><span class="lineno"> 2228</span>&#160;          iy = iy+1</div>
-<div class="line"><a name="l02229"></a><span class="lineno"> 2229</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l02230"></a><span class="lineno"> 2230</span>&#160;<span class="keywordflow">    end do</span></div>
-<div class="line"><a name="l02231"></a><span class="lineno"> 2231</span>&#160; </div>
-<div class="line"><a name="l02232"></a><span class="lineno"> 2232</span>&#160;    get_nest_vector_recv = nrecv</div>
-<div class="line"><a name="l02233"></a><span class="lineno"> 2233</span>&#160; </div>
-<div class="line"><a name="l02234"></a><span class="lineno"> 2234</span>&#160; </div>
-<div class="line"><a name="l02235"></a><span class="lineno"> 2235</span>&#160;  <span class="keyword">end function </span>get_nest_vector_recv</div>
-<div class="line"><a name="l02236"></a><span class="lineno"> 2236</span>&#160; </div>
-<div class="line"><a name="l02237"></a><span class="lineno"> 2237</span>&#160; </div>
-<div class="line"><a name="l02238"></a><span class="lineno"> 2238</span>&#160;  <span class="keyword">function </span>get_nest_vector_send(nest_domain, update_x, update_y, ind_x, ind_y, start_pos, pelist)</div>
-<div class="line"><a name="l02239"></a><span class="lineno"> 2239</span>&#160;    <span class="keywordtype">type</span>(nest_level_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02240"></a><span class="lineno"> 2240</span>&#160;    <span class="keywordtype">type</span>(nestspec),    <span class="keywordtype">intent(in)</span> :: update_x, update_y</div>
-<div class="line"><a name="l02241"></a><span class="lineno"> 2241</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(out)</span> :: ind_x(:), ind_y(:)</div>
-<div class="line"><a name="l02242"></a><span class="lineno"> 2242</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(out)</span> :: start_pos(:)</div>
-<div class="line"><a name="l02243"></a><span class="lineno"> 2243</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(out)</span> :: pelist(:)</div>
-<div class="line"><a name="l02244"></a><span class="lineno"> 2244</span>&#160;    <span class="keywordtype">integer</span>                       :: get_nest_vector_send</div>
-<div class="line"><a name="l02245"></a><span class="lineno"> 2245</span>&#160;    <span class="keywordtype">integer</span>                       :: nlist, nsend_x, nsend_y, ntot, n</div>
-<div class="line"><a name="l02246"></a><span class="lineno"> 2246</span>&#160;    <span class="keywordtype">integer</span>                       :: ix, iy, rank_x, rank_y, cur_pos</div>
-<div class="line"><a name="l02247"></a><span class="lineno"> 2247</span>&#160;    <span class="keywordtype">integer</span>                       :: nsend</div>
+<div class="line"><a name="l02193"></a><span class="lineno"> 2193</span>&#160;       <span class="keywordflow">if</span> ( ix &lt;= nrecv_x ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02194"></a><span class="lineno"> 2194</span>&#160;          rank_x = update_x%recv(ix)%pe</div>
+<div class="line"><a name="l02195"></a><span class="lineno"> 2195</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02196"></a><span class="lineno"> 2196</span>&#160;          rank_x = -1</div>
+<div class="line"><a name="l02197"></a><span class="lineno"> 2197</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l02198"></a><span class="lineno"> 2198</span>&#160;       <span class="keywordflow">if</span> ( iy &lt;= nrecv_y ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02199"></a><span class="lineno"> 2199</span>&#160;          rank_y = update_y%recv(iy)%pe</div>
+<div class="line"><a name="l02200"></a><span class="lineno"> 2200</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02201"></a><span class="lineno"> 2201</span>&#160;          rank_y = -1</div>
+<div class="line"><a name="l02202"></a><span class="lineno"> 2202</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l02203"></a><span class="lineno"> 2203</span>&#160;       nrecv = nrecv + 1</div>
+<div class="line"><a name="l02204"></a><span class="lineno"> 2204</span>&#160;       start_pos(nrecv) = cur_pos</div>
+<div class="line"><a name="l02205"></a><span class="lineno"> 2205</span>&#160;       <span class="keywordflow">if</span> ( (rank_x == rank_y) .and. ( (rank_x &gt;= 0) .and. (rank_y &gt;= 0) ) ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02206"></a><span class="lineno"> 2206</span>&#160;          n = n+2</div>
+<div class="line"><a name="l02207"></a><span class="lineno"> 2207</span>&#160;          ind_x(nrecv) = ix</div>
+<div class="line"><a name="l02208"></a><span class="lineno"> 2208</span>&#160;          ind_y(nrecv) = iy</div>
+<div class="line"><a name="l02209"></a><span class="lineno"> 2209</span>&#160;          cur_pos = cur_pos + update_x%recv(ix)%totsize + update_y%recv(iy)%totsize</div>
+<div class="line"><a name="l02210"></a><span class="lineno"> 2210</span>&#160;          pelist(nrecv) = update_x%recv(ix)%pe</div>
+<div class="line"><a name="l02211"></a><span class="lineno"> 2211</span>&#160;          ix = ix + 1</div>
+<div class="line"><a name="l02212"></a><span class="lineno"> 2212</span>&#160;          iy = iy + 1</div>
+<div class="line"><a name="l02213"></a><span class="lineno"> 2213</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_x &lt; rank_y ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02214"></a><span class="lineno"> 2214</span>&#160;          n = n+1</div>
+<div class="line"><a name="l02215"></a><span class="lineno"> 2215</span>&#160;          <span class="keywordflow">if</span> ( rank_x &lt; 0 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02216"></a><span class="lineno"> 2216</span>&#160;             ind_x(nrecv) = -1</div>
+<div class="line"><a name="l02217"></a><span class="lineno"> 2217</span>&#160;             ind_y(nrecv) = iy</div>
+<div class="line"><a name="l02218"></a><span class="lineno"> 2218</span>&#160;             cur_pos = cur_pos + update_y%recv(iy)%totsize</div>
+<div class="line"><a name="l02219"></a><span class="lineno"> 2219</span>&#160;             pelist(nrecv) = update_y%recv(iy)%pe</div>
+<div class="line"><a name="l02220"></a><span class="lineno"> 2220</span>&#160;             iy = iy + 1</div>
+<div class="line"><a name="l02221"></a><span class="lineno"> 2221</span>&#160;          <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02222"></a><span class="lineno"> 2222</span>&#160;             ind_x(nrecv) = ix</div>
+<div class="line"><a name="l02223"></a><span class="lineno"> 2223</span>&#160;             ind_y(nrecv) = -1</div>
+<div class="line"><a name="l02224"></a><span class="lineno"> 2224</span>&#160;             cur_pos = cur_pos + update_x%recv(ix)%totsize</div>
+<div class="line"><a name="l02225"></a><span class="lineno"> 2225</span>&#160;             pelist(nrecv) = update_x%recv(ix)%pe</div>
+<div class="line"><a name="l02226"></a><span class="lineno"> 2226</span>&#160;             ix = ix + 1</div>
+<div class="line"><a name="l02227"></a><span class="lineno"> 2227</span>&#160;<span class="keywordflow">          endif</span></div>
+<div class="line"><a name="l02228"></a><span class="lineno"> 2228</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_y &lt; rank_x ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02229"></a><span class="lineno"> 2229</span>&#160;          n = n+1</div>
+<div class="line"><a name="l02230"></a><span class="lineno"> 2230</span>&#160;          <span class="keywordflow">if</span> ( rank_y &lt; 0 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02231"></a><span class="lineno"> 2231</span>&#160;             ind_x(nrecv) = ix</div>
+<div class="line"><a name="l02232"></a><span class="lineno"> 2232</span>&#160;             ind_y(nrecv) = -1</div>
+<div class="line"><a name="l02233"></a><span class="lineno"> 2233</span>&#160;             cur_pos = cur_pos + update_x%recv(ix)%totsize</div>
+<div class="line"><a name="l02234"></a><span class="lineno"> 2234</span>&#160;             pelist(nrecv) = update_x%recv(ix)%pe</div>
+<div class="line"><a name="l02235"></a><span class="lineno"> 2235</span>&#160;             ix = ix + 1</div>
+<div class="line"><a name="l02236"></a><span class="lineno"> 2236</span>&#160;          <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02237"></a><span class="lineno"> 2237</span>&#160;             ind_x(nrecv) = -1</div>
+<div class="line"><a name="l02238"></a><span class="lineno"> 2238</span>&#160;             ind_y(nrecv) = iy</div>
+<div class="line"><a name="l02239"></a><span class="lineno"> 2239</span>&#160;             cur_pos = cur_pos + update_y%recv(iy)%totsize</div>
+<div class="line"><a name="l02240"></a><span class="lineno"> 2240</span>&#160;             pelist(nrecv) = update_y%recv(iy)%pe</div>
+<div class="line"><a name="l02241"></a><span class="lineno"> 2241</span>&#160;             iy = iy + 1</div>
+<div class="line"><a name="l02242"></a><span class="lineno"> 2242</span>&#160;<span class="keywordflow">          endif</span></div>
+<div class="line"><a name="l02243"></a><span class="lineno"> 2243</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l02244"></a><span class="lineno"> 2244</span>&#160;<span class="keywordflow">    end do</span></div>
+<div class="line"><a name="l02245"></a><span class="lineno"> 2245</span>&#160; </div>
+<div class="line"><a name="l02246"></a><span class="lineno"> 2246</span>&#160;    get_nest_vector_recv = nrecv</div>
+<div class="line"><a name="l02247"></a><span class="lineno"> 2247</span>&#160; </div>
 <div class="line"><a name="l02248"></a><span class="lineno"> 2248</span>&#160; </div>
-<div class="line"><a name="l02249"></a><span class="lineno"> 2249</span>&#160;    nlist = <span class="keyword">size</span>(nest_domain%pelist_fine(:)) + <span class="keyword">size</span>(nest_domain%pelist_coarse(:))</div>
-<div class="line"><a name="l02250"></a><span class="lineno"> 2250</span>&#160;    nsend_x = update_x%nsend</div>
-<div class="line"><a name="l02251"></a><span class="lineno"> 2251</span>&#160;    nsend_y = update_y%nsend</div>
-<div class="line"><a name="l02252"></a><span class="lineno"> 2252</span>&#160; </div>
-<div class="line"><a name="l02253"></a><span class="lineno"> 2253</span>&#160;    ntot = nsend_x + nsend_y</div>
-<div class="line"><a name="l02254"></a><span class="lineno"> 2254</span>&#160; </div>
-<div class="line"><a name="l02255"></a><span class="lineno"> 2255</span>&#160;    n  = 1</div>
-<div class="line"><a name="l02256"></a><span class="lineno"> 2256</span>&#160;    ix = 1</div>
-<div class="line"><a name="l02257"></a><span class="lineno"> 2257</span>&#160;    iy = 1</div>
-<div class="line"><a name="l02258"></a><span class="lineno"> 2258</span>&#160;    ind_x = -1</div>
-<div class="line"><a name="l02259"></a><span class="lineno"> 2259</span>&#160;    ind_y = -1</div>
-<div class="line"><a name="l02260"></a><span class="lineno"> 2260</span>&#160;    nsend = 0</div>
-<div class="line"><a name="l02261"></a><span class="lineno"> 2261</span>&#160;    cur_pos = 0</div>
-<div class="line"><a name="l02262"></a><span class="lineno"> 2262</span>&#160;    <span class="keywordflow">do</span> <span class="keywordflow">while</span> (n&lt;=ntot)</div>
-<div class="line"><a name="l02263"></a><span class="lineno"> 2263</span>&#160;       <span class="keywordflow">if</span>(ix &lt;= nsend_x ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02264"></a><span class="lineno"> 2264</span>&#160;          rank_x = update_x%send(ix)%pe-<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
-<div class="line"><a name="l02265"></a><span class="lineno"> 2265</span>&#160;          <span class="keywordflow">if</span>(rank_x .LE. 0) rank_x = rank_x + nlist</div>
-<div class="line"><a name="l02266"></a><span class="lineno"> 2266</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l02267"></a><span class="lineno"> 2267</span>&#160;          rank_x = nlist+1</div>
-<div class="line"><a name="l02268"></a><span class="lineno"> 2268</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l02269"></a><span class="lineno"> 2269</span>&#160;       <span class="keywordflow">if</span>(iy &lt;= nsend_y ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02270"></a><span class="lineno"> 2270</span>&#160;          rank_y = update_y%send(iy)%pe-<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
-<div class="line"><a name="l02271"></a><span class="lineno"> 2271</span>&#160;          <span class="keywordflow">if</span>(rank_y .LE. 0) rank_y = rank_y + nlist</div>
-<div class="line"><a name="l02272"></a><span class="lineno"> 2272</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l02273"></a><span class="lineno"> 2273</span>&#160;          rank_y = nlist+1</div>
-<div class="line"><a name="l02274"></a><span class="lineno"> 2274</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l02275"></a><span class="lineno"> 2275</span>&#160;       nsend = nsend + 1</div>
-<div class="line"><a name="l02276"></a><span class="lineno"> 2276</span>&#160;       start_pos(nsend) = cur_pos</div>
-<div class="line"><a name="l02277"></a><span class="lineno"> 2277</span>&#160;       <span class="keywordflow">if</span>( rank_x == rank_y ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02278"></a><span class="lineno"> 2278</span>&#160;          n = n+2</div>
-<div class="line"><a name="l02279"></a><span class="lineno"> 2279</span>&#160;          ind_x(nsend) = ix</div>
-<div class="line"><a name="l02280"></a><span class="lineno"> 2280</span>&#160;          ind_y(nsend) = iy</div>
-<div class="line"><a name="l02281"></a><span class="lineno"> 2281</span>&#160;          cur_pos = cur_pos + update_x%send(ix)%totsize + update_y%send(iy)%totsize</div>
-<div class="line"><a name="l02282"></a><span class="lineno"> 2282</span>&#160;          pelist(nsend) = update_x%send(ix)%pe</div>
-<div class="line"><a name="l02283"></a><span class="lineno"> 2283</span>&#160;          ix = ix + 1</div>
-<div class="line"><a name="l02284"></a><span class="lineno"> 2284</span>&#160;          iy = iy + 1</div>
-<div class="line"><a name="l02285"></a><span class="lineno"> 2285</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_x &lt; rank_y ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02286"></a><span class="lineno"> 2286</span>&#160;          n = n+1</div>
-<div class="line"><a name="l02287"></a><span class="lineno"> 2287</span>&#160;          ind_x(nsend) = ix</div>
-<div class="line"><a name="l02288"></a><span class="lineno"> 2288</span>&#160;          ind_y(nsend) = -1</div>
-<div class="line"><a name="l02289"></a><span class="lineno"> 2289</span>&#160;          cur_pos = cur_pos + update_x%send(ix)%totsize</div>
-<div class="line"><a name="l02290"></a><span class="lineno"> 2290</span>&#160;          pelist(nsend) = update_x%send(ix)%pe</div>
-<div class="line"><a name="l02291"></a><span class="lineno"> 2291</span>&#160;          ix = ix + 1</div>
-<div class="line"><a name="l02292"></a><span class="lineno"> 2292</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_y &lt; rank_x ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02293"></a><span class="lineno"> 2293</span>&#160;          n = n+1</div>
-<div class="line"><a name="l02294"></a><span class="lineno"> 2294</span>&#160;          ind_x(nsend) = -1</div>
-<div class="line"><a name="l02295"></a><span class="lineno"> 2295</span>&#160;          ind_y(nsend) = iy</div>
-<div class="line"><a name="l02296"></a><span class="lineno"> 2296</span>&#160;          cur_pos = cur_pos + update_y%send(iy)%totsize</div>
-<div class="line"><a name="l02297"></a><span class="lineno"> 2297</span>&#160;          pelist(nsend) = update_y%send(iy)%pe</div>
-<div class="line"><a name="l02298"></a><span class="lineno"> 2298</span>&#160;          iy = iy+1</div>
-<div class="line"><a name="l02299"></a><span class="lineno"> 2299</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l02300"></a><span class="lineno"> 2300</span>&#160;<span class="keywordflow">    end do</span></div>
-<div class="line"><a name="l02301"></a><span class="lineno"> 2301</span>&#160; </div>
-<div class="line"><a name="l02302"></a><span class="lineno"> 2302</span>&#160;    get_nest_vector_send = nsend</div>
-<div class="line"><a name="l02303"></a><span class="lineno"> 2303</span>&#160; </div>
-<div class="line"><a name="l02304"></a><span class="lineno"> 2304</span>&#160; </div>
-<div class="line"><a name="l02305"></a><span class="lineno"> 2305</span>&#160;  <span class="keyword">end function </span>get_nest_vector_send</div>
-<div class="line"><a name="l02306"></a><span class="lineno"> 2306</span>&#160; </div>
-<div class="line"><a name="l02307"></a><span class="lineno"> 2307</span>&#160;  <span class="keyword">subroutine </span>check_data_size_1d(module, str1, size1, str2, size2)</div>
-<div class="line"><a name="l02308"></a><span class="lineno"> 2308</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: module, str1, str2</div>
-<div class="line"><a name="l02309"></a><span class="lineno"> 2309</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(in)</span> :: size1, size2</div>
-<div class="line"><a name="l02310"></a><span class="lineno"> 2310</span>&#160; </div>
-<div class="line"><a name="l02311"></a><span class="lineno"> 2311</span>&#160; </div>
-<div class="line"><a name="l02312"></a><span class="lineno"> 2312</span>&#160;   <span class="keywordflow">if</span>(size2 &gt; 0 .AND. size1 .NE. size2 ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02313"></a><span class="lineno"> 2313</span>&#160;      print <span class="stringliteral">&#39;(a, 3I5)&#39;</span>, trim(module), <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>(), size1, size2</div>
-<div class="line"><a name="l02314"></a><span class="lineno"> 2314</span>&#160;      <span class="keyword">call </span>mpp_error(fatal, trim(module)//<span class="stringliteral">&quot;: mismatch between size of &quot;</span>//trim(str1)//<span class="stringliteral">&quot; and &quot;</span>//trim(str2))</div>
-<div class="line"><a name="l02315"></a><span class="lineno"> 2315</span>&#160;<span class="keywordflow">   endif</span></div>
-<div class="line"><a name="l02316"></a><span class="lineno"> 2316</span>&#160; </div>
-<div class="line"><a name="l02317"></a><span class="lineno"> 2317</span>&#160;  <span class="keyword">end subroutine </span>check_data_size_1d</div>
-<div class="line"><a name="l02318"></a><span class="lineno"> 2318</span>&#160; </div>
-<div class="line"><a name="l02319"></a><span class="lineno"> 2319</span>&#160; </div>
-<div class="line"><a name="l02320"></a><span class="lineno"> 2320</span>&#160;  <span class="keyword">subroutine </span>check_data_size_2d(module, str1, isize1, jsize1, str2, isize2, jsize2)</div>
-<div class="line"><a name="l02321"></a><span class="lineno"> 2321</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: module, str1, str2</div>
-<div class="line"><a name="l02322"></a><span class="lineno"> 2322</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(in)</span> :: isize1, jsize1, isize2, jsize2</div>
-<div class="line"><a name="l02323"></a><span class="lineno"> 2323</span>&#160; </div>
-<div class="line"><a name="l02324"></a><span class="lineno"> 2324</span>&#160; </div>
-<div class="line"><a name="l02325"></a><span class="lineno"> 2325</span>&#160;   <span class="keywordflow">if</span>(isize2 &gt; 0 .AND. jsize2 &gt; 0 .AND. (isize1 .NE. isize2 .OR. jsize1 .NE. jsize2) ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l02326"></a><span class="lineno"> 2326</span>&#160;      print <span class="stringliteral">&#39;(a, 5I5)&#39;</span>, trim(module), <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>(), isize1, jsize1, isize2, jsize2</div>
-<div class="line"><a name="l02327"></a><span class="lineno"> 2327</span>&#160;      <span class="keyword">call </span>mpp_error(fatal, trim(module)//<span class="stringliteral">&quot;: mismatch between size of &quot;</span>//trim(str1)//<span class="stringliteral">&quot; and &quot;</span>//trim(str2))</div>
-<div class="line"><a name="l02328"></a><span class="lineno"> 2328</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l02249"></a><span class="lineno"> 2249</span>&#160;  <span class="keyword">end function </span>get_nest_vector_recv</div>
+<div class="line"><a name="l02250"></a><span class="lineno"> 2250</span>&#160; </div>
+<div class="line"><a name="l02251"></a><span class="lineno"> 2251</span>&#160; </div>
+<div class="line"><a name="l02252"></a><span class="lineno"> 2252</span>&#160;  <span class="keyword">function </span>get_nest_vector_send(nest_domain, update_x, update_y, ind_x, ind_y, start_pos, pelist)</div>
+<div class="line"><a name="l02253"></a><span class="lineno"> 2253</span>&#160;    <span class="keywordtype">type</span>(nest_level_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02254"></a><span class="lineno"> 2254</span>&#160;    <span class="keywordtype">type</span>(nestspec),    <span class="keywordtype">intent(in)</span> :: update_x, update_y</div>
+<div class="line"><a name="l02255"></a><span class="lineno"> 2255</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(out)</span> :: ind_x(:), ind_y(:)</div>
+<div class="line"><a name="l02256"></a><span class="lineno"> 2256</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(out)</span> :: start_pos(:)</div>
+<div class="line"><a name="l02257"></a><span class="lineno"> 2257</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(out)</span> :: pelist(:)</div>
+<div class="line"><a name="l02258"></a><span class="lineno"> 2258</span>&#160;    <span class="keywordtype">integer</span>                       :: get_nest_vector_send</div>
+<div class="line"><a name="l02259"></a><span class="lineno"> 2259</span>&#160;    <span class="keywordtype">integer</span>                       :: nlist, nsend_x, nsend_y, ntot, n</div>
+<div class="line"><a name="l02260"></a><span class="lineno"> 2260</span>&#160;    <span class="keywordtype">integer</span>                       :: ix, iy, rank_x, rank_y, cur_pos</div>
+<div class="line"><a name="l02261"></a><span class="lineno"> 2261</span>&#160;    <span class="keywordtype">integer</span>                       :: nsend</div>
+<div class="line"><a name="l02262"></a><span class="lineno"> 2262</span>&#160; </div>
+<div class="line"><a name="l02263"></a><span class="lineno"> 2263</span>&#160;    nlist = <span class="keyword">size</span>(nest_domain%pelist_fine(:)) + <span class="keyword">size</span>(nest_domain%pelist_coarse(:))</div>
+<div class="line"><a name="l02264"></a><span class="lineno"> 2264</span>&#160;    nsend_x = update_x%nsend</div>
+<div class="line"><a name="l02265"></a><span class="lineno"> 2265</span>&#160;    nsend_y = update_y%nsend</div>
+<div class="line"><a name="l02266"></a><span class="lineno"> 2266</span>&#160; </div>
+<div class="line"><a name="l02267"></a><span class="lineno"> 2267</span>&#160;    ntot = nsend_x + nsend_y</div>
+<div class="line"><a name="l02268"></a><span class="lineno"> 2268</span>&#160; </div>
+<div class="line"><a name="l02269"></a><span class="lineno"> 2269</span>&#160;    n  = 1</div>
+<div class="line"><a name="l02270"></a><span class="lineno"> 2270</span>&#160;    ix = 1</div>
+<div class="line"><a name="l02271"></a><span class="lineno"> 2271</span>&#160;    iy = 1</div>
+<div class="line"><a name="l02272"></a><span class="lineno"> 2272</span>&#160;    ind_x = -1</div>
+<div class="line"><a name="l02273"></a><span class="lineno"> 2273</span>&#160;    ind_y = -1</div>
+<div class="line"><a name="l02274"></a><span class="lineno"> 2274</span>&#160;    nsend = 0</div>
+<div class="line"><a name="l02275"></a><span class="lineno"> 2275</span>&#160;    cur_pos = 0</div>
+<div class="line"><a name="l02276"></a><span class="lineno"> 2276</span>&#160;    <span class="keywordflow">do</span> <span class="keywordflow">while</span> (n&lt;=ntot)</div>
+<div class="line"><a name="l02277"></a><span class="lineno"> 2277</span>&#160;       <span class="keywordflow">if</span> ( ix &lt;= nsend_x ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02278"></a><span class="lineno"> 2278</span>&#160;          rank_x = update_x%send(ix)%pe</div>
+<div class="line"><a name="l02279"></a><span class="lineno"> 2279</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02280"></a><span class="lineno"> 2280</span>&#160;          rank_x = -1</div>
+<div class="line"><a name="l02281"></a><span class="lineno"> 2281</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l02282"></a><span class="lineno"> 2282</span>&#160;       <span class="keywordflow">if</span> ( iy &lt;= nsend_y ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02283"></a><span class="lineno"> 2283</span>&#160;          rank_y = update_y%send(iy)%pe</div>
+<div class="line"><a name="l02284"></a><span class="lineno"> 2284</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02285"></a><span class="lineno"> 2285</span>&#160;          rank_y = -1</div>
+<div class="line"><a name="l02286"></a><span class="lineno"> 2286</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l02287"></a><span class="lineno"> 2287</span>&#160;       nsend = nsend + 1</div>
+<div class="line"><a name="l02288"></a><span class="lineno"> 2288</span>&#160;       start_pos(nsend) = cur_pos</div>
+<div class="line"><a name="l02289"></a><span class="lineno"> 2289</span>&#160;       <span class="keywordflow">if</span> ( (rank_x == rank_y) .and. ( (rank_x &gt;= 0) .and. (rank_y &gt;= 0) ) ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02290"></a><span class="lineno"> 2290</span>&#160;          n = n+2</div>
+<div class="line"><a name="l02291"></a><span class="lineno"> 2291</span>&#160;          ind_x(nsend) = ix</div>
+<div class="line"><a name="l02292"></a><span class="lineno"> 2292</span>&#160;          ind_y(nsend) = iy</div>
+<div class="line"><a name="l02293"></a><span class="lineno"> 2293</span>&#160;          cur_pos = cur_pos + update_x%send(ix)%totsize + update_y%send(iy)%totsize</div>
+<div class="line"><a name="l02294"></a><span class="lineno"> 2294</span>&#160;          pelist(nsend) = update_x%send(ix)%pe</div>
+<div class="line"><a name="l02295"></a><span class="lineno"> 2295</span>&#160;          ix = ix + 1</div>
+<div class="line"><a name="l02296"></a><span class="lineno"> 2296</span>&#160;          iy = iy + 1</div>
+<div class="line"><a name="l02297"></a><span class="lineno"> 2297</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_x &lt; rank_y ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02298"></a><span class="lineno"> 2298</span>&#160;          n = n+1</div>
+<div class="line"><a name="l02299"></a><span class="lineno"> 2299</span>&#160;          <span class="keywordflow">if</span> ( rank_x &lt; 0 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02300"></a><span class="lineno"> 2300</span>&#160;             ind_x(nsend) = -1</div>
+<div class="line"><a name="l02301"></a><span class="lineno"> 2301</span>&#160;             ind_y(nsend) = iy</div>
+<div class="line"><a name="l02302"></a><span class="lineno"> 2302</span>&#160;             cur_pos = cur_pos + update_y%send(iy)%totsize</div>
+<div class="line"><a name="l02303"></a><span class="lineno"> 2303</span>&#160;             pelist(nsend) = update_y%send(iy)%pe</div>
+<div class="line"><a name="l02304"></a><span class="lineno"> 2304</span>&#160;             iy = iy + 1</div>
+<div class="line"><a name="l02305"></a><span class="lineno"> 2305</span>&#160;          <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02306"></a><span class="lineno"> 2306</span>&#160;             ind_x(nsend) = ix</div>
+<div class="line"><a name="l02307"></a><span class="lineno"> 2307</span>&#160;             ind_y(nsend) = -1</div>
+<div class="line"><a name="l02308"></a><span class="lineno"> 2308</span>&#160;             cur_pos = cur_pos + update_x%send(ix)%totsize</div>
+<div class="line"><a name="l02309"></a><span class="lineno"> 2309</span>&#160;             pelist(nsend) = update_x%send(ix)%pe</div>
+<div class="line"><a name="l02310"></a><span class="lineno"> 2310</span>&#160;             ix = ix + 1</div>
+<div class="line"><a name="l02311"></a><span class="lineno"> 2311</span>&#160;<span class="keywordflow">          endif</span></div>
+<div class="line"><a name="l02312"></a><span class="lineno"> 2312</span>&#160;       <span class="keywordflow">else</span> <span class="keywordflow">if</span> ( rank_y &lt; rank_x ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02313"></a><span class="lineno"> 2313</span>&#160;          n = n+1</div>
+<div class="line"><a name="l02314"></a><span class="lineno"> 2314</span>&#160;          <span class="keywordflow">if</span> ( rank_y &lt; 0 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02315"></a><span class="lineno"> 2315</span>&#160;             ind_x(nsend) = ix</div>
+<div class="line"><a name="l02316"></a><span class="lineno"> 2316</span>&#160;             ind_y(nsend) = -1</div>
+<div class="line"><a name="l02317"></a><span class="lineno"> 2317</span>&#160;             cur_pos = cur_pos + update_x%send(ix)%totsize</div>
+<div class="line"><a name="l02318"></a><span class="lineno"> 2318</span>&#160;             pelist(nsend) = update_x%send(ix)%pe</div>
+<div class="line"><a name="l02319"></a><span class="lineno"> 2319</span>&#160;             ix = ix + 1</div>
+<div class="line"><a name="l02320"></a><span class="lineno"> 2320</span>&#160;          <span class="keywordflow">else</span></div>
+<div class="line"><a name="l02321"></a><span class="lineno"> 2321</span>&#160;             ind_x(nsend) = -1</div>
+<div class="line"><a name="l02322"></a><span class="lineno"> 2322</span>&#160;             ind_y(nsend) = iy</div>
+<div class="line"><a name="l02323"></a><span class="lineno"> 2323</span>&#160;             cur_pos = cur_pos + update_y%send(iy)%totsize</div>
+<div class="line"><a name="l02324"></a><span class="lineno"> 2324</span>&#160;             pelist(nsend) = update_y%send(iy)%pe</div>
+<div class="line"><a name="l02325"></a><span class="lineno"> 2325</span>&#160;             iy = iy + 1</div>
+<div class="line"><a name="l02326"></a><span class="lineno"> 2326</span>&#160;<span class="keywordflow">          endif</span></div>
+<div class="line"><a name="l02327"></a><span class="lineno"> 2327</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l02328"></a><span class="lineno"> 2328</span>&#160;<span class="keywordflow">    end do</span></div>
 <div class="line"><a name="l02329"></a><span class="lineno"> 2329</span>&#160; </div>
-<div class="line"><a name="l02330"></a><span class="lineno"> 2330</span>&#160;  <span class="keyword">end subroutine </span>check_data_size_2d</div>
+<div class="line"><a name="l02330"></a><span class="lineno"> 2330</span>&#160;    get_nest_vector_send = nsend</div>
 <div class="line"><a name="l02331"></a><span class="lineno"> 2331</span>&#160; </div>
-<div class="line"><a name="l02332"></a><span class="lineno"> 2332</span>&#160;  <span class="keyword">function </span>mpp_get_nest_coarse_domain(nest_domain, nest_level)</div>
-<div class="line"><a name="l02333"></a><span class="lineno"> 2333</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02334"></a><span class="lineno"> 2334</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02335"></a><span class="lineno"> 2335</span>&#160;     <span class="keywordtype">type</span>(domain2d), <span class="keywordtype">pointer</span> :: mpp_get_nest_coarse_domain</div>
-<div class="line"><a name="l02336"></a><span class="lineno"> 2336</span>&#160; </div>
-<div class="line"><a name="l02337"></a><span class="lineno"> 2337</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02338"></a><span class="lineno"> 2338</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_coarse_domain): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02332"></a><span class="lineno"> 2332</span>&#160; </div>
+<div class="line"><a name="l02333"></a><span class="lineno"> 2333</span>&#160;  <span class="keyword">end function </span>get_nest_vector_send</div>
+<div class="line"><a name="l02334"></a><span class="lineno"> 2334</span>&#160; </div>
+<div class="line"><a name="l02335"></a><span class="lineno"> 2335</span>&#160;  <span class="keyword">subroutine </span>check_data_size_1d(module, str1, size1, str2, size2)</div>
+<div class="line"><a name="l02336"></a><span class="lineno"> 2336</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: module, str1, str2</div>
+<div class="line"><a name="l02337"></a><span class="lineno"> 2337</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(in)</span> :: size1, size2</div>
+<div class="line"><a name="l02338"></a><span class="lineno"> 2338</span>&#160; </div>
 <div class="line"><a name="l02339"></a><span class="lineno"> 2339</span>&#160; </div>
-<div class="line"><a name="l02340"></a><span class="lineno"> 2340</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02341"></a><span class="lineno"> 2341</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_coarse_domain): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
-<div class="line"><a name="l02342"></a><span class="lineno"> 2342</span>&#160;     mpp_get_nest_coarse_domain =&gt; nest_domain%nest(nest_level)%domain_coarse</div>
-<div class="line"><a name="l02343"></a><span class="lineno"> 2343</span>&#160; </div>
-<div class="line"><a name="l02344"></a><span class="lineno"> 2344</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_coarse_domain</div>
-<div class="line"><a name="l02345"></a><span class="lineno"> 2345</span>&#160; </div>
-<div class="line"><a name="l02346"></a><span class="lineno"> 2346</span>&#160;  <span class="keyword">function </span>mpp_get_nest_fine_domain(nest_domain, nest_level)</div>
-<div class="line"><a name="l02347"></a><span class="lineno"> 2347</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02348"></a><span class="lineno"> 2348</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02349"></a><span class="lineno"> 2349</span>&#160;     <span class="keywordtype">type</span>(domain2d), <span class="keywordtype">pointer</span> :: mpp_get_nest_fine_domain</div>
-<div class="line"><a name="l02350"></a><span class="lineno"> 2350</span>&#160; </div>
-<div class="line"><a name="l02351"></a><span class="lineno"> 2351</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02352"></a><span class="lineno"> 2352</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_domain): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
-<div class="line"><a name="l02353"></a><span class="lineno"> 2353</span>&#160; </div>
-<div class="line"><a name="l02354"></a><span class="lineno"> 2354</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02355"></a><span class="lineno"> 2355</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_domain): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
-<div class="line"><a name="l02356"></a><span class="lineno"> 2356</span>&#160;     mpp_get_nest_fine_domain =&gt; nest_domain%nest(nest_level)%domain_fine</div>
+<div class="line"><a name="l02340"></a><span class="lineno"> 2340</span>&#160;   <span class="keywordflow">if</span>(size2 &gt; 0 .AND. size1 .NE. size2 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02341"></a><span class="lineno"> 2341</span>&#160;      print <span class="stringliteral">&#39;(a, 3I5)&#39;</span>, trim(module), <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>(), size1, size2</div>
+<div class="line"><a name="l02342"></a><span class="lineno"> 2342</span>&#160;      <span class="keyword">call </span>mpp_error(fatal, trim(module)//<span class="stringliteral">&quot;: mismatch between size of &quot;</span>//trim(str1)//<span class="stringliteral">&quot; and &quot;</span>//trim(str2))</div>
+<div class="line"><a name="l02343"></a><span class="lineno"> 2343</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l02344"></a><span class="lineno"> 2344</span>&#160; </div>
+<div class="line"><a name="l02345"></a><span class="lineno"> 2345</span>&#160;  <span class="keyword">end subroutine </span>check_data_size_1d</div>
+<div class="line"><a name="l02346"></a><span class="lineno"> 2346</span>&#160; </div>
+<div class="line"><a name="l02347"></a><span class="lineno"> 2347</span>&#160; </div>
+<div class="line"><a name="l02348"></a><span class="lineno"> 2348</span>&#160;  <span class="keyword">subroutine </span>check_data_size_2d(module, str1, isize1, jsize1, str2, isize2, jsize2)</div>
+<div class="line"><a name="l02349"></a><span class="lineno"> 2349</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: module, str1, str2</div>
+<div class="line"><a name="l02350"></a><span class="lineno"> 2350</span>&#160;    <span class="keywordtype">integer</span>,          <span class="keywordtype">intent(in)</span> :: isize1, jsize1, isize2, jsize2</div>
+<div class="line"><a name="l02351"></a><span class="lineno"> 2351</span>&#160; </div>
+<div class="line"><a name="l02352"></a><span class="lineno"> 2352</span>&#160; </div>
+<div class="line"><a name="l02353"></a><span class="lineno"> 2353</span>&#160;   <span class="keywordflow">if</span>(isize2 &gt; 0 .AND. jsize2 &gt; 0 .AND. (isize1 .NE. isize2 .OR. jsize1 .NE. jsize2) ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l02354"></a><span class="lineno"> 2354</span>&#160;      print <span class="stringliteral">&#39;(a, 5I5)&#39;</span>, trim(module), <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>(), isize1, jsize1, isize2, jsize2</div>
+<div class="line"><a name="l02355"></a><span class="lineno"> 2355</span>&#160;      <span class="keyword">call </span>mpp_error(fatal, trim(module)//<span class="stringliteral">&quot;: mismatch between size of &quot;</span>//trim(str1)//<span class="stringliteral">&quot; and &quot;</span>//trim(str2))</div>
+<div class="line"><a name="l02356"></a><span class="lineno"> 2356</span>&#160;<span class="keywordflow">   endif</span></div>
 <div class="line"><a name="l02357"></a><span class="lineno"> 2357</span>&#160; </div>
-<div class="line"><a name="l02358"></a><span class="lineno"> 2358</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_fine_domain</div>
+<div class="line"><a name="l02358"></a><span class="lineno"> 2358</span>&#160;  <span class="keyword">end subroutine </span>check_data_size_2d</div>
 <div class="line"><a name="l02359"></a><span class="lineno"> 2359</span>&#160; </div>
-<div class="line"><a name="l02360"></a><span class="lineno"> 2360</span>&#160;  <span class="keyword">function </span>mpp_get_nest_npes(nest_domain, nest_level)</div>
+<div class="line"><a name="l02360"></a><span class="lineno"> 2360</span>&#160;  <span class="keyword">function </span>mpp_get_nest_coarse_domain(nest_domain, nest_level)</div>
 <div class="line"><a name="l02361"></a><span class="lineno"> 2361</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
 <div class="line"><a name="l02362"></a><span class="lineno"> 2362</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02363"></a><span class="lineno"> 2363</span>&#160;     <span class="keywordtype">integer</span>                            :: mpp_get_nest_npes</div>
+<div class="line"><a name="l02363"></a><span class="lineno"> 2363</span>&#160;     <span class="keywordtype">type</span>(domain2d), <span class="keywordtype">pointer</span> :: mpp_get_nest_coarse_domain</div>
 <div class="line"><a name="l02364"></a><span class="lineno"> 2364</span>&#160; </div>
 <div class="line"><a name="l02365"></a><span class="lineno"> 2365</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02366"></a><span class="lineno"> 2366</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_npes): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02366"></a><span class="lineno"> 2366</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_coarse_domain): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
 <div class="line"><a name="l02367"></a><span class="lineno"> 2367</span>&#160; </div>
-<div class="line"><a name="l02368"></a><span class="lineno"> 2368</span>&#160;     mpp_get_nest_npes = <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist(:))</div>
-<div class="line"><a name="l02369"></a><span class="lineno"> 2369</span>&#160; </div>
-<div class="line"><a name="l02370"></a><span class="lineno"> 2370</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_npes</div>
+<div class="line"><a name="l02368"></a><span class="lineno"> 2368</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02369"></a><span class="lineno"> 2369</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_coarse_domain): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
+<div class="line"><a name="l02370"></a><span class="lineno"> 2370</span>&#160;     mpp_get_nest_coarse_domain =&gt; nest_domain%nest(nest_level)%domain_coarse</div>
 <div class="line"><a name="l02371"></a><span class="lineno"> 2371</span>&#160; </div>
-<div class="line"><a name="l02372"></a><span class="lineno"> 2372</span>&#160;  <span class="keyword">subroutine </span>mpp_get_nest_pelist(nest_domain, nest_level, pelist)</div>
-<div class="line"><a name="l02373"></a><span class="lineno"> 2373</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02374"></a><span class="lineno"> 2374</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02375"></a><span class="lineno"> 2375</span>&#160;     <span class="keywordtype">integer</span>,               <span class="keywordtype">intent(out)</span> :: pelist(:)</div>
-<div class="line"><a name="l02376"></a><span class="lineno"> 2376</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02377"></a><span class="lineno"> 2377</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_pelist): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02372"></a><span class="lineno"> 2372</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_coarse_domain</div>
+<div class="line"><a name="l02373"></a><span class="lineno"> 2373</span>&#160; </div>
+<div class="line"><a name="l02374"></a><span class="lineno"> 2374</span>&#160;  <span class="keyword">function </span>mpp_get_nest_fine_domain(nest_domain, nest_level)</div>
+<div class="line"><a name="l02375"></a><span class="lineno"> 2375</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02376"></a><span class="lineno"> 2376</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
+<div class="line"><a name="l02377"></a><span class="lineno"> 2377</span>&#160;     <span class="keywordtype">type</span>(domain2d), <span class="keywordtype">pointer</span> :: mpp_get_nest_fine_domain</div>
 <div class="line"><a name="l02378"></a><span class="lineno"> 2378</span>&#160; </div>
-<div class="line"><a name="l02379"></a><span class="lineno"> 2379</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">size</span>(pelist) .NE. <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02380"></a><span class="lineno"> 2380</span>&#160;       .NE.<span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_pelist): size(pelist)  size(nest_domain%nest(nest_level)%pelist)&quot;</span>)</div>
+<div class="line"><a name="l02379"></a><span class="lineno"> 2379</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02380"></a><span class="lineno"> 2380</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_domain): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
 <div class="line"><a name="l02381"></a><span class="lineno"> 2381</span>&#160; </div>
-<div class="line"><a name="l02382"></a><span class="lineno"> 2382</span>&#160;     pelist = nest_domain%nest(nest_level)%pelist</div>
-<div class="line"><a name="l02383"></a><span class="lineno"> 2383</span>&#160; </div>
-<div class="line"><a name="l02384"></a><span class="lineno"> 2384</span>&#160;  <span class="keyword">end subroutine </span>mpp_get_nest_pelist</div>
+<div class="line"><a name="l02382"></a><span class="lineno"> 2382</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02383"></a><span class="lineno"> 2383</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_domain): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
+<div class="line"><a name="l02384"></a><span class="lineno"> 2384</span>&#160;     mpp_get_nest_fine_domain =&gt; nest_domain%nest(nest_level)%domain_fine</div>
 <div class="line"><a name="l02385"></a><span class="lineno"> 2385</span>&#160; </div>
-<div class="line"><a name="l02386"></a><span class="lineno"> 2386</span>&#160;  <span class="keyword">function </span>mpp_get_nest_fine_npes(nest_domain, nest_level)</div>
-<div class="line"><a name="l02387"></a><span class="lineno"> 2387</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02388"></a><span class="lineno"> 2388</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02389"></a><span class="lineno"> 2389</span>&#160;     <span class="keywordtype">integer</span>                            :: mpp_get_nest_fine_npes</div>
-<div class="line"><a name="l02390"></a><span class="lineno"> 2390</span>&#160; </div>
-<div class="line"><a name="l02391"></a><span class="lineno"> 2391</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02392"></a><span class="lineno"> 2392</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_npes): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
-<div class="line"><a name="l02393"></a><span class="lineno"> 2393</span>&#160; </div>
-<div class="line"><a name="l02394"></a><span class="lineno"> 2394</span>&#160;     mpp_get_nest_fine_npes = <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist_fine(:))</div>
+<div class="line"><a name="l02386"></a><span class="lineno"> 2386</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_fine_domain</div>
+<div class="line"><a name="l02387"></a><span class="lineno"> 2387</span>&#160; </div>
+<div class="line"><a name="l02388"></a><span class="lineno"> 2388</span>&#160;  <span class="keyword">function </span>mpp_get_nest_npes(nest_domain, nest_level)</div>
+<div class="line"><a name="l02389"></a><span class="lineno"> 2389</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02390"></a><span class="lineno"> 2390</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
+<div class="line"><a name="l02391"></a><span class="lineno"> 2391</span>&#160;     <span class="keywordtype">integer</span>                            :: mpp_get_nest_npes</div>
+<div class="line"><a name="l02392"></a><span class="lineno"> 2392</span>&#160; </div>
+<div class="line"><a name="l02393"></a><span class="lineno"> 2393</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02394"></a><span class="lineno"> 2394</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_npes): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
 <div class="line"><a name="l02395"></a><span class="lineno"> 2395</span>&#160; </div>
-<div class="line"><a name="l02396"></a><span class="lineno"> 2396</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_fine_npes</div>
+<div class="line"><a name="l02396"></a><span class="lineno"> 2396</span>&#160;     mpp_get_nest_npes = <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist(:))</div>
 <div class="line"><a name="l02397"></a><span class="lineno"> 2397</span>&#160; </div>
-<div class="line"><a name="l02398"></a><span class="lineno"> 2398</span>&#160;  <span class="keyword">subroutine </span>mpp_get_nest_fine_pelist(nest_domain, nest_level, pelist)</div>
-<div class="line"><a name="l02399"></a><span class="lineno"> 2399</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02400"></a><span class="lineno"> 2400</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02401"></a><span class="lineno"> 2401</span>&#160;     <span class="keywordtype">integer</span>,               <span class="keywordtype">intent(out)</span> :: pelist(:)</div>
-<div class="line"><a name="l02402"></a><span class="lineno"> 2402</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02403"></a><span class="lineno"> 2403</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
-<div class="line"><a name="l02404"></a><span class="lineno"> 2404</span>&#160; </div>
-<div class="line"><a name="l02405"></a><span class="lineno"> 2405</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">size</span>(pelist) .NE. <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist_fine)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02406"></a><span class="lineno"> 2406</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): size(pelist) &quot;</span>// &amp;</div>
-<div class="line"><a name="l02407"></a><span class="lineno"> 2407</span>&#160;       .NE.<span class="stringliteral">&quot; size(nest_domain%nest(nest_level)%pelist)&quot;</span>)</div>
-<div class="line"><a name="l02408"></a><span class="lineno"> 2408</span>&#160; </div>
-<div class="line"><a name="l02409"></a><span class="lineno"> 2409</span>&#160;     pelist = nest_domain%nest(nest_level)%pelist_fine</div>
-<div class="line"><a name="l02410"></a><span class="lineno"> 2410</span>&#160; </div>
-<div class="line"><a name="l02411"></a><span class="lineno"> 2411</span>&#160;  <span class="keyword">end subroutine </span>mpp_get_nest_fine_pelist</div>
-<div class="line"><a name="l02412"></a><span class="lineno"> 2412</span>&#160; </div>
+<div class="line"><a name="l02398"></a><span class="lineno"> 2398</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_npes</div>
+<div class="line"><a name="l02399"></a><span class="lineno"> 2399</span>&#160; </div>
+<div class="line"><a name="l02400"></a><span class="lineno"> 2400</span>&#160;  <span class="keyword">subroutine </span>mpp_get_nest_pelist(nest_domain, nest_level, pelist)</div>
+<div class="line"><a name="l02401"></a><span class="lineno"> 2401</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02402"></a><span class="lineno"> 2402</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
+<div class="line"><a name="l02403"></a><span class="lineno"> 2403</span>&#160;     <span class="keywordtype">integer</span>,               <span class="keywordtype">intent(out)</span> :: pelist(:)</div>
+<div class="line"><a name="l02404"></a><span class="lineno"> 2404</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02405"></a><span class="lineno"> 2405</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_pelist): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02406"></a><span class="lineno"> 2406</span>&#160; </div>
+<div class="line"><a name="l02407"></a><span class="lineno"> 2407</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">size</span>(pelist) .NE. <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02408"></a><span class="lineno"> 2408</span>&#160;       .NE.<span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_pelist): size(pelist)  size(nest_domain%nest(nest_level)%pelist)&quot;</span>)</div>
+<div class="line"><a name="l02409"></a><span class="lineno"> 2409</span>&#160; </div>
+<div class="line"><a name="l02410"></a><span class="lineno"> 2410</span>&#160;     pelist = nest_domain%nest(nest_level)%pelist</div>
+<div class="line"><a name="l02411"></a><span class="lineno"> 2411</span>&#160; </div>
+<div class="line"><a name="l02412"></a><span class="lineno"> 2412</span>&#160;  <span class="keyword">end subroutine </span>mpp_get_nest_pelist</div>
 <div class="line"><a name="l02413"></a><span class="lineno"> 2413</span>&#160; </div>
-<div class="line"><a name="l02414"></a><span class="lineno"> 2414</span>&#160; </div>
-<div class="line"><a name="l02415"></a><span class="lineno"> 2415</span>&#160;  <span class="keyword">function </span>mpp_is_nest_fine(nest_domain, nest_level)</div>
-<div class="line"><a name="l02416"></a><span class="lineno"> 2416</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02417"></a><span class="lineno"> 2417</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02418"></a><span class="lineno"> 2418</span>&#160;     <span class="keywordtype">logical</span>                            :: mpp_is_nest_fine</div>
-<div class="line"><a name="l02419"></a><span class="lineno"> 2419</span>&#160; </div>
-<div class="line"><a name="l02420"></a><span class="lineno"> 2420</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02421"></a><span class="lineno"> 2421</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_fine): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
-<div class="line"><a name="l02422"></a><span class="lineno"> 2422</span>&#160; </div>
-<div class="line"><a name="l02423"></a><span class="lineno"> 2423</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02424"></a><span class="lineno"> 2424</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_fine): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
+<div class="line"><a name="l02414"></a><span class="lineno"> 2414</span>&#160;  <span class="keyword">function </span>mpp_get_nest_fine_npes(nest_domain, nest_level)</div>
+<div class="line"><a name="l02415"></a><span class="lineno"> 2415</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02416"></a><span class="lineno"> 2416</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
+<div class="line"><a name="l02417"></a><span class="lineno"> 2417</span>&#160;     <span class="keywordtype">integer</span>                            :: mpp_get_nest_fine_npes</div>
+<div class="line"><a name="l02418"></a><span class="lineno"> 2418</span>&#160; </div>
+<div class="line"><a name="l02419"></a><span class="lineno"> 2419</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02420"></a><span class="lineno"> 2420</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_npes): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02421"></a><span class="lineno"> 2421</span>&#160; </div>
+<div class="line"><a name="l02422"></a><span class="lineno"> 2422</span>&#160;     mpp_get_nest_fine_npes = <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist_fine(:))</div>
+<div class="line"><a name="l02423"></a><span class="lineno"> 2423</span>&#160; </div>
+<div class="line"><a name="l02424"></a><span class="lineno"> 2424</span>&#160;  <span class="keyword">end function </span>mpp_get_nest_fine_npes</div>
 <div class="line"><a name="l02425"></a><span class="lineno"> 2425</span>&#160; </div>
-<div class="line"><a name="l02426"></a><span class="lineno"> 2426</span>&#160;     mpp_is_nest_fine = nest_domain%nest(nest_level)%is_fine_pe</div>
-<div class="line"><a name="l02427"></a><span class="lineno"> 2427</span>&#160; </div>
-<div class="line"><a name="l02428"></a><span class="lineno"> 2428</span>&#160;  <span class="keyword">end function </span>mpp_is_nest_fine</div>
-<div class="line"><a name="l02429"></a><span class="lineno"> 2429</span>&#160; </div>
-<div class="line"><a name="l02430"></a><span class="lineno"> 2430</span>&#160;  <span class="keyword">function </span>mpp_is_nest_coarse(nest_domain, nest_level)</div>
-<div class="line"><a name="l02431"></a><span class="lineno"> 2431</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
-<div class="line"><a name="l02432"></a><span class="lineno"> 2432</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
-<div class="line"><a name="l02433"></a><span class="lineno"> 2433</span>&#160;     <span class="keywordtype">logical</span>                            :: mpp_is_nest_coarse</div>
-<div class="line"><a name="l02434"></a><span class="lineno"> 2434</span>&#160; </div>
-<div class="line"><a name="l02435"></a><span class="lineno"> 2435</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02436"></a><span class="lineno"> 2436</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_coarse): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
-<div class="line"><a name="l02437"></a><span class="lineno"> 2437</span>&#160; </div>
-<div class="line"><a name="l02438"></a><span class="lineno"> 2438</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l02439"></a><span class="lineno"> 2439</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_coarse): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
+<div class="line"><a name="l02426"></a><span class="lineno"> 2426</span>&#160;  <span class="keyword">subroutine </span>mpp_get_nest_fine_pelist(nest_domain, nest_level, pelist)</div>
+<div class="line"><a name="l02427"></a><span class="lineno"> 2427</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02428"></a><span class="lineno"> 2428</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
+<div class="line"><a name="l02429"></a><span class="lineno"> 2429</span>&#160;     <span class="keywordtype">integer</span>,               <span class="keywordtype">intent(out)</span> :: pelist(:)</div>
+<div class="line"><a name="l02430"></a><span class="lineno"> 2430</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02431"></a><span class="lineno"> 2431</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02432"></a><span class="lineno"> 2432</span>&#160; </div>
+<div class="line"><a name="l02433"></a><span class="lineno"> 2433</span>&#160;     <span class="keywordflow">if</span>(<span class="keyword">size</span>(pelist) .NE. <span class="keyword">size</span>(nest_domain%nest(nest_level)%pelist_fine)) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02434"></a><span class="lineno"> 2434</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): size(pelist) &quot;</span>// &amp;</div>
+<div class="line"><a name="l02435"></a><span class="lineno"> 2435</span>&#160;       .NE.<span class="stringliteral">&quot; size(nest_domain%nest(nest_level)%pelist)&quot;</span>)</div>
+<div class="line"><a name="l02436"></a><span class="lineno"> 2436</span>&#160; </div>
+<div class="line"><a name="l02437"></a><span class="lineno"> 2437</span>&#160;     pelist = nest_domain%nest(nest_level)%pelist_fine</div>
+<div class="line"><a name="l02438"></a><span class="lineno"> 2438</span>&#160; </div>
+<div class="line"><a name="l02439"></a><span class="lineno"> 2439</span>&#160;  <span class="keyword">end subroutine </span>mpp_get_nest_fine_pelist</div>
 <div class="line"><a name="l02440"></a><span class="lineno"> 2440</span>&#160; </div>
-<div class="line"><a name="l02441"></a><span class="lineno"> 2441</span>&#160;     mpp_is_nest_coarse = nest_domain%nest(nest_level)%is_coarse_pe</div>
+<div class="line"><a name="l02441"></a><span class="lineno"> 2441</span>&#160; </div>
 <div class="line"><a name="l02442"></a><span class="lineno"> 2442</span>&#160; </div>
-<div class="line"><a name="l02443"></a><span class="lineno"> 2443</span>&#160;  <span class="keyword">end function </span>mpp_is_nest_coarse</div>
+<div class="line"><a name="l02443"></a><span class="lineno"> 2443</span>&#160;  <span class="keyword">function </span>mpp_is_nest_fine(nest_domain, nest_level)</div>
+<div class="line"><a name="l02444"></a><span class="lineno"> 2444</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02445"></a><span class="lineno"> 2445</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
+<div class="line"><a name="l02446"></a><span class="lineno"> 2446</span>&#160;     <span class="keywordtype">logical</span>                            :: mpp_is_nest_fine</div>
+<div class="line"><a name="l02447"></a><span class="lineno"> 2447</span>&#160; </div>
+<div class="line"><a name="l02448"></a><span class="lineno"> 2448</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02449"></a><span class="lineno"> 2449</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_fine): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02450"></a><span class="lineno"> 2450</span>&#160; </div>
+<div class="line"><a name="l02451"></a><span class="lineno"> 2451</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02452"></a><span class="lineno"> 2452</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_fine): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
+<div class="line"><a name="l02453"></a><span class="lineno"> 2453</span>&#160; </div>
+<div class="line"><a name="l02454"></a><span class="lineno"> 2454</span>&#160;     mpp_is_nest_fine = nest_domain%nest(nest_level)%is_fine_pe</div>
+<div class="line"><a name="l02455"></a><span class="lineno"> 2455</span>&#160; </div>
+<div class="line"><a name="l02456"></a><span class="lineno"> 2456</span>&#160;  <span class="keyword">end function </span>mpp_is_nest_fine</div>
+<div class="line"><a name="l02457"></a><span class="lineno"> 2457</span>&#160; </div>
+<div class="line"><a name="l02458"></a><span class="lineno"> 2458</span>&#160;  <span class="keyword">function </span>mpp_is_nest_coarse(nest_domain, nest_level)</div>
+<div class="line"><a name="l02459"></a><span class="lineno"> 2459</span>&#160;     <span class="keywordtype">type</span>(nest_domain_type), <span class="keywordtype">intent(in)</span> :: nest_domain</div>
+<div class="line"><a name="l02460"></a><span class="lineno"> 2460</span>&#160;     <span class="keywordtype">integer</span>,                <span class="keywordtype">intent(in)</span> :: nest_level</div>
+<div class="line"><a name="l02461"></a><span class="lineno"> 2461</span>&#160;     <span class="keywordtype">logical</span>                            :: mpp_is_nest_coarse</div>
+<div class="line"><a name="l02462"></a><span class="lineno"> 2462</span>&#160; </div>
+<div class="line"><a name="l02463"></a><span class="lineno"> 2463</span>&#160;     <span class="keywordflow">if</span>(nest_level &lt; 1 .OR. nest_level &gt; nest_domain%num_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02464"></a><span class="lineno"> 2464</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_coarse): nest_level should be between 1 and nest_domain%num_level&quot;</span>)</div>
+<div class="line"><a name="l02465"></a><span class="lineno"> 2465</span>&#160; </div>
+<div class="line"><a name="l02466"></a><span class="lineno"> 2466</span>&#160;     <span class="keywordflow">if</span>(.not. nest_domain%nest(nest_level)%on_level) <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l02467"></a><span class="lineno"> 2467</span>&#160;       <span class="stringliteral">&quot;mpp_define_nest_domains.inc(mpp_is_nest_coarse): nest_domain%nest(nest_level)%on_level is false&quot;</span>)</div>
+<div class="line"><a name="l02468"></a><span class="lineno"> 2468</span>&#160; </div>
+<div class="line"><a name="l02469"></a><span class="lineno"> 2469</span>&#160;     mpp_is_nest_coarse = nest_domain%nest(nest_level)%is_coarse_pe</div>
+<div class="line"><a name="l02470"></a><span class="lineno"> 2470</span>&#160; </div>
+<div class="line"><a name="l02471"></a><span class="lineno"> 2471</span>&#160;  <span class="keyword">end function </span>mpp_is_nest_coarse</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="ampp__define__nest__domains_8inc_html_ab7e7e7f060ef35d98de059c7e0e94be5"><div class="ttname"><a href="mpp__define__nest__domains_8inc.html#ab7e7e7f060ef35d98de059c7e0e94be5">mpp_get_f2c_index_fine</a></div><div class="ttdeci">subroutine mpp_get_f2c_index_fine(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse, is_fine, ie_fine, js_fine, je_fine, nest_level, position)</div><div class="ttdef"><b>Definition:</b> <a href="mpp__define__nest__domains_8inc_source.html#l01617">mpp_define_nest_domains.inc:1617</a></div></div>

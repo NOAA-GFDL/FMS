@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -106,15 +106,12 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a58a5a76c6b422cbaeacf366924dc9777"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1write__attribute__meta.html#a58a5a76c6b422cbaeacf366924dc9777">write_attribute_meta_fms2_io</a> (file_unit, id, num_attributes, attributes, time_method, err_msg, varname, fileob)</td></tr>
 <tr class="memdesc:a58a5a76c6b422cbaeacf366924dc9777"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write out attribute meta data to file.  <a href="interfacediag__output__mod_1_1write__attribute__meta.html#a58a5a76c6b422cbaeacf366924dc9777">More...</a><br /></td></tr>
 <tr class="separator:a58a5a76c6b422cbaeacf366924dc9777"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abeac9ce81cc2410c72e20bbeb99ff2d2"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1write__attribute__meta.html#abeac9ce81cc2410c72e20bbeb99ff2d2">write_attribute_meta_use_mpp_io</a> (file_unit, id, num_attributes, attributes, time_method, err_msg)</td></tr>
-<tr class="memdesc:abeac9ce81cc2410c72e20bbeb99ff2d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write out attribute meta data to file.  <a href="interfacediag__output__mod_1_1write__attribute__meta.html#abeac9ce81cc2410c72e20bbeb99ff2d2">More...</a><br /></td></tr>
-<tr class="separator:abeac9ce81cc2410c72e20bbeb99ff2d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Private interface to write metadata for an attribute to a file. </p>
 <dl class="section note"><dt>Note</dt><dd>Added for mpp_io support </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00136">136</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00124">124</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 </div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
 <a id="a58a5a76c6b422cbaeacf366924dc9777"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a58a5a76c6b422cbaeacf366924dc9777">&#9670;&nbsp;</a></span>write_attribute_meta_fms2_io()</h2>
@@ -200,82 +197,7 @@ Private Member Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01106">1106</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
-
-</div>
-</div>
-<a id="abeac9ce81cc2410c72e20bbeb99ff2d2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abeac9ce81cc2410c72e20bbeb99ff2d2">&#9670;&nbsp;</a></span>write_attribute_meta_use_mpp_io()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine write_attribute_meta_use_mpp_io </td>
-          <td>(</td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>file_unit</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>num_attributes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(<a class="el" href="structdiag__data__mod_1_1diag__atttype.html">diag_atttype</a>), dimension(:), intent(in)&#160;</td>
-          <td class="paramname"><em>attributes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(len=*), intent(in), optional&#160;</td>
-          <td class="paramname"><em>time_method</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(len=*), intent(out), optional&#160;</td>
-          <td class="paramname"><em>err_msg</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Write out attribute meta data to file. </p>
-<p>Write out the attribute meta data to file, for field and axes </p><dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_unit</td><td>File unit number </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">id</td><td>ID of field, file, axis to get attribute meta data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_attributes</td><td>Number of attributes to write </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">attributes</td><td>Array of attributes </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">time_method</td><td>To include in cell_methods attribute if present </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">err_msg</td><td>Return error message </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01915">1915</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01093">1093</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>

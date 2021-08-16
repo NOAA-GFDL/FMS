@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -186,12 +186,12 @@ Example usage: <br  />
 <p>Calls set_date_private for different calendar types when given a string input. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of set_date_gregorian. When .true., call set_date_gregorian_old to retrieve the days from the array date_to_day. When .false., call set_date_gregorian to compute the days on the fly. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of set_date_gregorian. When .true., call set_date_gregorian_old to retrieve the days from the array date_to_day. When .false., call set_date_gregorian to compute the days on the fly. Will be removed with set/get_date_gregorian_old </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02084">2084</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02085">2085</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -274,12 +274,12 @@ Example usage: <br  />
 <p>Calls set_date_private to set days for different calendar types. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call set_date_gregorian_old to retrieve the timedays from the array date_to_day. When .false., call set_date_gregorian to compute the timedays on the fly. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call set_date_gregorian_old to retrieve the timedays from the array date_to_day. When .false., call set_date_gregorian to compute the timedays on the fly. This ption will be removed with get/set_date_gregorian_old </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02050">2050</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02051">2051</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -288,7 +288,7 @@ Example usage: <br  />
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00475">fms.F90:475</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00474">fms.F90:474</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

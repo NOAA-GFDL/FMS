@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -109,8 +109,6 @@ Files</h2></td></tr>
 <tr class="memitem:array__utils__char_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="array__utils__char_8inc.html">array_utils_char.inc</a></td></tr>
 <tr class="memdesc:array__utils__char_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Character array routines used in <a class="el" href="group__fms__io__utils__mod.html">fms_io_utils_mod</a>. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:get__checksum_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="get__checksum_8inc.html">get_checksum.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:get__data__type__string_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="get__data__type__string_8inc.html">get_data_type_string.inc</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -133,8 +131,6 @@ Data Types</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__io__utils__mod_1_1get__array__section.html">get_array_section</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__io__utils__mod_1_1get__data__type__string.html">get_data_type_string</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__io__utils__mod_1_1get__checksum.html">get_checksum</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
@@ -185,9 +181,9 @@ subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="
 <tr class="separator:ga341c74a8c8df5190de10e05dc4092550"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga729bc1d0452894a454a91df8c4123938"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__io__utils__mod.html#ga729bc1d0452894a454a91df8c4123938">open_check</a> (flag, fname)</td></tr>
 <tr class="separator:ga729bc1d0452894a454a91df8c4123938"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2e5bf8a20a89497ccda754450467ec54"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__io__utils__mod.html#ga2e5bf8a20a89497ccda754450467ec54">ascii_read</a> (ascii_filename, ascii_var)</td></tr>
-<tr class="memdesc:ga2e5bf8a20a89497ccda754450467ec54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the ascii text from filename <code>ascii_filename</code>into string array <code>ascii_var</code>  <a href="group__fms__io__utils__mod.html#ga2e5bf8a20a89497ccda754450467ec54">More...</a><br /></td></tr>
-<tr class="separator:ga2e5bf8a20a89497ccda754450467ec54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga280e37a08d8e1b1f8ccfa2121f05a9a8"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__io__utils__mod.html#ga280e37a08d8e1b1f8ccfa2121f05a9a8">ascii_read</a> (ascii_filename, ascii_var, num_lines, max_length)</td></tr>
+<tr class="memdesc:ga280e37a08d8e1b1f8ccfa2121f05a9a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the ascii text from filename <code>ascii_filename</code>into string array <code>ascii_var</code>  <a href="group__fms__io__utils__mod.html#ga280e37a08d8e1b1f8ccfa2121f05a9a8">More...</a><br /></td></tr>
+<tr class="separator:ga280e37a08d8e1b1f8ccfa2121f05a9a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5e14d1913053ce17a0fd3194685e9ee6"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__io__utils__mod.html#ga5e14d1913053ce17a0fd3194685e9ee6">parse_mask_table_2d</a> (mask_table, maskmap, modelname)</td></tr>
 <tr class="memdesc:ga5e14d1913053ce17a0fd3194685e9ee6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Populate 2D maskmap from mask_table given a model.  <a href="group__fms__io__utils__mod.html#ga5e14d1913053ce17a0fd3194685e9ee6">More...</a><br /></td></tr>
 <tr class="separator:ga5e14d1913053ce17a0fd3194685e9ee6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -258,12 +254,12 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00322">322</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00311">311</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga2e5bf8a20a89497ccda754450467ec54"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga2e5bf8a20a89497ccda754450467ec54">&#9670;&nbsp;</a></span>ascii_read()</h2>
+<a id="ga280e37a08d8e1b1f8ccfa2121f05a9a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga280e37a08d8e1b1f8ccfa2121f05a9a8">&#9670;&nbsp;</a></span>ascii_read()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -278,7 +274,19 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">character(len=:), dimension(:), intent(out), allocatable&#160;</td>
-          <td class="paramname"><em>ascii_var</em>&#160;</td>
+          <td class="paramname"><em>ascii_var</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer, intent(out), optional&#160;</td>
+          <td class="paramname"><em>num_lines</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer, intent(out), optional&#160;</td>
+          <td class="paramname"><em>max_length</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -293,11 +301,13 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">ascii_filename</td><td>The file name to be read </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">ascii_var</td><td>The string array </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">num_lines</td><td>Optional argument to return number of lines in file </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">max_length</td><td>Optional argument to return max_length of line in file </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00509">509</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00498">498</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -325,7 +335,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00345">345</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00334">334</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -371,7 +381,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00397">397</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00386">386</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -399,7 +409,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00208">208</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00197">197</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -428,7 +438,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00220">220</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00209">209</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -456,7 +466,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00818">818</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00812">812</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -495,7 +505,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00848">848</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00842">842</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -563,7 +573,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00719">719</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00713">713</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -617,7 +627,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00779">779</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00773">773</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -653,7 +663,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00364">364</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00353">353</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -689,7 +699,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00420">420</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00409">409</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -725,7 +735,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00461">461</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00450">450</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -771,7 +781,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00445">445</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00434">434</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -818,7 +828,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00299">299</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00288">288</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -854,7 +864,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00493">493</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00482">482</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -908,7 +918,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00521">521</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00515">515</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -962,7 +972,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00616">616</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00610">610</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -990,7 +1000,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00834">834</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00828">828</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -1029,7 +1039,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
 <p>Compare strings. </p>
 <dl class="section return"><dt>Returns</dt><dd>Flag telling if the strings are the same. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00275">275</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00264">264</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>
@@ -1075,7 +1085,7 @@ character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><b
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00244">244</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__io__utils_8F90_source.html#l00233">233</a> of file <a class="el" href="fms__io__utils_8F90_source.html">fms_io_utils.F90</a>.</p>
 
 </div>
 </div>

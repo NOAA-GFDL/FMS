@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -166,24 +166,24 @@ integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <tr class="memitem:ga1cda424e7c8acb1935958add5a002ffe"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga1cda424e7c8acb1935958add5a002ffe">init_output_field</a> (module_name, field_name, output_name, output_file, time_method, pack, tile_count, local_coord)</td></tr>
 <tr class="memdesc:ga1cda424e7c8acb1935958add5a002ffe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the output field.  <a href="group__diag__util__mod.html#ga1cda424e7c8acb1935958add5a002ffe">More...</a><br /></td></tr>
 <tr class="separator:ga1cda424e7c8acb1935958add5a002ffe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa25276d7ef48164aead7bb297e72a421"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gaa25276d7ef48164aead7bb297e72a421">opening_file</a> (file, time, use_mpp_io, filename_time)</td></tr>
-<tr class="memdesc:gaa25276d7ef48164aead7bb297e72a421"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open file for output, and write the meta data.  <a href="group__diag__util__mod.html#gaa25276d7ef48164aead7bb297e72a421">More...</a><br /></td></tr>
-<tr class="separator:gaa25276d7ef48164aead7bb297e72a421"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga080607862bbe462075d2c80c32d7cd3d"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga080607862bbe462075d2c80c32d7cd3d">opening_file</a> (file, time, filename_time)</td></tr>
+<tr class="memdesc:ga080607862bbe462075d2c80c32d7cd3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open file for output, and write the meta data.  <a href="group__diag__util__mod.html#ga080607862bbe462075d2c80c32d7cd3d">More...</a><br /></td></tr>
+<tr class="separator:ga080607862bbe462075d2c80c32d7cd3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab35f99b9ccb0069696da67e65c46a303"><td class="memItemLeft" align="right" valign="top">character(len=128) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gab35f99b9ccb0069696da67e65c46a303">get_time_string</a> (filename, current_time)</td></tr>
 <tr class="memdesc:gab35f99b9ccb0069696da67e65c46a303"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function determines a string based on current time. This string is used as suffix in output file name.  <a href="group__diag__util__mod.html#gab35f99b9ccb0069696da67e65c46a303">More...</a><br /></td></tr>
 <tr class="separator:gab35f99b9ccb0069696da67e65c46a303"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7831ec2625f74c8e9df312b6cd170ca0"><td class="memItemLeft" align="right" valign="top">real function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga7831ec2625f74c8e9df312b6cd170ca0">get_date_dif</a> (t2, t1, units)</td></tr>
 <tr class="memdesc:ga7831ec2625f74c8e9df312b6cd170ca0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the difference between two times in units.  <a href="group__diag__util__mod.html#ga7831ec2625f74c8e9df312b6cd170ca0">More...</a><br /></td></tr>
 <tr class="separator:ga7831ec2625f74c8e9df312b6cd170ca0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabde1da83b163a333e9f2cb1210f45a28"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gabde1da83b163a333e9f2cb1210f45a28">diag_data_out</a> (file, field, dat, time, final_call_in, static_write_in, use_mpp_io_arg, filename_time)</td></tr>
-<tr class="memdesc:gabde1da83b163a333e9f2cb1210f45a28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write data out to file, and if necessary flush the buffers.  <a href="group__diag__util__mod.html#gabde1da83b163a333e9f2cb1210f45a28">More...</a><br /></td></tr>
-<tr class="separator:gabde1da83b163a333e9f2cb1210f45a28"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gacc85f996fad682a6bc41f95259c9d656"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gacc85f996fad682a6bc41f95259c9d656">check_and_open</a> (file, time, do_write, use_mpp_io, filename_time)</td></tr>
-<tr class="memdesc:gacc85f996fad682a6bc41f95259c9d656"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if it is time to open a new file.  <a href="group__diag__util__mod.html#gacc85f996fad682a6bc41f95259c9d656">More...</a><br /></td></tr>
-<tr class="separator:gacc85f996fad682a6bc41f95259c9d656"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga31af7562230aee6a21bdee017a51b6d7"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga31af7562230aee6a21bdee017a51b6d7">write_static</a> (file, use_mpp_io)</td></tr>
-<tr class="memdesc:ga31af7562230aee6a21bdee017a51b6d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output all static fields in this file.  <a href="group__diag__util__mod.html#ga31af7562230aee6a21bdee017a51b6d7">More...</a><br /></td></tr>
-<tr class="separator:ga31af7562230aee6a21bdee017a51b6d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1ba13ef1d2e071e0e38beb168cfc88e7"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga1ba13ef1d2e071e0e38beb168cfc88e7">diag_data_out</a> (file, field, dat, time, final_call_in, static_write_in, filename_time)</td></tr>
+<tr class="memdesc:ga1ba13ef1d2e071e0e38beb168cfc88e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write data out to file, and if necessary flush the buffers.  <a href="group__diag__util__mod.html#ga1ba13ef1d2e071e0e38beb168cfc88e7">More...</a><br /></td></tr>
+<tr class="separator:ga1ba13ef1d2e071e0e38beb168cfc88e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae871029d44ef9d39e680ef94c6d2ad1e"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gae871029d44ef9d39e680ef94c6d2ad1e">check_and_open</a> (file, time, do_write, filename_time)</td></tr>
+<tr class="memdesc:gae871029d44ef9d39e680ef94c6d2ad1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if it is time to open a new file.  <a href="group__diag__util__mod.html#gae871029d44ef9d39e680ef94c6d2ad1e">More...</a><br /></td></tr>
+<tr class="separator:gae871029d44ef9d39e680ef94c6d2ad1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga162741650fdc9582bf1aeaf0c04d4417"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga162741650fdc9582bf1aeaf0c04d4417">write_static</a> (file)</td></tr>
+<tr class="memdesc:ga162741650fdc9582bf1aeaf0c04d4417"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output all static fields in this file.  <a href="group__diag__util__mod.html#ga162741650fdc9582bf1aeaf0c04d4417">More...</a><br /></td></tr>
+<tr class="separator:ga162741650fdc9582bf1aeaf0c04d4417"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga80f6d43eb251fb619824021c0977da70"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga80f6d43eb251fb619824021c0977da70">check_duplicate_output_fields</a> (err_msg)</td></tr>
 <tr class="memdesc:ga80f6d43eb251fb619824021c0977da70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks to see if <code>output_name</code> and <code>output_file</code> are unique in <code>output_fields</code>.  <a href="group__diag__util__mod.html#ga80f6d43eb251fb619824021c0977da70">More...</a><br /></td></tr>
 <tr class="separator:ga80f6d43eb251fb619824021c0977da70"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -1,6 +1,7 @@
 var structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t =
 [
     [ "adjust_indices", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a3dc45d24d87ab7862160b877e1363df6", null ],
+    [ "allow_int8", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a869f05f3559ab9587f8abd84077ab725", null ],
     [ "bc_dimensions", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a9d60e00cbf427c534425cb4d7818a2b5", null ],
     [ "compressed_dims", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a1e3999a940850b3e8a4781e148a01117", null ],
     [ "domain", "structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html#a44cfff2babb687954ffc79c677a82a4d", null ],

@@ -1,5 +1,6 @@
 var structnetcdf__io__mod_1_1fmsnetcdffile__t =
 [
+    [ "allow_int8", "structnetcdf__io__mod_1_1fmsnetcdffile__t.html#a869f05f3559ab9587f8abd84077ab725", null ],
     [ "bc_dimensions", "structnetcdf__io__mod_1_1fmsnetcdffile__t.html#a9d60e00cbf427c534425cb4d7818a2b5", null ],
     [ "compressed_dims", "structnetcdf__io__mod_1_1fmsnetcdffile__t.html#a1e3999a940850b3e8a4781e148a01117", null ],
     [ "io_root", "structnetcdf__io__mod_1_1fmsnetcdffile__t.html#a32c807e75442ee5d98dcb64539e97633", null ],

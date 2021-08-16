@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -116,9 +116,9 @@ Data Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:gabaf667e53627cfaceb48057e827b7b5e"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#gabaf667e53627cfaceb48057e827b7b5e">fms_init</a> (localcomm)</td></tr>
-<tr class="memdesc:gabaf667e53627cfaceb48057e827b7b5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the FMS module and also calls the initialization routines for all modules in the MPP package. Will be called automatically if the user does not call it.  <a href="group__fms__mod.html#gabaf667e53627cfaceb48057e827b7b5e">More...</a><br /></td></tr>
-<tr class="separator:gabaf667e53627cfaceb48057e827b7b5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga76099928e3f2e58ea5efe717c7809fce"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_init</a> (localcomm, alt_input_nml_path)</td></tr>
+<tr class="memdesc:ga76099928e3f2e58ea5efe717c7809fce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the FMS module and also calls the initialization routines for all modules in the MPP package. Will be called automatically if the user does not call it.  <a href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">More...</a><br /></td></tr>
+<tr class="separator:ga76099928e3f2e58ea5efe717c7809fce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a46d4a91a0ec6ae17fd2386413dc8c30b"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="fms_8F90.html#a46d4a91a0ec6ae17fd2386413dc8c30b">fms_end</a> ()</td></tr>
 <tr class="memdesc:a46d4a91a0ec6ae17fd2386413dc8c30b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls the termination routines for all modules in the MPP package.  <a href="fms_8F90.html#a46d4a91a0ec6ae17fd2386413dc8c30b">More...</a><br /></td></tr>
 <tr class="separator:a46d4a91a0ec6ae17fd2386413dc8c30b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -249,7 +249,7 @@ logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>only</b><
 <p>Calls the termination routines for all modules in the MPP package. </p>
 <p>Termination routine for the fms module. It also calls destructor routines for the mpp, mpp_domains, and mpp_io modules. If this routine is called more than once it will return silently. There are no arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00448">448</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00447">447</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>

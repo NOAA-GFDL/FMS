@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -196,24 +196,6 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>determine_ocean
 subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">read_namelist</a></td></tr>
 <tr class="memdesc:ga1507b133d0b6d8fcc8767a45cb8b826e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads the namelist file, write namelist to log file, and initializes constants. <br /></td></tr>
 <tr class="separator:ga1507b133d0b6d8fcc8767a45cb8b826e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac274ad46a3d913795b81a82281b9853e"><td class="memItemLeft" align="right" valign="top">
-logical function&#160;</td><td class="memItemRight" valign="bottom"><b>get_water_frac_1d_mpp_io</b> (blon, blat, water_frac)</td></tr>
-<tr class="separator:gac274ad46a3d913795b81a82281b9853e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad68d8c8f8856348bd073ecd54b6f1082"><td class="memItemLeft" align="right" valign="top">
-logical function&#160;</td><td class="memItemRight" valign="bottom"><b>get_water_frac_2d_mpp_io</b> (blon, blat, water_frac)</td></tr>
-<tr class="separator:gad68d8c8f8856348bd073ecd54b6f1082"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad0ccd26832ef95363ae7bd2a499e3e9f"><td class="memItemLeft" align="right" valign="top">
-logical function&#160;</td><td class="memItemRight" valign="bottom"><b>open_topog_file_mpp_io</b> (filename)</td></tr>
-<tr class="separator:gad0ccd26832ef95363ae7bd2a499e3e9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae1d5cd0f833c8dcb5001b7699eeb4b6f"><td class="memItemLeft" align="right" valign="top">
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>input_data_mpp_io</b> (ifile, xdat, ydat, zdat)</td></tr>
-<tr class="separator:gae1d5cd0f833c8dcb5001b7699eeb4b6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae203eb88a02cec121fa5fe047efe333e"><td class="memItemLeft" align="right" valign="top">
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>interp_water_1d_mpp_io</b> (blon, blat, zout, do_ocean)</td></tr>
-<tr class="separator:gae203eb88a02cec121fa5fe047efe333e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2d6f664f86dbaffeb0dbfec792963f38"><td class="memItemLeft" align="right" valign="top">
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>interp_water_2d_mpp_io</b> (blon, blat, zout, do_ocean)</td></tr>
-<tr class="separator:ga2d6f664f86dbaffeb0dbfec792963f38"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -223,36 +205,33 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>use_mpp_io</b> =.f
 <tr class="memitem:gadd75c875ff11672a3def6120a41f696b"><td class="memItemLeft" align="right" valign="top">
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>var</b></td></tr>
 <tr class="separator:gadd75c875ff11672a3def6120a41f696b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga187b0fd2112edad35c5214668e323da7"><td class="memItemLeft" align="right" valign="top">
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>deprecated</b></td></tr>
+<tr class="separator:ga187b0fd2112edad35c5214668e323da7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8b4d0c587da7d734d790f2b9b4f60951"><td class="memItemLeft" align="right" valign="top">
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>namelist</b></td></tr>
 <tr class="separator:ga8b4d0c587da7d734d790f2b9b4f60951"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6fb3ad2e2a5a93eb4bc1b31c145ba3de"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>flag</b></td></tr>
-<tr class="separator:ga6fb3ad2e2a5a93eb4bc1b31c145ba3de"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga21a417e45e31cef2f7381165a4dedd08"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>to</b></td></tr>
-<tr class="separator:ga21a417e45e31cef2f7381165a4dedd08"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga42274cd63790008c53c218f7a650545c"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>enable</b></td></tr>
-<tr class="separator:ga42274cd63790008c53c218f7a650545c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga90e1b5626e3da86bb04bb12600ff9056"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>usage</b></td></tr>
-<tr class="separator:ga90e1b5626e3da86bb04bb12600ff9056"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga224b73bf43c6afb896492603c6a85c32"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>of</b></td></tr>
-<tr class="separator:ga224b73bf43c6afb896492603c6a85c32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac701e434faf849752b12f45cbfe81d21"><td class="memItemLeft" align="right" valign="top">
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>variable</b></td></tr>
+<tr class="separator:gac701e434faf849752b12f45cbfe81d21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6cf0ec5f9b4de7887441cd58b638a574"><td class="memItemLeft" align="right" valign="top">
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>for</b></td></tr>
+<tr class="separator:ga6cf0ec5f9b4de7887441cd58b638a574"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4e5598f3b79f1cafad0da8730782c584"><td class="memItemLeft" align="right" valign="top">
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>using</b></td></tr>
+<tr class="separator:ga4e5598f3b79f1cafad0da8730782c584"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gafdec7668ec16041a9e4975750cc04b1f"><td class="memItemLeft" align="right" valign="top">
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>mpp_io</b></td></tr>
 <tr class="separator:gafdec7668ec16041a9e4975750cc04b1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga0e49645637780ae34583dce8459480fc"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>subroutines</b></td></tr>
-<tr class="separator:ga0e49645637780ae34583dce8459480fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabd877a2f7a72d7734727d3bf145f9671"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>if</b></td></tr>
-<tr class="separator:gabd877a2f7a72d7734727d3bf145f9671"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga9196011c74e8670b9468c05e002f97c3"><td class="memItemLeft" align="right" valign="top">
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>true</b></td></tr>
-<tr class="separator:ga9196011c74e8670b9468c05e002f97c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga16a949761ab30181dac556cdf3b5dbd1"><td class="memItemLeft" align="right" valign="top">
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>in</b></td></tr>
+<tr class="separator:ga16a949761ab30181dac556cdf3b5dbd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga62ebbdff7b1755f2f24b9991af5185c3"><td class="memItemLeft" align="right" valign="top">
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>this</b></td></tr>
+<tr class="separator:ga62ebbdff7b1755f2f24b9991af5185c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae9bfea9d0e8a692556ef74da553ae5b4"><td class="memItemLeft" align="right" valign="top">
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>module</b></td></tr>
+<tr class="separator:gae9bfea9d0e8a692556ef74da553ae5b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4d5869333da817f40096541142bafb99"><td class="memItemLeft" align="right" valign="top">
 character(len=128)&#160;</td><td class="memItemRight" valign="bottom"><b>topog_file</b> = 'DATA/navy_topography.data'</td></tr>
 <tr class="separator:ga4d5869333da817f40096541142bafb99"><td class="memSeparator" colspan="2">&#160;</td></tr>

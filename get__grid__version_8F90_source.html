@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: data_override/get_grid_version_fms2io.F90 Source File</title>
+<title>FMS: data_override/get_grid_version.F90 Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -71,7 +71,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source.html',''); initResizable(); });
+$(document).ready(function(){initNavTree('get__grid__version_8F90_source.html',''); initResizable(); });
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -91,10 +91,10 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 
 <div class="header">
   <div class="headertitle">
-<div class="title">get_grid_version_fms2io.F90</div>  </div>
+<div class="title">get_grid_version.F90</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="get__grid__version__fms2io_8F90.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<a href="get__grid__version_8F90.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -117,11 +117,11 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @brief fms2_io implementations of grid routines for @ref data_override_mod</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @brief File for @ref get_grid_version_fms2_io_mod</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @brief File for @ref get_grid_version_mod</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!&gt; @addtogroup get_grid_version_fms2_io_mod</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!&gt; @addtogroup get_grid_version_mod</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!&gt; @{</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">module</span> get_grid_version_fms2io_mod</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">module</span> get_grid_version_mod</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keywordtype">use </span>constants_mod, <span class="keywordtype">only</span>: <a class="code" href="group__constants__mod.html#gadc909cc70e4e20bc99fc3d3c53125808">pi</a></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>,fatal,note, <a class="code" href="interfacempp__mod_1_1mpp__min.html">mpp_min</a>, <a class="code" href="interfacempp__mod_1_1mpp__max.html">mpp_max</a></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keywordtype">use </span>mpp_domains_mod, <span class="keywordtype">only</span> : domain2d, <span class="keyword">operator</span>(.NE.),<span class="keyword">operator</span>(.EQ.)</div>
@@ -136,8 +136,8 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">contains</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment">!&gt; Get lon and lat of three model (target) grids from grid_spec.nc</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">check_grid_sizes</a>(domain_name, Domain, nlon, nlat)</div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">   44</a></span>&#160;<span class="keywordtype">character(len=12)</span>, <span class="keywordtype">intent(in)</span> :: domain_name</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">check_grid_sizes</a>(domain_name, Domain, nlon, nlat)</div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">   44</a></span>&#160;<span class="keywordtype">character(len=12)</span>, <span class="keywordtype">intent(in)</span> :: domain_name</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keywordtype">type</span> (domain2d),   <span class="keywordtype">intent(in)</span> :: Domain</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">integer</span>,           <span class="keywordtype">intent(in)</span> :: nlon, nlat</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
@@ -157,11 +157,11 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keyword">write</span>(error_message(181:184),<span class="stringliteral">&#39;(i4)&#39;</span>) nlat</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,error_message)</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">check_grid_sizes</a></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">check_grid_sizes</a></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">!&gt; Get global lon and lat of three model (target) grids, with a given file name</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#gad1da55dd091f87f7fb5bb6aa43d6aed0">get_grid_version_1</a>(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)</div>
-<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="group__get__grid__version__fms2__io__mod.html#gad1da55dd091f87f7fb5bb6aa43d6aed0">   68</a></span>&#160;  <span class="keywordtype">character(len=*)</span>,            <span class="keywordtype">intent(in)</span> :: grid_file<span class="comment"> !&lt; name of grid file</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__get__grid__version__mod.html#ga3c9174b0fcf5d5be50bf29a2a0ed8fa8">get_grid_version_1</a>(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)</div>
+<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="group__get__grid__version__mod.html#ga3c9174b0fcf5d5be50bf29a2a0ed8fa8">   68</a></span>&#160;  <span class="keywordtype">character(len=*)</span>,            <span class="keywordtype">intent(in)</span> :: grid_file<span class="comment"> !&lt; name of grid file</span></div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">character(len=*)</span>,            <span class="keywordtype">intent(in)</span> :: mod_name<span class="comment"> !&lt; module name</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">type</span>(domain2d),              <span class="keywordtype">intent(in)</span> :: domain<span class="comment"> !&lt; 2D domain</span></div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">integer</span>,                     <span class="keywordtype">intent(in)</span> :: isc, iec, jsc, jec</div>
@@ -205,7 +205,7 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;      ndims = get_variable_num_dimensions(fileobj, <span class="stringliteral">&#39;x_T&#39;</span>)</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;      <span class="keyword">call </span>get_variable_size(fileobj, <span class="stringliteral">&#39;x_T&#39;</span>, siz(1:ndims))</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;      nlon = siz(1); nlat = siz(2)</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;      <span class="keyword">call </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;      <span class="keyword">call </span><a class="code" href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;      <span class="keyword">allocate</span>(lon_vert(isc:iec,jsc:jec,4), lat_vert(isc:iec,jsc:jec,4) )</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;      <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(fileobj, <span class="stringliteral">&#39;x_vert_T&#39;</span>, lon_vert)</div>
@@ -228,7 +228,7 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;      ndims = get_variable_num_dimensions(fileobj, <span class="stringliteral">&#39;geolon_vert_t&#39;</span>)</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;      <span class="keyword">call </span>get_variable_size(fileobj, <span class="stringliteral">&#39;geolon_vert_t&#39;</span>, siz(1:ndims))</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;      nlon = siz(1) - 1; nlat = siz(2) - 1;</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;      <span class="keyword">call </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;      <span class="keyword">call </span><a class="code" href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;      start(1) = isc; nread(1) = iec-isc+2</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;      start(2) = jsc; nread(2) = jec-jsc+2</div>
@@ -274,7 +274,7 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;     <span class="keyword">call </span>get_variable_size(fileobj, yname, siz(1:ndims))</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;     nlat = siz(1); <span class="keyword">allocate</span>(glat(nlat))</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;     <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(fileobj, yname, glat)</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;     <span class="keyword">call </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;     <span class="keyword">call </span><a class="code" href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;     is = isc - isg + 1; ie = iec - isg + 1</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;     js = jsc - jsg + 1; je = jec - jsg + 1</div>
@@ -301,12 +301,12 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;  <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__max.html">mpp_max</a>(max_lon)</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160; </div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#gad1da55dd091f87f7fb5bb6aa43d6aed0">get_grid_version_1</a></div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__get__grid__version__mod.html#ga3c9174b0fcf5d5be50bf29a2a0ed8fa8">get_grid_version_1</a></div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;<span class="comment">!&gt; Get global lon and lat of three model (target) grids from mosaic.nc.</span></div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;<span class="comment">!! Currently we assume the refinement ratio is 2 and there is one tile on each pe.</span></div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga3d8132365abfc20f0bc9f363801f26ba">get_grid_version_2</a>(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)</div>
-<div class="line"><a name="l00213"></a><span class="lineno"><a class="line" href="group__get__grid__version__fms2__io__mod.html#ga3d8132365abfc20f0bc9f363801f26ba">  213</a></span>&#160;  <span class="keywordtype">type</span>(fmsnetcdffile_t),       <span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; file object for grid file</span></div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__get__grid__version__mod.html#gab3e3d85b08f6138636fd47f11a60f8e5">get_grid_version_2</a>(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)</div>
+<div class="line"><a name="l00213"></a><span class="lineno"><a class="line" href="group__get__grid__version__mod.html#gab3e3d85b08f6138636fd47f11a60f8e5">  213</a></span>&#160;  <span class="keywordtype">type</span>(fmsnetcdffile_t),       <span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; file object for grid file</span></div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;  <span class="keywordtype">character(len=*)</span>,            <span class="keywordtype">intent(in)</span> :: mod_name<span class="comment"> !&lt; module name</span></div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;  <span class="keywordtype">type</span>(domain2d),              <span class="keywordtype">intent(in)</span> :: domain<span class="comment"> !&lt; 2D domain</span></div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;  <span class="keywordtype">integer</span>,                     <span class="keywordtype">intent(in)</span> :: isc, iec, jsc, jec</div>
@@ -362,7 +362,7 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;       <span class="stringliteral">&#39;data_override_mod: &#39;</span>//trim(mod_name)//<span class="stringliteral">&#39; supergrid latitude size can not be divided by 2&#39;</span>)</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;  nlon = nlon_super/2;</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;  nlat = nlat_super/2;</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;  <span class="keyword">call </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;  <span class="keyword">call </span><a class="code" href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">check_grid_sizes</a>(trim(mod_name)//<span class="stringliteral">&#39;_domain  &#39;</span>, domain, nlon, nlat)</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;  isc2 = 2*isc-1; iec2 = 2*iec+1</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;  jsc2 = 2*jsc-1; jec2 = 2*jec+1</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
@@ -404,30 +404,30 @@ $(document).ready(function(){initNavTree('get__grid__version__fms2io_8F90_source
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(tilefileobj)</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  <span class="keywordflow">if</span>(open_solo_mosaic)  <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1close__file.html">close_file</a>(mosaicfileobj)</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160; </div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__get__grid__version__fms2__io__mod.html#ga3d8132365abfc20f0bc9f363801f26ba">get_grid_version_2</a></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__get__grid__version__mod.html#gab3e3d85b08f6138636fd47f11a60f8e5">get_grid_version_2</a></div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160; </div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="keyword">end module </span>get_grid_version_fms2io_mod<span class="comment"></span></div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="keyword">end module </span>get_grid_version_mod<span class="comment"></span></div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;<span class="comment">!&gt; @}</span></div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;<span class="comment">! close documentation grouping</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__get__grid__version__fms2__io__mod_html_ga3d8132365abfc20f0bc9f363801f26ba"><div class="ttname"><a href="group__get__grid__version__fms2__io__mod.html#ga3d8132365abfc20f0bc9f363801f26ba">get_grid_version_fms2io_mod::get_grid_version_2</a></div><div class="ttdeci">subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)</div><div class="ttdoc">Get global lon and lat of three model (target) grids from mosaic.nc. Currently we assume the refineme...</div><div class="ttdef"><b>Definition:</b> <a href="get__grid__version__fms2io_8F90_source.html#l00213">get_grid_version_fms2io.F90:213</a></div></div>
 <div class="ttc" id="agroup__mosaic2__mod_html_ga8dfe682ca88da8a6e7d31d8bfb304fe7"><div class="ttname"><a href="group__mosaic2__mod.html#ga8dfe682ca88da8a6e7d31d8bfb304fe7">mosaic2_mod::get_mosaic_tile_grid</a></div><div class="ttdeci">subroutine, public get_mosaic_tile_grid(grid_file, fileobj, domain, tile_count)</div><div class="ttdoc">Gets the name of a mosaic tile grid file.</div><div class="ttdef"><b>Definition:</b> <a href="mosaic2_8F90_source.html#l00530">mosaic2.F90:530</a></div></div>
 <div class="ttc" id="ainterfacefms2__io__mod_1_1read__data_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1read__data.html">fms2_io_mod::read_data</a></div><div class="ttdoc">Read data from a defined field in a file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00276">fms2_io.F90:276</a></div></div>
 <div class="ttc" id="ainterfacempp__mod_1_1mpp__min_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__min.html">mpp_mod::mpp_min</a></div><div class="ttdoc">Get minimum value out of the PEs in pelist Result is also broadcast to all PEs.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00554">mpp.F90:554</a></div></div>
 <div class="ttc" id="ainterfacefms2__io__mod_1_1open__file_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1open__file.html">fms2_io_mod::open_file</a></div><div class="ttdoc">Opens a given netcdf or domain file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00123">fms2_io.F90:123</a></div></div>
 <div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00386">mpp.F90:386</a></div></div>
-<div class="ttc" id="agroup__get__grid__version__fms2__io__mod_html_ga9f19f4f970b0a4191182f03a17177716"><div class="ttname"><a href="group__get__grid__version__fms2__io__mod.html#ga9f19f4f970b0a4191182f03a17177716">get_grid_version_fms2io_mod::check_grid_sizes</a></div><div class="ttdeci">subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)</div><div class="ttdoc">Get lon and lat of three model (target) grids from grid_spec.nc.</div><div class="ttdef"><b>Definition:</b> <a href="get__grid__version__fms2io_8F90_source.html#l00044">get_grid_version_fms2io.F90:44</a></div></div>
+<div class="ttc" id="agroup__get__grid__version__mod_html_gab3e3d85b08f6138636fd47f11a60f8e5"><div class="ttname"><a href="group__get__grid__version__mod.html#gab3e3d85b08f6138636fd47f11a60f8e5">get_grid_version_mod::get_grid_version_2</a></div><div class="ttdeci">subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)</div><div class="ttdoc">Get global lon and lat of three model (target) grids from mosaic.nc. Currently we assume the refineme...</div><div class="ttdef"><b>Definition:</b> <a href="get__grid__version_8F90_source.html#l00213">get_grid_version.F90:213</a></div></div>
 <div class="ttc" id="ainterfacempp__mod_1_1mpp__max_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__max.html">mpp_mod::mpp_max</a></div><div class="ttdoc">Reduction operations. Find the max of scalar a the PEs in pelist result is also automatically broadca...</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00540">mpp.F90:540</a></div></div>
 <div class="ttc" id="ainterfacefms2__io__mod_1_1close__file_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1close__file.html">fms2_io_mod::close_file</a></div><div class="ttdoc">Close a netcdf or domain file opened with open_file or open_virtual_file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00162">fms2_io.F90:162</a></div></div>
 <div class="ttc" id="agroup__constants__mod_html_gadc909cc70e4e20bc99fc3d3c53125808"><div class="ttname"><a href="group__constants__mod.html#gadc909cc70e4e20bc99fc3d3c53125808">constants_mod::pi</a></div><div class="ttdeci">real, parameter, public pi</div><div class="ttdoc">Ratio of circle circumference to diameter [N/A].</div><div class="ttdef"><b>Definition:</b> <a href="constants_8F90_source.html#l00104">constants.F90:104</a></div></div>
 <div class="ttc" id="ainterfacempp__domains__mod_1_1mpp__get__global__domain_html"><div class="ttname"><a href="interfacempp__domains__mod_1_1mpp__get__global__domain.html">mpp_domains_mod::mpp_get_global_domain</a></div><div class="ttdoc">These routines retrieve the axis specifications associated with the global domains....</div><div class="ttdef"><b>Definition:</b> <a href="mpp__domains_8F90_source.html#l02182">mpp_domains.F90:2182</a></div></div>
-<div class="ttc" id="agroup__get__grid__version__fms2__io__mod_html_gad1da55dd091f87f7fb5bb6aa43d6aed0"><div class="ttname"><a href="group__get__grid__version__fms2__io__mod.html#gad1da55dd091f87f7fb5bb6aa43d6aed0">get_grid_version_fms2io_mod::get_grid_version_1</a></div><div class="ttdeci">subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)</div><div class="ttdoc">Get global lon and lat of three model (target) grids, with a given file name.</div><div class="ttdef"><b>Definition:</b> <a href="get__grid__version__fms2io_8F90_source.html#l00068">get_grid_version_fms2io.F90:68</a></div></div>
+<div class="ttc" id="agroup__get__grid__version__mod_html_ga5b4b5b2fe69e82c657c3c8f6a235f5e3"><div class="ttname"><a href="group__get__grid__version__mod.html#ga5b4b5b2fe69e82c657c3c8f6a235f5e3">get_grid_version_mod::check_grid_sizes</a></div><div class="ttdeci">subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)</div><div class="ttdoc">Get lon and lat of three model (target) grids from grid_spec.nc.</div><div class="ttdef"><b>Definition:</b> <a href="get__grid__version_8F90_source.html#l00044">get_grid_version.F90:44</a></div></div>
 <div class="ttc" id="ainterfacempp__domains__mod_1_1mpp__get__data__domain_html"><div class="ttname"><a href="interfacempp__domains__mod_1_1mpp__get__data__domain.html">mpp_domains_mod::mpp_get_data_domain</a></div><div class="ttdoc">These routines retrieve the axis specifications associated with the data domains. The domain is a der...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__domains_8F90_source.html#l02168">mpp_domains.F90:2168</a></div></div>
+<div class="ttc" id="agroup__get__grid__version__mod_html_ga3c9174b0fcf5d5be50bf29a2a0ed8fa8"><div class="ttname"><a href="group__get__grid__version__mod.html#ga3c9174b0fcf5d5be50bf29a2a0ed8fa8">get_grid_version_mod::get_grid_version_1</a></div><div class="ttdeci">subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)</div><div class="ttdoc">Get global lon and lat of three model (target) grids, with a given file name.</div><div class="ttdef"><b>Definition:</b> <a href="get__grid__version_8F90_source.html#l00068">get_grid_version.F90:68</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_4f40a9a9eeca16d46796605b549e958f.html">data_override</a></li><li class="navelem"><a class="el" href="get__grid__version__fms2io_8F90.html">get_grid_version_fms2io.F90</a></li>
+    <li class="navelem"><a class="el" href="dir_4f40a9a9eeca16d46796605b549e958f.html">data_override</a></li><li class="navelem"><a class="el" href="get__grid__version_8F90.html">get_grid_version.F90</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

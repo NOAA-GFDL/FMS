@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -140,72 +140,78 @@ $(document).ready(function(){initNavTree('register__global__attribute_8inc_sourc
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                                   trim(attribute_name), &amp;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                                   attribute_value)</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordflow">            type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                   nf90_global, &amp;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                   trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                   attribute_value)</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r4_kind))</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                                   nf90_global, &amp;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                                   trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                                   attribute_value)</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r8_kind))</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                   nf90_global, &amp;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                   trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                   attribute_value)</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keywordflow">            class default</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                <span class="keyword">call </span>error(<span class="stringliteral">&quot;register_global_attribute_0d: unsupported type for &quot;</span>//&amp;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                trim(attribute_name)//<span class="stringliteral">&quot; for file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;&quot;</span>)</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordflow">        end select</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <span class="keyword">call </span>check_netcdf_code(err)</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="register__global__attribute_8inc.html#a66a9cbced146bc41d6ddcab83edcc98f">register_global_attribute_0d</a><span class="comment"></span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">!&gt; @brief Add a global attribute.</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keyword">subroutine </span><a class="code" href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">register_global_attribute_1d</a>(fileobj, &amp;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                                                  attribute_name, &amp;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                                                  attribute_value, str_len)</div>
-<div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">   72</a></span>&#160;    <span class="keywordtype">class</span>(fmsnetcdffile_t),<span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; File object.</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordtype">character(len=*)</span>,<span class="keywordtype">intent(in)</span> :: attribute_name<span class="comment"> !&lt; Attribute name.</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordtype">class</span>(*),<span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(in)</span> :: attribute_value<span class="comment"> !&lt; Attribute value</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: str_len<span class="comment"> !&lt; Length of the string</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordtype">integer</span> :: err</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keyword">call </span>set_netcdf_mode(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                             define_mode)</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keywordflow">select type</span>(attribute_value)</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="keywordflow">            type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                                   nf90_global, &amp;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                                   trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                                   attribute_value)</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keywordflow">            type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                                   nf90_global, &amp;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                                   trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                                   attribute_value)</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r4_kind))</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                                   nf90_global, &amp;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                   trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                                   attribute_value)</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r8_kind))</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                                   nf90_global, &amp;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                                   trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                                   attribute_value)</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="keywordflow">            class default</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                <span class="keyword">call </span>error(<span class="stringliteral">&quot;register_global_attribute_1d: unsupported type for &quot;</span>//&amp;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                trim(attribute_name)//<span class="stringliteral">&quot; for file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;&quot;</span>)</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="keywordflow">        end select</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <span class="keyword">call </span>check_netcdf_code(err)</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">register_global_attribute_1d</a></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)//<span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//&amp;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                                       &amp;<span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                                       &amp;<span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                                   nf90_global, &amp;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                   trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                                   attribute_value)</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r4_kind))</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                                   nf90_global, &amp;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                                   trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                   attribute_value)</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r8_kind))</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                   nf90_global, &amp;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                   trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                                   attribute_value)</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordflow">            class default</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                <span class="keyword">call </span>error(<span class="stringliteral">&quot;register_global_attribute_0d: unsupported type for &quot;</span>//&amp;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                trim(attribute_name)//<span class="stringliteral">&quot; for file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;&quot;</span>)</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keywordflow">        end select</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="keyword">call </span>check_netcdf_code(err, <span class="stringliteral">&quot;register_global_attribute_0d: file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;- attribute:&quot;</span>//trim(attribute_name))</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="register__global__attribute_8inc.html#a66a9cbced146bc41d6ddcab83edcc98f">register_global_attribute_0d</a><span class="comment"></span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">!&gt; @brief Add a global attribute.</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keyword">subroutine </span><a class="code" href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">register_global_attribute_1d</a>(fileobj, &amp;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                                                  attribute_name, &amp;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                                                  attribute_value, str_len)</div>
+<div class="line"><a name="l00075"></a><span class="lineno"><a class="line" href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">   75</a></span>&#160;    <span class="keywordtype">class</span>(fmsnetcdffile_t),<span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; File object.</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordtype">character(len=*)</span>,<span class="keywordtype">intent(in)</span> :: attribute_name<span class="comment"> !&lt; Attribute name.</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordtype">class</span>(*),<span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(in)</span> :: attribute_value<span class="comment"> !&lt; Attribute value</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: str_len<span class="comment"> !&lt; Length of the string</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordtype">integer</span> :: err</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keyword">call </span>set_netcdf_mode(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                             define_mode)</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <span class="keywordflow">select type</span>(attribute_value)</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keywordflow">            type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                                   nf90_global, &amp;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                                   trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                                   attribute_value)</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keywordflow">            type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)//<span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//&amp;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                                       &amp;<span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                                                       &amp;<span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                   nf90_global, &amp;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                                   trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                                   attribute_value)</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r4_kind))</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                                   nf90_global, &amp;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                                   trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                                   attribute_value)</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keywordflow">            type is</span> (real(kind=r8_kind))</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                err = nf90_put_att(fileobj%ncid, &amp;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                                   nf90_global, &amp;</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                                   trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                                   attribute_value)</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="keywordflow">            class default</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                <span class="keyword">call </span>error(<span class="stringliteral">&quot;register_global_attribute_1d: unsupported type for &quot;</span>//&amp;</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                trim(attribute_name)//<span class="stringliteral">&quot; for file: &quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;&quot;</span>)</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="keywordflow">        end select</span></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <span class="keyword">call </span>check_netcdf_code(err, <span class="stringliteral">&quot;register_global_attribute_1d: file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;- attribute:&quot;</span>//trim(attribute_name))</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">register_global_attribute_1d</a></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="aregister__global__attribute_8inc_html_a66a9cbced146bc41d6ddcab83edcc98f"><div class="ttname"><a href="register__global__attribute_8inc.html#a66a9cbced146bc41d6ddcab83edcc98f">register_global_attribute_0d</a></div><div class="ttdeci">subroutine register_global_attribute_0d(fileobj, attribute_name, attribute_value, str_len)</div><div class="ttdoc">Add a global attribute.</div><div class="ttdef"><b>Definition:</b> <a href="register__global__attribute_8inc_source.html#l00026">register_global_attribute.inc:26</a></div></div>
-<div class="ttc" id="aregister__global__attribute_8inc_html_a7b2740ed662cb8203d9c0cf3a6c0cbd4"><div class="ttname"><a href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">register_global_attribute_1d</a></div><div class="ttdeci">subroutine register_global_attribute_1d(fileobj, attribute_name, attribute_value, str_len)</div><div class="ttdoc">Add a global attribute.</div><div class="ttdef"><b>Definition:</b> <a href="register__global__attribute_8inc_source.html#l00072">register_global_attribute.inc:72</a></div></div>
+<div class="ttc" id="aregister__global__attribute_8inc_html_a7b2740ed662cb8203d9c0cf3a6c0cbd4"><div class="ttname"><a href="register__global__attribute_8inc.html#a7b2740ed662cb8203d9c0cf3a6c0cbd4">register_global_attribute_1d</a></div><div class="ttdeci">subroutine register_global_attribute_1d(fileobj, attribute_name, attribute_value, str_len)</div><div class="ttdoc">Add a global attribute.</div><div class="ttdef"><b>Definition:</b> <a href="register__global__attribute_8inc_source.html#l00075">register_global_attribute.inc:75</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

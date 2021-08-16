@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.0-dev</span>
+   &#160;<span id="projectnumber">2021.03.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -163,24 +163,24 @@ integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <tr class="memitem:ga1cda424e7c8acb1935958add5a002ffe"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga1cda424e7c8acb1935958add5a002ffe">init_output_field</a> (module_name, field_name, output_name, output_file, time_method, pack, tile_count, local_coord)</td></tr>
 <tr class="memdesc:ga1cda424e7c8acb1935958add5a002ffe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the output field.  <a href="group__diag__util__mod.html#ga1cda424e7c8acb1935958add5a002ffe">More...</a><br /></td></tr>
 <tr class="separator:ga1cda424e7c8acb1935958add5a002ffe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa25276d7ef48164aead7bb297e72a421"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gaa25276d7ef48164aead7bb297e72a421">opening_file</a> (file, time, use_mpp_io, filename_time)</td></tr>
-<tr class="memdesc:gaa25276d7ef48164aead7bb297e72a421"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open file for output, and write the meta data.  <a href="group__diag__util__mod.html#gaa25276d7ef48164aead7bb297e72a421">More...</a><br /></td></tr>
-<tr class="separator:gaa25276d7ef48164aead7bb297e72a421"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga080607862bbe462075d2c80c32d7cd3d"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga080607862bbe462075d2c80c32d7cd3d">opening_file</a> (file, time, filename_time)</td></tr>
+<tr class="memdesc:ga080607862bbe462075d2c80c32d7cd3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open file for output, and write the meta data.  <a href="group__diag__util__mod.html#ga080607862bbe462075d2c80c32d7cd3d">More...</a><br /></td></tr>
+<tr class="separator:ga080607862bbe462075d2c80c32d7cd3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab35f99b9ccb0069696da67e65c46a303"><td class="memItemLeft" align="right" valign="top">character(len=128) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gab35f99b9ccb0069696da67e65c46a303">get_time_string</a> (filename, current_time)</td></tr>
 <tr class="memdesc:gab35f99b9ccb0069696da67e65c46a303"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function determines a string based on current time. This string is used as suffix in output file name.  <a href="group__diag__util__mod.html#gab35f99b9ccb0069696da67e65c46a303">More...</a><br /></td></tr>
 <tr class="separator:gab35f99b9ccb0069696da67e65c46a303"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7831ec2625f74c8e9df312b6cd170ca0"><td class="memItemLeft" align="right" valign="top">real function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga7831ec2625f74c8e9df312b6cd170ca0">get_date_dif</a> (t2, t1, units)</td></tr>
 <tr class="memdesc:ga7831ec2625f74c8e9df312b6cd170ca0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the difference between two times in units.  <a href="group__diag__util__mod.html#ga7831ec2625f74c8e9df312b6cd170ca0">More...</a><br /></td></tr>
 <tr class="separator:ga7831ec2625f74c8e9df312b6cd170ca0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabde1da83b163a333e9f2cb1210f45a28"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gabde1da83b163a333e9f2cb1210f45a28">diag_data_out</a> (file, field, dat, time, final_call_in, static_write_in, use_mpp_io_arg, filename_time)</td></tr>
-<tr class="memdesc:gabde1da83b163a333e9f2cb1210f45a28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write data out to file, and if necessary flush the buffers.  <a href="group__diag__util__mod.html#gabde1da83b163a333e9f2cb1210f45a28">More...</a><br /></td></tr>
-<tr class="separator:gabde1da83b163a333e9f2cb1210f45a28"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gacc85f996fad682a6bc41f95259c9d656"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gacc85f996fad682a6bc41f95259c9d656">check_and_open</a> (file, time, do_write, use_mpp_io, filename_time)</td></tr>
-<tr class="memdesc:gacc85f996fad682a6bc41f95259c9d656"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if it is time to open a new file.  <a href="group__diag__util__mod.html#gacc85f996fad682a6bc41f95259c9d656">More...</a><br /></td></tr>
-<tr class="separator:gacc85f996fad682a6bc41f95259c9d656"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga31af7562230aee6a21bdee017a51b6d7"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga31af7562230aee6a21bdee017a51b6d7">write_static</a> (file, use_mpp_io)</td></tr>
-<tr class="memdesc:ga31af7562230aee6a21bdee017a51b6d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output all static fields in this file.  <a href="group__diag__util__mod.html#ga31af7562230aee6a21bdee017a51b6d7">More...</a><br /></td></tr>
-<tr class="separator:ga31af7562230aee6a21bdee017a51b6d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1ba13ef1d2e071e0e38beb168cfc88e7"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga1ba13ef1d2e071e0e38beb168cfc88e7">diag_data_out</a> (file, field, dat, time, final_call_in, static_write_in, filename_time)</td></tr>
+<tr class="memdesc:ga1ba13ef1d2e071e0e38beb168cfc88e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write data out to file, and if necessary flush the buffers.  <a href="group__diag__util__mod.html#ga1ba13ef1d2e071e0e38beb168cfc88e7">More...</a><br /></td></tr>
+<tr class="separator:ga1ba13ef1d2e071e0e38beb168cfc88e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae871029d44ef9d39e680ef94c6d2ad1e"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#gae871029d44ef9d39e680ef94c6d2ad1e">check_and_open</a> (file, time, do_write, filename_time)</td></tr>
+<tr class="memdesc:gae871029d44ef9d39e680ef94c6d2ad1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if it is time to open a new file.  <a href="group__diag__util__mod.html#gae871029d44ef9d39e680ef94c6d2ad1e">More...</a><br /></td></tr>
+<tr class="separator:gae871029d44ef9d39e680ef94c6d2ad1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga162741650fdc9582bf1aeaf0c04d4417"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga162741650fdc9582bf1aeaf0c04d4417">write_static</a> (file)</td></tr>
+<tr class="memdesc:ga162741650fdc9582bf1aeaf0c04d4417"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output all static fields in this file.  <a href="group__diag__util__mod.html#ga162741650fdc9582bf1aeaf0c04d4417">More...</a><br /></td></tr>
+<tr class="separator:ga162741650fdc9582bf1aeaf0c04d4417"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga80f6d43eb251fb619824021c0977da70"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__util__mod.html#ga80f6d43eb251fb619824021c0977da70">check_duplicate_output_fields</a> (err_msg)</td></tr>
 <tr class="memdesc:ga80f6d43eb251fb619824021c0977da70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks to see if <code>output_name</code> and <code>output_file</code> are unique in <code>output_fields</code>.  <a href="group__diag__util__mod.html#ga80f6d43eb251fb619824021c0977da70">More...</a><br /></td></tr>
 <tr class="separator:ga80f6d43eb251fb619824021c0977da70"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -250,7 +250,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02611">2611</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02414">2414</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -297,12 +297,12 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02727">2727</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02530">2530</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
-<a id="gacc85f996fad682a6bc41f95259c9d656"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gacc85f996fad682a6bc41f95259c9d656">&#9670;&nbsp;</a></span>check_and_open()</h2>
+<a id="gae871029d44ef9d39e680ef94c6d2ad1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae871029d44ef9d39e680ef94c6d2ad1e">&#9670;&nbsp;</a></span>check_and_open()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -331,12 +331,6 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">logical, intent(in)&#160;</td>
-          <td class="paramname"><em>use_mpp_io</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>), intent(in), optional&#160;</td>
           <td class="paramname"><em>filename_time</em>&#160;</td>
         </tr>
@@ -359,14 +353,13 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
     <tr><td class="paramdir">[in]</td><td class="paramname">file</td><td>File ID. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">time</td><td>Current model time. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">do_write</td><td><code>.TRUE.</code> if file is expecting more data to write, <code>.FALSE.</code> otherwise. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">use_mpp_io</td><td>true=mpp_io, false=fms2_io </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">filename_time</td><td>Time used in setting the filename when writting periodic files </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">filename_time</td><td>Reset the number of times in the files back to 0 </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02495">2495</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02312">2312</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -419,7 +412,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00781">781</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00779">779</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -464,7 +457,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00847">847</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00845">845</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -492,7 +485,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02581">2581</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02384">2384</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -538,12 +531,12 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00735">735</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00733">733</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
-<a id="gabde1da83b163a333e9f2cb1210f45a28"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gabde1da83b163a333e9f2cb1210f45a28">&#9670;&nbsp;</a></span>diag_data_out()</h2>
+<a id="ga1ba13ef1d2e071e0e38beb168cfc88e7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga1ba13ef1d2e071e0e38beb168cfc88e7">&#9670;&nbsp;</a></span>diag_data_out()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -587,12 +580,6 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">logical, intent(in), optional&#160;</td>
-          <td class="paramname"><em>use_mpp_io_arg</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>), intent(in), optional&#160;</td>
           <td class="paramname"><em>filename_time</em>&#160;</td>
         </tr>
@@ -613,7 +600,6 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
     <tr><td class="paramdir">[in]</td><td class="paramname">time</td><td>Current model time. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">final_call_in</td><td><code>.TRUE.</code> if this is the last write for file. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">static_write_in</td><td><code>.TRUE.</code> if static fields are to be written to file. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">use_mpp_io_arg</td><td>Switch for which IO to use for outputting data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">filename_time</td><td>Time used in setting the filename when writting periodic files </td></tr>
   </table>
   </dd>
@@ -622,7 +608,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
 <p>Set up the time index and write the correct time value to the time array</p>
 <p>Write data</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02338">2338</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02202">2202</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -675,7 +661,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01099">1099</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01097">1097</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -723,7 +709,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01169">1169</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01167">1167</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -770,7 +756,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01186">1186</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01184">1184</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -817,7 +803,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02292">2292</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02156">2156</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -856,7 +842,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00133">133</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00131">131</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -895,7 +881,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00414">414</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00412">412</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -943,7 +929,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02151">2151</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02015">2015</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1060,7 +1046,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
 </dl>
 <p>Initialize the times to 0</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00890">890</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00888">888</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1106,7 +1092,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01205">1205</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01203">1203</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1187,7 +1173,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01238">1238</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01236">1236</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1268,12 +1254,12 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00634">634</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00632">632</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
-<a id="gaa25276d7ef48164aead7bb297e72a421"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gaa25276d7ef48164aead7bb297e72a421">&#9670;&nbsp;</a></span>opening_file()</h2>
+<a id="ga080607862bbe462075d2c80c32d7cd3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga080607862bbe462075d2c80c32d7cd3d">&#9670;&nbsp;</a></span>opening_file()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1292,12 +1278,6 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
           <td></td>
           <td class="paramtype">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>), intent(in)&#160;</td>
           <td class="paramname"><em>time</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical&#160;</td>
-          <td class="paramname"><em>use_mpp_io</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1323,7 +1303,6 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file</td><td>File ID. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">time</td><td>Time for the file time stamp </td></tr>
-    <tr><td class="paramdir"></td><td class="paramname">use_mpp_io</td><td>controls which IO is used for output </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">filename_time</td><td>Time used in setting the filename when writting periodic files </td></tr>
   </table>
   </dd>
@@ -1332,7 +1311,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
 <p>Allocate the is_time_axis_registered field and set it to false for the first trip</p>
 <p>Use the correct file object</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01530">1530</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01528">1528</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1393,7 +1372,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02640">2640</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02443">2443</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1454,7 +1433,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02755">2755</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02558">2558</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1500,7 +1479,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01070">1070</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l01068">1068</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
@@ -1574,12 +1553,12 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00716">716</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l00714">714</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga31af7562230aee6a21bdee017a51b6d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga31af7562230aee6a21bdee017a51b6d7">&#9670;&nbsp;</a></span>write_static()</h2>
+<a id="ga162741650fdc9582bf1aeaf0c04d4417"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga162741650fdc9582bf1aeaf0c04d4417">&#9670;&nbsp;</a></span>write_static()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1588,18 +1567,8 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
           <td class="memname">subroutine, public diag_util_mod::write_static </td>
           <td>(</td>
           <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>file</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"><em>file</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">logical&#160;</td>
-          <td class="paramname"><em>use_mpp_io</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1608,12 +1577,11 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file</td><td>File ID. </td></tr>
-    <tr><td class="paramdir"></td><td class="paramname">use_mpp_io</td><td>Switch to select which IO is used to output history files </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02537">2537</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__util_8F90_source.html#l02353">2353</a> of file <a class="el" href="diag__util_8F90_source.html">diag_util.F90</a>.</p>
 
 </div>
 </div>

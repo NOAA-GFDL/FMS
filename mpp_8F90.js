@@ -24,7 +24,6 @@ var mpp_8F90 =
     [ "get_len_nocomm", "mpp_8F90.html#ga27b06972e1120f543cc30929d81abc92", null ],
     [ "in_unit", "mpp_8F90.html#ga9dae2853ed8158f6cf8bd11fa5c16513", null ],
     [ "input_nml_file", "mpp_8F90.html#ga9f26741b5ef128645b1a21cd1c875d25", null ],
-    [ "input_str_length", "mpp_8F90.html#gaf0b9d6445f103d775b624ed20446e3e9", null ],
     [ "log_unit", "mpp_8F90.html#ga91aacf472d5dd57cf133592df92f10da", null ],
     [ "max_request", "mpp_8F90.html#ga6fcc55ab1a2948846b1650ea43992069", null ],
     [ "max_request_min", "mpp_8F90.html#ga6f26996b8db1f3aea0ce6a6d4ef75afc", null ],
