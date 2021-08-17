@@ -471,8 +471,31 @@ test_diag_manager
 #output variables
  "test_diag_manager_mod", "sst", "sst", "ocn%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
 _EOF
+
 rm -f input.nml && touch input.nml
 test_expect_success "Modified diag_table (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_manager_time
+'
+
+# uses input.nml, diag_table from 24
+test_expect_success "wildcard filenames (test 25)" '
+  mpirun -n 1 ../test_diag_manager_time
+'
+
+rm -f input.nml diag_table
+touch input.nml
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_diurnal",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "test_diurnal",  "all", "diurnal3", "none", 2
+ "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal3", "none", 2
+_EOF
+test_expect_success "diurnal test (test 26)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
