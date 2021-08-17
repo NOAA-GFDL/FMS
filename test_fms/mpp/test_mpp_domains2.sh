@@ -35,7 +35,7 @@
 output_dir
 
 # Create input_base.nml for test input
-cat <<_EOF > input.nml
+cat <<_EOF > input_base.nml
 &test_mpp_domains_nml
 nx=64
 ny=64
