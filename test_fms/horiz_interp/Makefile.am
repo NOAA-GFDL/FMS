@@ -29,11 +29,10 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_horiz_interp test2_horiz_interp
+check_PROGRAMS = test_horiz_interp
 
 # These are the sources for the tests.
 test_horiz_interp_SOURCES = test_horiz_interp.F90
-test2_horiz_interp_SOURCES = test2_horiz_interp.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
@@ -47,4 +46,4 @@ TESTS = test_horiz_interp2.sh
 EXTRA_DIST = test_horiz_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out* INPUT/*
+CLEANFILES = input.nml *.out*
