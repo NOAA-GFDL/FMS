@@ -1243,7 +1243,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     character(len=2), intent(in), optional :: fnum_for_domain
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
-    real,allocatable :: local_buffer(:,:,:,: !< Buffer containing the data will be sent to fms2io
+    real,allocatable :: local_buffer(:,:,:,:) !< Buffer containing the data will be sent to fms2io
 
 !> Set up the time.  Static field and default time is 0
      if (present(static) .and. static) then
