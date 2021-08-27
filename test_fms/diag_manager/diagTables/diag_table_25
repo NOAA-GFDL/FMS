@@ -1,0 +1,9 @@
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_diurnal",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "test_diurnal",  "all", "diurnal3", "none", 2
+ "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal3", "none", 2

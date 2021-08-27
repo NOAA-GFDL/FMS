@@ -1172,7 +1172,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     character(len=2), intent(in), optional :: fnum_for_domain
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
-    real(kind=4),allocatable :: local_buffer(:,:,:,:)
      if (present(static)) then
           if (static) time = 0
      elseif (present(time_in)) then
@@ -1194,31 +1193,29 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
                call error_mesg("diag_field_write","fileob passed in is not one of the FmsNetcdfFile_t types",fatal)
           end select
      elseif (present(file_num) .and. present(fileobjU) .and. present(fileobjND) .and. present(fileobj) .and. present(fnum_for_domain)) then
-          allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,3),size(buffer,4)))
-          local_buffer = real(buffer,4)
      !> Figure out which file object to write output to
 !          if (fnum_for_domain == "2d" .or. fnum_for_domain == "nd") then
           if (fnum_for_domain == "2d" ) then
                if (check_if_open(fileobj(file_num))) then
                     if (time == 0) then
-                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), buffer)
                     else
-                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), local_buffer, unlim_dim_level=time)
+                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), buffer, unlim_dim_level=time)
                     endif
                endif
           elseif (fnum_for_domain == "nd") then
                if (check_if_open(fileobjND (file_num)) ) then
                     if (time == 0) then
-                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), buffer)
                     else
-                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), local_buffer, unlim_dim_level=time)
+                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), buffer, unlim_dim_level=time)
                     endif
                endif
           elseif (fnum_for_domain == "ug") then
                     if (time == 0) then
-                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), local_buffer)
+                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), buffer)
                     else
-                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), local_buffer, unlim_dim_level=time)
+                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), buffer, unlim_dim_level=time)
                     endif
           else
                call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
@@ -1230,7 +1227,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
      else
           call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
      endif
-     if (allocated(local_buffer)) deallocate(local_buffer)
   end subroutine diag_field_write_field
 
   !> \brief Writes diagnostic data out using fms2_io routine.
@@ -1247,7 +1243,8 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     character(len=2), intent(in), optional :: fnum_for_domain
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
-    real(kind=4),allocatable :: local_buffer(:,:,:,:)
+    real,allocatable :: local_buffer(:,:,:,:) !< Buffer containing the data will be sent to fms2io
+
 !> Set up the time.  Static field and default time is 0
      if (present(static) .and. static) then
           time = 0
@@ -1257,31 +1254,40 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           time = 0
      endif
 
+     !> If the variable is 2D, switch the n_diurnal_samples and nz dimension, so local_buffer has
+     !! dimension (nx, ny, n_diurnal_samples, nz).
+     if (size(buffer,3) .eq. 1) then
+        allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,4),size(buffer,3)))
+        local_buffer(:,:,:,1) = buffer(:,:,1,:)
+     else
+        allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,3),size(buffer,4)))
+        local_buffer = buffer(:,:,:,:)
+     endif
+
      if (present(fileob)) then !> Write output to the fileob file
           fptr => fileob
           select type (fptr)
           type is (FmsNetcdfFile_t)
-               call write_data (fptr,trim(varname),buffer)
+               call write_data (fptr,trim(varname),local_buffer)
           type is (FmsNetcdfDomainFile_t)
-               call write_data (fptr,trim(varname),buffer)
+               call write_data (fptr,trim(varname),local_buffer)
           type is (FmsNetcdfUnstructuredDomainFile_t)
-               call write_data (fptr,trim(varname),buffer)
+               call write_data (fptr,trim(varname),local_buffer)
           class default
                call error_mesg("diag_field_write","fileob passed in is not one of the FmsNetcdfFile_t types",fatal)
           end select
-          call write_data (fileob,trim(varname),buffer)
      elseif (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fileobjND) .and. present(fnum_for_domain)) then
      !> Figure out which file object to write output to
           if (fnum_for_domain == "2d" ) then
                if (check_if_open(fileobj(file_num))) then
-                    call write_data (fileobj (file_num), trim(varname), buffer, unlim_dim_level=time )
+                    call write_data (fileobj (file_num), trim(varname), local_buffer, unlim_dim_level=time )
                endif
           elseif (fnum_for_domain == "nd") then
                if (check_if_open(fileobjND (file_num)) ) then
-                    call write_data (fileobjND (file_num), trim(varname), buffer, unlim_dim_level=time)
+                    call write_data (fileobjND (file_num), trim(varname), local_buffer, unlim_dim_level=time)
                endif
           elseif (fnum_for_domain == "ug") then
-               call write_data (fileobjU(file_num), trim(varname), buffer, unlim_dim_level=time)
+               call write_data (fileobjU(file_num), trim(varname), local_buffer, unlim_dim_level=time)
           else
                call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
           endif
@@ -1291,6 +1297,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
      else
           call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
      endif
+     deallocate(local_buffer)
   end subroutine diag_field_write_varname
 !> \brief Writes the time data to the history file
   subroutine diag_write_time (fileob,rtime_value,time_index,time_name)
