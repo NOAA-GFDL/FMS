@@ -460,7 +460,7 @@ test_expect_success "Unstructured grid (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=24
+# test_diag_manager_time
 cat <<_EOF > diag_table
 test_diag_manager
 2 1 1 0 0 0
@@ -484,7 +484,7 @@ test_expect_success "wildcard filenames (test $my_test_count)" '
 '
 
 rm -f input.nml diag_table
-my_test_count=25
+
 touch input.nml
 cat <<_EOF > diag_table
 test_diag_manager

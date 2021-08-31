@@ -91,7 +91,6 @@ do i=1,23
 Time = set_date(2,1,1,i,0,0)
 sst = real(i)
 ice = real(i)
-
 if(id_sst > 0) used = send_data(id_sst, sst, Time)
 if(id_ice > 0) used = send_data(id_ice, ice, Time)
 enddo
