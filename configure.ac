@@ -276,8 +276,8 @@ fi
 AC_MSG_CHECKING([if gcc 11.1.0 is loaded])
 if [ test -n "`$FC --version | grep GNU | grep 11\.1\..`" ]; then
   AC_MSG_RESULT([yes])
-  AC_MSG_ERROR([Compilation with gcc and gfortran 11 is unsupported by this version\
- of FMS. Please use another compiler version])
+  AC_MSG_ERROR([Compilation with gcc and gfortran 11.1.0 is unsupported by this version\
+ of FMS. Please use gcc/gfortran 11.2.0 or an older version.])
 else
   AC_MSG_RESULT([no])
 fi
