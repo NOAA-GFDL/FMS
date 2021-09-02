@@ -273,8 +273,8 @@ if test -n "$fc_version_info"; then
 fi
 
 # Check if gcc is 11.1 for class(*) select type bug
-AC_MSG_CHECKING([if gcc 11 is loaded])
-if [ test -n "`$FC --version | grep GNU | grep 11\..\..`" ]; then
+AC_MSG_CHECKING([if gcc 11.1.0 is loaded])
+if [ test -n "`$FC --version | grep GNU | grep 11\.1\..`" ]; then
   AC_MSG_RESULT([yes])
   AC_MSG_ERROR([Compilation with gcc and gfortran 11 is unsupported by this version\
  of FMS. Please use another compiler version])
