@@ -1,26 +1,18 @@
-name: Tag CI libFMS and AM4 regression
+name: Pull Request CI libFMS with intel18 and intel21
   
-on:
-   push:
-        tags:
-             - '*alpha*'
-             - '*beta*'
-   workflow_dispatch:
+on: pull_request 
 jobs:
    parallelWorks:
     runs-on: [self-hosted, pw-platform]
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 2
       matrix:
         include:
                 - runname: FMS with intel 18
                   runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/FMStestStartClusters.py azcluster_noaa
                 - runname: FMS with intel 2021 container
                   runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/FMSintel21StartClusters.py azcluster_noaa_two
-                - runname: AM4 regression
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel21StartClusters.py azcluster_noaa
-
     steps:
                 - name: FMS make check on paralellWorks
                   env:

@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2021.03.0-dev],
+  [2021.04.0-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -50,7 +50,7 @@ LT_INIT()
 # is, then disable building shared libraries.  Note, the user can still override
 # this by using --enable-shared when running the configure script.
 AS_IF([test x${CRAYPE_VERSION:+yes} = "xyes"],[
-  AS_IF([test x${CRAYPE_LINK_TYP} = "xstatic"],
+  AS_IF([test x${CRAYPE_LINK_TYPE} = "xstatic"],
         [AC_DISABLE_SHARED])])
 
 
