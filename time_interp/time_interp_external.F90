@@ -1097,7 +1097,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
         field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0
         deallocate(mask_out)
-        field%need_compute(ib, window_id) = .false.
      else
         if ( field%region_type .NE. NO_REGION ) then
            call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present")
@@ -1108,6 +1107,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      ! convert units
      where(field%mask(isw:iew,jsw:jew,:,ib)) field%data(isw:iew,jsw:jew,:,ib) = &
           field%data(isw:iew,jsw:jew,:,ib)*field%slope + field%intercept
+     field%need_compute(ib, window_id) = .false.
   endif
 
 end subroutine load_record

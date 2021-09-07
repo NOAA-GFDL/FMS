@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2021.03.0],
+  [2021.03.01],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -273,11 +273,11 @@ if test -n "$fc_version_info"; then
 fi
 
 # Check if gcc is 11.1 for class(*) select type bug
-AC_MSG_CHECKING([if gcc 11 is loaded])
-if [ test -n "`$FC --version | grep GNU | grep 11\..\..`" ]; then
+AC_MSG_CHECKING([if gcc 11.1.0 is loaded])
+if [ test -n "`$FC --version | grep GNU | grep 11\.1\..`" ]; then
   AC_MSG_RESULT([yes])
-  AC_MSG_ERROR([Compilation with gcc and gfortran 11 is unsupported by this version\
- of FMS. Please use another compiler version])
+  AC_MSG_ERROR([Compilation with gcc and gfortran 11.1.0 is unsupported \
+by this version of FMS due to a bug in the compiler. Please use a different version of gcc/gfortran.])
 else
   AC_MSG_RESULT([no])
 fi
