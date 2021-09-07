@@ -71,9 +71,6 @@
           verbose = flags.EQ.MPP_VERBOSE .OR. debug
       end if
 
-!set range of allowed fortran unit numbers: could be compiler-dependent (should not overlap stdin/out/err)
-      call mpp_set_unit_range( 103, maxunits )
-
       !--- namelist
       read (input_nml_file, mpp_io_nml, iostat=io_status)
       if (io_status > 0) then

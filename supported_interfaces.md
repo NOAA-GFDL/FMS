@@ -392,7 +392,6 @@ Additional information for this module and others can be found in the Doxygen ge
 - mpp_clock_id
 - mpp_clock_set_grain
 - mpp_record_timing_data
-- get_unit
 - read_ascii_file
 - read_input_nml
 - mpp_clock_begin
