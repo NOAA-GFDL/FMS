@@ -71,6 +71,9 @@
           verbose = flags.EQ.MPP_VERBOSE .OR. debug
       end if
 
+      unit_begin = 103
+      unit_end = maxunits
+
       !--- namelist
       read (input_nml_file, mpp_io_nml, iostat=io_status)
       if (io_status > 0) then
@@ -82,6 +85,7 @@
       write(outunit, mpp_io_nml)
       write(logunit, mpp_io_nml)
 
+      print *, 'outunit', outunit
 !--- check the deflate level, set deflate = 1 if deflate_level is greater than equal to 0
       if(deflate_level .GE. 0) deflate = 1
       if(deflate .NE. 0) then
@@ -161,7 +165,8 @@
       mpp_file(outunit)%opened = .TRUE.
       mpp_file(logunit)%opened = .TRUE.
       inunit  = stdin()  ; mpp_file(inunit)%opened  = .TRUE.
-      errunit = stderr() ; mpp_file(errunit)%opened = .TRUE.
+      errunit = stderr()
+      mpp_file(errunit)%opened = .TRUE.
 
       if( pe.EQ.mpp_root_pe() )then
           iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
