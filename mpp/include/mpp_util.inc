@@ -140,13 +140,10 @@
        inquire(unit=etc_unit, opened=opened )
        if( opened )then
           FLUSH(etc_unit)
-          print *, 'non-root, opened', etc_unit
        else
           open(newunit=etc_unit, status='UNKNOWN', file=trim(etcfile), position='APPEND', err=11 )
-          print *, 'non-root, not opened', etc_unit
        end if
        stdlog = etc_unit
-       print *, 'non-root, stdlog', stdlog
     end if
     return
 10  call mpp_error( FATAL, 'STDLOG: unable to open '//trim(configfile)//this_pe//'.' )
