@@ -210,7 +210,7 @@ private
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_pe
   public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
-  public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data
+  public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
   public :: get_ascii_file_num_lines, get_ascii_file_num_lines_and_length
   public :: mpp_record_time_start, mpp_record_time_end

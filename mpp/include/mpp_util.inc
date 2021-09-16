@@ -1083,6 +1083,28 @@ end function rarray_to_char
 
   !#####################################################################
 
+  integer function get_unit()
+
+    integer,save :: i
+    logical      :: l_open
+
+    call mpp_error(WARNING,'get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit')
+    do i=10,99
+       inquire(unit=i,opened=l_open)
+       if(.not.l_open)exit
+    end do
+
+    if(i==100)then
+       call mpp_error(FATAL,'Unable to get I/O unit')
+    else
+       get_unit = i
+    endif
+
+    return
+  end function get_unit
+
+  !#####################################################################
+
   subroutine sum_clock_data()
 
     integer :: i,j,k,ct,event_size,event_cnt
