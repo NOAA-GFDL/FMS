@@ -82,6 +82,9 @@
       write(outunit, mpp_io_nml)
       write(logunit, mpp_io_nml)
 
+      unit_begin = 103
+      unit_end = maxunits
+
 !--- check the deflate level, set deflate = 1 if deflate_level is greater than equal to 0
       if(deflate_level .GE. 0) deflate = 1
       if(deflate .NE. 0) then
