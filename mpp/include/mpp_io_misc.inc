@@ -157,7 +157,9 @@
       mpp_file(NULLUNIT)%opened = .TRUE.
       mpp_file(NULLUNIT)%valid  = .TRUE.
       mpp_file(NULLUNIT)%initialized = .TRUE.
-!declare the stdunits to be open
+!! Declare the stdunits to be open
+!! Because the stdunits are created with the newunit intrinsic function in some cases,
+!! only open up an mpp_file array for units that are within the allocated scope of mpp_file
       if (outunit > NULLUNIT .AND. outunit < 2*maxunits) mpp_file(outunit)%opened = .TRUE.
       if (logunit > NULLUNIT .AND. logunit < 2*maxunits) mpp_file(logunit)%opened = .TRUE.
       inunit  = stdin()
