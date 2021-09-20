@@ -267,7 +267,7 @@ module fms
                      mpp_pe, mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist, &
                      mpp_get_current_pelist, mpp_set_current_pelist, &
                      mpp_get_current_pelist_name, mpp_clock_id, mpp_clock_set_grain, &
-                     mpp_record_timing_data, read_ascii_file, read_input_nml, &
+                     mpp_record_timing_data, get_unit, read_ascii_file, read_input_nml, &
                      mpp_clock_begin, mpp_clock_end, get_ascii_file_num_lines, &
                      mpp_record_time_start, mpp_record_time_end, mpp_chksum, &
                      mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv, &
