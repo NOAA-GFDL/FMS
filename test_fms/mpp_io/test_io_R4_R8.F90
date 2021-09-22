@@ -37,10 +37,7 @@ program test_io_R4_R8
   use mpp_io_mod,      only : MPP_NETCDF, MPP_MULTI, mpp_get_atts, mpp_write, mpp_close
   use mpp_io_mod,      only : mpp_get_info, mpp_get_axes, mpp_get_fields, mpp_get_times
   use mpp_io_mod,      only : mpp_read, mpp_io_exit, MPP_APPEND
-
-#ifdef INTERNAL_FILE_NML
-  USE mpp_mod, ONLY: input_nml_file
-#endif
+  use mpp_mod,         only : input_nml_file
 
   implicit none
 
@@ -88,20 +85,7 @@ program test_io_R4_R8
   pe = mpp_pe()
   npes = mpp_npes()
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, test_mpp_io_R8_nml, iostat=io_status)
-#else
-  do
-     inquire( unit=unit, opened=opened )
-     if( .NOT.opened )exit
-     unit = unit + 1
-     if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
-  end do
-  open( unit=unit, file='input.nml', iostat=io_status)
-  read( unit,test_mpp_io_R8_nml, iostat=io_status )
-  close(unit)
-#endif
-
   if (io_status > 0) then
       call mpp_error(FATAL,'=>test_mpp_io_R8: Error reading input.nml')
   endif
@@ -163,7 +147,7 @@ program test_io_R4_R8
   type(atttype),          allocatable :: atts(:)
   type(fieldtype),        allocatable :: vars(:)
   type(axistype),         allocatable :: axes(:)
-  real(r8_kind),                   allocatable :: tstamp(:)
+  real,                   allocatable :: tstamp(:)
   real(r4_kind), dimension(:,:,:), allocatable  :: data4, gdata4, rdata4
   !--- determine the shift and symmetry according to type,
   select case(type)
@@ -350,7 +334,7 @@ program test_io_R4_R8
   type(atttype),          allocatable :: atts(:)
   type(fieldtype),        allocatable :: vars(:)
   type(axistype),         allocatable :: axes(:)
-  real(r8_kind),                   allocatable :: tstamp8(:)
+  real,                   allocatable :: tstamp(:)
   real(r8_kind), dimension(:,:,:), allocatable :: data8, gdata8, rdata8
   !--- determine the shift and symmetry according to type,
   select case(type)
@@ -473,11 +457,11 @@ program test_io_R4_R8
   allocate( atts(natt) )
   allocate( axes(ndim) )
   allocate( vars(nvar) )
-  allocate( tstamp8(ntime) )
+  allocate( tstamp(ntime) )
   call mpp_get_atts ( unit, atts(:) )
   call mpp_get_axes ( unit, axes(:) )
   call mpp_get_fields ( unit, vars(:) )
-  call mpp_get_times( unit, tstamp8(:) )
+  call mpp_get_times( unit, tstamp(:) )
 
   call mpp_get_atts(vars(1),name=varname)
 
@@ -493,7 +477,7 @@ program test_io_R4_R8
   end if
 
   call mpp_close(unit)
-  deallocate( atts, axes, vars, tstamp8 )
+  deallocate( atts, axes, vars, tstamp )
 
 !netCDF distributed read
   call mpp_sync()               !wait for previous write to complete
@@ -503,11 +487,11 @@ program test_io_R4_R8
   allocate( atts(natt) )
   allocate( axes(ndim) )
   allocate( vars(nvar) )
-  allocate( tstamp8(ntime) )
+  allocate( tstamp(ntime) )
   call mpp_get_atts ( unit, atts(:) )
   call mpp_get_axes ( unit, axes(:) )
   call mpp_get_fields ( unit, vars(:) )
-  call mpp_get_times( unit, tstamp8(:) )
+  call mpp_get_times( unit, tstamp(:) )
 
   call mpp_get_atts(vars(1),name=varname)
   rdata8 = 0
@@ -525,7 +509,7 @@ program test_io_R4_R8
            //trim(type) )
   end if
 
-  deallocate( atts, axes, vars, tstamp8 )
+  deallocate( atts, axes, vars, tstamp )
   deallocate( rdata8, gdata8, data8)
 
   end subroutine test_netcdf_io_R8
