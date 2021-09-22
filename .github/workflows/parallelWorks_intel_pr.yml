@@ -19,17 +19,17 @@ jobs:
                           RUNNAME: ${{ matrix.runname }}
                           RUNSCRIPT: ${{ matrix.runscript }}
                   run: $RUNSCRIPT
-   ShutDownCluster:
-    runs-on: [self-hosted, pw-platform]
-    if: always()
-    needs: [parallelWorks]
-    strategy:
-      matrix:
-        include:
-                - cluster: azcluster_noaa
-                - cluster: azcluster_noaa_two
-    steps:
-                - name: Turn off cluster
-                  env:
-                          CLUSTER: ${{ matrix.cluster }}
-                  run: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/stopClusters.py $CLUSTER
+#  ShutDownCluster:
+#   runs-on: [self-hosted, pw-platform]
+#   if: always()
+#   needs: [parallelWorks]
+#   strategy:
+#     matrix:
+#       include:
+#               - cluster: azcluster_noaa
+#               - cluster: azcluster_noaa_two
+#   steps:
+#               - name: Turn off cluster
+#                 env:
+#                         CLUSTER: ${{ matrix.cluster }}
+#                 run: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/stopClusters.py $CLUSTER
