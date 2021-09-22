@@ -89,9 +89,14 @@ setup_test 21 "Test 21: Add axis attributes"
 setup_test 22 "Test 22: Get 'nv' axis id"
 setup_test 23 "Test 23: Unstructured grid"
 
-echo "Test 24: Modified diag_table"
+echo "Test 24: Wildcard filenames"
 rm -f input.nml diag_table
 touch input.nml
 cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_24 diag_table
 run_test test_diag_manager_time 1
 
+echo "Test 25: Diurnal test"
+rm -f input.nml diag_table
+touch input.nml
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
+run_test test_diag_manager_time 1
