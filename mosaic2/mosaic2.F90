@@ -552,7 +552,7 @@ end function transfer_to_model_index
 
   end subroutine calc_mosaic_grid_area_r8
 
-  !> @brief r8_kind overload for @ref calc_mosaic_grid_area
+  !> @brief r8_kind overload for @ref calc_mosaic_grid_great_circle_area
   subroutine calc_mosaic_grid_great_circle_area_r8(lon, lat, area)
      real(r8_kind), dimension(:,:), intent(in)    :: lon
      real(r8_kind), dimension(:,:), intent(in)    :: lat

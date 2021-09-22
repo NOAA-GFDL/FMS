@@ -1460,7 +1460,7 @@ CONTAINS
   LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL(kind=8), INTENT(in), DIMENSION(:,:,:) :: field
+    REAL(r8_kind), INTENT(in), DIMENSION(:,:,:) :: field
     REAL, INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in

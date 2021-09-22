@@ -1437,31 +1437,10 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
         end do
         grid%is_latlon = .true.
      else
-        isd = grid%isd_me; ied = grid%ied_me
-        jsd = grid%jsd_me; jed = grid%jed_me
-        print *, mpp_pe(), isd, ied, jsd, jed
-        print *, mpp_pe(), grid%is_me, grid%ie_me, grid%js_me, grid%je_me
-
-        ! TODO these allocations fail, grid%geolon/lat are real(r8_kind)(:,:) pointers
-        !! try different ways of allocating/pointing
-        ! original allocations
-        !!allocate(grid%geolon(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
-        !!allocate(grid%geolat(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
-
-        !allocate(geolon(isd:ied,jsd:jed))
-        allocate(geolon(0:49,0:49))
-        allocate(geolat(0:49,0:49))
-        !allocate(geolat(isd:ied,jsd:jed))
-
-        !!print *, mpp_pe(), "allocated"
-
-        grid%geolon => geolon!(isd:ied,jsd:jed)
-        grid%geolat => geolat!(isd:ied,jsd:jed)
-
+        allocate(grid%geolon(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
+        allocate(grid%geolat(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
         grid%geolon = 1e10
-
         grid%geolat = 1e10
-
         !--- area_ocn_sphere, area_lnd_sphere, area_atm_sphere is not been defined.
         do j = grid%js_me,grid%je_me
            do i = grid%is_me,grid%ie_me
@@ -1473,7 +1452,6 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
         call mpp_update_domains(grid%geolat, grid%domain)
         grid%is_latlon = .false.
      end if
-     call mpp_sync()
      deallocate(tmpx, tmpy)
   end if
 
