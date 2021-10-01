@@ -209,6 +209,7 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
+public :: fms_c2f_string
 !public from the old fms_io but not exists here
 public :: string
 
@@ -811,7 +812,8 @@ end function monotonic_array
 
   end function string_from_real
 
-!> \brief Converts a C-string to a fortran string with type character.
+!> \brief Converts a C-string returned from a TYPE(C_PTR) function to
+!! a fortran string with type character.
 function fms_c2f_string (cstring) result(fstring)
  type (c_ptr) :: cstring
  character(len=:), allocatable :: fstring    !< The fortran string returned
