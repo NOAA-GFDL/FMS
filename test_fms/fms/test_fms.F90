@@ -40,8 +40,8 @@ program test_fms
 !Test the C string to F string function
  test = "                "
  answer = '100'
- Cptr = strPoint
- test = fms_c2f_string(Cptr)
+! Cptr = strPoint()
+ test = fms_c2f_string(strPoint())
 
  write (6,*) "Cstring test = ", trim(test)
  if (trim(answer) .eq. trim(test)) then
