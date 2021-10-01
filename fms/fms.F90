@@ -165,6 +165,7 @@ use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
 
+use, intrinsic :: iso_c_binding
 
 implicit none
 private
@@ -298,6 +299,19 @@ interface string
    module procedure string_from_integer
    module procedure string_from_real
 end interface
+!> C functions
+  interface
+    !> @brief Finds the length of a C-string
+    integer(c_size_t) pure function c_strlen(s) bind(c,name="strlen")
+      import c_size_t, c_ptr
+      type(c_ptr), intent(in), value :: s !< A C-string whose size is desired
+    end function
+    !> @brief Frees a C pointer
+    subroutine c_free(ptr) bind(c,name="free")
+      import c_ptr
+      type(c_ptr), value :: ptr !< A C-pointer to free
+    end subroutine
+  end interface
 
 !> @addtogroup fms_mod
 !> @{
@@ -797,6 +811,26 @@ end function monotonic_array
 
   end function string_from_real
 
+!> \brief Converts a C-string to a fortran string with type character.
+function fms_c2f_string (cstring) result(fstring)
+ type (c_ptr) :: cstring
+ character(len=:), allocatable :: fstring    !< The fortran string returned
+ character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
+ integer(c_size_t) :: length !< The string length
+ integer :: i
+
+  length = c_strlen(cstring)
+  allocate (character(len=length, kind=c_char) :: string_buffer)
+    block
+      character(len=length,kind=c_char), pointer :: s
+      call c_f_pointer(cstring,s)  ! Recovers a view of the C string
+      string_buffer = s                   ! Copies the string contents
+    end block
+
+ allocate(character(len=length) :: fstring) !> Set the length of fstring
+fstring = string_buffer
+
+end function fms_c2f_string
 !#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and
 !!  tag name.
