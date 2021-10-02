@@ -16,11 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup axis_utils_mod axis_utils_mod
+!> @ingroup axis_utils
+!> @brief A set of utilities for manipulating axes and extracting axis attributes,
+!> @author M.J. Harrison
 
 !> @file
-!! @brief A set of utilities for manipulating axes and extracting axis attributes
-!! @author M.J. Harrison
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref axis_utils_mod
+
+!> @addtogroup axis_utils_mod
+!> @{
 module axis_utils_mod
   use netcdf
   use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
@@ -44,19 +49,32 @@ module axis_utils_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!> @}
+
+  !> Perform 1D interpolation between grids.
+  !!
+  !> Data and grids can have 1, 2, or 3 dimensions.
+  !! @param grid1
+  !! @param grid2
+  !! @param data1 Data to interpolate
+  !! @param [inout] data2 Interpolated data
+  !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
+  !! @ingroup axis_utils_mod
   interface interp_1d
      module procedure interp_1d_1d
      module procedure interp_1d_2d
      module procedure interp_1d_3d
   end interface
+!> @addtogroup axis_utils_mod
+!> @{
 
 contains
 
   !> @brief Returns X,Y,Z or T cartesian attribute
   subroutine get_axis_cart(axis, cart)
 
-    type(axistype), intent(in) :: axis
-    character(len=1), intent(out) :: cart
+    type(axistype), intent(in) :: axis !< axis to get data from
+    character(len=1), intent(out) :: cart !< Returned cartesian axis
     character(len=1) :: axis_cart
     character(len=16), dimension(2) :: lon_names, lat_names
     character(len=16), dimension(3) :: z_names
@@ -177,8 +195,9 @@ contains
     return
   end subroutine get_axis_bounds
 
-  !> @brief Returns true if axis has the modulo attribute
-  !! @return logical get_axis_modulo
+  !> @brief Checks if 'modulo' variable exists for a given axis.
+  !!
+  !> @return true if modulo variable exists in fileobj for the given axis name.
   function get_axis_modulo(axis)
 
     type(axistype) :: axis
@@ -350,44 +369,41 @@ contains
     return
   end subroutine tranlon
 
-  !> @return real frac_index
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!   be the nearest data point to 0.0
+  !!
+  !!   @return real frac_index
   function frac_index (value, array)
-    !=======================================================================
-    !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
-    !
-    !=======================================================================
     integer :: ia, i, ii, unit
     real :: value !< arbitrary data...same units as elements in "array"
     real :: frac_index
@@ -427,43 +443,44 @@ contains
   end function frac_index
 
   !> @brief Return index of nearest point along axis
+  !!
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!     ia     = dimension of "array"
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!     be the nearest data point to 0.0
   !! @return integer nearest_index
   function nearest_index (value, array)
     !=======================================================================
     !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !     ia     = dimension of "array"
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
     !
     !=======================================================================
 
@@ -773,3 +790,5 @@ contains
   end subroutine find_index
 
 end module axis_utils_mod
+!> @}
+! close documentation grouping

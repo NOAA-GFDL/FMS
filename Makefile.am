@@ -40,7 +40,9 @@ SUBDIRS = \
   mpp \
   memutils \
   fms2_io \
-  fms affinity \
+  mosaic2 \
+  fms \
+  affinity \
   mosaic \
   time_manager \
   axis_utils \
@@ -63,6 +65,7 @@ SUBDIRS = \
   tracer_manager \
   sat_vapor_pres \
   random_numbers \
+  . \
   libFMS \
   test_fms \
   ${DOCS}
@@ -71,6 +74,19 @@ include_HEADERS = include/file_version.h include/fms_platform.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = FMS.pc
+
+## Build libFMS module
+AM_CPPFLAGS = -I${top_srcdir}/include -I${top_srcdir}/mpp/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
+
+noinst_LTLIBRARIES = libFMS_mod.la
+libFMS_mod_la_SOURCES = libFMS.F90
+
+fms.$(FC_MODEXT): .mods/*_mod.$(FC_MODEXT) 
+
+nodist_include_HEADERS = libFMS_mod.la 
+
+include $(top_srcdir)/mkmods.mk
 
 # Prepare CMake files for installation.  This is to help
 # packages build using CMake to more easily use the libFMS

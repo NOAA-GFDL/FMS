@@ -26,6 +26,12 @@
 #ifdef use_netCDF
 #include <netcdf.h>
 #endif
+
+/** \file
+ *  \ingroup mosaic
+ *  \brief Support for reading mosaic netcdf grid files.
+ */
+
 /*********************************************************************
     void netcdf_error( int status )
     status is the returning value of netcdf call. this routine will

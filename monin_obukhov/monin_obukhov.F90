@@ -16,22 +16,18 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup monin_obukhov_mod monin_obukhov_mod
+!> @ingroup monin_obukhov
+!> @brief Routines for computing surface drag coefficients
+!! from data at the lowest model level
+!! and for computing the profile of fields
+!! between the lowest model level and the ground
+!! using Monin-Obukhov scaling
+
+!> @file
+!> @brief File for @ref monin_obukhov_mod
 
 module monin_obukhov_mod
-
-
-!=======================================================================
-!
-!                         MONIN-OBUKHOV MODULE
-!
-!          Routines for computing surface drag coefficients
-!                 from data at the lowest model level
-!              and for computing the profile of fields
-!           between the lowest model level and the ground
-!                  using Monin-Obukhov scaling
-!
-!=======================================================================
-
 
 use constants_mod, only: grav, vonkarm
 use mpp_mod,       only: input_nml_file
@@ -52,26 +48,34 @@ private
  public :: stable_mix
 !=======================================================================
 
+!> @brief Compute surface drag coefficients
+!> @ingroup monin_obukhov_mod
 interface mo_drag
     module procedure  mo_drag_0d, mo_drag_1d, mo_drag_2d
 end interface
 
 
+!> @ingroup monin_obukhov_mod
 interface mo_profile
     module procedure  mo_profile_0d,   mo_profile_1d,   mo_profile_2d, &
                       mo_profile_0d_n, mo_profile_1d_n, mo_profile_2d_n
 end interface
 
+!> @ingroup monin_obukhov_mod
 interface mo_diff
     module procedure  mo_diff_0d_n, mo_diff_0d_1, &
                       mo_diff_1d_n, mo_diff_1d_1, &
                       mo_diff_2d_n, mo_diff_2d_1
 end interface
 
+!> @ingroup monin_obukhov_mod
 interface stable_mix
     module procedure  stable_mix_0d, stable_mix_1d, &
                       stable_mix_2d, stable_mix_3d
 end interface
+
+!> @addtogroup monin_obukhov_mod
+!> @{
 
 !-----------------------------------------------------------------------
 ! version number of this module
@@ -993,3 +997,5 @@ end subroutine stable_mix_0d
 !=======================================================================
 
 end module monin_obukhov_mod
+!> @}
+! close documentation grouping

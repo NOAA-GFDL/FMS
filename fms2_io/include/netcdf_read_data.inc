@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms2_io
 
 !> @brief Read in data from a variable in a netcdf file.
 subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
@@ -45,6 +47,9 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(:), allocatable :: dimsizes
   integer :: i
   character(len=1024), dimension(1) :: buf1d
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_read_data_0d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -56,12 +61,12 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                              broadcast=bcast)
     if (unlim_dim_index .ne. 1) then
-      call error("unlimited dimension must be the slowest varying dimension.")
+      call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c)
@@ -84,11 +89,11 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
           endif
           dimsizes(2) = 1
         elseif (ndims .gt. 2) then
-          call error("Only scalar and 1d string values are currently supported.")
+          call error("Only scalar and 1d string values are currently supported: "//trim(append_error_msg))
         endif
         err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
         if (len(buf) .lt. dimsizes(1)) then
-          call error("character buffer is too small; increase length.")
+          call error("character buffer is too small; increase length: "//trim(append_error_msg))
         endif
         buf = ""
         do i = 1, dimsizes(1)
@@ -100,9 +105,9 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
         deallocate(charbuf)
         deallocate(dimsizes)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (bcast) then
     select type(buf)
@@ -119,7 +124,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
         call mpp_broadcast(buf1d, len(buf1d(1)), fileobj%io_root, pelist=fileobj%pelist)
         call string_copy(buf, buf1d(1))
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
   endif
 end subroutine netcdf_read_data_0d
@@ -163,6 +168,9 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
   character(len=1024) :: sbuf
   integer :: i
   integer :: j
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_read_data_1d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -183,12 +191,12 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                              broadcast=bcast)
     if (unlim_dim_index .ne. 2) then
-      call error("unlimited dimension must be the slowest varying dimension.")
+      call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -211,10 +219,10 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
         charbuf(:,:) = ""
         err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
         if (len(buf(1)) .lt. dimsizes(1)) then
-          call error("character buffer is too small; increase length.")
+          call error("character buffer is too small; increase length: "//trim(append_error_msg))
         endif
         if (size(buf) .lt. dimsizes(2)) then
-          call error("incorrect buffer array size.")
+          call error("incorrect buffer array size:: "//trim(append_error_msg))
         endif
         do i = start(2), start(2)+dimsizes(2)-1
           sbuf = ""
@@ -228,9 +236,9 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
         enddo
         deallocate(charbuf)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (bcast) then
     select type(buf)
@@ -245,7 +253,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (character(len=*))
         call mpp_broadcast(buf, len(buf(1)), fileobj%io_root, pelist=fileobj%pelist)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
   endif
 end subroutine netcdf_read_data_1d
@@ -282,6 +290,9 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(3) :: c
   integer, dimension(3) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_read_data_2d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -302,12 +313,12 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                              broadcast=bcast)
     if (unlim_dim_index .ne. 3) then
-      call error("unlimited dimension must be the slowest varying dimension.")
+      call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -318,9 +329,9 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (bcast) then
     select type(buf)
@@ -333,7 +344,7 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
   endif
 end subroutine netcdf_read_data_2d
@@ -370,6 +381,9 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(4) :: c
   integer, dimension(4) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_read_data_3d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -390,12 +404,12 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                              broadcast=bcast)
     if (unlim_dim_index .ne. 4) then
-      call error("unlimited dimension must be the slowest varying dimension.")
+      call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -406,9 +420,9 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (bcast) then
     select type(buf)
@@ -421,7 +435,7 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
   endif
 end subroutine netcdf_read_data_3d
@@ -458,6 +472,9 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(5) :: c
   integer, dimension(5) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_read_data_4d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -478,12 +495,12 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                              broadcast=bcast)
     if (unlim_dim_index .ne. 5) then
-      call error("unlimited dimension must be the slowest varying dimension.")
+      call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -494,9 +511,9 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (bcast) then
     select type(buf)
@@ -509,7 +526,7 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
   endif
 end subroutine netcdf_read_data_4d
@@ -546,6 +563,9 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(6) :: c
   integer, dimension(6) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_read_data_5d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -566,12 +586,12 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                              broadcast=bcast)
     if (unlim_dim_index .ne. 6) then
-      call error("unlimited dimension must be the slowest varying dimension.")
+      call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -582,9 +602,9 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (bcast) then
     select type(buf)
@@ -597,7 +617,7 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r8_kind))
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
   endif
 end subroutine netcdf_read_data_5d

@@ -16,32 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-
-!> @file
+!> @defgroup diag_util_mod diag_util_mod
+!> @ingroup diag_manager
 !! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
 !! @author Seth Underwood
-!! @email gfdl.climate.model.info@noaa.gov
+
+!> @file
+!> @brief File for @ref diag_util_mod
+
 MODULE diag_util_mod
 
 use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
-  ! <CONTACT EMAIL="seth.underwood@noaa.gov">
-  !   Seth Underwood
-  ! </CONTACT>
-  ! <HISTORY SRC="http://cobweb.gfdl.noaa.gov/fms-cgi-bin/viewcvs/FMS/shared/diag_manager/"/>
 
-  ! <OVERVIEW>
-  !   Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
-  ! </OVERVIEW>
-
-  ! <DESCRIPTION>
-  !   <TT>diag_util_mod</TT> is a set of Fortran functions and subroutines used by the <TT>diag_manager_mod</TT>.
-  ! </DESCRIPTION>
-
-  ! <INFO>
   !   <FUTURE>
   !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT> and
   !     <TT>check_bounds_are_exact_dynamic</TT>.
@@ -52,7 +41,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   !       END INTERFACE check_bounds_are_exact
   !     </PRE>
   !   </FUTURE>
-  ! </INFO>
+
   USE diag_data_mod, ONLY: output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
        & VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, EVERY_TIME,&
        & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, base_time,&
@@ -70,13 +59,13 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
-  USE diag_output_mod, ONLY: done_meta_data_use_mpp_io !<use_mpp_io=.true.
   USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io use_mpp_io=.false.
-  USE diag_output_mod, ONLY: diag_field_out !<mpp_io use_mpp_io = .true.
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
-  USE fms_io_mod, ONLY: get_tile_string, return_domain, string, get_instance_filename
+  USE fms_io_mod, ONLY: get_tile_string, return_domain, string
+  USE fms2_io_mod, ONLY: fms2_io_get_instance_filename => get_instance_filename
+  USE fms_io_mod, ONLY: mpp_io_get_instance_filename => get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
@@ -86,7 +75,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
   USE mpp_io_mod, ONLY: mpp_close
   USE mpp_mod, ONLY: mpp_npes
-  USE fms_io_mod, ONLY: get_instance_filename, get_mosaic_tile_file_ug
+  USE fms_io_mod, ONLY: get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 use fms2_io_mod
 #ifdef use_netCDF
@@ -101,18 +90,23 @@ use fms2_io_mod
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
        & prepend_attribute, attribute_init, diag_util_init
 
-  !> @brief prepend a value to a string attribute in the output field or output file
+
+  !> @brief Prepend a value to a string attribute in the output field or output file.
+  !> @ingroup diag_util_mod
   INTERFACE prepend_attribute
      MODULE PROCEDURE prepend_attribute_field
      MODULE PROCEDURE prepend_attribute_file
   END INTERFACE prepend_attribute
 
-  !> @brief Allocates the atttype in out_file
+  !> @brief Allocates the atttype in out_file.
+  !> @ingroup diag_util_mod
   INTERFACE attribute_init
      MODULE PROCEDURE attribute_init_field
      MODULE PROCEDURE attribute_init_file
   END INTERFACE attribute_init
-  ! </INTERFACE>
+
+!> @addtogroup diag_util_mod
+!> @{
 
   ! Include variable "version" to be written to log file.
 #include <file_version.h>
@@ -546,8 +540,8 @@ CONTAINS
 
   !> @brief Find index <TT>i</TT> of array such that <TT>array(i)</TT> is closest to number.
   INTEGER FUNCTION get_index(number, array)
-    REAL, INTENT(in) :: number
-    REAL, INTENT(in), DIMENSION(:) :: array
+    REAL, INTENT(in) :: number !<
+    REAL, INTENT(in), DIMENSION(:) :: array !<
 
     INTEGER :: i, n
     LOGICAL :: found
@@ -1530,11 +1524,10 @@ CONTAINS
   END SUBROUTINE init_output_field
 
   !> @brief Open file for output, and write the meta data.
-  SUBROUTINE opening_file(file, time, use_mpp_io, filename_time)
+  SUBROUTINE opening_file(file, time, filename_time)
     ! WARNING: Assumes that all data structures are fully initialized
     INTEGER, INTENT(in) :: file !< File ID.
     TYPE(time_type), INTENT(in) :: time !< Time for the file time stamp
-    logical :: use_mpp_io !< controls which IO is used for output
     TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
@@ -1601,7 +1594,7 @@ CONTAINS
 
     ! Add ensemble ID to filename
     fname=base_name
-    call get_instance_filename(fname, base_name)
+    call fms2_io_get_instance_filename(fname, base_name)
 
     ! Set the filename
     filename = TRIM(base_name)//TRIM(suffix)
@@ -1685,25 +1678,14 @@ CONTAINS
           CALL get_mosaic_tile_file_ug(fname,filename,domainU)
     ENDIF
     IF ( allocated(files(file)%attributes) ) THEN
-       if (.not.use_mpp_io) then
                 CALL diag_output_init(filename, files(file)%format, global_descriptor,&
                 & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
                 & fileobj(file),fileobjU(file), fileobjND(file), fnum_for_domain(file),&
                 & attributes=files(file)%attributes(1:files(file)%num_attributes))
-       else
-                CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-                & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
-                & attributes=files(file)%attributes(1:files(file)%num_attributes))
-       endif
     ELSE
-       if (.not.use_mpp_io) then
                 CALL diag_output_init(filename, files(file)%format, global_descriptor,&
                 & files(file)%file_unit, all_scalar_or_1d, domain2,domainU, &
                 & fileobj(file),fileobjU(file),fileobjND(file),fnum_for_domain(file))
-       else
-                CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-                & files(file)%file_unit, all_scalar_or_1d, domain2,domainU)
-       endif
     END IF
     !> update fnum_for_domain with the correct domain
     files(file)%bytes_written = 0
@@ -1773,7 +1755,6 @@ CONTAINS
        END IF
 
        axes(num_axes + 1) = files(file)%time_axis_id
-      if (.not. use_mpp_io) then
 !> Allocate the is_time_axis_registered field and set it to false for the first trip
        if (.not. allocated(files(file)%is_time_axis_registered)) then
           allocate(files(file)%is_time_axis_registered)
@@ -1820,22 +1801,6 @@ CONTAINS
              DEALLOCATE(axesc)
           ENDIF
        ENDDO
-      else !< use_mpp_io
-       CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1), time_ops)
-       IF ( time_ops ) THEN
-          axes(num_axes + 2) = files(file)%time_bounds_id
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2))
-       END IF
-       ! write metadata for axes used  in compression-by-gathering, e.g. for unstructured
-       ! grid
-       DO k = 1, num_axes
-          IF (axis_is_compressed(axes(k))) THEN
-             CALL get_compressed_axes_ids(axes(k), axesc) ! returns allocatable array
-             CALL write_axis_meta_data(files(file)%file_unit, axesc)
-             DEALLOCATE(axesc)
-          ENDIF
-       ENDDO
-      endif !< use_mpp_io
     END DO
 
     ! Looking for the first NON-static field in a file
@@ -1907,7 +1872,6 @@ CONTAINS
        ELSE
           avg = " "
        END IF
-     if (.not.use_mpp_io) then
 !> Use the correct file object
        if (fnum_for_domain(file) == "2d") then
           fileob => fileobj (file)
@@ -1979,66 +1943,7 @@ CONTAINS
 
           END IF
        END IF
-     else !< use_mpp_io
-       IF ( input_fields(input_field_num)%missing_value_present ) THEN
-          IF ( LEN_TRIM(input_fields(input_field_num)%interp_method) > 0 ) THEN
-             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
-                  & output_fields(field_num)%output_name, axes(1:num_axes),&
-                  & input_fields(input_field_num)%units,&
-                  & input_fields(input_field_num)%long_name,&
-                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                  & input_fields(input_field_num)%missing_value, avg_name = avg,&
-                  & time_method=output_fields(field_num)%time_method,&
-                  & standard_name = input_fields(input_field_num)%standard_name,&
-                  & interp_method = input_fields(input_field_num)%interp_method,&
-                  & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
-          ELSE
-             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
-                  & output_fields(field_num)%output_name, axes(1:num_axes),&
-                  & input_fields(input_field_num)%units,&
-                  & input_fields(input_field_num)%long_name,&
-                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                  & input_fields(input_field_num)%missing_value, avg_name = avg,&
-                  & time_method=output_fields(field_num)%time_method,&
-                  & standard_name = input_fields(input_field_num)%standard_name,&
-                  & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
-          END IF
-          ! NEED TO TAKE CARE OF TIME AVERAGING INFO TOO BOTH CASES
-       ELSE
-          IF ( LEN_TRIM(input_fields(input_field_num)%interp_method) > 0 ) THEN
-             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
-                  & output_fields(field_num)%output_name, axes(1:num_axes),&
-                  & input_fields(input_field_num)%units,&
-                  & input_fields(input_field_num)%long_name,&
-                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                  & avg_name = avg,&
-                  & time_method=output_fields(field_num)%time_method,&
-                  & standard_name = input_fields(input_field_num)%standard_name,&
-                  & interp_method = input_fields(input_field_num)%interp_method,&
-                  & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
-          ELSE
-             output_fields(field_num)%f_type = write_field_meta_data(files(file)%file_unit,&
-                  & output_fields(field_num)%output_name, axes(1:num_axes),&
-                  & input_fields(input_field_num)%units,&
-                  & input_fields(input_field_num)%long_name,&
-                  & input_fields(input_field_num)%range, output_fields(field_num)%pack,&
-                  & avg_name = avg,&
-                  & time_method=output_fields(field_num)%time_method,&
-                  & standard_name = input_fields(input_field_num)%standard_name,&
-                  & attributes=output_fields(field_num)%attributes,&
-                  & num_attributes=output_fields(field_num)%num_attributes,&
-                  & use_UGdomain=files(file)%use_domainUG)
-          END IF
-       END IF
-     endif !<use_mpp_io
     END DO nfields_loop
-   if (.not. use_mpp_io) then
     ! If any of the fields in the file are time averaged, need to output the axes
     ! Use double precision since time axis is double precision
     IF ( time_ops ) THEN
@@ -2081,45 +1986,6 @@ CONTAINS
     END IF
     ! Let lower levels know that all meta data has been sent
     call done_meta_data(files(file)%file_unit)
-   else !< use_mpp_io
-    ! If any of the fields in the file are time averaged, need to output the axes
-    ! Use double precision since time axis is double precision
-    IF ( time_ops ) THEN
-       time_axis_id(1) = files(file)%time_axis_id
-       files(file)%f_avg_start = write_field_meta_data(files(file)%file_unit,&
-            & avg_name // '_T1', time_axis_id, time_units,&
-            & "Start time for average period", pack=pack_size)
-       files(file)%f_avg_end = write_field_meta_data(files(file)%file_unit,&
-            & avg_name // '_T2', time_axis_id, time_units,&
-            & "End time for average period", pack=pack_size)
-       files(file)%f_avg_nitems = write_field_meta_data(files(file)%file_unit,&
-            & avg_name // '_DT', time_axis_id,&
-            & TRIM(time_unit_list(files(file)%time_units)),&
-            & "Length of average period", pack=pack_size)
-    END IF
-
-    IF ( time_ops ) THEN
-       time_axis_id(1) = files(file)%time_axis_id
-       time_bounds_id(1) = files(file)%time_bounds_id
-       CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
-       CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
-       IF ( do_cf_compliance() ) THEN
-          ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
-          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size)
-       ELSE
-          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & TRIM(time_unit_list(files(file)%time_units)),&
-               & TRIM(time_name)//' axis boundaries', pack=pack_size)
-       END IF
-    END IF
-    ! Let lower levels know that all meta data has been sent
-    CALL done_meta_data_use_mpp_io(files(file)%file_unit)
-   endif !< use_mpp_io
 
     IF( aux_present .AND. .NOT.match_aux_name ) THEN
        ! <ERROR STATUS="WARNING">
@@ -2138,10 +2004,8 @@ CONTAINS
                   &'one axis has required fields ('//trim(req_fields)//') but the '// &
                   &'corresponding fields are NOT found in file '//TRIM(files(file)%name), FATAL)
     END IF
-   if (.not. use_mpp_io) then
     ! Clean up pointer
     if (associated(fileob)) nullify(fileob)
-   endif !< use_mpp_io
   END SUBROUTINE opening_file
 
   !> @brief This function determines a string based on current time.
@@ -2334,27 +2198,19 @@ CONTAINS
   END FUNCTION get_date_dif
 
   !> @brief Write data out to file, and if necessary flush the buffers.
-  SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in, use_mpp_io_arg, filename_time)
+  SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in, filename_time)
     INTEGER, INTENT(in) :: file !< File ID.
     INTEGER, INTENT(in) :: field !< Field ID.
     REAL, DIMENSION(:,:,:,:), INTENT(inout) :: dat !< Data to write out.
     TYPE(time_type), INTENT(in) :: time !< Current model time.
     LOGICAL, OPTIONAL, INTENT(in):: final_call_in !< <TT>.TRUE.</TT> if this is the last write for file.
     LOGICAL, OPTIONAL, INTENT(in):: static_write_in !< <TT>.TRUE.</TT> if static fields are to be written to file.
-    logical,optional,intent(in) :: use_mpp_io_arg !< Switch for which IO to use for outputting data
     type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     LOGICAL :: final_call, do_write, static_write
     INTEGER :: i, num
     REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
-    LOGICAL :: use_mpp_io
 
-    if (present(use_mpp_io_arg)) then
-        use_mpp_io = use_mpp_io_arg
-    else
-        call error_mesg("diag_util_mod::diag_data_out",&
-        "diag_data_out must be called with the argument use_mpp_io_arg",FATAL)
-    endif
     do_write = .TRUE.
     final_call = .FALSE.
     IF ( PRESENT(final_call_in) ) final_call = final_call_in
@@ -2365,9 +2221,8 @@ CONTAINS
 
     ! get file_unit, open new file and close curent file if necessary
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) &
-       CALL check_and_open(file, time, do_write, use_mpp_io, filename_time=filename_time)
+       CALL check_and_open(file, time, do_write, filename_time=filename_time)
     IF ( .NOT.do_write ) RETURN  ! no need to write data
-   if( .not. use_mpp_io) then
 !> Set up the time index and write the correct time value to the time array
     if (dif > files(file)%rtime_current) then
      files(file)%time_index = files(file)%time_index + 1
@@ -2436,44 +2291,6 @@ CONTAINS
           END IF
        END IF
     END DO
-   else !< use_mpp_io
-    CALL diag_field_out(files(file)%file_unit, output_fields(field)%f_type, dat, dif)
-    ! record number of bytes written to this file
-    files(file)%bytes_written = files(file)%bytes_written +&
-         & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)
-    IF ( .NOT.output_fields(field)%written_once ) output_fields(field)%written_once = .TRUE.
-    ! *** inserted this line because start_dif < 0 for static fields ***
-    IF ( .NOT.output_fields(field)%static ) THEN
-       start_dif = get_date_dif(output_fields(field)%last_output, base_time,files(file)%time_units)
-       IF ( .NOT.mix_snapshot_average_fields ) THEN
-          end_dif = get_date_dif(output_fields(field)%next_output, base_time, files(file)%time_units)
-       ELSE
-          end_dif = dif
-       END IF
-    END IF
-
-    ! Need to write average axes out;
-    DO i = 1, files(file)%num_fields
-       num = files(file)%fields(i)
-       IF ( output_fields(num)%time_ops .AND. &
-            input_fields(output_fields(num)%input_field)%register) THEN
-          IF ( num == field ) THEN
-             ! Output the axes if this is first time-averaged field
-             time_data(1, 1, 1, 1) = start_dif
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_start, time_data(1:1,:,:,:), dif)
-             time_data(2, 1, 1, 1) = end_dif
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_end, time_data(2:2,:,:,:), dif)
-             ! Compute the length of the average
-             dt_time(1, 1, 1, 1) = end_dif - start_dif
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_avg_nitems, dt_time(1:1,:,:,:), dif)
-
-             ! Include boundary variable for CF compliance
-             CALL diag_field_out(files(file)%file_unit, files(file)%f_bounds, time_data(1:2,:,:,:), dif)
-             EXIT
-          END IF
-       END IF
-    END DO
-   endif !< use_mpp_io
 
     ! If write time is greater (equal for the last call) than last_flush for this file, flush it
     IF ( final_call ) THEN
@@ -2491,25 +2308,24 @@ CONTAINS
   !! @details Checks if it is time to open a new file. If yes, it first closes the
   !!     current file, opens a new file and returns file_unit
   !!     previous diag_manager_end is replaced by closing_file and output_setup by opening_file.
-  SUBROUTINE check_and_open(file, time, do_write, use_mpp_io, filename_time)
+  SUBROUTINE check_and_open(file, time, do_write, filename_time)
     INTEGER, INTENT(in) :: file !<File ID.
     TYPE(time_type), INTENT(in) :: time !< Current model time.
     LOGICAL, INTENT(out) :: do_write !< <TT>.TRUE.</TT> if file is expecting more data to write,
                                      !! <TT>.FALSE.</TT> otherwise.
-    LOGICAL, INTENT(in) :: use_mpp_io !< true=mpp_io, false=fms2_io
     TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file
-          CALL opening_file(file, time, use_mpp_io, filename_time=filename_time)
+          CALL opening_file(file, time, filename_time=filename_time)
           do_write = .TRUE.
        ELSE
           do_write = .TRUE.
           IF ( time > files(file)%close_time .AND. time < files(file)%next_open ) THEN
              do_write = .FALSE. ! file still open but receives NO MORE data
           ELSE IF ( time > files(file)%next_open ) THEN ! need to close current file and open a new one
-             CALL write_static(file, use_mpp_io)  ! write all static fields and close this file
-             CALL opening_file(file, time, use_mpp_io, filename_time=filename_time)
+             CALL write_static(file)  ! write all static fields and close this file
+             CALL opening_file(file, time, filename_time=filename_time)
              files(file)%time_index = 0 !< Reset the number of times in the files back to 0
              files(file)%start_time = files(file)%next_open
              files(file)%close_time =&
@@ -2533,10 +2349,8 @@ CONTAINS
   END SUBROUTINE check_and_open
 
   !> @brief Output all static fields in this file
-  SUBROUTINE write_static(file, use_mpp_io)
+  SUBROUTINE write_static(file)
     INTEGER, INTENT(in) :: file !< File ID.
-    logical :: use_mpp_io !< Switch to select which IO is used to output history files
-
     INTEGER :: j, i, input_num
 
     DO j = 1, files(file)%num_fields
@@ -2547,9 +2361,8 @@ CONTAINS
        IF ( output_fields(i)%local_output .AND. .NOT. output_fields(i)%need_compute) CYCLE
        ! only output static fields here
        IF ( .NOT.output_fields(i)%static ) CYCLE
-       CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE., use_mpp_io_arg=use_mpp_io)
+       CALL diag_data_out(file, i, output_fields(i)%buffer, files(file)%last_flush, .TRUE., .TRUE.)
     END DO
-   if (.not. use_mpp_io) then
 !! New FMS_IO close
       ! File is stil open.  This is to protect when the diag_table has no Fields
       ! going to this file, and it was never opened (b/c diag_data_out was not
@@ -2564,16 +2377,6 @@ CONTAINS
           if (check_if_open(fileobjU(file))) call close_file (fileobjU(file))
       endif
       files(file)%file_unit = -1
-   else !< use_mpp_io
-    ! Close up this file
-    IF ( files(file)%file_unit.NE.-1 ) then
-      ! File is stil open.  This is to protect when the diag_table has no Fields
-      ! going to this file, and it was never opened (b/c diag_data_out was not
-      ! called)
-      CALL mpp_close(files(file)%file_unit)
-      files(file)%file_unit = -1
-    END IF
-   endif  !< use_mpp_io
   END SUBROUTINE write_static
 
   !> @brief Checks to see if <TT>output_name</TT> and <TT>output_file</TT> are unique in <TT>output_fields</TT>.
@@ -2837,5 +2640,7 @@ CONTAINS
        out_file%attributes(this_attribute)%len = length
     END IF
   END SUBROUTINE prepend_attribute_file
-  ! </SUBROUTINE>
+
 END MODULE diag_util_mod
+!> @}
+! close documentation grouping

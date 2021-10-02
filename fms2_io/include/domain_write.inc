@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @ingroup fms_netcdf_domain_io_mod
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have
 !!        the I/O root write out the data that spans the "global" domain.
@@ -35,13 +37,9 @@ subroutine domain_write_0d(fileobj, variable_name, vdata, unlim_dim_level, corne
                                           !! where the data
                                           !! will be written to.
 
-  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true.)) then
-    call compressed_write(fileobj, variable_name, vdata, &
+  call compressed_write(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner)
-    return
-  else
-    call error("this branch should never be reached.")
-  endif
+
 end subroutine domain_write_0d
 
 
@@ -68,14 +66,10 @@ subroutine domain_write_1d(fileobj, variable_name, vdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
-  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true.)) then
-    call compressed_write(fileobj, variable_name, vdata, &
+  call compressed_write(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths)
-    return
-  else
-    call error("this branch should never be reached.")
-  endif
+
 end subroutine domain_write_1d
 
 
@@ -150,7 +144,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -204,7 +198,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported type.")
+      call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -367,7 +361,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported type.")
+        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
   endif
 end subroutine domain_write_2d
@@ -444,7 +438,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -498,7 +492,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported type.")
+        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -661,7 +655,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported type.")
+        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
   endif
 end subroutine domain_write_3d
@@ -738,7 +732,7 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -792,7 +786,7 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported type.")
+        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -955,7 +949,7 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported type.")
+        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
   endif
 end subroutine domain_write_4d
@@ -1032,7 +1026,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
-                      buffer_includes_halos)
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -1086,7 +1080,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported type.")
+        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -1249,7 +1243,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported type.")
+        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
   endif
 end subroutine domain_write_5d

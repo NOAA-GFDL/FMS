@@ -16,32 +16,21 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup time_interp_mod time_interp_mod
+!> @ingroup time_interp
+!> @brief Computes a weight and dates/indices for linearly interpolating between two dates.
+!> @author Bruce Wyman
+!!
+!! A time type is converted into two consecutive dates plus
+!! a fraction representing the distance between the dates.
+!! This information can be used to interpolate between the dates.
+!! The dates may be expressed as years, months, or days or
+!! as indices in an array.
+
+!> @file
+!> @brief File for @ref time_interp_mod
 
 module time_interp_mod
-
-! <CONTACT EMAIL="Bruce.Wyman@noaa.gov">
-!   Bruce Wyman
-! </CONTACT>
-
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-
-! <OVERVIEW>
-!   Computes a weight and dates/indices for linearly interpolating between two dates.
-! </OVERVIEW>
-
-! <DESCRIPTION>
-!     A time type is converted into two consecutive dates plus
-!     a fraction representing the distance between the dates.
-!     This information can be used to interpolate between the dates.
-!     The dates may be expressed as years, months, or days or
-!     as indices in an array.
-! </DESCRIPTION>
-
-! <PUBLIC>
-!   Description summarizing public interface.
-! </PUBLIC>
-
-!-----------------------------------------------------------------------
 
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &
                             days_in_year, days_in_month, leap_year,  &
@@ -55,7 +44,7 @@ use time_manager_mod, only: time_type, get_date, set_date, set_time, &
 
 use          fms_mod, only: write_version_number, &
                             error_mesg, FATAL, stdout, stdlog, &
-                            open_namelist_file, close_file, check_nml_error, &
+                            check_nml_error, &
                             fms_error_handler
 use          mpp_mod, only: input_nml_file
 
@@ -194,6 +183,50 @@ public :: time_interp_init, time_interp, fraction_of_year
 !     </PRE>
 !   </NOTE>
 
+!> Returns a weight and dates or indices for interpolating between two dates. The
+!! interface fraction_of_year is provided for backward compatibility with the
+!! previous version.\n
+!!
+!! Returns weight by interpolating Time between Time1 and Time2.
+!! i.e. weight = (Time-Time1)/(Time2-Time1)
+!! Time1 and Time2 may be specified by any of several different ways,
+!! which is the reason for multiple interfaces.\n
+!!
+!! - If Time1 and Time2 are the begining and end of the year in which
+!!   Time falls, use first interface.\n
+!!
+!! - If Time1 and Time2 fall on year boundaries, use second interface.\n
+!!
+!! - If Time1 and Time2 fall on month boundaries, use third.\n
+!!
+!! - If Time1 and Time2 fall on day boundaries, use fourth.\n
+!!
+!! - If Time1 and Time2 are consecutive elements of an assending list, use fifth.
+!!   The fifth also returns the indices of Timelist between which Time falls.\n
+!!
+!! - The sixth interface is for cyclical data. Time_beg and Time_end specify the
+!!   begining and end of a repeating period. In this case:<br>
+!!              weight = (Time_adjusted - Time1) / (Time2 - Time1)
+!! <br>Where:
+!! @code{.F90}
+!!              Time1 = Timelist(index1)
+!!              Time2 = Timelist(index2)
+!!              Time_adjusted = Time - N*Period
+!!              Period = Time_end-Time_beg
+!! @endcode
+!! N is between (Time-Time_end)/Period and (Time-Time_beg)/Period
+!! That is, N is the integer that results in Time_adjusted that is between Time_beg and Time_end.
+!!
+!! <br>Example usages:
+!! @code{.F90}
+!!              call time_interp( Time, weight )
+!!              call time_interp( Time, weight, year1, year2 )
+!!              call time_interp( Time, weight, year1, year2, month1, month2 )
+!!              call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
+!!              call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
+!!              call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
+!! @endcode
+!> @ingroup time_interp_mod
 interface time_interp
     module procedure time_interp_frac,  time_interp_year, &
                      time_interp_month, time_interp_day,  &
@@ -201,6 +234,8 @@ interface time_interp
 end interface
 ! </INTERFACE>
 
+!> @addtogroup time_interp_mod
+!> @{
 integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
 
 !-----------------------------------------------------------------------
@@ -227,22 +262,12 @@ contains
 
 
  subroutine time_interp_init()
-   integer :: ierr, io, namelist_unit, logunit
+   integer :: ierr, io, logunit
 
    if ( module_is_initialized ) return
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, time_interp_nml, iostat=io)
-      ierr = check_nml_error (io, 'time_interp_nml')
-#else
-   namelist_unit = open_namelist_file()
-   ierr=1
-   do while (ierr /= 0)
-     read(namelist_unit, nml=time_interp_nml, iostat=io, end=20)
-     ierr = check_nml_error (io, 'time_interp_nml')
-   enddo
-   20 call close_file (namelist_unit)
-#endif
+   read (input_nml_file, time_interp_nml, iostat=io)
+   ierr = check_nml_error (io, 'time_interp_nml')
 
    call write_version_number("TIME_INTERP_MOD", version)
    logunit = stdlog()
@@ -258,12 +283,11 @@ contains
 !   <IN NAME="Time" TYPE="time_type" > </IN>
 !   <OUT NAME="weight" TYPE="real"> </OUT>
 ! </SUBROUTINE>
-!  returns the fractional time into the current year
-
+ !> @brief Calculates the fractional time into the current year
  subroutine time_interp_frac ( Time, weight )
 
    type(time_type), intent(in)  :: Time
-   real           , intent(out) :: weight
+   real           , intent(out) :: weight !< fractional time
 
    integer         :: year, month, day, hour, minute, second
    type(time_type) :: Year_beg, Year_end
@@ -289,6 +313,9 @@ contains
 ! </OVERVIEW>
 ! </SUBROUTINE>
 
+!> @brief Wrapper function to return the fractional time into the current year
+!> @param Time time to calculate fraction with
+!> @return real fraction of time passed in current year
  function fraction_of_year (Time)
  type(time_type), intent(in)  :: Time
  real :: fraction_of_year
@@ -306,10 +333,11 @@ contains
 ! </SUBROUTINE>
 !  returns fractional time between mid points of consecutive years
 
+ !> @brief Calculates fractional time between mid points of consecutive years
  subroutine time_interp_year ( Time, weight, year1, year2 )
 
    type(time_type), intent(in)  :: Time
-   real           , intent(out) :: weight
+   real           , intent(out) :: weight !< fractional time between midpoints of year1 and year2
    integer        , intent(out) :: year1, year2
 
    integer :: year, month, day, hour, minute, second
@@ -348,8 +376,7 @@ contains
 !   <OUT NAME="month1" TYPE="integer"> </OUT>
 !   <OUT NAME="month2" TYPE="integer"> </OUT>
 ! </SUBROUTINE>
-!  returns fractional time between mid points of consecutive months
-
+ !> @brief Calculates fractional time between mid points of consecutive months
  subroutine time_interp_month ( Time, weight, year1, year2, month1, month2 )
 
    type(time_type), intent(in)  :: Time
@@ -410,8 +437,7 @@ contains
 !   <OUT NAME="day1" TYPE="integer"> </OUT>
 !   <OUT NAME="day2" TYPE="integer"> </OUT>
 ! </SUBROUTINE>
-!  returns fractional time between mid points of consecutive days
-
+ !> @brief Calculates fractional time between mid points of consecutive days
  subroutine time_interp_day ( Time, weight, year1, year2, month1, month2, day1, day2 )
 
    type(time_type), intent(in)  :: Time
@@ -481,7 +507,14 @@ subroutine time_interp_modulo(Time, Time_beg, Time_end, Timelist, weight, index1
 type(time_type), intent(in)  :: Time, Time_beg, Time_end, Timelist(:)
 real           , intent(out) :: weight
 integer        , intent(out) :: index1, index2
-logical, intent(in), optional :: correct_leap_year_inconsistency
+logical, intent(in), optional :: correct_leap_year_inconsistency!< When true turns on a kluge for an
+                                !! inconsistency which may occur in a special case.
+                                !! When the modulo time period (i.e. Time_end - Time_beg) is a
+                                !! whole number of years and is not a multiple of 4, and the calendar
+                                !! in use has leap years, then it is likely that the interpolation
+                                !! will involve mapping a common year onto a leap year. In this case
+                                !! it is often desirable, but not absolutely necessary, to use data
+                                !! for Feb 28 of the leap year when it is mapped onto a common year.
 character(len=*), intent(out), optional :: err_msg
 
   type(time_type) :: Period, T
@@ -635,11 +668,11 @@ character(len=*), intent(out), optional :: err_msg
 end subroutine time_interp_modulo
 
 !#######################################################################
-! given an array of times in ascending order and a specific time returns
-! values of index1 and index2 such that the Timelist(index1)<=Time and
-! Time<=Timelist(index2), and index2=index1+1
-! index1=0, index2=1 or index=n, index2=n+1 are returned to indicate that
-! the time is out of range
+!> Given an array of times in ascending order and a specific time returns
+!! values of index1 and index2 such that the Timelist(index1)<=Time and
+!! Time<=Timelist(index2), and index2=index1+1
+!! index1=0, index2=1 or index=n, index2=n+1 are returned to indicate that
+!! the time is out of range
 subroutine bisect(Timelist,Time,index1,index2)
   type(time_type)  , intent(in)  :: Timelist(:)
   type(time_type)  , intent(in)  :: Time
@@ -936,3 +969,5 @@ end module time_interp_mod
 !   </NOTE>
 
 ! </INFO>
+!> @}
+! close documentation grouping

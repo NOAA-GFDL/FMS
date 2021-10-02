@@ -16,8 +16,24 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup time_interp_external_mod time_interp_external_mod
+!> @ingroup time_interp
+!> @brief Perform I/O and time interpolation of external fields (contained in a file).
+!> @author M.J. Harrison
+!!
+!! Perform I/O and time interpolation for external fields.
+!! Uses udunits library to calculate calendar dates and
+!! convert units.  Allows for reading data decomposed across
+!! model horizontal grid using optional domain2d argument
+!!
+!! data are defined over data domain for domain2d data
+!! (halo values are NOT updated by this module)
 
+!> @file
+!> @brief File for @ref time_interp_external_mod
 
+!> @addtogroup time_interp_external_mod
+!> @{
 module time_interp_external_mod
 #include  <fms_platform.h>
 !
@@ -26,17 +42,9 @@ module time_interp_external_mod
 !<REVIEWER EMAIL="hsimmons@iarc.uaf.edu">Harper Simmons</REVIEWER>
 !
 !<OVERVIEW>
-! Perform I/O and time interpolation of external fields (contained in a file).
 !</OVERVIEW>
 
 !<DESCRIPTION>
-! Perform I/O and time interpolation for external fields.
-! Uses udunits library to calculate calendar dates and
-! convert units.  Allows for reading data decomposed across
-! model horizontal grid using optional domain2d argument
-!
-! data are defined over data domain for domain2d data
-! (halo values are NOT updated by this module)
 !
 !</DESCRIPTION>
 !
@@ -90,6 +98,9 @@ module time_interp_external_mod
   private find_buf_index,&
          set_time_modulo
 
+  !> @}
+
+  !> @ingroup time_interp_external_mod
   type, private :: ext_fieldtype
      integer :: unit ! keep unit open when not reading all records
      character(len=128) :: name, units
@@ -121,16 +132,32 @@ module time_interp_external_mod
      real    :: missing ! missing value
   end type ext_fieldtype
 
+  !> @ingroup time_interp_external_mod
   type, private :: filetype
      character(len=128) :: filename = ''
      integer :: unit = -1
   end type filetype
 
+  !> Provide data from external file interpolated to current model time.
+  !! Data may be local to current processor or global, depending on
+  !! "init_external_field" flags. Uses @ref mpp_io_mod for I/O.
+  !!
+  !! @param index index of external field from previous call to init_external_field
+  !! @param time target time for data
+  !! @param [inout] data global or local data array
+  !! @param interp time_interp_external defined interpolation method (optional).  Currently
+  !! this module only supports LINEAR_TIME_INTERP.
+  !! @param verbose verbose flag for debugging (optional).
+  !!
+  !> @ingroup time_interp_external_mod
   interface time_interp_external
      module procedure time_interp_external_0d
      module procedure time_interp_external_2d
      module procedure time_interp_external_3d
   end interface
+
+  !> @addtogroup time_interp_external_mod
+  !> @{
 
   integer :: outunit
 
@@ -230,6 +257,22 @@ module time_interp_external_mod
 !</INOUT>
 
 
+    !> Initialize an external field.  Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations.
+    !! distributed reads are supported using the optional "domain" flag.
+    !! Units conversion via the optional "desired_units" flag using udunits_mod.
+    !!
+    !> @return integer id of field for future calls to time_interp_external.
+    !> @param file filename
+    !> @param fieldname fieldname (in file)
+    !> @param format mpp_io flag for format of file(optional). Currently only "MPP_NETCDF" supported
+    !> @param threading mpp_io flag for threading (optional). "MPP_SINGLE" means root pe reads
+    !! global field and distributes to other PEs. "MPP_MULTI" means all PEs read data
+    !> @param domain domain flag (optional)
+    !> @param desired_units Target units for data (optional), e.g. convert from deg_K to deg_C.
+    !! Failure to convert using udunits will result in failure of this module.
+    !> @param verbose verbose flag for debugging (optional).
+    !> @param [out] axis_names List of axis names (optional).
+    !> @param [inout] axis_sizes array of axis lengths ordered X-Y-Z-T (optional).
     function init_external_field(file,fieldname,format,threading,domain,desired_units,&
          verbose,axis_centers,axis_sizes,override,correct_leap_year_inconsistency,&
          permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts )
@@ -653,6 +696,7 @@ module time_interp_external_mod
 !</FUNCTION> NAME="init_external_field"
 
 
+    !> @brief 2D time interpolation for @ref time_interp_external
     subroutine time_interp_external_2d(index, time, data_in, interp, verbose,horz_interp, mask_out, &
                is_in, ie_in, js_in, je_in, window_id)
 
@@ -703,6 +747,7 @@ module time_interp_external_mod
 ! verbose flag for debugging (optional).
 !</IN>
 
+    !> @brief 3D time interpolation for @ref time_interp_external
     subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)
 
       integer,                    intent(in)           :: index
@@ -863,6 +908,7 @@ module time_interp_external_mod
     end subroutine time_interp_external_3d
 !</SUBROUTINE> NAME="time_interp_external"
 
+    !> @brief Scalar time interpolation for @ref time_interp_external
     subroutine time_interp_external_0d(index, time, data, verbose)
 
       integer, intent(in) :: index
@@ -1051,7 +1097,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
         field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0
         deallocate(mask_out)
-        field%need_compute(ib, window_id) = .false.
      else
         if ( field%region_type .NE. NO_REGION ) then
            call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present")
@@ -1062,6 +1107,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      ! convert units
      where(field%mask(isw:iew,jsw:jew,:,ib)) field%data(isw:iew,jsw:jew,:,ib) = &
           field%data(isw:iew,jsw:jew,:,ib)*field%slope + field%intercept
+     field%need_compute(ib, window_id) = .false.
   endif
 
 end subroutine load_record
@@ -1370,3 +1416,5 @@ end subroutine
 !</SUBROUTINE> NAME="time_interp_external_exit"
 
 end module time_interp_external_mod
+!> @}
+! close documentation grouping

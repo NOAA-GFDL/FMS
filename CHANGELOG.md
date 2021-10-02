@@ -6,6 +6,63 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2021.03.01] - 2021-09-07
+### Fixed
+- TIME_INTERP: Fixes issue in load_record when reading 3d variables with fms2_io and elimates redundant loads and validity checks for on-grid interpolations
+### Changed
+- Changes configure script to only check for gcc 11.1.0, not any gcc 11 version
+
+## [2021.03] - 2021-08-16
+### Known Issues
+- DIAG_MANAGER: 3D diurnal diagnostic variables are not supported in this version of FMS
+### Added
+- FMS2_IO: Documentation was added for FMS2_io to help users convert from fms_io/mpp_io
+### Changed
+- FMS2_IO: The error messages in FMS2_io were updated to give more useful information
+- TEST_FMS: The unit tests in mosaic, axis_utils, and time_interp_external were updated to use the FMS2_io version of these routines and are no longer skipped
+- DOCS: The doxygen generated documentation has been improved with more doxygen comments added and a more cohesive layout
+- TEST_FMS: Unit tests for time_manager were updated to use the new get/set_date_gregorian routines
+### Removed
+- MPP_IO: The namelist variable use_mpp_io was removed from interpolator, amip_interp, diag_manager, topography, xgrid, and data_override
+- MPP_IO: Any remaining fms_io/mpp_io calls from the source and test code were removed
+- FMS: Removes the hardcoded path for input.nml, path now may be specified in the call to `fms_init`
+### Fixed
+- MPP: Fixes algorithm used with nested grid updates to properly coalesce x-dir and y-dir pelists for vector quantities
+- CMAKE/AUTOTOOLS: Fixes for minor issues with filenames in both the CMake and autotools build systems
+- MPP: Restored deleted pset functionality needed by GFDL SCM by reinstating mpp_pset.F90
+- MPP: Fixed uninitialized variables for data domains in mpp domains broadcast routines
+- MPP: Minor memory leaks from deallocating domains
+- AXIS_UTILS: Fix PGI related error with string length sizes
+
+## [2021.02] - 2021-05-20
+### Added
+- FMS2_IO: Added fms2_io support for boundary condition restarts. `register_restart_region_2d` and `register_restart_region_3d` were added to fms2_io’s `register_restart_field` interface and `read_restart_bc` and `write_restart_bc` subroutines were added to read and write boundary conditions restarts. See [test_fms/fms2_io/test_bc_restart.F90](https://github.com/NOAA-GFDL/FMS/blob/9d55115a331685e4c6e01f2dfb3b770a9f80fa37/test_fms/fms2_io/test_bc_restart.F90) for sample usage.
+- FMS2_IO: Added fms2_io’s version of set_filename_appendix. The string sent in will be appended to the filename of a restart/history file before the *.nc or before *.tile if tile is in the filename.
+- FMS2_IO: Added workarounds to get fms2_io code working with pgi
+- COUPLER_TYPES: Added fms2_io’s version of `register_restarts_2/3d` and `CT_restore_state_2/3d` to the `coupler_type_register_restarts` and `coupler_type_restore_state` interfaces in coupler_types. The fms_io’s versions were renamed as mpp_io_* and both versions may still be used. See [test_fms/coupler/test_coupler_*d.F90](https://github.com/NOAA-GFDL/FMS/tree/9d55115a331685e4c6e01f2dfb3b770a9f80fa37/test_fms/coupler) for sample usage.
+- MPP_DOMAINS: Added a subroutine `mpp_create_super_grid_domain`, which sets the indices of the input domain to match the supergrid domain.
+- MOSAIC2/GRID2: Added a version of grid.F90 that is suitable for use with fms2_io called grid2.F90, and moved it into the mosaic2 folder along with mosaic2.F90
+- FMS_MOD: Added grid_init and grid_end calls for use with grid2.F90
+- TIME_MANAGER: New `set_date_gregorian` and `get_date_gregorian` function/subroutine that do not use coded_date and date_to_day arrays are added and set as default.  The original get_date_gregorian and set_date_gregorian have been renamed to `get_date_gregorian_old` and `set_date_gregorian_old` and can be used by adding `old_method=.true.` optional argument to set_date and get_date subroutine calls.  This is the first step out of three to remove the memory-consuming `coded_date` and `date_to_day` arrays from the time_manager_mod.
+- FMS GLOBAL MODULE: Adds a new module (libFMS.F90) to be used as a global import for all supported routines/types/variables within FMS. Also adds a separate module (fmsconstants.F90) to be used for constant values from `constants_mod`.
+### Changed
+- FMS2_IO: Adds logic so that the domain decomposition variable attribute is only added if the io_layout is not 1,1.
+- FMS_IO: Moved get_great_circle_algorithm from fms_io to grid2.F90
+- FMS_IO: Moved routines and submodules that were not IO related to fms_mod
+###Removed
+- DIAG_MANAGER: Removed the variable attributes `_FillValue` and `missing_value` from the `time_bounds` variable to be cf compliant
+- FV3GFS: Removes the unused fv3gfs directory
+- MOSAIC/GRID: Removed references in grid.F90 to fms_mod(replaced with mpp_mod direct calls)
+- MOSAIC/GRID: Moved mosaic/mosaic2.F90 to mosaic2 folder
+###Fixed
+- DIAG_MANAGER: Fixed a bug where the variable type of `Time` and `Time_bounds` were different (float vs double) when compiling with 32 bit reals
+- FMS2_IO: Fixed a bug where the code was crashing when you were trying to read/write scalar variables with the domain decomposed fileobj
+### Tag Commit Hashes
+- 2021.02-alpha1 (1a653fcb86a826251e6c8d0a90db897377acc49e)
+- 2021.02-alpha2 (81a5b6ea2559e2c31edbcab32a3230dfc31287be)
+- 2021.02-beta1 (d7e564adee07073febeb263b89158f768d665689)
+- 2021.02-beta2 (9d55115a331685e4c6e01f2dfb3b770a9f80fa37)
+
 ## [2021.01] - 2021-03-08
 ### Added
 - MPP: A counter for timers to report how many times a timer section is run

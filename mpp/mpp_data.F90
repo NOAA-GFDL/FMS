@@ -16,6 +16,19 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_data_mod mpp_data_mod
+!> @ingroup mpp
+!> @brief Module to hold pointer and stack data for use in @ref mpp modules.
+!!
+!> Makes stack and pointer data publicly available from @ref mpp_data_mpi.inc or @ref
+!! mpp_data_nocomm.inc for use in @ref mpp modules. This module is mainly
+!! for internal use within @ref mpp_mod and @ref mpp_domains_mod .
+
+!> @file
+!> @brief File for @ref mpp_data_mod
+
+!> @addtogroup mpp_data_mod
+!> @{
 module mpp_data_mod
 
 #if defined(use_libMPI)
@@ -32,12 +45,12 @@ module mpp_data_mod
 #include<file_version.h>
   public version
 
-  !--- public data is used by mpp_mod
+  !> public data used by mpp_mod
   public :: stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
   public :: mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
 
-  !--- public data which is used by mpp_domains_mod.
   !--- All othere modules should import these parameters from mpp_domains_mod.
+  !> public data which is used by mpp_domains_mod.
   public :: mpp_domains_stack, ptr_domains_stack
   public :: mpp_domains_stack_nonblock, ptr_domains_stack_nonblock
 
@@ -52,3 +65,5 @@ module mpp_data_mod
 #endif
 
 end module mpp_data_mod
+!> @}
+! close documentation grouping

@@ -16,7 +16,147 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup field_manager_mod field_manager_mod
+!> @ingroup field_manager
+!> @brief Reads entries from a field table and stores this
+!! information along with the type  of field it belongs to.
+!!
+!> This allows the component models to query the field manager to see if non-default
+!! methods of operation are desired. In essence the field table is a
+!! powerful type of namelist. Default values can be provided for all the
+!! fields through a namelist, individual fields can be modified  through
+!! the field table however.
+!!
+!> @author William Cooke
+!!
+!! An example of field table entries could be
+!! <PRE>
+!!              "tracer","atmos_mod","sphum"
+!!
+!!              "tracer","atmos_mod","sf6"
+!!              "longname","sulf_hex"
+!!              "advection_scheme_horiz","2nd_order"
+!!              "Profile_type","Fixed","surface_value = 0.0E+00"/
+!!
+!!              "prog_tracers","ocean_mod","age_global"
+!!              horizontal-advection-scheme = mdfl_sweby
+!!              vertical-advection-scheme = mdfl_sweby
+!!              restart_file = ocean_age.res.nc
+!! </PRE>
+!!
+!! The field table consists of entries in the following format.
+!!
+!! The first line of an entry should consist of three quoted strings.
+!!
+!! The first quoted string will tell the field manager what type of
+!! field it is.
+!!
+!! The second quoted string will tell the field manager which model the
+!! field is being applied to.
+!! The supported types at present are
+!!<PRE>
+!!      "coupler_mod" for the coupler,
+!!      "atmos_mod" for the atmosphere model,
+!!      "ocean_mod" for the ocean model,
+!!      "land_mod" for the land model, and,
+!!      "ice_mod" for the ice model.
+!!</PRE>
+!! The third quoted string should be a unique name that can be used as a
+!! query.
+!!
+!! The second and following lines of each entry are called methods in
+!! this context. Methods can be developed within any module and these
+!! modules can query the field manager to find any methods that are
+!! supplied in the field table.
+!!
+!! These lines can be coded quite flexibly.
+!!
+!! The line can consist of two or three quoted strings or a simple unquoted
+!! string.
+!!
+!! If the line consists two or three quoted strings, then the first string will
+!! be an identifier that the querying module will ask for.
+!!
+!! The second string will be a name that the querying module can use to
+!! set up values for the module.
+!!
+!! The third string, if present, can supply parameters to the calling module that can be
+!! parsed and used to further modify values.
+!!
+!! If the line consists of a simple unquoted string then quotes are not allowed
+!! in any part of the line.
+!!
+!! An entry is ended with a backslash (/) as the final character in a
+!! row.
+!!
+!! Comments can be inserted in the field table by having a # as the
+!! first character in the line.
+!!
+!! In the example above we have three field entries.
+!!
+!! The first is a simple declaration of a tracer called "sphum".
+!!
+!! The second is for a tracer called "sf6". In this case a field named
+!! "longname" will be given the value "sulf_hex". A field named
+!! "advection_scheme_horiz" will be given the value "2nd_order". Finally a field
+!! name "Profile_type" will be given a child field called "Fixed", and that field
+!! will be given a field called "surface_value" with a real value of 0.0E+00.
+!!
+!! The third entry is an example of a oceanic age tracer. Note that the
+!! method lines are formatted differently here. This is the flexibility mentioned
+!! above.
+!!
+!! With these formats, a number of restrictions are required.
+!!
+!! The following formats are equally valid.
+!!<PRE>
+!!      "longname","sulf_hex"
+!!      "longname = sulf_hex"
+!!      longname = sulf_hex
+!!</PRE>
+!! However the following is not valid.
+!!<PRE>
+!!      longname = "sulf_hex"
+!!</PRE>
+!!
+!! In the SF6 example above the last line of the entry could be written in the
+!! following ways.
+!!<PRE>
+!!      "Profile_type","Fixed","surface_value = 0.0E+00"/
+!!      Profile_type/Fixed/surface_value = 0.0E+00/
+!!</PRE>
+!!
+!! Values supplied with fields are converted to the various types with the
+!! following assumptions.
+!!<PRE>
+!! Real values : These values contain a decimal point or are in exponential format.
+!!    These values only support e or E format for exponentials.
+!!    e.g. 10.0, 1e10 and 1E10 are considered to be real numbers.
+!!
+!! Integer values : These values only contain numbers.
+!!    e.g 10 is an integer. 10.0 and 1e10 are not.
+!!
+!! Logical values : These values are supplied as one of the following formats.
+!!    T, .T., TRUE, .TRUE.
+!!    t, .t., true, .true.
+!!    F, .F., FALSE, .FALSE.
+!!    f, .f., false, .false.
+!!    These will be converted to T or F in a dump of the field.
+!!
+!! Character strings : These values are assumed to be strings if a character
+!!    other than an e (or E) is in the value. Numbers can be suppled in the value.
+!!    If the value does not meet the criteria for a real, integer or logical type,
+!!    it is assumed to be a character type.
+!!</PRE>
+!! The entries within the field table can be designed by the individual
+!! authors of code to allow modification of their routines.
+!!
 
+!> @file
+!> @brief File for @ref field_manager_mod
+
+!> @addtogroup field_manager_mod
+!> @{
 module field_manager_mod
 #ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
@@ -42,144 +182,6 @@ module field_manager_mod
 ! <HISTORY
 !  SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/field_manager/field_manager.F90"/>
 
-! <OVERVIEW>
-
-! The field manager reads entries from a field table and stores this
-! information along with the type  of field it belongs to. This allows
-! the component models to query the field manager to see if  non-default
-! methods of operation are desired. In essence the field table is a
-! powerful type of namelist. Default values can be provided for all the
-! fields through a namelist, individual fields can be modified  through
-! the field table however.
-
-!</OVERVIEW>
-
-! <DESCRIPTION>
-!
-! An example of field table entries could be
-! <PRE>
-!"tracer","atmos_mod","sphum"/
-!
-!"tracer","atmos_mod","sf6"
-!"longname","sulf_hex"
-!"advection_scheme_horiz","2nd_order"
-!"Profile_type","Fixed","surface_value = 0.0E+00"/
-!
-!"prog_tracers","ocean_mod","age_global"
-!horizontal-advection-scheme = mdfl_sweby
-!vertical-advection-scheme = mdfl_sweby
-!restart_file = ocean_age.res.nc
-! </PRE>
-!
-! The field table consists of entries in the following format.
-!
-! The first line of an entry should consist of three quoted strings.
-!
-! The first quoted string will tell the field manager what type of
-! field it is.
-!
-! The second quoted string will tell the field manager which model the
-! field is being applied to.
-! The supported types at present are
-!<PRE>
-!      "coupler_mod" for the coupler,
-!      "atmos_mod" for the atmosphere model,
-!      "ocean_mod" for the ocean model,
-!      "land_mod" for the land model, and,
-!      "ice_mod" for the ice model.
-!</PRE>
-! The third quoted string should be a unique name that can be used as a
-! query.
-!
-! The second and following lines of each entry are called methods in
-! this context. Methods can be developed within any module and these
-! modules can query the field manager to find any methods that are
-! supplied in the field table.
-!
-! These lines can be coded quite flexibly.
-!
-! The line can consist of two or three quoted strings or a simple unquoted
-! string.
-!
-! If the line consists two or three quoted strings, then the first string will
-! be an identifier that the querying module will ask for.
-!
-! The second string will be a name that the querying module can use to
-! set up values for the module.
-!
-! The third string, if present, can supply parameters to the calling module that can be
-! parsed and used to further modify values.
-!
-! If the line consists of a simple unquoted string then quotes are not allowed
-! in any part of the line.
-!
-! An entry is ended with a backslash (/) as the final character in a
-! row.
-!
-! Comments can be inserted in the field table by having a # as the
-! first character in the line.
-!
-! In the example above we have three field entries.
-!
-! The first is a simple declaration of a tracer called "sphum".
-!
-! The second is for a tracer called "sf6". In this case a field named
-! "longname" will be given the value "sulf_hex". A field named
-! "advection_scheme_horiz" will be given the value "2nd_order". Finally a field
-! name "Profile_type" will be given a child field called "Fixed", and that field
-! will be given a field called "surface_value" with a real value of 0.0E+00.
-!
-! The third entry is an example of a oceanic age tracer. Note that the
-! method lines are formatted differently here. This is the flexibility mentioned
-! above.
-!
-! With these formats, a number of restrictions are required.
-!
-! The following formats are equally valid.
-!<PRE>
-!      "longname","sulf_hex"
-!      "longname = sulf_hex"
-!      longname = sulf_hex
-!</PRE>
-! However the following is not valid.
-!<PRE>
-!      longname = "sulf_hex"
-!</PRE>
-!
-! In the SF6 example above the last line of the entry could be written in the
-! following ways.
-!<PRE>
-!      "Profile_type","Fixed","surface_value = 0.0E+00"/
-!      Profile_type/Fixed/surface_value = 0.0E+00/
-!</PRE>
-!
-! Values supplied with fields are converted to the various types with the
-! following assumptions.
-!<PRE>
-! Real values : These values contain a decimal point or are in exponential format.
-!    These values only support e or E format for exponentials.
-!    e.g. 10.0, 1e10 and 1E10 are considered to be real numbers.
-!
-! Integer values : These values only contain numbers.
-!    e.g 10 is an integer. 10.0 and 1e10 are not.
-!
-! Logical values : These values are supplied as one of the following formats.
-!    T, .T., TRUE, .TRUE.
-!    t, .t., true, .true.
-!    F, .F., FALSE, .FALSE.
-!    f, .f., false, .false.
-!    These will be converted to T or F in a dump of the field.
-!
-! Character strings : These values are assumed to be strings if a character
-!    other than an e (or E) is in the value. Numbers can be suppled in the value.
-!    If the value does not meet the criteria for a real, integer or logical type,
-!    it is assumed to be a character type.
-!</PRE>
-! The entries within the field table can be designed by the individual
-! authors of code to allow modification of their routines.
-!
-! </DESCRIPTION>
-
 use    mpp_mod, only : mpp_error,   &
                        FATAL,       &
                        NOTE,        &
@@ -189,7 +191,6 @@ use    mpp_mod, only : mpp_error,   &
                        stdlog,      &
                        stdout,      &
                        get_unit
-use mpp_io_mod, only : mpp_io_init
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
@@ -205,51 +206,50 @@ logical            :: module_is_initialized  = .false.
 !        Public routines
 !        Interface definitions (optional arguments are in [brackets]):
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-public :: field_manager_init   ! (nfields, [table_name]) returns number of fields
-public :: field_manager_end    ! ()
-public :: find_field_index     ! (model, field_name) or (list_path)
-public :: find_field_index_old ! (model, field_name) returns index of field_name in
-public :: find_field_index_new ! (list_path) returns index of field_name in
-                               ! component model model
-public :: get_field_info       ! (n,fld_type,fld_name,model,num_methods)
-                               ! Returns parameters relating to field n.
-public :: get_field_method     ! (n, m, method) Returns the m-th method of field n
-public :: get_field_methods    ! (n, methods) Returns the methods related to field n
-public :: parse                ! (text, label, values) Overloaded function to parse integer,
-                               ! real or character. Parse returns the number of values
-                               ! decoded (> 1 => an array of values)
-public :: fm_change_list       ! (list) return success
-public :: fm_change_root       ! (list) return success
-public :: fm_dump_list         ! (list [, recursive]) return success
-public :: fm_exists            ! (field) return success
-public :: fm_get_index         ! (field) return index
-public :: fm_get_current_list  ! () return path
-public :: fm_get_length        ! (list) return length
-public :: fm_get_type          ! (field) return string
-public :: fm_get_value         ! (entry, value [, index]) return success !! generic
-public :: fm_get_value_integer !   as above (overloaded function)
-public :: fm_get_value_logical !   as above (overloaded function)
-public :: fm_get_value_real    !   as above (overloaded function)
-public :: fm_get_value_string  !   as above (overloaded function)
-public :: fm_intersection      ! (lists, num_lists) return fm_array_list pointer
-public :: fm_init_loop         ! (list, iter)
-public :: fm_loop_over_list    ! (list, name, type, index) return success
-                               ! (iter, name, type, index) return success
-public :: fm_new_list          ! (list [, create] [, keep]) return index
-public :: fm_new_value         ! (entry, value [, create] [, index]) return index !! generic
-public :: fm_new_value_integer !   as above (overloaded function)
-public :: fm_new_value_logical !   as above (overloaded function)
-public :: fm_new_value_real    !   as above (overloaded function)
-public :: fm_new_value_string  !   as above (overloaded function)
-public :: fm_reset_loop        ! ()
-public :: fm_return_root       ! () return success
-public :: fm_modify_name       ! (oldname, newname) return success
-public :: fm_query_method      ! (name, method_name, method_control) return success and
-                               ! name and control strings
-public :: fm_find_methods      ! (list, methods, control) return success and name and
-                               ! control strings.
-public :: fm_copy_list         ! (list, suffix, [create]) return index
-public :: fm_set_verbosity     ! ([verbosity])
+public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
+public :: field_manager_end    !< ()
+public :: find_field_index     !< (model, field_name) or (list_path)
+public :: find_field_index_old !< (model, field_name) returns index of field_name in
+public :: find_field_index_new
+public :: get_field_info       !< (n,fld_type,fld_name,model,num_methods)
+                               !! Returns parameters relating to field n.
+public :: get_field_method     !< (n, m, method) Returns the m-th method of field n
+public :: get_field_methods    !< (n, methods) Returns the methods related to field n
+public :: parse                !< (text, label, values) Overloaded function to parse integer,
+                               !! real or character. Parse returns the number of values
+                               !! decoded (> 1 => an array of values)
+public :: fm_change_list       !< (list) return success
+public :: fm_change_root       !< (list) return success
+public :: fm_dump_list         !< (list [, recursive]) return success
+public :: fm_exists            !< (field) return success
+public :: fm_get_index         !< (field) return index
+public :: fm_get_current_list  !< () return path
+public :: fm_get_length        !< (list) return length
+public :: fm_get_type          !< (field) return string
+public :: fm_get_value         !< (entry, value [, index]) return success !! generic
+public :: fm_get_value_integer !<   as above (overloaded function)
+public :: fm_get_value_logical !<   as above (overloaded function)
+public :: fm_get_value_real    !<   as above (overloaded function)
+public :: fm_get_value_string  !<   as above (overloaded function)
+public :: fm_intersection      !< (lists, num_lists) return fm_array_list pointer
+public :: fm_init_loop         !< (list, iter)
+public :: fm_loop_over_list    !< (list, name, type, index) return success
+                               !! (iter, name, type, index) return success
+public :: fm_new_list          !< (list [, create] [, keep]) return index
+public :: fm_new_value         !< (entry, value [, create] [, index]) return index !! generic
+public :: fm_new_value_integer !<   as above (overloaded function)
+public :: fm_new_value_logical !<   as above (overloaded function)
+public :: fm_new_value_real    !<   as above (overloaded function)
+public :: fm_new_value_string  !<   as above (overloaded function)
+public :: fm_reset_loop        !< ()
+public :: fm_return_root       !< () return success
+public :: fm_modify_name       !< (oldname, newname) return success
+public :: fm_query_method      !< (name, method_name, method_control) return success and
+                               !! name and control strings
+public :: fm_find_methods      !< (list, methods, control) return success and name and
+                               !! control strings.
+public :: fm_copy_list         !< (list, suffix, [create]) return index
+public :: fm_set_verbosity     !< ([verbosity])
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !   Private routines
@@ -269,143 +269,92 @@ private :: make_list           ! (list_p, name) return field pointer
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Public parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+!> The length of a character string representing the field name.
 integer, parameter, public :: fm_field_name_len = 48
-! <DATA NAME="fm_field_name_len" TYPE="integer, parameter" DEFAULT="48">
-!   The length of a character string representing the field name.
-! </DATA>
+!> The length of a character string representing the field path.
 integer, parameter, public :: fm_path_name_len  = 512
-! <DATA NAME="fm_path_name_len" TYPE="integer, parameter" DEFAULT="512">
-!   The length of a character string representing the field path.
-! </DATA>
+!> The length of a character string representing character values for the field.
 integer, parameter, public :: fm_string_len     = 128
-! <DATA NAME="fm_string_len" TYPE="integer, parameter" DEFAULT="128">
-!   The length of a character string representing character values for the field.
-! </DATA>
+!> The length of a character string representing the various types that the values of the field can take.
 integer, parameter, public :: fm_type_name_len  = 8
-! <DATA NAME="fm_type_name_len" TYPE="integer, parameter" DEFAULT="8">
-!   The length of a character string representing the various types that the values of the field can take.
-! </DATA>
+!> Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).
 integer, parameter, public :: NUM_MODELS        = 5
-! <DATA NAME="NUM_MODELS" TYPE="integer, parameter" DEFAULT="5">
-!   Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).
-! </DATA>
+!> The value returned if a field is not defined.
 integer, parameter, public :: NO_FIELD          = -1
-! <DATA NAME="NO_FIELD" TYPE="integer, parameter" DEFAULT="-1">
-!   The value returned if a field is not defined.
-! </DATA>!
+!> Atmospheric model.
 integer, parameter, public :: MODEL_ATMOS       = 1
-! <DATA NAME="MODEL_ATMOS" TYPE="integer, parameter" DEFAULT="1">
-!   Atmospheric model.
-! </DATA>!
+!> Ocean model.
 integer, parameter, public :: MODEL_OCEAN       = 2
-! <DATA NAME="MODEL_OCEAN" TYPE="integer, parameter" DEFAULT="2">
-!   Ocean model.
-! </DATA>
+!> Land model.
 integer, parameter, public :: MODEL_LAND        = 3
-! <DATA NAME="MODEL_LAND" TYPE="integer, parameter" DEFAULT="3">
-!   Land model.
-! </DATA>
+!> Ice model.
 integer, parameter, public :: MODEL_ICE         = 4
-! <DATA NAME="MODEL_ICE" TYPE="integer, parameter" DEFAULT="4">
-!   Ice model.
-! </DATA>
+!> Ice model.
 integer, parameter, public :: MODEL_COUPLER     = 5
-! <DATA NAME="MODEL_COUPLER" TYPE="integer, parameter" DEFAULT="5">
-!   Ice model.
-! </DATA>
+!> Model names, e.g. MODEL_NAMES(MODEL_OCEAN) is 'oceanic'
 character(len=11), parameter, public, dimension(NUM_MODELS) :: &
    MODEL_NAMES=(/'atmospheric','oceanic    ','land       ','ice        ','coupler    '/)
-! <DATA NAME="MODEL_NAMES" TYPE="character(len=11), parameter">
-!   Model names, e.g. MODEL_NAMES(MODEL_OCEAN) is 'oceanic'
-! </DATA>
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Public type definitions
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-type, public :: fm_array_list_def  !{
+!> @}
+
+!> @brief List of field names
+!> @ingroup field_manager_mod
+type, public :: fm_array_list_def
   character (len=fm_field_name_len), dimension(:), pointer :: names => NULL()
   integer                                                  :: length
-end type  fm_array_list_def  !}
+end type  fm_array_list_def
 
-!
-! <TYPE NAME="method_type">
-! <DESCRIPTION>
-
-! This method_type is a way to allow a component module to alter the parameters it needs
-! for various tracers. In essence this is a way to modify a namelist. A namelist can supply
-! default parameters for all tracers. This  method will allow the user to modify these
-! default parameters for an individual tracer. An example could be that  the user wishes to
-! use second order advection on a tracer and also use fourth order advection on a second
-! tracer  within the same model run. The default advection could be second order and the
-! field table would then indicate  that the second tracer requires fourth order advection.
-! This would be parsed by the advection routine.
-
-!
-! </DESCRIPTION>
+!> @brief This method_type is a way to allow a component module to alter the parameters it needs
+!! for various tracers.
+!!
+!> In essence this is a way to modify a namelist. A namelist can supply
+!! default parameters for all tracers. This  method will allow the user to modify these
+!! default parameters for an individual tracer. An example could be that  the user wishes to
+!! use second order advection on a tracer and also use fourth order advection on a second
+!! tracer  within the same model run. The default advection could be second order and the
+!! field table would then indicate  that the second tracer requires fourth order advection.
+!! This would be parsed by the advection routine.
+!> @ingroup field_manager_mod
 type, public :: method_type
 
-  ! <DATA NAME="method_type :: method_type" TYPE="character" DIM="(128)">
-  !
-  !   This string represents a tag that a module using this method can
-  !   key on. Typically this should contain some reference to the module
-  !   that is calling it.
-  ! </DATA>
-  !
-  ! <DATA NAME="method_type :: method_name" TYPE="character" DIM="(128)">
-  !   This is the name of a method which the module can parse and use
-  !   to assign different default values to a field method.
-  ! </DATA>
-  !
-  ! <DATA NAME="method_type :: method_control" TYPE="character" DIM="(256)">
-  !   This is the string containing parameters that the module can use
-  !   as values  for a field method. These should override default
-  !   values within the module.
-  ! </DATA>
-  character(len=fm_string_len) :: method_type
-  character(len=fm_string_len) :: method_name
-  character(len=fm_string_len) :: method_control
+  character(len=fm_string_len) :: method_type !< This string represents a tag that a module
+                                 !! using this method can key on. Typically this should
+                                 !! contain some reference to the module that is calling it.
+  character(len=fm_string_len) :: method_name !< This is the name of a method which the module
+                                 !! can parse and use to assign different default values to
+                                 !! a field method.
+  character(len=fm_string_len) :: method_control !< This is the string containing parameters that
+                                 !! the module can use as values  for a field method. These should
+                                 !! override default values within the module.
 end type
-! </TYPE> NAME="method_type"
 
-! <TYPE NAME="method_type_short">
-! <DESCRIPTION>
-!   This method_type is the same as method_type except that the
-!   method_control string is not present. This is used when you wish to
-!   change to a scheme within a module but do not need to pass
-!   parameters.
-! </DESCRIPTION>
+!>   This method_type is the same as method_type except that the
+!!   method_control string is not present. This is used when you wish to
+!!   change to a scheme within a module but do not need to pass
+!!   parameters. See @ref method_type for member information.
+!> @ingroup field_manager_mod
 type, public :: method_type_short
-  ! <DATA NAME="method_type_short :: method_type" TYPE="character" DIM="(128)">
-  !   see method_type :: method_type above.
-  ! </DATA>
-  !
-  ! <DATA NAME="method_type_short :: method_name" TYPE="character" DIM="(128)">
-  !   see method_type :: method_name above.
-  ! </DATA>
   character(len=fm_string_len) :: method_type
   character(len=fm_string_len) :: method_name
 end type
-! </TYPE> NAME="method_type_short"
 
-! <TYPE NAME="method_type_very_short">
-! <DESCRIPTION>
-!   This method_type is the same as method_type except that the
-!   method_control and method_name strings are not present. This is used
-!   when you wish to change to a scheme within a module but do not need
-!   to pass  parameters.
-! </DESCRIPTION>
+!>   This is the same as method_type except that the
+!!   method_control and method_name strings are not present. This is used
+!!   when you wish to change to a scheme within a module but do not need
+!!   to pass parameters.
+!> @ingroup field_manager_mod
 type, public :: method_type_very_short
-  ! <DATA NAME="method_type_short :: method_type" TYPE="character" DIM="(128)">
-  !   see method_type :: method_type above.
-  ! </DATA>
   character(len=fm_string_len) :: method_type
 end type
-! </TYPE> NAME="method_type_very_short"
 
-! iterator over the field manager list
+!> Iterator over the field manager list
+!> @ingroup field_manager_mod
 type, public :: fm_list_iter_type
-   type(field_def), pointer    :: ptr => NULL()  ! pointer to the current field
+   type(field_def), pointer    :: ptr => NULL()  !< pointer to the current field
 end type fm_list_iter_type
 
 
@@ -413,22 +362,41 @@ end type fm_list_iter_type
 !        Public types
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+!> @ingroup field_manager_mod
 type(method_type), public :: default_method
-
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Public variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Interface definitions for overloaded routines
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+!> @brief Returns an index corresponding to the given field name.
+!!
+!> Model number can be given for old method.
+!! <br>Example usage:
+!! @code{.F90}
+!! value=find_field_index( model, field_name )
+!! value=find_field_index( field_name )
+!! @endcode
+!> @ingroup field_manager_mod
 interface find_field_index
   module procedure  find_field_index_old
   module procedure  find_field_index_new
 end interface
 
+!> @brief A function to parse an integer or an array of integers,
+!! a real or an array of reals, a string or an array of strings.
+!!
+!> Parse is an integer function that decodes values from a text string.
+!! The text string has the form: "label=list" where "label" is an
+!! arbitrary user defined label describing the values being decoded,
+!! and "list" is a list of one or more values separated by commas.
+!! The values may be integer, real, or character.
+!! Parse returns the number of values decoded.
+!! <br>Example usage:
+!! @code{.F90}
+!! number = parse(text, label, value)
+!! @endcode
+!> @ingroup field_manager_mod
 interface parse
   module procedure  parse_real
   module procedure  parse_reals
@@ -438,20 +406,56 @@ interface parse
   module procedure  parse_strings
 end interface
 
-interface  fm_new_value  !{
+!> @brief An overloaded function to assign a value to a field.
+!!
+!> Allocate and initialize a new value and return the index.
+!! If an error condition occurs the parameter NO_FIELD is returned.
+!!
+!! If the type of the field is changing (e.g. real values being transformed to
+!! integers), then any previous values for the field are removed and replaced
+!! by the value passed in the present call to this function.
+!!
+!! If append is present and .true., then index cannot be greater than 0 if
+!! it is present.
+!! <br> Example usage:
+!! @code{.F90}
+!! field_index= fm_new_value(name, value, [create], [index], [append])
+!! @endcode
+!> @ingroup field_manager_mod
+interface  fm_new_value
   module procedure  fm_new_value_integer
   module procedure  fm_new_value_logical
   module procedure  fm_new_value_real
   module procedure  fm_new_value_string
-end interface  !}
+end interface
 
-interface  fm_get_value  !{
+!> @brief An overloaded function to find and extract a value for a named field.
+!!
+!> Find and extract the value for name. The value may be of type real,
+!! integer, logical or character. If a single value from an array  of values
+!! is required, an optional index can be supplied.
+!! Return true for success and false for failure
+!! <br> Example usage:
+!! @code{.F90}
+!! success = fm_get_value(name, value, index)
+!! @endcode
+!> @ingroup field_manager_mod
+interface  fm_get_value
   module procedure  fm_get_value_integer
   module procedure  fm_get_value_logical
   module procedure  fm_get_value_real
   module procedure  fm_get_value_string
-end interface  !}
+end interface
 
+!> @brief A function for looping over a list.
+!!
+!> Loop over the list, setting the name, type and index
+!! of the next field. Return false at the end of the loop.
+!! <br> Example usage:
+!! @code{.F90}
+!! success = fm_loop_over_list(list, name, field_type, index)
+!! @endcode
+!> @ingroup field_manager_mod
 interface fm_loop_over_list
   module procedure  fm_loop_over_list_new
   module procedure  fm_loop_over_list_old
@@ -490,6 +494,8 @@ integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
 !        Private type definitions
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+!> @brief Private type for internal use
+!> @ingroup field_manager_mod
 type, private :: field_mgr_type !{
   character(len=fm_field_name_len)                    :: field_type
   character(len=fm_string_len)                    :: field_name
@@ -497,17 +503,23 @@ type, private :: field_mgr_type !{
   type(method_type)                                   :: methods(MAX_FIELD_METHODS)
 end type field_mgr_type !}
 
+!> @brief Private type for internal use
+!> @ingroup field_manager_mod
 type, private :: field_names_type !{
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
   character(len=fm_string_len)                    :: fld_name
 end  type field_names_type !}
 
+!> @brief Private type for internal use
+!> @ingroup field_manager_mod
 type, private :: field_names_type_short !{
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
 end type field_names_type_short !}
 
+!> @brief Private type for internal use
+!> @ingroup field_manager_mod
 type, private :: field_def  !{
   character (len=fm_field_name_len)                   :: name
   integer                                             :: index
@@ -526,12 +538,14 @@ type, private :: field_def  !{
   type (field_def), pointer                           :: prev => NULL()
 end type field_def  !}
 
+!> @addtogroup field_manager_mod
+!> @{
+
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Private types
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 type(field_mgr_type), private :: fields(MAX_FIELDS)
-
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Private variables
@@ -562,35 +576,18 @@ type (field_def), target, save   :: root
 
 contains
 
-! <SUBROUTINE NAME="field_manager_init">
-!   <OVERVIEW>
-!     Routine to initialize the field manager.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine reads from a file containing formatted strings.
-!     These formatted strings contain information on which schemes are
-!     needed within various modules. The field manager does not
-!     initialize any of those schemes however. It simply holds the
-!     information and is queried by the appropriate  module.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call field_manager_init(nfields, table_name)
-!   </TEMPLATE>
-
+!> @brief Routine to initialize the field manager.
+!!
+!> This routine reads from a file containing formatted strings.
+!! These formatted strings contain information on which schemes are
+!! needed within various modules. The field manager does not
+!! initialize any of those schemes however. It simply holds the
+!! information and is queried by the appropriate  module.
 subroutine field_manager_init(nfields, table_name)
 
-! <OUT NAME="nfields" TYPE="integer">
-!   The number of fields.
-! </OUT>
-
-integer,                      intent(out), optional :: nfields
-
-! <IN NAME="table_name" TYPE="character, optional"
-!     DIM="(len=128)" DEFAULT="field_table">
-!   The name of the field table. The default name is field_table.
-! </IN>
-
-character(len=fm_string_len), intent(in), optional :: table_name
+integer,                      intent(out), optional :: nfields !< number of fields
+character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
+                                                                 !! is 'field_table'
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -653,8 +650,6 @@ call mpp_error(NOTE,trim(note_header)//"Preserving the unit's case is experiment
 
 num_fields = 0
 call initialize
-
-call mpp_io_init()
 
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table'
@@ -1053,35 +1048,20 @@ end subroutine check_for_name_duplication
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><SUBROUTINE NAME="new_name">
-!   <OVERVIEW>
-!     Subroutine to add new values to list parameters.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This subroutine uses input strings list_name, method_name
-!     and val_name_in to add new values to the list. Given
-!     list_name a new list item is created that is named
-!     method_name and is given the value or values in
-!     val_name_in. If there is more than 1 value in
-!     val_name_in, these values should be  comma-separated.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call new_name ( list_name, method_name , val_name_in)
-!   </TEMPLATE>
+!> @brief Subroutine to add new values to list parameters.
+!!
+!> This subroutine uses input strings list_name, method_name
+!! and val_name_in to add new values to the list. Given
+!! list_name a new list item is created that is named
+!! method_name and is given the value or values in
+!! val_name_in. If there is more than 1 value in
+!! val_name_in, these values should be  comma-separated.
 subroutine new_name ( list_name, method_name_in , val_name_in)
-!   <IN NAME="list_name" TYPE="character(len=*)">
-!     The name of the field that is of interest here.
-!   </IN>
-!   <IN NAME="method_name" TYPE="character(len=*)">
-!     The name of the method that values are being supplied for.
-!   </IN>
-character(len=*), intent(in)    :: list_name
-character(len=*), intent(in)    :: method_name_in
-!   <INOUT NAME="val_name_in" TYPE="character(len=*)">
-!     The value or values that will be parsed and used as the value when
-!     creating a new field or fields.
-!   </INOUT>
-character(len=*), intent(inout) :: val_name_in
+character(len=*), intent(in)    :: list_name !< The name of the field that is of interest here.
+character(len=*), intent(in)    :: method_name_in !< The name of the method that values are
+                                                  !! being supplied for.
+character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
+                                               !! used as the value when creating a new field or fields.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1304,22 +1284,14 @@ do i = 1, num_elem
 enddo
 
 end subroutine new_name
-!</SUBROUTINE>
-!</PRIVATE>
+
 !#######################################################################
 !#######################################################################
 
-! <SUBROUTINE NAME="field_manager_end">
-!   <OVERVIEW>
-!     Destructor for field manager.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This subroutine writes to the logfile that the user is exiting field_manager and
-!     changes the initialized flag to false.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call field_manager_end
-!   </TEMPLATE>
+!> @brief Destructor for field manager.
+!!
+!> This subroutine writes to the logfile that the user is exiting field_manager and
+!! changes the initialized flag to false.
 subroutine field_manager_end
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1342,24 +1314,16 @@ endif
 module_is_initialized = .false.
 
 end subroutine field_manager_end
-! </SUBROUTINE>
 
 !#######################################################################
 !#######################################################################
 
-! <SUBROUTINE NAME="strip_front_blanks">
-!   <OVERVIEW>
-!     A routine to strip whitespace from the start of character strings.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This subroutine removes spaces and tabs from the start of a character string.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call strip_front_blanks(name)
-!   </TEMPLATE>
+!> @brief A routine to strip whitespace from the start of character strings.
+!!
+!> This subroutine removes spaces and tabs from the start of a character string.
 subroutine strip_front_blanks(name)
 
-character(len=*), intent(inout) :: name
+character(len=*), intent(inout) :: name !< name to remove whitespace from
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1377,40 +1341,21 @@ do i = 1,len_trim(name) !{
 enddo !}
 name = name(j:)
 end subroutine strip_front_blanks
-!</SUBROUTINE>
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="find_field_index">
-!   <OVERVIEW>
-!     Function to return the index of the field.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This function when passed a model number and a field name will
-!     return the index of the field within the field manager. This index
-!     can be used to access other information from the field manager.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     value=find_field_index( model, field_name )
-!     value=find_field_index( field_name )
-!   </TEMPLATE>
-
+!> @brief Function to return the index of the field
+!!
+!> This function when passed a model number and a field name will
+!! return the index of the field within the field manager. This index
+!! can be used to access other information from the field manager.
+!! @returns The index of the field corresponding to field_name.
 function find_field_index_old(model, field_name)
-!
-!   <IN NAME="model" TYPE="integer">
-!     The number indicating which model is used.
-!   </IN>
-!   <IN NAME="field_name" TYPE="character">
-!     The name of the field that an index is being requested for.
-!   </IN>
-!   <OUT NAME="find_field_index" TYPE="integer">
-!     The index of the field corresponding to field_name.
-!   </OUT>
 
 integer                      :: find_field_index_old
-integer,          intent(in) :: model
-character(len=*), intent(in) :: field_name
+integer,          intent(in) :: model !< The number indicating which model is used.
+character(len=*), intent(in) :: field_name !< The name of the field that an index is being requested for.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1428,17 +1373,12 @@ enddo
 
 end function find_field_index_old
 
+!> @returns index of the field corresponding to field_name
 function find_field_index_new(field_name)
-!
-!   <IN NAME="field_name" TYPE="character">
-!     The path to the name of the field that an index is being requested for.
-!   </IN>
-!   <OUT NAME="find_field_index" TYPE="integer">
-!     The index of the field corresponding to field_name.
-!   </OUT>
 
 integer                      :: find_field_index_new
-character(len=*), intent(in) :: field_name
+character(len=*), intent(in) :: field_name !< The path to the name of the field that an index is
+                             !! being requested for.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1450,47 +1390,25 @@ find_field_index_new = NO_FIELD
 find_field_index_new = fm_get_index(field_name)
 
 end function find_field_index_new
-! </FUNCTION>
 
 !#######################################################################
 !#######################################################################
 
-! <SUBROUTINE NAME="get_field_info">
-!   <OVERVIEW>
-!     This routine allows access to field information given an index.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     When passed an index, this routine will return the type of field,
-!     the name of the field, the model which the field is associated and
-!     the number of methods associated with the field.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_field_info( n,fld_type,fld_name,model,num_methods )
-!   </TEMPLATE>
+!> @brief This routine allows access to field information given an index.
+!!
+!> When passed an index, this routine will return the type of field,
+!! the name of the field, the model which the field is associated and
+!! the number of methods associated with the field.
+!! <br>Example usage:
+!! @code{.F90}
+!! call get_field_info( n,fld_type,fld_name,model,num_methods )
+!! @endcode
 subroutine get_field_info(n,fld_type,fld_name,model,num_methods)
-!
-!   <IN NAME="n" TYPE="integer">
-!     The field index.
-!   </IN>
-integer,          intent(in)  :: n
-
-!   <OUT NAME="fld_type" TYPE="character" DIM="(*)">
-!     The field type.
-!   </OUT>
-
-!   <OUT NAME="fld_name" TYPE="character" DIM="(*)">
-!     The name of the field.
-!   </OUT>
-
-!   <OUT NAME="model" TYPE="integer">
-!     The number indicating which model is used.
-!   </OUT>
-
-!   <OUT NAME="num_methods" TYPE="integer">
-!     The number of methods.
-!   </OUT>
-character (len=*),intent(out) :: fld_type, fld_name
-integer, intent(out) :: model, num_methods
+integer,          intent(in)  :: n !< index of field
+character (len=*),intent(out) :: fld_type !< field type
+character (len=*),intent(out) :: fld_name !< name of the field
+integer, intent(out) :: model !< number indicating which model is used
+integer, intent(out) :: num_methods !< number of methods
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1511,36 +1429,19 @@ model       = fields(n)%model
 num_methods = fields(n)%num_methods
 
 end subroutine get_field_info
-! </SUBROUTINE>
 
 !#######################################################################
 !#######################################################################
 
-! <SUBROUTINE NAME="get_field_method">
-!   <OVERVIEW>
-!     A routine to get a specified method.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     This routine, when passed a field index and a method index will
-!     return the method text associated with the field(n) method(m).
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_field_method( n,m,method )
-!   </TEMPLATE>
+!> @brief A routine to get a specified method
+!!
+!> This routine, when passed a field index and a method index will
+!! return the method text associated with the field(n) method(m).
 subroutine get_field_method(n,m,method)
-!
-!   <IN NAME="n" TYPE="integer">
-!     The field index.
-!   </IN>
-!   <IN NAME="m" TYPE="integer">
-!     The method index.
-!   </IN>
-!   <OUT NAME="method" TYPE="type(method_type)">
-!     The m-th method of field with index n.
-!   </OUT>
-integer,           intent(in)    :: n
-integer,           intent(in)    :: m
-type(method_type) ,intent(inout) :: method
+
+integer,           intent(in)    :: n !< index of field
+integer,           intent(in)    :: m !< index of method
+type(method_type) ,intent(inout) :: method !< the m-th method of field with index n
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1564,33 +1465,18 @@ if (m < 1 .or. m > fields(n)%num_methods) call mpp_error(FATAL,trim(error_header
   method = fields(n)%methods(m)
 
 end subroutine get_field_method
-! </SUBROUTINE>
 
 !#######################################################################
 !#######################################################################
 
-! <SUBROUTINE NAME="get_field_methods">
-!   <OVERVIEW>
-!     A routine to obtain all the methods associated with a field.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     When passed a field index, this routine will return the text
-!     associated with all the methods attached to the field.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call get_field_methods( n,methods )
-!   </TEMPLATE>
+!> @brief A routine to obtain all the methods associated with a field.
+!!
+!> When passed a field index, this routine will return the text
+!! associated with all the methods attached to the field.
 subroutine get_field_methods(n,methods)
-!
-!   <IN NAME="n" TYPE="integer">
-!     The field index.
-!   </IN>
-!   <OUT NAME="method" TYPE="type(method_type)" DIM="(:)">
-!     An array of methods for field with index n.
-!   </OUT>
-integer,          intent(in)  :: n
 
-type(method_type),intent(inout) :: methods(:)
+integer,          intent(in)  :: n !< field index
+type(method_type),intent(inout) :: methods(:) !< an array of methods for field with index n
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1622,47 +1508,17 @@ logical                                                   :: found_methods
   methods(1:fields(n)%num_methods) = fields(n)%methods(1:fields(n)%num_methods)
 
 end subroutine get_field_methods
-! </SUBROUTINE>
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="parse">
-!   <OVERVIEW>
-!     A function to parse an integer or an array of integers,
-!     a real or an array of reals, a string or an array of strings.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!  Parse is an integer function that decodes values from a text string.
-!  The text string has the form: "label=list" where "label" is an
-!  arbitrary user defined label describing the values being decoded,
-!  and "list" is a list of one or more values separated by commas.
-!  The values may be integer, real, or character.
-!  Parse returns the number of values decoded.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     number = parse(text, label, value)
-!   </TEMPLATE>
-
-
+!> @returns The number of values that have been decoded. This allows
+!! a user to define a large array and fill it partially with
+!! values from a list. This should be the size of the value array.
 function parse_reals ( text, label, values ) result (parse)
-!
-!   <IN NAME="text" TYPE="character(len=*)">
-!     The text string from which the values will be parsed.
-!   </IN>
-!   <IN NAME="label" TYPE="character(len=*)">
-!     A label which describes the values being decoded.
-!   </IN>
-!   <OUT NAME="value" TYPE="integer, real, character(len=*)">
-!     The value or values that have been decoded.
-!   </OUT>
-!   <OUT NAME="parse" TYPE="integer">
-!     The number of values that have been decoded. This allows
-!     a user to define a large array and fill it partially with
-!     values from a list. This should be the size of the value array.
-!   </OUT>
-character(len=*), intent(in)  :: text, label
-real,             intent(out) :: values(:)
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+real,             intent(out) :: values(:) !< The value or values that have been decoded.
 
 include 'parse.inc'
 end function parse_reals
@@ -1672,8 +1528,9 @@ end function parse_reals
 !#######################################################################
 
 function parse_integers ( text, label, values ) result (parse)
-character(len=*), intent(in)  :: text, label
-integer,          intent(out) :: values(:)
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+integer,          intent(out) :: values(:) !< The value or values that have been decoded.
 
 include 'parse.inc'
 end function parse_integers
@@ -1682,8 +1539,9 @@ end function parse_integers
 !#######################################################################
 
 function parse_strings ( text, label, values ) result (parse)
-character(len=*), intent(in)  :: text, label
-character(len=*), intent(out) :: values(:)
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+character(len=*), intent(out) :: values(:) !< The value or values that have been decoded.
 
 include 'parse.inc'
 end function parse_strings
@@ -1694,8 +1552,9 @@ end function parse_strings
 !---- scalar overloads -----
 
 function parse_real ( text, label, value ) result (parse)
-character(len=*), intent(in)  :: text, label
-real,             intent(out) :: value
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+real,             intent(out) :: value !< The value or values that have been decoded.
 integer :: parse
 
 real :: values(1)
@@ -1708,8 +1567,9 @@ end function parse_real
 !#######################################################################
 
 function parse_integer ( text, label, value ) result (parse)
-character(len=*), intent(in)  :: text, label
-integer,          intent(out) :: value
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+integer,          intent(out) :: value !< The value or values that have been decoded.
 integer :: parse
 
 integer :: values(1)
@@ -1722,8 +1582,9 @@ end function parse_integer
 !#######################################################################
 
 function parse_string ( text, label, value ) result (parse)
-character(len=*), intent(in)  :: text, label
-character(len=*), intent(out) :: value
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+character(len=*), intent(out) :: value !< The value or values that have been decoded.
 integer :: parse
 
 character(len=len(value)) :: values(1)
@@ -1735,43 +1596,21 @@ end function parse_string
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="create_field">
-!
-! <OVERVIEW>
-!    A function to create a field as a child of parent_p. This will return
-!    a pointer to a field_def type.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Allocate and initialize a new field in parent_p list.
-!    Return a pointer to the field on success, or a null pointer
-!    on failure.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     list_p => create_field(parent_p, name)
-!   </TEMPLATE>
-!
-!
+!> @brief A function to create a field as a child of parent_p. This will return
+!! a pointer to a field_def type.
+!!
+!> Allocate and initialize a new field in parent_p list.
+!! Return a pointer to the field on success, or a null pointer
+!! on failure.
+!! <br>Example usage:
+!! @code{.F90}
+!! list_p => create_field(parent_p, name)
+!! @endcode
 function  create_field(parent_p, name)                        &
           result (list_p)  !{
-!
-!   <IN NAME="parent_p" TYPE="type(field_def), pointer">
-!     A pointer to the parent of the field that is to be created.
-!   </IN>
-!   <IN NAME="name" TYPE="character">
-!     The name of the field that is to be created.
-!   </IN>
-!   <OUT NAME="list_p" TYPE="type(field_def), pointer">
-!     A pointer to the field that has been created.
-!   </OUT>
-!
-!        Function definition
-!
 type (field_def), pointer    :: list_p
-!
-!        arguments
-!
-type (field_def), pointer    :: parent_p
-character(len=*), intent(in) :: name
+type (field_def), pointer    :: parent_p !< A pointer to the parent of the field that is to be created
+character(len=*), intent(in) :: name !< The name of the field that is to be created
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -1862,47 +1701,27 @@ list_p%index = parent_p%length
 list_p%parent => parent_p
 
 end function  create_field  !}
-! </FUNCTION> NAME="create_field"
-!</PRIVATE>
+
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="dump_list">
-!
-! <OVERVIEW>
-!    This is a function that lists the parameters of a field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Given a pointer to a list, this function prints out the fields, and
-!    subfields, if recursive is true, associated with the list.
-!
-!    This is most likely to be used through fm_dump_list.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = dump_list(list_p, recursive= .true., depth=0)
-!   </TEMPLATE>
-!
+!> @brief This is a function that lists the parameters of a field.
+!!
+!> Given a pointer to a list, this function prints out the fields, and
+!! subfields, if recursive is true, associated with the list.
+!!
+!! This is most likely to be used through fm_dump_list.
+!! <br> Example usage:
+!! @code{.F90}
+!! success = dump_list(list_p, recursive=.true., depth=0)
+!! @endcode
 logical recursive function dump_list(list_p, recursive, depth, out_unit) result(success)
-!
-!   <IN NAME="list_p" TYPE="type(field_def), pointer">
-!     A pointer to the field, the contents of which will be printed out.
-!   </IN>
-!   <IN NAME="recursive" TYPE="logical">
-!     A flag to make the function recursively print all the sub-fields
-!     of the field pointed to by list_p.
-!   </IN>
-!   <IN NAME="depth" TYPE="integer">
-!     The listing will be padded so that 'depth' spaces appear before
-!     the field being printed.
-!   </IN>
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-  type (field_def), pointer :: list_p
-  logical, intent(in)       :: recursive
-  integer, intent(in)       :: depth
-  integer, intent(in)       :: out_unit
+
+  type (field_def), pointer :: list_p !< pointer to the field to be printed out
+  logical, intent(in)       :: recursive !< flag to make function recursively print subfields
+  integer, intent(in)       :: depth !< Listing will be padded so that 'depth' spaces appear before
+                                     !! the field being printed
+  integer, intent(in)       :: out_unit !< unit number to print to
 
   ! ---- local constants
   character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) // '(dump_list): '
@@ -2026,43 +1845,21 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
   enddo
 
 end function dump_list
-! </FUNCTION> NAME="dump_list"
-!</PRIVATE>
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><SUBROUTINE NAME="find_base">
-!
-! <OVERVIEW>
-!    A subroutine that splits a listname into a path and a base.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Find the base name for a list by splitting the list name into
-!    a path and base. The base is the last field within name, while the
-!    path is the preceding section of name. The base string can then be
-!    used to query for values associated with name.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     call find_base(name, path, base)
-!   </TEMPLATE>
-!
+!> @brief A subroutine that splits a listname into a path and a base.
+!!
+!> Find the base name for a list by splitting the list name into
+!! a path and base. The base is the last field within name, while the
+!! path is the preceding section of name. The base string can then be
+!! used to query for values associated with name.
 subroutine find_base(name, path, base)  !{
-!
-!   <IN NAME="name" TYPE="character(len=*)">
-!   </IN>
-!   <OUT NAME="path" TYPE="character(len=*)">
-!      A string containing the path of the base field.
-!   </OUT>
-!   <OUT NAME="base" TYPE="character(len=*)">
-!      A string which can be used to query for values associated with name.
-!   </OUT>
-!
-!        arguments
-!
-character(len=*), intent(in)  :: name
-character(len=*), intent(out) :: path
-character(len=*), intent(out) :: base
+
+character(len=*), intent(in)  :: name !< list name for a field
+character(len=*), intent(out) :: path !< path of the base field
+character(len=*), intent(out) :: base !< A string which can be used to query for values associated with name
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
@@ -2125,47 +1922,24 @@ else  !}{
 endif  !}
 
 end subroutine find_base  !}
-! </SUBROUTINE> NAME="find_base"
-!</PRIVATE>
+
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="find_field">
-!
-! <OVERVIEW>
-!    Find and return a pointer to the field in the specified
-!    list. Return a null pointer on error.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Find and return a pointer to the field in the specified
-!    list. Return a null pointer on error. Given a pointer to a field,
-!    this function searchs for "name" as a sub field.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     field_p => find_field(name, this_list_p)
-!   </TEMPLATE>
-!
+!> @brief Find and return a pointer to the field in the specified
+!! list. Return a null pointer on error.
+!!
+!> Find and return a pointer to the field in the specified
+!! list. Return a null pointer on error. Given a pointer to a field,
+!! this function searchs for "name" as a sub field.
+!> @returns A pointer to the field corresponding to "name" or an unassociated pointer if the field
+!! name does not exist.
 function find_field(name, this_list_p)                                &
         result (field_p)  !{
-!  <OUT NAME="field_p" TYPE="type(field_def), pointer">
-!    A pointer to the field corresponding to "name" or an unassociated
-!    pointer if the field name does not exist.
-!  </OUT>
-!  <IN NAME="name" TYPE="character(len=*)">
-!    The name of a field that the user wishes to find.
-!  </IN>
-!  <IN NAME="this_list_p" TYPE="type(field_def), pointer">
-!    A pointer to a list which the user wishes to search for a field "name".
-!  </IN>
-!
-!        Function definition
-!
 type (field_def), pointer    :: field_p
-!
-!        arguments
-!
-character(len=*), intent(in) :: name
-type (field_def), pointer    :: this_list_p
+character(len=*), intent(in) :: name !< The name of a field that the user wishes to find
+type (field_def), pointer    :: this_list_p !< A pointer to a list which the user wishes to search
+                                            !! for a field "name".
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
@@ -2208,45 +1982,22 @@ else  !}{
 endif  !}
 
 end function find_field  !}
-! </FUNCTION> NAME="find_field"
-!</PRIVATE>
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><SUBROUTINE NAME="find_head">
-!
-! <OVERVIEW>
-!    Find the first list for a name by splitting the name into
-!    a head and the rest.
-! </OVERVIEW>
-! <DESCRIPTION>
-!   Find the first list for a name by splitting the name into a head and the
-! rest. The head is the first field within name, while rest is the remaining
-! section of name. The head string can then be used to find other fields that
-! may be associated with name.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     call find_head(name, head, rest)
-!   </TEMPLATE>
-!
+!> @brief Find the first list for a name by splitting the name into
+!!    a head and the rest.
+!!
+!> Find the first list for a name by splitting the name into a head and the
+!! rest. The head is the first field within name, while rest is the remaining
+!! section of name. The head string can then be used to find other fields that
+!! may be associated with name.
 subroutine find_head(name, head, rest)  !{
-!
-!   <IN NAME="name" TYPE="character(len=*)">
-!      The name of a field of interest.
-!   </IN>
-!   <OUT NAME="head" TYPE="character(len=*)">
-!      head is the first field within name.
-!   </OUT>
-!   <OUT NAME="rest" TYPE="character(len=*)">
-!      rest is the remaining section of name.
-!   </OUT>
-!
-!        arguments
-!
-character(len=*), intent(in)  :: name
-character(len=*), intent(out) :: head
-character(len=*), intent(out) :: rest
+
+character(len=*), intent(in)  :: name !< The name of a field of interest
+character(len=*), intent(out) :: head !< the first field within name
+character(len=*), intent(out) :: rest !< the remaining section of name
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
@@ -2292,53 +2043,25 @@ else  !}{
 endif  !}
 
 end subroutine find_head  !}
-! </SUBROUTINE> NAME="find_head"
-!</PRIVATE>
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="find_list">
-!
-! <OVERVIEW>
-!    Find and return a pointer to the specified list, relative to
-!    relative_p. Return a null pointer on error.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function, when supplied a pointer to a field and a name of a second
-!    field relative to that pointer, will find a list and return the pointer to
-!    the second field. If create is .true. and the second field does not exist,
-!    it will be created.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     list_p => find_list(path, relative_p, create)
-!   </TEMPLATE>
-!
+
+!> @brief Find and return a pointer to the specified list, relative to
+!!    relative_p. Return a null pointer on error.
+!!
+!> This function, when supplied a pointer to a field and a name of a second
+!! field relative to that pointer, will find a list and return the pointer to
+!! the second field. If create is .true. and the second field does not exist,
+!! it will be created.
+!> @returns A pointer to the list to be returned
 function find_list(path, relative_p, create)                    &
         result (list_p)  !{
-!
-!   <OUT NAME="list_p" TYPE="type(field_def), pointer">
-!     A pointer to the list to be returned.
-!   </OUT>
-!   <IN NAME="path" TYPE="character(len=*)">
-!     A path to the list of interest.
-!   </IN>
-!   <IN NAME="list_p" TYPE="type(field_def), pointer">
-!     A pointer to the list to which "path" is relative to.
-!   </IN>
-!   <IN NAME="create" TYPE="logical">
-!     If the list does not exist, having create = .true. will create it.
-!   </IN>
-!
-!        Function definition
-!
 type (field_def), pointer        :: list_p
-!
-!        arguments
-!
-character(len=*), intent(in)     :: path
-type (field_def), pointer        :: relative_p
-logical,          intent(in)     :: create
+character(len=*), intent(in)     :: path !< path to the list of interest
+type (field_def), pointer        :: relative_p !< pointer to the list to which "path" is relative to
+logical,          intent(in)     :: create !< If the list does not exist, it will be created if set to true
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -2458,45 +2181,21 @@ else  !}{
 endif  !}
 
 end function find_list  !}
-! </FUNCTION> NAME="find_list"
-!</PRIVATE>
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_change_list">
-!
-! <OVERVIEW>
-!    Change the current list. Return true on success,
-!    false otherwise
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function changes the currect list to correspond to the list named name.
-!    If the first character of name is the list separator (/) then the list will
-!    search for "name" starting from the root of the field tree. Otherwise it
-!    will search for name starting from the current list.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_change_list(name)
-!   </TEMPLATE>
-!
+!> @brief Change the current list. Return true on success, false otherwise
+!!
+!> This function changes the currect list to correspond to the list named name.
+!! If the first character of name is the list separator (/) then the list will
+!! search for "name" starting from the root of the field tree. Otherwise it
+!! will search for name starting from the current list.
+!! @return A flag to indicate operation success, true = no errors
 function fm_change_list(name)                                        &
         result (success)  !{
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a list that the user wishes to change to.
-!   </IN>
-!
-!        Function definition
-!
 logical        :: success
-!
-!        arguments
-!
-character(len=*), intent(in)  :: name
+character(len=*), intent(in)  :: name !< name of a list to change to
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
@@ -2526,43 +2225,21 @@ end function fm_change_list  !}
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_change_root">
-!
-! <OVERVIEW>
-!    Change the root list
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function changes the root of the field tree to correspond to the
-!    field named name. An example of a use of this would be if code is
-!    interested in a subset of fields with a common base. This common base
-!    could be set using fm_change_root and fields could be referenced using
-!    this root.
-!
-!    This function should be used in conjunction with fm_return_root.
-!
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_change_root(name)
-!   </TEMPLATE>
-!
+!> @brief Change the root list
+!!
+!> This function changes the root of the field tree to correspond to the
+!! field named name. An example of a use of this would be if code is
+!! interested in a subset of fields with a common base. This common base
+!! could be set using fm_change_root and fields could be referenced using
+!! this root.
+!!
+!! This function should be used in conjunction with fm_return_root.
+!! @return A flag to indicate operation success, true = no errors
 function  fm_change_root(name)                                        &
           result (success)  !{
-!
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of the field which the user wishes to become the root.
-!   </IN>
-!
-!        Function definition
-!
 logical        :: success
-!
-!        arguments
-!
-character(len=*), intent(in)  :: name
+character(len=*), intent(in)  :: name !< name of the field which the user wishes to become the root.
+
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -2638,40 +2315,21 @@ else  !}{
 endif  !}
 
 end function  fm_change_root  !}
-! </FUNCTION> NAME="fm_change_root"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_dump_list">
-!
-! <OVERVIEW>
-!    A function to list properties associated with a field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function writes the contents of the field named "name" to stdout.
-!    If recursive is present and .true., then this function writes out the
-!    contents of any subfields associated with the field named "name".
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_dump_list(name, recursive = .true.)
-!   </TEMPLATE>
-!
+!> @brief A function to list properties associated with a field.
+!!
+!> This function writes the contents of the field named "name" to stdout.
+!! If recursive is present and .true., then this function writes out the
+!! contents of any subfields associated with the field named "name".
+!! @return A flag to indicate operation success, true = no errors
 logical function  fm_dump_list(name, recursive, unit) result (success)
-  character(len=*), intent(in)  :: name
-  logical, intent(in), optional :: recursive
-  integer, intent(in), optional :: unit ! file to print to
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of the field for which output is requested.
-!   </IN>
-!   <IN NAME="recursive" TYPE="logical, optional">
-!     If present and .true., then a recursive listing of fields will be
-!     performed.
-!   </IN>
+  character(len=*), intent(in)  :: name !< The name of the field for which output is requested.
+  logical, intent(in), optional :: recursive !< If present and .true., then a recursive listing of
+                                             !! fields will be performed.
+  integer, intent(in), optional :: unit !< file to print to
 
   ! ---- local parameters
   character(len=12), parameter :: sub_name     = 'fm_dump_list'
@@ -2714,42 +2372,19 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
       success = dump_list(temp_list_p, recursive_t, 0, out_unit)
   endif
 end function  fm_dump_list
-! </FUNCTION> NAME="fm_dump_list"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_exists">
-!
-! <OVERVIEW>
-!   A function to test whether a named field exists.
-! </OVERVIEW>
-! <DESCRIPTION>
-!   This function determines is a field exists, relative to the current list,
-!   and returns true if the list exists, false otherwise.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_exists(name)
-!   </TEMPLATE>
-!
+!> @brief A function to test whether a named field exists.
+!!
+!> This function determines is a field exists, relative to the current list,
+!! and returns true if the list exists, false otherwise.
+!! @return A flag to indicate operation success, true = no errors
 function fm_exists(name)                                                &
         result (success)  !{
-!
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of the field that is being queried.
-!   </IN>
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!
-!        Function definition
-!
 logical        :: success
-!
-!        arguments
-!
-character(len=*), intent(in) :: name
+character(len=*), intent(in) :: name !< The name of the field that is being queried
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
@@ -2768,43 +2403,21 @@ dummy_p => get_field(name, current_list_p)
 success = associated(dummy_p)
 
 end function fm_exists  !}
-! </FUNCTION> NAME="fm_exists"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_get_index">
-!
-! <OVERVIEW>
-!    A function to return the index of a named field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Returns the index for name, returns the parameter NO_FIELD if it does not
-!    exist. If the first character of the named field is the list peparator,
-!    then the named field will be relative to the root of the field tree.
-!    Otherwise the named field will be relative to the current list.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     index = fm_get_index(name)
-!   </TEMPLATE>
-!
+!> @brief A function to return the index of a named field.
+!!
+!> Returns the index for name, returns the parameter NO_FIELD if it does not
+!! exist. If the first character of the named field is the list peparator,
+!! then the named field will be relative to the root of the field tree.
+!! Otherwise the named field will be relative to the current list.
+!> @returns index of the named field if it exists, otherwise the parameter NO_FIELD
 function  fm_get_index(name)                        &
           result (index)  !{
-!   <OUT NAME="index" TYPE="index">
-!     The index of the named field if it exists.
-!     Otherwise the parameter NO_FIELD.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a field that the user wishes to get an index for.
-!   </IN>
-!
-!        Function definition
-!
 integer        :: index
-!
-!        arguments
-!
-character(len=*), intent(in) :: name
+character(len=*), intent(in) :: name !< The name of a field that the user wishes to get an index for
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -2855,37 +2468,18 @@ else  !}{
 endif  !}
 
 end function  fm_get_index  !}
-! </FUNCTION> NAME="fm_get_index"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_get_current_list">
-!
-! <OVERVIEW>
-!    A function to return the full path of the current list.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function returns the full path for the current list. A blank
-!    path indicates an error condition has occurred.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     path = fm_get_current_list()
-!   </TEMPLATE>
-!
+!> @brief A function to return the full path of the current list.
+!!
+!> This function returns the full path for the current list. A blank
+!! path indicates an error condition has occurred.
+!> @returns The path corresponding to the current list
 function  fm_get_current_list()                                        &
           result (path)  !{
-!
-!   <OUT NAME="path" TYPE="character(len=fm_path_name_len)">
-!     The path corresponding to the current list.
-!   </OUT>
-!
-!        Function definition
-!
 character(len=fm_path_name_len) :: path
-!
-!        arguments
-!
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
@@ -2937,42 +2531,20 @@ elseif (path .eq. ' ') then  !}{
 endif  !}
 
 end function  fm_get_current_list  !}
-! </FUNCTION> NAME="fm_get_current_list"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_get_length">
-!
-! <OVERVIEW>
-!    A function to return how many elements are contained within the named
-!    list or entry.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function returns the list or entry length for the named list or entry.
-!    If the named field or entry does not exist, a value of 0 is returned.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     length = fm_get_length(name)
-!   </TEMPLATE>
-!
+!> @brief A function to return how many elements are contained within the named
+!! list or entry.
+!!
+!> This function returns the list or entry length for the named list or entry.
+!! If the named field or entry does not exist, a value of 0 is returned.
+!> @returns The number of elements that the field name has.
 function  fm_get_length(name)                        &
           result (length)  !{
-!
-!   <OUT NAME="length" TYPE="integer">
-!     The number of elements that the field name has.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a list or entry that the user wishes to get the length of.
-!   </IN>
-!
-!        Function definition
-!
 integer                      :: length
-!
-!        arguments
-!
-character(len=*), intent(in) :: name
+character(len=*), intent(in) :: name !< The name of a list or entry that the user wishes to get the length of
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3030,42 +2602,21 @@ else  !}{
 endif  !}
 
 end function  fm_get_length  !}
-! </FUNCTION> NAME="fm_get_length"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_get_type">
-!
-! <OVERVIEW>
-!    A function to return the type of the named field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function returns the type of the field for name.
-!    This indicates whether the named field is a "list" (has children fields),
-!    or has values of type "integer", "real", "logical" or "string".
-!    If it does not exist it returns a blank string.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     name_field_type = fm_get_type(name)
-!   </TEMPLATE>
-!
+!> @brief A function to return the type of the named field
+!!
+!> This function returns the type of the field for name.
+!! This indicates whether the named field is a "list" (has children fields),
+!! or has values of type "integer", "real", "logical" or "string".
+!! If it does not exist it returns a blank string.
+!> @returns A string containing the type of the named field
 function  fm_get_type(name)                        &
           result (name_field_type)  !{
-!   <OUT NAME="name_field_type" TYPE="character(len=8)">
-!     A string containing the type of the named field.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a field that the user wishes to find the type of.
-!   </IN>
-!
-!        Function definition
-!
 character(len=8)             :: name_field_type
-!
-!        arguments
-!
-character(len=*), intent(in) :: name
+character(len=*), intent(in) :: name !< The name of a field that the user wishes to find the type of
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3119,51 +2670,18 @@ else  !}{
 endif  !}
 
 end function  fm_get_type  !}
-! </FUNCTION> NAME="fm_get_type"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_get_value">
-!
-! <OVERVIEW>
-!    An overloaded function to find and extract a value for a named field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Find and extract the value for name. The value may be of type real,
-!    integer, logical or character. If a single value from an array  of values
-!    is required, an optional index can be supplied.
-!    Return true for success and false for failure
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_get_value(name, value, index)
-!   </TEMPLATE>
-!
+!> @returns A flag to indicate whether the function operated with (false) or without
+!! (true) errors.
 function  fm_get_value_integer(name, value, index)                 &
           result (success)  !{
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a field that the user wishes to get a value for.
-!   </IN>
-!   <OUT NAME="value" TYPE="integer, real, logical or character">
-!     The value associated with the named field.
-!   </OUT>
-!   <IN NAME="index" TYPE="integer, optional">
-!     An optional index to retrieve a single value from an array.
-!   </IN>
-!
-!        Function definition
-!
 logical                                :: success
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-integer,          intent(out)          :: value
-integer,          intent(in), optional :: index
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
+integer,          intent(out)          :: value !< The value associated with the named field.
+integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3275,18 +2793,14 @@ end function  fm_get_value_integer  !}
 !#######################################################################
 !#######################################################################
 
+!> @returns A flag to indicate whether the function operated with (false) or without
+!! (true) errors.
 function  fm_get_value_logical(name, value, index)                 &
           result (success)  !{
-!
-!        Function definition
-!
 logical                                :: success
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-logical,          intent(out)          :: value
-integer,          intent(in), optional :: index
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
+logical,          intent(out)          :: value !< The value associated with the named field
+integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3401,18 +2915,14 @@ end function  fm_get_value_logical  !}
 !#######################################################################
 !#######################################################################
 
+!> @returns A flag to indicate whether the function operated with (false) or without
+!! (true) errors.
 function  fm_get_value_real(name, value, index)                 &
           result (success)  !{
-!
-!        Function definition
-!
 logical                                :: success
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-real,             intent(out)          :: value
-integer,          intent(in), optional :: index
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
+real,             intent(out)          :: value !< The value associated with the named field
+integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3530,18 +3040,14 @@ end function  fm_get_value_real  !}
 !#######################################################################
 !#######################################################################
 
+!> @returns A flag to indicate whether the function operated with (false) or without
+!! (true) errors.
 function  fm_get_value_string(name, value, index)                 &
           result (success)  !{
-!
-!        Function definition
-!
 logical                                :: success
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-character(len=*), intent(out)          :: value
-integer,          intent(in), optional :: index
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
+character(len=*), intent(out)          :: value !< The value associated with the named field
+integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3654,48 +3160,24 @@ else  !}{
 endif  !}
 
 end function  fm_get_value_string  !}
-! </FUNCTION> NAME="fm_get_value"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_intersection">
-!
-! <OVERVIEW>
-!    A function to find the common names of the sub-fields in a list
-!    of fields.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Return a pointer to an fm_array_list of the intersection
-!    of an array of lists, ignoring the contents of the values,
-!    but just returning the names.
-!    Return false on the end of the intersection.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     return_p => fm_intersection(lists,dim)
-!   </TEMPLATE>
-!
+!> @brief A function to find the common names of the sub-fields in a list
+!!    of fields.
+!!
+!> Return a pointer to an fm_array_list of the intersection
+!! of an array of lists, ignoring the contents of the values,
+!! but just returning the names.
+!! Return false on the end of the intersection.
+!!
+!! @returns A pointer to a list of names that are common to the fields provided in lists.
 function fm_intersection(lists, dim)                        &
         result (return_p)  !{
-!   <OUT NAME="return_p" TYPE="type (fm_array_list_def), pointer">
-!     A pointer to a list of names that are common to the fields provided in
-!     lists.
-!   </OUT>
-!   <IN NAME="dim" TYPE="dim">
-!     The dimension of lists.
-!   </IN>
-!   <IN NAME="lists" TYPE="character(len=*)" DIM="(dim)">
-!     A list of fields that the user wishes to find the common fields of.
-!   </IN>
-!
-!        Function definition
-!
 type (fm_array_list_def), pointer  :: return_p
-!
-!        arguments
-!
-integer,          intent(in)       :: dim
-character(len=*), intent(in)       :: lists(dim)
+integer,          intent(in)       :: dim !< The dimension of lists
+character(len=*), intent(in)       :: lists(dim) !< A list of fields to find common fields of
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3859,53 +3341,20 @@ return_p%length = count
 deallocate(names)
 
 end function fm_intersection  !}
-! </FUNCTION> NAME="fm_intersection"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_loop_over_list">
-!
-! <OVERVIEW>
-!    A function for looping over a list.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Loop over the list, setting the name, type and index
-!    of the next field. Return false at the end of the loop.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_loop_over_list(list, name, field_type, index)
-!   </TEMPLATE>
-!
+!> Iterates through the given list
+!> @returns A flag to indicate whether the function operated with (FALSE)
+!! or without (TRUE) errors
 function  fm_loop_over_list_old(list, name, field_type, index)        &
           result (success)  !{
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="list" TYPE="character(len=*)">
-!     The name of a list to loop over.
-!   </IN>
-!   <OUT NAME="name" TYPE="character(len=*)">
-!     The name of a field from list.
-!   </OUT>
-!   <OUT NAME="field_type" TYPE="character(len=fm_type_name_len)">
-!     The type of a list entry.
-!   </OUT>
-!   <OUT NAME="index" TYPE="integer">
-!     The index of tje field within the list.
-!   </OUT>
-!
-!        Function definition
-!
 logical                                      :: success
-!
-!        arguments
-!
-character(len=*),                intent(in)  :: list
-character(len=*),                intent(out) :: name
-character(len=fm_type_name_len), intent(out) :: field_type
-integer,                         intent(out) :: index
+character(len=*),                intent(in)  :: list !< Name of a list to loop over
+character(len=*),                intent(out) :: name !< name of a field from list
+character(len=fm_type_name_len), intent(out) :: field_type !< type of a list entry
+integer,                         intent(out) :: index !< index of the field within the list
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -3917,7 +3366,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_list_p
-integer                         :: out_unit
+ integer                         :: out_unit
 
 out_unit = stdout()
 !
@@ -3969,12 +3418,10 @@ contains
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="set_list_stuff">
-!
-! <DESCRIPTION>
-! If the the pointer matches to the right list,
-! extract the field information.  Used in fm_loop_over_list
-! </DESCRIPTION>
+!> If the the pointer matches to the right list,
+!! extract the field information.  Used in fm_loop_over_list
+!> @returns A flag to indicate whether the function operated with (FALSE)
+!! or without (TRUE) errors
 function  set_list_stuff()                                                &
           result (success)  !{
 !
@@ -3998,17 +3445,15 @@ function  set_list_stuff()                                                &
   endif  !}
 
 end function  set_list_stuff  !}
-! </FUNCTION> NAME="set_list_stuff"
 
 end function  fm_loop_over_list_old
-! </FUNCTION> NAME="fm_loop_over_list"
 
 !#######################################################################
-! given a name of the list, prepares an iterator over the list content.
-! If the name of the given list is blank, then the current list is used
+!> given a name of the list, prepares an iterator over the list content.
+!! If the name of the given list is blank, then the current list is used
 subroutine fm_init_loop(loop_list, iter)
-  character(len=*)       , intent(in)  :: loop_list ! name of the list to iterate over
-  type(fm_list_iter_type), intent(out) :: iter     ! loop iterator
+  character(len=*)       , intent(in)  :: loop_list !< name of the list to iterate over
+  type(fm_list_iter_type), intent(out) :: iter     !< loop iterator
 
   if (.not.module_is_initialized) call initialize
 
@@ -4021,15 +3466,15 @@ subroutine fm_init_loop(loop_list, iter)
 end subroutine fm_init_loop
 
 !#######################################################################
-! given a list iterator, returns information about curren list element
-! and advances the iterator to the next list element. At the end of the
-! list, returns FALSE
+!> given a list iterator, returns information about curren list element
+!! and advances the iterator to the next list element. At the end of the
+!! list, returns FALSE
 function fm_loop_over_list_new(iter, name, field_type, index) &
          result (success) ; logical success
-  type (fm_list_iter_type), intent(inout) :: iter ! list iterator
-  character(len=*), intent(out) :: name       ! name of the current list item
-  character(len=*), intent(out) :: field_type ! type of the field
-  integer         , intent(out) :: index      ! index in the list
+  type (fm_list_iter_type), intent(inout) :: iter !< list iterator
+  character(len=*), intent(out) :: name       !< name of the current list item
+  character(len=*), intent(out) :: field_type !< type of the field
+  integer         , intent(out) :: index      !< index in the list
 
   if (.not.module_is_initialized) call initialize
   if (associated(iter%ptr)) then
@@ -4049,43 +3494,17 @@ end function fm_loop_over_list_new
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_new_list">
-!
-! <OVERVIEW>
-!    A function to create a new list.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Allocate and initialize a new list and return the index of the list.
-!    If an error occurs return the parameter NO_FIELD.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     index = fm_new_list(name, create, keep)
-!   </TEMPLATE>
-!
+!> @brief A function to create a new list
+!!
+!> Allocate and initialize a new list and return the index of the list. If an
+!! error occurs return the parameter NO_FIELD.
+!> @return integer index of the newly created list
 function  fm_new_list(name, create, keep)                        &
           result (index)  !{
-!   <OUT NAME="index" TYPE="integer">
-!     The index of the newly created list.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a list that the user wishes to create.
-!   </IN>
-!   <IN NAME="create" TYPE="logical, optional">
-!     If present and .true., create the list if it does not exist.
-!   </IN>
-!   <IN NAME="keep" TYPE="logical, optional">
-!     If present and .true., make this list the current list.
-!   </IN>
-!
-!        Function definition
-!
 integer                                :: index
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-logical,          intent(in), optional :: create
-logical,          intent(in), optional :: keep
+character(len=*), intent(in)           :: name !< Name of a list that user wishes to create
+logical,          intent(in), optional :: create !< If present and true, create the list if it does not exist
+logical,          intent(in), optional :: keep !< If present and true, make this list the current list
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -4180,64 +3599,25 @@ else  !}{
 endif  !}
 
 end function  fm_new_list  !}
-! </FUNCTION> NAME="fm_new_list"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_new_value">
-!
-! <OVERVIEW>
-!    An overloaded function to assign a value to a field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Allocate and initialize a new value and return the index.
-!    If an error condition occurs the parameter NO_FIELD is returned.
-!
-!    If the type of the field is changing (e.g. real values being transformed to
-!    integers), then any previous values for the field are removed and replaced
-!    by the value passed in the present call to this function.
-!
-!    If append is present and .true., then index cannot be greater than 0 if
-!    it is present.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     field_index = fm_new_value(name, value, [create], [index], [append])
-!   </TEMPLATE>
-!
+!> @brief Assigns a given value to a given field
+!> @returns An index for the named field
 function  fm_new_value_integer(name, value, create, index, append)     &
           result (field_index)  !{
-!   <OUT NAME="field_index" TYPE="integer">
-!     An index for the named field.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a field that the user wishes to create a value for.
-!   </IN>
-!   <IN NAME="value" TYPE="integer, real, logical, or character(len=*)">
-!     The value that the user wishes to apply to the named field.
-!   </IN>
-!   <IN NAME="create" TYPE="logical, optional">
-!     If present and .true., then a value for this field will be created.
-!   </IN>
-!   <IN NAME="index" TYPE="integer, optional">
-!     The index to an array of values that the user wishes to apply a new value.
-!   </IN>
-!   <IN NAME="append" TYPE="logical, optional">
-!     If present and .true., then append the value to an array of the present
-!     values. If present and .true., then index cannot be greater than 0.
-!   </IN>
-!
-!        Function definition
-!
 integer                                :: field_index
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-integer,          intent(in)           :: value
-logical,          intent(in), optional :: create
-integer,          intent(in), optional :: index
-logical,          intent(in), optional :: append
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
+                                               !! a value for.
+integer,          intent(in)           :: value !< The value that the user wishes to apply to the
+                                                !! named field.
+logical,          intent(in), optional :: create !< If present and .true., then a value for this
+                                                 !! field will be created.
+integer,          intent(in), optional :: index !< The index to an array of values that the user
+                                                !! wishes to apply a new value.
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
+      !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -4459,20 +3839,21 @@ end function  fm_new_value_integer  !}
 !#######################################################################
 !#######################################################################
 
+!> @brief Assigns a given value to a given field
+!> @returns An index for the named field
 function  fm_new_value_logical(name, value, create, index, append) &
           result (field_index)  !{
-!
-!        Function definition
-!
 integer                                :: field_index
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-logical,          intent(in)           :: value
-logical,          intent(in), optional :: create
-integer,          intent(in), optional :: index
-logical,          intent(in), optional :: append
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
+                                               !! a value for.
+logical,          intent(in)           :: value !< The value that the user wishes to apply to the
+                                                !! named field.
+logical,          intent(in), optional :: create !< If present and .true., then a value for this
+                                                 !! field will be created.
+integer,          intent(in), optional :: index !< The index to an array of values that the user
+                                                !! wishes to apply a new value.
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
+      !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -4694,20 +4075,21 @@ end function  fm_new_value_logical  !}
 !#######################################################################
 !#######################################################################
 
+!> @brief Assigns a given value to a given field
+!> @returns An index for the named field
 function  fm_new_value_real(name, value, create, index, append) &
           result (field_index)  !{
-!
-!        Function definition
-!
 integer                                :: field_index
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-real,             intent(in)           :: value
-logical,          intent(in), optional :: create
-integer,          intent(in), optional :: index
-logical,          intent(in), optional :: append
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
+                                               !! a value for.
+real,             intent(in)           :: value !< The value that the user wishes to apply to the
+                                                !! named field.
+logical,          intent(in), optional :: create !< If present and .true., then a value for this
+                                                 !! field will be created.
+integer,          intent(in), optional :: index !< The index to an array of values that the user
+                                                !! wishes to apply a new value.
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
+      !! an array of the present values. If present and .true., then index cannot be greater than 0.
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4929,20 +4311,20 @@ end function  fm_new_value_real  !}
 !#######################################################################
 !#######################################################################
 
+!> @brief Assigns a given value to a given field
+!> @returns An index for the named field
 function  fm_new_value_string(name, value, create, index, append) &
           result (field_index)  !{
-!
-!        Function definition
-!
 integer                                :: field_index
-!
-!        arguments
-!
-character(len=*), intent(in)           :: name
-character(len=*), intent(in)           :: value
-logical,          intent(in), optional :: create
-integer,          intent(in), optional :: index
-logical,          intent(in), optional :: append
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
+                                               !! a value for.
+character(len=*), intent(in)           :: value !< The value that the user wishes to apply to the
+                                                !! named field.
+logical,          intent(in), optional :: create !< If present and .true., then a value for this
+                                                 !! field will be created.
+integer,          intent(in), optional :: index !< The index to an array of values that the user
+                                                !! wishes to apply a new value.
+logical,          intent(in), optional :: append !< If present and .true., then append the value to
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5162,24 +4544,12 @@ else  !}{
 endif  !}
 
 end function  fm_new_value_string  !}
-! </FUNCTION> NAME="fm_new_value"
 
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_reset_loop">
-!
-! <OVERVIEW>
-!    Resets the loop variable. For use in conjunction with fm_loop_over_list.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Resets the loop variable. For use in conjunction with fm_loop_over_list.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     call fm_reset_loop
-!   </TEMPLATE>
-!
+!> Resets the loop variable. For use in conjunction with fm_loop_over_list.
 subroutine  fm_reset_loop
 !
 !        arguments
@@ -5201,27 +4571,16 @@ loop_list = ' '
 nullify(loop_list_p)
 
 end subroutine  fm_reset_loop  !}
-! </FUNCTION> NAME="fm_reset_loop"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_return_root">
-!
-! <OVERVIEW>
-!    Return the root list to the value at initialization
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Return the root list to the value at initialization.
-!    For use in conjunction with fm_change_root.
-!
-!    Users should use this routine before leaving their routine if they
-!    previously used fm_change_root.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     call fm_return_root
-!   </TEMPLATE>
-!
+!> Return the root list to the value at initialization.
+!!
+!> For use in conjunction with fm_change_root.
+!!
+!! Users should use this routine before leaving their routine if they
+!! previously used fm_change_root.
 subroutine  fm_return_root  !{
 !
 !        arguments
@@ -5251,45 +4610,19 @@ save_root_name = ' '
 nullify(save_root_parent_p)
 
 end subroutine  fm_return_root  !}
-! </FUNCTION> NAME="fm_return_root"
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="get_field">
-!
-! <OVERVIEW>
-!    Return a pointer to the field if it exists relative to this_list_p,
-!    null otherwise
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Return a pointer to the field if it exists relative to this_list_p,
-!    null otherwise
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     list_p => get_field(name, this_list_p)
-!   </TEMPLATE>
-!
+!> Return a pointer to the field if it exists relative to this_list_p,
+!! null otherwise
+!! @returns A pointer to the field name
 function get_field(name, this_list_p)                                        &
         result (list_p)  !{
-!   <OUT NAME="list_p" TYPE="type (field_def)">
-!     A pointer to the field name.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a list that the user wishes to get information for.
-!   </IN>
-!   <IN NAME="this_list_p" TYPE="type (field_def)">
-!     A pointer to a list that serves as the base point for searching for name.
-!   </IN>
-!
-!        Function definition
-!
 type (field_def), pointer        :: list_p
-!
-!        arguments
-!
-character(len=*), intent(in)     :: name
-type (field_def), pointer        :: this_list_p
+character(len=*), intent(in)     :: name !< The name of a list that the user wishes to get information for
+type (field_def), pointer        :: this_list_p !< A pointer to a list that serves as the base point
+                                                !! for searching for name
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5317,48 +4650,24 @@ else  !}{
 endif  !}
 
 end function get_field  !}
-! </FUNCTION> NAME="get_field"
-!</PRIVATE>
-
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_modify_name">
-!
-! <OVERVIEW>
-!    This function allows a user to rename a field without modifying the
-!    contents of the field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Function to modify the name of a field.
-!    Should be used with caution.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_modify_name(oldname, newname)
-!   </TEMPLATE>
-!
+!> This function allows a user to rename a field without modifying the
+!! contents of the field.
+!!
+!> Function to modify the name of a field.
+!! Should be used with caution.
+!! @returns A flag to indicate whether the function operated with (FALSE) or
+!!     without (TRUE) errors.
 function fm_modify_name(oldname, newname)                                        &
         result (success)  !{
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="oldname" TYPE="character(len=*)">
-!     The name of a field that the user wishes to change the name of.
-!   </IN>
-!   <IN NAME="newname" TYPE="character(len=*)">
-!     The name that the user wishes to change the name of the field to.
-!   </IN>
-!
-!        Function definition
-!
 logical                          :: success
-!
-!        arguments
-!
-character(len=*), intent(in)     :: oldname
-character(len=*), intent(in)     :: newname
+character(len=*), intent(in)     :: oldname !< The name of a field that the user wishes to change
+                                            !! the name of
+character(len=*), intent(in)     :: newname !< The name that the user wishes to change the name of
+                                            !! the field to.
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5394,26 +4703,12 @@ else  !}{
 endif  !}
 
 end function fm_modify_name  !}
-! </FUNCTION> NAME="fm_modify_name"
-
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="initialize">
-!
-! <OVERVIEW>
-!    A function to initialize the values of the pointers. This will remove
-!    all fields and reset the field tree to only the root field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    A function to initialize the values of the pointers. This will remove
-!    all fields and reset the field tree to only the root field.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     call initialize
-!   </TEMPLATE>
-!
+!> A function to initialize the values of the pointers. This will remove
+!! all fields and reset the field tree to only the root field.
 subroutine initialize  !{
 !
 !        arguments
@@ -5466,46 +4761,20 @@ if (.not. module_is_initialized) then  !{
 endif  !}
 
 end subroutine initialize  !}
-! </FUNCTION> NAME="initialize"
-!</PRIVATE>
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="make_list">
-!
-! <OVERVIEW>
-!    This function creates a new field and returns a pointer to that field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Allocate and initialize a new list in this_list_p list.
-!    Return a pointer to the list on success, or a null pointer
-!    on failure
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     list_p => make_list(this_list_p, name)
-!   </TEMPLATE>
-!
+!> This function creates a new field and returns a pointer to that field.
+!!
+!> Allocate and initialize a new list in this_list_p list.
+!! @return a pointer to the list on success, or a null pointer
+!! on failure.
 function  make_list(this_list_p, name)                        &
           result (list_p)  !{
-!   <OUT NAME="list_p" TYPE="type (field_def), pointer">
-!     A pointer to the list that has been created.
-!   </OUT>
-!   <IN NAME="this_list_p" TYPE="type (field_def), pointer">
-!     The base of a list that the user wishes to add a list to.
-!   </IN>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a list that the user wishes to create.
-!   </IN>
-!
-!        Function definition
-!
 type (field_def), pointer    :: list_p
-!
-!        arguments
-!
-type (field_def), pointer    :: this_list_p
-character(len=*), intent(in) :: name
+type (field_def), pointer    :: this_list_p !< Base of a list that the user wishes to add a list to
+character(len=*), intent(in) :: name !< name of a list that the user wishes to create
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5562,53 +4831,25 @@ if (associated(list_p%r_value)) deallocate(list_p%r_value)
 if (associated(list_p%s_value)) deallocate(list_p%s_value)
 
 end function  make_list  !}
-! </FUNCTION> NAME="make_list"
-!</PRIVATE>
 
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME="fm_query_method">
-!
-! <OVERVIEW>
-!    This is a function that provides the capability to return parameters
-!    associated with a field in a pair of strings.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Given a name return a list of method names and control strings.
-!    This function should return strings similar to those in the field
-!    table if a comma delimited format is being used.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_query_method(name, method_name, method_control)
-!   </TEMPLATE>
-!
+!> This is a function that provides the capability to return parameters
+!! associated with a field in a pair of strings.
+!!
+!> Given a name return a list of method names and control strings.
+!! This function should return strings similar to those in the field
+!! table if a comma delimited format is being used.
+!> @return A flag to indicate whether the function operated with (FALSE) or
+!! without (TRUE) errors
 function fm_query_method(name, method_name, method_control)                &
           result (success)  !{
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a list that the user wishes to change to.
-!   </IN>
-!   <OUT NAME="method_name" TYPE="character(len=*)">
-!     The name of a parameter associated with the named field.
-!   </OUT>
-!   <OUT NAME="method_control" TYPE="character(len=*)">
-!     The value of parameters associated with the named field.
-!   </OUT>
-!
-!        Function definition
-!
 logical                       :: success
-!
-!        arguments
-!
-character(len=*), intent(in)  :: name
-character(len=*), intent(out) :: method_name
-character(len=*), intent(out) :: method_control
+character(len=*), intent(in)  :: name !< name of a list that the user wishes to change to
+character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
+character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5677,54 +4918,22 @@ else  !}{
 endif  !}
 
 end function  fm_query_method  !}
-! </FUNCTION> NAME="fm_query_method"
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME="query_method">
-!
-! <OVERVIEW>
-!    A private function that can recursively recover values for parameters
-!    associated with a field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    A private function that can recursively recover values for parameters
-!    associated with a field.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = query_method(list_p, recursive, name, method_name, method_control)
-!   </TEMPLATE>
-!
+!> A private function that can recursively recover values for parameters
+!! associated with a field.
+!> @return A flag to indicate whether the function operated with (FALSE) or
+!! without (TRUE) errors
 recursive function query_method(list_p, recursive, name, method_name, method_control) &
           result (success)
 logical :: success
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="list_p" TYPE="type (field_def), pointer">
-!     A pointer to the field that is of interest.
-!   </IN>
-!   <IN NAME="name" TYPE="character(len=*)">
-!     The name of a list that the user wishes to change to.
-!   </IN>
-!   <OUT NAME="method_name" TYPE="character(len=*)">
-!     The name of a parameter associated with the named field.
-!   </OUT>
-!   <OUT NAME="method_control" TYPE="character(len=*)">
-!     The value of parameters associated with the named field.
-!   </OUT>
-!
-!        Function definition
-!
-!
-!        arguments
-!
-type (field_def), pointer     :: list_p
-logical,          intent(in)  :: recursive
-character(len=*), intent(in)  :: name
-character(len=*), intent(out) :: method_name, method_control
+type (field_def), pointer     :: list_p !< A pointer to the field that is of interest
+logical,          intent(in)  :: recursive !< A flag to enable recursive searching if true
+character(len=*), intent(in)  :: name !<  name of a list that the user wishes to change to
+character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
+character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 
 ! local parameters
 character(len=12), parameter :: sub_name     = 'query_method'
@@ -5803,7 +5012,7 @@ endif
 end function query_method
 
 !#######################################################################
-! private function: appends str2 to the end of str1, with length check
+!> private function: appends str2 to the end of str1, with length check
 subroutine concat_strings(str1,str2)
    character(*), intent(inout) :: str1
    character(*), intent(in)    :: str2
@@ -5820,47 +5029,23 @@ subroutine concat_strings(str1,str2)
    str1 = trim(str1)//trim(str2)
 end subroutine concat_strings
 
-! </FUNCTION> NAME="query_method"
-!</PRIVATE>
-
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME = "fm_copy_list" >
-! <OVERVIEW>
-!    A function that allows the user to copy a field and add a suffix to
-!    the name of the new field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Given the name of a pre-existing field and a suffix, this function
-!    will create a new field. The name of the new field will be that of
-!    the old field with a suffix supplied by the user.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     index = fm_copy_list(list_name, suffix, create)
-!   </TEMPLATE>
-!
+!> A function that allows the user to copy a field and add a suffix to
+!! the name of the new field.
+!!
+!> Given the name of a pre-existing field and a suffix, this function
+!! will create a new field. The name of the new field will be that of
+!! the old field with a suffix supplied by the user.
+!! @return index of the field that has been created by the copy
 function fm_copy_list(list_name, suffix, create ) &
          result(index)   !{
-!   <OUT NAME="index" TYPE="integer">
-!     The index of the field that has been created by the copy.
-!   </OUT>
-!   <IN NAME="list_name" TYPE="character(len=*)">
-!     The name of a field that the user wishes to copy..
-!   </IN>
-!   <IN NAME="suffix" TYPE="character(len=*)">
-!     The suffix that will be added to list_name when the field is copied.
-!   </IN>
-!
-!        Function definition
-!
 integer        :: index
-!
-!        arguments
-!
-character(len=*), intent(in)           :: list_name
-character(len=*), intent(in)           :: suffix
-logical,          intent(in), optional :: create
+character(len=*), intent(in)           :: list_name !< name of a field that the user wishes to copy
+character(len=*), intent(in)           :: suffix !< suffix that will be added to list_name when
+                                                 !! field is copied
+logical,          intent(in), optional :: create !< flag to create new list if applicable
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -5979,49 +5164,22 @@ if (success) then  !{
 endif  !}
 
 end function fm_copy_list !}
-! </FUNCTION > NAME = "fm_copy_list"
 
 !#######################################################################
 !#######################################################################
 
-! <FUNCTION NAME = "fm_find_methods" >
-! <OVERVIEW>
-!    This function retrieves all the methods associated with a field.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    This function retrieves all the methods associated with a field.
-!    This is different from fm_query_method in that this function gets all
-!    the methods associated as opposed to 1 method.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = fm_find_methods(list_name, methods, control )
-!   </TEMPLATE>
-!
+!> This function retrieves all the methods associated with a field.
+!!
+!> This is different from fm_query_method in that this function gets all
+!! the methods associated as opposed to 1 method.
+!! @return A flag to indicate whether the function operated with (FALSE) or
+!!     without (TRUE) errors.
 function fm_find_methods(list_name, methods, control ) &
          result(success)   !{
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="list_name" TYPE="character(len=*)">
-!     The name of a list that the user wishes to find methods for.
-!   </IN>
-!   <OUT NAME="methods" TYPE="character(len=*)">
-!     An array of the methods associated with list_name.
-!   </OUT>
-!   <OUT NAME="control" TYPE="character(len=*)">
-!     An array of the parameters associated with methods.
-!   </OUT>
-!
-!        Function definition
-!
 logical                                     :: success
-!
-!        arguments
-!
-character(len=*), intent(in)                :: list_name
-character(len=*), intent(out), dimension(:) :: methods
-character(len=*), intent(out), dimension(:) :: control
+character(len=*), intent(in)                :: list_name !< The name of a list that the user wishes to find methods for
+character(len=*), intent(out), dimension(:) :: methods !< An array of the methods associated with list_name
+character(len=*), intent(out), dimension(:) :: control !< An array of the parameters associated with methods
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
@@ -6083,58 +5241,22 @@ if (success) then  !{
 endif  !}
 
 end function fm_find_methods !}
-! </FUNCTION > NAME = "fm_find_methods"
 
 !#######################################################################
 !#######################################################################
 
-! <PRIVATE><FUNCTION NAME = "find_method">
-!
-! <OVERVIEW>
-!    Given a field list pointer this function retrieves methods and
-!    associated parameters for the field list.
-! </OVERVIEW>
-! <DESCRIPTION>
-!    Given a field list pointer this function retrieves methods and
-!    associated parameters for the field list.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     success = find_method(list_p, recursive, num_meth, method, control)
-!   </TEMPLATE>
-!
+!> Given a field list pointer this function retrieves methods and
+!! associated parameters for the field list.
+!! @returns A flag to indicate whether the function operated with (FALSE) or
+!!     without (TRUE) errors.
 recursive function find_method(list_p, recursive, num_meth, method, control)   &
           result (success)  !{
-!   <OUT NAME="success" TYPE="logical">
-!     A flag to indicate whether the function operated with (FALSE) or
-!     without (TRUE) errors.
-!   </OUT>
-!   <IN NAME="list_p" TYPE="type (field_def), pointer">
-!     A pointer to the field of interest
-!   </IN>
-!   <IN NAME="recursive" TYPE="logical">
-!     If true, then recursively search for methods.
-!   </IN>
-!   <INOUT NAME="num_meth" TYPE="integer">
-!     The number of methods found.
-!   </INOUT>
-!   <OUT NAME="method" TYPE="character(len=*)" DIM="(:)">
-!     The methods associated with the field pointed to by list_p
-!   </OUT>
-!   <OUT NAME="control" TYPE="character(len=*)" DIM="(:)">
-!     The control parameters for the methods found.
-!   </OUT>
-!
-!        Function definition
-!
 logical                                     :: success
-!
-!        arguments
-!
-type (field_def), pointer                   :: list_p
-logical,          intent(in)                :: recursive
-integer,          intent(inout)             :: num_meth
-character(len=*), intent(out), dimension(:) :: method
-character(len=*), intent(out), dimension(:) :: control
+type (field_def), pointer                   :: list_p !< A pointer to the field of interest
+logical,          intent(in)                :: recursive !< If true, search recursively for fields
+integer,          intent(inout)             :: num_meth !< The number of methods found
+character(len=*), intent(out), dimension(:) :: method !< The methods associated with the field pointed to by list_p
+character(len=*), intent(out), dimension(:) :: control !< The control parameters for the methods found
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local parameters
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -6248,37 +5370,18 @@ else  !}{
 endif  !}
 
 end function find_method !}
-! </FUNCTION > NAME = "find_method"
-!</PRIVATE>
 
-!#######################################################################
-! <SUBROUTINE NAME="fm_set_verbosity">
-!
-! <OVERVIEW>
-!   A subroutine to set the verbosity of the field manager output.
-! </OVERVIEW>
-! <DESCRIPTION>
-!   This subroutine will set the level of verbosity in the module.
-!   Currently, verbosity is either on (1) or off (0). However,
-!   in the future, "on" may have more granularity. If no argument
-!   is given, then, if verbosity is on it will be turned off, and
-!   is off, will be turned to the default on level.
-!   If verbosity is negative then it is turned off.
-!   Values greater than the maximum will be set to the maximum.
-! </DESCRIPTION>
-!   <TEMPLATE>
-!     call fm_set_verbosity(verbosity)
-!   </TEMPLATE>
-!
+!> A subroutine to set the verbosity of the field manager output.
+!!
+!> This subroutine will set the level of verbosity in the module.
+!! Currently, verbosity is either on (1) or off (0). However,
+!! in the future, "on" may have more granularity. If no argument
+!! is given, then, if verbosity is on it will be turned off, and
+!! is off, will be turned to the default on level.
+!! If verbosity is negative then it is turned off.
+!! Values greater than the maximum will be set to the maximum.
 subroutine  fm_set_verbosity(verbosity)  !{
-!   <IN NAME="verbosity" TYPE="integer, optional">
-!     The level of verbosity required by the user.
-!   </IN>
-!
-!       arguments
-!
-
-integer, intent(in), optional :: verbosity
+integer, intent(in), optional :: verbosity !< The level of verbosity required by user
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !       local parameters
@@ -6324,6 +5427,7 @@ write (out_unit,*) trim(note_header),                          &
 write (out_unit,*)
 
 end subroutine  fm_set_verbosity  !}
-! </SUBROUTINE> NAME="fm_set_verbosity"
 
 end module field_manager_mod
+!> @}
+! close documentation grouping

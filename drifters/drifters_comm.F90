@@ -18,8 +18,13 @@
 !***********************************************************************
 #include "fms_switches.h"
 
+!> @defgroup drifters_comm_mod drifters_comm_mod
+!> @ingroup drifters
+!> @brief Routines and types to update drifter positions across processor domains
+
 !> @file
-!! @email gfdl.climate.model.info@noaa.gov
+!> @brief File for @ref drifters_comm_mod
+
 module drifters_comm_mod
 
 #ifdef _SERIAL
@@ -52,26 +57,23 @@ module drifters_comm_mod
   public :: drifters_comm_type, drifters_comm_new, drifters_comm_del, drifters_comm_set_pe_neighbors
   public :: drifters_comm_set_domain, drifters_comm_update, drifters_comm_gather
 
-  type drifters_comm_type
-     ! compute domain
+  !> Type for drifter communication between PE's
+  !> @ingroup drifters_comm_mod
+  type :: drifters_comm_type
      real           :: xcmin !< compute domain
      real           :: xcmax !< compute domain
      real           :: ycmin !< compute domain
      real           :: ycmax !< compute domain
-     ! data domain
      real           :: xdmin !< data domain
      real           :: xdmax !< data domain
      real           :: ydmin !< data domain
      real           :: ydmax !< data domain
-     ! global valid min/max
      real           :: xgmin !< global valid min/max
      real           :: xgmax !< global valid min/max
      real           :: ygmin !< global valid min/max
      real           :: ygmax !< global valid min/max
-     ! x/y period (can be be nearly infinite)
      logical        :: xperiodic !< x/y period (can be be nearly infinite)
      logical        :: yperiodic !< x/y period (can be be nearly infinite)
-     ! neighbor domains
      integer        :: pe_N !< neighbor domains
      integer        :: pe_S !< neighbor domains
      integer        :: pe_E !< neighbor domains
@@ -80,16 +82,18 @@ module drifters_comm_mod
      integer        :: pe_SE !< neighbor domains
      integer        :: pe_SW !< neighbor domains
      integer        :: pe_NW !< neighbor domains
-     ! starting/ending pe, set this to a value /= 0 if running concurrently
      integer        :: pe_beg !< starting/ending pe, set this to a value /= 0 if running concurrently
      integer        :: pe_end !< starting/ending pe, set this to a value /= 0 if running concurrently
   end type drifters_comm_type
 
 contains
 
+!> @addtogroup drifters_comm_mod
+!> @{
 !===============================================================================
+  !> @brief Initializes default values for @ref drifters_comm_type in self
   subroutine drifters_comm_new(self)
-    type(drifters_comm_type)   :: self
+    type(drifters_comm_type)   :: self !< A new @ref drifters_comm_type
 
     self%xcmin = -huge(1.); self%xcmax = +huge(1.)
     self%ycmin = -huge(1.); self%ycmax = +huge(1.)
@@ -118,8 +122,9 @@ contains
   end subroutine drifters_comm_new
 
 !===============================================================================
+  !> @brief Reset data in a given @ref drifters_comm_type to defaults
   subroutine drifters_comm_del(self)
-    type(drifters_comm_type)   :: self
+    type(drifters_comm_type)   :: self !< A @ref drifters_comm_type to reset
 
     ! nothing to deallocate
     call drifters_comm_new(self)
@@ -158,8 +163,8 @@ contains
   !> @brief Set neighboring pe numbers.
   subroutine drifters_comm_set_pe_neighbors(self, domain)
     ! Set neighboring pe numbers.
-    type(drifters_comm_type)   :: self
-    _TYPE_DOMAIN2D, intent(inout) :: domain
+    type(drifters_comm_type)   :: self !< Drifters communication type to set pe numbers for
+    _TYPE_DOMAIN2D, intent(inout) :: domain !< domain to get neighboring PE's from
 
 #ifndef _SERIAL
 ! parallel code
@@ -319,6 +324,7 @@ contains
   end subroutine drifters_comm_set_domain
 
 !===============================================================================
+  !> Updates drifter communication
   subroutine drifters_comm_update(self, drfts, new_positions, &
        & comm, remove, max_add_remove)
 #ifndef _SERIAL

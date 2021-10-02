@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @file
+!> @ingroup fms_io_mod
 
 !------------------------------------------------------------------------------
 !>Add a real scalar field to a restart object (restart_file_type).  Return

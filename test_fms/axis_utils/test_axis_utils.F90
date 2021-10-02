@@ -19,126 +19,148 @@
 
 program test_axis_utils
 
-use fms_mod,       only : fms_init, fms_end, file_exist, open_namelist_file, check_nml_error
-use fms_mod,       only : close_file
-use mpp_mod,       only : mpp_error, FATAL, stdout
-use mpp_mod,       only : input_nml_file
-use axis_utils_mod, only: interp_1d
+use fms_mod,         only : fms_init, fms_end, check_nml_error
+use mpp_mod,         only : mpp_sync, mpp_pe, mpp_root_pe, mpp_error, FATAL, stdout, &
+                            mpp_get_current_pelist, mpp_npes
+use mpp_mod,         only : input_nml_file
+use axis_utils2_mod, only : axis_edges
+use fms2_io_mod,     only : open_file, close_file, write_data, register_axis, register_field, &
+                            FmsNetcdfFile_t, register_variable_attribute
+use platform_mod,    only : r8_kind
 
 implicit none
 
+type data_type
+   real(kind=r8_kind) :: var(10)         !< Axis data
+   real(kind=r8_kind) :: var_edges(2,10) !< The boundaries of the axis data
+   real(kind=r8_kind) :: answers(11)     !< The expected result
+end type data_type
 
+type(data_type)       :: data_in     !< Data used to create the netcdf file
+integer, allocatable  :: pes(:)      !< List of pes
+type(FmsNetcdfFile_t) :: fileobj     !< FMS2_io fileobj
 
-integer, parameter :: maxsize = 100
+real(kind=r8_kind)    :: answers(11) !< Results obtained from the axis_edges call
 
-integer :: n_src = 0
-integer :: n_dst = 0
-real, dimension(MAXSIZE) :: grid_src = 0
-real, dimension(MAXSIZE) :: grid_dst = 0
-real, dimension(MAXSIZE) :: data_src = 0
-real, dimension(MAXSIZE) :: out_linear_dst = 0
-real, dimension(MAXSIZE) :: out_cubic_dst = 0
-real :: diff
+call fms_init
 
-namelist / test_axis_utils_nml / n_src, n_dst, grid_src, grid_dst, data_src, out_linear_dst, out_cubic_dst
+!< Get the current pelist
+allocate(pes(mpp_npes()))
+call mpp_get_current_pelist(pes)
 
-real, allocatable :: data_dst(:)
-integer           :: unit, ierr, io
+call set_data(data_in)
+call create_input_files(data_in)
 
-  call fms_init()
+!< Test calls to axis_edges
+if ( .not. open_file(fileobj, "test_axis_utils.nc", "read", pelist=pes)) then
+    call mpp_error(FATAL, "Error opening test_axis_utils.nc to read")
+endif
 
-  !--- default option of data
+!< Case 1: Here the variable "axis" in the file does not have the attribute "bounds" or "edges", so
+!! it calculates them from the data in "axis"
+answers = 0.0
+call axis_edges(fileobj, "axis", answers)
+call compare_answers(answers, data_in%answers, "1")
 
- n_src = 31
-  n_dst = 40
-  grid_src(1:n_src) = (/ -63.6711465476916, -63.6711455476916, 166.564180735096, 401.25299580552, &
-                         641.056493022762, 886.219516665347, 1137.35352761133, 1394.4936854079,   &
-                         1657.17893448689, 1925.64572676068, 2200.13183483549, 2480.9124139255,   &
-                         2768.35396680912, 3062.86513953019, 3675.47369643284, 4325.10564183322,  &
-                         5020.19039479527, 5769.85432323481, 6584.25101514851, 7475.94655633703,  &
-                         8462.01951335773, 9568.28246037887, 10178.3869413515, 10834.1425668942,  &
-                         11543.5265942777, 12317.3907407535, 13170.4562394288, 14125.6466646843,  &
-                         15225.8720618086, 16554.7859690842, 19697.1334102613   /)
-  grid_dst(1:n_dst) = (/ 1002.9522552602, 1077.51144617887, 1163.37842788755, 1264.19848463606,  &
-                         1382.57557953916, 1521.56713587855, 1684.76300370633, 1876.37817787584, &
-                         2101.36166220498, 2365.52429149707, 2675.68881278444, 3039.86610206727, &
-                         3467.4620678435, 3969.52058529847, 4553.81573511231, 5159.54844211827,  &
-                         5765.28114912423, 6371.01385613019, 6976.74656313614, 7582.4792701421,  &
-                         8188.21197714806, 8793.94468415402, 9399.67739115997, 10005.4100981659, &
-                         10611.1428051719, 11216.8755121778, 11822.6082191838, 12428.3409261898, &
-                         13034.0736331957, 13639.8063402017, 14245.5390472076, 14851.2717542136, &
-                         15457.0044612196, 16062.7371682255, 16668.4698752315, 17274.2025822374, &
-                         17879.9352892434, 18485.6679962493, 19091.4007032553, 19697.1334102613 /)
-  data_src(1:n_src) = (/ 309.895999643929, 309.991081541887, 309.971074746584, 310.873654697145, &
-                         311.946530606618, 312.862249229647, 314.821236806913, 315.001269608758, &
-                         315.092410930288, 315.19010999336,  315.122964496815, 315.057882573487, &
-                         314.998796850493, 314.984586411292, 315.782246062002, 318.142544345795, &
-                         321.553905292867, 325.247730854554, 329.151282227113, 332.835673638378, &
-                         336.810414210932, 341.64530983048,  344.155248759994, 346.650476976385, &
-                         349.106430095269, 351.915323032738, 354.709396583792, 359.68904432446,  &
-                         371.054289820675, 395.098187506342, 446.150726850039 /)
-  out_linear_dst(1:n_src)  = (/ 313.772830731158,  314.354434665370,  314.839457748187, 314.910045389784, &
-                         314.992925326750, 315.045359036116, 315.102449183793, 315.172180798747, &
-                         315.147125910052, 315.084628301276, 315.017844853703, 314.985696136334, &
-                         315.511400215769, 316.850602339827, 319.265015637373, 322.240565405352, &
-                         325.225197414186, 328.129197765043, 330.773032206975, 333.265094095404, &
-                         335.706729219375, 338.261085191662, 340.908425428092, 343.443630789374, &
-                         345.801936337123, 347.975533834707, 350.119412036280, 352.278721832823, &
-                         354.262698137434, 357.156236613905, 360.927523607037, 367.184696853722, &
-                         375.236143688601, 386.195600996087, 396.945167256346, 406.786279175083, &
-                         416.627391093823, 426.468503012560, 436.309614931300, 446.150726850039 /)
- out_cubic_dst(1:n_src) = (/ -313.942318474633, 314.503163655656, 314.913470956341, 315.055635714636, &
-                         315.006673321389, 315.010907002311, 315.109298816167, 315.185728881530, &
-                         315.155647446989, 315.081117180934, 315.017858886237, 314.979618544023, &
-                         315.354523043308, 316.685513873638, 319.218943479033, 322.249746569912, &
-                         325.225277554867, 328.168923274850, 330.835994100920, 333.255253114313, &
-                         335.672089973660, 338.246525654852, 340.917577732601, 343.460878949881, &
-                         345.833971678071, 347.972895520732, 350.130774046054, 352.280193191086, &
-                         354.219167222638, 356.767905094900, 360.561704156599, 366.216858589885, &
-                         374.647838146611, 385.613883532528, 397.240573301678, 408.134997959681, &
-                         418.287826652131, 427.884458370414, 437.110292105921, 446.150726850039 /)
+!< Case 2: Here the variable "axis_with_bounds" in the file has the attribute
+!! "bounds", so the data is read from the variable "bounds"
+answers = 0.0
+call axis_edges(fileobj, "axis_with_bounds", answers)
+call compare_answers(answers, data_in%answers, "2")
 
-  !---reading namelist
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, test_axis_utils_nml, iostat=io)
-      ierr = check_nml_error(io,'test_axis_utils_nml')
-#else
-  if(file_exist('input.nml')) then
-    unit =  open_namelist_file()
-       ierr=1
-    do while (ierr /= 0)
-          read  (unit, nml=test_axis_utils_nml, iostat=io, end=10)
-          ierr = check_nml_error(io,'test_axis_utils_nml')  ! also initializes nml error codes
-    enddo
- 10    call close_file(unit)
-  endif
-#endif
+!< Case 3: Here the variable "axis_with_edges" in the file has the attribute
+!"edges", so the data is read from the variable "edges"
+answers = 0.0
+call axis_edges(fileobj, "axis_with_edges", answers)
+call compare_answers(answers, data_in%answers, "3")
 
-  if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
-  if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')
+!< Case 4: Here the flag "reproduce_null_char_bug_flag" is turned on, so the
+!! edges are calculated from the data in axis because edges has a null character
+!! in the end
+answers = 0.0
+call axis_edges(fileobj, "axis_with_edges", answers, reproduce_null_char_bug_flag=.true.)
+call compare_answers(answers, data_in%answers, "4")
 
-  allocate(data_dst(n_dst) )
+call close_file(fileobj)
+deallocate(pes)
 
+call fms_end
 
-  !--- write out data
-  unit = stdout()
-  write(unit,*)' the source grid is ', grid_src(1:n_src)
-  write(unit,*)' the destination grid is ', grid_dst(1:n_dst)
-  write(unit,*)' the source data is ', data_src(1:n_src)
+contains
 
-  !--- testing linear interpolation
-  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "linear")
-  write(unit,*)' the destination data using linear interpolation is ', data_dst(1:n_dst)
-  diff = sum(abs(data_dst - out_linear_dst(1:n_dst)))
-  write(unit,*)' the total difference between the result and the expected result is ', diff
-  if(diff > 1.0e-8) call mpp_error(FATAL, 'test_axis_utils: the result with linear interpolation is different')
+!> @brief  Compares the values of two arrays
+subroutine compare_answers(answers_in, answers_expected, test_case)
+real(kind=r8_kind), intent(in) :: answers_in(:) !< Answer calculated
+real(kind=r8_kind), intent(in) :: answers_expected(:) !< Answer expected
+character(1),       intent(in) :: test_case !< String indicating the case number
 
-  !--- testing cubic spline interpolation
-  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "cubic_spline")
-  write(unit,*)' the destination data using cublic spline interpolation is ', data_dst(1:n_dst)
-  diff = sum(abs(data_dst - out_cubic_dst(1:n_dst)))
-  write(unit,*)' the total difference between the result and the expected result is ', diff
-  if(diff > 1.0e-8) call mpp_error(FATAL, 'test_axis_utils: the result with cubic spline interpolation is different')
+integer :: i !< For do loop
 
-   call fms_end()
+do i = 1, size(answers_expected,1)
+   if(answers_in(i) .ne. answers_expected(i)) then
+      print *, "i=", i, " Answer in: ", answers_in(i), " Answer expected ", answers_expected(i)
+      call mpp_error(FATAL, "axis_edges case"//trim(test_case)//": Answers are not correct")
+   endif
+enddo
+end subroutine compare_answers
+
+!> @brief  Sets the values of the data_type to be use to write the file, and to
+!! compare answers
+subroutine set_data(data_in)
+type(data_type), intent(out) :: data_in !< data_type to set the expected values to
+
+integer :: i !< For do loop
+
+do i=1,10
+   data_in%var(i) = real(i, kind=r8_kind)-0.5_r8_kind
+
+   data_in%var_edges(1,i) = real(i-1, kind=r8_kind)
+   data_in%var_edges(2,i) = real(i, kind=r8_kind)
+
+   data_in%answers(i) = real(i-1, kind=r8_kind)
+enddo
+
+data_in%answers(11) = real(10, kind=r8_kind)
+
+end subroutine
+
+!> @brief  Creates a netcdf file to test the different test cases of
+!!"axis_edges"
+subroutine create_input_files(data_in)
+type(data_type), intent(in) :: data_in !< data_type containing the values to be added to the file
+
+type(FmsNetcdfFile_t) :: fileobj !< FMS2_io fileobj
+
+if (mpp_pe() .eq. mpp_root_pe()) then
+   if ( .not. open_file(fileobj, "test_axis_utils.nc", "overwrite")) then
+      call mpp_error(FATAL, "Error opening test_axis_utils.nc to write")
+   endif
+
+   call register_axis(fileobj, "dim1", 10)
+   call register_axis(fileobj, "dim2", 2)
+
+   call register_field(fileobj, "axis", "double", dimensions=(/"dim1"/))
+
+   call register_field(fileobj, "axis_with_bounds", "double", dimensions=(/"dim1"/))
+   call register_variable_attribute(fileobj, "axis_with_bounds", "bounds", "bounds", str_len=6)
+   call register_field(fileobj, "bounds", "double", dimensions=(/"dim2", "dim1"/))
+
+   call register_field(fileobj, "axis_with_edges", "double", dimensions=(/"dim1"/))
+   call register_variable_attribute(fileobj, "axis_with_edges", "edges", "edges"//char(0), str_len=6)
+   call register_field(fileobj, "edges", "double", dimensions=(/"dim2", "dim1"/))
+
+   call write_data(fileobj, "axis", data_in%var)
+   call write_data(fileobj, "axis_with_bounds", data_in%var)
+   call write_data(fileobj, "axis_with_edges", data_in%var)
+   call write_data(fileobj, "bounds", data_in%var_edges)
+   call write_data(fileobj, "edges", data_in%var_edges)
+
+   call close_file(fileobj)
+endif
+
+!< Wait for root_pe to catch up!
+call mpp_sync()
+
+end subroutine create_input_files
+
 end program test_axis_utils

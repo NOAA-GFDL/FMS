@@ -16,11 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup netcdf_io_mod netcdf_io_mod
+!> @ingroup fms2_io
+!> @brief Creates a basic netcdf type and routines to extend for other uses
+!!
+!> Handles type definitions and interfaces for netcdf I/O.
 
 !> @file
+!> @brief File for @ref netcdf_io_mod
 
-!> @brief Create a netcdf type, which can be extended to meet
-!!        our various I/O needs.
+!> @addtogroup netcdf_io_mod
+!> @{
 module netcdf_io_mod
 use, intrinsic :: iso_fortran_env
 use netcdf
@@ -50,8 +56,32 @@ integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used i
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
+!> @}
+
+!> @brief information needed fr regional restart variables
+!> @ingroup netcdf_io_mod
+type, private :: bc_information
+  integer, dimension(:), allocatable :: indices !< Indices for the halo region for the variable
+                                                !! (starting x, ending x, starting y, ending y)
+  integer, dimension(:), allocatable :: global_size !< Size of the variable for each dimension
+  integer, dimension(:), allocatable :: pelist !< List of pelist that have the data for the variable
+  logical :: is_root_pe !< Flag indicating if this is the root_pe from the pelist
+  integer :: x_halo !< Number of halos in x
+  integer :: y_halo !< Number of halos in y
+  integer :: jshift !< Shift in the x axis (from center)
+  integer :: ishift !< Shift in the y axis (from center)
+  real(kind=r4_kind), dimension(:,:), allocatable :: globaldata2d_r4 !< 2d data pointer.
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: globaldata3d_r4 !< 3d data pointer.
+  real(kind=r8_kind), dimension(:,:), allocatable :: globaldata2d_r8 !< 2d data pointer.
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: globaldata3d_r8 !< 3d data pointer.
+  character(len=32) :: chksum !< The variable's checksum
+  logical :: data_on_file_root !< Flag indicating if the file root is part of the pelist that
+                               !!contains data
+endtype bc_information
+
 !> @brief Restart variable.
-type :: RestartVariable_t
+!> @ingroup netcdf_io_mod
+type, private :: RestartVariable_t
   character(len=256) :: varname !< Variable name.
   class(*), pointer :: data0d => null() !< Scalar data pointer.
   class(*), dimension(:), pointer :: data1d => null() !< 1d data pointer.
@@ -61,11 +91,13 @@ type :: RestartVariable_t
   class(*), dimension(:,:,:,:,:), pointer :: data5d => null() !< 5d data pointer.
   logical :: was_read !< Flag to support legacy "query_initialized" feature, which
                       !! keeps track if a file was read.
+  logical :: is_bc_variable !< Flag indicating if variable is a bc_variable
+  type(bc_information) :: bc_info !< information about the boundary condition variable
 endtype RestartVariable_t
 
-
 !> @brief Compressed dimension.
-type :: CompressedDimension_t
+!> @ingroup netcdf_io_mod
+type, private :: CompressedDimension_t
   character(len=256) :: dimname !< Dimension name.
   integer, dimension(:), allocatable :: npes_corner !< Array of starting
                                                     !! indices for each rank.
@@ -75,13 +107,26 @@ type :: CompressedDimension_t
   integer :: nelems !< Total size of the dimension.
 endtype CompressedDimension_t
 
+!> @brief information about the current dimensions for regional restart variables
+!> @ingroup netcdf_io_mod
+type, private :: dimension_information
+  integer, dimension(5) :: xlen !> The size of each unique x dimension
+  integer, dimension(5) :: ylen !> The size of each unique y dimension
+  integer, dimension(5) :: zlen !> The size of each unique z dimension
+  integer, dimension(3) :: cur_dim_len !> Number of unique:
+                                       !! cur_dim_len(1) : x dimensions
+                                       !! cur_dim_len(2) : y dimensions
+                                       !! cur_dim_len(3) : z dimensions
+endtype dimension_information
 
 !> @brief Netcdf file type.
+!> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=256) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
   character(len=256) :: nc_format !< Netcdf file format.
+  logical :: allow_int8 !< Flag indicating if int8 variables are allowed
   integer, dimension(:), allocatable :: pelist !< List of ranks who will
                                                !! communicate.
   integer :: io_root !< I/O root rank of the pelist.
@@ -98,10 +143,13 @@ type, public :: FmsNetcdfFile_t
   integer :: num_compressed_dims !< Number of compressed dimensions.
   logical :: is_diskless !< Flag telling whether this is a diskless file.
   character (len=20) :: time_name
+  type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional restart variables
+
 endtype FmsNetcdfFile_t
 
 
 !> @brief Range type for a netcdf variable.
+!> @ingroup netcdf_io_mod
 type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_min !< Flag that's true if min exists for a variable.
@@ -170,6 +218,8 @@ public :: netcdf_add_restart_variable_2d_wrap
 public :: netcdf_add_restart_variable_3d_wrap
 public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
+public :: register_restart_region_2d
+public :: register_restart_region_3d
 public :: compressed_start_and_count
 public :: get_fill_value
 public :: get_variable_sense
@@ -181,7 +231,10 @@ public :: set_netcdf_mode
 public :: check_netcdf_code
 public :: check_if_open
 public :: set_fileobj_time_name
+public :: write_restart_bc
+public :: read_restart_bc
 
+!> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
   module procedure netcdf_add_restart_variable_1d
@@ -191,7 +244,7 @@ interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_5d
 end interface netcdf_add_restart_variable
 
-
+!> @ingroup netcdf_io_mod
 interface netcdf_read_data
   module procedure netcdf_read_data_0d
   module procedure netcdf_read_data_1d
@@ -202,6 +255,7 @@ interface netcdf_read_data
 end interface netcdf_read_data
 
 
+!> @ingroup netcdf_io_mod
 interface netcdf_write_data
   module procedure netcdf_write_data_0d
   module procedure netcdf_write_data_1d
@@ -212,6 +266,7 @@ interface netcdf_write_data
 end interface netcdf_write_data
 
 
+!> @ingroup netcdf_io_mod
 interface compressed_write
   module procedure compressed_write_0d
   module procedure compressed_write_1d
@@ -222,29 +277,55 @@ interface compressed_write
 end interface compressed_write
 
 
+!> @ingroup netcdf_io_mod
 interface register_global_attribute
   module procedure register_global_attribute_0d
   module procedure register_global_attribute_1d
 end interface register_global_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface register_variable_attribute
   module procedure register_variable_attribute_0d
   module procedure register_variable_attribute_1d
 end interface register_variable_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface get_global_attribute
   module procedure get_global_attribute_0d
   module procedure get_global_attribute_1d
 end interface get_global_attribute
 
 
+!> @ingroup netcdf_io_mod
 interface get_variable_attribute
   module procedure get_variable_attribute_0d
   module procedure get_variable_attribute_1d
 end interface get_variable_attribute
 
+
+!> @ingroup netcdf_io_mod
+interface scatter_data_bc
+  module procedure scatter_data_bc_2d
+  module procedure scatter_data_bc_3d
+end interface scatter_data_bc
+
+!> @ingroup netcdf_io_mod
+interface gather_data_bc
+  module procedure gather_data_bc_2d
+  module procedure gather_data_bc_3d
+end interface gather_data_bc
+
+!> The interface is needed to accomodate pgi because it can't handle class * and there was no other way around it
+!> @ingroup netcdf_io_mod
+interface is_valid
+  module procedure is_valid_r8
+  module procedure is_valid_r4
+end interface is_valid
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 contains
 
@@ -274,15 +355,16 @@ end subroutine netcdf_io_init
 
 !> @brief Check for errors returned by netcdf.
 !! @internal
-subroutine check_netcdf_code(err)
+subroutine check_netcdf_code(err, msg)
 
   integer, intent(in) :: err !< Code returned by netcdf.
+  character(len=*), intent(in) :: msg !< Error message to be appended to the FATAL
 
   character(len=80) :: buf
 
   if (err .ne. nf90_noerr) then
     buf = nf90_strerror(err)
-    call error(trim(buf))
+    call error(trim(buf)//": "//trim(msg))
   endif
 end subroutine check_netcdf_code
 
@@ -310,21 +392,23 @@ subroutine set_netcdf_mode(ncid, mode)
   else
     call error("mode must be either define_mode or data_mode.")
   endif
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, "set_netcdf_mode")
 end subroutine set_netcdf_mode
 
 
 !> @brief Get the id of a dimension from its name.
 !! @return Dimension id, or dimension_missing if it doesn't exist.
 !! @internal
-function get_dimension_id(ncid, dimension_name, allow_failure) &
+function get_dimension_id(ncid, dimension_name, msg, allow_failure) &
   result(dimid)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   character(len=*), intent(in) :: dimension_name !< Dimension name.
+  character(len=*), intent(in) :: msg !< Error message
   logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if dimension
                                                  !! does not exist.
+
   integer :: dimid
 
   integer :: err
@@ -336,21 +420,23 @@ function get_dimension_id(ncid, dimension_name, allow_failure) &
       return
     endif
   endif
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_dimension_id
 
 
 !> @brief Get the id of a variable from its name.
 !! @return Variable id, or variable_missing if it doesn't exist.
 !! @internal
-function get_variable_id(ncid, variable_name, allow_failure) &
+function get_variable_id(ncid, variable_name, msg, allow_failure) &
   result(varid)
 
   integer, intent(in) :: ncid !< Netcdf file object.
   character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), intent(in) :: msg !< Error message
   logical, intent(in), optional :: allow_failure !< Flag that prevents
                                                  !! crash if variable does
                                                  !! not exist.
+
   integer :: varid
 
   integer :: err
@@ -362,19 +448,21 @@ function get_variable_id(ncid, variable_name, allow_failure) &
       return
     endif
   endif
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_variable_id
 
 
 !> @brief Determine if an attribute exists.
 !! @return Flag telling if the attribute exists.
 !! @internal
-function attribute_exists(ncid, varid, attribute_name) &
+function attribute_exists(ncid, varid, attribute_name, msg) &
   result(att_exists)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   integer, intent(in) :: varid !< Variable id.
   character(len=*), intent(in) :: attribute_name !< Attribute name.
+  character(len=*), intent(in), optional :: msg !< Error message
+
   logical :: att_exists
 
   integer :: err
@@ -383,7 +471,7 @@ function attribute_exists(ncid, varid, attribute_name) &
   if (err .eq. nf90_enotatt) then
     att_exists = .false.
   else
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, msg)
     att_exists = .true.
   endif
 end function attribute_exists
@@ -392,35 +480,39 @@ end function attribute_exists
 !> @brief Get the type of a netcdf attribute.
 !! @return The netcdf type of the attribute.
 !! @internal
-function get_attribute_type(ncid, varid, attname) &
+function get_attribute_type(ncid, varid, attname, msg) &
   result(xtype)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   integer, intent(in) :: varid !< Variable id.
   character(len=*), intent(in) :: attname !< Attribute name.
+  character(len=*), intent(in), optional :: msg !< Error message
+
   integer :: xtype
 
   integer :: err
 
   err = nf90_inquire_attribute(ncid, varid, attname, xtype=xtype)
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_attribute_type
 
 
 !> @brief Get the type of a netcdf variable.
 !! @return The netcdf type of the variable.
 !! @internal
-function get_variable_type(ncid, varid) &
+function get_variable_type(ncid, varid, msg) &
   result(xtype)
 
   integer, intent(in) :: ncid !< Netcdf file id.
   integer, intent(in) :: varid !< Variable id.
+  character(len=*), intent(in), optional :: msg !< Error message to append to netcdf error code
+
   integer :: xtype
 
   integer :: err
 
   err = nf90_inquire_variable(ncid, varid, xtype=xtype)
-  call check_netcdf_code(err)
+  call check_netcdf_code(err, msg)
 end function get_variable_type
 
 
@@ -456,7 +548,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   integer :: nc_format_param
   integer :: err
-  character(len=256) :: buf
+  character(len=256) :: buf !< Filename with .res in the filename if it is a restart
+  character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
@@ -483,17 +576,24 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     call string_copy(buf, trim(path))
   endif
 
+  !< If it is a restart add the filename_appendix to the filename
+  if (is_res) then
+     call get_instance_filename(trim(buf), buf2)
+  else
+     call string_copy(buf2, trim(buf))
+  endif
+
   !Check if the file exists.
   success = .true.
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
-    success = file_exists(buf)
+    success = file_exists(buf2)
     if (.not. success) then
       return
     endif
   endif
 
   !Store properties in the derived type.
-  call string_copy(fileobj%path, trim(buf))
+  call string_copy(fileobj%path, trim(buf2))
   if (present(pelist)) then
     allocate(fileobj%pelist(size(pelist)))
     fileobj%pelist(:) = pelist(:)
@@ -504,10 +604,11 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%io_root = fileobj%pelist(1)
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
+  fileobj%allow_int8 = .false.
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
-    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set.")
-    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set.")
+    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
+    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
 
     if (present(nc_format)) then
       if (string_compare(nc_format, "64bit", .true.)) then
@@ -515,9 +616,11 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       elseif (string_compare(nc_format, "classic", .true.)) then
         nc_format_param = nf90_classic_model
       elseif (string_compare(nc_format, "netcdf4", .true.)) then
+        fileobj%allow_int8 = .true.
         nc_format_param = nf90_netcdf4
       else
-        call error("unrecognized netcdf file format "//trim(nc_format)//".")
+        call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
+                   &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
       endif
       call string_copy(fileobj%nc_format, nc_format)
     else
@@ -534,9 +637,10 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     else
-      call error("unrecognized file mode "//trim(mode)//".")
+      call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are read, append, write, overwrite")
     endif
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
   else
     fileobj%ncid = missing_ncid
   endif
@@ -556,6 +660,12 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   ! Set the is_open flag to true for this file object.
   if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
   fileobj%is_open = .true.
+
+  fileobj%bc_dimensions%xlen = 0
+  fileobj%bc_dimensions%ylen = 0
+  fileobj%bc_dimensions%zlen = 0
+  fileobj%bc_dimensions%cur_dim_len = 0
+
 end function netcdf_file_open
 
 
@@ -569,7 +679,7 @@ subroutine netcdf_file_close(fileobj)
 
   if (fileobj%is_root) then
     err = nf90_close(fileobj%ncid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "netcdf_file_close:"//trim(fileobj%path))
   endif
   if (allocated(fileobj%is_open)) fileobj%is_open = .false.
   fileobj%path = missing_path
@@ -704,7 +814,7 @@ subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
   if (fileobj%is_root .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"//trim(dimension_name))
   endif
 end subroutine netcdf_add_dimension
 
@@ -753,12 +863,18 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
   integer :: vtype
   integer :: varid
   integer :: i
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_add_variable: file:"//trim(fileobj%path)//"variable:"//trim(variable_name)
 
   if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     if (string_compare(variable_type, "int", .true.)) then
       vtype = nf90_int
     elseif (string_compare(variable_type, "int64", .true.)) then
+      if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//": 64 bit integers are only supported with 'netcdf4' file format"//&
+                                               &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
+                                               &"add nc_format='netcdf4' to your open_file call")
       vtype = nf90_int64
     elseif (string_compare(variable_type, "float", .true.)) then
       vtype = nf90_float
@@ -767,22 +883,22 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     elseif (string_compare(variable_type, "char", .true.)) then
       vtype = nf90_char
       if (.not. present(dimensions)) then
-        call error("string variables require a string length dimension.")
+        call error("String variables require a string length dimension:"//trim(append_error_msg))
       endif
     else
-      call error("unsupported type.")
+      call error("Unsupported variable type:"//trim(append_error_msg))
     endif
     if (present(dimensions)) then
       allocate(dimids(size(dimensions)))
       do i = 1, size(dimids)
-        dimids(i) = get_dimension_id(fileobj%ncid, trim(dimensions(i)))
+        dimids(i) = get_dimension_id(fileobj%ncid, trim(dimensions(i)),msg=append_error_msg)
       enddo
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
       deallocate(dimids)
     else
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
     endif
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_add_variable
 
@@ -964,7 +1080,8 @@ function global_att_exists(fileobj, attribute_name, broadcast) &
   logical :: att_exists
 
   if (fileobj%is_root) then
-    att_exists = attribute_exists(fileobj%ncid, nf90_global, trim(attribute_name))
+    att_exists = attribute_exists(fileobj%ncid, nf90_global, trim(attribute_name), &
+                 & msg="global_att_exists: file:"//trim(fileobj%path)//" attribute name:"//trim(attribute_name))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -996,8 +1113,12 @@ function variable_att_exists(fileobj, variable_name, attribute_name, &
 
   att_exists = .false.
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
-    att_exists = attribute_exists(fileobj%ncid, varid, trim(attribute_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+            & msg="variable_att_exists: file:"//trim(fileobj%path)//"- variable:"//&
+            &trim(variable_name))
+    att_exists = attribute_exists(fileobj%ncid, varid, trim(attribute_name), &
+                 &msg="variable_att_exists: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)//&
+                 &" attribute name:"//trim(attribute_name))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1026,7 +1147,7 @@ function get_num_dimensions(fileobj, broadcast) &
 
   if (fileobj%is_root) then
     err = nf90_inquire(fileobj%ncid, nDimensions=ndims)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_num_dimensions: file:"//trim(fileobj%path))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1058,15 +1179,16 @@ subroutine get_dimension_names(fileobj, names, broadcast)
     ndims = get_num_dimensions(fileobj, broadcast=.false.)
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("incorrect size of names array.")
+        call error("'names' has to be the same size of the number of dimensions."&
+                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no dimensions in this file.")
+      call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
     endif
     names(:) = ""
     do i = 1, ndims
       err = nf90_inquire_dimension(fileobj%ncid, i, name=names(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, "get_dimension_names: file:"//trim(fileobj%path))
     enddo
   endif
   if (present(broadcast)) then
@@ -1078,10 +1200,11 @@ subroutine get_dimension_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("incorrect size of names array.")
+        call error("'names' has to be the same size of the number of dimensions."&
+                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no dimensions in this file.")
+      call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
     endif
     names(:) = ""
   endif
@@ -1109,6 +1232,7 @@ function dimension_exists(fileobj, dimension_name, broadcast) &
 
   if (fileobj%is_root) then
     dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), &
+                             msg="dimension_exists: file:"//trim(fileobj%path)//" dimension:"//trim(dimension_name), &
                              allow_failure=.true.)
     if (dimid .eq. dimension_missing) then
       dim_exists = .false.
@@ -1140,14 +1264,17 @@ function is_dimension_unlimited(fileobj, dimension_name, broadcast) &
                                              !! by default.
   logical :: is_unlimited
 
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
   integer :: dimid
   integer :: err
   integer :: ulim_dimid
 
   if (fileobj%is_root) then
-    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name))
+    append_error_msg="is_dimension_unlimited: file:"//trim(fileobj%path)//&
+                   & " dimension_name:"//trim(dimension_name)
+    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), msg=append_error_msg)
     err = nf90_inquire(fileobj%ncid, unlimitedDimId=ulim_dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     is_unlimited = dimid .eq. ulim_dimid
   endif
   if (present(broadcast)) then
@@ -1178,9 +1305,9 @@ subroutine get_unlimited_dimension_name(fileobj, dimension_name, broadcast)
   dimension_name = ""
   if (fileobj%is_root) then
     err = nf90_inquire(fileobj%ncid, unlimitedDimId=dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_unlimited_dimension_name: file:"//trim(fileobj%path))
     err = nf90_inquire_dimension(fileobj%ncid, dimid, dimension_name)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_unlimited_dimension_name: file:"//trim(fileobj%path))
     call string_copy(buffer(1), dimension_name)
   endif
   if (present(broadcast)) then
@@ -1209,11 +1336,13 @@ subroutine get_dimension_size(fileobj, dimension_name, dim_size, broadcast)
 
   integer :: dimid
   integer :: err
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   if (fileobj%is_root) then
-    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name))
+    append_error_msg = "get_dimension_size: file:"//trim(fileobj%path)//" dimension_name: "//trim(dimension_name)
+    dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), msg=append_error_msg)
     err = nf90_inquire_dimension(fileobj%ncid, dimid, len=dim_size)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1242,7 +1371,7 @@ function get_num_variables(fileobj, broadcast) &
 
   if (fileobj%is_root) then
     err = nf90_inquire(fileobj%ncid, nVariables=nvars)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, "get_num_variables: file: "//trim(fileobj%path))
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1274,15 +1403,16 @@ subroutine get_variable_names(fileobj, names, broadcast)
     nvars = get_num_variables(fileobj, broadcast=.false.)
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("names array has incorrect size.")
+        call error("'names' has to be the same size of the number of variables."&
+                   &" Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no variables in this file.")
+      call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
     endif
     names(:) = ""
     do i = 1, nvars
       err = nf90_inquire_variable(fileobj%ncid, i, name=names(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, "get_variable_names: "//trim(fileobj%path))
     enddo
   endif
   if (present(broadcast)) then
@@ -1294,10 +1424,11 @@ subroutine get_variable_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("names array has incorrect size.")
+        call error("'names' has to be the same size of the number of variables."&
+                   &" Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
-      call error("there are no variables in this file.")
+      call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
     endif
     names(:) = ""
   endif
@@ -1325,6 +1456,7 @@ function variable_exists(fileobj, variable_name, broadcast) &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+                            msg="variable_exists: file:"//trim(fileobj%path)//" variable:"//trim(variable_name), &
                             allow_failure=.true.)
     var_exists = varid .ne. variable_missing
   endif
@@ -1354,11 +1486,14 @@ function get_variable_num_dimensions(fileobj, variable_name, broadcast) &
 
   integer :: varid
   integer :: err
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_num_dimension: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
   if (present(broadcast)) then
     if (.not. broadcast) then
@@ -1390,23 +1525,30 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   integer :: ndims
   integer,dimension(nf90_max_var_dims) :: dimids
   integer :: i
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_dimension_names: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
+
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims, &
                                 dimids=dimids)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("incorrect size of dim_names array.")
+        call error("'names' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
     dim_names(:) = ""
     do i = 1, ndims
       err = nf90_inquire_dimension(fileobj%ncid, dimids(i), name=dim_names(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
   endif
   if (present(broadcast)) then
@@ -1418,10 +1560,13 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("incorrect size of dim_names array.")
+        call error("'names' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
     dim_names(:) = ""
   endif
@@ -1449,21 +1594,26 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
   integer :: ndims
   integer,dimension(nf90_max_var_dims) :: dimids
   integer :: i
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    append_error_msg = "get_variable_size: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims, dimids=dimids)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("incorrect size of dim_sizes array.")
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
     do i = 1, ndims
       err = nf90_inquire_dimension(fileobj%ncid, dimids(i), len=dim_sizes(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
   endif
   if (present(broadcast)) then
@@ -1475,10 +1625,13 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("incorrect size of dim_names array.")
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
+                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
+                   &" and variable:"//trim(variable_name))
       endif
     else
-      call error("this variable is a scalar.")
+      call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
+                &" does not any dimensions. ")
     endif
   endif
   call mpp_broadcast(dim_sizes, ndims, fileobj%io_root, pelist=fileobj%pelist)
@@ -1544,9 +1697,11 @@ function get_valid(fileobj, variable_name) &
   real(kind=r8_kind) :: add_offset
   real(kind=r8_kind), dimension(2) :: buffer
   integer :: xtype
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
+  append_error_msg = "get_valid: file:"//trim(fileobj%path)
   if (fileobj%is_root) then
-    varid = get_variable_id(fileobj%ncid, variable_name)
+    varid = get_variable_id(fileobj%ncid, variable_name, msg=append_error_msg)
     valid%has_max = .false.
     valid%has_min = .false.
     valid%has_fill = .false.
@@ -1555,13 +1710,13 @@ function get_valid(fileobj, variable_name) &
 
     !This routine makes use of netcdf's automatic type conversion to
     !store all range information in double precision.
-    if (attribute_exists(fileobj%ncid, varid, "scale_factor")) then
+    if (attribute_exists(fileobj%ncid, varid, "scale_factor", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "scale_factor", scale_factor, &
                                   broadcast=.false.)
     else
       scale_factor = 1._r8_kind
     endif
-    if (attribute_exists(fileobj%ncid, varid, "add_offset")) then
+    if (attribute_exists(fileobj%ncid, varid, "add_offset", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "add_offset", add_offset, &
                                   broadcast=.false.)
     else
@@ -1572,7 +1727,7 @@ function get_valid(fileobj, variable_name) &
     !"valid_max" variable attributes if they are present in the file. If either the maximum value
     !or minimum value is defined, valid%has_range is set to .true. (i.e. open ended ranges
     !are valid and should be tested within the is_valid function).
-    if (attribute_exists(fileobj%ncid, varid, "valid_range")) then
+    if (attribute_exists(fileobj%ncid, varid, "valid_range", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "valid_range", buffer, &
                                   broadcast=.false.)
       valid%max_val = buffer(2)*scale_factor + add_offset
@@ -1580,13 +1735,13 @@ function get_valid(fileobj, variable_name) &
       valid%min_val = buffer(1)*scale_factor + add_offset
       valid%has_min = .true.
     else
-      if (attribute_exists(fileobj%ncid, varid, "valid_max")) then
+      if (attribute_exists(fileobj%ncid, varid, "valid_max", msg=append_error_msg)) then
         call get_variable_attribute(fileobj, variable_name, "valid_max", buffer(1), &
                                   broadcast=.false.)
         valid%max_val = buffer(1)*scale_factor + add_offset
         valid%has_max = .true.
       endif
-      if (attribute_exists(fileobj%ncid, varid, "valid_min")) then
+      if (attribute_exists(fileobj%ncid, varid, "valid_min", msg=append_error_msg)) then
         call get_variable_attribute(fileobj, variable_name, "valid_min", buffer(1), &
                                   broadcast=.false.)
         valid%min_val = buffer(1)*scale_factor + add_offset
@@ -1597,7 +1752,7 @@ function get_valid(fileobj, variable_name) &
 
 
     !Get the missing value from the file if it exists.
-    if (attribute_exists(fileobj%ncid, varid, "missing_value")) then
+    if (attribute_exists(fileobj%ncid, varid, "missing_value", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "missing_value", buffer(1), &
                                   broadcast=.false.)
       valid%missing_val = buffer(1)*scale_factor + add_offset
@@ -1612,12 +1767,13 @@ function get_valid(fileobj, variable_name) &
     !non-positive fill value will be the exclusive lower bound (i.e. valis
     !values are greater than the fill value). As before, valid%has_range is true
     !if either a maximum or minimum value is set.
-    if (attribute_exists(fileobj%ncid, varid, "_FillValue")) then
+    if (attribute_exists(fileobj%ncid, varid, "_FillValue", msg=append_error_msg)) then
       call get_variable_attribute(fileobj, variable_name, "_FillValue", buffer(1), &
                                   broadcast=.false.)
       valid%fill_val = buffer(1)*scale_factor + add_offset
       valid%has_fill = .true.
-      xtype = get_variable_type(fileobj%ncid, varid)
+      xtype = get_variable_type(fileobj%ncid, varid, msg=append_error_msg)
+
       if (.not. valid%has_range) then
         if (xtype .eq. nf90_short .or. xtype .eq. nf90_int) then
           if (buffer(1) .gt. 0) then
@@ -1638,7 +1794,7 @@ function get_valid(fileobj, variable_name) &
             valid%has_min = .true.
           endif
         else
-          call error("unsupported type.")
+          call error("Unsupported variable type:"//trim(append_error_msg))
         endif
         valid%has_range = .true.
       endif
@@ -1668,28 +1824,44 @@ function get_valid(fileobj, variable_name) &
 
 end function get_valid
 
-
-!> @brief Determine if a piece of data is "valid" (in the correct range.)
+!> @brief Determine if a piece of (r4) data is "valid" (in the correct range.)
 !! @return A flag telling if the data element is "valid."
-elemental function is_valid(datum, validobj) &
+elemental function is_valid_r8(datum, validobj) &
   result(valid_data)
 
-  class(*), intent(in) :: datum !< Unpacked data element.
+  real(kind=r8_kind), intent(in) :: datum !< Unpacked data element.
+  type(Valid_t), intent(in) :: validobj !< Valid object.
+  logical :: valid_data
+
+  valid_data = check_if_valid(datum, validobj)
+
+end function is_valid_r8
+
+!> @brief Determine if a piece of (r8) data is "valid" (in the correct range.)
+!! @return A flag telling if the data element is "valid."
+elemental function is_valid_r4(datum, validobj) &
+  result(valid_data)
+
+  real(kind=r4_kind), intent(in) :: datum !< Unpacked data element.
   type(Valid_t), intent(in) :: validobj !< Valid object.
   logical :: valid_data
 
   real(kind=r8_kind) :: rdatum
 
-  select type (datum)
-    type is (integer(kind=i4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r4_kind))
-      rdatum = real(datum, kind=r8_kind)
-    type is (real(kind=r8_kind))
-      rdatum = real(datum, kind=r8_kind)
- !  class default
- !    call error("unsupported type.")
-  end select
+  !< Convert the data to r8 so it can be compared correctly since validobj%*_val are defined as r8
+  rdatum = real(datum, kind=r8_kind)
+  valid_data = check_if_valid(rdatum, validobj)
+
+end function is_valid_r4
+
+!> @brief Determine if a piece of data is "valid" (in the correct range.)
+!! @return A flag telling if the data element is "valid."
+elemental function check_if_valid(rdatum, validobj) &
+  result(valid_data)
+
+  real(kind=r8_kind), intent(in) :: rdatum !< packed data element.
+  type(Valid_t), intent(in) :: validobj !< Valid object.
+  logical :: valid_data
 
   valid_data = .true.
   ! If the variable has a range (open or closed), valid values must be in that
@@ -1714,7 +1886,7 @@ elemental function is_valid(datum, validobj) &
       valid_data = .not. (rdatum .eq. validobj%missing_val .or. rdatum .eq. validobj%fill_val)
     endif
   endif
-end function is_valid
+end function check_if_valid
 
 
 !> @brief Gathers a compressed arrays size and offset for each pe.
@@ -1756,7 +1928,8 @@ include "get_global_attribute.inc"
 include "get_variable_attribute.inc"
 include "compressed_write.inc"
 include "compressed_read.inc"
-
+include "scatter_data_bc.inc"
+include "gather_data_bc.inc"
 
 !> @brief Wrapper to distinguish interfaces.
 function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
@@ -1810,7 +1983,6 @@ subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimen
 
   call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
 end subroutine netcdf_add_variable_wrap
-
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level)
@@ -1891,15 +2063,20 @@ function get_variable_missing(fileobj, variable_name) &
   character(len=*), intent(in) :: variable_name
   real(kind=r8_kind) :: variable_missing
 
+  real(kind=r8_kind) :: variable_missing_1d(1) !< Workaround for pgi
+
   if (variable_att_exists(fileobj, variable_name, "_FillValue")) then
-    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "_FillValue", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing_value")) then
-    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing_value", variable_missing_1d)
   elseif (variable_att_exists(fileobj, variable_name, "missing")) then
-    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing)
+    call get_variable_attribute(fileobj, variable_name, "missing", variable_missing_1d)
   else
-    variable_missing = MPP_FILL_DOUBLE
+    variable_missing_1d = MPP_FILL_DOUBLE
   endif
+
+  variable_missing = variable_missing_1d(1)
+
 end function get_variable_missing
 
 
@@ -1945,7 +2122,8 @@ function is_registered_to_restart(fileobj, variable_name) &
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("file "//trim(fileobj%path)//" is not a restart file. "&
+               "Add is_restart=.true. to your open_file call")
   endif
   is_registered = .false.
   do i = 1, fileobj%num_restart_vars
@@ -1991,4 +2169,102 @@ subroutine set_fileobj_time_name (fileobj,time_name)
 !  endif
 end subroutine set_fileobj_time_name
 
+!> @brief Loop through the registered restart variables (including regional
+!! variables) and read them from the netcdf file
+subroutine read_restart_bc(fileobj, unlim_dim_level)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+  integer :: i !< No description
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+
+  do i = 1, fileobj%num_restart_vars
+    !> Go away if you are not in the pelist!
+    if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
+
+    !> The file's root pe reads the file and scatters it to the rest of the pes
+    if (associated(fileobj%restart_vars(i)%data2d)) then
+       call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
+                                fileobj%restart_vars(i)%data2d, &
+                                fileobj%restart_vars(i)%bc_info)
+    else if (associated(fileobj%restart_vars(i)%data3d)) then
+       call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
+                                fileobj%restart_vars(i)%data3d, &
+                                fileobj%restart_vars(i)%bc_info)
+    endif
+  end do
+
+
+end subroutine read_restart_bc
+
+!> @brief Loop through the registered restart variables (including regional
+!! variables) and write them to the netcdf file
+subroutine write_restart_bc(fileobj, unlim_dim_level)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+  integer :: i !< No description
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file. "&
+               &"Add is_restart=.true. to your open_file call")
+  endif
+
+ !> Loop through the variables, root pe gathers the data from the other pes and writes out the checksum.
+ !! Then loop through the variables again to write the data to the netcdf file.
+ !! All the metadata should be written before the data to prevent netcdf from rewriting the file
+ !! if the header is not big enough. That is why the two do loops are needed.
+
+ do i = 1, fileobj%num_restart_vars
+    !> Go away if you are not in the pelist!
+    if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
+
+    !> Go away if this is not a BC variable
+    if (.not. fileobj%restart_vars(i)%is_bc_variable) cycle
+
+    !> Root pe gathers the data from the other ranks, saves it in a buffer, and writes out the checksum.
+    if (associated(fileobj%restart_vars(i)%data2d)) then
+        call gather_data_bc(fileobj, fileobj%restart_vars(i)%data2d, fileobj%restart_vars(i)%bc_info)
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, "checksum", &
+             fileobj%restart_vars(i)%bc_info%chksum, str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
+    else if (associated(fileobj%restart_vars(i)%data3d)) then
+        call gather_data_bc(fileobj, fileobj%restart_vars(i)%data3d, fileobj%restart_vars(i)%bc_info)
+        call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, "checksum", &
+             fileobj%restart_vars(i)%bc_info%chksum, str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
+    endif
+ enddo
+
+ !> Write the data to the netcdf file
+ do i = 1, fileobj%num_restart_vars
+    if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_r8 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata2d_r8 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_r8)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_r4 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata2d_r4 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_r4)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_r8 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata3d_r8 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_r8)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_r4 )) then
+       call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata3d_r4 , &
+                            unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_r4 )
+    endif
+
+ enddo
+
+end subroutine write_restart_bc
+
 end module netcdf_io_mod
+!> @}
+! close documentation grouping

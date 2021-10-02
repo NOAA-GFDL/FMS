@@ -27,6 +27,7 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build these test programs.
 check_PROGRAMS = test_mpp \
+  test_super_grid \
   test_mpp_domains \
   test_redistribute_int \
   test_mpp_memuse \
@@ -120,6 +121,7 @@ test_mpp_global_field_ug_SOURCES = \
   compare_data_checksums_int.F90 \
   test_mpp_global_field_ug.F90
 test_mpp_global_sum_ad_SOURCES = test_mpp_global_sum_ad.F90
+test_super_grid_SOURCES = test_super_grid.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
@@ -153,7 +155,8 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_alltoall.sh \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
-  test_mpp_global_sum_ad.sh
+  test_mpp_global_sum_ad.sh \
+  test_super_grid.sh
 
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
@@ -191,7 +194,8 @@ EXTRA_DIST = input_base.nml \
   test_mpp_alltoall.sh \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
-  test_mpp_global_sum_ad.sh
+  test_mpp_global_sum_ad.sh \
+  test_super_grid.sh
 
 fill_halo.mod: fill_halo.$(OBJEXT)
 compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)

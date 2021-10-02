@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2021.01],
+  [2021.03.01],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -50,7 +50,7 @@ LT_INIT()
 # is, then disable building shared libraries.  Note, the user can still override
 # this by using --enable-shared when running the configure script.
 AS_IF([test x${CRAYPE_VERSION:+yes} = "xyes"],[
-  AS_IF([test x${CRAYPE_LINK_TYP} = "xstatic"],
+  AS_IF([test x${CRAYPE_LINK_TYPE} = "xstatic"],
         [AC_DISABLE_SHARED])])
 
 
@@ -272,13 +272,13 @@ if test -n "$fc_version_info"; then
   FC_VERSION="$FC_VERSION ( $fc_version_info )"
 fi
 
-# Check if netcdf is version 4.7.4 to skip failing fms2_io tests
-AC_MSG_CHECKING([if netCDF 4.7.4 is loaded])
-if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
-  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], true )
+# Check if gcc is 11.1 for class(*) select type bug
+AC_MSG_CHECKING([if gcc 11.1.0 is loaded])
+if [ test -n "`$FC --version | grep GNU | grep 11\.1\..`" ]; then
   AC_MSG_RESULT([yes])
+  AC_MSG_ERROR([Compilation with gcc and gfortran 11.1.0 is unsupported \
+by this version of FMS due to a bug in the compiler. Please use a different version of gcc/gfortran.])
 else
-  AM_CONDITIONAL([SKIP_FMS2_IO_TESTS], false )
   AC_MSG_RESULT([no])
 fi
 
@@ -317,6 +317,7 @@ AC_CONFIG_FILES([
   tracer_manager/Makefile
   topography/Makefile
   mosaic/Makefile
+  mosaic2/Makefile
   monin_obukhov/Makefile
   memutils/Makefile
   interpolator/Makefile
@@ -355,12 +356,8 @@ AC_CONFIG_FILES([
   test_fms/axis_utils/Makefile
   test_fms/mosaic/Makefile
   test_fms/affinity/Makefile
+  test_fms/coupler/Makefile
   FMS.pc
   ])
 
 AC_OUTPUT()
-
-## if tests are being skipped, output warning at end of output
-if [ test "`nc-config --version`" == "netCDF 4.7.4" ]; then
-  AC_MSG_RESULT([Warning: netCDF v4.7.4 is loaded. Incompatible fms2_io tests will be skipped and there may be netCDF issues with model runs.])
-fi

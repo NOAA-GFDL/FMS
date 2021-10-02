@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,25 +17,29 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms directory.
+# This is an automake file for the test_fms/data_override directory of the FMS
+# package.
 
-# Ed Hartnett 11/29/19
+# uramirez, Ed Hartnett
 
-# Set common test settings.
-. ../test_common.sh
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 
-# Create the base input.nml file needed for the tests
-cat <<_EOF > input.nml
-&test_fms_io_nml
-  io_layout = 1,1
-/
-_EOF
+# Link to the FMS library.
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
-# Test the structured grid
-rm -rf RESTART && mkdir RESTART
-run_test test_fms_io 6
+# Build this test program.
+check_PROGRAMS = test_coupler_2d test_coupler_3d
 
-# Ensure the restart directory is empty
-rm -rf RESTART && mkdir RESTART
-run_test test_unstructured_fms_io 6
+# This is the source code for the test.
+test_coupler_2d_SOURCES = test_coupler_2d.F90
+test_coupler_3d_SOURCES = test_coupler_3d.F90
+
+# Run the test program.
+TESTS = test_coupler.sh
+
+# Include these files with the distribution.
+EXTRA_DIST = test_coupler.sh
+
+# Clean up
+CLEANFILES = input.nml *.nc* *.out

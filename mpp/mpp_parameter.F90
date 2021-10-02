@@ -16,6 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_parameter_mod mpp_parameter_mod
+!> @ingroup mpp
+!> @brief Parameters values for use in various @ref mpp modules
+!> If needed, these values should be imported from their corresponding mpp module
+
+!> @file
+!> @brief File for @ref mpp_parameter_mod
+
+!> @addtogroup mpp_parameter_mod
+!> @{
 module mpp_parameter_mod
   use platform_mod
 
@@ -79,14 +89,14 @@ module mpp_parameter_mod
   real(r4_kind)  , parameter :: MPP_FILL_FLOAT  = 9.9692099683868690e+36 !NF_FILL_DOUBLE
   !--- predefined clock granularities, but you can use any integer
   !--- using CLOCK_LOOP and above may distort coarser-grain measurements
-  integer, parameter :: CLOCK_COMPONENT=1      !component level, e.g model, exchange
-  integer, parameter :: CLOCK_SUBCOMPONENT=11  !top level within a model component, e.g dynamics, physics
-  integer, parameter :: CLOCK_MODULE_DRIVER=21 !module driver level, e.g adriver that calls multiple
-                                               !related physics routines
-  integer, parameter :: CLOCK_MODULE=31        !module level, e.g main subroutine of a physics module
-  integer, parameter :: CLOCK_ROUTINE=41       !level of individual subroutine or function
-  integer, parameter :: CLOCK_LOOP=51          !loops or blocks within a routine
-  integer, parameter :: CLOCK_INFRA=61         !infrastructure level, e.g halo update
+  integer, parameter :: CLOCK_COMPONENT=1      !< component level, e.g model, exchange
+  integer, parameter :: CLOCK_SUBCOMPONENT=11  !< top level within a model component, e.g dynamics, physics
+  integer, parameter :: CLOCK_MODULE_DRIVER=21 !< module driver level, e.g adriver that calls multiple
+                                               !< related physics routines
+  integer, parameter :: CLOCK_MODULE=31        !< module level, e.g main subroutine of a physics module
+  integer, parameter :: CLOCK_ROUTINE=41       !< level of individual subroutine or function
+  integer, parameter :: CLOCK_LOOP=51          !< loops or blocks within a routine
+  integer, parameter :: CLOCK_INFRA=61         !< infrastructure level, e.g halo update
   integer, parameter :: MAX_BINS=20
   integer(i8_kind), parameter :: MPP_WAIT=-1, MPP_READY=-2
 
@@ -126,14 +136,14 @@ module mpp_parameter_mod
   integer, parameter :: MAX_TILES=10
 
   !--- The following paramters are used by mpp_io_mod and its components.
-  integer, parameter :: MPP_WRONLY=100, MPP_RDONLY=101, MPP_APPEND=102, MPP_OVERWR=103 !action on open
-  integer, parameter :: MPP_ASCII=200,  MPP_IEEE32=201, MPP_NATIVE=202, MPP_NETCDF=203 !format
-  integer, parameter :: MPP_SEQUENTIAL=300, MPP_DIRECT=301 !access
-  integer, parameter :: MPP_SINGLE=400, MPP_MULTI=401      !threading, fileset
-  integer, parameter :: MPP_DELETE=501, MPP_COLLECT=502    !action on close
-  integer, parameter :: NULLUNIT=-1                        !returned by PEs not participating in
-                                                           !IO after a collective call with threading
-                                                           !equal to MPP_SINGLE
+  integer, parameter :: MPP_WRONLY=100, MPP_RDONLY=101, MPP_APPEND=102, MPP_OVERWR=103 !< action on open
+  integer, parameter :: MPP_ASCII=200,  MPP_IEEE32=201, MPP_NATIVE=202, MPP_NETCDF=203 !< format
+  integer, parameter :: MPP_SEQUENTIAL=300, MPP_DIRECT=301 !< access
+  integer, parameter :: MPP_SINGLE=400, MPP_MULTI=401      !< threading, fileset
+  integer, parameter :: MPP_DELETE=501, MPP_COLLECT=502    !< action on close
+  integer, parameter :: NULLUNIT=-1                        !< returned by PEs not participating in
+                                                           !! IO after collective call with threading
+                                                           !! equal to MPP_SINGLE
   !--- unique tag used in FMS
   integer, parameter :: COMM_TAG_1  = 1,  COMM_TAG_2  = 2,  COMM_TAG_3  = 3,  COMM_TAG_4  = 4
   integer, parameter :: COMM_TAG_5  = 5,  COMM_TAG_6  = 6,  COMM_TAG_7  = 7,  COMM_TAG_8  = 8
@@ -153,3 +163,5 @@ module mpp_parameter_mod
   !#####################################################################
 
 end module mpp_parameter_mod
+!> @}
+! close documentation grouping

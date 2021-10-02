@@ -28,7 +28,7 @@ lib_LTLIBRARIES = libFMS.la
 # These linker flags specify libtool version info.
 # See http://www.gnu.org/software/libtool/manual/libtool.html#Libtool-versioning
 # for information regarding incrementing `-version-info`.
-libFMS_la_LDFLAGS = -version-info 7:0:0
+libFMS_la_LDFLAGS = -version-info 9:0:0
 
 # Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = $(top_builddir)/platform/libplatform.la
@@ -40,6 +40,7 @@ libFMS_la_LIBADD += $(top_builddir)/fms/libfms.la
 libFMS_la_LIBADD += $(top_builddir)/fms2_io/libfms2_io.la
 libFMS_la_LIBADD += $(top_builddir)/affinity/libfms_affinity.la
 libFMS_la_LIBADD += $(top_builddir)/mosaic/libmosaic.la
+libFMS_la_LIBADD += $(top_builddir)/mosaic2/libmosaic2.la
 libFMS_la_LIBADD += $(top_builddir)/coupler/libcoupler.la
 libFMS_la_LIBADD += $(top_builddir)/drifters/libdrifters.la
 libFMS_la_LIBADD += $(top_builddir)/axis_utils/libaxis_utils.la
@@ -59,6 +60,9 @@ libFMS_la_LIBADD += $(top_builddir)/exchange/libexchange.la
 libFMS_la_LIBADD += $(top_builddir)/topography/libtopography.la
 libFMS_la_LIBADD += $(top_builddir)/tracer_manager/libtracer_manager.la
 libFMS_la_LIBADD += $(top_builddir)/random_numbers/librandom_numbers.la
+libFMS_la_LIBADD += $(top_builddir)/diag_integral/libdiag_integral.la
+libFMS_la_LIBADD += $(top_builddir)/sat_vapor_pres/libsat_vapor_pres.la
+libFMS_la_LIBADD += $(top_builddir)/libFMS_mod.la
 
 # At least one source file must be included to please Automake.
 libFMS_la_SOURCES = $(top_builddir)/include/file_version.h

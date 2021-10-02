@@ -17,6 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp
+!> @brief Routines for reading distributed ascii files for @ref mpp_io_mod
 #undef MPP_READ_DISTRIBUTED_ASCII_1D_
 #define MPP_READ_DISTRIBUTED_ASCII_1D_ mpp_read_distributed_ascii_r1D
 #undef MPP_TYPE_

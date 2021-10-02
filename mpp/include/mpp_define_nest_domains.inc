@@ -20,9 +20,15 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+!> @ingroup mpp_domains_mod
+!> @brief Routines for use in @ref mpp_domains_mod for routines utilizing
+!! domains with nested grids
+
 !#############################################################################
 !> @brief Set up a domain to pass data between aligned coarse and fine grid of nested model.
-!> @detailed Set up a domain to pass data between aligned coarse and fine grid of a nested
+!!
+!> Set up a domain to pass data between aligned coarse and fine grid of a nested
 !! model. Supports multiple and telescoping nests. A telescoping nest is defined as
 !! a nest within a nest. Nest domains may span multiple tiles, but cannot contain a
 !! coarse-grid, cube corner. Concurrent nesting is the only supported mechanism,
@@ -35,51 +41,53 @@
 !! You may call mpp_get_C2F_index before calling mpp_update_nest_fine to get the index for
 !! passing data from coarse to fine. You may call mpp_get_F2C_index before calling
 !! mpp_update_nest_coarse to get the index for passing data from coarse to fine.
-!
-!> @note: The following tests for nesting of regular lat-lon grids upon a cubed-sphere
+!!
+!> @note The following tests for nesting of regular lat-lon grids upon a cubed-sphere
 !! grid are done in test_mpp_domains:\n
 !!   a) a first-level nest spanning multiple cubed-sphere faces (tiles 1, 2, & 4)\n
 !!   b) a first-level nest wholly contained within tile 3\n
 !!   c) a second-level nest contained within the nest mentioned in a)\n
 !! Tests are done for data at T, E, C, N-cell center.\n
-!
-!> @example Below is an example to pass data between fine and coarse grid (More details on how to
+!!
+!!
+!! Below is an example to pass data between fine and coarse grid (More details on how to
 !! use the nesting domain update are available in routine test_update_nest_domain of
 !! test_fms/mpp/test_mpp_domains.F90.\n
 !!\n
-!! if( concurrent ) then\n
-!!   call mpp_broadcast_domain(domain_fine)\n
-!!   call mpp_broadcast_domain(domain_coarse)\n
-!! endif \n
-!! \n
-!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level(1:num_nest),  &\n
-!!                              tile_fine(1:num_nest), tile_coarse(1:num_nest), &\n
-!!                              istart_coarse(1:num_nest), icount_coarse(1:num_nest), &\n
-!!                              jstart_coarse(1:num_nest), jcount_coarse(1:num_nest), &\n
-!!                              npes_nest_tile, x_refine(1:num_nest), y_refine(1:num_nest), &\n
-!!                              extra_halo=extra_halo, name="nest_domain")\n
-!!\n
-!! call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, level)\n
-!! call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, level)\n
-!! call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, level)\n
-!! call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, level)\n
-!!\n
-!!    allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))\n
-!!    allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))\n
-!!    allocate(sbuffer(iss_c:ies_c, jss_c:jes_c,nz))\n
-!!    allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))\n
-!!    call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer)\n
-!!\n
-!!    call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f, nest_level=level)\n
-!!    allocate(buffer (is_f:ie_f, js_f:je_f,nz))\n
-!!    call mpp_update_nest_coarse(x, nest_domain, buffer)
+!! @code{.F90}
+!! if( concurrent ) then
+!!   call mpp_broadcast_domain(domain_fine)
+!!   call mpp_broadcast_domain(domain_coarse)
+!! endif
+!!
+!! call mpp_define_nest_domains(nest_domain,domain,num_nest,nest_level(1:num_nest), &
+!!                             tile_fine(1:num_nest), tile_coarse(1:num_nest), &
+!!                              istart_coarse(1:num_nest), icount_coarse(1:num_nest), &
+!!                              jstart_coarse(1:num_nest), jcount_coarse(1:num_nest), &
+!!                              npes_nest_tile, x_refine(1:num_nest), y_refine(1:num_nest), &
+!!                              extra_halo=extra_halo, name="nest_domain")
+!!
+!! call mpp_get_C2F_index(nest_domain, isw_f, iew_f, jsw_f, jew_f, isw_c, iew_c, jsw_c, jew_c, WEST, level)
+!! call mpp_get_C2F_index(nest_domain, ise_f, iee_f, jse_f, jee_f, ise_c, iee_c, jse_c, jee_c, EAST, level)
+!! call mpp_get_C2F_index(nest_domain, iss_f, ies_f, jss_f, jes_f, iss_c, ies_c, jss_c, jes_c, SOUTH, level)
+!! call mpp_get_C2F_index(nest_domain, isn_f, ien_f, jsn_f, jen_f, isn_c, ien_c, jsn_c, jen_c, NORTH, level)
+!!
+!! allocate(wbuffer(isw_c:iew_c, jsw_c:jew_c,nz))
+!! allocate(ebuffer(ise_c:iee_c, jse_c:jee_c,nz))
+!! allocate(sbuffer(iss_c:ies_c, jss_c:jes_c,nz))
+!! allocate(nbuffer(isn_c:ien_c, jsn_c:jen_c,nz))
+!! call mpp_update_nest_fine(x, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer)
+!!
+!! call mpp_get_F2C_index(nest_domain, is_c, ie_c, js_c, je_c, is_f, ie_f, js_f, je_f, nest_level=level)
+!! allocate(buffer (is_f:ie_f, js_f:je_f,nz))
+!! call mpp_update_nest_coarse(x, nest_domain, buffer)
 !
-!> @example all mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &\n
-!!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &\n
+!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
+!!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &
 !!                                    npes_nest_tile, x_refine, y_refine, extra_halo, name)
-!
+!! @endcode
+!!
 !> @note Currently the contact will be limited to overlap contact.
-
 subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, npes_nest_tile, &
                                   x_refine, y_refine, extra_halo, name)
@@ -233,7 +241,6 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
      pe_end_pos(ntiles_top+n)   = pe_end_pos(ntiles_top+n-1) + npes_nest_tile(tile_fine(n))
   enddo
 
-
   nest_domain%num_level = nlevels
   allocate(nest_domain%nest(nlevels))
   allocate(pelist_level(mpp_npes()))
@@ -357,7 +364,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
 
 end subroutine mpp_define_nest_domains
 
-!  Ramstrom/HRD Moving Nest 
+!  Ramstrom/HRD Moving Nest
 !  Based on mpp_define_nest_domains, but just resets positioning of nest
 subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_coarse, extra_halo)
   type(nest_domain_type),     intent(inout) :: nest_domain
@@ -383,7 +390,6 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
 
   nest_level => nest_domain%nest_level
 
-
   extra_halo_local = 0
   if(present(extra_halo)) then
      if(extra_halo .NE. 0) call mpp_error(FATAL, "shift mpp_define_nest_domains.inc: only support extra_halo=0, contact developer")
@@ -397,7 +403,6 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
   if(size(delta_i_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "shift mpp_define_nest_domains.inc: size(delta_i_coarse) .NE. num_nest")
   if(size(delta_j_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "shift mpp_define_nest_domains.inc: size(delta_j_coarse) .NE. num_nest")
 
-  
   ! Step through all nests and apply any modifications
   !  Should only need to modify {i,j}{start,end}_coarse
   !  The indices for fine do not change when the nest moves; only if it was changing size (which it cannot)
@@ -468,10 +473,6 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
   enddo
 
 end subroutine mpp_shift_nest_domains
-
-
-
-
 
 
 subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
@@ -1638,11 +1639,15 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
   !################################################################
   !> @brief Get the index of the data passed from coarse grid to fine grid.
-  !> @detailed Get the index of the data passed from coarse grid to fine grid.
-  !> @example call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
+  !!
+  !> Get the index of the data passed from coarse grid to fine grid.
+  !!
+  !! <br>Example usage:
+  !! @code{.F90}
+  !! call mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine,
   !!                            is_coarse, ie_coarse, js_coarse, je_coarse, dir,
   !!                            nest_level, position)
-  !
+  !! @endcode
   subroutine mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine, &
                 is_coarse, ie_coarse, js_coarse, je_coarse, dir, nest_level, position)
 
@@ -1940,7 +1945,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end subroutine get_nnest
 
 
-!--- This routine will convert the global coarse grid index to nest grid index.
+  !> This routine will convert the global coarse grid index to nest grid index.
   function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
                        ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out, rotate_out)
     type(domain2D), intent(in) :: domain
@@ -2302,21 +2307,19 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     nrecv = 0
     cur_pos = 0
     do while (n<=ntot)
-       if(ix <= nrecv_x ) then
-          rank_x = update_x%recv(ix)%pe-mpp_pe()
-          if(rank_x .LE. 0) rank_x = rank_x + nlist
+       if ( ix <= nrecv_x ) then
+          rank_x = update_x%recv(ix)%pe
        else
-          rank_x = nlist+1
+          rank_x = -1
        endif
-       if(iy <= nrecv_y ) then
-          rank_y = update_y%recv(iy)%pe-mpp_pe()
-          if(rank_y .LE. 0) rank_y = rank_y + nlist
+       if ( iy <= nrecv_y ) then
+          rank_y = update_y%recv(iy)%pe
        else
-          rank_y = nlist+1
+          rank_y = -1
        endif
        nrecv = nrecv + 1
        start_pos(nrecv) = cur_pos
-       if( rank_x == rank_y ) then
+       if ( (rank_x == rank_y) .and. ( (rank_x >= 0) .and. (rank_y >= 0) ) ) then
           n = n+2
           ind_x (nrecv) = ix
           ind_y (nrecv) = iy
@@ -2326,18 +2329,34 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           iy = iy + 1
        else if ( rank_x < rank_y ) then
           n = n+1
-          ind_x (nrecv) = ix
-          ind_y (nrecv) = -1
-          cur_pos = cur_pos + update_x%recv(ix)%totsize
-          pelist(nrecv) = update_x%recv(ix)%pe
-          ix = ix + 1
+          if ( rank_x < 0 ) then
+             ind_x (nrecv) = -1
+             ind_y (nrecv) = iy
+             cur_pos = cur_pos + update_y%recv(iy)%totsize
+             pelist(nrecv) = update_y%recv(iy)%pe
+             iy = iy + 1
+          else
+             ind_x (nrecv) = ix
+             ind_y (nrecv) = -1
+             cur_pos = cur_pos + update_x%recv(ix)%totsize
+             pelist(nrecv) = update_x%recv(ix)%pe
+             ix = ix + 1
+          endif
        else if ( rank_y < rank_x ) then
           n = n+1
-          ind_x (nrecv) = -1
-          ind_y (nrecv) = iy
-          cur_pos = cur_pos + update_y%recv(iy)%totsize
-          pelist(nrecv) = update_y%recv(iy)%pe
-          iy = iy+1
+          if ( rank_y < 0 ) then
+             ind_x (nrecv) = ix
+             ind_y (nrecv) = -1
+             cur_pos = cur_pos + update_x%recv(ix)%totsize
+             pelist(nrecv) = update_x%recv(ix)%pe
+             ix = ix + 1
+          else
+             ind_x (nrecv) = -1
+             ind_y (nrecv) = iy
+             cur_pos = cur_pos + update_y%recv(iy)%totsize
+             pelist(nrecv) = update_y%recv(iy)%pe
+             iy = iy + 1
+          endif
        endif
     end do
 
@@ -2372,21 +2391,19 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     nsend = 0
     cur_pos = 0
     do while (n<=ntot)
-       if(ix <= nsend_x ) then
-          rank_x = update_x%send(ix)%pe-mpp_pe()
-          if(rank_x .LE. 0) rank_x = rank_x + nlist
+       if ( ix <= nsend_x ) then
+          rank_x = update_x%send(ix)%pe
        else
-          rank_x = nlist+1
+          rank_x = -1
        endif
-       if(iy <= nsend_y ) then
-          rank_y = update_y%send(iy)%pe-mpp_pe()
-          if(rank_y .LE. 0) rank_y = rank_y + nlist
+       if ( iy <= nsend_y ) then
+          rank_y = update_y%send(iy)%pe
        else
-          rank_y = nlist+1
+          rank_y = -1
        endif
        nsend = nsend + 1
        start_pos(nsend) = cur_pos
-       if( rank_x == rank_y ) then
+       if ( (rank_x == rank_y) .and. ( (rank_x >= 0) .and. (rank_y >= 0) ) ) then
           n = n+2
           ind_x (nsend) = ix
           ind_y (nsend) = iy
@@ -2396,18 +2413,34 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           iy = iy + 1
        else if ( rank_x < rank_y ) then
           n = n+1
-          ind_x (nsend) = ix
-          ind_y (nsend) = -1
-          cur_pos = cur_pos + update_x%send(ix)%totsize
-          pelist(nsend) = update_x%send(ix)%pe
-          ix = ix + 1
+          if ( rank_x < 0 ) then
+             ind_x (nsend) = -1
+             ind_y (nsend) = iy
+             cur_pos = cur_pos + update_y%send(iy)%totsize
+             pelist(nsend) = update_y%send(iy)%pe
+             iy = iy + 1
+          else
+             ind_x (nsend) = ix
+             ind_y (nsend) = -1
+             cur_pos = cur_pos + update_x%send(ix)%totsize
+             pelist(nsend) = update_x%send(ix)%pe
+             ix = ix + 1
+          endif
        else if ( rank_y < rank_x ) then
           n = n+1
-          ind_x (nsend) = -1
-          ind_y (nsend) = iy
-          cur_pos = cur_pos + update_y%send(iy)%totsize
-          pelist(nsend) = update_y%send(iy)%pe
-          iy = iy+1
+          if ( rank_y < 0 ) then
+             ind_x (nsend) = ix
+             ind_y (nsend) = -1
+             cur_pos = cur_pos + update_x%send(ix)%totsize
+             pelist(nsend) = update_x%send(ix)%pe
+             ix = ix + 1
+          else
+             ind_x (nsend) = -1
+             ind_y (nsend) = iy
+             cur_pos = cur_pos + update_y%send(iy)%totsize
+             pelist(nsend) = update_y%send(iy)%pe
+             iy = iy + 1
+          endif
        endif
     end do
 
