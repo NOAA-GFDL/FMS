@@ -1559,9 +1559,9 @@ CONTAINS
     IF ( PRESENT(rmask) ) THEN
        SELECT TYPE (rmask)
        TYPE IS (real(kind=r4_kind))
-          WHERE ( rmask < 0.5 ) oor_mask = .FALSE.
+          WHERE ( rmask < 0.5_r4_kind ) oor_mask = .FALSE.
        TYPE IS (real(kind=r8_kind))
-          WHERE ( rmask < 0.5 ) oor_mask = .FALSE.
+          WHERE ( rmask < 0.5_r8_kind ) oor_mask = .FALSE.
        END SELECT
     END IF
 
@@ -3004,8 +3004,14 @@ CONTAINS
                       IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
                          i1 = i-l_start(1)-hi+1
                          j1 =  j-l_start(2)-hj+1
-                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5 ) &
-                              & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         SELECT TYPE (rmask)
+                         TYPE IS (real(kind=r4_kind))
+                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         TYPE IS (real(kind=r8_kind))
+                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         END SELECT
                       END IF
                    END DO
                 END DO
@@ -3017,8 +3023,14 @@ CONTAINS
                 k1 = k - ksr + 1
                 DO j=js, je
                    DO i=is, ie
-                      IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5 ) &
-                           & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      SELECT TYPE (rmask)
+                      TYPE IS (real(kind=r4_kind))
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      TYPE IS (real(kind=r8_kind))
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      END SELECT
                    END DO
                 END DO
              END DO
@@ -3026,8 +3038,14 @@ CONTAINS
              DO k=ks, ke
                 DO j=js, je
                    DO i=is, ie
-                      IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5 ) &
-                           & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      SELECT TYPE (rmask)
+                      TYPE IS (real(kind=r4_kind))
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      TYPE IS (real(kind=r8_kind))
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      END SELECT
                    END DO
                 END DO
              END DO
