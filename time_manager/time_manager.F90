@@ -169,7 +169,7 @@ type :: time_type
    integer:: days
    integer:: ticks
    integer:: dummy !< added as a workaround bug on IRIX64 (AP)
-end type time_typ
+end type time_type
 
 !> Operator override interface for use with @ref time_type
 !> @ingroup time_manager_mod
