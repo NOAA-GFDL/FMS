@@ -20,5 +20,7 @@ program test_fms
  else
          call mpp_error(FATAL, trim(test)//" does not match "//trim(answer))
  endif
+
+ call fms_end()
  
 end program test_fms
