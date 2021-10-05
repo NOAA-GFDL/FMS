@@ -168,7 +168,6 @@ type :: time_type
    integer:: seconds
    integer:: days
    integer:: ticks
-   integer:: dummy !< added as a workaround bug on IRIX64 (AP)
 end type time_type
 
 !> Operator override interface for use with @ref time_type
