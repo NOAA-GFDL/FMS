@@ -1,6 +1,6 @@
 program test_fms
  use mpp_mod, only : mpp_error, fatal, note, mpp_init
- use fms_mod, only : fms_init, string
+ use fms_mod, only : fms_init, string, fms_end
 
  integer :: i !< Integer
  character(len=16) :: answer !< expected answer
@@ -20,5 +20,7 @@ program test_fms
  else
          call mpp_error(FATAL, trim(test)//" does not match "//trim(answer))
  endif
+
+ call fms_end()
  
 end program test_fms
