@@ -365,28 +365,20 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
 end subroutine mpp_define_nest_domains
 
 !  Ramstrom/HRD Moving Nest
-!  Based on mpp_define_nest_domains, but just resets positioning of nest
+!  Based on mpp_define_nest_domains, but just resets positioning of nest 
+!    Modifies the parent/coarse start and end indices of the nest location
+!    Computes new overlaps of nest PEs on parent PEs
 subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_coarse, extra_halo)
   type(nest_domain_type),     intent(inout) :: nest_domain
   type(domain2D), target,     intent(in   ) :: domain
   integer,                    intent(in   ) :: delta_i_coarse(:), delta_j_coarse(:)
   integer,          optional, intent(in   ) :: extra_halo
 
-  !logical                                   :: concurrent
   integer                                   :: n, l, m, my_tile_coarse
   integer                                   :: num_nest
-  !integer                                   :: nx_coarse, ny_coarse
-  !integer                                   :: nx_fine, ny_fine
-  !integer                                   :: npes, npes_level, prev_tile_coarse
   integer                                   :: extra_halo_local, npes_nest_top
-  !integer, dimension(:), allocatable        :: pes, pe_start_pos, pe_end_pos, pelist_level
-  !logical, dimension(:), allocatable        :: is_nest_fine, is_nest_coarse
-  !integer, dimension(num_nest)              :: istart_fine, iend_fine, jstart_fine, jend_fine
-  !integer, dimension(num_nest)              :: iend_coarse, jend_coarse
   integer                                   :: nnest, nlevels, ntiles_top, ntiles, pos
-  !logical                                   :: is_first
-
-  integer,                    pointer :: nest_level(:)
+  integer, pointer                          :: nest_level(:)
 
   nest_level => nest_domain%nest_level
 
@@ -409,7 +401,7 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
   !  The PEs for running each component remain the same
   !    But the nest may connect to different parent PEs after motion, so that must be recalculated
   do n = 1, num_nest
-     ! TODO add validation to make sure we don't run off edge
+     ! Moving nest code performs validation to ensure nest does not run off edge
 
      nest_domain%istart_coarse(n) = nest_domain%istart_coarse(n) + delta_i_coarse(n)
      nest_domain%iend_coarse(n) = nest_domain%iend_coarse(n) + delta_i_coarse(n)
@@ -430,42 +422,15 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
         do n = 1, num_nest
            if(nest_level(n) ==l) then
               pos = pos+1
-              !nest_domain%nest(l)%tile_fine(pos) = nest_domain%tile_fine(n)
-              !nest_domain%nest(l)%tile_coarse(pos) = nest_domain%tile_coarse(n)
-              !nest_domain%nest(l)%istart_fine(pos) = nest_domain%istart_fine(n)
-              !nest_domain%nest(l)%iend_fine(pos) = nest_domain%iend_fine(n)
-              !nest_domain%nest(l)%jstart_fine(pos) = nest_domain%jstart_fine(n)
-              !nest_domain%nest(l)%jend_fine(pos) = nest_domain%jend_fine(n)
               nest_domain%nest(l)%istart_coarse(pos) = nest_domain%istart_coarse(n)
               nest_domain%nest(l)%iend_coarse(pos) = nest_domain%iend_coarse(n)
               nest_domain%nest(l)%jstart_coarse(pos) = nest_domain%jstart_coarse(n)
               nest_domain%nest(l)%jend_coarse(pos) = nest_domain%jend_coarse(n)
-              !if(l==1) then
-              !   my_tile_coarse = 1
-              !else if((mpp_pe() .GE. pes(pe_start_pos(tile_fine(n))) .AND. mpp_pe() .LE. pes(pe_end_pos(tile_fine(n)))) .OR.  &
-              !     (mpp_pe() .GE. pes(pe_start_pos(tile_coarse(n))) .AND. mpp_pe() .LE. pes(pe_end_pos(tile_coarse(n)))) ) then
-              !   my_tile_coarse = tile_coarse(n)
-              !endif
            endif
         enddo
-        !if(my_tile_coarse == 0) call mpp_error(FATAL, "shift mpp_define_nest_domains.inc: my_tile_coarse == 0")
 
         if(pos .NE. nest_domain%nest(l)%num_nest)  &
             call mpp_error(FATAL, "shift mpp_define_nest_domains.inc:pos .NE. nest_domain%nest(l)%num_nest")
-
-        !if(is_nest_fine(l)) then
-        !   nest_domain%nest(l)%domain_fine=>domain
-        !   !allocate(nest_domain%nest(l)%domain_coarse)
-        !else if(is_nest_coarse(l)) then
-        !   nest_domain%nest(l)%domain_coarse=>domain
-        !   !allocate(nest_domain%nest(l)%domain_fine)
-        !endif
-!!!! DEBUG CODE ! has problems on coarse domain
-!!$        print*, 'MPP_BROADCAST_DOMAIN: ', mpp_pe(), l, & !ASSOCIATED(nest_domain%nest(l)%domain_fine), &
-!!$             nest_domain%nest(l)%domain_fine%tile_id(1), nest_domain%nest(l)%tile_fine, tile_fine
-!!!! END DEBUG CODE
-        !call mpp_broadcast_domain(nest_domain%nest(l)%domain_fine, nest_domain%nest(l)%tile_fine)
-        !call mpp_broadcast_domain(nest_domain%nest(l)%domain_coarse, my_tile_coarse)
 
         !  The nest may connect to different parent PEs after motion, so this must be recalculated
         call define_nest_level_type(nest_domain%nest(l), nest_domain%nest(l)%x_refine, nest_domain%nest(l)%y_refine, extra_halo_local)
