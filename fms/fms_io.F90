@@ -137,7 +137,7 @@ integer, parameter, private :: max_split_file = 50
 integer, parameter, private :: max_fields=400
 integer, parameter, private :: max_axes=40
 integer, parameter, private :: max_atts=20
-integer, parameter, private :: max_domains = 10
+integer, parameter, private :: max_domains = 100
 integer, parameter, private :: MAX_TIME_LEVEL_REGISTER = 2
 integer, parameter, private :: MAX_TIME_LEVEL_WRITE = 20
 integer, parameter          :: max_axis_size=10000
@@ -712,8 +712,9 @@ subroutine fms_io_init()
   end select
 
 ! Initially allocate  files_write and files_read
-  allocate(files_write(max_files_w),files_read(max_files_r))
-  allocate(registered_file(max_files_w))
+  if (.not. allocated(files_write) ) allocate(files_write(max_files_w))
+  if (.not. allocated(files_read) ) allocate(files_read(max_files_r))
+  if (.not. allocated(registered_file)) allocate(registered_file(max_files_w))
 
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
@@ -7895,11 +7896,12 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
 
 
   !#############################################################################
-  subroutine get_mosaic_tile_grid(grid_file, mosaic_file, domain, tile_count)
+  subroutine get_mosaic_tile_grid(grid_file, mosaic_file, domain, tile_count, custom_path)
     character(len=*), intent(out)          :: grid_file
     character(len=*), intent(in)           :: mosaic_file
     type(domain2D),   intent(in)           :: domain
     integer,          intent(in), optional :: tile_count
+    character(len=*), intent(in), optional :: custom_path
     integer                                :: tile, ntileMe
     integer, dimension(:), allocatable     :: tile_id
 
@@ -7909,7 +7911,11 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     allocate(tile_id(ntileMe))
     tile_id = mpp_get_tile_id(domain)
     call read_data(mosaic_file, "gridfiles", grid_file, level=tile_id(tile) )
-    grid_file = 'INPUT/'//trim(grid_file)
+    if (.not. present(custom_path)) then
+      grid_file = 'INPUT/'//trim(grid_file)
+    else
+      grid_file = trim(custom_path)//'/'//trim(grid_file)
+    endif
     deallocate(tile_id)
 
   end subroutine get_mosaic_tile_grid

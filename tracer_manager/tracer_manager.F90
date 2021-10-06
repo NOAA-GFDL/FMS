@@ -159,7 +159,7 @@ end type inst_type
 !> @{
 
 integer            :: num_tracer_fields = 0
-integer, parameter :: MAX_TRACER_FIELDS = 150
+integer, parameter :: MAX_TRACER_FIELDS = 250
 integer, parameter :: MAX_TRACER_METHOD = 20
 integer, parameter :: NO_TRACER         = 1-HUGE(1)
 integer, parameter :: NOTRACER          = -HUGE(1)

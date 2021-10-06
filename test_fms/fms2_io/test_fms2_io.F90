@@ -86,9 +86,9 @@ call parse_args(parser)
 
 !Set defaults.
 tests(:) = .true.
-nx = 96
-ny = 96
-nz = 30
+nx = 36
+ny = 36
+nz = 10
 io_layout(:) = 1
 ocn_io_layout(:) = 1
 npes_group = 1
