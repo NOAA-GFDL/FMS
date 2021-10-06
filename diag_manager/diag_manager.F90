@@ -373,14 +373,20 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value
-    REAL,  DIMENSION(2), OPTIONAL, INTENT(in) :: RANGE
+    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
+    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
     CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
 
     IF ( PRESENT(err_msg) ) err_msg = ''
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) .AND. (SIZE(range) .NE. 2) ) THEN
+       ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+       CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+    END IF
 
     IF ( PRESENT(init_time) ) THEN
        register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
@@ -403,7 +409,8 @@ CONTAINS
     INTEGER, INTENT(in) :: axes(:)
     TYPE(time_type), INTENT(in) :: init_time
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value, RANGE(2)
+    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
+    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
@@ -440,6 +447,12 @@ CONTAINS
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) .AND. (SIZE(range) .NE. 2) ) THEN
+       ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+       CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+    END IF
 
     ! Call register static, then set static back to false
     register_diag_field_array = register_static_field(module_name, field_name, axes,&
@@ -590,8 +603,8 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, DIMENSION(:), INTENT(in) :: axes
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value
-    REAL, DIMENSION(2), OPTIONAL, INTENT(in) :: range
+    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
+    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant
     LOGICAL, OPTIONAL, INTENT(in) :: DYNAMIC
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
@@ -605,6 +618,7 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm !< String to set as the value to the modeling_realm attribute
 
     REAL :: missing_value_use
+    REAL, DIMENSION(2) :: range_use
     INTEGER :: field, num_axes, j, out_num, k
     INTEGER, DIMENSION(3) :: siz, local_siz, local_start, local_end ! indices of local domain of global axes
     INTEGER :: tile, file_num
@@ -623,7 +637,12 @@ CONTAINS
        IF ( use_cmor ) THEN
           missing_value_use = CMOR_MISSING_VALUE
        ELSE
-          missing_value_use = missing_value
+          SELECT TYPE (missing_value)
+          TYPE IS (real(kind=r4_kind))
+             missing_value_use = missing_value
+          TYPE IS (real(kind=r8_kind))
+             missing_value_use = missing_value
+          END SELECT
        END IF
     END IF
 
@@ -649,6 +668,12 @@ CONTAINS
        allow_log = .NOT.do_not_log
     ELSE
        allow_log = .TRUE.
+    END IF
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) .AND. (SIZE(range) .NE. 2) ) THEN
+       ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+       CALL error_mesg ('diag_manager_mod::register_static_field', 'extent of range should be 2', FATAL)
     END IF
 
     ! Namelist do_diag_field_log is by default false.  Thus to log the
@@ -770,9 +795,15 @@ CONTAINS
     END IF
 
     IF ( PRESENT(range) ) THEN
-       input_fields(field)%range = range
+       SELECT TYPE (range)
+       TYPE IS (real(kind=r4_kind))
+          range_use = range
+       TYPE IS (real(kind=r8_kind))
+          range_use = range
+       END SELECT
+       input_fields(field)%range = range_use
        ! don't use the range if it is not a valid range
-       input_fields(field)%range_present = range(2) .gt. range(1)
+       input_fields(field)%range_present = range_use(2) .gt. range_use(1)
     ELSE
        input_fields(field)%range = (/ 1., 0. /)
        input_fields(field)%range_present = .FALSE.
