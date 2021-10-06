@@ -56,12 +56,34 @@ use platform_mod
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
   use fms2_io_mod
-
+  use  iso_c_binding
   IMPLICIT NONE
 
   PUBLIC
 
   ! Specify storage limits for fixed size tables used for pointers, etc.
+  integer, parameter :: diag_null = -999 !< Integer represening NULL in the diag_object
+  integer, parameter :: diag_not_found = -1
+  integer, parameter :: diag_not_registered = 0
+  integer, parameter :: diag_registered_id = 10
+  !> Supported averaging intervals
+  integer, parameter :: monthly = 30
+  integer, parameter :: daily = 24
+  integer, parameter :: diurnal = 2
+  integer, parameter :: yearly = 12
+  integer, parameter :: no_diag_averaging = 0
+  integer, parameter :: instantaneous = 0
+  integer, parameter :: three_hourly = 3
+  integer, parameter :: six_hourly = 6
+  !integer, parameter :: seasonally = 180
+  !> Supported type/kind of the variable
+  !integer, parameter :: r16=16
+  integer, parameter :: r8 = 8
+  integer, parameter :: r4 = 4
+  integer, parameter :: i8 = -8
+  integer, parameter :: i4 = -4
+  integer, parameter :: string = 19 !< s is the 19th letter of the alphabet
+  integer, parameter :: null_type_int = -999
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   INTEGER, PARAMETER :: DIAG_OTHER = 0
   INTEGER, PARAMETER :: DIAG_OCEAN = 1
@@ -81,6 +103,33 @@ use platform_mod
   INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1 !< Return value for a diag_field that isn't found in the diag_table
 
   !> @}
+
+
+  !> @brief The files type matching a C struct containing diag_yaml information
+    !> @ingroup diag_data_mod
+type, bind(c) :: diag_files_type
+     character (kind=c_char) :: fname (20) !< file name
+     character (kind=c_char) :: frequnit (7) !< the frequency unit
+     integer (c_int)    :: freq !< the frequency of data
+     character (kind=c_char) :: timeunit(7) !< The unit of time
+     character (kind=c_char) :: unlimdim(8) !< The name of the unlimited dimension
+     character (kind=c_char) :: key(8) !< Storage for the key in the yaml file
+end type diag_files_type
+!> @brief The field type matching the C struct for diag_yaml information
+  !> @ingroup diag_data_mod
+type, bind(c) :: diag_fields_type
+     character (kind=c_char) :: fname (20) !< The field/diagnostic name
+     character (kind=c_char) :: var(20) !< The name of the variable
+     character (kind=c_char) :: files(20) !< The files that the diagnostic will be written to
+     integer (c_int)    :: ikind !< The type/kind of the variable
+     character (kind=c_char) :: skind(20) !< The type/kind of the variable
+     character (kind=c_char) :: reduction(20) !< IDK
+     character (kind=c_char) :: all_all(4) !< This has to be "all"
+     character (kind=c_char) :: region(50) !< The region
+     character (kind=c_char) :: regcoord(50) !< Coodinates of the region
+     character (kind=c_char) :: module_location(20) !< The module
+     character (kind=c_char) :: key(8) !< Storage for the key in the yaml file
+end type diag_fields_type
 
   !> @brief Contains the coordinates of the local domain to output.
   !> @ingroup diag_data_mod
