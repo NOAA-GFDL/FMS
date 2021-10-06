@@ -1,6 +1,6 @@
 module fms_diag_yaml_mod
 
-use fms_diag_data_mod, only: diag_files_type, diag_fields_type
+use diag_data_mod, only: diag_files_type, diag_fields_type
 
 contains
 !> \brief Compares two field type variables
