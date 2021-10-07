@@ -557,25 +557,6 @@
     end function mpp_get_field_id
 
   !#####################################################################
-    subroutine mpp_get_unit_range( unit_begin_out, unit_end_out )
-      integer, intent(out) ::      unit_begin_out, unit_end_out
-
-      unit_begin_out = unit_begin; unit_end_out = unit_end
-      return
-    end subroutine mpp_get_unit_range
-
-  !#####################################################################
-    subroutine mpp_set_unit_range( unit_begin_in, unit_end_in )
-      integer, intent(in) ::       unit_begin_in, unit_end_in
-
-      if( unit_begin_in.GT.unit_end_in )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_begin_in.GT.unit_end_in.' )
-      if( unit_begin_in.LT.0           )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_begin_in.LT.0.' )
-      if( unit_end_in  .GT.maxunits    )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_end_in.GT.maxunits.' )
-      unit_begin = unit_begin_in; unit_end = unit_end_in
-      return
-    end subroutine mpp_set_unit_range
-
-  !#####################################################################
     !> @brief Set the mpp_io_stack variable to be at least n LONG words long
     subroutine mpp_io_set_stack_size(n)
       integer, intent(in) :: n

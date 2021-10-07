@@ -12,10 +12,11 @@ end module test_fms_mod
 
 program test_fms
  use mpp_mod, only : mpp_error, fatal, note, mpp_init
- use fms_mod, only : fms_init, string
+ use fms_mod, only : fms_init, string, fms_end
  use fms_mod, only : fms_c2f_string
  use test_fms_mod
  use, intrinsic :: iso_c_binding
+
  integer :: i !< Integer
  character(len=16) :: answer !< expected answer
  character(len=16) :: test !< Test string
@@ -50,5 +51,6 @@ program test_fms
          call mpp_error(FATAL, trim(test)//" does not match "//trim(answer))
  endif
 
+ call fms_end()
  
 end program test_fms

@@ -70,7 +70,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   PRIVATE
   PUBLIC :: diag_output_init, write_axis_meta_data, write_field_meta_data, done_meta_data,&
        & diag_fieldtype, get_diag_global_att, set_diag_global_att
-  PUBLIC :: diag_field_write, diag_write_time !< use_mpp_io = .false.
+  PUBLIC :: diag_field_write, diag_write_time, diag_flush
   TYPE(diag_global_att_type), SAVE :: diag_global_att
 
   INTEGER, PARAMETER      :: NETCDF1 = 1
@@ -1364,6 +1364,27 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     diag_global_att%tile_name = tileName
     ! endif
   END SUBROUTINE set_diag_global_att
+
+  !> @brief Flushes the file into disk
+  subroutine diag_flush(file_num, fileobjU, fileobj, fileobjND, fnum_for_domain)
+    integer,                                   intent(in) :: file_num        !< Index in the fileobj* types array
+    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout) :: fileobjU(:)     !< Array of non domain decomposed fileobj
+    type(FmsNetcdfDomainFile_t),            intent(inout) :: fileobj(:)      !< Array of domain decomposed fileobj
+    type(FmsNetcdfFile_t),                  intent(inout) :: fileobjND(:)    !< Array of unstructured domain fileobj
+    character(len=2),                          intent(in) :: fnum_for_domain !< String indicating the type of domain
+                                                                             !! "2d" domain decomposed
+                                                                             !! "ug" unstructured domain decomposed
+                                                                             !! "nd" no domain
+    if (fnum_for_domain == "2d" ) then
+       call flush_file (fileobj (file_num))
+    elseif (fnum_for_domain == "nd") then
+       call flush_file (fileobjND (file_num))
+    elseif (fnum_for_domain == "ug") then
+       call flush_file (fileobjU(file_num))
+    else
+       call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
+    endif
+  end subroutine diag_flush
 END MODULE diag_output_mod
 !> @}
 ! close documentation grouping

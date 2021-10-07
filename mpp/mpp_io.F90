@@ -371,8 +371,8 @@ private
   public :: default_field, default_axis, default_att
 
   !--- public interface from mpp_io_util.h ----------------------
-  public :: mpp_get_id, mpp_get_ncid, mpp_get_unit_range, mpp_is_valid
-  public :: mpp_set_unit_range, mpp_get_info, mpp_get_atts, mpp_get_fields
+  public :: mpp_get_id, mpp_get_ncid, mpp_is_valid
+  public :: mpp_get_info, mpp_get_atts, mpp_get_fields
   public :: mpp_get_times, mpp_get_axes, mpp_get_recdimid, mpp_get_axis_data, mpp_get_axis_by_name
   public :: mpp_io_set_stack_size, mpp_get_field_index, mpp_get_axis_index
   public :: mpp_get_field_name, mpp_get_att_value, mpp_get_att_length
