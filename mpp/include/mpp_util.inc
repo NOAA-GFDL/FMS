@@ -133,16 +133,15 @@
        if( opened )then
           FLUSH(log_unit)
        else
-          log_unit=get_unit()
-          open( unit=log_unit, status='UNKNOWN', file=trim(configfile)//this_pe, position='APPEND', err=10 )
+          open(newunit=log_unit, status='UNKNOWN', file=trim(configfile)//this_pe, position='APPEND', err=10 )
        end if
        stdlog = log_unit
     else
-       inquire( unit=etc_unit, opened=opened )
+       inquire(unit=etc_unit, opened=opened )
        if( opened )then
           FLUSH(etc_unit)
        else
-          open( unit=etc_unit, status='UNKNOWN', file=trim(etcfile), position='APPEND', err=11 )
+          open(newunit=etc_unit, status='UNKNOWN', file=trim(etcfile), position='APPEND', err=11 )
        end if
        stdlog = etc_unit
     end if
@@ -157,12 +156,11 @@
   logical :: exist
   character(len=11) :: this_pe
   if( pe.EQ.root_pe )then
-     log_unit = get_unit()
      do p=0,npes-1
        write(this_pe,'(a,i6.6,a)') '.',p,'.out'
        inquire( file=trim(configfile)//this_pe, exist=exist )
        if(exist)then
-         open( unit=log_unit, file=trim(configfile)//this_pe, status='REPLACE' )
+         open(newunit=log_unit, file=trim(configfile)//this_pe, status='REPLACE' )
          close(log_unit)
        endif
      end do
@@ -988,8 +986,7 @@ end function rarray_to_char
     if( .NOT.ANY(clocks(1:clock_num)%detailed) )return
     write( filename,'(a,i6.6)' )'mpp_clock.out.', pe
 
-    SD_UNIT = get_unit()
-    open(SD_UNIT,file=trim(filename),form='formatted')
+    open(newunit=SD_UNIT,file=trim(filename),form='formatted')
 
     COMM_TYPE: do ct = 1,clock_num
 
@@ -1091,7 +1088,7 @@ end function rarray_to_char
     integer,save :: i
     logical      :: l_open
 
-!  9 is reserved for etc_unit
+    call mpp_error(WARNING,'get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit')
     do i=10,99
        inquire(unit=i,opened=l_open)
        if(.not.l_open)exit
@@ -1392,8 +1389,7 @@ end function rarray_to_char
        inquire(FILE=FILENAME, EXIST=file_exist)
 
        if ( file_exist ) then
-          f_unit = get_unit()
-          open(UNIT=f_unit, FILE=FILENAME, ACTION='READ', STATUS='OLD', IOSTAT=status)
+          open(newunit=f_unit, FILE=FILENAME, ACTION='READ', STATUS='OLD', IOSTAT=status)
 
           if ( status .ne. 0 ) then
              write (UNIT=text, FMT='(I5)') status
@@ -1462,8 +1458,7 @@ end function rarray_to_char
        inquire(FILE=FILENAME, EXIST=file_exist)
 
        if ( file_exist ) then
-          f_unit = get_unit()
-          open(UNIT=f_unit, FILE=FILENAME, ACTION='READ', STATUS='OLD', IOSTAT=status)
+          open(newunit=f_unit, FILE=FILENAME, ACTION='READ', STATUS='OLD', IOSTAT=status)
 
           if ( status .ne. 0 ) then
              write (UNIT=text, FMT='(I5)') status
@@ -1565,8 +1560,7 @@ end function rarray_to_char
        inquire(FILE=FILENAME, EXIST=file_exist)
 
        if ( file_exist ) then
-          f_unit = get_unit()
-          open(UNIT=f_unit, FILE=FILENAME, ACTION='READ', STATUS='OLD', IOSTAT=status)
+          open(newunit=f_unit, FILE=FILENAME, ACTION='READ', STATUS='OLD', IOSTAT=status)
 
           if ( status .ne. 0 ) then
              write (UNIT=text, FMT='(I5)') status
