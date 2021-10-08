@@ -42,7 +42,7 @@
 module data_override_mod
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error, FATAL, WARNING, stdout, stdlog, mpp_max
-use mpp_mod, only : input_nml_file, get_unit
+use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=)
 use time_interp_external2_mod, only:time_interp_external_init, &
@@ -240,8 +240,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     enddo
 
 !  Read coupler_table
-    iunit = get_unit()
-    open(iunit, file='data_table', action='READ', iostat=io_status)
+    open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
     if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
 
     ntable = 0

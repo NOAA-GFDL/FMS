@@ -189,8 +189,7 @@ use    mpp_mod, only : mpp_error,   &
                        mpp_pe,      &
                        mpp_root_pe, &
                        stdlog,      &
-                       stdout,      &
-                       get_unit
+                       stdout
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
@@ -670,8 +669,7 @@ if(present(nfields)) nfields = 0
   return
 endif
 
-iunit = get_unit()
-open(iunit, file=trim(tbl_name), action='READ', iostat=io_status)
+open(newunit=iunit, file=trim(tbl_name), action='READ', iostat=io_status)
 if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in opening file '//trim(tbl_name))
 !write_version_number should precede all writes to stdlog from field_manager
 call write_version_number("FIELD_MANAGER_MOD", version)

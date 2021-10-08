@@ -34,7 +34,7 @@ use fms_mod,                only:  fms_init, mpp_pe, mpp_root_pe, &
 use time_manager_mod,       only:  time_manager_init, month_name, &
                                    get_date, time_type
 use constants_mod,          only:  constants_init, PI, RADIAN
-use mpp_mod,                only:  input_nml_file, get_unit
+use mpp_mod,                only:  input_nml_file
 
 !-------------------------------------------------------------------
 
@@ -429,8 +429,7 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
               else
                  write( filename,'(a,i4.4)' )trim(filename)//'.', mpp_pe()-mpp_root_pe()
               endif
-              diag_units(nn) = get_unit()
-              open(diag_units(nn), file=trim(filename), action='WRITE', position='rewind', iostat=io)
+              open(newunit=diag_units(nn), file=trim(filename), action='WRITE', position='rewind', iostat=io)
               if(io/=0) call error_mesg ('column_diagnostics_mod', 'Error in opening file '//trim(filename), FATAL)
             endif  ! (open_file)
           endif
