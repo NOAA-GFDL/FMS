@@ -67,6 +67,12 @@ AC_ARG_WITH([mpi],
 AS_IF([test ${with_mpi:-yes} = yes],
   [with_mpi=yes],
   [with_mpi=no])
+AC_ARG_WITH([yaml],
+  [AS_HELP_STRING([--with-yaml],
+    [Build with YAML support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default no)])])
+AS_IF([test ${with_yaml:-no} = no],
+  [with_yaml=no],
+  [with_yaml=yes])
 AC_ARG_ENABLE([setting-flags],
   [AS_HELP_STRING([--enable-setting-flags],
     [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
@@ -120,6 +126,15 @@ if test $with_mpi = yes; then
   # CPPFLAGS, {C,FC}FLAGS, LDFLAGS and LIBS options are given.
   AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([Can't find the MPI C header file.  Set CC/CPPFLAGS/CFLAGS])])
   AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([Can't find the MPI C library.  Set CC/LDFLAGS/LIBS])])
+fi
+
+# Require yaml
+if test $with_yaml = yes; then
+  AC_CHECK_HEADERS([yaml.h], [], [AC_MSG_ERROR(["Can't find the libYAML C header file.  Set CC/CPPFLAGS/CFLAGS"])])
+  AC_SEARCH_LIBS([yaml_parser_initialize], [yaml], [], [AC_MSG_ERROR(["Can't find the libYAML C library.  Set CC/LDFLAGS/LIBS"])])
+
+  #If the test pass, define use_yaml macro
+  AC_DEFINE([use_yaml], [1], [This is required to use yaml parser])
 fi
 
 # Require netCDF
@@ -337,6 +352,7 @@ AC_CONFIG_FILES([
   random_numbers/Makefile
   libFMS/Makefile
   docs/Makefile
+  parser/Makefile
   test_fms/test_common.sh
   test_fms/Makefile
   test_fms/diag_manager/Makefile
@@ -357,6 +373,7 @@ AC_CONFIG_FILES([
   test_fms/mosaic/Makefile
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
+  test_fms/parser/Makefile
   FMS.pc
   ])
 
