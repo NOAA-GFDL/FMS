@@ -76,6 +76,8 @@ use field_manager_mod, only : field_manager_init, &
                               fm_exists,          &
                               MODEL_NAMES
 
+use platform_mod, only: r4_kind, r8_kind
+
 implicit none
 private
 
@@ -1037,7 +1039,7 @@ subroutine set_tracer_profile(model, n, tracer, err_msg)
 
 integer, intent(in) :: model !< Parameter representing component model in use
 integer, intent(in) :: n !< Tracer number
-real, intent(inout), dimension(:,:,:) :: tracer !< Initialized tracer array
+class(*), intent(inout), dimension(:,:,:) :: tracer !< Initialized tracer array
 character(len=*), intent(out), optional :: err_msg
 
 real    :: surf_value, multiplier
@@ -1063,7 +1065,12 @@ top_value  = surf_value
 bottom_value = surf_value
 multiplier = 1.0
 
-tracer = surf_value
+select type (tracer)
+type is (real(kind=r4_kind))
+  tracer = surf_value
+type is (real(kind=r8_kind))
+  tracer = surf_value
+end select
 
 if ( query_method ( 'profile_type',model,n,scheme,control)) then
 !Change the tracer_number to the tracer_manager version
@@ -1072,7 +1079,12 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
     profile_type                   = 'Fixed'
     flag =parse(control,'surface_value',surf_value)
     multiplier = 1.0
-    tracer = surf_value
+    select type (tracer)
+    type is (real(kind=r4_kind))
+      tracer = surf_value
+    type is (real(kind=r8_kind))
+      tracer = surf_value
+    end select
   endif
 
   if(lowercase(trim(scheme(1:7))).eq.'profile') then
@@ -1105,16 +1117,32 @@ numlevels = size(tracer,3) -1
     select case (tracers(n1)%model)
       case (MODEL_ATMOS)
         multiplier = exp( log (top_value/surf_value) /numlevels)
-        tracer(:,:,1) = surf_value
-        do k = 2, size(tracer,3)
-          tracer(:,:,k) = tracer(:,:,k-1) * multiplier
-        enddo
+        select type (tracer)
+        type is (real(kind=r4_kind))
+          tracer(:,:,1) = surf_value
+          do k = 2, size(tracer,3)
+            tracer(:,:,k) = tracer(:,:,k-1) * multiplier
+          enddo
+        type is (real(kind=r8_kind))
+          tracer(:,:,1) = surf_value
+          do k = 2, size(tracer,3)
+            tracer(:,:,k) = tracer(:,:,k-1) * multiplier
+          enddo
+        end select
       case (MODEL_OCEAN)
         multiplier = exp( log (bottom_value/surf_value) /numlevels)
-        tracer(:,:,size(tracer,3)) = surf_value
-        do k = size(tracer,3) - 1, 1, -1
-          tracer(:,:,k) = tracer(:,:,k+1) * multiplier
-        enddo
+        select type (tracer)
+        type is (real(kind=r4_kind))
+          tracer(:,:,size(tracer,3)) = surf_value
+          do k = size(tracer,3) - 1, 1, -1
+            tracer(:,:,k) = tracer(:,:,k+1) * multiplier
+          enddo
+        type is (real(kind=r8_kind))
+          tracer(:,:,size(tracer,3)) = surf_value
+          do k = size(tracer,3) - 1, 1, -1
+            tracer(:,:,k) = tracer(:,:,k+1) * multiplier
+          enddo
+        end select
       case default
     end select
   endif !scheme.eq.profile
