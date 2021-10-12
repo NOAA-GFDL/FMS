@@ -24,7 +24,7 @@ jobs:
           ec2-instance-type: m5a.large
           subnet-id: subnet-02829d7b8c3522644
           security-group-id: sg-0f78a1ee120af6542
-      #    iam-role-name: arn:aws:iam::430073024411:user/fms_test
+          iam-role-name: arn:aws:iam::430073024411:user/fms_test
   do-the-job:
     name: Do the job on the runner
     needs: start-runner # required to start the main job when the runner is ready
