@@ -20,10 +20,10 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-123
-          ec2-instance-type: t3.nano
-          subnet-id: subnet-123
-          security-group-id: sg-123
+          ec2-image-id: ami-02aa2cdcba723e66b
+          ec2-instance-type: m5a.large
+          subnet-id: subnet-02829d7b8c3522644
+          security-group-id: sg-0f78a1ee120af6542
       #    iam-role-name: arn:aws:iam::430073024411:user/fms_test
  # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
