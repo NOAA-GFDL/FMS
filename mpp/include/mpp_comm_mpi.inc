@@ -134,18 +134,14 @@
   if(etc_unit_is_stderr) then
      etc_unit = stderr()
   else
-! 9 is reserved for etc_unit
-     etc_unit=9
-     inquire(unit=etc_unit,opened=opened)
-     if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_mpi')
      if (trim(etcfile) /= '/dev/null') then
         write( etcfile,'(a,i6.6)' )trim(etcfile)//'.', pe
      endif
      inquire(file=etcfile, exist=existed)
      if(existed) then
-        open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+        open( newunit=etc_unit, file=trim(etcfile), status='REPLACE' )
      else
-        open( unit=etc_unit, file=trim(etcfile) )
+        open( newunit=etc_unit, file=trim(etcfile) )
      endif
   endif
 
@@ -308,7 +304,6 @@ subroutine mpp_exit()
 
   call FLUSH( out_unit )
 
-! close down etc_unit: 9
   inquire(unit=etc_unit, opened=opened)
   if (opened) then
    call FLUSH (etc_unit)

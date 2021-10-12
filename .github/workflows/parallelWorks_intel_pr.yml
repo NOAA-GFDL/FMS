@@ -9,10 +9,12 @@ jobs:
       max-parallel: 2
       matrix:
         include:
+# Turn this back on when fixed 
                 - runname: FMS with intel 18
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/FMStestStartClusters.py azcluster_noaa
+                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel18StartClusters.py $GITHUB_REF
+# Runs on FMS_CONTAINER_CI cluster
                 - runname: FMS with intel 2021 container
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/FMSintel21StartClusters.py azcluster_noaa_two
+                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel21StartClusters.py $GITHUB_REF
     steps:
                 - name: FMS make check on paralellWorks
                   env:
@@ -26,8 +28,8 @@ jobs:
     strategy:
       matrix:
         include:
-                - cluster: azcluster_noaa
-                - cluster: azcluster_noaa_two
+                - cluster: FMS_CONTAINER_CI
+                - cluster: fms_intel18_ci
     steps:
                 - name: Turn off cluster
                   env:

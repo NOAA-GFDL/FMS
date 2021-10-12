@@ -27,6 +27,7 @@
 #
 # Set common test settings.
 . ../test_common.sh
+# Set the test variable
 # make a dummy file for mpp_init to read
 printf "EOF\n&dummy\nEOF" | cat > input.nml
 # run the tests

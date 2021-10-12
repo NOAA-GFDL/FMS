@@ -233,6 +233,7 @@ public :: check_if_open
 public :: set_fileobj_time_name
 public :: write_restart_bc
 public :: read_restart_bc
+public :: flush_file
 
 !> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
@@ -2264,6 +2265,16 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
  enddo
 
 end subroutine write_restart_bc
+
+!> @brief flushes the netcdf file into disk
+subroutine flush_file(fileobj)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< FMS2_io fileobj
+
+  integer :: err !< Netcdf error code
+
+  err = nf90_sync(fileobj%ncid)
+  call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
+end subroutine flush_file
 
 end module netcdf_io_mod
 !> @}
