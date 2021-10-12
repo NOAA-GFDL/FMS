@@ -15,6 +15,6 @@ jobs:
     - name: Configure AWS credentials from Test account
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        role-to-assume: arn:aws:iam::111111111111:role/my-github-actions-role-test
+        role-to-assume: arn:aws:iam::430073024411:user/fms_test
         aws-region: us-east-1
 
