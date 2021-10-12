@@ -25,9 +25,37 @@ jobs:
           subnet-id: subnet-02829d7b8c3522644
           security-group-id: sg-0f78a1ee120af6542
       #    iam-role-name: arn:aws:iam::430073024411:user/fms_test
+  do-the-job:
+    name: Do the job on the runner
+    needs: start-runner # required to start the main job when the runner is ready
+    runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runner
+    steps:
+      - name: Hello World
+        run: echo 'Hello MDTF!'
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+    needs:
+      - start-runner # required to get output from the start-runner job
+      - do-the-job # required to wait when the main job is done
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
  # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "ec2-github-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
+  #        aws-resource-tags: > # optional, requires additional permissions
+   #         [
+    #          {"Key": "Name", "Value": "ec2-github-runner"},
+     #         {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+      #      ]
