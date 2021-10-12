@@ -14,6 +14,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+          iam-role-name: arn:aws:iam::430073024411:user/fms_test
       - name: Start EC2 runner
         id: start-ec2-runner
         uses: machulav/ec2-github-runner@v2
@@ -24,7 +25,7 @@ jobs:
           ec2-instance-type: m5a.large
           subnet-id: subnet-02829d7b8c3522644
           security-group-id: sg-0f78a1ee120af6542
-          iam-role-name: arn:aws:iam::430073024411:user/fms_test
+       #   iam-role-name: arn:aws:iam::430073024411:user/fms_test
   do-the-job:
     name: Do the job on the runner
     needs: start-runner # required to start the main job when the runner is ready
