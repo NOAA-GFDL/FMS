@@ -151,6 +151,8 @@ end subroutine mosaic_init
       call read_data(fileobj, 'xgrid_area', area, corner=start, edge_lengths=nread)
     type is (real(r8_kind))
       call read_data(fileobj, 'xgrid_area', area, corner=start, edge_lengths=nread)
+    class default
+      call mpp_error(FATAL,"get_mosaic_xgrid: invalid data type for area, must be real(r4_kind) or real(r8_kind)")
     end select
 
     start = 1; nread = 1
