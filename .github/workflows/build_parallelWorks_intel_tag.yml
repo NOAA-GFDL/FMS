@@ -16,10 +16,10 @@ jobs:
         include:
 # Turn this back on when fixed 
                 - runname: FMS with intel 18
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel18StartClusters.py 
+                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel18StartClusters.py main
 # Runs on FMS_CONTAINER_CI cluster
                 - runname: FMS with intel 2021 container
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel21StartClusters.py
+                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel21StartClusters.py main
 # Runs AM4
                 - runname: AM4 regression
                   runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel21StartClusters.py azcluster_noaa
