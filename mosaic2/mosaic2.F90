@@ -127,13 +127,6 @@ end subroutine mosaic_init
 
     logical :: is_mixed_prec
 
-    select type(area)
-    type is (real(r4_kind))
-    type is (real(r8_kind))
-    class default
-      call mpp_error(FATAL, "get_mosaic_xgrid: invalid data type for area, must be real(r4_kind) or real(r8_kind)")
-    end select
-
     garea = get_global_area()
 
     ! When start and nread present, make sure nread(1) is the same as the size of the data

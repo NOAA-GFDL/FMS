@@ -464,8 +464,8 @@ end type xmap_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
- real(r8_kind), parameter                              :: EPS = 1.0e-10
- real(r8_kind), parameter                              :: LARGE_NUMBER = 1.e20
+ real(r8_kind), parameter                              :: EPS = 1.0d-10
+ real(r8_kind), parameter                              :: LARGE_NUMBER = 1.d20
  logical :: module_is_initialized = .FALSE.
  integer :: id_put_1_to_xgrid_order_1 = 0
  integer :: id_put_1_to_xgrid_order_2 = 0
@@ -1388,7 +1388,6 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
   integer                  :: start(4), nread(4), isc2, iec2, jsc2, jec2
   type(FmsNetcdfFile_t) :: fileobj
   real(r8_kind), allocatable, target :: geolon(:,:), geolat(:,:)
-  integer           :: isd, ied, jsd, jed
 
   if(.not. open_file(fileobj, grid_file, 'read') ) then
      call error_mesg('xgrid_mod(get_grid_version2)', 'Error in opening file '//trim(grid_file), FATAL)

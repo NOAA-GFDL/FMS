@@ -351,6 +351,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
   real(r8_kind), allocatable :: glonb_r8(:,:), glatb_r8(:,:)
 
   select type(cellarea)
+  !! R4 argument
   type is (real(r4_kind))
      select case(grid_version)
      case(VERSION_0,VERSION_1)
@@ -383,7 +384,8 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
         end if
         deallocate(glonb_r4,glatb_r4)
       end select
-   type is (real(r8_kind))
+  !! R8 argument
+  type is (real(r8_kind))
      select case(grid_version)
      case(VERSION_0,VERSION_1)
         if (.not. grid_spec_exists) then
@@ -937,236 +939,236 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
    select type(latb)
    type is (real(r4_kind))
 
-   !! use lonb, latb as r4
-   select case(grid_version)
-   case(VERSION_0)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
-     end if
-     select case(component)
-     case('ATM','LND')
-        allocate(buffer_r4(max(nlon,nlat)+1))
-        ! read coordinates of grid cell vertices
-        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r4(1:nlon+1))
-        do j = js, je+1
-           do i = is, ie+1
-              lonb(i+i0,j+j0) = buffer_r4(i)
-           enddo
-        enddo
-        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r4(1:nlat+1))
-        do j = js, je+1
-           do i = is, ie+1
-              latb(i+i0,j+j0) = buffer_r4(j)
-           enddo
-        enddo
-        deallocate(buffer_r4)
-     case('OCN')
-        if (present(domain)) then
-           start = 1; nread = 1
-           start(1) = is; start(2) = js
-           nread(1) = ie-is+2; nread(2) = je-js+2
-           call read_data(gridfileobj, "geolon_vert_t", lonb, corner=start, edge_lengths=nread)
-           call read_data(gridfileobj, "geolat_vert_t", latb, corner=start, edge_lengths=nread)
-         else
-           call read_data(gridfileobj, "geolon_vert_t", lonb)
-           call read_data(gridfileobj, "geolat_vert_t", latb)
-         endif
-     end select
-   case(VERSION_1)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
-     end if
-     select case(component)
-     case('ATM','LND')
-        allocate(buffer_r4(max(nlon,nlat)+1))
-        ! read coordinates of grid cell vertices
-        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r4(1:nlon+1))
-        do j = js, je+1
-           do i = is, ie+1
-              lonb(i+i0,j+j0) = buffer_r4(i)
-           enddo
-        enddo
-        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r4(1:nlat+1))
-        do j = js, je+1
-           do i = is, ie+1
-              latb(i+i0,j+j0) = buffer_r4(j)
-           enddo
-        enddo
-        deallocate(buffer_r4)
-     case('OCN')
-        nlon=ie-is+1; nlat=je-js+1
-        allocate (x_vert_t_r4(nlon,nlat,4), y_vert_t_r4(nlon,nlat,4) )
-        call read_data(gridfileobj, 'x_vert_T', x_vert_t_r4)
-        call read_data(gridfileobj, 'y_vert_T', y_vert_t_r4)
-        lonb(1:nlon,1:nlat) = x_vert_t_r4(1:nlon,1:nlat,1)
-        lonb(nlon+1,1:nlat) = x_vert_t_r4(nlon,1:nlat,2)
-        lonb(1:nlon,nlat+1) = x_vert_t_r4(1:nlon,nlat,4)
-        lonb(nlon+1,nlat+1) = x_vert_t_r4(nlon,nlat,3)
-        latb(1:nlon,1:nlat) = y_vert_t_r4(1:nlon,1:nlat,1)
-        latb(nlon+1,1:nlat) = y_vert_t_r4(nlon,1:nlat,2)
-        latb(1:nlon,nlat+1) = y_vert_t_r4(1:nlon,nlat,4)
-        latb(nlon+1,nlat+1) = y_vert_t_r4(nlon,nlat,3)
-        deallocate(x_vert_t_r4, y_vert_t_r4)
-     end select
-   case(VERSION_2, VERSION_3)
-     ! get the name of the grid file for the component and tile
-     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
-     call open_grid_file(tilefileobj, grid_dir//tilefile)
-     if(PRESENT(domain)) then
-        call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
-        start = 1; nread = 1
-        start(1) = 2*(is-isg+1) - 1; nread(1) = 2*(ie-is)+3
-        start(2) = 2*(js-jsg+1) - 1; nread(2) = 2*(je-js)+3
-        allocate(tmp_r4(nread(1), nread(2)) )
-        call read_data(tilefileobj, "x", tmp_r4, corner=start, edge_lengths=nread)
-        do j = 1, je-js+2
-           do i = 1, ie-is+2
-              lonb(i,j) = tmp_r4(2*i-1,2*j-1)
-           enddo
-        enddo
-        call read_data(tilefileobj, "y", tmp_r4, corner=start, edge_lengths=nread)
-        do j = 1, je-js+2
-           do i = 1, ie-is+2
-              latb(i,j) = tmp_r4(2*i-1,2*j-1)
-           enddo
-        enddo
-     else
-        allocate(tmp_r4(2*nlon+1,2*nlat+1))
-        call read_data(tilefileobj, "x", tmp_r4)
-        do j = js, je+1
-           do i = is, ie+1
-              lonb(i+i0,j+j0) = tmp_r4(2*i-1,2*j-1)
-           end do
-        end do
-        call read_data(tilefileobj, "y", tmp_r4)
-        do j = js, je+1
-           do i = is, ie+1
-              latb(i+i0,j+j0) = tmp_r4(2*i-1,2*j-1)
-           end do
-        end do
-     endif
-     deallocate(tmp_r4)
-     call close_file(tilefileobj)
-   end select
-   end select ! end r4
+     !! use lonb, latb as r4
+     select case(grid_version)
+     case(VERSION_0)
+       if (.not. grid_spec_exists) then
+         call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
+       end if
+       select case(component)
+       case('ATM','LND')
+          allocate(buffer_r4(max(nlon,nlat)+1))
+          ! read coordinates of grid cell vertices
+          call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r4(1:nlon+1))
+          do j = js, je+1
+             do i = is, ie+1
+                lonb(i+i0,j+j0) = buffer_r4(i)
+             enddo
+          enddo
+          call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r4(1:nlat+1))
+          do j = js, je+1
+             do i = is, ie+1
+                latb(i+i0,j+j0) = buffer_r4(j)
+             enddo
+          enddo
+          deallocate(buffer_r4)
+       case('OCN')
+          if (present(domain)) then
+             start = 1; nread = 1
+             start(1) = is; start(2) = js
+             nread(1) = ie-is+2; nread(2) = je-js+2
+             call read_data(gridfileobj, "geolon_vert_t", lonb, corner=start, edge_lengths=nread)
+             call read_data(gridfileobj, "geolat_vert_t", latb, corner=start, edge_lengths=nread)
+           else
+             call read_data(gridfileobj, "geolon_vert_t", lonb)
+             call read_data(gridfileobj, "geolat_vert_t", latb)
+           endif
+       end select
+     case(VERSION_1)
+       if (.not. grid_spec_exists) then
+         call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
+       end if
+       select case(component)
+       case('ATM','LND')
+          allocate(buffer_r4(max(nlon,nlat)+1))
+          ! read coordinates of grid cell vertices
+          call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r4(1:nlon+1))
+          do j = js, je+1
+             do i = is, ie+1
+                lonb(i+i0,j+j0) = buffer_r4(i)
+             enddo
+          enddo
+          call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r4(1:nlat+1))
+          do j = js, je+1
+             do i = is, ie+1
+                latb(i+i0,j+j0) = buffer_r4(j)
+             enddo
+          enddo
+          deallocate(buffer_r4)
+       case('OCN')
+          nlon=ie-is+1; nlat=je-js+1
+          allocate (x_vert_t_r4(nlon,nlat,4), y_vert_t_r4(nlon,nlat,4) )
+          call read_data(gridfileobj, 'x_vert_T', x_vert_t_r4)
+          call read_data(gridfileobj, 'y_vert_T', y_vert_t_r4)
+          lonb(1:nlon,1:nlat) = x_vert_t_r4(1:nlon,1:nlat,1)
+          lonb(nlon+1,1:nlat) = x_vert_t_r4(nlon,1:nlat,2)
+          lonb(1:nlon,nlat+1) = x_vert_t_r4(1:nlon,nlat,4)
+          lonb(nlon+1,nlat+1) = x_vert_t_r4(nlon,nlat,3)
+          latb(1:nlon,1:nlat) = y_vert_t_r4(1:nlon,1:nlat,1)
+          latb(nlon+1,1:nlat) = y_vert_t_r4(nlon,1:nlat,2)
+          latb(1:nlon,nlat+1) = y_vert_t_r4(1:nlon,nlat,4)
+          latb(nlon+1,nlat+1) = y_vert_t_r4(nlon,nlat,3)
+          deallocate(x_vert_t_r4, y_vert_t_r4)
+       end select
+     case(VERSION_2, VERSION_3)
+       ! get the name of the grid file for the component and tile
+       tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+       call open_grid_file(tilefileobj, grid_dir//tilefile)
+       if(PRESENT(domain)) then
+          call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
+          start = 1; nread = 1
+          start(1) = 2*(is-isg+1) - 1; nread(1) = 2*(ie-is)+3
+          start(2) = 2*(js-jsg+1) - 1; nread(2) = 2*(je-js)+3
+          allocate(tmp_r4(nread(1), nread(2)) )
+          call read_data(tilefileobj, "x", tmp_r4, corner=start, edge_lengths=nread)
+          do j = 1, je-js+2
+             do i = 1, ie-is+2
+                lonb(i,j) = tmp_r4(2*i-1,2*j-1)
+             enddo
+          enddo
+          call read_data(tilefileobj, "y", tmp_r4, corner=start, edge_lengths=nread)
+          do j = 1, je-js+2
+             do i = 1, ie-is+2
+                latb(i,j) = tmp_r4(2*i-1,2*j-1)
+             enddo
+          enddo
+       else
+          allocate(tmp_r4(2*nlon+1,2*nlat+1))
+          call read_data(tilefileobj, "x", tmp_r4)
+          do j = js, je+1
+             do i = is, ie+1
+                lonb(i+i0,j+j0) = tmp_r4(2*i-1,2*j-1)
+             end do
+          end do
+          call read_data(tilefileobj, "y", tmp_r4)
+          do j = js, je+1
+             do i = is, ie+1
+                latb(i+i0,j+j0) = tmp_r4(2*i-1,2*j-1)
+             end do
+          end do
+       endif
+       deallocate(tmp_r4)
+       call close_file(tilefileobj)
+     end select ! end grid_version
+   end select ! end latb r4
 
   type is (real(r8_kind))
     select type(latb)
     type is (real(r8_kind))
 
-   !! use lonb, latb as r8
-   select case(grid_version)
-   case(VERSION_0)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
-     end if
-     select case(component)
-     case('ATM','LND')
-        allocate(buffer_r8(max(nlon,nlat)+1))
-        ! read coordinates of grid cell vertices
-        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r8(1:nlon+1))
-        do j = js, je+1
-           do i = is, ie+1
-              lonb(i+i0,j+j0) = buffer_r8(i)
-           enddo
-        enddo
-        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r8(1:nlat+1))
-        do j = js, je+1
-           do i = is, ie+1
-              latb(i+i0,j+j0) = buffer_r8(j)
-           enddo
-        enddo
-        deallocate(buffer_r8)
-     case('OCN')
-        if (present(domain)) then
-           start = 1; nread = 1
-           start(1) = is; start(2) = js
-           nread(1) = ie-is+2; nread(2) = je-js+2
-           call read_data(gridfileobj, "geolon_vert_t", lonb, corner=start, edge_lengths=nread)
-           call read_data(gridfileobj, "geolat_vert_t", latb, corner=start, edge_lengths=nread)
-         else
-           call read_data(gridfileobj, "geolon_vert_t", lonb)
-           call read_data(gridfileobj, "geolat_vert_t", latb)
-         endif
-     end select
-   case(VERSION_1)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
-     end if
-     select case(component)
-     case('ATM','LND')
-        allocate(buffer_r8(max(nlon,nlat)+1))
-        ! read coordinates of grid cell vertices
-        call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r8(1:nlon+1))
-        do j = js, je+1
-           do i = is, ie+1
-              lonb(i+i0,j+j0) = buffer_r8(i)
-           enddo
-        enddo
-        call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r8(1:nlat+1))
-        do j = js, je+1
-           do i = is, ie+1
-              latb(i+i0,j+j0) = buffer_r8(j)
-           enddo
-        enddo
-        deallocate(buffer_r8)
-     case('OCN')
-        nlon=ie-is+1; nlat=je-js+1
-        allocate (x_vert_t_r8(nlon,nlat,4), y_vert_t_r8(nlon,nlat,4) )
-        call read_data(gridfileobj, 'x_vert_T', x_vert_t_r8)
-        call read_data(gridfileobj, 'y_vert_T', y_vert_t_r8)
-        lonb(1:nlon,1:nlat) = x_vert_t_r8(1:nlon,1:nlat,1)
-        lonb(nlon+1,1:nlat) = x_vert_t_r8(nlon,1:nlat,2)
-        lonb(1:nlon,nlat+1) = x_vert_t_r8(1:nlon,nlat,4)
-        lonb(nlon+1,nlat+1) = x_vert_t_r8(nlon,nlat,3)
-        latb(1:nlon,1:nlat) = y_vert_t_r8(1:nlon,1:nlat,1)
-        latb(nlon+1,1:nlat) = y_vert_t_r8(nlon,1:nlat,2)
-        latb(1:nlon,nlat+1) = y_vert_t_r8(1:nlon,nlat,4)
-        latb(nlon+1,nlat+1) = y_vert_t_r8(nlon,nlat,3)
-        deallocate(x_vert_t_r8, y_vert_t_r8)
-     end select
-   case(VERSION_2, VERSION_3)
-     ! get the name of the grid file for the component and tile
-     tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
-     call open_grid_file(tilefileobj, grid_dir//tilefile)
-     if(PRESENT(domain)) then
-        call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
-        start = 1; nread = 1
-        start(1) = 2*(is-isg+1) - 1; nread(1) = 2*(ie-is)+3
-        start(2) = 2*(js-jsg+1) - 1; nread(2) = 2*(je-js)+3
-        allocate(tmp_r8(nread(1), nread(2)) )
-        call read_data(tilefileobj, "x", tmp_r8, corner=start, edge_lengths=nread)
-        do j = 1, je-js+2
-           do i = 1, ie-is+2
-              lonb(i,j) = tmp_r8(2*i-1,2*j-1)
-           enddo
-        enddo
-        call read_data(tilefileobj, "y", tmp_r8, corner=start, edge_lengths=nread)
-        do j = 1, je-js+2
-           do i = 1, ie-is+2
-              latb(i,j) = tmp_r8(2*i-1,2*j-1)
-           enddo
-        enddo
-     else
-        allocate(tmp_r8(2*nlon+1,2*nlat+1))
-        call read_data(tilefileobj, "x", tmp_r8)
-        do j = js, je+1
-           do i = is, ie+1
-              lonb(i+i0,j+j0) = tmp_r8(2*i-1,2*j-1)
-           end do
-        end do
-        call read_data(tilefileobj, "y", tmp_r8)
-        do j = js, je+1
-           do i = is, ie+1
-              latb(i+i0,j+j0) = tmp_r8(2*i-1,2*j-1)
-           end do
-        end do
-     endif
-     deallocate(tmp_r8)
-     call close_file(tilefileobj)
-    end select
-   end select! end r8
-  end select
+     !! use lonb, latb as r8
+     select case(grid_version)
+     case(VERSION_0)
+       if (.not. grid_spec_exists) then
+         call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
+       end if
+       select case(component)
+       case('ATM','LND')
+          allocate(buffer_r8(max(nlon,nlat)+1))
+          ! read coordinates of grid cell vertices
+          call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r8(1:nlon+1))
+          do j = js, je+1
+             do i = is, ie+1
+                lonb(i+i0,j+j0) = buffer_r8(i)
+             enddo
+          enddo
+          call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r8(1:nlat+1))
+          do j = js, je+1
+             do i = is, ie+1
+                latb(i+i0,j+j0) = buffer_r8(j)
+             enddo
+          enddo
+          deallocate(buffer_r8)
+       case('OCN')
+          if (present(domain)) then
+             start = 1; nread = 1
+             start(1) = is; start(2) = js
+             nread(1) = ie-is+2; nread(2) = je-js+2
+             call read_data(gridfileobj, "geolon_vert_t", lonb, corner=start, edge_lengths=nread)
+             call read_data(gridfileobj, "geolat_vert_t", latb, corner=start, edge_lengths=nread)
+           else
+             call read_data(gridfileobj, "geolon_vert_t", lonb)
+             call read_data(gridfileobj, "geolat_vert_t", latb)
+           endif
+       end select
+     case(VERSION_1)
+       if (.not. grid_spec_exists) then
+         call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
+       end if
+       select case(component)
+       case('ATM','LND')
+          allocate(buffer_r8(max(nlon,nlat)+1))
+          ! read coordinates of grid cell vertices
+          call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), buffer_r8(1:nlon+1))
+          do j = js, je+1
+             do i = is, ie+1
+                lonb(i+i0,j+j0) = buffer_r8(i)
+             enddo
+          enddo
+          call read_data(gridfileobj, 'yb'//lowercase(component(1:1)), buffer_r8(1:nlat+1))
+          do j = js, je+1
+             do i = is, ie+1
+                latb(i+i0,j+j0) = buffer_r8(j)
+             enddo
+          enddo
+          deallocate(buffer_r8)
+       case('OCN')
+          nlon=ie-is+1; nlat=je-js+1
+          allocate (x_vert_t_r8(nlon,nlat,4), y_vert_t_r8(nlon,nlat,4) )
+          call read_data(gridfileobj, 'x_vert_T', x_vert_t_r8)
+          call read_data(gridfileobj, 'y_vert_T', y_vert_t_r8)
+          lonb(1:nlon,1:nlat) = x_vert_t_r8(1:nlon,1:nlat,1)
+          lonb(nlon+1,1:nlat) = x_vert_t_r8(nlon,1:nlat,2)
+          lonb(1:nlon,nlat+1) = x_vert_t_r8(1:nlon,nlat,4)
+          lonb(nlon+1,nlat+1) = x_vert_t_r8(nlon,nlat,3)
+          latb(1:nlon,1:nlat) = y_vert_t_r8(1:nlon,1:nlat,1)
+          latb(nlon+1,1:nlat) = y_vert_t_r8(nlon,1:nlat,2)
+          latb(1:nlon,nlat+1) = y_vert_t_r8(1:nlon,nlat,4)
+          latb(nlon+1,nlat+1) = y_vert_t_r8(nlon,nlat,3)
+          deallocate(x_vert_t_r8, y_vert_t_r8)
+       end select
+     case(VERSION_2, VERSION_3)
+       ! get the name of the grid file for the component and tile
+       tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
+       call open_grid_file(tilefileobj, grid_dir//tilefile)
+       if(PRESENT(domain)) then
+          call mpp_get_global_domain(domain, xbegin=isg, ybegin=jsg)
+          start = 1; nread = 1
+          start(1) = 2*(is-isg+1) - 1; nread(1) = 2*(ie-is)+3
+          start(2) = 2*(js-jsg+1) - 1; nread(2) = 2*(je-js)+3
+          allocate(tmp_r8(nread(1), nread(2)) )
+          call read_data(tilefileobj, "x", tmp_r8, corner=start, edge_lengths=nread)
+          do j = 1, je-js+2
+             do i = 1, ie-is+2
+                lonb(i,j) = tmp_r8(2*i-1,2*j-1)
+             enddo
+          enddo
+          call read_data(tilefileobj, "y", tmp_r8, corner=start, edge_lengths=nread)
+          do j = 1, je-js+2
+             do i = 1, ie-is+2
+                latb(i,j) = tmp_r8(2*i-1,2*j-1)
+             enddo
+          enddo
+       else
+          allocate(tmp_r8(2*nlon+1,2*nlat+1))
+          call read_data(tilefileobj, "x", tmp_r8)
+          do j = js, je+1
+             do i = is, ie+1
+                lonb(i+i0,j+j0) = tmp_r8(2*i-1,2*j-1)
+             end do
+          end do
+          call read_data(tilefileobj, "y", tmp_r8)
+          do j = js, je+1
+             do i = is, ie+1
+                latb(i+i0,j+j0) = tmp_r8(2*i-1,2*j-1)
+             end do
+          end do
+       endif
+       deallocate(tmp_r8)
+       call close_file(tilefileobj)
+      end select ! end grid_version
+   end select ! end latb r8
+  end select ! end lonb
 end subroutine get_grid_cell_vertices_2D
 
 !> @brief returns cell vertices for the specified model component and mosaic tile number for
