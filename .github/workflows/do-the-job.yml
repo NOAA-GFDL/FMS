@@ -20,18 +20,31 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0b0af3577fe5e3532
-          ec2-instance-type: m5a.large
+          #ec2-image-id: ami-092a9e946def5be32
+          ec2-image-id: ami-02e136e904f3da870
+          ec2-instance-type: m5.4xlarge
           subnet-id: subnet-02829d7b8c3522644
-          security-group-id: sg-0f78a1ee120af6542
-       #   iam-role-name: arn:aws:iam::430073024411:user/fms_test
+          security-group-id: sg-09f60dd1eeea6d55f
+          #subnet-id: subnet-003faaf9f1e386979
+          #security-group-id: sg-05735797b251348e2
+       ##   iam-role-name: arn:aws:iam::430073024411:user/fms_test
   do-the-job:
     name: Do the job on the runner
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runner
     steps:
-      - name: Hello World
-        run: echo 'Hello MDTF!'
+      - name: Install epel 
+        run:  sudo amazon-linux-extras install epel -y
+      - name: config epel 
+        run:  sudo yum-config-manager --enable epel
+      - name: Install singularity
+        run:  sudo yum install -y singularity git
+      - name: Clone from git
+        run: git clone https://github.com/thomas-robinson/build_fms_script.git
+      - name: Pull the container
+        run:  singularity pull docker://thomasrobinson/model_environment:i2021.2
+      - name: Build FMS in the container
+        run:  singularity exec model_environment_i2021.2.sif ./build_fms.sh
   stop-runner:
     name: Stop self-hosted EC2 runner
     needs:
@@ -53,7 +66,7 @@ jobs:
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           label: ${{ needs.start-runner.outputs.label }}
           ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
- # optional, requires additional permissions
+ ## optional, requires additional permissions
   #        aws-resource-tags: > # optional, requires additional permissions
    #         [
     #          {"Key": "Name", "Value": "ec2-github-runner"},
