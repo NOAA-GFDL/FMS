@@ -60,23 +60,6 @@ test_interface = .false.
 num_fields = 4
 do_sleep = .false.
 num_iter = 1
-! NEST inputs
-test_nest = .false.
-test_nest_regional = .false.
-num_nest = 3
-tile_coarse =    1,  3,  7
-tile_fine   =    7 , 8,  9
-istart_coarse =  3,  3,  5
-icount_coarse = 40,  5,  6
-jstart_coarse =  3,  3,  6
-jcount_coarse = 14,  6,  8
-extra_halo = 0
-ntiles_nest_all = 9
-npes_nest_tile = 2, 2, 2, 2, 2, 2, 2, 1, 1
-nest_level = 1, 1, 2
-refine_ratio = 2, 2, 2
-cyclic_nest = 'N'
-! NEST inputs end
 mix_2D_3D = .false.
 test_get_nbr = .false.
 test_edge_update = .false.
@@ -100,26 +83,6 @@ _EOF
 cat input_base.nml > input.nml
 test_expect_success "simple functionality" '
     mpirun -n 4 ../test_domains_simple
-'
-sed "s/test_nest = .false./test_nest = .true./" input_base.nml > input.nml
-test_expect_success "update nest domain" '
-    mpirun -n 16 ../test_mpp_domains
-'
-## single face nest needs additional namelist changes
-sed "s/tile_coarse =    1,  3,  7/tile_coarse =    1,  1,  2/" input_base.nml > input.nml
-sed -i "s/tile_fine   =    7 , 8,  9/tile_fine   =    2 , 3,  4/" input.nml
-sed -i "s/istart_coarse =  3,  3,  5/istart_coarse =  4,  3,  5/" input.nml
-sed -i "s/icount_coarse = 40,  5,  6/icount_coarse = 12,  5,  6/" input.nml
-sed -i "s/jstart_coarse =  3,  3,  6/jstart_coarse =  4,  3,  6/" input.nml
-sed -i "s/jcount_coarse = 14,  6,  8/jcount_coarse = 12,  6,  8/" input.nml
-sed -i "s/ntiles_nest_all = 9/ntiles_nest_all = 4/" input.nml
-sed -i "s/npes_nest_tile = 2, 2, 2, 2, 2, 2, 2, 1, 1/npes_nest_tile = 2, 2, 2, 1/" input.nml
-test_expect_success "update single face nest domain" '
-    mpirun -n 7 ../test_mpp_domains
-'
-sed -i "s/test_nest_regional = .false./test_nest_regional = .true./" input.nml
-test_expect_success "nested with regional top level domain" '
-    mpirun -n 7 ../test_mpp_domains
 '
 
 sed "s/test_subset = .false./test_subset = .true./" input_base.nml > input.nml
@@ -169,7 +132,7 @@ test_expect_success "group" '
 '
 sed "s/test_interface = .false./test_interface = .true./" input_base.nml > input.nml
 test_expect_success "interface" '
-    mpirun -n 2 ../test_mpp_domains
+    mpirun -n 6 ../test_mpp_domains
 '
 sed "s/check_parallel = .false./check_parallel = .true./" input_base.nml > input.nml
 test_expect_success "check_parallel" '
