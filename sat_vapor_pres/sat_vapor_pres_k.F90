@@ -50,6 +50,8 @@
 ! not be a fortran module. This complicates things greatly for questionable
 ! benefit and could be done as a second step anyway, if necessary.
 
+ use platform_mod, only: r4_kind, r8_kind
+
  implicit none
  private
 
@@ -475,15 +477,15 @@
  subroutine compute_qs_k_3d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:,:)           :: temp, press
- real, intent(in)                              :: eps, zvir
- real, intent(out), dimension(:,:,:)           :: qs
- integer, intent(out)                          :: nbad
- real, intent(in),  dimension(:,:,:), optional :: q
- real, intent(in),                    optional :: hc
- real, intent(out), dimension(:,:,:), optional :: dqsdT, esat
- logical,intent(in),                  optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ class(*), intent(in), dimension(:,:,:)            :: temp, press
+ real, intent(in)                                  :: eps, zvir
+ class(*), intent(out), dimension(:,:,:)           :: qs
+ integer, intent(out)                              :: nbad
+ class(*), intent(in), dimension(:,:,:),  optional :: q
+ class(*), intent(in),                    optional :: hc
+ class(*), intent(out), dimension(:,:,:), optional :: dqsdT, esat
+ logical,intent(in),                      optional :: es_over_liq
+ logical,intent(in),                      optional :: es_over_liq_and_ice
 
  real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
                                                   esloc, desat, denom
@@ -491,66 +493,144 @@
  real    :: hc_loc
 
    if (present(hc)) then
-     hc_loc = hc
+     select type (hc)
+     type is (real(kind=r4_kind))
+       hc_loc = hc
+     type is (real(kind=r8_kind))
+       hc_loc = hc
+     end select
    else
      hc_loc = 1.0
    endif
- if (present(es_over_liq)) then
-   if (present (dqsdT)) then
-     call lookup_es2_des2_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
+
+   if (present(es_over_liq)) then
+     if (present (dqsdT)) then
+       call lookup_es2_des2_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es2_k (temp, esloc, nbad)
+     endif
+   else if (present(es_over_liq_and_ice)) then
+     if (present (dqsdT)) then
+       call lookup_es3_des3_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es3_k (temp, esloc, nbad)
+     endif
    else
-     call lookup_es2_k (temp, esloc, nbad)
+     if (present (dqsdT)) then
+       call lookup_es_des_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es_k (temp, esloc, nbad)
+     endif
    endif
- else if (present(es_over_liq_and_ice)) then
-   if (present (dqsdT)) then
-     call lookup_es3_des3_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es3_k (temp, esloc, nbad)
-   endif
- else
-   if (present (dqsdT)) then
-     call lookup_es_des_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es_k (temp, esloc, nbad)
-   endif
- endif
+
    esloc = esloc*hc_loc
    if (present (esat)) then
-     esat = esloc
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = esloc
+     type is (real(kind=r8_kind))
+       esat = esloc
+     end select
    endif
+
    if (nbad == 0) then
-     if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
-       if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
-       endif
-     else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
-       do k=1,size(qs,3)
-         do j=1,size(qs,2)
-           do i=1,size(qs,1)
-             if (denom(i,j,k) > 0.0) then
-               qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
-             else
-               qs(i,j,k) = eps
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r4_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r4_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
              endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           do k=1,size(qs,3)
+             do j=1,size(qs,2)
+               do i=1,size(qs,1)
+                 if (denom(i,j,k) > 0.0) then
+                   qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
+                 else
+                   qs(i,j,k) = eps
+                 endif
+               end do
+             end do
            end do
-         end do
-       end do
-       if (present (dqsdT)) then
-         dqsdT = eps*press*desat/denom**2
-       endif
-     endif ! (present(q))
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r4_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r8_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r8_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
+             endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           do k=1,size(qs,3)
+             do j=1,size(qs,2)
+               do i=1,size(qs,1)
+                 if (denom(i,j,k) > 0.0) then
+                   qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
+                 else
+                   qs(i,j,k) = eps
+                 endif
+               end do
+             end do
+           end do
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r8_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     end select
    else ! (nbad = 0)
-     qs = -999.
+     select type (qs)
+     type is (real(kind=r4_kind))
+       qs = -999.
+     type is (real(kind=r8_kind))
+       qs = -999.
+     end select
      if (present (dqsdT)) then
-       dqsdT = -999.
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         dqsdT = -999.
+       type is (real(kind=r8_kind))
+         dqsdT = -999.
+       end select
      endif
      if (present (esat)) then
-       esat = -999.
+       select type (esat)
+       type is (real(kind=r4_kind))
+         esat = -999.
+       type is (real(kind=r8_kind))
+         esat = -999.
+       end select
      endif
    endif ! (nbad = 0)
 
@@ -562,80 +642,155 @@
  subroutine compute_qs_k_2d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:)           :: temp, press
- real, intent(in)                            :: eps, zvir
- real, intent(out), dimension(:,:)           :: qs
- integer, intent(out)                        :: nbad
- real, intent(in),  dimension(:,:), optional :: q
- real, intent(in),                  optional :: hc
- real, intent(out), dimension(:,:), optional :: dqsdT, esat
- logical,intent(in),                optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ class(*), intent(in), dimension(:,:)            :: temp, press
+ real, intent(in)                                :: eps, zvir
+ class(*), intent(out), dimension(:,:)           :: qs
+ integer, intent(out)                            :: nbad
+ class(*), intent(in), dimension(:,:),  optional :: q
+ class(*), intent(in),                  optional :: hc
+ class(*), intent(out), dimension(:,:), optional :: dqsdT, esat
+ logical,intent(in),                    optional :: es_over_liq
+ logical,intent(in),                    optional :: es_over_liq_and_ice
 
  real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
  real    :: hc_loc
 
    if (present(hc)) then
-     hc_loc = hc
+     select type (hc)
+     type is (real(kind=r4_kind))
+       hc_loc = hc
+     type is (real(kind=r8_kind))
+       hc_loc = hc
+     end select
    else
      hc_loc = 1.0
    endif
 
- if (present(es_over_liq)) then
-   if (present (dqsdT)) then
-     call lookup_es2_des2_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
+   if (present(es_over_liq)) then
+     if (present (dqsdT)) then
+       call lookup_es2_des2_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es2_k (temp, esloc, nbad)
+     endif
+   else if (present(es_over_liq_and_ice)) then
+     if (present (dqsdT)) then
+       call lookup_es3_des3_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es3_k (temp, esloc, nbad)
+     endif
    else
-     call lookup_es2_k (temp, esloc, nbad)
+     if (present (dqsdT)) then
+       call lookup_es_des_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es_k (temp, esloc, nbad)
+     endif
    endif
- else if (present(es_over_liq_and_ice)) then
-   if (present (dqsdT)) then
-     call lookup_es3_des3_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es3_k (temp, esloc, nbad)
-   endif
- else
-   if (present (dqsdT)) then
-     call lookup_es_des_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es_k (temp, esloc, nbad)
-   endif
- endif
+
    esloc = esloc*hc_loc
    if (present (esat)) then
-     esat = esloc
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = esloc
+     type is (real(kind=r8_kind))
+       esat = esloc
+     end select
    endif
+
    if (nbad == 0) then
-     if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
-       if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
-       endif
-     else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
-      do j=1,size(qs,2)
-        do i=1,size(qs,1)
-          if (denom(i,j) > 0.0) then
-            qs(i,j) = eps*esloc(i,j)/denom(i,j)
-          else
-            qs(i,j) = eps
-          endif
-        end do
-      end do
-      if (present (dqsdT)) then
-        dqsdT = eps*press*desat/denom**2
-      endif
-    endif ! (present(q))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r4_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r4_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
+             endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           do j=1,size(qs,2)
+             do i=1,size(qs,1)
+               if (denom(i,j) > 0.0) then
+                 qs(i,j) = eps*esloc(i,j)/denom(i,j)
+               else
+                 qs(i,j) = eps
+               endif
+             end do
+           end do
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r4_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r8_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r8_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
+             endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           do j=1,size(qs,2)
+             do i=1,size(qs,1)
+               if (denom(i,j) > 0.0) then
+                 qs(i,j) = eps*esloc(i,j)/denom(i,j)
+               else
+                 qs(i,j) = eps
+               endif
+             end do
+           end do
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r8_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     end select
    else ! (nbad = 0)
-     qs = -999.
+     select type (qs)
+     type is (real(kind=r4_kind))
+       qs = -999.
+     type is (real(kind=r8_kind))
+       qs = -999.
+     end select
      if (present (dqsdT)) then
-       dqsdT = -999.
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         dqsdT = -999.
+       type is (real(kind=r8_kind))
+         dqsdT = -999.
+       end select
      endif
      if (present (esat)) then
-       esat = -999.
+       select type (esat)
+       type is (real(kind=r4_kind))
+         esat = -999.
+       type is (real(kind=r8_kind))
+         esat = -999.
+       end select
      endif
    endif ! (nbad = 0)
 
@@ -647,78 +802,151 @@
  subroutine compute_qs_k_1d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:)           :: temp, press
- real, intent(in)                          :: eps, zvir
- real, intent(out), dimension(:)           :: qs
- integer, intent(out)                      :: nbad
- real, intent(in),  dimension(:), optional :: q
- real, intent(in),                optional :: hc
- real, intent(out), dimension(:), optional :: dqsdT, esat
- logical,intent(in),              optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ class(*), intent(in), dimension(:)           :: temp, press
+ real, intent(in)                             :: eps, zvir
+ class(*), intent(out),dimension(:)           :: qs
+ integer, intent(out)                         :: nbad
+ class(*), intent(in), dimension(:), optional :: q
+ class(*), intent(in),               optional :: hc
+ class(*), intent(out), dimension(:),optional :: dqsdT, esat
+ logical,intent(in),                 optional :: es_over_liq
+ logical,intent(in),                 optional :: es_over_liq_and_ice
 
  real, dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
  real    :: hc_loc
 
    if (present(hc)) then
-     hc_loc = hc
+     select type (hc)
+     type is (real(kind=r4_kind))
+       hc_loc = hc
+     type is (real(kind=r8_kind))
+       hc_loc = hc
+     end select
    else
      hc_loc = 1.0
    endif
 
- if (present(es_over_liq)) then
-   if (present (dqsdT)) then
-     call lookup_es2_des2_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
+   if (present(es_over_liq)) then
+     if (present (dqsdT)) then
+       call lookup_es2_des2_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es2_k (temp, esloc, nbad)
+     endif
+   else if (present(es_over_liq_and_ice)) then
+     if (present (dqsdT)) then
+       call lookup_es3_des3_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es3_k (temp, esloc, nbad)
+     endif
    else
-     call lookup_es2_k (temp, esloc, nbad)
+     if (present (dqsdT)) then
+       call lookup_es_des_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es_k (temp, esloc, nbad)
+     endif
    endif
- else if (present(es_over_liq_and_ice)) then
-   if (present (dqsdT)) then
-     call lookup_es3_des3_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es3_k (temp, esloc, nbad)
-   endif
- else
-   if (present (dqsdT)) then
-     call lookup_es_des_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es_k (temp, esloc, nbad)
-   endif
- endif
+
    esloc = esloc*hc_loc
    if (present (esat)) then
-     esat = esloc
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = esloc
+     type is (real(kind=r8_kind))
+       esat = esloc
+     end select
    endif
+
    if (nbad == 0) then
-     if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
-       if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
-       endif
-     else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
-       do i=1,size(qs,1)
-         if (denom(i) >  0.0) then
-           qs(i) = eps*esloc(i)/denom(i)
-         else
-           qs(i) = eps
-         endif
-       end do
-       if (present (dqsdT)) then
-         dqsdT = eps*press*desat/denom**2
-       endif
-     endif ! (present(q))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r4_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r4_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
+             endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           do i=1,size(qs,1)
+             if (denom(i) >  0.0) then
+               qs(i) = eps*esloc(i)/denom(i)
+             else
+               qs(i) = eps
+             endif
+           end do
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r4_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r8_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r8_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
+             endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           do i=1,size(qs,1)
+             if (denom(i) >  0.0) then
+               qs(i) = eps*esloc(i)/denom(i)
+             else
+               qs(i) = eps
+             endif
+           end do
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r8_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     end select
    else ! (nbad = 0)
-     qs = -999.
+     select type (qs)
+     type is (real(kind=r4_kind))
+       qs = -999.
+     type is (real(kind=r8_kind))
+       qs = -999.
+     end select
      if (present (dqsdT)) then
-       dqsdT = -999.
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         dqsdT = -999.
+       type is (real(kind=r8_kind))
+         dqsdT = -999.
+       end select
      endif
      if (present (esat)) then
-       esat = -999.
+       select type (esat)
+       type is (real(kind=r4_kind))
+         esat = -999.
+       type is (real(kind=r8_kind))
+         esat = -999.
+       end select
      endif
    endif ! (nbad = 0)
 
@@ -730,78 +958,148 @@
  subroutine compute_qs_k_0d (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in)                :: temp, press
+ class(*), intent(in)            :: temp, press
  real, intent(in)                :: eps, zvir
- real, intent(out)               :: qs
+ class(*), intent(out)           :: qs
  integer, intent(out)            :: nbad
- real, intent(in),      optional :: q
- real, intent(in),      optional :: hc
- real, intent(out),     optional :: dqsdT, esat
+ class(*), intent(in),  optional :: q
+ class(*), intent(in),  optional :: hc
+ class(*), intent(out), optional :: dqsdT, esat
  logical,intent(in),    optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ logical,intent(in),    optional :: es_over_liq_and_ice
 
  real    :: esloc, desat, denom
  real    :: hc_loc
 
    if (present(hc)) then
-     hc_loc = hc
+     select type (hc)
+     type is (real(kind=r4_kind))
+       hc_loc = hc
+     type is (real(kind=r8_kind))
+       hc_loc = hc
+     end select
    else
      hc_loc = 1.0
    endif
 
- if (present(es_over_liq)) then
-   if (present (dqsdT)) then
-     call lookup_es2_des2_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
+   if (present(es_over_liq)) then
+     if (present (dqsdT)) then
+       call lookup_es2_des2_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es2_k (temp, esloc, nbad)
+     endif
+   else if (present(es_over_liq_and_ice)) then
+     if (present (dqsdT)) then
+       call lookup_es3_des3_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es3_k (temp, esloc, nbad)
+     endif
    else
-     call lookup_es2_k (temp, esloc, nbad)
+     if (present (dqsdT)) then
+       call lookup_es_des_k (temp, esloc, desat, nbad)
+       desat = desat*hc_loc
+     else
+       call lookup_es_k (temp, esloc, nbad)
+     endif
    endif
- else if (present(es_over_liq_and_ice)) then
-   if (present (dqsdT)) then
-     call lookup_es3_des3_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es3_k (temp, esloc, nbad)
-   endif
- else
-   if (present (dqsdT)) then
-     call lookup_es_des_k (temp, esloc, desat, nbad)
-     desat = desat*hc_loc
-   else
-     call lookup_es_k (temp, esloc, nbad)
-   endif
- endif
+
    esloc = esloc*hc_loc
    if (present (esat)) then
-     esat = esloc
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = esloc
+     type is (real(kind=r8_kind))
+       esat = esloc
+     end select
    endif
+
    if (nbad == 0) then
-     if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
-       if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
-       endif
-     else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
-       if (denom > 0.0) then
-         qs = eps*esloc/denom
-       else
-         qs = eps
-       endif
-       if (present (dqsdT)) then
-         dqsdT = eps*press*desat/denom**2
-       endif
-     endif ! (present(q))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r4_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r4_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
+             endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           if (denom > 0.0) then
+             qs = eps*esloc/denom
+           else
+             qs = eps
+           endif
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r4_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         if (present (q) .and. use_exact_qs) then
+           select type (q)
+           type is (real(kind=r8_kind))
+             qs = (1.0 + zvir*q)*eps*esloc/press
+             if (present (dqsdT)) then
+               select type (dqsdT)
+               type is (real(kind=r8_kind))
+                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+               end select
+             endif
+           end select
+         else  ! (present(q))
+           denom = press - (1.0 - eps)*esloc
+           if (denom > 0.0) then
+             qs = eps*esloc/denom
+           else
+             qs = eps
+           endif
+           if (present (dqsdT)) then
+             select type (dqsdT)
+             type is (real(kind=r8_kind))
+               dqsdT = eps*press*desat/denom**2
+             end select
+           endif
+         endif ! (present(q))
+       end select
+     end select
    else ! (nbad = 0)
-     qs = -999.
+     select type (qs)
+     type is (real(kind=r4_kind))
+       qs = -999.
+     type is (real(kind=r8_kind))
+       qs = -999.
+     end select
      if (present (dqsdT)) then
-       dqsdT = -999.
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         dqsdT = -999.
+       type is (real(kind=r8_kind))
+         dqsdT = -999.
+       end select
      endif
      if (present (esat)) then
-       esat = -999.
+       select type (esat)
+       type is (real(kind=r4_kind))
+         esat = -999.
+       type is (real(kind=r8_kind))
+         esat = -999.
+       end select
      endif
    endif ! (nbad = 0)
-
 
  end subroutine compute_qs_k_0d
 
@@ -1148,107 +1446,211 @@
 !#######################################################################
 
  subroutine lookup_es_des_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz) then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE(ind+1) +  &
-                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do k = 1, size(temp,3)
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j,k)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j,k) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+             desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           endif
+         enddo
+         enddo
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do k = 1, size(temp,3)
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j,k)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j,k) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+             desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           endif
+         enddo
+         enddo
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es_des_k_3d
 
 !#######################################################################
 
  subroutine lookup_es_des_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
 
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE(ind+1) + &
-                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+             desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           endif
+         enddo
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+             desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           endif
+         enddo
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es_des_k_2d
 
 !#######################################################################
 
  subroutine lookup_es_des_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
 
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE(ind+1) + &
-                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do i = 1, size(temp,1)
+           tmp = temp(i)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+             desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           endif
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do i = 1, size(temp,1)
+           tmp = temp(i)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+             desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           endif
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es_des_k_1d
 
 !#######################################################################
 
  subroutine lookup_es_des_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: esat, desat
  integer, intent(out) :: nbad
 
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     esat = TABLE(ind+1) + &
-            del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+     type is (real(kind=r8_kind))
+       esat = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+     end select
+
+     select type (desat)
+     type is (real(kind=r4_kind))
+       desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     type is (real(kind=r8_kind))
+       desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     end select
    endif
 
  end subroutine lookup_es_des_k_0d
@@ -1256,289 +1658,553 @@
 !#######################################################################
 
  subroutine lookup_es_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE(ind+1) + &
-                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j,k) = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j,k) = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es_k_3d
 
 !#######################################################################
 
  subroutine lookup_des_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des_k_3d
 
 !#######################################################################
  subroutine lookup_des_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+         endif
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+         endif
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des_k_2d
 !#######################################################################
  subroutine lookup_es_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1) +   &
-                                                  del*D2TABLE(ind+1))
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j) = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+         endif
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j) = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+         endif
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es_k_2d
 !#######################################################################
  subroutine lookup_des_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+         endif
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+         endif
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des_k_1d
 !#######################################################################
  subroutine lookup_es_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+         endif
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+         endif
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es_k_1d
 !#######################################################################
  subroutine lookup_des_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     select type (desat)
+     type is (real(kind=r4_kind))
+       desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     type is (real(kind=r8_kind))
+       desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     end select
    endif
 
  end subroutine lookup_des_k_0d
 !#######################################################################
  subroutine lookup_es_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      tmp = temp-tminl
+   type is (real(kind=r8_kind))
+      tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     select type (esat)
+     type is (real(kind=r4_kind))
+        esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     type is (real(kind=r8_kind))
+        esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     end select
    endif
 
  end subroutine lookup_es_k_0d
 !#######################################################################
 
  subroutine lookup_es2_des2_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz) then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE2(ind+1) +  &
-                     del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do k = 1, size(temp,3)
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j,k)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j,k) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+             desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           endif
+         enddo
+         enddo
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do k = 1, size(temp,3)
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j,k)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j,k) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+             desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           endif
+         enddo
+         enddo
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es2_des2_k_3d
 
 !#######################################################################
 
  subroutine lookup_es2_des2_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
 
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE2(ind+1) + &
-                   del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+             desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           endif
+         enddo
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+             desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           endif
+         enddo
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es2_des2_k_2d
 
 !#######################################################################
 
  subroutine lookup_es2_des2_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
 
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE2(ind+1) + &
-                   del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do i = 1, size(temp,1)
+           tmp = temp(i)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+             desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           endif
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do i = 1, size(temp,1)
+           tmp = temp(i)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+             desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           endif
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es2_des2_k_1d
 
 !#######################################################################
 
  subroutine lookup_es2_des2_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: esat, desat
  integer, intent(out) :: nbad
 
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     esat = TABLE2(ind+1) + &
-            del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+     type is (real(kind=r8_kind))
+       esat = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+     end select
+
+     select type (desat)
+     type is (real(kind=r4_kind))
+       desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     type is (real(kind=r8_kind))
+       desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     end select
    endif
 
  end subroutine lookup_es2_des2_k_0d
@@ -1546,182 +2212,342 @@
 !#######################################################################
 
  subroutine lookup_es2_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE2(ind+1) + &
-                     del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j,k) = TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j,k) = TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es2_k_3d
 
 !#######################################################################
 
  subroutine lookup_des2_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des2_k_3d
 
 !#######################################################################
  subroutine lookup_des2_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+         endif
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+         endif
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des2_k_2d
 !#######################################################################
  subroutine lookup_es2_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE2(ind+1) + del*(DTABLE2(ind+1) +   &
-                                                  del*D2TABLE2(ind+1))
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j) = TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+         endif
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j) = TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+         endif
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es2_k_2d
 !#######################################################################
  subroutine lookup_des2_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+         endif
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+         endif
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des2_k_1d
 !#######################################################################
  subroutine lookup_es2_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-     endif
-   enddo
 
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+         endif
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+         endif
+       enddo
+     end select
+   end select
+  
  end subroutine lookup_es2_k_1d
 !#######################################################################
  subroutine lookup_des2_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     select type (desat)
+     type is (real(kind=r4_kind))
+       desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     type is (real(kind=r8_kind))
+       desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     end select
    endif
 
  end subroutine lookup_des2_k_0d
 !#######################################################################
  subroutine lookup_es2_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+     type is (real(kind=r8_kind))
+       esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+     end select
    endif
 
  end subroutine lookup_es2_k_0d
@@ -1730,107 +2556,211 @@
 !#######################################################################
 
  subroutine lookup_es3_des3_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz) then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE3(ind+1) +  &
-                     del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do k = 1, size(temp,3)
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j,k)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j,k) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+             desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           endif
+         enddo
+         enddo
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do k = 1, size(temp,3)
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j,k)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz) then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j,k) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+             desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           endif
+         enddo
+         enddo
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es3_des3_k_3d
 
 !#######################################################################
 
  subroutine lookup_es3_des3_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
 
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE3(ind+1) + &
-                   del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+             desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           endif
+         enddo
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do j = 1, size(temp,2)
+         do i = 1, size(temp,1)
+           tmp = temp(i,j)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i,j) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+             desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           endif
+         enddo
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es3_des3_k_2d
 
 !#######################################################################
 
  subroutine lookup_es3_des3_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
 
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE3(ind+1) + &
-                   del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         do i = 1, size(temp,1)
+           tmp = temp(i)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+             desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           endif
+         enddo
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         do i = 1, size(temp,1)
+           tmp = temp(i)-tminl
+           ind = int(dtinvl*(tmp+tepsl))
+           if (ind < 0 .or. ind >= table_siz)  then
+             nbad = nbad+1
+           else
+             del = tmp-dtres*real(ind)
+             esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+             desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           endif
+         enddo
+       end select
+     end select
+   end select
 
  end subroutine lookup_es3_des3_k_1d
 
 !#######################################################################
 
  subroutine lookup_es3_des3_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: esat, desat
  integer, intent(out) :: nbad
 
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     esat = TABLE3(ind+1) + &
-            del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+     type is (real(kind=r8_kind))
+       esat = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+     end select
+
+     select type (desat)
+     type is (real(kind=r4_kind))
+       desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     type is (real(kind=r8_kind))
+       desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     end select
    endif
 
  end subroutine lookup_es3_des3_k_0d
@@ -1838,182 +2768,342 @@
 !#######################################################################
 
  subroutine lookup_es3_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE3(ind+1) + &
-                     del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j,k) = TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j,k) = TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es3_k_3d
 
 !#######################################################################
 
  subroutine lookup_des3_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
+ class(*), intent(in),  dimension(:,:,:)  :: temp
+ class(*), intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
 
    nbad = 0
-   do k = 1, size(temp,3)
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-     endif
-   enddo
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do k = 1, size(temp,3)
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j,k)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+         endif
+       enddo
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des3_k_3d
 
 !#######################################################################
  subroutine lookup_des3_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+         endif
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+         endif
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des3_k_2d
 !#######################################################################
  subroutine lookup_es3_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
+ class(*), intent(in),  dimension(:,:)  :: temp
+ class(*), intent(out), dimension(:,:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
 
    nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE3(ind+1) + del*(DTABLE3(ind+1) +   &
-                                                  del*D2TABLE3(ind+1))
-     endif
-   enddo
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j) = TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+         endif
+       enddo
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do j = 1, size(temp,2)
+       do i = 1, size(temp,1)
+         tmp = temp(i,j)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i,j) = TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+         endif
+       enddo
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es3_k_2d
 !#######################################################################
  subroutine lookup_des3_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+         endif
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+         endif
+       enddo
+     end select
+   end select
 
  end subroutine lookup_des3_k_1d
 !#######################################################################
  subroutine lookup_es3_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
+ class(*), intent(in),  dimension(:)  :: temp
+ class(*), intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
 
    nbad = 0
-   do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-     endif
-   enddo
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+         endif
+       enddo
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       do i = 1, size(temp,1)
+         tmp = temp(i)-tminl
+         ind = int(dtinvl*(tmp+tepsl))
+         if (ind < 0 .or. ind >= table_siz)  then
+           nbad = nbad+1
+         else
+           del = tmp-dtres*real(ind)
+           esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+         endif
+       enddo
+     end select
+   end select
 
  end subroutine lookup_es3_k_1d
 !#######################################################################
  subroutine lookup_des3_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: desat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     select type (desat)
+     type is (real(kind=r4_kind))
+       desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     type is (real(kind=r8_kind))
+       desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     end select
    endif
 
  end subroutine lookup_des3_k_0d
 !#######################################################################
  subroutine lookup_es3_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
+ class(*), intent(in)     :: temp
+ class(*), intent(out)    :: esat
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind
 
    nbad = 0
-   tmp = temp-tminl
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     tmp = temp-tminl
+   type is (real(kind=r8_kind))
+     tmp = temp-tminl
+   end select
+
    ind = int(dtinvl*(tmp+tepsl))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+     type is (real(kind=r8_kind))
+       esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+     end select
    endif
 
  end subroutine lookup_es3_k_0d
