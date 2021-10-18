@@ -96,8 +96,6 @@
 module xgrid_mod
 
 
-#include <fms_platform.h>
-
 use       fms_mod,   only: check_nml_error,  &
                            error_mesg, FATAL, NOTE, stdlog,      &
                            WARNING, &
@@ -135,6 +133,7 @@ use gradient_mod,        only: gradient_cubic
 use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
 use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
 use fms2_io_mod,         only: get_variable_units, dimension_exists
+use platform_mod
 
 implicit none
 private
@@ -185,9 +184,9 @@ logical :: init = .true.
 integer :: remapping_method
 
 !> Area elements used inside each model
-real, allocatable, dimension(:,:) :: AREA_ATM_MODEL, AREA_LND_MODEL, AREA_OCN_MODEL
+real(r8_kind), allocatable, dimension(:,:) :: AREA_ATM_MODEL, AREA_LND_MODEL, AREA_OCN_MODEL
 !> Area elements based on a the spherical model used by the ICE layer
-real, allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_SPHERE
+real(r8_kind), allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_SPHERE
 
 !> @}
 
@@ -247,7 +246,7 @@ end interface
 !!     side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !!     Conservation_check must be called by all PEs to work properly.
 !!
-!! @param d real data
+!! @param d real(r8_kind) data
 !! @param grid_id 3 character grid ID
 !! @param[inout] xmap exchange grid
 !! @param[out] global sum of a variable on home model grid, after side grid interpolation and after
@@ -284,28 +283,28 @@ type xcell_type
   integer :: recv_pos       !< position in the receive buffer.
   integer :: pe             !< other side pe that has this cell
   integer :: tile           !< tile index of side 1 mosaic.
-  real    :: area           !< geographic area of exchange cell
-!  real    :: area1_ratio     !(= x_area/grid1_area), will be added in the future to improve efficiency
-!  real    :: area2_ratio     !(= x_area/grid2_area), will be added in the future to improve efficiency
-  real    :: di !< Weight for the gradient of flux
-  real    :: dj !< Weight for the gradient of flux
-  real    :: scale
+  real(r8_kind)    :: area           !< geographic area of exchange cell
+!  real(r8_kind)    :: area1_ratio     !(= x_area/grid1_area), will be added in the future to improve efficiency
+!  real(r8_kind)    :: area2_ratio     !(= x_area/grid2_area), will be added in the future to improve efficiency
+  real(r8_kind)    :: di !< Weight for the gradient of flux
+  real(r8_kind)    :: dj !< Weight for the gradient of flux
+  real(r8_kind)    :: scale
 end type xcell_type
 
 !> Type to hold pointers for grid boxes
 !> @ingroup xgrid_mod
 type grid_box_type
-   real, dimension(:,:),   pointer :: dx     => NULL()
-   real, dimension(:,:),   pointer :: dy     => NULL()
-   real, dimension(:,:),   pointer :: area   => NULL()
-   real, dimension(:),     pointer :: edge_w => NULL()
-   real, dimension(:),     pointer :: edge_e => NULL()
-   real, dimension(:),     pointer :: edge_s => NULL()
-   real, dimension(:),     pointer :: edge_n => NULL()
-   real, dimension(:,:,:), pointer :: en1    => NULL()
-   real, dimension(:,:,:), pointer :: en2    => NULL()
-   real, dimension(:,:,:), pointer :: vlon   => NULL()
-   real, dimension(:,:,:), pointer :: vlat   => NULL()
+   real(r8_kind), dimension(:,:),   pointer :: dx     => NULL()
+   real(r8_kind), dimension(:,:),   pointer :: dy     => NULL()
+   real(r8_kind), dimension(:,:),   pointer :: area   => NULL()
+   real(r8_kind), dimension(:),     pointer :: edge_w => NULL()
+   real(r8_kind), dimension(:),     pointer :: edge_e => NULL()
+   real(r8_kind), dimension(:),     pointer :: edge_s => NULL()
+   real(r8_kind), dimension(:),     pointer :: edge_n => NULL()
+   real(r8_kind), dimension(:,:,:), pointer :: en1    => NULL()
+   real(r8_kind), dimension(:,:,:), pointer :: en2    => NULL()
+   real(r8_kind), dimension(:,:,:), pointer :: vlon   => NULL()
+   real(r8_kind), dimension(:,:,:), pointer :: vlat   => NULL()
 end type grid_box_type
 
 !> Private type to hold all data needed from given grid for an exchange grid
@@ -340,13 +339,13 @@ type grid_type
   integer                         :: im                     !< global domain range
   integer                         :: jm                     !< global domain range
   integer                         :: km                     !< global domain range
-  real, pointer, dimension(:)     :: lon =>NULL()       !< center of global grids
-  real, pointer, dimension(:)     :: lat =>NULL()       !< center of global grids
-  real, pointer, dimension(:,:)   :: geolon=>NULL()   !< geographical grid center
-  real, pointer, dimension(:,:)   :: geolat=>NULL()   !< geographical grid center
-  real, pointer, dimension(:,:,:) :: frac_area =>NULL()               !< partition fractions
-  real, pointer, dimension(:,:)   :: area =>NULL()                    !< cell area
-  real, pointer, dimension(:,:)   :: area_inv =>NULL()                !< 1 / area for normalization
+  real(r8_kind), pointer, dimension(:)     :: lon =>NULL()       !< center of global grids
+  real(r8_kind), pointer, dimension(:)     :: lat =>NULL()       !< center of global grids
+  real(r8_kind), pointer, dimension(:,:)   :: geolon=>NULL()   !< geographical grid center
+  real(r8_kind), pointer, dimension(:,:)   :: geolat=>NULL()   !< geographical grid center
+  real(r8_kind), pointer, dimension(:,:,:) :: frac_area =>NULL()               !< partition fractions
+  real(r8_kind), pointer, dimension(:,:)   :: area =>NULL()                    !< cell area
+  real(r8_kind), pointer, dimension(:,:)   :: area_inv =>NULL()                !< 1 / area for normalization
   integer                         :: first                      !< xgrid index range
   integer                         :: last                       !< xgrid index range
   integer                         :: first_get              !< xgrid index range for get_2_from_xgrid
@@ -376,10 +375,10 @@ end type grid_type
 !> @ingroup xgrid_mod
 type x1_type
   integer :: i, j
-  real    :: area   !< (= geographic area * frac_area)
-!  real    :: area_ratio !(= x1_area/grid1_area) ! will be added in the future to improve efficiency
-  real    :: di !< weight for the gradient of flux
-  real    :: dj !< weight for the gradient of flux
+  real(r8_kind)    :: area   !< (= geographic area * frac_area)
+!  real(r8_kind)    :: area_ratio !(= x1_area/grid1_area) ! will be added in the future to improve efficiency
+  real(r8_kind)    :: di !< weight for the gradient of flux
+  real(r8_kind)    :: dj !< weight for the gradient of flux
   integer :: tile           !< tile index of side 1 mosaic.
   integer :: pos
 end type x1_type
@@ -388,8 +387,8 @@ end type x1_type
 !> @ingroup xgrid_mod
 type x2_type
   integer :: i, j, l, k, pos
-  real    :: area   !< geographic area of exchange cell
-!  real    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
+  real(r8_kind)    :: area   !< geographic area of exchange cell
+!  real(r8_kind)    :: area_ratio !(=x2_area/grid2_area )  ! will be added in the future to improve efficiency
 end type x2_type
 
 !> Private type for overlap exchange grid data
@@ -403,8 +402,8 @@ type overlap_type
    integer, allocatable :: g(:)
    integer, allocatable :: xLoc(:)
    integer, allocatable :: tile(:)
-   real,    allocatable :: di(:)
-   real,    allocatable :: dj(:)
+   real(r8_kind),    allocatable :: di(:)
+   real(r8_kind),    allocatable :: dj(:)
 end type overlap_type
 
 !> Private type used for exchange grid communication
@@ -465,8 +464,8 @@ end type xmap_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
- real, parameter                              :: EPS = 1.0e-10
- real, parameter                              :: LARGE_NUMBER = 1.e20
+ real(r8_kind), parameter                              :: EPS = 1.0d-10
+ real(r8_kind), parameter                              :: LARGE_NUMBER = 1.d20
  logical :: module_is_initialized = .FALSE.
  integer :: id_put_1_to_xgrid_order_1 = 0
  integer :: id_put_1_to_xgrid_order_2 = 0
@@ -609,27 +608,27 @@ logical,        intent(in)             :: use_higher_order
 
   integer, pointer,       dimension(:)   :: i1=>NULL(), j1=>NULL()
   integer, pointer,       dimension(:)   :: i2=>NULL(), j2=>NULL()
-  real,    pointer,       dimension(:)   :: di=>NULL(), dj=>NULL()
-  real,    pointer,       dimension(:)   :: area =>NULL()
+  real(r8_kind),    pointer,       dimension(:)   :: di=>NULL(), dj=>NULL()
+  real(r8_kind),    pointer,       dimension(:)   :: area =>NULL()
   integer, pointer,       dimension(:)   :: i1_tmp=>NULL(), j1_tmp=>NULL()
   integer, pointer,       dimension(:)   :: i2_tmp=>NULL(), j2_tmp=>NULL()
-  real,    pointer,       dimension(:)   :: di_tmp=>NULL(), dj_tmp=>NULL()
-  real,    pointer,       dimension(:)   :: area_tmp =>NULL()
+  real(r8_kind),    pointer,       dimension(:)   :: di_tmp=>NULL(), dj_tmp=>NULL()
+  real(r8_kind),    pointer,       dimension(:)   :: area_tmp =>NULL()
   integer, pointer,       dimension(:)   :: i1_side1=>NULL(), j1_side1=>NULL()
   integer, pointer,       dimension(:)   :: i2_side1=>NULL(), j2_side1=>NULL()
-  real,    pointer,       dimension(:)   :: di_side1=>NULL(), dj_side1=>NULL()
-  real,    pointer,       dimension(:)   :: area_side1 =>NULL()
+  real(r8_kind),    pointer,       dimension(:)   :: di_side1=>NULL(), dj_side1=>NULL()
+  real(r8_kind),    pointer,       dimension(:)   :: area_side1 =>NULL()
 
-  real,    allocatable, dimension(:,:) :: tmp
-  real,    allocatable, dimension(:)   :: send_buffer, recv_buffer
+  real(r8_kind),    allocatable, dimension(:,:) :: tmp
+  real(r8_kind),    allocatable, dimension(:)   :: send_buffer, recv_buffer
   type (grid_type),   pointer, save    :: grid1 =>NULL()
   integer                              :: l, ll, ll_repro, p, siz(4), nxgrid, size_prev
   type(xcell_type),   allocatable      :: x_local(:)
   integer                              :: size_repro, out_unit
   logical                              :: scale_exist = .false.
   logical                              :: is_distribute = .false.
-  real,    allocatable,   dimension(:) :: scale
-  real                                 :: garea
+  real(r8_kind),    allocatable,   dimension(:) :: scale
+  real(r8_kind)                                 :: garea
   integer                              :: npes, isc, iec, nxgrid_local, pe, nxgrid_local_orig
   integer                              :: nxgrid1, nxgrid2, nset1, nset2, ndivs, cur_ind
   integer                              :: pos, nsend, nrecv, l1, l2, n, mypos, m
@@ -1312,10 +1311,10 @@ subroutine get_grid_version1(grid, grid_id, grid_file)
   character(len=3), intent(in)            :: grid_id
   character(len=*), intent(in)            :: grid_file
 
-  real, dimension(grid%im) :: lonb
-  real, dimension(grid%jm) :: latb
-  real, allocatable        :: tmpx(:,:), tmpy(:,:)
-  real                     :: d2r
+  real(r8_kind), dimension(grid%im) :: lonb
+  real(r8_kind), dimension(grid%jm) :: latb
+  real(r8_kind), allocatable        :: tmpx(:,:), tmpy(:,:)
+  real(r8_kind)                     :: d2r
   integer                  :: is, ie, js, je, nlon, nlat, i, j
   integer                  :: start(4), nread(4), isc2, iec2, jsc2, jec2
   type(FmsNetcdfDomainFile_t) :: fileobj
@@ -1381,13 +1380,14 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
   character(len=3), intent(in)            :: grid_id
   character(len=*), intent(in)            :: grid_file
 
-  real, dimension(grid%im) :: lonb
-  real, dimension(grid%jm) :: latb
-  real, allocatable        :: tmpx(:,:), tmpy(:,:)
-  real                     :: d2r
+  real(r8_kind), dimension(grid%im) :: lonb
+  real(r8_kind), dimension(grid%jm) :: latb
+  real(r8_kind), allocatable        :: tmpx(:,:), tmpy(:,:)
+  real(r8_kind)                     :: d2r
   integer                  :: is, ie, js, je, nlon, nlat, i, j
   integer                  :: start(4), nread(4), isc2, iec2, jsc2, jec2
   type(FmsNetcdfFile_t) :: fileobj
+  real(r8_kind), allocatable, target :: geolon(:,:), geolat(:,:)
 
   if(.not. open_file(fileobj, grid_file, 'read') ) then
      call error_mesg('xgrid_mod(get_grid_version2)', 'Error in opening file '//trim(grid_file), FATAL)
@@ -1465,7 +1465,7 @@ end subroutine get_grid_version2
 subroutine get_area_elements_fms2_io(fileobj, name, data)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
-  real, intent(out)            :: data(:,:)
+  real(r8_kind), intent(out)            :: data(:,:)
 
   if(variable_exists(fileobj, name)) then
      call read_data(fileobj, name, data)
@@ -1530,10 +1530,10 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   integer :: unit, nxgrid_file, i1, i2, i3, tile1, tile2, j
   integer :: nxc, nyc, out_unit
   type (grid_type), pointer, save :: grid =>NULL(), grid1 =>NULL()
-  real, dimension(3) :: xxx
-  real, dimension(:,:), allocatable   :: check_data
-  real, dimension(:,:,:), allocatable :: check_data_3D
-  real,                 allocatable   :: tmp_2d(:,:), tmp_3d(:,:,:)
+  real(r8_kind), dimension(3) :: xxx
+  real(r8_kind), dimension(:,:), allocatable   :: check_data
+  real(r8_kind), dimension(:,:,:), allocatable :: check_data_3D
+  real(r8_kind),                 allocatable   :: tmp_2d(:,:), tmp_3d(:,:,:)
   character(len=256)                  :: xgrid_file, xgrid_name, xgrid_dimname
   character(len=256)                  :: tile_file, mosaic_file
   character(len=256)                  :: mosaic1, mosaic2, contact
@@ -2274,8 +2274,8 @@ subroutine set_comm_get1(xmap)
   integer              :: i1, j1, tile1, p, n, pos, buffer_pos, mypos
   integer              :: nsend, nrecv, rbuf_size, sbuf_size, msgsize
   logical              :: found
-  real,    allocatable :: recv_buf(:), send_buf(:)
-  real,    allocatable :: diarray(:), djarray(:)
+  real(r8_kind),    allocatable :: recv_buf(:), send_buf(:)
+  real(r8_kind),    allocatable :: diarray(:), djarray(:)
   integer, allocatable :: iarray(:), jarray(:), tarray(:)
   integer, allocatable :: pos_x(:), pelist(:), size_pe(:), pe_side1(:)
   integer              :: recv_buffer_pos(0:xmap%npes)
@@ -2573,8 +2573,8 @@ subroutine set_comm_put1(xmap)
   integer              :: i1, j1, tile1, p, n, pos, buffer_pos
   integer              :: nsend, nrecv, msgsize, nset, rbuf_size, sbuf_size
   logical              :: found
-  real,    allocatable :: recv_buf(:), send_buf(:)
-  real,    allocatable :: diarray(:), djarray(:)
+  real(r8_kind),    allocatable :: recv_buf(:), send_buf(:)
+  real(r8_kind),    allocatable :: diarray(:), djarray(:)
   integer, allocatable :: iarray(:), jarray(:), tarray(:)
   integer, allocatable :: pos_x(:), pelist(:), size_pe(:), pe_put1(:)
   integer              :: root_pe, recvsize, sendsize
@@ -3064,7 +3064,7 @@ end subroutine regen
 
 !> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_sg(f, grid_id, xmap)
-real, dimension(:,:,:), intent(in   ) :: f !< fraction area to be set
+real(r8_kind), dimension(:,:,:), intent(in   ) :: f !< fraction area to be set
 character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
 type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid ID
 
@@ -3096,7 +3096,7 @@ end subroutine  set_frac_area_sg
 
 !> @brief Changes sub-grid portion areas and/or number.
 subroutine set_frac_area_ug(f, grid_id, xmap)
-real, dimension(:,:),   intent(in   ) :: f !< fractional area to set
+real(r8_kind), dimension(:,:),   intent(in   ) :: f !< fractional area to set
 character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
 type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid ID
 
@@ -3139,9 +3139,9 @@ end function xgrid_count
 
 !> Scatters data to exchange grid
 subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
-  real, dimension(:,:), intent(in   )    :: d !< data to send
+  real(r8_kind), dimension(:,:), intent(in   )    :: d !< data to send
   character(len=3),     intent(in   )    :: grid_id !< 3 character grid ID
-  real, dimension(:),   intent(inout)    :: x !< xgrid data
+  real(r8_kind), dimension(:),   intent(inout)    :: x !< xgrid data
   type (xmap_type),     intent(inout)    :: xmap !< exchange grid
   integer, intent(in), optional          :: remap_method !< exchange grid interpolation method can
                                                          !! be FIRST_ORDER(=1) or SECOND_ORDER(=2)
@@ -3156,8 +3156,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   integer,                                   save :: xsize=0
   integer,                                   save :: method_saved=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      method = FIRST_ORDER      ! default
@@ -3230,9 +3230,9 @@ end subroutine put_side1_to_xgrid
 
 !> Scatters data to exchange grid
 subroutine put_side2_to_xgrid(d, grid_id, x, xmap)
-real, dimension(:,:,:), intent(in   ) :: d !< data to send
+real(r8_kind), dimension(:,:,:), intent(in   ) :: d !< data to send
 character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
-real, dimension(:),     intent(inout) :: x !< xgrid data
+real(r8_kind), dimension(:),     intent(inout) :: x !< xgrid data
 type (xmap_type),       intent(inout) :: xmap !< exchange grid
 
   integer :: g
@@ -3255,9 +3255,9 @@ end subroutine put_side2_to_xgrid
 !#######################################################################
 
 subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
-  real, dimension(:,:), intent(  out) :: d !< recieved xgrid data
+  real(r8_kind), dimension(:,:), intent(  out) :: d !< recieved xgrid data
   character(len=3),     intent(in   ) :: grid_id !< 3 character grid ID
-  real, dimension(:),   intent(in   ) :: x !< xgrid data
+  real(r8_kind), dimension(:),   intent(in   ) :: x !< xgrid data
   type (xmap_type),     intent(inout) :: xmap !< exchange grid
   logical, intent(in), optional     :: complete
 
@@ -3269,8 +3269,8 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -3330,9 +3330,9 @@ end subroutine get_side1_from_xgrid
 !#######################################################################
 
 subroutine get_side2_from_xgrid(d, grid_id, x, xmap)
-real, dimension(:,:,:), intent(  out) :: d !< received xgrid data
+real(r8_kind), dimension(:,:,:), intent(  out) :: d !< received xgrid data
 character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
-real, dimension(:),     intent(in   ) :: x !< xgrid data
+real(r8_kind), dimension(:),     intent(in   ) :: x !< xgrid data
 type (xmap_type),       intent(in   ) :: xmap !< exchange grid
 
   integer :: g
@@ -3391,9 +3391,9 @@ end subroutine some
 
 subroutine put_2_to_xgrid(d, grid, x, xmap)
 type (grid_type),                                intent(in) :: grid
-real, dimension(grid%is_me:grid%ie_me, &
+real(r8_kind), dimension(grid%is_me:grid%ie_me, &
                 grid%js_me:grid%je_me, grid%km), intent(in) :: d
-real, dimension(:    ), intent(inout) :: x
+real(r8_kind), dimension(:    ), intent(inout) :: x
 type (xmap_type),       intent(in   ) :: xmap
 
   integer                 ::   l
@@ -3410,9 +3410,9 @@ end subroutine put_2_to_xgrid
 
 subroutine get_2_from_xgrid(d, grid, x, xmap)
 type (grid_type),                                intent(in ) :: grid
-real, dimension(grid%is_me:grid%ie_me, &
+real(r8_kind), dimension(grid%is_me:grid%ie_me, &
                 grid%js_me:grid%je_me, grid%km), intent(out) :: d
-real, dimension(:),     intent(in   ) :: x
+real(r8_kind), dimension(:),     intent(in   ) :: x
 type (xmap_type),       intent(in   ) :: xmap
 
   integer                 :: l, k
@@ -3438,8 +3438,8 @@ end subroutine get_2_from_xgrid
 !#######################################################################
 
 subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
-  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
+  integer(i8_kind), dimension(:), intent(in) :: d_addrs
+  integer(i8_kind), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
@@ -3447,12 +3447,12 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   integer                         :: from_pe, to_pe, pos, n, l, count
   integer                         :: ibegin, istart, iend, start_pos
   type (comm_type), pointer, save :: comm =>NULL()
-  real                            :: recv_buffer(xmap%put1%recvsize*lsize)
-  real                            :: send_buffer(xmap%put1%sendsize*lsize)
-  real                            :: unpack_buffer(xmap%put1%recvsize)
+  real(r8_kind)                            :: recv_buffer(xmap%put1%recvsize*lsize)
+  real(r8_kind)                            :: send_buffer(xmap%put1%sendsize*lsize)
+  real(r8_kind)                            :: unpack_buffer(xmap%put1%recvsize)
 
-  real, dimension(isize, jsize)   :: d
-  real, dimension(xsize)          :: x
+  real(r8_kind), dimension(isize, jsize)   :: d
+  real(r8_kind), dimension(xsize)          :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
 
@@ -3527,29 +3527,29 @@ end subroutine put_1_to_xgrid_order_1
 
 
 subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
-  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
+  integer(i8_kind), dimension(:), intent(in) :: d_addrs
+  integer(i8_kind), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
   !: NOTE: halo size is assumed to be 1 in setup_xmap
-  real, dimension(0:isize+1, 0:jsize+1, lsize) :: tmp
-  real, dimension(isize,     jsize,     lsize) :: tmpx, tmpy
-  real, dimension(isize,     jsize,     lsize) :: d_bar_max, d_bar_min
-  real, dimension(isize,     jsize,     lsize) :: d_max, d_min
-  real                            :: d_bar
+  real(r8_kind), dimension(0:isize+1, 0:jsize+1, lsize) :: tmp
+  real(r8_kind), dimension(isize,     jsize,     lsize) :: tmpx, tmpy
+  real(r8_kind), dimension(isize,     jsize,     lsize) :: d_bar_max, d_bar_min
+  real(r8_kind), dimension(isize,     jsize,     lsize) :: d_max, d_min
+  real(r8_kind)                            :: d_bar
   integer                         :: i, is, ie, im, j, js, je, jm, ii, jj
   integer                         :: p, l, ioff, joff, isd, jsd
   type (grid_type), pointer, save :: grid1 =>NULL()
   type (comm_type), pointer, save :: comm  =>NULL()
   integer                         :: buffer_pos, msgsize, from_pe, to_pe, pos, n
   integer                         :: ibegin, count, istart, iend
-  real                            :: recv_buffer(xmap%put1%recvsize*lsize*3)
-  real                            :: send_buffer(xmap%put1%sendsize*lsize*3)
-  real                            :: unpack_buffer(xmap%put1%recvsize*3)
+  real(r8_kind)                            :: recv_buffer(xmap%put1%recvsize*lsize*3)
+  real(r8_kind)                            :: send_buffer(xmap%put1%sendsize*lsize*3)
+  real(r8_kind)                            :: unpack_buffer(xmap%put1%recvsize*3)
   logical                         :: on_west_edge, on_east_edge, on_south_edge, on_north_edge
-  real, dimension(isize, jsize)   :: d
-  real, dimension(xsize)          :: x
+  real(r8_kind), dimension(isize, jsize)   :: d
+  real(r8_kind), dimension(xsize)          :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
 
@@ -3764,25 +3764,25 @@ end subroutine put_1_to_xgrid_order_2
 !#######################################################################
 
 subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
-  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
+  integer(i8_kind), dimension(:), intent(in) :: d_addrs
+  integer(i8_kind), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
-  real, dimension(xmap%size), target :: dg(xmap%size, lsize)
+  real(r8_kind), dimension(xmap%size), target :: dg(xmap%size, lsize)
   integer                            :: i, j, l, p, n, m
   integer                            :: msgsize, buffer_pos, pos
   integer                            :: istart, iend, count
-  real              , pointer, save  :: dgp =>NULL()
+  real(r8_kind)              , pointer, save  :: dgp =>NULL()
   type  (grid_type) , pointer, save  :: grid1 =>NULL()
   type  (comm_type) , pointer, save  :: comm  =>NULL()
   type(overlap_type), pointer, save  :: send => NULL()
   type(overlap_type), pointer, save  :: recv => NULL()
-  real                               :: recv_buffer(xmap%get1%recvsize*lsize*3)
-  real                               :: send_buffer(xmap%get1%sendsize*lsize*3)
-  real                               :: unpack_buffer(xmap%get1%recvsize*3)
-  real                               :: d(isize,jsize)
-  real, dimension(xsize)             :: x
+  real(r8_kind)                               :: recv_buffer(xmap%get1%recvsize*lsize*3)
+  real(r8_kind)                               :: send_buffer(xmap%get1%sendsize*lsize*3)
+  real(r8_kind)                               :: unpack_buffer(xmap%get1%recvsize*3)
+  real(r8_kind)                               :: d(isize,jsize)
+  real(r8_kind), dimension(xsize)             :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
 
@@ -3897,8 +3897,8 @@ end subroutine get_1_from_xgrid
 !#######################################################################
 
 subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
-  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
-  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
+  integer(i8_kind), dimension(:), intent(in) :: d_addrs
+  integer(i8_kind), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: xsize, lsize
 
@@ -3909,11 +3909,11 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   type(overlap_type), pointer, save  :: send => NULL()
   type(overlap_type), pointer, save  :: recv => NULL()
     integer,  dimension(0:xmap%npes-1) :: pl, ml
-  real                               :: recv_buffer(xmap%recv_count_repro_tot*lsize)
-  real                               :: send_buffer(xmap%send_count_repro_tot*lsize)
-  real                               :: d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, &
+  real(r8_kind)                               :: recv_buffer(xmap%recv_count_repro_tot*lsize)
+  real(r8_kind)                               :: send_buffer(xmap%send_count_repro_tot*lsize)
+  real(r8_kind)                               :: d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, &
                                           xmap%grids(1)%js_me:xmap%grids(1)%je_me)
-  real, dimension(xsize)             :: x
+  real(r8_kind), dimension(xsize)             :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
 
@@ -3997,18 +3997,18 @@ end subroutine get_1_from_xgrid_repro
 !> @brief conservation_check - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!! @return real conservation_check_side1
+!! @return real(r8_kind) conservation_check_side1
 function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
-real, dimension(:,:),    intent(in   ) :: d !< model data to check
+real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
 character(len=3),        intent(in   ) :: grid_id !< 3 character grid id
 type (xmap_type),        intent(inout) :: xmap !< exchange grid
-real, dimension(3)                     :: conservation_check_side1
+real(r8_kind), dimension(3)                     :: conservation_check_side1
 integer, intent(in), optional :: remap_method
 
 
-  real, dimension(xmap%size) :: x_over, x_back
-  real, dimension(size(d,1),size(d,2)) :: d1
-  real, dimension(:,:,:), allocatable  :: d2
+  real(r8_kind), dimension(xmap%size) :: x_over, x_back
+  real(r8_kind), dimension(size(d,1),size(d,2)) :: d1
+  real(r8_kind), dimension(:,:,:), allocatable  :: d2
   integer                              :: g
   type (grid_type), pointer, save      :: grid1 =>NULL(), grid2 =>NULL()
 
@@ -4044,18 +4044,18 @@ end function conservation_check_side1
 !> @brief conservation_check - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!! @return real conservation_check_side2
+!! @return real(r8_kind) conservation_check_side2
 function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
-real, dimension(:,:,:), intent(in   )  :: d !< model data to check
+real(r8_kind), dimension(:,:,:), intent(in   )  :: d !< model data to check
 character(len=3),       intent(in   )  :: grid_id !< 3 character grid ID
 type (xmap_type),       intent(inout)  :: xmap !< exchange grid
-real, dimension(3)                     :: conservation_check_side2
+real(r8_kind), dimension(3)                     :: conservation_check_side2
 integer, intent(in), optional :: remap_method
 
 
-  real, dimension(xmap%size) :: x_over, x_back
-  real, dimension(:,:  ), allocatable :: d1
-  real, dimension(:,:,:), allocatable :: d2
+  real(r8_kind), dimension(xmap%size) :: x_over, x_back
+  real(r8_kind), dimension(:,:  ), allocatable :: d1
+  real(r8_kind), dimension(:,:,:), allocatable :: d2
   integer                             :: g
   type (grid_type), pointer, save     :: grid1 =>NULL(), grid2 =>NULL()
 
@@ -4100,19 +4100,19 @@ end function conservation_check_side2
 !> @brief conservation_check_ug - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!! @return real conservation_check_ug_side1
+!! @return real(r8_kind) conservation_check_ug_side1
 function conservation_check_ug_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
-real, dimension(:,:),    intent(in   ) :: d !< model data to check
+real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
 character(len=3),        intent(in   ) :: grid_id !< 3 character grid ID
 type (xmap_type),        intent(inout) :: xmap !< exchange grid
-real, dimension(3)                     :: conservation_check_ug_side1
+real(r8_kind), dimension(3)                     :: conservation_check_ug_side1
 integer, intent(in), optional :: remap_method
 
-  real, dimension(xmap%size) :: x_over, x_back
-  real, dimension(size(d,1),size(d,2)) :: d1
-  real, dimension(:,:,:), allocatable  :: d2
-  real, dimension(:    ), allocatable  :: d_ug
-  real, dimension(:,:),   allocatable  :: d2_ug
+  real(r8_kind), dimension(xmap%size) :: x_over, x_back
+  real(r8_kind), dimension(size(d,1),size(d,2)) :: d1
+  real(r8_kind), dimension(:,:,:), allocatable  :: d2
+  real(r8_kind), dimension(:    ), allocatable  :: d_ug
+  real(r8_kind), dimension(:,:),   allocatable  :: d2_ug
   integer                              :: g
   type (grid_type), pointer, save      :: grid1 =>NULL(), grid2 =>NULL()
 
@@ -4172,18 +4172,18 @@ end function conservation_check_ug_side1
 !> @brief conservation_check_ug - returns three numbers which are the global sum of a
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!! @return real conservation_check_ug_side2
+!! @return real(r8_kind) conservation_check_ug_side2
 function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
-real, dimension(:,:,:), intent(in   )  :: d !< model data to check
+real(r8_kind), dimension(:,:,:), intent(in   )  :: d !< model data to check
 character(len=3),       intent(in   )  :: grid_id !< 3 character grid ID
 type (xmap_type),       intent(inout)  :: xmap !< exchange grid
-real, dimension(3)                     :: conservation_check_ug_side2
+real(r8_kind), dimension(3)                     :: conservation_check_ug_side2
 integer, intent(in),   optional :: remap_method
 
 
-  real, dimension(xmap%size) :: x_over, x_back
-  real, dimension(:,:  ), allocatable :: d1, d_ug
-  real, dimension(:,:,:), allocatable :: d2
+  real(r8_kind), dimension(xmap%size) :: x_over, x_back
+  real(r8_kind), dimension(:,:  ), allocatable :: d1, d_ug
+  real(r8_kind), dimension(:,:,:), allocatable :: d2
   integer                             :: g
   type (grid_type), pointer, save     :: grid1 =>NULL(), grid2 =>NULL()
 
@@ -4256,7 +4256,7 @@ end function conservation_check_ug_side2
 subroutine get_xmap_grid_area(id, xmap, area)
   character(len=3),     intent(in   ) :: id
   type (xmap_type),     intent(inout) :: xmap
-  real, dimension(:,:), intent(out  ) :: area
+  real(r8_kind), dimension(:,:), intent(out  ) :: area
   integer                             :: g
   logical                             :: found
 
@@ -4280,16 +4280,16 @@ end subroutine get_xmap_grid_area
 !> @brief This function is used to calculate the gradient along zonal direction.
 !!   Maybe need to setup a limit for the gradient. The grid is assumeed
 !!   to be regular lat-lon grid
-!! @return real grad_zonal_latlon
+!! @return real(r8_kind) grad_zonal_latlon
 function grad_zonal_latlon(d, lon, lat, is, ie, js, je, isd, jsd)
 
   integer,                    intent(in) :: isd, jsd
-  real, dimension(isd:,jsd:), intent(in) :: d
-  real, dimension(:),         intent(in) :: lon
-  real, dimension(:),         intent(in) :: lat
+  real(r8_kind), dimension(isd:,jsd:), intent(in) :: d
+  real(r8_kind), dimension(:),         intent(in) :: lon
+  real(r8_kind), dimension(:),         intent(in) :: lat
   integer,                    intent(in) :: is, ie, js, je
-  real, dimension(is:ie,js:je)           :: grad_zonal_latlon
-  real                                   :: dx, costheta
+  real(r8_kind), dimension(is:ie,js:je)           :: grad_zonal_latlon
+  real(r8_kind)                                   :: dx, costheta
   integer                                :: i, j, ip1, im1
 
   !  calculate the gradient of the data on each grid
@@ -4323,11 +4323,11 @@ end function grad_zonal_latlon
 !! @return grad_merid_latlon
 function grad_merid_latlon(d, lat, is, ie, js, je, isd, jsd)
   integer,                    intent(in) :: isd, jsd
-  real, dimension(isd:,jsd:), intent(in) :: d
-  real, dimension(:),         intent(in) :: lat
+  real(r8_kind), dimension(isd:,jsd:), intent(in) :: d
+  real(r8_kind), dimension(:),         intent(in) :: lat
   integer,                    intent(in) :: is, ie, js, je
-  real, dimension(is:ie,js:je)           :: grad_merid_latlon
-  real                                   :: dy
+  real(r8_kind), dimension(is:ie,js:je)           :: grad_merid_latlon
+  real(r8_kind)                                   :: dy
   integer                                :: i, j, jp1, jm1
 
   !  calculate the gradient of the data on each grid
@@ -4383,16 +4383,16 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, intent(in)             :: grid_index        !< grid index
-  real, intent(in)                :: data(:,:,:)  !< data array is 3d
+  real(r8_kind), intent(in)                :: data(:,:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
-  real, intent(in)                :: delta_t
+  real(r8_kind), intent(in)                :: delta_t
   integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
   integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       !< earth radius
+  real(r8_kind), intent(in)                :: radius       !< earth radius
   character(len=*), intent(in), optional      :: verbose
   integer, intent(out)            :: ier
 
-  real    :: from_dq, to_dq
+  real(r8_kind)    :: from_dq, to_dq
 
   ier = 0
   if(grid_index == 1) then
@@ -4442,16 +4442,16 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, optional, intent(in)   :: grid_index
-  real, intent(in)                :: data(:,:)    !< data array is 2d
+  real(r8_kind), intent(in)                :: data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
-  real, intent(in)                :: delta_t
+  real(r8_kind), intent(in)                :: delta_t
   integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
   integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       !< earth radius
+  real(r8_kind), intent(in)                :: radius       !< earth radius
   character(len=*), intent(in)    :: verbose
   integer, intent(out)            :: ier
 
-  real    :: to_dq, from_dq
+  real(r8_kind)    :: to_dq, from_dq
 
   ier = 0
 
@@ -4507,17 +4507,17 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, intent(in)             :: grid_index        !< grid index
-  real, intent(in)                :: data(:,:)  !< data array is 3d
+  real(r8_kind), intent(in)                :: data(:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
-  real, intent(in)                :: delta_t
+  real(r8_kind), intent(in)                :: delta_t
   integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
   integer, intent(in)             :: to_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
-  real, intent(in)                :: radius       !< earth radius
+  real(r8_kind), intent(in)                :: radius       !< earth radius
   character(len=*), intent(in), optional      :: verbose
   integer, intent(out)            :: ier
-  real, dimension(size(data,1),size(data,2)) :: tmp
+  real(r8_kind), dimension(size(data,1),size(data,2)) :: tmp
 
-  real    :: from_dq, to_dq
+  real(r8_kind)    :: from_dq, to_dq
 
   ier = 0
   if(grid_index == 1) then
@@ -4562,11 +4562,11 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
 
   use mpp_mod, only : mpp_sum
 
-  real, intent(in)                :: data(:,:)    !< data array is 2d
+  real(r8_kind), intent(in)                :: data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
-  real, intent(in)                :: delta_t
-  real, intent(in)                :: radius       !< earth radius
-  real, intent(out)               :: res
+  real(r8_kind), intent(in)                :: delta_t
+  real(r8_kind), intent(in)                :: radius       !< earth radius
+  real(r8_kind), intent(out)               :: res
   integer, intent(out)            :: ier
 
   ier = 0
@@ -4596,15 +4596,15 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
   type(time_type), intent(in)   :: Time
   character(len=*)              :: comp_name
   integer, intent(in)           :: index     !< to map stock element (water, heat, ..) to a name
-  real, intent(in)              :: ref_value !< the stock value returned by the component per PE
-  real, intent(in)              :: radius
+  real(r8_kind), intent(in)              :: ref_value !< the stock value returned by the component per PE
+  real(r8_kind), intent(in)              :: radius
   integer, intent(in), optional :: pelist(:)
 
   integer, parameter :: initID = -2 !< initial value for diag IDs. Must not be equal to the value
   !! that register_diag_field returns when it can't register the filed -- otherwise the registration
   !! is attempted every time this subroutine is called
 
-  real :: f_value, c_value, planet_area
+  real(r8_kind) :: f_value, c_value, planet_area
   character(len=80) :: formatString
   integer :: iday, isec, hours
   integer :: diagID, compInd
@@ -4612,7 +4612,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
   integer, dimension(NELEMS,4), save :: c_valueDiagID = initID
   integer, dimension(NELEMS,4), save :: fmc_valueDiagID = initID
 
-  real :: diagField
+  real(r8_kind) :: diagField
   logical :: used
   character(len=30) :: field_name, units
 
@@ -4688,7 +4688,7 @@ end subroutine stock_print
 !###############################################################################
  !> @return logical is_lat_lon
  function is_lat_lon(lon, lat)
-    real, dimension(:,:), intent(in) :: lon, lat
+    real(r8_kind), dimension(:,:), intent(in) :: lon, lat
     logical                          :: is_lat_lon
     integer                          :: i, j, nlon, nlat, num
 
@@ -4730,15 +4730,15 @@ end subroutine stock_print
 !#######################################################################
 
 ! <SUBROUTINE NAME="get_side1_from_xgrid_ug" INTERFACE="get_from_xgrid_ug">
-!   <IN NAME="x"  TYPE="real" DIM="(:)" > </IN>
+!   <IN NAME="x"  TYPE="real(r8_kind)" DIM="(:)" > </IN>
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <OUT NAME="d"  TYPE="real" DIM="(:,:)" > </OUT>
+!   <OUT NAME="d"  TYPE="real(r8_kind)" DIM="(:,:)" > </OUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
 subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
-  real, dimension(:),   intent(  out) :: d
+  real(r8_kind), dimension(:),   intent(  out) :: d
   character(len=3),     intent(in   ) :: grid_id
-  real, dimension(:),   intent(in   ) :: x
+  real(r8_kind), dimension(:),   intent(in   ) :: x
   type (xmap_type),     intent(inout) :: xmap
   logical, intent(in), optional     :: complete
 
@@ -4749,8 +4749,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -4808,17 +4808,17 @@ end subroutine get_side1_from_xgrid_ug
 !#######################################################################
 
 ! <SUBROUTINE NAME="put_side1_to_xgrid_ug" INTERFACE="put_to_xgrid_ug">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
+!   <IN NAME="d"  TYPE="real(r8_kind)" DIM="(:,:)" > </IN>
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
+!   <INOUT NAME="x"  TYPE="real(r8_kind)" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
 
 !> @brief Currently only support first order.
 subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
-  real, dimension(:),   intent(in   )    :: d !<
+  real(r8_kind), dimension(:),   intent(in   )    :: d !<
   character(len=3),     intent(in   )    :: grid_id
-  real, dimension(:),   intent(inout)    :: x
+  real(r8_kind), dimension(:),   intent(inout)    :: x
   type (xmap_type),     intent(inout)    :: xmap
   logical, intent(in), optional          :: complete
 
@@ -4829,8 +4829,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: d_addrs=-9999
-  integer(LONG_KIND), dimension(MAX_FIELDS), save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -4884,15 +4884,15 @@ end subroutine put_side1_to_xgrid_ug
 !#######################################################################
 
 ! <SUBROUTINE NAME="put_side2_to_xgrid_ug" INTERFACE="put_to_xgrid_ug">
-!   <IN NAME="d"  TYPE="real" DIM="(:,:)" > </IN>
+!   <IN NAME="d"  TYPE="real(r8_kind)" DIM="(:,:)" > </IN>
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <INOUT NAME="x"  TYPE="real" DIM="(:)" > </INOUT>
+!   <INOUT NAME="x"  TYPE="real(r8_kind)" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
 subroutine put_side2_to_xgrid_ug(d, grid_id, x, xmap)
-  real, dimension(:,:), intent(in   ) :: d
+  real(r8_kind), dimension(:,:), intent(in   ) :: d
   character(len=3),     intent(in   ) :: grid_id
-  real, dimension(:),   intent(inout) :: x
+  real(r8_kind), dimension(:),   intent(inout) :: x
   type (xmap_type),     intent(inout) :: xmap
 
   integer :: g
@@ -4916,15 +4916,15 @@ end subroutine put_side2_to_xgrid_ug
 !#######################################################################
 
 ! <SUBROUTINE NAME="get_side2_from_xgrid_ug" INTERFACE="get_from_xgrid_ug">
-!   <IN NAME="x"  TYPE="real" DIM="(:)" > </IN>
+!   <IN NAME="x"  TYPE="real(r8_kind)" DIM="(:)" > </IN>
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <OUT NAME="d"  TYPE="real" DIM="(:,:)" > </OUT>
+!   <OUT NAME="d"  TYPE="real(r8_kind)" DIM="(:,:)" > </OUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
 subroutine get_side2_from_xgrid_ug(d, grid_id, x, xmap)
-  real, dimension(:,:), intent(  out) :: d
+  real(r8_kind), dimension(:,:), intent(  out) :: d
   character(len=3),     intent(in   ) :: grid_id
-  real, dimension(:),   intent(in   ) :: x
+  real(r8_kind), dimension(:),   intent(in   ) :: x
   type (xmap_type),     intent(in   ) :: xmap
 
   integer :: g
@@ -4949,8 +4949,8 @@ end subroutine get_side2_from_xgrid_ug
 !#######################################################################
 
 subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize)
-  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
-  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
+  integer(i8_kind), dimension(:), intent(in) :: d_addrs
+  integer(i8_kind), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: dsize, xsize, lsize
 
@@ -4958,12 +4958,12 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
   integer                         :: from_pe, to_pe, pos, n, l, count
   integer                         :: ibegin, istart, iend, start_pos
   type (comm_type), pointer, save :: comm =>NULL()
-  real                            :: recv_buffer(xmap%put1%recvsize*lsize)
-  real                            :: send_buffer(xmap%put1%sendsize*lsize)
-  real                            :: unpack_buffer(xmap%put1%recvsize)
+  real(r8_kind)                            :: recv_buffer(xmap%put1%recvsize*lsize)
+  real(r8_kind)                            :: send_buffer(xmap%put1%sendsize*lsize)
+  real(r8_kind)                            :: unpack_buffer(xmap%put1%recvsize)
 
-  real, dimension(dsize)   :: d
-  real, dimension(xsize)   :: x
+  real(r8_kind), dimension(dsize)   :: d
+  real(r8_kind), dimension(xsize)   :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
   integer :: lll
@@ -5038,8 +5038,8 @@ end subroutine put_1_to_xgrid_ug_order_1
 
 subroutine put_2_to_xgrid_ug(d, grid, x, xmap)
 type (grid_type),                                intent(in) :: grid
-real, dimension(grid%ls_me:grid%le_me, grid%km), intent(in) :: d
-real, dimension(:    ), intent(inout) :: x
+real(r8_kind), dimension(grid%ls_me:grid%le_me, grid%km), intent(in) :: d
+real(r8_kind), dimension(:    ), intent(inout) :: x
 type (xmap_type),       intent(in   ) :: xmap
 
   integer                 ::   l
@@ -5054,25 +5054,25 @@ end subroutine put_2_to_xgrid_ug
 
 
 subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
-  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
-  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
+  integer(i8_kind), dimension(:), intent(in) :: d_addrs
+  integer(i8_kind), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: isize, xsize, lsize
 
-  real, dimension(xmap%size), target :: dg(xmap%size, lsize)
+  real(r8_kind), dimension(xmap%size), target :: dg(xmap%size, lsize)
   integer                            :: i, j, l, p, n, m
   integer                            :: msgsize, buffer_pos, pos
   integer                            :: istart, iend, count
-  real              , pointer, save  :: dgp =>NULL()
+  real(r8_kind)              , pointer, save  :: dgp =>NULL()
   type  (grid_type) , pointer, save  :: grid1 =>NULL()
   type  (comm_type) , pointer, save  :: comm  =>NULL()
   type(overlap_type), pointer, save  :: send => NULL()
   type(overlap_type), pointer, save  :: recv => NULL()
-  real                               :: recv_buffer(xmap%get1%recvsize*lsize*3)
-  real                               :: send_buffer(xmap%get1%sendsize*lsize*3)
-  real                               :: unpack_buffer(xmap%get1%recvsize*3)
-  real                               :: d(isize)
-  real, dimension(xsize)             :: x
+  real(r8_kind)                               :: recv_buffer(xmap%get1%recvsize*lsize*3)
+  real(r8_kind)                               :: send_buffer(xmap%get1%sendsize*lsize*3)
+  real(r8_kind)                               :: unpack_buffer(xmap%get1%recvsize*3)
+  real(r8_kind)                               :: d(isize)
+  real(r8_kind), dimension(xsize)             :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
 
@@ -5185,8 +5185,8 @@ end subroutine get_1_from_xgrid_ug
 !#######################################################################
 
 subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
-  integer(LONG_KIND), dimension(:), intent(in) :: d_addrs
-  integer(LONG_KIND), dimension(:), intent(in) :: x_addrs
+  integer(i8_kind), dimension(:), intent(in) :: d_addrs
+  integer(i8_kind), dimension(:), intent(in) :: x_addrs
   type (xmap_type),              intent(inout) :: xmap
   integer,                          intent(in) :: xsize, lsize
 
@@ -5197,10 +5197,10 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   type(overlap_type), pointer, save  :: send => NULL()
   type(overlap_type), pointer, save  :: recv => NULL()
     integer,  dimension(0:xmap%npes-1) :: pl, ml
-  real                               :: recv_buffer(xmap%recv_count_repro_tot*lsize)
-  real                               :: send_buffer(xmap%send_count_repro_tot*lsize)
-  real                               :: d(xmap%grids(1)%ls_me:xmap%grids(1)%le_me)
-  real, dimension(xsize)             :: x
+  real(r8_kind)                               :: recv_buffer(xmap%recv_count_repro_tot*lsize)
+  real(r8_kind)                               :: send_buffer(xmap%send_count_repro_tot*lsize)
+  real(r8_kind)                               :: d(xmap%grids(1)%ls_me:xmap%grids(1)%le_me)
+  real(r8_kind), dimension(xsize)             :: x
   pointer(ptr_d, d)
   pointer(ptr_x, x)
 
@@ -5282,8 +5282,8 @@ end subroutine get_1_from_xgrid_ug_repro
 
 subroutine get_2_from_xgrid_ug(d, grid, x, xmap)
 type (grid_type),                                intent(in ) :: grid
-real, dimension(grid%ls_me:grid%le_me, grid%km), intent(out) :: d
-real, dimension(:),     intent(in   ) :: x
+real(r8_kind), dimension(grid%ls_me:grid%le_me, grid%km), intent(out) :: d
+real(r8_kind), dimension(:),     intent(in   ) :: x
 type (xmap_type),       intent(in   ) :: xmap
 
   integer                 :: l, k

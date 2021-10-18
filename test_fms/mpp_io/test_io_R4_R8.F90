@@ -147,7 +147,7 @@ program test_io_R4_R8
   type(atttype),          allocatable :: atts(:)
   type(fieldtype),        allocatable :: vars(:)
   type(axistype),         allocatable :: axes(:)
-  real(r8_kind),                   allocatable :: tstamp(:)
+  real,                   allocatable :: tstamp(:)
   real(r4_kind), dimension(:,:,:), allocatable  :: data4, gdata4, rdata4
   !--- determine the shift and symmetry according to type,
   select case(type)
@@ -334,7 +334,7 @@ program test_io_R4_R8
   type(atttype),          allocatable :: atts(:)
   type(fieldtype),        allocatable :: vars(:)
   type(axistype),         allocatable :: axes(:)
-  real(r8_kind),                   allocatable :: tstamp8(:)
+  real,                   allocatable :: tstamp(:)
   real(r8_kind), dimension(:,:,:), allocatable :: data8, gdata8, rdata8
   !--- determine the shift and symmetry according to type,
   select case(type)
@@ -457,11 +457,11 @@ program test_io_R4_R8
   allocate( atts(natt) )
   allocate( axes(ndim) )
   allocate( vars(nvar) )
-  allocate( tstamp8(ntime) )
+  allocate( tstamp(ntime) )
   call mpp_get_atts ( unit, atts(:) )
   call mpp_get_axes ( unit, axes(:) )
   call mpp_get_fields ( unit, vars(:) )
-  call mpp_get_times( unit, tstamp8(:) )
+  call mpp_get_times( unit, tstamp(:) )
 
   call mpp_get_atts(vars(1),name=varname)
 
@@ -477,7 +477,7 @@ program test_io_R4_R8
   end if
 
   call mpp_close(unit)
-  deallocate( atts, axes, vars, tstamp8 )
+  deallocate( atts, axes, vars, tstamp )
 
 !netCDF distributed read
   call mpp_sync()               !wait for previous write to complete
@@ -487,11 +487,11 @@ program test_io_R4_R8
   allocate( atts(natt) )
   allocate( axes(ndim) )
   allocate( vars(nvar) )
-  allocate( tstamp8(ntime) )
+  allocate( tstamp(ntime) )
   call mpp_get_atts ( unit, atts(:) )
   call mpp_get_axes ( unit, axes(:) )
   call mpp_get_fields ( unit, vars(:) )
-  call mpp_get_times( unit, tstamp8(:) )
+  call mpp_get_times( unit, tstamp(:) )
 
   call mpp_get_atts(vars(1),name=varname)
   rdata8 = 0
@@ -509,7 +509,7 @@ program test_io_R4_R8
            //trim(type) )
   end if
 
-  deallocate( atts, axes, vars, tstamp8 )
+  deallocate( atts, axes, vars, tstamp )
   deallocate( rdata8, gdata8, data8)
 
   end subroutine test_netcdf_io_R8

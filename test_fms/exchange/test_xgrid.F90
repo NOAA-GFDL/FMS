@@ -49,7 +49,7 @@ program xgrid_test
 
 implicit none
 
-  real, parameter :: EPSLN = 1.0e-10
+  real(r8_kind), parameter :: EPSLN = 1.0e-10
   character(len=256) :: atm_input_file  = "INPUT/atmos_input.nc"
   character(len=256) :: atm_output_file = "atmos_output.nc"
   character(len=256) :: lnd_output_file = "land_output.nc"
@@ -98,20 +98,20 @@ implicit none
   type(domain2d)       :: Atm_domain, Ice_domain, Lnd_domain
   type(xmap_type)      :: Xmap, Xmap_runoff
   type(grid_box_type)  :: atm_grid
-  real, allocatable    :: xt(:,:), yt(:,:)  ! on T-cell data domain
-  real, allocatable    :: xc(:,:), yc(:,:)  ! on C-cell compute domain
-  real, allocatable    :: tmpx(:,:), tmpy(:,:)
-  real, allocatable    :: atm_data_in(:,:), atm_data_out(:,:)
-  real, allocatable    :: atm_data_out_1(:,:), atm_data_out_2(:,:), atm_data_out_3(:,:)
-  real, allocatable    :: lnd_data_out(:,:,:), ice_data_out(:,:,:)
-  real, allocatable    :: runoff_data_in(:,:), runoff_data_out(:,:,:)
-  real, allocatable    :: atm_area(:,:), lnd_area(:,:), ice_area(:,:)
-  real, allocatable    :: lnd_frac(:,:,:), ice_frac(:,:,:)
-  real, allocatable    :: x_1(:), x_2(:), x_3(:), x_4(:)
-  real                 :: sum_atm_in, sum_ice_out, sum_lnd_out, sum_atm_out
-  real                 :: sum_runoff_in, sum_runoff_out, tot
-  real                 :: min_atm_in, max_atm_in, min_atm_out, max_atm_out
-  real                 :: min_x, max_x
+  real(r8_kind), allocatable    :: xt(:,:), yt(:,:)  ! on T-cell data domain
+  real(r8_kind), allocatable    :: xc(:,:), yc(:,:)  ! on C-cell compute domain
+  real(r8_kind), allocatable    :: tmpx(:,:), tmpy(:,:)
+  real(r8_kind), allocatable    :: atm_data_in(:,:), atm_data_out(:,:)
+  real(r8_kind), allocatable    :: atm_data_out_1(:,:), atm_data_out_2(:,:), atm_data_out_3(:,:)
+  real(r8_kind), allocatable    :: lnd_data_out(:,:,:), ice_data_out(:,:,:)
+  real(r8_kind), allocatable    :: runoff_data_in(:,:), runoff_data_out(:,:,:)
+  real(r8_kind), allocatable    :: atm_area(:,:), lnd_area(:,:), ice_area(:,:)
+  real(r8_kind), allocatable    :: lnd_frac(:,:,:), ice_frac(:,:,:)
+  real(r8_kind), allocatable    :: x_1(:), x_2(:), x_3(:), x_4(:)
+  real(r8_kind)                 :: sum_atm_in, sum_ice_out, sum_lnd_out, sum_atm_out
+  real(r8_kind)                 :: sum_runoff_in, sum_runoff_out, tot
+  real(r8_kind)                 :: min_atm_in, max_atm_in, min_atm_out, max_atm_out
+  real(r8_kind)                 :: min_x, max_x
   logical              :: atm_input_file_exist, runoff_input_file_exist
   integer              :: npes_per_tile
   integer              :: id_put_side1_to_xgrid, id_get_side1_from_xgrid
@@ -486,6 +486,7 @@ implicit none
   call close_file(gridfileobj)
 
   !--- conservation check is done in setup_xmap.
+
   call setup_xmap(Xmap, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ice_domain, Lnd_domain /), grid_file, atm_grid)
   call setup_xmap(Xmap_runoff, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file )
   !--- set frac area if nk_lnd or nk_ocn is greater than 1.
@@ -526,7 +527,7 @@ implicit none
 
   deallocate(atm_nx, atm_ny, lnd_nx, lnd_ny, ice_nx, ice_ny)
 
-  !--- remap realistic data and write the output file when atmos_input_file does exist
+  !--- remap real(r8_kind)istic data and write the output file when atmos_input_file does exist
   atm_input_file_exist = open_file(atminputfileobj, atm_input_file, 'read', atm_domain)
 
   if( atm_input_file_exist ) then
@@ -668,7 +669,7 @@ implicit none
      deallocate(atm_data_out_1, atm_data_out_2, atm_data_out_3)
      deallocate(x_1, x_2)
   else
-     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real(r8_kind) data sets."
   end if
 
   runoff_input_file_exist = open_file(runoffinputfileobj, runoff_input_file, "read", lnd_domain)
@@ -715,7 +716,7 @@ implicit none
      write(out_unit,*) "the global area sum of runoff input data is                    : ", sum_runoff_in
      write(out_unit,*) "the global area sum of runoff output data is                   : ", sum_runoff_out
   else
-     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)//" does not exist, no check is done for real data sets."
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)//" does not exist, no check is done for real(r8_kind) data sets."
   end if
 
   ! when num_iter is greater than 0, create random number as input to test the performance of xgrid_mod.
@@ -779,15 +780,15 @@ contains
 
   subroutine test_unstruct_exchange()
 
-    real, allocatable :: atm_data_in(:,:), atm_data_sg(:,:)
-    real, allocatable :: atm_data_sg_1(:,:), atm_data_sg_2(:,:), atm_data_sg_3(:,:)
-    real, allocatable :: lnd_data_sg(:,:,:), ice_data_sg(:,:,:)
-    real, allocatable :: atm_data_ug(:,:), tmp_sg(:,:,:)
-    real, allocatable :: atm_data_ug_1(:,:), atm_data_ug_2(:,:), atm_data_ug_3(:,:)
-    real, allocatable :: lnd_data_ug(:,:), ice_data_ug(:,:,:)
-    real, allocatable :: x_1(:), x_2(:), x_3(:), x_4(:)
-    real, allocatable :: y_1(:), y_2(:), y_3(:), y_4(:)
-    real,    allocatable, dimension(:,:)     :: rmask, tmp2d
+    real(r8_kind), allocatable :: atm_data_in(:,:), atm_data_sg(:,:)
+    real(r8_kind), allocatable :: atm_data_sg_1(:,:), atm_data_sg_2(:,:), atm_data_sg_3(:,:)
+    real(r8_kind), allocatable :: lnd_data_sg(:,:,:), ice_data_sg(:,:,:)
+    real(r8_kind), allocatable :: atm_data_ug(:,:), tmp_sg(:,:,:)
+    real(r8_kind), allocatable :: atm_data_ug_1(:,:), atm_data_ug_2(:,:), atm_data_ug_3(:,:)
+    real(r8_kind), allocatable :: lnd_data_ug(:,:), ice_data_ug(:,:,:)
+    real(r8_kind), allocatable :: x_1(:), x_2(:), x_3(:), x_4(:)
+    real(r8_kind), allocatable :: y_1(:), y_2(:), y_3(:), y_4(:)
+    real(r8_kind),    allocatable, dimension(:,:)     :: rmask, tmp2d
     logical, allocatable, dimension(:,:,:)   :: lmask
     integer, allocatable, dimension(:)       :: npts_tile, grid_index, ntiles_grid
     integer :: ntiles, nx, ny, ntotal_land, l, is_ug, ie_ug
@@ -973,7 +974,7 @@ contains
 
  !###########################################################################
   subroutine compare_chksum_2D( a, b, string )
-    real, intent(in), dimension(:,:) :: a, b
+    real(r8_kind), intent(in), dimension(:,:) :: a, b
     character(len=*), intent(in) :: string
     integer(i8_kind) :: sum1, sum2
     integer :: i, j
@@ -1010,7 +1011,7 @@ contains
 
 
   subroutine compare_chksum( a, b, string )
-    real, intent(in), dimension(:,:,:) :: a, b
+    real(r8_kind), intent(in), dimension(:,:,:) :: a, b
     character(len=*), intent(in) :: string
     integer(i8_kind) :: sum1, sum2
     integer :: i, j, k

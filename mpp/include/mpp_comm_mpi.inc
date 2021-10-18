@@ -134,18 +134,14 @@
   if(etc_unit_is_stderr) then
      etc_unit = stderr()
   else
-! 9 is reserved for etc_unit
-     etc_unit=9
-     inquire(unit=etc_unit,opened=opened)
-     if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_mpi')
      if (trim(etcfile) /= '/dev/null') then
         write( etcfile,'(a,i6.6)' )trim(etcfile)//'.', pe
      endif
      inquire(file=etcfile, exist=existed)
      if(existed) then
-        open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+        open( newunit=etc_unit, file=trim(etcfile), status='REPLACE' )
      else
-        open( unit=etc_unit, file=trim(etcfile) )
+        open( newunit=etc_unit, file=trim(etcfile) )
      endif
   endif
 
@@ -227,7 +223,7 @@ subroutine mpp_exit()
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
   logical :: opened
-  type(mpp_type), pointer :: dtype
+  type(mpp_type), pointer :: dtype, next_dtype
 
   if( .NOT.module_is_initialized )return
   call mpp_set_current_pelist()
@@ -308,19 +304,18 @@ subroutine mpp_exit()
 
   call FLUSH( out_unit )
 
-! close down etc_unit: 9
   inquire(unit=etc_unit, opened=opened)
   if (opened) then
    call FLUSH (etc_unit)
    close(etc_unit)
   endif
 
-  ! Clear derived data types (skipping list head, mpp_byte)
+  ! Clear derived data types
   dtype => datatypes%head
-  do while (.not. associated(dtype))
-      dtype => dtype%next
-      dtype%counter = 1         ! Force deallocation
+  do while (associated(dtype))
+      next_dtype => dtype%next
       call mpp_type_free(dtype)
+      dtype => next_dtype
   end do
 
   call mpp_set_current_pelist()
@@ -1419,19 +1414,20 @@ subroutine mpp_type_free(dtype)
     dtype%counter = dtype%counter - 1
 
     if (dtype%counter < 1) then
-        ! De-register the datatype in MPI runtime
-        call MPI_Type_free(dtype%id, error)
-
         ! Remove from list
         dtype%prev => dtype%next
-
-        ! Remove from memory
-        if (allocated(dtype%sizes)) deallocate(dtype%sizes)
-        if (allocated(dtype%subsizes)) deallocate(dtype%subsizes)
-        if (allocated(dtype%starts)) deallocate(dtype%starts)
-        deallocate(dtype)
-
         datatypes%length = datatypes%length - 1
+
+        ! Free resources
+        deallocate(dtype%sizes)
+        deallocate(dtype%subsizes)
+        deallocate(dtype%starts)
+
+        ! User-defined datatype cleanup
+        if (dtype%id /= MPI_BYTE) then
+            call MPI_Type_free(dtype%id, error)
+            deallocate(dtype)
+        endif
     end if
 
     if (current_clock .NE. 0) &

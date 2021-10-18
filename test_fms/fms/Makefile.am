@@ -32,7 +32,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 check_PROGRAMS = test_fms
 
 # These are the sources for the tests.
-test_fms_SOURCES = test_fms.F90
+test_fms_SOURCES = test_fmsC.c test_fms.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
@@ -44,7 +44,7 @@ TESTS = test_fms2.sh
 # These will also be included in the distribution.
 EXTRA_DIST = test_fms2.sh
 
-CLEANFILES = input.nml logfile.*.out
+CLEANFILES = input.nml logfile.*.out *.mod *.o
 
 clean-local:
 	rm -rf RESTART

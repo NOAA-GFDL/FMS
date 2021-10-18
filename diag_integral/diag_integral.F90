@@ -69,7 +69,7 @@ use time_manager_mod, only:  time_type, get_time, set_time,  &
                              operator(+),  operator(-),      &
                              operator(==), operator(>=),     &
                              operator(/=)
-use mpp_mod,          only:  input_nml_file, get_unit
+use mpp_mod,          only:  input_nml_file
 use fms_mod,          only:  open_file, error_mesg, &
                              check_nml_error, &
                              fms_init, &
