@@ -377,6 +377,7 @@ end type diag_fields_type
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
+  LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
 
