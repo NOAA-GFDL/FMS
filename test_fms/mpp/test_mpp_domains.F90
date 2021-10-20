@@ -105,7 +105,6 @@ program test_mpp_domains
   logical :: test_adjoint = .false.
   logical :: wide_halo = .false.
   logical :: test_unstruct = .false.
-  logical :: test_edge_nonblock = .false.
 
 
   namelist / test_mpp_domains_nml / nx, ny, nz, stackmax, debug, mpes, check_parallel, &
@@ -117,7 +116,7 @@ program test_mpp_domains
                                layout_ensemble, nthreads, test_boundary, layout_tripolar, &
                                test_group, test_global_sum, test_subset, test_nonsym_edge, &
                                test_halosize_performance, test_adjoint, wide_halo, &
-                               test_unstruct, test_edge_nonblock
+                               test_unstruct
   integer :: i, j, k, n
   integer :: layout(2)
   integer :: id
@@ -276,7 +275,7 @@ program test_mpp_domains
 
   if( check_parallel) then
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_check_parallel <-------------------'
-     !call test_parallel_3D( )
+     call test_parallel_3D( )
      call test_parallel_2D( )
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finish test_check_parallel <-------------------'
   endif
@@ -5490,17 +5489,13 @@ end subroutine test_halosize_update
     call mpp_update_domains( x, domain, flags=EDGEUPDATE)
     call mpp_clock_end(id)
     call compare_checksums( x, x2, type )
-    call mpp_sync()
 
-    if(test_edge_nonblock) then
-        a = 0
-        a(is:ie,js:je,:) = global(is:ie,js:je,:)
-        id_update = mpp_start_update_domains( a, domain, flags=EDGEUPDATE)
-        call sleep(1)
-        call mpp_complete_update_domains(id_update, a, domain, flags=EDGEUPDATE)
-        call mpp_sync()
-        call compare_checksums( x, x2, type//" nonblock")
-    endif
+    a = 0
+    a(is:ie,js:je,:) = global(is:ie,js:je,:)
+    id_update = mpp_start_update_domains( a, domain, flags=EDGEUPDATE)
+    call sleep(1)
+    call mpp_complete_update_domains(id_update, a, domain, flags=EDGEUPDATE)
+    call compare_checksums( a, x2, type//" nonblock")
 
     !--- test vector update for FOLDED and MASKED case.
     if( type == 'Cyclic' ) then
@@ -5554,10 +5549,8 @@ end subroutine test_halosize_update
     call mpp_clock_end  (id)
 
     !--nonblocking update
-    if (test_edge_nonblock) then
-        id_update = mpp_start_update_domains(a,b, domain, flags=EDGEUPDATE, gridtype=BGRID_NE)
-        call mpp_complete_update_domains(id_update, a,b, domain, flags=EDGEUPDATE, gridtype=BGRID_NE)
-    endif
+    id_update = mpp_start_update_domains(a,b, domain, flags=EDGEUPDATE, gridtype=BGRID_NE)
+    call mpp_complete_update_domains(id_update, a,b, domain, flags=EDGEUPDATE, gridtype=BGRID_NE)
 
     !redundant points must be equal and opposite
 
@@ -5579,10 +5572,8 @@ end subroutine test_halosize_update
 
     call compare_checksums( x,  x2, type//' BGRID_NE X' )
     call compare_checksums( y,  x2, type//' BGRID_NE Y' )
-    if (test_edge_nonblock) then
-        call compare_checksums( a,  x2, type//' BGRID_NE X nonblock' )
-        call compare_checksums( b,  x2, type//' BGRID_NE Y nonblock' )
-    endif
+    call compare_checksums( a,  x2, type//' BGRID_NE X nonblock' )
+    call compare_checksums( b,  x2, type//' BGRID_NE Y nonblock' )
 
     deallocate(global, x, y, x2, a, b)
 
@@ -5645,10 +5636,8 @@ end subroutine test_halosize_update
     call mpp_clock_end  (id)
 
     !--nonblocking
-    if (test_edge_nonblock) then
-        id_update = mpp_start_update_domains( a,  b, domain, flags=EDGEUPDATE, gridtype=CGRID_NE)
-        call mpp_complete_update_domains(id_update, a,  b, domain, flags=EDGEUPDATE, gridtype=CGRID_NE)
-    endif
+    id_update = mpp_start_update_domains( a,  b, domain, flags=EDGEUPDATE, gridtype=CGRID_NE)
+    call mpp_complete_update_domains(id_update, a,  b, domain, flags=EDGEUPDATE, gridtype=CGRID_NE)
 
     !redundant points must be equal and opposite
     global2(nx/2+1:nx,     ny+shift,:) = -global2(nx/2:1:-1, ny+shift,:)
@@ -5662,10 +5651,8 @@ end subroutine test_halosize_update
 
     call compare_checksums( x,  x2, type//' CGRID_NE X' )
     call compare_checksums( y,  y2, type//' CGRID_NE Y' )
-    if(test_edge_nonblock) then
-        call compare_checksums( a,  x2, type//' CGRID_NE X nonblock' )
-        call compare_checksums( b,  y2, type//' CGRID_NE Y nonblock' )
-    endif
+    call compare_checksums( a,  x2, type//' CGRID_NE X nonblock' )
+    call compare_checksums( b,  y2, type//' CGRID_NE Y nonblock' )
 
     deallocate(global1, global2, x, y, x2, y2, a, b)
 
@@ -6183,17 +6170,15 @@ end subroutine test_halosize_update
   subroutine test_parallel_3D
 
     integer :: nx=128,ny=128, nz=2
-    integer :: npes1, npes2, layout(2), i, j, k,is, ie, js, je, isd, ied, jsd, jed
+    integer :: layout(2), i, j, k,is, ie, js, je, isd, ied, jsd, jed
     real, dimension(:,:,:), allocatable :: field3d
     type(domain2d) :: domain
     integer, dimension(:), allocatable :: pelist1 , pelist2
 
-    !> define pelists
-    npes1 = mpp_npes()/2
-    npes2 = mpp_npes()
-    allocate(pelist1(npes1), pelist2(npes2-npes1))
-    pelist1 = (/(i, i = 0, npes1-1)/)
-    pelist2 = (/(i, i = npes1, npes2-1)/)
+    !> define pelists ( test 1 pe and n pes version)
+    allocate(pelist1(1), pelist2(mpp_npes()-2))
+    pelist1 = (/ 0 /)
+    pelist2 = (/(i, i = 1, mpp_npes()-1)/)
     call mpp_declare_pelist(pelist1)
     call mpp_declare_pelist(pelist2)
 

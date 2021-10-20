@@ -148,7 +148,7 @@ program test_mpp_nesting
      call test_update_nest_domain_r4('Regional')
     if (mpp_pe() == mpp_root_pe())  print *, '---------------> Finished test_update_nest_domain_r4 Regional <--------------'
   endif
-  ! single face cubed-sphere 
+  ! single face cubed-sphere
   if(ntiles_nest_all == 4 .and. num_nest > 0) then
     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_update_nest_domain(cubed-sphere, single face) <-------------------'
      do n = 1, num_nest
@@ -1007,7 +1007,7 @@ program test_mpp_nesting
           !--- compare with assumed value
           if( is_coarse_pe) then
              !! initial failure point
-             call compare_checksums(x1, x2, trim(type2)//' fine to coarse scalar', skip_chksum=.true.)
+             call compare_checksums(x1, x2, trim(type2)//' fine to coarse scalar')
           endif
           if(allocated(x))       deallocate(x)
           if(allocated(x1))      deallocate(x1)
@@ -2940,7 +2940,7 @@ program test_mpp_nesting
 
           !--- compare with assumed value
           if( is_coarse_pe) then
-             call compare_checksums(x1, x2, trim(type2)//' fine to coarse scalar', skip_chksum=.true.)
+             call compare_checksums(x1, x2, trim(type2)//' fine to coarse scalar')
           endif
           if(allocated(x))       deallocate(x)
           if(allocated(x1))      deallocate(x1)
@@ -3043,8 +3043,8 @@ program test_mpp_nesting
 
        !--- compare with assumed value
        if( is_coarse_pe) then
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair X', skip_chksum=.true.)
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair Y', skip_chksum=.true.)
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair X')
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Scalar_pair Y')
        endif
        if(allocated(x))       deallocate(x)
        if(allocated(x1))      deallocate(x1)
@@ -3130,8 +3130,8 @@ program test_mpp_nesting
 
        !--- compare with assumed value
        if( is_coarse_pe) then
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector X', skip_chksum=.true.)
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector Y', skip_chksum=.true.)
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector X')
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer CGRID Vector Y')
        endif
        if(allocated(x))       deallocate(x)
        if(allocated(x1))      deallocate(x1)
@@ -3217,8 +3217,8 @@ program test_mpp_nesting
 
        !--- compare with assumed value
        if( is_coarse_pe) then
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector X', skip_chksum=.true.)
-          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector Y', skip_chksum=.true.)
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector X')
+          call compare_checksums(x1, x2, trim(type2)//' fine to coarse buffer DGRID Vector Y')
        endif
        if(allocated(x))       deallocate(x)
        if(allocated(x1))      deallocate(x1)
@@ -4425,6 +4425,6 @@ program test_mpp_nesting
     call mpp_sync(pelist)
     deallocate(pelist)
 
-  end subroutine test_update_nest_domain_r4 
+  end subroutine test_update_nest_domain_r4
 
 end program
