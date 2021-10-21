@@ -195,13 +195,12 @@ use platform_mod
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
-  USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
   USE mpp_mod, ONLY: input_nml_file
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
+       & fms_error_handler, check_nml_error, lowercase
   USE fms_io_mod, ONLY: get_instance_filename
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
        & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
@@ -3453,7 +3452,7 @@ CONTAINS
     INTEGER :: file
 
     IF ( do_diag_field_log ) THEN
-       CALL mpp_close (diag_log_unit)
+       close (diag_log_unit)
     END IF
     DO file = 1, num_files
        CALL closing_file(file, time)
@@ -3623,16 +3622,6 @@ CONTAINS
        CALL error_mesg('diag_manager_mod::diag_manager_init', 'Using CMOR missing value ('//TRIM(err_msg_local)//').', NOTE)
     END IF
 
-    ! Issue note if attempting to set diag_manager_nml::max_files larger than
-    ! mpp_get_maxunits() -- Default is 1024 set in mpp_io.F90
-    IF ( max_files .GT. mpp_get_maxunits() ) THEN
-       err_msg_local = ''
-       WRITE (err_msg_local,'(A,I6,A,I6,A,I6,A)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
-            & mpp_get_maxunits(),"'.  Forcing 'max_files' to be ",mpp_get_maxunits(),"."
-       CALL error_mesg('diag_manager_mod::diag_managet_init', TRIM(err_msg_local), NOTE)
-       max_files = mpp_get_maxunits()
-    END IF
-
     ! How to handle Out of Range Warnings.
     IF ( oor_warnings_fatal ) THEN
        oor_warning = FATAL
@@ -3698,7 +3687,7 @@ CONTAINS
 
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
-       CALL mpp_open(diag_log_unit, 'diag_field_log.out', nohdrs=.TRUE.)
+       open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
        WRITE (diag_log_unit,'(777a)') &
             & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
             & 'Units',         SEP, 'Number of Axis', SEP, 'Time Axis',    SEP,&
