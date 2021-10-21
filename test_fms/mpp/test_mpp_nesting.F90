@@ -166,6 +166,8 @@ program test_mpp_nesting
     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_update_nest_domain <-------------------'
   endif
 
+  call mpp_exit()
+
   contains
 
 !###############################################################################
