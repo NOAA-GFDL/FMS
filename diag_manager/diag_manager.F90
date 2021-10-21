@@ -383,9 +383,11 @@ CONTAINS
     IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) .AND. (SIZE(range) .NE. 2) ) THEN
-       ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-       CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+       END IF
     END IF
 
     IF ( PRESENT(init_time) ) THEN
@@ -449,9 +451,11 @@ CONTAINS
     IF ( PRESENT(err_msg) ) err_msg = ''
 
     ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) .AND. (SIZE(range) .NE. 2) ) THEN
-       ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-       CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+       END IF
     END IF
 
     ! Call register static, then set static back to false
@@ -671,9 +675,11 @@ CONTAINS
     END IF
 
     ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) .AND. (SIZE(range) .NE. 2) ) THEN
-       ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-       CALL error_mesg ('diag_manager_mod::register_static_field', 'extent of range should be 2', FATAL)
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'extent of range should be 2', FATAL)
+       END IF
     END IF
 
     ! Namelist do_diag_field_log is by default false.  Thus to log the
