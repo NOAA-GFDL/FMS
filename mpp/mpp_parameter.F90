@@ -52,6 +52,11 @@ module mpp_parameter_mod
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
   public :: MPP_FILL_INT, MPP_FILL_FLOAT, MPP_FILL_DOUBLE
 
+
+  THIS IS SUPPOSED TO FAIL A COMPILE!!!!  
+  DO NOT MERGE!!!!
+
+
   !--- public paramters which is used by mpp_domains_mod and its components.
   !--- All othere modules should import these parameters from mpp_domains_mod.
   public :: GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, BGRID_NE, BGRID_SW, CGRID_NE, CGRID_SW
