@@ -14,13 +14,21 @@ use fms_diag_yaml_mod, only: is_field_type_null
 use fms_diag_yaml_mod, only: diag_fields_type, diag_files_type, get_diag_table_field
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
+use time_manager_mod, ONLY: time_type
+!!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
+!!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
+!!!       & get_ticks_per_second
+
 !use diag_util_mod,  only: int_to_cs, logical_to_cs
 !USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND
 
 use fms2_io_mod
+use platform_mod
 use iso_c_binding
 
 implicit none
+
+integer, parameter :: range_dims = 2 !< The range of the variables will be set to 2 when allocated
 
 interface operator (<)
      procedure obj_lt_int
@@ -38,10 +46,10 @@ interface operator (>=)
      procedure obj_ge_int
      procedure int_ge_obj
 end interface
-interface operator (==)
-     procedure obj_eq_int
-     procedure int_eq_obj
-end interface
+!interface operator (==)
+!     procedure obj_eq_int
+!     procedure int_eq_obj
+!end interface
 interface operator (.ne.)
      procedure obj_ne_int
      procedure int_ne_obj
@@ -50,40 +58,63 @@ end interface
 
 !> \brief Object that holds all variable information
 type fms_diag_object
-     type (diag_fields_type)                           :: diag_field         !< info from diag_table
-     type (diag_files_type),allocatable, dimension(:)  :: diag_file          !< info from diag_table
+     type (diag_fields_type)                          :: diag_field        !< info from diag_table
+     type (diag_files_type),allocatable, dimension(:) :: diag_file         !< info from diag_table
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the 
                                                                            !! file objects for this variable
      character(len=:), allocatable, dimension(:)      :: metadata          !< metedata for the variable
-     logical, private                                 :: static         !< true is this is a static var
-     logical, allocatable, private                    :: registered     !< true when registered
-     integer, allocatable, dimension(:), private      :: frequency         !< specifies the frequency
-
+     logical, private                                 :: static            !< true is this is a static var
+     logical, allocatable, private                    :: registered        !< true when registered
+     logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
+     logical, allocatable, private                    :: local             !< If the output is local
+     TYPE(time_type), private                         :: init_time         !< The initial time
      integer,          allocatable, private           :: vartype           !< the type of varaible
      character(len=:), allocatable, private           :: varname           !< the name of the variable     
      character(len=:), allocatable, private           :: longname          !< longname of the variable     
+     character(len=:), allocatable, private           :: standname         !< standard name of the variable     
      character(len=:), allocatable, private           :: units             !< the units
      character(len=:), allocatable, private           :: modname           !< the module
-     integer, private                                 :: missing_value     !< The missing fill value
+     character(len=:), allocatable, private           :: realm             !< String to set as the value 
+                                                                           !! to the modeling_realm attribute
+     character(len=:), allocatable, private           :: err_msg           !< An error message
+     character(len=:), allocatable, private           :: interp_method     !< The interp method to be used
+                                                            !! when regridding the field in post-processing.
+                                                            !! Valid options are "conserve_order1",
+                                                            !! "conserve_order2", and "none".
+     integer, allocatable, dimension(:), private      :: frequency         !< specifies the frequency
+     integer, allocatable, dimension(:), private      :: output_units
+     integer, allocatable, private                    :: t
+     integer, allocatable, private                    :: tile_count        !< The number of tiles
      integer, allocatable, dimension(:), private      :: axis_ids          !< variable axis IDs
-     type (diag_axis_type), allocatable, dimension(:)      :: axis              !< The axis object
+     integer, allocatable, private                    :: area, volume      !< The Area and Volume
+     integer(kind=I4_KIND), allocatable               :: i4missing_value   !< The missing i4 fill value
+     integer(kind=I8_KIND), allocatable               :: i8missing_value   !< The missing i8 fill value
+     real(kind=R4_KIND), allocatable                  :: r4missing_value   !< The missing r4 fill value
+     real(kind=R8_KIND), allocatable                  :: r8missing_value   !< The missing r8 fill value
+     integer(kind=I4_KIND), allocatable,dimension(:)  :: i4data_RANGE      !< The range of i4 data
+     integer(kind=I8_KIND), allocatable,dimension(:)  :: i8data_RANGE      !< The range of i8 data
+     real(kind=R4_KIND), allocatable,dimension(:)     :: r4data_RANGE      !< The range of r4 data
+     real(kind=R8_KIND), allocatable,dimension(:)     :: r8data_RANGE      !< The range of r8 data
+     type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
 
+!! dev variables that need to be removed
+     integer :: missing_value !< this should be removed
      contains
 !     procedure :: send_data => fms_send_data  !!TODO
-     procedure :: init_ob => diag_obj_init
-     procedure :: diag_id_inq => fms_diag_id_inq
-     procedure :: copy => copy_diag_obj
-     procedure :: register_meta => fms_register_diag_field_obj
-     procedure :: setID => set_diag_id
-     procedure :: is_registered => diag_ob_registered
-     procedure :: set_type => set_vartype
-     procedure :: vartype_inq => what_is_vartype
+     procedure,public :: init_ob => diag_obj_init
+     procedure,public :: diag_id_inq => fms_diag_id_inq
+     procedure,public :: copy => copy_diag_obj
+     procedure,public :: register_meta => fms_register_diag_field_obj
+     procedure,public :: setID => set_diag_id
+     procedure,public :: is_registered => diag_ob_registered
+     procedure,public :: set_type => set_vartype
+     procedure,public :: vartype_inq => what_is_vartype
 
-     procedure :: is_static => diag_obj_is_static
-     procedure :: is_registeredB => diag_obj_is_registered
-     procedure :: get_vartype => diag_obj_get_vartype
-     procedure :: get_varname => diag_obj_get_varname
+     procedure,public :: is_static => diag_obj_is_static
+     procedure,public :: is_registeredB => diag_obj_is_registered
+     procedure,public :: get_vartype => diag_obj_get_vartype
+     procedure,public :: get_varname => diag_obj_get_varname
 
 end type fms_diag_object
 !> \brief Extends the variable object to work with multiple types of data
@@ -116,11 +147,13 @@ type(fms_diag_object_5d) :: null_5d
 
 integer,private :: MAX_LEN_VARNAME
 integer,private :: MAX_LEN_META
+
+type(fms_diag_object_3d) :: diag_object_placeholder (10)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 public :: fms_diag_object, fms_diag_object_scalar, fms_diag_object_1d
 public :: fms_diag_object_2d, fms_diag_object_3d, fms_diag_object_4d, fms_diag_object_5d
 public :: copy_diag_obj, fms_diag_id_inq
-public :: operator (>),operator (<),operator (>=),operator (<=),operator (==),operator (.ne.)
+public :: operator (>),operator (<),operator (>=),operator (<=),operator (.ne.)!operator (==),operator (.ne.)
 public :: null_sc, null_1d, null_2d, null_3d, null_4d, null_5d
 public :: fms_diag_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -158,7 +191,7 @@ subroutine fms_register_diag_field_obj (dobj, modname, varname, axes, time, long
  class(fms_diag_object)     , intent(inout)            :: dobj
  character(*)               , intent(in)               :: modname!< The module name
  character(*)               , intent(in)               :: varname!< The variable name
- integer     , dimension(:) , intent(in), optional     :: axes   !< Th character(:),allocatable :: rese axes
+ integer     , dimension(:) , intent(in), optional     :: axes   !< The character(:),allocatable :: rese axes
  integer                    , intent(in), optional     :: time !< Time placeholder 
  character(*)               , intent(in), optional     :: longname!< The variable long name
  character(*)               , intent(in), optional     :: units  !< Units of the variable
@@ -485,36 +518,10 @@ pure logical function int_le_obj (i,obj) result(ll)
      ll = .true.
   elseif (.not.allocated(obj) ) then
      ll = .false.
-  else
+  else 
      ll = (i <= obj%diag_id)
   endif
 end function int_le_obj
-!> \brief override for checking if object ID is equal to an integer (IDs)
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function obj_eq_int (obj,i) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i == diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else 
-     ll = (obj%diag_id == i)
-  endif
-end function obj_eq_int
-!> \brief override for checking if integer (ID) is equal to an object ID
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function int_eq_obj (i,obj) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i == diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else 
-     ll = (i == obj%diag_id)
-  endif
-end function int_eq_obj
 
 !> \brief override for checking if object ID is not equal to an integer (IDs)
 !> @note unalloacted obj is assumed to equal diag_not_registered
