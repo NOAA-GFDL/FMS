@@ -89,18 +89,17 @@ type fms_diag_object
      integer, allocatable, private                    :: tile_count        !< The number of tiles
      integer, allocatable, dimension(:), private      :: axis_ids          !< variable axis IDs
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
-     integer(kind=I4_KIND), allocatable               :: i4missing_value   !< The missing i4 fill value
-     integer(kind=I8_KIND), allocatable               :: i8missing_value   !< The missing i8 fill value
-     real(kind=R4_KIND), allocatable                  :: r4missing_value   !< The missing r4 fill value
-     real(kind=R8_KIND), allocatable                  :: r8missing_value   !< The missing r8 fill value
+     real, private                                    :: missing_value     !< Holds a missing value if none given
+     integer(kind=I4_KIND), allocatable, private      :: i4missing_value   !< The missing i4 fill value
+     integer(kind=I8_KIND), allocatable, private      :: i8missing_value   !< The missing i8 fill value
+     real(kind=R4_KIND), allocatable, private         :: r4missing_value   !< The missing r4 fill value
+     real(kind=R8_KIND), allocatable, private         :: r8missing_value   !< The missing r8 fill value
      integer(kind=I4_KIND), allocatable,dimension(:)  :: i4data_RANGE      !< The range of i4 data
      integer(kind=I8_KIND), allocatable,dimension(:)  :: i8data_RANGE      !< The range of i8 data
      real(kind=R4_KIND), allocatable,dimension(:)     :: r4data_RANGE      !< The range of r4 data
      real(kind=R8_KIND), allocatable,dimension(:)     :: r8data_RANGE      !< The range of r8 data
      type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
 
-!! dev variables that need to be removed
-     integer :: missing_value !< this should be removed
      contains
 !     procedure :: send_data => fms_send_data  !!TODO
 <<<<<<< HEAD
@@ -117,7 +116,7 @@ type fms_diag_object
      procedure,public :: init_ob => diag_obj_init
      procedure,public :: diag_id_inq => fms_diag_id_inq
      procedure,public :: copy => copy_diag_obj
-     procedure,public :: register_meta => fms_register_diag_field_obj
+     procedure,public :: register => fms_register_diag_field_obj
      procedure,public :: setID => set_diag_id
      procedure,public :: is_registered => diag_ob_registered
      procedure,public :: set_type => set_vartype
@@ -205,18 +204,33 @@ subroutine diag_obj_init(ob)
 end subroutine diag_obj_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \description Fills in and allocates (when necessary) the values in the diagnostic object
-subroutine fms_register_diag_field_obj (dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
+subroutine fms_register_diag_field_obj &
+                !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
+       (dobj, modname, varname, axes, init_time, &
+       longname, units, missing_value, varRange, mask_variant, standname, &
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, metadata)
  class(fms_diag_object)     , intent(inout)            :: dobj
- character(*)               , intent(in)               :: modname!< The module name
- character(*)               , intent(in)               :: varname!< The variable name
- integer     , dimension(:) , intent(in), optional     :: axes   !< The character(:),allocatable :: rese axes
- integer                    , intent(in), optional     :: time !< Time placeholder 
- character(*)               , intent(in), optional     :: longname!< The variable long name
- character(*)               , intent(in), optional     :: units  !< Units of the variable
- integer                    , intent(in), optional     :: missing_value !< A missing value to be used 
- character(*), dimension(:) , intent(in), optional     :: metadata
-! class(*), pointer :: vptr
-
+ CHARACTER(len=*), INTENT(in) :: modname !< The module name
+ CHARACTER(len=*), INTENT(in) :: varname !< The variable name
+ INTEGER, INTENT(in) :: axes(:) !< The axes indicies
+ TYPE(time_type), INTENT(in) :: init_time !< Initial time
+ CHARACTER(len=*), OPTIONAL, INTENT(in) :: longname !< THe variables long name
+ CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< The units of the variables
+ CHARACTER(len=*), OPTIONAL, INTENT(in) :: standname !< The variables stanard name
+ class(*), OPTIONAL, INTENT(in) :: missing_value
+ class(*), OPTIONAL, INTENT(in) :: varRANGE(2)
+ LOGICAL, OPTIONAL, INTENT(in) :: mask_variant
+ LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
+ CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg !< Error message to be passed back up
+ CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
+                                                         !! regridding the field in post-processing.
+                                                         !! Valid options are "conserve_order1",
+                                                         !! "conserve_order2", and "none".
+ INTEGER, OPTIONAL, INTENT(in) :: tile_count !< the number of tiles
+ INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
+ INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
+ CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+ character(len=*), optional, intent(in), dimension(:)     :: metadata !< metedata for the variable
 
 !> Fill in information from the register call
   allocate(character(len=MAX_LEN_VARNAME) :: dobj%varname)
@@ -236,6 +250,10 @@ subroutine fms_register_diag_field_obj (dobj, modname, varname, axes, time, long
      allocate(character(len=len(longname)) :: dobj%longname)
      dobj%longname = trim(longname)
   endif
+  if (present(standname)) then
+     allocate(character(len=len(standname)) :: dobj%standname)
+     dobj%standname = trim(standname)
+  endif  
   if (present(units)) then
      allocate(character(len=len(units)) :: dobj%units)
      dobj%units = trim(units)
@@ -245,7 +263,20 @@ subroutine fms_register_diag_field_obj (dobj, modname, varname, axes, time, long
      dobj%metadata = metadata
   endif
   if (present(missing_value)) then
-     dobj%missing_value = missing_value
+    select type (missing_value)
+     type is (integer(kind=i4_kind))
+             dobj%i4missing_value = missing_value
+     type is (integer(kind=i8_kind))
+             dobj%i4missing_value = missing_value
+     type is (real(kind=r4_kind))
+             dobj%i4missing_value = missing_value
+     type is (real(kind=i8_kind))
+             dobj%i4missing_value = missing_value
+     class default
+             call mpp_error("fms_register_diag_field_obj", &
+                     "The missing value passed to register a diagnostic is not a r8, r4, i8, or i4",&
+                     FATAL)
+    end select
   else   
       dobj%missing_value = DIAG_NULL
   endif

@@ -611,6 +611,14 @@ CONTAINS
 
        END DO
     END IF
+
+    if (use_modern_diag) then
+            call diag_object_placeholder(1)%register &
+       (module_name, field_name, axes, init_time, &
+       long_name, units, missing_value, Range, mask_variant, standard_name, &
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
+    endif
+
   END FUNCTION register_diag_field_array
 
   !> @brief Return field index for subsequent call to send_data.
