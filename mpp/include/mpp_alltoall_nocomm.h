@@ -1,3 +1,5 @@
+! -*-f90-*-
+
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -20,6 +22,7 @@
 !> @ingroup mpp
 !> @brief @ref mpp_alltoall routine implementations without MPI
 
+!> Sends data from all to all processes
 subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
     MPP_TYPE_, dimension(:), intent(in) :: sbuf
     MPP_TYPE_, dimension(:), intent(inout) :: rbuf
@@ -40,6 +43,7 @@ subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
 end subroutine MPP_ALLTOALL_
 
 
+!> Sends data from all to all processes with vector displacement
 subroutine MPP_ALLTOALLV_(sbuf, ssize, sdispl, rbuf, rsize, rdispl, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)
     MPP_TYPE_, intent(inout) :: rbuf(:)
@@ -62,6 +66,8 @@ subroutine MPP_ALLTOALLV_(sbuf, ssize, sdispl, rbuf, rsize, rdispl, pelist)
 end subroutine MPP_ALLTOALLV_
 
 
+!> Sends data from all to all processes with given data types,
+!! displacements and block sizes
 subroutine MPP_ALLTOALLW_(sbuf, ssize, sdispl, stype, &
                           rbuf, rsize, rdispl, rtype, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)

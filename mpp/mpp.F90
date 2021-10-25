@@ -427,38 +427,38 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @fn subroutine mpp_init( flags, localcomm, test_level)
-  !> @brief Initialize @ref mpp_mod
-  !!
-  !> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
-  !! that this call be the first executed line in your program. It sets the
-  !! number of PEs assigned to this run (acquired from the command line, or
-  !! through the environment variable <TT>NPES</TT>), and associates an ID
-  !! number to each PE. These can be accessed by calling @ref mpp_npes and
-  !! @ref mpp_pe.
-  !! <br> Example usage:
-  !!
-  !!            call mpp_init( flags )
-  !!
-  !! @param flags
-  !!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
-  !!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
-  !! @param test_level
-  !!   Debugging flag to set amount of initialization tasks performed
-  !> @ingroup mpp_mod
+!> @fn mpp_mod::mpp_init::mpp_init( flags, localcomm, test_level)
+!> @ingroup mpp_mod
+!> @brief Initialize @ref mpp_mod
+!!
+!> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
+!! that this call be the first executed line in your program. It sets the
+!! number of PEs assigned to this run (acquired from the command line, or
+!! through the environment variable <TT>NPES</TT>), and associates an ID
+!! number to each PE. These can be accessed by calling @ref mpp_npes and
+!! @ref mpp_pe.
+!! <br> Example usage:
+!!
+!!            call mpp_init( flags )
+!!
+!! @param flags
+!!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
+!!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
+!! @param test_level
+!!   Debugging flag to set amount of initialization tasks performed
 
-  !> @fn subroutine mpp_exit()
-  !> @brief Exit <TT>@ref mpp_mod</TT>.
-  !!
-  !> Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
-  !! should you require that for some odd reason.
-  !!
-  !! This call implies synchronization across all PEs.
-  !!
-  !! <br>Example usage:
-  !!
-  !!            call mpp_exit()
-  !> @ingroup mpp_mod
+!> @fn mpp_mod::mpp_exit()
+!> @brief Exit <TT>@ref mpp_mod</TT>.
+!!
+!> Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
+!! should you require that for some odd reason.
+!!
+!! This call implies synchronization across all PEs.
+!!
+!! <br>Example usage:
+!!
+!!            call mpp_exit()
+!> @ingroup mpp_mod
 
   !#####################################################################
 

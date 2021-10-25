@@ -19,7 +19,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
+!> @ingroup mpp_mod
 !> @brief Imports checksum, gather, and scatter routines used for communications and calculations
 !! between PE's in @ref mpp_mod
 

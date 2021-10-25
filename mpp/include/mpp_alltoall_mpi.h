@@ -1,3 +1,5 @@
+! -*-f90-*-
+
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -16,10 +18,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+
 !> @file
 !> @ingroup mpp
 !> @brief MPI implementation of @ref mpp_alltoall routines
 
+!> Wrapper for mpi_alltoall routine, sends data from all to all processes
 subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)
     MPP_TYPE_, intent(inout) :: rbuf(:)
@@ -46,7 +50,7 @@ subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
 
 end subroutine MPP_ALLTOALL_
 
-
+!> Wrapper for mpi_alltoallv, sends data from all to all processes with vector displacement
 subroutine MPP_ALLTOALLV_(sbuf, ssize, sdispl, rbuf, rsize, rdispl, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)
     MPP_TYPE_, intent(inout) :: rbuf(:)
@@ -76,7 +80,8 @@ subroutine MPP_ALLTOALLV_(sbuf, ssize, sdispl, rbuf, rsize, rdispl, pelist)
 
 end subroutine MPP_ALLTOALLV_
 
-
+!> Wrapper for mpi_alltoallw, sends data from all to all processes with given data types,
+!! displacements and block sizes
 subroutine MPP_ALLTOALLW_(sbuf, ssize, sdispl, stype, &
                           rbuf, rsize, rdispl, rtype, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)
