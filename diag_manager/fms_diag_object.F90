@@ -267,11 +267,11 @@ subroutine fms_register_diag_field_obj &
      type is (integer(kind=i4_kind))
              dobj%i4missing_value = missing_value
      type is (integer(kind=i8_kind))
-             dobj%i4missing_value = missing_value
+             dobj%i8missing_value = missing_value
      type is (real(kind=r4_kind))
-             dobj%i4missing_value = missing_value
-     type is (real(kind=i8_kind))
-             dobj%i4missing_value = missing_value
+             dobj%r4missing_value = missing_value
+     type is (real(kind=r8_kind))
+             dobj%r8missing_value = missing_value
      class default
              call mpp_error("fms_register_diag_field_obj", &
                      "The missing value passed to register a diagnostic is not a r8, r4, i8, or i4",&
