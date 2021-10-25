@@ -29,12 +29,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_get_grid_v1 test_data_override test_data_override_ongrid
+check_PROGRAMS = test_data_yaml test_get_grid_v1 test_data_override test_data_override_ongrid
 
 # This is the source code for the test.
 test_data_override_SOURCES = test_data_override.F90
 test_data_override_ongrid_SOURCES = test_data_override_ongrid.F90
 test_get_grid_v1_SOURCES = test_get_grid_v1.F90
+test_data_yaml_SOURCES = test_data_yaml.F90
 
 # Run the test program.
 TESTS = test_data_override2.sh
@@ -44,4 +45,4 @@ EXTRA_DIST = input_base.nml diag_table_base data_table_base	\
 test_data_override2.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table
+CLEANFILES = input.nml *.nc* *.out diag_table

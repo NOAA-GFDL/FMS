@@ -1,0 +1,26 @@
+title: c384L49_esm5PIcontrol
+baseDate: [1960 1 1 1 1 1 1]
+diag_files:
+-    fileName: "atmos_daily"
+     freq: 24
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - varName: tdata
+       mullions: 10
+       fill_value: -999.9
+     - varName: pdata
+       outName: pressure
+       reduction: False
+       kind: double
+       module: "moist"
+-    fileName: atmos_8xdaily
+     freq: 3
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - varName: tdata
+       reduction: False
+       module: "moist"

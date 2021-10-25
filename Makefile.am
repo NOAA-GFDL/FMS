@@ -42,6 +42,7 @@ SUBDIRS = \
   fms2_io \
   mosaic2 \
   fms \
+  parser \
   affinity \
   mosaic \
   time_manager \
@@ -65,7 +66,6 @@ SUBDIRS = \
   tracer_manager \
   sat_vapor_pres \
   random_numbers \
-  parser \
   . \
   libFMS \
   test_fms \

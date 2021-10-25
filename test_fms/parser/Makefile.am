@@ -29,16 +29,17 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_yaml_parser
+check_PROGRAMS = test_yaml_parser check_crashes
 
 # This is the source code for the test.
 test_yaml_parser_SOURCES = test_yaml_parser.F90
+check_crashes_SOURCES = check_crashes.F90
 
 # Run the test program.
-#TESTS = test_yaml_parser.sh
+TESTS = test_yaml_parser.sh
 
 # Include these files with the distribution.
-#EXTRA_DIST = test_yaml_parser.sh
+EXTRA_DIST = test_yaml_parser.sh data_table.yaml diag_table.yaml
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out
