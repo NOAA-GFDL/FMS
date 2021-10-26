@@ -63,7 +63,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_alltoall \
   test_mpp_global_field \
   test_mpp_global_field_ug \
-  test_mpp_global_sum_ad
+  test_mpp_global_sum_ad \
+  test_mpp_efp
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -122,9 +123,11 @@ test_mpp_global_field_ug_SOURCES = \
   test_mpp_global_field_ug.F90
 test_mpp_global_sum_ad_SOURCES = test_mpp_global_sum_ad.F90
 test_super_grid_SOURCES = test_super_grid.F90
+test_mpp_efp_SOURCES = test_mpp_efp.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
+  test_mpp_efp.sh \
   test_redistribute_int.sh \
   test_global_arrays.sh  \
   test_mpp2.sh \
@@ -195,7 +198,8 @@ EXTRA_DIST = input_base.nml \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh \
-  test_super_grid.sh
+  test_super_grid.sh \
+  test_mpp_efp.sh
 
 fill_halo.mod: fill_halo.$(OBJEXT)
 compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)
