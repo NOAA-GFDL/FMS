@@ -41,5 +41,12 @@ TESTS = test_yaml_parser.sh
 # Include these files with the distribution.
 EXTRA_DIST = test_yaml_parser.sh data_table.yaml diag_table.yaml
 
+if SKIP_PARSER_TESTS
+skipflag="skip"
+else
+skipflag=""
+endif
+
+TESTS_ENVIRONMENT = parser_skip=${skipflag}
 # Clean up
 CLEANFILES = input.nml *.nc* *.out

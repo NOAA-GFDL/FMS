@@ -135,6 +135,10 @@ if test $with_yaml = yes; then
 
   #If the test pass, define use_yaml macro
   AC_DEFINE([use_yaml], [1], [This is required to use yaml parser])
+
+  AM_CONDITIONAL([SKIP_PARSER_TESTS], false )
+else
+  AM_CONDITIONAL([SKIP_PARSER_TESTS], true )
 fi
 
 # Require netCDF

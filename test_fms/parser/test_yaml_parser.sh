@@ -28,31 +28,31 @@
 # Run the ongrid test case with 2 halos in x and y
 touch input.nml
 
-run_test test_yaml_parser 1
+run_test test_yaml_parser 1 $parser_skip
 
 printf "&check_crashes_nml \n missing_file = .true. \n/" | cat > input.nml
-run_test check_crashes 1 && echo "It worked?"
+run_test check_crashes 1 $parser_skip && echo "It worked?"
 if [ $? -eq 0 ]; then
   echo "The test should have failed"
   exit 3
 fi
 
 printf "&check_crashes_nml \n bad_conversion = .true. \n/" | cat > input.nml
-run_test check_crashes 1 && echo "It worked?"
+run_test check_crashes 1 $parser_skip && echo "It worked?"
 if [ $? -eq 0 ]; then
   echo "The test should have failed"
   exit 3
 fi
 
 printf "&check_crashes_nml \n missing_key = .true. \n/" | cat > input.nml
-run_test check_crashes 1 && echo "It worked?"
+run_test check_crashes 1 $parser_skip && echo "It worked?"
 if [ $? -eq 0 ]; then
   echo "The test should have failed"
   exit 3
 fi
 
 printf "&check_crashes_nml \n get_key_name_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 && echo "It worked?"
+run_test check_crashes 1 $parser_skip && echo "It worked?"
 if [ $? -eq 0 ]; then
   echo "The test should have failed"
   exit 3
