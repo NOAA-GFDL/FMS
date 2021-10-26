@@ -1,3 +1,11 @@
+!> @defgroup yaml_parser_mod yaml_parser_mod
+!> @brief Routines to use for parsing yaml files
+
+!> @file
+!> @brief File for @ref yaml_parser_mod
+
+!> @addtogroup yaml_parser_mod
+!> @{
 module yaml_parser_mod
 
 #ifdef use_yaml
@@ -18,14 +26,18 @@ public :: get_key_ids
 public :: get_key_name
 public :: get_key_value
 !public :: clean_up
+!> @}
 
 !> @brief Dermine the value of a key from a keyname
+!> @ingroup yaml_parser_mod
 interface get_value_from_key
   module procedure get_value_from_key_0d
   module procedure get_value_from_key_1d
 end interface get_value_from_key
 
-interface
+!> @brief c functions binding
+!> @ingroup yaml_parser_mod
+interface c_functions
 
 !> @brief Private c function that opens and parses a yaml file (see yaml_parser_binding.c)
 !! @return Flag indicating if the read was sucessful
@@ -134,6 +146,8 @@ end subroutine get_block_ids_child
 
 end interface
 
+!> @addtogroup yaml_parser_mod
+!> @{
 contains
 
 !> @brief Opens and parses a yaml file
@@ -301,3 +315,5 @@ end subroutine get_block_ids
 
 #endif
 end module yaml_parser_mod
+!> @}
+! close documentation grouping
