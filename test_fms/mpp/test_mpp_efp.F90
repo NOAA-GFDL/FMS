@@ -30,7 +30,7 @@ program test_mpp_efp
   subroutine test_reproducing_sum()
     real(r8_kind)        :: arr1(64,64), arr2(64,64), arr3d(64,64,1), res, res_chk
     real(r4_kind)        :: arr_r4(64,64), res4
-    integer              :: err, i, j, n, npes
+    integer              :: err, i, j, n, npes, zero
     type(mpp_efp_type)   :: res_efp
     integer, allocatable :: pelist(:)
 
@@ -70,15 +70,16 @@ program test_mpp_efp
     end do
 
     ! check edge cases
-    arr1(1,1) = 0.0 / 0.0 ! NaN
+    zero = 0.0 ! avoid div by zero errors
+    arr1(1,1) = 0.0 / zero ! NaN
     res = mpp_reproducing_sum(arr1, overflow_check = .true., err = err)
     if ( res .ne. 0.0_r8_kind .or. err .ne. 4 ) call mpp_error(FATAL, "test_reproducing_sum: " &
                                                 //"NaN error not detected")
-    arr1(1,1) = 1.0 / 0.0 ! inf
+    arr1(1,1) = 1.0 / zero ! inf
     res = mpp_reproducing_sum(arr1, overflow_check = .true., err = err)
     if ( res .ne. 0.0_r8_kind .or. err .ne. 2 ) call mpp_error(FATAL, "test_reproducing_sum: " &
                                                 //"inf error not detected")
-    arr1(1,1) = -1.0 / 0.0 ! -inf
+    arr1(1,1) = -1.0 / zero ! -inf
     res = mpp_reproducing_sum(arr1, overflow_check = .true., err = err)
     if ( res .ne. 0.0_r8_kind .or. err .ne. 2 ) call mpp_error(FATAL, "test_reproducing_sum: " &
                                                 //"-inf error not detected")
