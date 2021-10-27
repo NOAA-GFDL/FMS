@@ -1557,7 +1557,7 @@ CONTAINS
     INTEGER :: is, ie, last, ind
     character(len=2) :: fnum_domain
     class(FmsNetcdfFile_t), pointer    :: fileob
-    integer :: real_num_axes
+    integer :: actual_num_axes !< The actual number of axes to write including time
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
@@ -1715,21 +1715,21 @@ CONTAINS
        endif
        if (time_ops) then
             !< If the file contains time_average fields write the "time" and "nv" dimension
-            real_num_axes = num_axes + 2
+            actual_num_axes = num_axes + 2
             axes(num_axes + 2) = files(file)%time_bounds_id
        else
             !< If the file doesn't contain time_average fields write the "time" dimension
-            real_num_axes = num_axes + 1
+            actual_num_axes = num_axes + 1
        endif
 
        if (fnum_for_domain(file) == "2d") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:real_num_axes),fileobj(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobj(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "nd") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:real_num_axes),fileobjnd(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjnd(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "ug") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:real_num_axes),fileobjU(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjU(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        endif
 

@@ -109,7 +109,7 @@ CONTAINS
     TYPE(diag_atttype), INTENT(in), OPTIONAL :: attributes(:) !< Array of global attributes to be written to file
 
     class(FmsNetcdfFile_t), pointer :: fileob => NULL()
-    INTEGER :: i
+    integer :: i !< For looping through number of attributes
     TYPE(diag_global_att_type) :: gAtt
     integer, allocatable, dimension(:) :: current_pelist
     integer :: mype  !< The pe you are on
