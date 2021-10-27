@@ -127,7 +127,6 @@ test_mpp_efp_SOURCES = test_mpp_efp.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
-  test_mpp_efp.sh \
   test_redistribute_int.sh \
   test_global_arrays.sh  \
   test_mpp2.sh \
@@ -159,7 +158,8 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh \
-  test_super_grid.sh
+  test_super_grid.sh \
+  test_mpp_efp.sh
 
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
