@@ -30,9 +30,11 @@
 cat <<_EOF > input.nml
 &test_mpp_efp_nml
 test_num = 1
-/ 
+/
 _EOF
 
 run_test test_mpp_efp 4
 sed -i 's/test_num = 1/test_num = 2/' input.nml
+run_test test_mpp_efp 4
+sed -i 's/test_num = 2/test_num = 3/' input.nml
 run_test test_mpp_efp 4

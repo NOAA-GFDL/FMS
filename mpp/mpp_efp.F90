@@ -445,14 +445,14 @@ function real_to_ints(r, prec_error, overflow) result(ints)
 
   prec_err = prec ; if (present(prec_error)) prec_err = prec_error
   ints(:) = 0_8
-  if ((r >= 1e30) .eqv. (r < 1e30)) then ; NaN_error = .true. ; return ; endif
+  if (isNaN(r)) then ; NaN_error = .true. ; return ; endif
 
   sgn = 1 ; if (r<0.0) sgn = -1
   rs = abs(r)
 
   if (present(overflow)) then
     if (.not.(rs < prec_err*pr(1))) overflow = .true.
-    if ((r >= 1e30) .eqv. (r < 1e30)) overflow = .true.
+    if (isNaN(r)) overflow = .true.
   elseif (.not.(rs < prec_err*pr(1))) then
     write(mesg, '(ES13.5)') r
     call mpp_error(FATAL,"Overflow in real_to_ints conversion of "//trim(mesg))
@@ -518,7 +518,7 @@ subroutine increment_ints_faster(int_sum, r, max_mag_term)
   integer(i8_kind) :: ival
   integer :: sgn, i
 
-  if ((r >= 1e30) .eqv. (r < 1e30)) then ; NaN_error = .true. ; return ; endif
+  if (isNaN(r)) then ; NaN_error = .true. ; return ; endif
   sgn = 1 ; if (r<0.0) sgn = -1
   rs = abs(r)
   if (rs > abs(max_mag_term)) max_mag_term = r
