@@ -347,9 +347,8 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 end subroutine data_override_init
 
 #ifndef use_yaml
-subroutine read_table(data_table, ntable_out)
+subroutine read_table(data_table)
     type(data_type), dimension(max_table), intent(inout) :: data_table
-    integer, intent(out), optional :: ntable_out
 
     integer :: ntable
     integer :: ntable_lima
@@ -480,13 +479,11 @@ subroutine read_table(data_table, ntable_out)
        'data_override_mod: New and old formats together in same data_table not supported')
     close(iunit, iostat=io_status)
     if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in closing file data_table')
-    if (present(ntable_out)) ntable_out = ntable
 end subroutine read_table
 
 #else
-subroutine read_table_yaml(data_table, ntable_out)
+subroutine read_table_yaml(data_table)
     type(data_type), dimension(:), allocatable, intent(out) :: data_table
-    integer, intent(out), optional :: ntable_out
 
     integer, allocatable :: entry_id(:)
     integer :: nentries
@@ -495,37 +492,35 @@ subroutine read_table_yaml(data_table, ntable_out)
     integer :: file_id
 
     file_id = open_and_parse_file("data_table.yaml")
-       nentries = get_num_blocks(file_id, "data_table")
-       allocate(data_table(nentries))
-       allocate(entry_id(nentries))
-       call get_block_ids(file_id, "data_table", entry_id)
+    nentries = get_num_blocks(file_id, "data_table")
+    allocate(data_table(nentries))
+    allocate(entry_id(nentries))
+    call get_block_ids(file_id, "data_table", entry_id)
 
-       do i = 1, nentries
-           call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
-           call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
-           call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
-           call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
-           call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
-           call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
-           call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
+    do i = 1, nentries
+       call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
+       call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
+       call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
+       call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
+       call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
+       call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+       call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
 
-           if(trim(buffer) == "inside_region" ) then
-             data_table(i)%region_type = INSIDE_REGION
-           else if( trim(buffer) == "outside_region" ) then
-             data_table(i)%region_type = OUTSIDE_REGION
-           else
-             data_table(i)%region_type = NO_REGION
-           endif
+       if(trim(buffer) == "inside_region" ) then
+          data_table(i)%region_type = INSIDE_REGION
+       else if( trim(buffer) == "outside_region" ) then
+          data_table(i)%region_type = OUTSIDE_REGION
+       else
+          data_table(i)%region_type = NO_REGION
+       endif
 
-           call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-           call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-           call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-           call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+       call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
+       call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
+       call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
+       call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
 
-           print *, trim(data_table(i)%gridname), trim(data_table(i)%fieldname_code), trim(data_table(i)%fieldname_file), trim(data_table(i)%file_name), trim(data_table(i)%interpol_method), data_table(i)%factor
-       end do
+    end do
 
-    if(present(ntable_out)) ntable_out = nentries
     table_size = nentries !< Because one variable is not enough
 end subroutine read_table_yaml
 #endif
