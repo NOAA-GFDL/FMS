@@ -35,12 +35,10 @@
   integer, optional, intent(in) :: localcomm
   integer, optional, intent(in) :: test_level
   character(len=*), optional, intent(in) :: alt_input_nml_path
-  integer                       :: my_pe, num_pes, len, i, iunit
+  integer                       :: i, iunit
   logical                       :: opened, existed
   integer                       :: io_status
   integer                       :: t_level
-  character(len=5) :: this_pe
-  type(mpp_type), pointer :: dtype
 
   if( module_is_initialized )return
 
@@ -223,7 +221,7 @@ end subroutine mpp_init
 !#######################################################################
   !> To be called at the end of a run
 subroutine mpp_exit()
-  integer :: i, j, k, n, nmax, istat, out_unit, log_unit
+  integer :: i, j, n, nmax, out_unit, log_unit
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
   logical :: opened
@@ -359,7 +357,7 @@ end subroutine mpp_exit
       character(len=*), intent(inout) :: data(:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      integer :: n, i, from_rank, out_unit
+      integer :: n, i, from_rank
       character    :: str1D(length*size(data(:)))
       pointer(lptr, str1D)
 

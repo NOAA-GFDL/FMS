@@ -425,7 +425,6 @@ logical,          intent(out), optional :: single_year_file
 !  clim_units :: A list of the units for the components listed in data_names.
 !
 integer :: io, ierr
-logical :: the_file_exists
 
 if (.not. module_is_initialized) then
   call fms_init

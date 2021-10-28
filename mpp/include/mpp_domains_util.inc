@@ -1935,9 +1935,8 @@ end subroutine mpp_get_tile_compute_domains
      integer   :: ind_s(3*MAXOVERLAP)
      integer   :: ind_x(3*MAXOVERLAP)
      integer   :: ind_y(3*MAXOVERLAP)
-     integer   :: pelist(3*MAXOVERLAP), to_pe_list(3*MAXOVERLAP)
-     integer   :: buffer_pos_recv(3*MAXOVERLAP), buffer_pos_send(3*MAXOVERLAP)
-     integer   :: recv_size(3*MAXOVERLAP), send_size(3*MAXOVERLAP)
+     integer   :: pelist(3*MAXOVERLAP)
+     integer   :: send_size(3*MAXOVERLAP)
      integer   :: position_x, position_y, npack, nunpack, dir
      integer   :: pack_buffer_pos, unpack_buffer_pos
      integer   :: omp_get_num_threads, nthreads

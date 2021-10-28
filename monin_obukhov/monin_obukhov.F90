@@ -116,7 +116,7 @@ contains
 
 subroutine monin_obukhov_init
 
-integer :: unit, ierr, io, logunit
+integer :: ierr, io, logunit
 
 !------------------- read namelist input -------------------------------
 

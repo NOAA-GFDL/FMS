@@ -172,7 +172,7 @@ module time_interp_external2_mod
     !> @brief Initialize the @ref time_interp_external_mod module
     subroutine time_interp_external_init()
 
-      integer :: ioun, io_status, logunit, ierr
+      integer :: io_status, logunit, ierr
 
       namelist /time_interp_external_nml/ num_io_buffers, debug_this_module, &
                                           max_fields, max_files
@@ -282,7 +282,7 @@ module time_interp_external2_mod
       integer :: init_external_field
 
       real(DOUBLE_KIND) :: slope, intercept
-      integer :: unit,ndim,nvar,natt,ntime,i,j
+      integer :: ndim,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
@@ -290,7 +290,7 @@ module time_interp_external2_mod
       character(len=1) :: cart
       character(len=1), dimension(4) :: cart_dir
       character(len=128) :: units, fld_units
-      character(len=128) :: name, msg, calendar_type, timebeg, timeend
+      character(len=128) :: msg, calendar_type, timebeg, timeend
       character(len=128) :: timename, timeunits
       character(len=128), allocatable :: axisname(:)
       integer,            allocatable :: axislen(:)
@@ -1036,7 +1036,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   ! ---- local vars
   integer :: ib ! index in the array of input buffers
   integer :: isw,iew,jsw,jew ! boundaries of the domain on each window
-  integer :: is_region, ie_region, js_region, je_region, i, j, n
+  integer :: is_region, ie_region, js_region, je_region, i, j
   integer :: start(4), nread(4)
   logical :: need_compute
   real    :: mask_in(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
@@ -1342,7 +1342,6 @@ end subroutine realloc_fields
     function get_external_field_missing(index)
 
       integer :: index
-      real :: missing
       real :: get_external_field_missing
 
       if (index .lt. 1 .or. index .gt. num_fields) &
@@ -1378,7 +1377,7 @@ end subroutine
 
     subroutine time_interp_external_exit()
 
-      integer :: i,j
+      integer :: i
 !
 ! release storage arrays
 !

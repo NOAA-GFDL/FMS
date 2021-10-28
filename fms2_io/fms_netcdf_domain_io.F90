@@ -26,7 +26,6 @@
 !> @addtogroup fms_netcdf_domain_io_mod
 !> @{
 module fms_netcdf_domain_io_mod
-use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use mpp_domains_mod
@@ -309,10 +308,7 @@ function is_dimension_registered(fileobj, dimension_name) &
 
   ! local
   logical :: is_registered
-
   integer :: dpos
-  integer :: ndims
-  character(len=nf90_max_name), dimension(:), allocatable :: dim_names
 
   dpos = 0
   is_registered = .false.

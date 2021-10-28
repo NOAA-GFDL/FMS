@@ -472,40 +472,6 @@ CONTAINS
 
   END SUBROUTINE parse_diag_table
 
-  !> @brief Open the <TT>diag_table</TT> file, and return the Fortran file unit number.
-  SUBROUTINE open_diag_table(iunit, iostat, err_msg)
-    INTEGER, INTENT(out) :: iunit !< Fortran file unit number of the <TT>diag_table</TT>.
-    INTEGER, INTENT(out), OPTIONAL, TARGET :: iostat !< Status of opening file.  If iostat == 0, file exists.
-                                                     !! If iostat > 0, the diag_table file does not exist.
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< String to hold the return error message.
-
-    INTEGER, TARGET :: mystat
-    INTEGER, POINTER :: pstat
-
-    IF ( PRESENT(iostat) ) THEN
-       pstat => iostat
-    ELSE
-       pstat => mystat
-    END IF
-
-    IF ( .NOT.file_exist('diag_table') ) THEN
-       pstat = 1
-       IF ( fms_error_handler('diag_table_mod::open_diag_table',&
-            & 'diag_table file does not exist.', err_msg) ) RETURN
-    ELSE
-       pstat = 0
-    END IF
-
-    CALL mpp_open(iunit, 'diag_table', action=MPP_RDONLY)
-  END SUBROUTINE open_diag_table
-
-  !> @brief Closes the diag_table file.
-  SUBROUTINE close_diag_table(iunit)
-    INTEGER, INTENT(in) :: iunit !< Fortran file unit number of the <TT>diag_table</TT>.
-
-    CALL close_file(iunit)
-  END SUBROUTINE close_diag_table
-
   !> @brief <TT>parse_file_line</TT> parses a file description line from the <TT>diag_table</TT> file, and returns a
   !!     <TT>TYPE(file_description_type)</TT>.  The calling function, would then need to call the <TT>init_file</TT> to initialize
   !!     the diagnostic output file.
@@ -844,11 +810,6 @@ CONTAINS
        find_unit_ivalue = -1 ! Return statement if an incorrect / unknown unit used.
     END SELECT
   END FUNCTION find_unit_ivalue
-
-  !> @brief Allocate the file, in and out field arrays after reading the <TT>diag_table</TT> file. (CURRENTLY EMPTY)
-  SUBROUTINE initialize_output_arrays()
-    ! Place Holder
-  END SUBROUTINE initialize_output_arrays
 
 END MODULE diag_table_mod
 !> @}

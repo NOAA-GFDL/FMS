@@ -331,7 +331,7 @@ CONTAINS
     INTEGER              :: axis_direction, axis_edges
     REAL, ALLOCATABLE    :: axis_data(:)
     INTEGER, ALLOCATABLE :: axis_extent(:), pelist(:)
-integer :: domain_size, axis_length, axis_pos
+    integer              :: axis_pos
     INTEGER              :: num_attributes
     TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE :: attributes
     INTEGER              :: calendar, id_axis, id_time_axis
@@ -349,8 +349,6 @@ integer :: domain_size, axis_length, axis_pos
     integer :: istart, iend
     integer :: gstart, cstart, cend !< Start and end of global and compute domains
     integer :: clength !< Length of compute domain
-    integer :: data_size
-    integer, allocatable, dimension(:) :: all_indicies
     character(len=32) :: type_str !< Str indicating the type of the axis data
 
     ! Make sure err_msg is initialized
@@ -822,16 +820,15 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
 
     logical :: is_time_bounds !< Flag indicating if the variable is time_bounds
     CHARACTER(len=256) :: standard_name2
-    CHARACTER(len=1280) :: att_str
     TYPE(diag_fieldtype) :: Field
     LOGICAL :: coord_present
-    CHARACTER(len=40) :: aux_axes(SIZE(axes))
+    CHARACTER(len=128) :: aux_axes(SIZE(axes))
     CHARACTER(len=160) :: coord_att
     CHARACTER(len=1024) :: err_msg
 
 character(len=128),dimension(size(axes)) :: axis_names
     REAL :: scale, add
-    INTEGER :: i, indexx, num, ipack, np, att_len
+    INTEGER :: i, indexx, num, ipack, np
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
     logical :: use_UGdomain_local
@@ -1247,7 +1244,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     character(len=2), intent(in), optional :: fnum_for_domain
     INTEGER, OPTIONAL, INTENT(in) :: time_in
     integer :: time
-    real(kind=4),allocatable :: local_buffer(:,:,:,:)
 !> Set up the time.  Static field and default time is 0
      if (present(static) .and. static) then
           time = 0

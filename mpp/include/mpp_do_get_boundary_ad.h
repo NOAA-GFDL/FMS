@@ -1,6 +1,5 @@
 ! -*-f90-*-
 
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -357,7 +356,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   integer,    allocatable :: msg1(:), msg2(:)
   logical                 :: recvx(4), sendx(4)
   logical                 :: recvy(4), sendy(4)
-  integer                 :: nlist, buffer_pos,buffer_pos_old, pos, pos_, tMe, m
+  integer                 :: nlist, buffer_pos,buffer_pos_old, pos, tMe, m
   integer                 :: is, ie, js, je, msgsize, l_size, buffer_recv_size, msgsize_send
   integer                 :: i, j, k, l, n, index, to_pe, from_pe
   integer                 :: rank_x, rank_y, cur_rank, ind_x, ind_y

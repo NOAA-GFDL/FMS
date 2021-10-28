@@ -869,7 +869,7 @@ CONTAINS
     INTEGER, DIMENSION(:), INTENT(in), OPTIONAL :: ival !< Integer attribute value(s)
     REAL, DIMENSION(:), INTENT(in), OPTIONAL :: rval !< Real attribute value(s)
 
-    INTEGER :: istat, length, i, j, this_attribute, out_field
+    INTEGER :: istat, length, i, this_attribute
     CHARACTER(len=1024) :: err_msg
 
     IF ( .NOT.first_send_data_call ) THEN
@@ -1050,9 +1050,6 @@ CONTAINS
     INTEGER, INTENT(in) :: diag_axis_id
     CHARACTER(len=*), INTENT(in) :: att_name
     REAL, DIMENSION(:), INTENT(in) :: att_value
-
-    INTEGER :: num_attributes, len
-    CHARACTER(len=512) :: err_msg
 
     CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
   END SUBROUTINE diag_axis_add_attribute_r1d

@@ -108,7 +108,6 @@ module drifters_mod
   integer, parameter, private :: MAX_STR_LEN = 128
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
-  real :: DRFT_EMPTY_ARRAY(0)
   !> @}
 
   !> @brief Holds all data needed for drifters communication, io, and input.

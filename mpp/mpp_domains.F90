@@ -668,7 +668,7 @@ module mpp_domains_mod
   integer,                                save :: a_sort_len=0 !< length sorted memory list
   integer,                                save :: n_addrs=0   !< number of memory addresses used
 
-  integer(i8_kind), parameter :: ADDR2_BASE = int(Z'0000000000010000', kind=i8_kind)
+  integer(i8_kind), parameter :: ADDR2_BASE = 65536_i8_kind !< = 0x0000000000010000
   integer, parameter :: MAX_ADDRS2=128
   integer(i8_kind),dimension(MAX_ADDRS2),save :: addrs2_sorted=-9999 !< list of sorted local addresses
   integer,           dimension(-1:MAX_ADDRS2),save :: addrs2_idx=-9999 !< index of addr2 associated with d_comm
@@ -695,10 +695,10 @@ module mpp_domains_mod
   integer,                                         save           :: n_comm=0  !< number of communicators used
 
   !     integer(i8_kind), parameter :: GT_BASE=2**8
-  integer(i8_kind), parameter :: GT_BASE = int(Z'0000000000000100', kind=i8_kind)
+  integer(i8_kind), parameter :: GT_BASE = 256_i8_kind !0x0000000000000100
 
   !     integer(i8_kind), parameter :: KE_BASE=2**48
-  integer(i8_kind), parameter :: KE_BASE = int(Z'0001000000000000', kind=i8_kind)
+  integer(i8_kind), parameter :: KE_BASE = 281474976710656_i8_kind !0x0001000000000000
 
   integer(i8_kind) :: domain_cnt=0
 

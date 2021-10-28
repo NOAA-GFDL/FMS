@@ -82,7 +82,7 @@ contains
 
   !> Initializes module and writes version number to logfile.out
   subroutine horiz_interp_spherical_init
-    integer :: unit, ierr, io
+    integer :: ierr, io
 
 
     if(module_is_initialized) return
@@ -413,20 +413,19 @@ end subroutine horiz_interp_spherical_init
   end subroutine horiz_interp_spherical
 
   !#######################################################################
-  subroutine horiz_interp_spherical_wght( Interp, wt, verbose, mask_in, mask_out, missing_value)
+  subroutine horiz_interp_spherical_wght( Interp, wt, verbose, mask_in, mask_out)
     type (horiz_interp_type), intent(in)        :: Interp
     real, intent(out), dimension(:,:,:)         :: wt
     integer, intent(in),               optional :: verbose
     real, intent(in), dimension(:,:),  optional :: mask_in
     real, intent(inout), dimension(:,:), optional :: mask_out
-    real, intent(in),                  optional :: missing_value
 
     !--- some local variables ----------------------------------------
     real, dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src
     real, dimension(Interp%nlon_dst, Interp%nlat_dst) :: mask_dst
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, num_found
-    integer :: m, n, i, j, k, miss_in, miss_out, i1, i2, j1, j2, iverbose
-    real    :: min_in, max_in, avg_in, min_out, max_out, avg_out, sum
+    integer :: m, n, k, i1, i2, j1, j2, iverbose
+    real    :: sum
     !-----------------------------------------------------------------
 
     iverbose = 0;  if (present(verbose)) iverbose = verbose

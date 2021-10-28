@@ -999,9 +999,9 @@ if(.not.module_is_initialized) call time_manager_init
 ! ticks could be up to ticks_per_second-1
 
 tick_prod = dble(time%ticks) * dble(n)
-num_sec   = tick_prod/dble(ticks_per_second)
+num_sec   = int(tick_prod/dble(ticks_per_second))
 sec_prod  = dble(time%seconds) * dble(n) + num_sec
-ticks     = tick_prod - num_sec * ticks_per_second
+ticks     = int(tick_prod - num_sec * ticks_per_second)
 
 ! If sec_prod is large compared to precision of double precision, things
 ! can go bad.  Need to warn and abort on this.
@@ -1013,8 +1013,8 @@ if(sec_prod /= 0.0) then
       'Insufficient precision to handle scalar product in time_scalar_mult; contact developer',FATAL)
 end if
 
-days = sec_prod / dble(seconds_per_day)
-seconds = sec_prod - dble(days) * dble(seconds_per_day)
+days = int(sec_prod / dble(seconds_per_day))
+seconds = int(sec_prod - dble(days) * dble(seconds_per_day))
 
 time_scalar_mult = set_time(seconds, time%days * n + days, ticks)
 
@@ -1091,7 +1091,7 @@ d1 = time1%days * dble(seconds_per_day) + dble(time1%seconds) + time1%ticks/dble
 d2 = time2%days * dble(seconds_per_day) + dble(time2%seconds) + time2%ticks/dble(ticks_per_second)
 
 ! Get integer quotient of this, check carefully to avoid round-off problems.
-time_divide = d1 / d2
+time_divide = int(d1 / d2)
 
 ! Verify time_divide*time2 is <= time1 and (time_divide + 1)*time2 is > time1
 if(time_divide * time2 > time1 .or. (time_divide + 1) * time2 <= time1) &
@@ -1197,8 +1197,8 @@ type(time_type), intent(in) :: time
 
 if(.not.module_is_initialized) call time_manager_init
 
-time_type_to_real = dble(time%days) * 86400.d0 + dble(time%seconds) + &
-     dble(time%ticks)/dble(ticks_per_second)
+time_type_to_real = real(dble(time%days) * 86400.d0 + dble(time%seconds) + &
+     dble(time%ticks)/dble(ticks_per_second), kind=r8_kind)
 
 end function time_type_to_real
 
@@ -1297,9 +1297,9 @@ dticks_per_second = dble(ticks_per_second)
 d = time%days*dseconds_per_day*dticks_per_second + dble(time%seconds)*dticks_per_second + dble(time%ticks)
 div = d/dble(n)
 
-days = div/(dseconds_per_day*dticks_per_second)
-seconds = div/dticks_per_second - days*dseconds_per_day
-ticks = div - (days*dseconds_per_day + dble(seconds))*dticks_per_second
+days = int(div/(dseconds_per_day*dticks_per_second))
+seconds = int(div/dticks_per_second - days*dseconds_per_day)
+ticks = int(div - (days*dseconds_per_day + dble(seconds))*dticks_per_second)
 time_scalar_divide = set_time(seconds, days, ticks)
 
 ! Need to make sure that roundoff isn't killing this
@@ -2833,7 +2833,7 @@ if(present(err_msg)) err_msg = ''
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   days_in_month = days_in_month_thirty(Time)
+   days_in_month = 30
 case(GREGORIAN)
    days_in_month = days_in_month_gregorian(Time)
 case(JULIAN)
@@ -2879,19 +2879,6 @@ days_in_month_julian = days_per_month(month)
 if(leap_year_julian(Time) .and. month == 2) days_in_month_julian = 29
 
 end function days_in_month_julian
-
-!--------------------------------------------------------------------------
-function days_in_month_thirty(Time)
-
-! Returns the number of days in a thirty day month (needed for transparent
-! changes to calendar type).
-
-integer :: days_in_month_thirty
-type(time_type), intent(in) :: Time
-
-days_in_month_thirty = 30
-
-end function days_in_month_thirty
 
 !--------------------------------------------------------------------------
 function days_in_month_no_leap(Time)
@@ -2940,13 +2927,13 @@ if(present(err_msg)) err_msg=''
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   leap_year = leap_year_thirty(Time)
+   leap_year = .false.
 case(GREGORIAN)
    leap_year = leap_year_gregorian(Time)
 case(JULIAN)
    leap_year = leap_year_julian(Time)
 case(NOLEAP)
-   leap_year = leap_year_no_leap(Time)
+   leap_year = .false.
 case default
    if(error_handler('function leap_year', 'Invalid calendar type in leap_year', err_msg)) return
 end select
@@ -2995,31 +2982,6 @@ leap_year_julian = ((year / 4 * 4) == year)
 
 end function leap_year_julian
 
-!--------------------------------------------------------------------------
-
-function leap_year_thirty(Time)
-
-! No leap years in thirty day months, included for transparency.
-
-logical :: leap_year_thirty
-type(time_type), intent(in) :: Time
-
-leap_year_thirty = .FALSE.
-
-end function leap_year_thirty
-
-!--------------------------------------------------------------------------
-
-function leap_year_no_leap(Time)
-
-! Another tough one; no leap year returns false for leap year inquiry.
-
-logical :: leap_year_no_leap
-type(time_type), intent(in) :: Time
-
-leap_year_no_leap = .FALSE.
-
-end function leap_year_no_leap
 
 !END OF leap_year BLOCK
 !==========================================================================
@@ -3066,11 +3028,8 @@ end function length_of_year_thirty
 function length_of_year_gregorian()
 
 type(time_type) :: length_of_year_gregorian
-integer :: days, seconds
 
-days = days_in_400_year_period / 400
-seconds = 86400*(days_in_400_year_period/400. - days)
-length_of_year_gregorian = set_time(seconds, days)
+length_of_year_gregorian = set_time(20952, 365)
 
 end function length_of_year_gregorian
 
@@ -3080,7 +3039,7 @@ function length_of_year_julian()
 
 type(time_type) :: length_of_year_julian
 
-length_of_year_julian = set_time((24 / 4) * 60 * 60, 365)
+length_of_year_julian = set_time(21600, 365)
 
 end function length_of_year_julian
 
@@ -3116,7 +3075,7 @@ end
 ! START OF days_in_year BLOCK
 ! <FUNCTION NAME="days_in_year">
 
-!> @brief Retruns the number of days in the calendar year corresponding to the date represented by
+!> @brief Returns the number of days in the calendar year corresponding to the date represented by
 !! time for the default calendar.
 !> @returns The number of days in this year for the default calendar type.
 function days_in_year(Time)
@@ -3130,13 +3089,13 @@ if(.not.module_is_initialized) call time_manager_init
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   days_in_year = days_in_year_thirty(Time)
+   days_in_year = days_in_year_thirty()
 case(GREGORIAN)
    days_in_year = days_in_year_gregorian(Time)
 case(JULIAN)
    days_in_year = days_in_year_julian(Time)
 case(NOLEAP)
-   days_in_year = days_in_year_no_leap(Time)
+   days_in_year = days_in_year_no_leap()
 case default
    call error_mesg('days_in_year','Invalid calendar type in days_in_year',FATAL)
 end select
@@ -3145,10 +3104,9 @@ end function days_in_year
 
 !--------------------------------------------------------------------------
 
-function days_in_year_thirty(Time)
+function days_in_year_thirty()
 
 integer :: days_in_year_thirty
-type(time_type), intent(in) :: Time
 
 days_in_year_thirty = 360
 
@@ -3185,10 +3143,9 @@ end function days_in_year_julian
 
 !--------------------------------------------------------------------------
 
-function days_in_year_no_leap(Time)
+function days_in_year_no_leap()
 
 integer :: days_in_year_no_leap
-type(time_type), intent(in) :: Time
 
 days_in_year_no_leap = 365
 

@@ -150,10 +150,10 @@ end subroutine mosaic_init
     call read_data(fileobj, 'tile2_cell', tile2_cell, corner=start, edge_lengths=nread)
 
      do n = 1, nxgrid
-       i1(n) = tile1_cell(1,n)
-       j1(n) = tile1_cell(2,n)
-       i2(n) = tile2_cell(1,n)
-       j2(n) = tile2_cell(2,n)
+       i1(n) = int(tile1_cell(1,n))
+       j1(n) = int(tile1_cell(2,n))
+       i2(n) = int(tile2_cell(1,n))
+       j2(n) = int(tile2_cell(2,n))
        area(n) = area(n)/garea
     end do
 
@@ -459,7 +459,6 @@ end function transfer_to_model_index
      real, intent(in) :: lon1, lat1
      real, intent(in) :: lon2(:), lat2(:)
      logical          :: is_inside_polygon
-     real, dimension(size(lon2(:))) :: x2, y2, z2
      integer                        :: npts, isinside
      integer                        :: inside_a_polygon
 

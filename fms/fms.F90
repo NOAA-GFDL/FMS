@@ -329,7 +329,7 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
- integer :: unit, ierr, io
+ integer :: ierr, io
  integer :: logunitnum
  integer :: stdout_unit !< Unit number for the stdout file
 

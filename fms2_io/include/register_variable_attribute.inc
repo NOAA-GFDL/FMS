@@ -132,13 +132,12 @@ end subroutine register_variable_attribute_0d
 
 !> @brief Add an attribute to a variable.
 subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name, &
-                                          attribute_value, str_len)
+                                          attribute_value)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   character(len=*), intent(in) :: attribute_name !< Attribute name.
   class(*), dimension(:), intent(in) :: attribute_value !< Attribute value
-  integer, intent(in), optional :: str_len !< Length of the string
 
   integer :: varid
   integer :: err

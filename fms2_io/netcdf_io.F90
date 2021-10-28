@@ -28,7 +28,7 @@
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod
-use, intrinsic :: iso_fortran_env
+!use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
@@ -2189,11 +2189,13 @@ subroutine read_restart_bc(fileobj, unlim_dim_level)
     if (associated(fileobj%restart_vars(i)%data2d)) then
        call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
                                 fileobj%restart_vars(i)%data2d, &
-                                fileobj%restart_vars(i)%bc_info)
+                                fileobj%restart_vars(i)%bc_info, &
+                                unlim_dim_level = unlim_dim_level)
     else if (associated(fileobj%restart_vars(i)%data3d)) then
        call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
                                 fileobj%restart_vars(i)%data3d, &
-                                fileobj%restart_vars(i)%bc_info)
+                                fileobj%restart_vars(i)%bc_info, &
+                                unlim_dim_level = unlim_dim_level)
     endif
   end do
 

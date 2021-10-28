@@ -169,7 +169,7 @@ contains
       ! Force use of "scalar", integer pointer mpp interface
       call mpp_send(buffer_real(1),plen=3,to_pe=root_pe, tag=COMM_TAG_1)
       buffer_int(1) = miss
-      buffer_int(2) = npts
+      buffer_int(2) = int(npts)
       call mpp_send(buffer_int(1), plen=2, to_pe=root_pe, tag=COMM_TAG_2)
     endif
 

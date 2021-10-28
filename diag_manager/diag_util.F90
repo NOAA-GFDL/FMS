@@ -1547,7 +1547,6 @@ CONTAINS
     INTEGER, ALLOCATABLE  :: axesc(:) ! indices if compressed axes associated with the field
     LOGICAL :: time_ops, aux_present, match_aux_name, req_present, match_req_fields
     LOGICAL :: all_scalar_or_1d
-    CHARACTER(len=7) :: prefix
     CHARACTER(len=7) :: avg_name = 'average'
     CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name, req_fields, fieldname
     CHARACTER(len=128) :: suffix, base_name
@@ -1558,7 +1557,6 @@ CONTAINS
     TYPE(domain2d) :: domain2
     TYPE(domainUG) :: domainU
     INTEGER :: is, ie, last, ind
-    character(len=2) :: fnum_domain
     class(FmsNetcdfFile_t), pointer    :: fileob
 
     aux_present = .FALSE.

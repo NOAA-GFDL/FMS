@@ -617,8 +617,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer :: nxd, nyd, nxc, nyc, nwindows
   integer :: nwindows_x, ipos, jpos, window_size(2)
   integer :: istart, iend, jstart, jend
-  integer :: isw, iew, jsw, jew, n
-  integer :: omp_get_num_threads, omp_get_thread_num, thread_id, window_id
+  integer :: isw, iew, jsw, jew
+  integer :: omp_get_num_threads, window_id
   logical :: need_compute
   real    :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src

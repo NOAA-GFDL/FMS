@@ -54,7 +54,6 @@
       integer, intent(in), optional :: flags
       integer                       :: n
       integer                       :: io_status, unit
-      logical                       :: opened
 
       if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
@@ -614,8 +613,7 @@ end subroutine init_nonblock_type
       type(domain2D), intent(in)    :: domain_in
       type(domain2D), intent(inout) :: domain_out
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
-      integer :: listsize, listpos
+      integer :: listpos
       integer :: n
       integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
       integer                :: errunit, npes_in, npes_out, pstart, pend
@@ -865,7 +863,7 @@ end subroutine init_nonblock_type
       logical :: native         !true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer, allocatable :: tile_pesize(:)
-      integer :: n, tile, maxtile
+      integer :: n, maxtile
       integer, dimension(17) :: msg, info         !pe and compute domain of each item in list
       integer                :: errunit
 

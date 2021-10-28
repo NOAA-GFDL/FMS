@@ -388,7 +388,6 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     type (time_type) :: Udate
     character(len=4) :: yyyy
     integer :: nrecords, ierr, k, yr, mo, dy
-    integer :: siz(4)
     integer, dimension(:), allocatable :: ryr, rmo, rdy
     character(len=30) :: time_unit
     real, dimension(:), allocatable :: timeval

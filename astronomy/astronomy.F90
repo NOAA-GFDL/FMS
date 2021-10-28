@@ -1753,7 +1753,7 @@ real,                    intent(out)   :: rrsun
 !--------------------------------------------------------------------
       real, dimension(size(lat,1),size(lat,2)) :: s,z
       real    :: t
-      integer :: n, i
+      integer :: n
 
 !--------------------------------------------------------------------
 !    if the calculation has not yet been done, do it here.
