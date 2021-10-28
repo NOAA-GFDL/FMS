@@ -162,13 +162,7 @@ namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_nul
 
 
 public :: data_override_init, data_override, data_override_unset_domains
-public :: data_override_UG, data_type
-
-#ifdef use_yaml
-public :: read_table_yaml
-#else
-public :: read_table
-#endif
+public :: data_override_UG
 
 contains
 function count_ne_1(in_1, in_2, in_3)
@@ -532,7 +526,7 @@ subroutine read_table_yaml(data_table, ntable_out)
        end do
 
     if(present(ntable_out)) ntable_out = nentries
-
+    table_size = nentries !< Because one variable is not enough
 end subroutine read_table_yaml
 #endif
 
