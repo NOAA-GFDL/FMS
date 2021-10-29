@@ -189,8 +189,7 @@ use    mpp_mod, only : mpp_error,   &
                        mpp_pe,      &
                        mpp_root_pe, &
                        stdlog,      &
-                       stdout,      &
-                       get_unit
+                       stdout
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
@@ -274,7 +273,7 @@ integer, parameter, public :: fm_field_name_len = 48
 !> The length of a character string representing the field path.
 integer, parameter, public :: fm_path_name_len  = 512
 !> The length of a character string representing character values for the field.
-integer, parameter, public :: fm_string_len     = 128
+integer, parameter, public :: fm_string_len     = 1024
 !> The length of a character string representing the various types that the values of the field can take.
 integer, parameter, public :: fm_type_name_len  = 8
 !> Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).
@@ -670,8 +669,7 @@ if(present(nfields)) nfields = 0
   return
 endif
 
-iunit = get_unit()
-open(iunit, file=trim(tbl_name), action='READ', iostat=io_status)
+open(newunit=iunit, file=trim(tbl_name), action='READ', iostat=io_status)
 if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in opening file '//trim(tbl_name))
 !write_version_number should precede all writes to stdlog from field_manager
 call write_version_number("FIELD_MANAGER_MOD", version)

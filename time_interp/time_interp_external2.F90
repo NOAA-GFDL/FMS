@@ -1067,7 +1067,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      start(2) = field%js_src; nread(2) = field%je_src - field%js_src + 1
      start(3) = 1;            nread(3) = size(field%src_data,3)
      start(field%tdim) = rec; nread(field%tdim) = 1
-     call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
+     call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib:ib),corner=start,edge_lengths=nread)
   endif
 !$OMP END CRITICAL
   isw=field%isc;iew=field%iec
@@ -1117,7 +1117,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
         field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0
         deallocate(mask_out)
-        field%need_compute(ib, window_id) = .false.
      else
         if ( field%region_type .NE. NO_REGION ) then
            call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present")
@@ -1128,6 +1127,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      ! convert units
      where(field%mask(isw:iew,jsw:jew,:,ib)) field%data(isw:iew,jsw:jew,:,ib) = &
           field%data(isw:iew,jsw:jew,:,ib)*field%slope + field%intercept
+     field%need_compute(ib, window_id) = .false.
   endif
 
 end subroutine load_record

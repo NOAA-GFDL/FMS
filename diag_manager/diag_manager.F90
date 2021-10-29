@@ -195,13 +195,12 @@ use platform_mod
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
-  USE mpp_io_mod, ONLY: mpp_open, mpp_close, mpp_get_maxunits
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
   USE mpp_mod, ONLY: input_nml_file
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
+       & fms_error_handler, check_nml_error, lowercase
   USE fms_io_mod, ONLY: get_instance_filename
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
        & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
@@ -331,6 +330,8 @@ use platform_mod
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
 #ifdef OVERLOAD_R8
+     MODULE PROCEDURE send_data_0d_r8
+     MODULE PROCEDURE send_data_1d_r8
      MODULE PROCEDURE send_data_2d_r8
      MODULE PROCEDURE send_data_3d_r8
 #endif
@@ -1343,11 +1344,79 @@ CONTAINS
   END FUNCTION send_data_2d
 
 #ifdef OVERLOAD_R8
+
+  !> @return true if send is successful
+  LOGICAL FUNCTION send_data_0d_r8(diag_field_id, field, time, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(r8_kind), INTENT(in) :: field
+    TYPE(time_type), INTENT(in), OPTIONAL :: time
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL(r8_kind) :: field_out(1, 1, 1)
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_0d_r8 = .FALSE.
+       RETURN
+    END IF
+    ! First copy the data to a three d array with last element 1
+    field_out(1, 1, 1) = field
+    send_data_0d_r8 = send_data_3d_r8(diag_field_id, field_out, time, err_msg=err_msg)
+  END FUNCTION send_data_0d_r8
+
+  !> @return true if send is successful
+  LOGICAL FUNCTION send_data_1d_r8(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    REAL(r8_kind), DIMENSION(:), INTENT(in) :: field
+    REAL, INTENT(in), OPTIONAL :: weight
+    REAL, INTENT(in), DIMENSION(:), OPTIONAL :: rmask
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, ie_in
+    LOGICAL, INTENT(in), DIMENSION(:), OPTIONAL :: mask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL(r8_kind), DIMENSION(SIZE(field(:)), 1, 1) :: field_out
+    LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_1d_r8 = .FALSE.
+       RETURN
+    END IF
+
+    ! First copy the data to a three d array with last element 1
+    field_out(:, 1, 1) = field
+
+    ! Default values for mask
+    IF ( PRESENT(mask) ) THEN
+       mask_out(:, 1, 1) = mask
+    ELSE
+       mask_out = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
+    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
+       IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
+          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+               & mask=mask_out, ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
+       ELSE
+          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, mask=mask_out,&
+               & weight=weight, err_msg=err_msg)
+       END IF
+    ELSE
+       IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
+          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+               & ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
+       ELSE
+          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, weight=weight, err_msg=err_msg)
+       END IF
+    END IF
+  END FUNCTION send_data_1d_r8
   !> @return true if send is successful
   LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL(kind=8), INTENT(in), DIMENSION(:,:) :: field
+    REAL(r8_kind), INTENT(in), DIMENSION(:,:) :: field
     REAL, INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
@@ -1388,7 +1457,7 @@ CONTAINS
   LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL(kind=8), INTENT(in), DIMENSION(:,:,:) :: field
+    REAL(r8_kind), INTENT(in), DIMENSION(:,:,:) :: field
     REAL, INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
@@ -3127,7 +3196,6 @@ CONTAINS
     INTEGER :: b1,b2,b3,b4 !< size of buffer along x,y,z,and diurnal axes
     INTEGER :: i, j, k, m
     REAL    :: missvalue, num
-    real,allocatable,dimension(:,:,:,:) :: diurnal_buffer
     writing_field = 0
 
     need_compute = output_fields(out_num)%need_compute
@@ -3227,17 +3295,6 @@ CONTAINS
     ! Output field
     IF ( at_diag_end .AND. freq == END_OF_RUN ) output_fields(out_num)%next_output = time
 ! if (time .eq. output_fields(out_num)%next_output) then
-    if (output_fields(out_num)%n_diurnal_samples > 1) then
-          !> allocate the buffer for diurnal data
-          allocate(diurnal_buffer(size(output_fields(out_num)%buffer,1),size(output_fields(out_num)%buffer,2),&
-                    size(output_fields(out_num)%buffer,4),size(output_fields(out_num)%buffer,3)))
-          !> swap the last 2 axes in the data buffer to match the netcdf output order
-          do i = 1,size(output_fields(out_num)%buffer,4)
-          do j = 1,size(output_fields(out_num)%buffer,3)
-               diurnal_buffer(:,:,i,j) = output_fields(out_num)%buffer(:,:,j,i)
-          enddo
-          enddo
-    endif
     IF ( (output_fields(out_num)%time_ops) .AND. (.NOT. mix_snapshot_average_fields) ) THEN
        middle_time = (output_fields(out_num)%last_output+output_fields(out_num)%next_output)/2
        if (trim(files(file_num)%filename_time_bounds) == "begin") then
@@ -3248,21 +3305,11 @@ CONTAINS
            filename_time = output_fields(out_num)%next_output
        endif
 
-       if (output_fields(out_num)%n_diurnal_samples > 1) then
-          CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, &
+       CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
                  & filename_time=filename_time)
-       else
-          CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
-                 & filename_time=filename_time)
-       endif
     ELSE
-       if (output_fields(out_num)%n_diurnal_samples > 1) then
-            CALL diag_data_out(file_num, out_num, &
-                 & diurnal_buffer, output_fields(out_num)%next_output)
-       else
-            CALL diag_data_out(file_num, out_num, &
+       CALL diag_data_out(file_num, out_num, &
                  & output_fields(out_num)%buffer, output_fields(out_num)%next_output)
-       endif
     END IF
 !output_fields(out_num)%last_output = output_fields(out_num)%next_output
 ! endif
@@ -3291,7 +3338,6 @@ CONTAINS
        END IF
        IF ( input_fields(in_num)%mask_variant .AND. average ) output_fields(out_num)%counter = 0.0
     END IF
-    if (allocated(diurnal_buffer))deallocate(diurnal_buffer)
   END FUNCTION writing_field
 
   SUBROUTINE diag_manager_set_time_end(Time_end_in)
@@ -3404,7 +3450,7 @@ CONTAINS
     INTEGER :: file
 
     IF ( do_diag_field_log ) THEN
-       CALL mpp_close (diag_log_unit)
+       close (diag_log_unit)
     END IF
     DO file = 1, num_files
        CALL closing_file(file, time)
@@ -3424,7 +3470,6 @@ CONTAINS
     INTEGER :: stdout_unit
     LOGICAL :: reduced_k_range, need_compute, local_output
     CHARACTER(len=128) :: message
-    real,allocatable,dimension(:,:,:,:) :: diurnal_buffer
 
     stdout_unit = stdout()
 
@@ -3475,21 +3520,7 @@ CONTAINS
                & TRIM(output_fields(i)%output_name)//' NOT available,'//&
                & ' check if output interval > runlength. Netcdf fill_values are written', NOTE)
           output_fields(i)%buffer = FILL_VALUE
-          if (output_fields(i)%n_diurnal_samples > 1) then
-               !> allocate the buffer for diurnal data
-               if (.not. allocated(diurnal_buffer)) &
-                    allocate(diurnal_buffer(size(output_fields(i)%buffer,1),size(output_fields(i)%buffer,2),&
-                    size(output_fields(i)%buffer,4),size(output_fields(i)%buffer,3)))
-               !> swap the last 2 axes in the data buffer to match the netcdf output order
-               do loop1 = 1,size(output_fields(i)%buffer,4)
-               do loop2 = 1,size(output_fields(i)%buffer,3)
-                    diurnal_buffer(:,:,loop1,loop2) = output_fields(i)%buffer(:,:,loop2,loop1)
-               enddo
-               enddo
-               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE.)
-          else
           CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE.)
-          endif
        END IF
     END DO
     ! Now it's time to output static fields
@@ -3502,7 +3533,6 @@ CONTAINS
             & WRITE (stdout_unit,'(a,i12,a,a)') 'Diag_Manager: ',files(file)%bytes_written, &
             & ' bytes of data written to file ',TRIM(files(file)%name)
     END IF
-     if (allocated(diurnal_buffer)) deallocate(diurnal_buffer)
   END SUBROUTINE closing_file
 
   !> @brief Initialize Diagnostics Manager.
@@ -3590,16 +3620,6 @@ CONTAINS
        CALL error_mesg('diag_manager_mod::diag_manager_init', 'Using CMOR missing value ('//TRIM(err_msg_local)//').', NOTE)
     END IF
 
-    ! Issue note if attempting to set diag_manager_nml::max_files larger than
-    ! mpp_get_maxunits() -- Default is 1024 set in mpp_io.F90
-    IF ( max_files .GT. mpp_get_maxunits() ) THEN
-       err_msg_local = ''
-       WRITE (err_msg_local,'(A,I6,A,I6,A,I6,A)') "DIAG_MANAGER_NML variable 'max_files' (",max_files,") is larger than '",&
-            & mpp_get_maxunits(),"'.  Forcing 'max_files' to be ",mpp_get_maxunits(),"."
-       CALL error_mesg('diag_manager_mod::diag_managet_init', TRIM(err_msg_local), NOTE)
-       max_files = mpp_get_maxunits()
-    END IF
-
     ! How to handle Out of Range Warnings.
     IF ( oor_warnings_fatal ) THEN
        oor_warning = FATAL
@@ -3665,7 +3685,7 @@ CONTAINS
 
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
-       CALL mpp_open(diag_log_unit, 'diag_field_log.out', nohdrs=.TRUE.)
+       open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
        WRITE (diag_log_unit,'(777a)') &
             & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
             & 'Units',         SEP, 'Number of Axis', SEP, 'Time Axis',    SEP,&

@@ -221,9 +221,8 @@
 
 MODULE diag_table_mod
 
-  USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY
-  USE mpp_mod, ONLY: read_ascii_file, get_ascii_file_num_lines
-  USE fms_mod, ONLY: fms_error_handler, error_mesg, file_exist, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase, close_file
+  USE fms2_io_mod, ONLY: ascii_read
+  USE fms_mod, ONLY: fms_error_handler, error_mesg, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase
   USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
@@ -309,7 +308,7 @@ CONTAINS
     CHARACTER(len=9) :: amonth !< Month name
     CHARACTER(len=256) :: record_line !< Current line from the diag_table.
     CHARACTER(len=256) :: local_err_msg !< Sting to hold local error messages.
-    CHARACTER(len=DT_LINE_LENGTH), DIMENSION(:), ALLOCATABLE :: diag_table
+    CHARACTER(len=:), DIMENSION(:), ALLOCATABLE :: diag_table
 
     TYPE(file_description_type) :: temp_file
     TYPE(field_description_type) :: temp_field
@@ -331,10 +330,8 @@ CONTAINS
 
     ! get the stdlog unit number
     stdlog_unit = stdlog()
-    num_lines = get_ascii_file_num_lines('diag_table', DT_LINE_LENGTH)
-    allocate(diag_table(num_lines))
 
-    call read_ascii_file('diag_table', DT_LINE_LENGTH, diag_table)
+    call ascii_read('diag_table', diag_table, num_lines=num_lines)
 
     ! Read in the global file labeling string
     READ (UNIT=diag_table(1), FMT=*, IOSTAT=mystat) global_descriptor

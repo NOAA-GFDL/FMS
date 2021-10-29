@@ -479,6 +479,7 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
   ALLOCATE(dat1(is1:ie1,js1:je1,nlev))
   ALLOCATE(dat1h(is1-hi:ie1+hi,js1-hj:je1+hj,nlev))
   dat1h = 0.
+  dat1 = 0.
   DO j=js1, je1
      DO i=is1, ie1
         dat1(i,j,1) = SIN(lon1(i))*COS(lat1(j))
