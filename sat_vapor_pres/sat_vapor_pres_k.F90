@@ -487,10 +487,21 @@
  logical,intent(in),                      optional :: es_over_liq
  logical,intent(in),                      optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
-                                                  esloc, desat, denom
+ real(kind=r4_kind), allocatable, dimension(:,:,:) :: esloc_r4, desat_r4, denom_r4
+ real(kind=r8_kind), allocatable, dimension(:,:,:) :: esloc_r8, desat_r8, denom_r8
  integer :: i, j, k
  real    :: hc_loc
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     allocate(esloc_r4(size(temp,1), size(temp,2), size(temp,3)))
+     allocate(desat_r4(size(temp,1), size(temp,2), size(temp,3)))
+     allocate(denom_r4(size(temp,1), size(temp,2), size(temp,3)))
+   type is (real(kind=r8_kind))
+     allocate(esloc_r8(size(temp,1), size(temp,2), size(temp,3)))
+     allocate(desat_r8(size(temp,1), size(temp,2), size(temp,3)))
+     allocate(denom_r8(size(temp,1), size(temp,2), size(temp,3)))
+   end select
 
    if (present(hc)) then
      select type (hc)
@@ -505,34 +516,73 @@
 
    if (present(es_over_liq)) then
      if (present (dqsdT)) then
-       call lookup_es2_des2_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es2_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es2_k (temp, esloc_r8, nbad)
+       end select
      endif
    else if (present(es_over_liq_and_ice)) then
      if (present (dqsdT)) then
-       call lookup_es3_des3_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es3_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es3_k (temp, esloc_r8, nbad)
+       end select
      endif
    else
      if (present (dqsdT)) then
-       call lookup_es_des_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es_k (temp, esloc_r8, nbad)
+       end select
      endif
    endif
 
-   esloc = esloc*hc_loc
+   select type (temp)
+   type is (real(kind=r4_kind))
+     esloc_r4 = esloc_r4*hc_loc
+   type is (real(kind=r8_kind))
+     esloc_r8 = esloc_r8*hc_loc
+   end select
+
    if (present (esat)) then
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = esloc
+       esat = esloc_r4
      type is (real(kind=r8_kind))
-       esat = esloc
+       esat = esloc_r8
      end select
    endif
 
@@ -544,21 +594,21 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
+           denom_r4 = press - (1.0 - eps)*esloc_r4
            do k=1,size(qs,3)
              do j=1,size(qs,2)
                do i=1,size(qs,1)
-                 if (denom(i,j,k) > 0.0) then
-                   qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
+                 if (denom_r4(i,j,k) > 0.0) then
+                   qs(i,j,k) = eps*esloc_r4(i,j,k)/denom_r4(i,j,k)
                  else
                    qs(i,j,k) = eps
                  endif
@@ -568,7 +618,7 @@
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -579,21 +629,21 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r8_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r8/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r8_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r8/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
+           denom_r8 = press - (1.0 - eps)*esloc_r8
            do k=1,size(qs,3)
              do j=1,size(qs,2)
                do i=1,size(qs,1)
-                 if (denom(i,j,k) > 0.0) then
-                   qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
+                 if (denom_r8(i,j,k) > 0.0) then
+                   qs(i,j,k) = eps*esloc_r8(i,j,k)/denom_r8(i,j,k)
                  else
                    qs(i,j,k) = eps
                  endif
@@ -603,7 +653,7 @@
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r8_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r8/denom_r8**2
              end select
            endif
          endif ! (present(q))
@@ -634,6 +684,12 @@
      endif
    endif ! (nbad = 0)
 
+   select type (temp)
+   type is (real(kind=r4_kind))
+     deallocate(esloc_r4, desat_r4, denom_r4)
+   type is (real(kind=r8_kind))
+     deallocate(esloc_r8, desat_r8, denom_r8)
+   end select
 
  end subroutine compute_qs_k_3d
 
@@ -652,9 +708,21 @@
  logical,intent(in),                    optional :: es_over_liq
  logical,intent(in),                    optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
+ real(kind=r4_kind), allocatable, dimension(:,:) :: esloc_r4, desat_r4, denom_r4
+ real(kind=r8_kind), allocatable, dimension(:,:) :: esloc_r8, desat_r8, denom_r8
  integer :: i, j
  real    :: hc_loc
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     allocate(esloc_r4(size(temp,1), size(temp,2)))
+     allocate(desat_r4(size(temp,1), size(temp,2)))
+     allocate(denom_r4(size(temp,1), size(temp,2)))
+   type is (real(kind=r8_kind))
+     allocate(esloc_r8(size(temp,1), size(temp,2)))
+     allocate(desat_r8(size(temp,1), size(temp,2)))
+     allocate(denom_r8(size(temp,1), size(temp,2)))
+   end select
 
    if (present(hc)) then
      select type (hc)
@@ -669,34 +737,73 @@
 
    if (present(es_over_liq)) then
      if (present (dqsdT)) then
-       call lookup_es2_des2_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es2_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es2_k (temp, esloc_r8, nbad)
+       end select
      endif
    else if (present(es_over_liq_and_ice)) then
      if (present (dqsdT)) then
-       call lookup_es3_des3_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es3_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es3_k (temp, esloc_r8, nbad)
+       end select
      endif
    else
      if (present (dqsdT)) then
-       call lookup_es_des_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es_k (temp, esloc_r8, nbad)
+       end select
      endif
    endif
 
-   esloc = esloc*hc_loc
+   select type (temp)
+   type is (real(kind=r4_kind))
+     esloc_r4 = esloc_r4*hc_loc
+   type is (real(kind=r8_kind))
+     esloc_r8 = esloc_r8*hc_loc
+   end select
+
    if (present (esat)) then
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = esloc
+       esat = esloc_r4
      type is (real(kind=r8_kind))
-       esat = esloc
+       esat = esloc_r8
      end select
    endif
 
@@ -708,20 +815,20 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
+           denom_r4 = press - (1.0 - eps)*esloc_r4
            do j=1,size(qs,2)
              do i=1,size(qs,1)
-               if (denom(i,j) > 0.0) then
-                 qs(i,j) = eps*esloc(i,j)/denom(i,j)
+               if (denom_r4(i,j) > 0.0) then
+                 qs(i,j) = eps*esloc_r4(i,j)/denom_r4(i,j)
                else
                  qs(i,j) = eps
                endif
@@ -730,7 +837,7 @@
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -741,20 +848,20 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r8_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r8/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r8_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r8/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
+           denom_r8 = press - (1.0 - eps)*esloc_r8
            do j=1,size(qs,2)
              do i=1,size(qs,1)
-               if (denom(i,j) > 0.0) then
-                 qs(i,j) = eps*esloc(i,j)/denom(i,j)
+               if (denom_r8(i,j) > 0.0) then
+                 qs(i,j) = eps*esloc_r8(i,j)/denom_r8(i,j)
                else
                  qs(i,j) = eps
                endif
@@ -763,7 +870,7 @@
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r8_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r8/denom_r8**2
              end select
            endif
          endif ! (present(q))
@@ -794,6 +901,12 @@
      endif
    endif ! (nbad = 0)
 
+   select type (temp)
+   type is (real(kind=r4_kind))
+     deallocate(esloc_r4, desat_r4, denom_r4)
+   type is (real(kind=r8_kind))
+     deallocate(esloc_r8, desat_r8, denom_r8)
+   end select
 
  end subroutine compute_qs_k_2d
 
@@ -812,9 +925,21 @@
  logical,intent(in),                 optional :: es_over_liq
  logical,intent(in),                 optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1)) :: esloc, desat, denom
+ real(kind=r4_kind), allocatable, dimension(:) :: esloc_r4, desat_r4, denom_r4
+ real(kind=r8_kind), allocatable, dimension(:) :: esloc_r8, desat_r8, denom_r8
  integer :: i
  real    :: hc_loc
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     allocate(esloc_r4(size(temp,1)))
+     allocate(desat_r4(size(temp,1)))
+     allocate(denom_r4(size(temp,1)))
+   type is (real(kind=r8_kind))
+     allocate(esloc_r8(size(temp,1)))
+     allocate(desat_r8(size(temp,1)))
+     allocate(denom_r8(size(temp,1)))
+   end select
 
    if (present(hc)) then
      select type (hc)
@@ -829,34 +954,73 @@
 
    if (present(es_over_liq)) then
      if (present (dqsdT)) then
-       call lookup_es2_des2_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es2_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es2_k (temp, esloc_r8, nbad)
+       end select
      endif
    else if (present(es_over_liq_and_ice)) then
      if (present (dqsdT)) then
-       call lookup_es3_des3_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es3_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es3_k (temp, esloc_r8, nbad)
+       end select
      endif
    else
      if (present (dqsdT)) then
-       call lookup_es_des_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es_k (temp, esloc_r8, nbad)
+       end select
      endif
    endif
 
-   esloc = esloc*hc_loc
+   select type (temp)
+   type is (real(kind=r4_kind))
+     esloc_r4 = esloc_r4*hc_loc
+   type is (real(kind=r8_kind))
+     esloc_r8 = esloc_r8*hc_loc
+   end select
+
    if (present (esat)) then
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = esloc
+       esat = esloc_r4
      type is (real(kind=r8_kind))
-       esat = esloc
+       esat = esloc_r8
      end select
    endif
 
@@ -868,19 +1032,19 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
+           denom_r4 = press - (1.0 - eps)*esloc_r4
            do i=1,size(qs,1)
-             if (denom(i) >  0.0) then
-               qs(i) = eps*esloc(i)/denom(i)
+             if (denom_r4(i) >  0.0) then
+               qs(i) = eps*esloc_r4(i)/denom_r4(i)
              else
                qs(i) = eps
              endif
@@ -888,7 +1052,7 @@
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -899,19 +1063,19 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r8_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r8/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r8_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r8/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
+           denom_r8 = press - (1.0 - eps)*esloc_r8
            do i=1,size(qs,1)
-             if (denom(i) >  0.0) then
-               qs(i) = eps*esloc(i)/denom(i)
+             if (denom_r8(i) >  0.0) then
+               qs(i) = eps*esloc_r8(i)/denom_r8(i)
              else
                qs(i) = eps
              endif
@@ -919,7 +1083,7 @@
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r8_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r8/denom_r8**2
              end select
            endif
          endif ! (present(q))
@@ -950,6 +1114,12 @@
      endif
    endif ! (nbad = 0)
 
+   select type (temp)
+   type is (real(kind=r4_kind))
+     deallocate(esloc_r4, desat_r4, denom_r4)
+   type is (real(kind=r8_kind))
+     deallocate(esloc_r8, desat_r8, denom_r8)
+   end select
 
  end subroutine compute_qs_k_1d
 
@@ -968,7 +1138,8 @@
  logical,intent(in),    optional :: es_over_liq
  logical,intent(in),    optional :: es_over_liq_and_ice
 
- real    :: esloc, desat, denom
+ real(kind=r4_kind) :: esloc_r4, desat_r4, denom_r4
+ real(kind=r8_kind) :: esloc_r8, desat_r8, denom_r8
  real    :: hc_loc
 
    if (present(hc)) then
@@ -984,34 +1155,73 @@
 
    if (present(es_over_liq)) then
      if (present (dqsdT)) then
-       call lookup_es2_des2_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es2_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es2_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es2_k (temp, esloc_r8, nbad)
+       end select
      endif
    else if (present(es_over_liq_and_ice)) then
      if (present (dqsdT)) then
-       call lookup_es3_des3_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es3_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es3_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es3_k (temp, esloc_r8, nbad)
+       end select
      endif
    else
      if (present (dqsdT)) then
-       call lookup_es_des_k (temp, esloc, desat, nbad)
-       desat = desat*hc_loc
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
+         desat_r4 = desat_r4*hc_loc
+       type is (real(kind=r8_kind))
+         call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
+         desat_r8 = desat_r8*hc_loc
+       end select
      else
-       call lookup_es_k (temp, esloc, nbad)
+       select type (temp)
+       type is (real(kind=r4_kind))
+         call lookup_es_k (temp, esloc_r4, nbad)
+       type is (real(kind=r8_kind))
+         call lookup_es_k (temp, esloc_r8, nbad)
+       end select
      endif
    endif
 
-   esloc = esloc*hc_loc
+   select type (temp)
+   type is (real(kind=r4_kind))
+     esloc_r4 = esloc_r4*hc_loc
+   type is (real(kind=r8_kind))
+     esloc_r8 = esloc_r8*hc_loc
+   end select
+
    if (present (esat)) then
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = esloc
+       esat = esloc_r4
      type is (real(kind=r8_kind))
-       esat = esloc
+       esat = esloc_r8
      end select
    endif
 
@@ -1023,25 +1233,25 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
-           if (denom > 0.0) then
-             qs = eps*esloc/denom
+           denom_r4 = press - (1.0 - eps)*esloc_r4
+           if (denom_r4 > 0.0) then
+             qs = eps*esloc_r4/denom_r4
            else
              qs = eps
            endif
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -1052,25 +1262,25 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r8_kind))
-             qs = (1.0 + zvir*q)*eps*esloc/press
+             qs = (1.0 + zvir*q)*eps*esloc_r8/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r8_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat/press
+                 dqsdT = (1.0 + zvir*q)*eps*desat_r8/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom = press - (1.0 - eps)*esloc
-           if (denom > 0.0) then
-             qs = eps*esloc/denom
+           denom_r8 = press - (1.0 - eps)*esloc_r8
+           if (denom_r8 > 0.0) then
+             qs = eps*esloc_r8/denom_r8
            else
              qs = eps
            endif
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r8_kind))
-               dqsdT = eps*press*desat/denom**2
+               dqsdT = eps*press*desat_r8/denom_r8**2
              end select
            endif
          endif ! (present(q))
