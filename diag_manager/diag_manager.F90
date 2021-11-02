@@ -226,6 +226,7 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+  USE fms_diag_object_mod, ONLY: fms_diag_object, diag_object_placeholder
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -582,6 +583,14 @@ CONTAINS
 
        END DO
     END IF
+
+    if (use_modern_diag) then
+            call diag_object_placeholder(1)%register &
+       (module_name, field_name, axes, init_time, &
+       long_name, units, missing_value, Range, mask_variant, standard_name, &
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
+    endif
+
   END FUNCTION register_diag_field_array
 
   !> @brief Return field index for subsequent call to send_data.
