@@ -10,8 +10,9 @@ module fms_diag_object_mod
 use diag_data_mod,  only: diag_null
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
+use diag_data_mod,  only: diag_fields_type, diag_files_type
 use fms_diag_yaml_mod, only: is_field_type_null
-use fms_diag_yaml_mod, only: diag_fields_type, diag_files_type, get_diag_table_field
+use fms_diag_yaml_mod, only: diag_yaml 
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 !use diag_util_mod,  only: int_to_cs, logical_to_cs
@@ -21,32 +22,6 @@ use fms2_io_mod
 use iso_c_binding
 
 implicit none
-
-interface operator (<)
-     procedure obj_lt_int
-     procedure int_lt_obj
-end interface
-interface operator (<=)
-     procedure obj_le_int
-     procedure int_le_obj
-end interface
-interface operator (>)
-     procedure obj_gt_int
-     procedure int_gt_obj
-end interface
-interface operator (>=)
-     procedure obj_ge_int
-     procedure int_ge_obj
-end interface
-interface operator (==)
-     procedure obj_eq_int
-     procedure int_eq_obj
-end interface
-interface operator (.ne.)
-     procedure obj_ne_int
-     procedure int_ne_obj
-end interface
-
 
 !> \brief Object that holds all variable information
 type fms_diag_object
@@ -72,7 +47,8 @@ type fms_diag_object
      contains
 !     procedure :: send_data => fms_send_data  !!TODO
      procedure :: init_ob => diag_obj_init
-     procedure :: diag_id_inq => fms_diag_id_inq
+     procedure :: get_id => fms_diag_get_id
+     procedure :: id => fms_diag_get_id
      procedure :: copy => copy_diag_obj
      procedure :: register_meta => fms_register_diag_field_obj
      procedure :: setID => set_diag_id
@@ -119,8 +95,7 @@ integer,private :: MAX_LEN_META
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 public :: fms_diag_object, fms_diag_object_scalar, fms_diag_object_1d
 public :: fms_diag_object_2d, fms_diag_object_3d, fms_diag_object_4d, fms_diag_object_5d
-public :: copy_diag_obj, fms_diag_id_inq
-public :: operator (>),operator (<),operator (>=),operator (<=),operator (==),operator (.ne.)
+public :: copy_diag_obj, fms_diag_get_id
 public :: null_sc, null_1d, null_2d, null_3d, null_4d, null_5d
 public :: fms_diag_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -150,6 +125,7 @@ subroutine diag_obj_init(ob)
  select type (ob)
   class is (fms_diag_object)
      ob%diag_id = diag_not_registered !null_ob%diag_id
+     ob%registered = .false.
  end select
 end subroutine diag_obj_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -173,7 +149,8 @@ subroutine fms_register_diag_field_obj (dobj, modname, varname, axes, time, long
   allocate(character(len=len(modname)) :: dobj%modname)
   dobj%modname = trim(modname)
 !> Grab the information from the diag_table
-  dobj%diag_field = get_diag_table_field(trim(varname))
+!  dobj%diag_field = get_diag_table_field(trim(varname))
+!  dobj%diag_field = diag_yaml%get_diag_field(
   if (is_field_type_null(dobj%diag_field)) then
      dobj%diag_id = diag_not_found
      dobj%vartype = diag_null
@@ -200,6 +177,8 @@ subroutine fms_register_diag_field_obj (dobj, modname, varname, axes, time, long
 
 !     write(6,*)"IKIND for diag_fields(1) is",dobj%diag_fields(1)%ikind
 !     write(6,*)"IKIND for "//trim(varname)//" is ",dobj%diag_field%ikind
+!> Set the registered flag to true
+ dobj%registered = .true.
 end subroutine fms_register_diag_field_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Sets the diag_id.  This can only be done if a variable is unregistered
@@ -300,16 +279,19 @@ select type (objout)
 end select
 end subroutine copy_diag_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!> \brief Returns the diag_id
-integer function fms_diag_id_inq (dobj) result(diag_id)
+!> \brief Returns the ID integer for a variable
+integer function fms_diag_get_id (dobj) result(diag_id)
  class(fms_diag_object)     , intent(inout)            :: dobj
 ! character(*)               , intent(in)               :: varname
- 
- if (.not.allocated(dobj%registered)) then
-     call mpp_error ("fms_what_is_my_id","The diag object was not registered", fatal)
+!> Check if the diag_object registration has been done 
+ if (allocated(dobj%registered)) then
+         !> Return the diag_id if the variable has been registered
+         diag_id = dobj%diag_id
+ else
+!> If the variable is not regitered, then return the unregistered value
+        diag_id = DIAG_NOT_REGISTERED
  endif
-     diag_id = dobj%diag_id
-end function fms_diag_id_inq
+end function fms_diag_get_id
 
 !> Function to return a character (string) representation of the most basic
 !> object identity info. Intended for debugging and warning. The format produced is:
@@ -382,166 +364,5 @@ function diag_obj_get_varname(obj) result (rslt)
     rslt = obj%varname
 end function diag_obj_get_varname
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Operator Overrides !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!> \brief override for checking if object ID is greater than an integer (IDs)
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function obj_gt_int (obj,i) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i >= diag_not_registered) then
-     ll = .false.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else
-     ll = (obj%diag_id > i)
-  endif
-end function obj_gt_int
-!> \brief override for checking if integer (ID) is greater than an object ID
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function int_gt_obj (i,obj) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i <= diag_not_registered) then
-     ll = .false.
-  elseif (.not.allocated(obj)) then
-     ll = .true.
-  else
-     ll = (i > obj%diag_id)
-  endif
-end function int_gt_obj
-!> \brief override for checking if object ID is less than an integer (IDs)
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function obj_lt_int (obj,i) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i > diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj)) then
-     ll = .false.
-  else
-     ll = (obj%diag_id < i)
-  endif
-end function obj_lt_int
-!> \brief override for checking if integer (ID) is less than an object ID
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function int_lt_obj (i,obj) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i >= diag_not_registered) then
-     ll = .false.
-  elseif (.not.allocated(obj)) then
-     ll = .true.
-  else
-     ll = (i < obj%diag_id)
-  endif
-end function int_lt_obj
-!> \brief override for checking if object ID is greater than or equal to an integer (IDs)
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function obj_ge_int (obj,i) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i <= diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else
-     ll = (obj%diag_id >= i)
-  endif
-end function obj_ge_int
-!> \brief override for checking if integer (ID) is greater than or equal to an object ID
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function int_ge_obj (i,obj) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i >= diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else
-     ll = (i >= obj%diag_id)
-  endif
-end function int_ge_obj
-!> \brief override for checking if object ID is less than or equal to an integer (IDs)
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function obj_le_int (obj,i) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i >= diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else
-     ll = (obj%diag_id <= i)
-  endif
-end function obj_le_int
-!> \brief override for checking if integer (ID) is less than or equal to an object ID
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function int_le_obj (i,obj) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i <= diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else
-     ll = (i <= obj%diag_id)
-  endif
-end function int_le_obj
-!> \brief override for checking if object ID is equal to an integer (IDs)
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function obj_eq_int (obj,i) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i == diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else 
-     ll = (obj%diag_id == i)
-  endif
-end function obj_eq_int
-!> \brief override for checking if integer (ID) is equal to an object ID
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function int_eq_obj (i,obj) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i == diag_not_registered) then
-     ll = .true.
-  elseif (.not.allocated(obj) ) then
-     ll = .false.
-  else 
-     ll = (i == obj%diag_id)
-  endif
-end function int_eq_obj
-
-!> \brief override for checking if object ID is not equal to an integer (IDs)
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function obj_ne_int (obj,i) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i == diag_not_registered) then
-     ll = .false.
-  elseif (.not.allocated(obj) ) then
-     ll = .true.
-  else
-     ll = (obj%diag_id .ne. i)
-  endif
-end function obj_ne_int
-
-!> \brief override for checking if integer (ID) is not equal to an object ID
-!> @note unalloacted obj is assumed to equal diag_not_registered
-pure logical function int_ne_obj (i,obj) result(ll)
- class (fms_diag_object), intent(in), allocatable :: obj
- integer,                 intent(in) :: i
-  if (.not.allocated(obj) .and. i == diag_not_registered) then
-     ll = .false.
-  elseif (.not.allocated(obj) ) then
-     ll = .true.
-  else
-     ll = (i .ne. obj%diag_id)
-  endif
-end function int_ne_obj
 
 end module fms_diag_object_mod
