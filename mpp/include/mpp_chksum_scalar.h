@@ -23,11 +23,13 @@
 !> @ingroup mpp
 !> @brief Wrapper routine for scalar checksums
 
+!> @brief Wrapper routine for scalar checksums
+!!
+!> mold is a dummy array to be used by TRANSFER()
+!! must be same TYPE as result
+!! result is i8_kind, which will actually be int ifdef no_8byte_integers
+!! mold and mask_val must be same numBytes, otherwise undefined behavior
 function MPP_CHKSUM_( var, pelist, mask_val )
-!mold is a dummy array to be used by TRANSFER()
-!must be same TYPE as result
-!result is i8_kind, which will actually be int ifdef no_8byte_integers
-  !mold and mask_val must be same numBytes, otherwise undefined behavior
       integer(i8_kind) :: MPP_CHKSUM_
       MPP_TYPE_, intent(in) :: var
       integer, intent(in), optional :: pelist(:)

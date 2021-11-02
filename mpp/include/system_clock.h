@@ -23,10 +23,10 @@
 #define SYSTEM_CLOCK system_clock_mpi
 
 !#######################################################################
+!> There can be one ONE baseline count0 and this routine is
+!! included in multiple places.
+!! mimics F90 SYSTEM_CLOCK intrinsic
 subroutine system_clock_mpi( count, count_rate, count_max )
-! There can be one ONE baseline count0 and this routine is
-! included in multiple places.
-!mimics F90 SYSTEM_CLOCK intrinsic
       integer(i8_kind), intent(out), optional :: count, count_rate, count_max
 !count must return a number between 0 and count_max
       integer(i8_kind), parameter :: maxtick=HUGE(count_max)

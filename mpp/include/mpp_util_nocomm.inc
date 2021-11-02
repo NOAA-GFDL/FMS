@@ -73,10 +73,10 @@ subroutine mpp_error_basic( errortype, errormsg )
 end subroutine mpp_error_basic
 
 !#####################################################################
-!--- makes a PE set out of a PE list. A PE list is an ordered list of PEs
-!--- a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI
-!--- if stride is non-uniform or not a power of 2,
-!--- will return error (not required for MPI but enforced for uniformity)
+!> Makes a PE set out of a PE list. A PE list is an ordered list of PEs
+!! a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI
+!! if stride is non-uniform or not a power of 2,
+!! will return error (not required for MPI but enforced for uniformity)
 function get_peset(pelist)
   integer                       :: get_peset
   integer, intent(in), optional :: pelist(:)
@@ -92,7 +92,7 @@ function get_peset(pelist)
 end function get_peset
 
 !#######################################################################
- !synchronize PEs in list
+!> synchronize PEs in list
 subroutine mpp_sync( pelist, check )
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
@@ -101,9 +101,9 @@ subroutine mpp_sync( pelist, check )
 end subroutine mpp_sync
 
 !#######################################################################
-  !this is to check if current PE's outstanding puts are complete
-  !but we can't use shmem_fence because we are actually waiting for
-  !a remote PE to complete its get
+!> This is to check if current PE's outstanding puts are complete
+!! but we can't use shmem_fence because we are actually waiting for
+!! a remote PE to complete its get
 subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type )
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check

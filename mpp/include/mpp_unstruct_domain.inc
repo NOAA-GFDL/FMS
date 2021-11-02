@@ -25,11 +25,11 @@
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
      type(domain2d), target,     intent(in) :: SG_domain
-     integer,                    intent(in) :: npts_tile(:) ! number of unstructured points on each tile
-     integer,                    intent(in) :: grid_nlev(:) ! number of levels in each unstructured grid.
+     integer,                    intent(in) :: npts_tile(:) !< number of unstructured points on each tile
+     integer,                    intent(in) :: grid_nlev(:) !< number of levels in each unstructured grid.
      integer,                    intent(in) :: ndivs
-     integer,                    intent(in) :: npes_io_group  ! number of processors in a io group. Only pe with same tile_id
-                                                              ! in the same group
+     integer,                    intent(in) :: npes_io_group  !< number of processors in a io group. Only pe with same tile_id
+                                                              !! in the same group
      integer,                    intent(in) :: grid_index(:)
      character(len=*), optional, intent(in) :: name
      integer, dimension(size(npts_tile(:))) :: ndivs_tile, pe_start, pe_end

@@ -28,12 +28,10 @@
 !       ROUTINES TO INITIALIZE/FINALIZE MPP MODULE: mpp_init, mpp_exit        !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !    subroutine mpp_init( flags, in, out, err, log )
-  !      integer, optional, intent(in) :: flags, in, out, err, log
 !> @brief Initialize the @ref mpp_mod module
 subroutine mpp_init( flags,localcomm, alt_input_nml_path )
   integer, optional, intent(in) :: flags
-  integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
+  integer, optional, intent(in) :: localcomm !< dummy here, used only in MPI
   character(len=*), optional, intent(in) :: alt_input_nml_path
   integer                       :: my_pe, num_pes, len, i, logunit
   logical                       :: opened, existed

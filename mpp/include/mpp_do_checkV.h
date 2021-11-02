@@ -21,9 +21,9 @@
 !> @ingroup mpp
 !> @brief Updates data domain of 3D field whose computational domains have been computed
 
+    !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_CHECK_3D_V_(f_addrsx,f_addrsy, domain, check_x, check_y, &
                                    d_type, ke, flags, name)
-!updates data domain of 3D field whose computational domains have been computed
       integer(i8_kind),  intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
       type(domain2d),      intent(in)        :: domain
       type(overlapSpec),   intent(in)        :: check_x, check_y

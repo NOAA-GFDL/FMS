@@ -18,13 +18,14 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+
 !> @file
-!> @ingroup mpp
+!> @addtogroup mpp
 !> @brief Wrapper routine for @ref mpp_chksum interface
 
 !> Wrapper routine for @ref mpp_chksum interface
 !!
-!> @returns i8_kind checksum of var, which will actually be int ifdef no_8byte_integers
+!> @returns i8_kind checksum of var, which will actually be int if no_8byte_integers is defined
 function MPP_CHKSUM_( var, pelist , mask_val)
   integer(i8_kind) :: MPP_CHKSUM_
   integer(MPP_TRANSFER_KIND_) :: mold(1) !< Mold is a dummy array to be used by TRANSFER(),

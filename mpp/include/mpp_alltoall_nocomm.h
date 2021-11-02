@@ -22,7 +22,7 @@
 !> @ingroup mpp
 !> @brief @ref mpp_alltoall routine implementations without MPI
 
-!> Sends data from all to all processes
+!> Sends data from all to all processes, non-mpi version
 subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
     MPP_TYPE_, dimension(:), intent(in) :: sbuf
     MPP_TYPE_, dimension(:), intent(inout) :: rbuf
@@ -43,7 +43,7 @@ subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
 end subroutine MPP_ALLTOALL_
 
 
-!> Sends data from all to all processes with vector displacement
+!> Sends data from all to all processes with vector displacement, non-mpi version
 subroutine MPP_ALLTOALLV_(sbuf, ssize, sdispl, rbuf, rsize, rdispl, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)
     MPP_TYPE_, intent(inout) :: rbuf(:)
@@ -67,7 +67,7 @@ end subroutine MPP_ALLTOALLV_
 
 
 !> Sends data from all to all processes with given data types,
-!! displacements and block sizes
+!! displacements and block sizes. Non-mpi version
 subroutine MPP_ALLTOALLW_(sbuf, ssize, sdispl, stype, &
                           rbuf, rsize, rdispl, rtype, pelist)
     MPP_TYPE_, intent(in) :: sbuf(:)

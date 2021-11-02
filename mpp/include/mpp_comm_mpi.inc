@@ -217,7 +217,8 @@
 end subroutine mpp_init
 
 !#######################################################################
-  !> To be called at the end of a run
+!> Finalizes process termination. To be called at the end of a run.
+!! Certain mpi implementations(openmpi) will fail if this is not called before program termination
 subroutine mpp_exit()
   integer :: i, j, k, n, nmax, istat, out_unit, log_unit
   real    :: t, tmin, tmax, tavg, tstd
@@ -350,10 +351,12 @@ end subroutine mpp_exit
 !                BASIC MESSAGE PASSING ROUTINE: mpp_transmit                  !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !> Broadcasts a character string from the given pe to it's pelist
     subroutine mpp_broadcast_char(data, length, from_pe, pelist )
-      character(len=*), intent(inout) :: data(:)
-      integer, intent(in) :: length, from_pe
-      integer, intent(in), optional :: pelist(:)
+      character(len=*), intent(inout) :: data(:) !< Character string to send
+      integer, intent(in) :: length  !< length of given data to broadcast
+      integer, intent(in) :: from_pe !< pe to broadcast from
+      integer, intent(in), optional :: pelist(:) !< optional pelist to broadcast to
       integer :: n, i, from_rank, out_unit
       character    :: str1D(length*size(data(:)))
       pointer(lptr, str1D)
@@ -1397,7 +1400,8 @@ end subroutine mpp_exit
 #undef MPP_TYPE_
 #undef MPP_TYPE_CREATE_
 
-! NOTE: This should probably not take a pointer, but for now we do this.
+!> Deallocates memory for mpp_type objects
+!! @TODO This should probably not take a pointer, but for now we do this.
 subroutine mpp_type_free(dtype)
     type(mpp_type), pointer, intent(inout) :: dtype
 
