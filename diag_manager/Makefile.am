@@ -48,7 +48,8 @@ libdiag_manager_la_SOURCES = \
   fms_diag_yaml.F90 \
   diag_yaml.h \
   diag_yaml.c \
-  fms_diag_object.F90
+  fms_diag_object.F90 \
+  fms_diag_yaml_object.F90
 
 # Some mods are dependant on other mods in this dir.
 diag_data_mod.$(FC_MODEXT): fms_diag_bbox_mod.$(FC_MODEXT)
@@ -87,6 +88,7 @@ MODFILES = \
   diag_manager_mod.$(FC_MODEXT) \
   include/fms_diag_fieldbuff_update.inc \
   include/fms_diag_fieldbuff_update.fh
+  fms_diag_yaml_object_mod.$(FC_MODEXT) \
   fms_diag_yaml_mod.$(FC_MODEXT) \
   fms_diag_object_mod.$(FC_MODEXT) \
   diag_manager_mod.$(FC_MODEXT)
