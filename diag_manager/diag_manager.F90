@@ -3034,58 +3034,82 @@ CONTAINS
        ! If rmask and missing value present, then insert missing value
        IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
           IF ( need_compute ) THEN
-             DO k = l_start(3), l_end(3)
-                k1 = k - l_start(3) + 1
-                DO j = js, je
-                   DO i = is, ie
-                      IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
-                         i1 = i-l_start(1)-hi+1
-                         j1 =  j-l_start(2)-hj+1
-                         SELECT TYPE (rmask)
-                         TYPE IS (real(kind=r4_kind))
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
                             IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
                                  & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
-                         TYPE IS (real(kind=r8_kind))
-                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
-                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
-                         END SELECT
-                      END IF
+                         END IF
+                      END DO
                    END DO
                 END DO
-             END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
+                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         END IF
+                      END DO
+                   END DO
+                END DO
+             END SELECT
           ELSE IF ( reduced_k_range ) THEN
              ksr= l_start(3)
              ker= l_end(3)
-             DO k= ksr, ker
-                k1 = k - ksr + 1
-                DO j=js, je
-                   DO i=is, ie
-                      SELECT TYPE (rmask)
-                      TYPE IS (real(kind=r4_kind))
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k= ksr, ker
+                   k1 = k - ksr + 1
+                   DO j=js, je
+                      DO i=is, ie
                          IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
                               & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
-                      TYPE IS (real(kind=r8_kind))
-                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
-                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
-                      END SELECT
+                      END DO
                    END DO
                 END DO
-             END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k= ksr, ker
+                   k1 = k - ksr + 1
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             END SELECT
           ELSE
-             DO k=ks, ke
-                DO j=js, je
-                   DO i=is, ie
-                      SELECT TYPE (rmask)
-                      TYPE IS (real(kind=r4_kind))
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k=ks, ke
+                   DO j=js, je
+                      DO i=is, ie
                          IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
                               & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
-                      TYPE IS (real(kind=r8_kind))
-                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
-                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
-                      END SELECT
+                      END DO
                    END DO
                 END DO
-             END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k=ks, ke
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             END SELECT
           END IF
        END IF
 
