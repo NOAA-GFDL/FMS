@@ -209,7 +209,7 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
-public :: fms_c2f_string
+public :: fms_c2f_string, fms_cstring2cpointer
 !public from the old fms_io but not exists here
 public :: string
 
@@ -302,11 +302,19 @@ interface string
 end interface
 !> C functions
   interface
+    !> @brief converts a kind=c_char to type c_ptr
+    pure function fms_cstring2cpointer (cs) result (cp) bind(c, name="cstring2cpointer")
+      import c_char, c_ptr
+        character(kind=c_char), intent(in) :: cs(*) !< C string input
+        type (c_ptr) :: cp !< C pointer
+    end function fms_cstring2cpointer
+
     !> @brief Finds the length of a C-string
     integer(c_size_t) pure function c_strlen(s) bind(c,name="strlen")
       import c_size_t, c_ptr
       type(c_ptr), intent(in), value :: s !< A C-string whose size is desired
     end function
+
     !> @brief Frees a C pointer
     subroutine c_free(ptr) bind(c,name="free")
       import c_ptr
