@@ -23,31 +23,36 @@
 #include <yaml.h>
 #include <stdbool.h>
 
+/* Type to store info about key */
 typedef struct {
-   int key_number;
-   char key[255];
-   char value[255];
-   char parent_name[255];
-   int parent_key;
+   int key_number;        /* Id of this key */
+   char key[255];         /* Name of the key */
+   char value[255];       /* Value of the key */
+   char parent_name[255]; /* Name of the block the key belongs to */
+   int parent_key;        /* Id of the block the key belongs to */
 }key_value_pairs;
 
+/* Type to store all of the keys */
 typedef struct  {
    int nkeys;
    key_value_pairs *keys;
 }yaml_file;
 
+/* Type to store all the yaml files that are opened */
 typedef struct {
    yaml_file *files;
 }file_type;
 
-file_type my_files;
-int nfiles = 0;
+file_type my_files; /* Array of opened yaml files */
+int nfiles = 0;     /* Number of files in the yaml file */
 
+/* @brief  Private c function that gets the number of key-value pairs in a block
+   @return Number of key-value pairs in this block */
 int get_nkeys_binding(int *file_id, int *block_id)
 {
-  int nkeys = 0;
-  int i;
-  int j = *file_id;
+  int nkeys = 0;    /* Number of key-value pairs */
+  int i;            /* For loops */
+  int j = *file_id; /* To minimize the typing :) */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
@@ -58,11 +63,12 @@ int get_nkeys_binding(int *file_id, int *block_id)
 
 }
 
+/* @brief Private c function that gets the ids of the key-value pairs in a block */
 void get_key_ids_binding(int *file_id, int *block_id, int key_ids[*])
 {
-  int i;
-  int key_count = -1;
-  int j = *file_id;
+  int i;              /* For loops */
+  int key_count = -1; /* Number of key-value pairs */
+  int j = *file_id;   /* To minimize the typing :) */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
@@ -75,10 +81,12 @@ void get_key_ids_binding(int *file_id, int *block_id, int key_ids[*])
   return;
 }
 
+/* @brief Private c function that get the key from a key_id in a yaml file
+   @return Name of the key obtained */
 char *get_key(int *file_id, int *key_id)
 {
-   char *key_name;
-   int j = *file_id;
+   char *key_name;     /* Name of the key */
+   int j = *file_id;   /* To minimize the typing :) */
 
   key_name = malloc(sizeof(char) * (strlen(my_files.files[j].keys[*key_id].key) + 1));
   strcpy(key_name, my_files.files[j].keys[*key_id].key);
@@ -86,10 +94,12 @@ char *get_key(int *file_id, int *key_id)
   return key_name;
 }
 
+/* @brief Private c function that get the value from a key_id in a yaml file
+   @return String containing the value obtained */
 char *get_value(int *file_id, int *key_id)
 {
-  char *key_value;
-  int j = *file_id;
+  char *key_value;    /* Value of the key */
+  int j = *file_id;   /* To minimize the typing :) */
 
   key_value = malloc(sizeof(char) * (strlen(my_files.files[j].keys[*key_id].value) + 1));
   strcpy(key_value, my_files.files[j].keys[*key_id].value);
@@ -97,13 +107,15 @@ char *get_value(int *file_id, int *key_id)
   return key_value;
 }
 
+/* @brief Private c function that determines they value of a key in yaml_file
+   @return c pointer with the value obtained */
 char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, int *sucess) /*, char *key_name) */
 {
-  int i;
-  int j = *file_id;
+  int i;              /* For loops */
+  int j = *file_id;   /* To minimize the typing :) */
  
-  char *key_value=NULL;
-  *sucess = 0;
+  char *key_value=NULL; /* Value of the key */
+  *sucess = 0;          /* Flag indicating if the search was sucessful */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
@@ -121,11 +133,13 @@ char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, int *
   return key_value;
 }
 
+/* @brief Private c function that determines the number of blocks with block_name in the yaml file
+   @return Number of blocks with block_name */
 int get_num_blocks_all(int *file_id, char *block_name)
 {
-  int nblocks = 0;
-  int i;
-  int j = *file_id;
+  int nblocks = 0;    /* Number of blocks */
+  int i;              /* For loops */
+  int j = *file_id;   /* To minimize the typing :) */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
@@ -135,25 +149,30 @@ int get_num_blocks_all(int *file_id, char *block_name)
   return nblocks;
 }
 
-int get_num_blocks_child(int *file_id, char *block_name, int *parent_key_id)
+/* @brief Private c function that determines the number of blocks with block_name that belong to
+   a parent block with parent_block_id in the yaml file
+   @return Number of blocks with block_name */
+int get_num_blocks_child(int *file_id, char *block_name, int *parent_block_id)
 {
-  int nblocks = 0;
-  int i;
-  int j = *file_id;
+  int nblocks = 0;    /* Number of blocks */
+  int i;              /* For loops */
+  int j = *file_id;   /* To minimize the typing :) */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
-     if(strcmp(my_files.files[j].keys[i].parent_name, block_name) == 0 && my_files.files[j].keys[i].parent_key == *parent_key_id) nblocks = nblocks + 1;
+     if(strcmp(my_files.files[j].keys[i].parent_name, block_name) == 0 && my_files.files[j].keys[i].parent_key == *parent_block_id) nblocks = nblocks + 1;
   }
 
   return nblocks;
 }
 
+
+/* @brief Private c function that gets the the ids of the blocks with block_name in the yaml file */
 void get_block_ids_all(int *file_id, char *block_name, int block_ids[*])
 {
-  int i;
-  int nblocks = -1;
-  int j = *file_id;
+  int i;              /* For loops */
+  int nblocks = -1;   /* Number of blocks */
+  int j = *file_id;   /* To minimize the typing :) */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
@@ -165,11 +184,13 @@ void get_block_ids_all(int *file_id, char *block_name, int block_ids[*])
   return;
 }
 
+/* @brief Private c function that gets the the ids of the blocks with block_name and that
+   belong to a parent block id in the yaml file */
 void get_block_ids_child(int *file_id, char *block_name, int block_ids[*], int *parent_key_id )
 {
-  int i;
-  int nblocks = -1;
-  int j = *file_id;
+  int i;              /* For loops */
+  int nblocks = -1;   /* Number of blocks */
+  int j = *file_id;   /* To minimize the typing :) */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
@@ -181,44 +202,49 @@ void get_block_ids_child(int *file_id, char *block_name, int block_ids[*], int *
   return;
 }
 
+/* @brief Private c function to determine if a block_id is valid */
 bool is_valid_block_id(int *file_id, int *block_id)
 {
    /* If the block id it not in the allowed range is not a valid block id */
    if (*block_id <= -1 || *block_id > my_files.files[*file_id].nkeys) {return false;}
 
    /* If the block id has an empty parent name then it is not a valid block id */
-   if (strcmp(my_files.files[*file_id].keys[*block_id].parent_name, "") == 0) {return false;} 
+   if (*block_id != 0 && strcmp(my_files.files[*file_id].keys[*block_id].parent_name, "") == 0) {return false;}
    return true;
 }
 
+/* @brief Private c function to determine if a key_id is valid */
 bool is_valid_key_id(int *file_id, int *key_id)
 {
-   if (*key_id > -1 && *key_id < my_files.files[*file_id].nkeys) {return true;}
+   if (*key_id > -1 && *key_id <= my_files.files[*file_id].nkeys) {return true;}
    else { return false;}
 }
 
+/* @brief Private c function to determine if a file_id is valid */
 bool is_valid_file_id(int *file_id)
 {
    if (*file_id > -1 && *file_id < nfiles) {return true;}
    else { return false;}
 }
 
+/* @brief Private c function that opens and parses a yaml file and saves it in a struct
+   @return Flag indicating if the read was sucessful */
 bool open_and_parse_file_wrap(char *filename, int *file_id)
 {
   yaml_parser_t parser;
   yaml_token_t  token;
   FILE *file;
 
-  bool is_key = false;
-  char key_value[255];
-  int layer = 0;
-  int key_count=0;
-  int parent[10];
-  int current_parent;
-  char layer_name[10][255];
-  char current_layername[255];
-  int i;
-  int j;
+  bool is_key = false;         /* Flag indicating if the current token in a key */
+  char key_value[255];         /* Value of a key */
+  int layer = 0;               /* Current layer (block level) */
+  int key_count=0;             /* Current number of keys */
+  int parent[10];              /* Ids of blocks */
+  int current_parent;          /* Id of the current block */
+  char layer_name[10][255];    /* Array of block names */
+  char current_layername[255]; /* Name of the current block */
+  int i;                       /* To minimize the typing :) */
+  int j;                       /* To minimize the typing :) */
 
   if (nfiles == 0 )
   {
@@ -312,10 +338,12 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
   yaml_token_delete(&token);
   yaml_parser_delete(&parser);
 
+  /*
   for ( i = 1; i <= my_files.files[j].nkeys; i++ ) {
        printf("Key_number:%i Parent_key:%i Parent_name:%s Key:%s Value:%s \n", my_files.files[j].keys[i].key_number, my_files.files[j].keys[i].parent_key, my_files.files[j].keys[i].parent_name, my_files.files[j].keys[i].key, my_files.files[j].keys[i].value);
   }
   printf("/\n");
+   */
 
   nfiles = nfiles + 1;
 /*  printf("closing file: %s\n", filename); */

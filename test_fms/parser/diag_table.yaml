@@ -8,6 +8,8 @@ diag_files:
      unlimdim: time
      varlist:
      - varName: tdata
+       reduction: False
+       module: mullions
        mullions: 10
        fill_value: -999.9
      - varName: pdata

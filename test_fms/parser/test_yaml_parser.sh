@@ -20,15 +20,16 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/data_override directory.
+# execute tests in the test_fms/parser directory.
 
 # Set common test settings.
 . ../test_common.sh
 
-# Run the ongrid test case with 2 halos in x and y
 touch input.nml
 
 run_test test_yaml_parser 1 $parser_skip
+run_test parser_demo 1 $parser_skip
+run_test parser_demo2 1 $parser_skip
 
 printf "&check_crashes_nml \n missing_file = .true. \n/" | cat > input.nml
 run_test check_crashes 1 $parser_skip && echo "It worked?"

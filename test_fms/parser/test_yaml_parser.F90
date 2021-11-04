@@ -1,3 +1,23 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+!> @brief  This programs tests the public subroutines in parser/yaml_parser.F90
 program test_read_and_parse_file
 
 #ifdef use_yaml
@@ -8,23 +28,24 @@ use platform_mod
 
 implicit none
 
-integer :: yaml_file_id1, nfiles, nvariables
-integer, allocatable :: file_ids(:)
-integer, allocatable :: variable_ids(:)
-integer :: yaml_file_id2, nentries
-integer, allocatable :: entries_ids(:)
-integer :: i, j, k !< For do loops
-integer :: zero
-character(len=20) :: string_buffer
-integer(kind=i4_kind) :: i4_buffer
-integer(kind=i8_kind) :: i8_buffer
-real(kind=r4_kind) :: r4_buffer
-real(kind=r8_kind) :: r8_buffer
-integer :: nkeys
-integer, allocatable :: key_ids(:)
-character(len=20) :: key_name
-character(len=20) :: key_value
-logical :: wut
+integer               :: yaml_file_id1   !< file id of a yaml file
+integer               :: nfiles          !< number of files
+integer               :: nvariables      !< number of variables
+integer, allocatable  :: file_ids(:)     !< array of file ids
+integer, allocatable  :: variable_ids(:) !< array of variable ids
+integer               :: yaml_file_id2   !< file id of a yaml file
+integer               :: nentries        !< number of entries
+integer, allocatable  :: entries_ids(:)  !< array of entries ids
+integer               :: zero            !< dummy integer buffer
+character(len=20)     :: string_buffer   !< string buffer
+integer(kind=i4_kind) :: i4_buffer       !< i4 buffer
+integer(kind=i8_kind) :: i8_buffer       !< i8 buffer
+real(kind=r4_kind)    :: r4_buffer       !< r4 buffer
+real(kind=r8_kind)    :: r8_buffer       !< r8 buffer
+integer               :: nkeys           !< number of keys
+integer, allocatable  :: key_ids(:)      !< array of key ids
+character(len=20)     :: key_name        !< the name of the key
+character(len=20)     :: key_value       !< the value of a key
 
 call fms_init
 
@@ -59,7 +80,7 @@ if (nvariables .ne. 2) call mpp_error(FATAL, "There should only be 2 variables i
 !< Test get_block_ids
 allocate(file_ids(nfiles))
 call get_block_ids(yaml_file_id1, "diag_files", file_ids)
-if(file_ids(1) .ne. 3 .or. file_ids(2) .ne. 19) call mpp_error(FATAL, "The file_ids are wrong!")
+if(file_ids(1) .ne. 3 .or. file_ids(2) .ne. 21) call mpp_error(FATAL, "The file_ids are wrong!")
 
 !< Test to see if a diffrent yaml file id will work
 allocate(entries_ids(nentries))
@@ -69,7 +90,7 @@ if(entries_ids(1) .ne. 1 .or. entries_ids(2) .ne. 8) call mpp_error(FATAL, "The 
 !< Try the parent block id optional argument
 allocate(variable_ids(nvariables))
 call get_block_ids(yaml_file_id1, "varlist", variable_ids, parent_block_id=3)
-if (variable_ids(1) .ne. 9 .or. variable_ids(2) .ne. 13) call mpp_error(FATAL, "The variable_ids are wrong!")
+if (variable_ids(1) .ne. 9 .or. variable_ids(2) .ne. 15) call mpp_error(FATAL, "The variable_ids are wrong!")
 
 !< Error check: *_ids is not the correct size
 
@@ -105,16 +126,14 @@ if (trim(string_buffer) .ne. "") call mpp_error(FATAL, "string_buffer was set wh
 
 !< Test nkeys
 nkeys = get_nkeys(yaml_file_id1, variable_ids(1))
-if (nkeys .ne. 3) call mpp_error(FATAL, "The number of keys was not read correctly")
+if (nkeys .ne. 5) call mpp_error(FATAL, "The number of keys was not read correctly")
 
 !< -----------------------------------
 
 !< Test get_key_ids
 allocate(key_ids(nkeys))
 call get_key_ids(yaml_file_id1, variable_ids(1), key_ids)
-if (key_ids(1) .ne. 10 .or. key_ids(2) .ne. 11 .or. key_ids(3) .ne. 12) call mpp_error(FATAL, "The key ids obtained are wrong")
-
-!< Error check: *_ids is not the correct size
+if (key_ids(1) .ne. 10 .or. key_ids(2) .ne. 11 .or. key_ids(3) .ne. 12 .or. key_ids(4) .ne. 13 .or. key_ids(5) .ne. 14) call mpp_error(FATAL, "The key ids obtained are wrong")
 
 !< -----------------------------------
 
