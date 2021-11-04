@@ -7,35 +7,155 @@ use fms_mod, only : fms_init, fms_end
 implicit none
 
 integer :: io_status
-logical :: missing_file        = .false.
-logical :: bad_conversion      = .false.
-logical :: missing_key         = .false.
-logical :: wrong_buffer_size   = .false.
+logical :: missing_file         = .false.
+logical :: bad_conversion       = .false.
+logical :: missing_key          = .false.
+logical :: wrong_buffer_size_key_id    = .false.
+logical :: wrong_buffer_size_block_id = .false.
+logical :: get_key_name_bad_key_id  = .false.
+logical :: get_block_ids_bad_id = .false.
 logical :: get_key_name_bad_id = .false.
+logical :: get_key_value_bad_id = .false.
+logical :: get_num_blocks_bad_id = .false.
+logical :: get_value_from_key_bad_id = .false.
+logical :: get_nkeys_bad_id = .false.
+logical :: get_key_ids_bad_id = .false.
+logical :: get_key_value_bad_key_id = .false.
+logical :: get_key_ids_bad_block_id = .false.
+logical :: get_nkeys_bad_block_id = .false.
+logical :: get_block_ids_bad_block_id = .false.
+logical :: get_num_blocks_bad_block_id = .false.
+logical :: get_value_from_key_bad_block_id = .false.
 
-namelist / check_crashes_nml / missing_file, bad_conversion, missing_key, wrong_buffer_size, get_key_name_bad_id
+namelist / check_crashes_nml / missing_file, bad_conversion, missing_key, get_block_ids_bad_id, &
+                               get_key_name_bad_id, get_key_value_bad_id, get_num_blocks_bad_id, get_value_from_key_bad_id, &
+                               get_nkeys_bad_id, get_key_ids_bad_id, &
+                               get_key_name_bad_key_id, get_key_value_bad_key_id, &
+                               get_key_ids_bad_block_id, get_nkeys_bad_block_id, get_block_ids_bad_block_id, get_num_blocks_bad_block_id, &
+                               get_value_from_key_bad_block_id, &
+                               wrong_buffer_size_key_id, wrong_buffer_size_block_id
 
 call fms_init
 
 read (input_nml_file, check_crashes_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>check_crashes: Error reading input.nml')
 
-!< Bad file id
-if (missing_file)        call check_read_and_parse_file_missing
-if (bad_conversion)      call check_bad_conversion
-if (missing_key)         call check_missing_key
-if (wrong_buffer_size)   call check_wrong_buffer_size
-if (get_key_name_bad_id) call check_get_key_name_bad_id
+if (missing_file)                    call check_read_and_parse_file_missing
+if (get_block_ids_bad_id)            call check_get_block_ids_bad_id
+if (get_key_name_bad_id)             call check_get_key_name_bad_id
+if (get_key_value_bad_id)            call check_get_key_value_bad_id
+if (get_num_blocks_bad_id)           call check_get_num_blocks_bad_id
+if (get_value_from_key_bad_id)       call check_get_value_from_key_bad_id
+if (get_nkeys_bad_id)                call check_get_nkeys_bad_id
+if (get_key_ids_bad_id)              call check_get_key_ids_bad_id
+if (bad_conversion)                  call check_bad_conversion
+if (missing_key)                     call check_missing_key
+if (wrong_buffer_size_key_id)        call check_wrong_buffer_size_key_id
+if (wrong_buffer_size_block_id)      call check_wrong_buffer_size_block_id
+if (get_key_name_bad_key_id)         call check_get_key_name_bad_key_id
+if (get_key_value_bad_key_id)        call check_get_key_value_bad_key_id
+if (get_key_ids_bad_block_id)        call check_get_key_ids_bad_block_id
+if (get_nkeys_bad_block_id)          call check_get_nkeys_bad_block_id
+if (get_block_ids_bad_block_id)      call check_get_block_ids_bad_block_id
+if (get_num_blocks_bad_block_id)     call check_get_num_blocks_bad_block_id
+if (get_value_from_key_bad_block_id) call check_get_value_from_key_bad_block_id
 
 call fms_end
 
 contains
+subroutine check_get_key_ids_bad_block_id
+   integer :: yaml_file_id
+   integer :: key_ids(10)
+
+   yaml_file_id = open_and_parse_file("diag_table.yaml")
+   call get_key_ids (yaml_file_id, -40, key_ids)
+
+end subroutine check_get_key_ids_bad_block_id
+
+subroutine check_get_nkeys_bad_block_id
+   integer :: yaml_file_id
+   integer :: nkeys
+
+   yaml_file_id = open_and_parse_file("diag_table.yaml")
+   nkeys = get_nkeys(yaml_file_id, 9999)
+
+end subroutine check_get_nkeys_bad_block_id
+
+subroutine check_get_block_ids_bad_block_id
+   integer :: yaml_file_id
+   integer :: block_ids(10)
+
+   yaml_file_id = open_and_parse_file("diag_table.yaml")
+   call get_block_ids(yaml_file_id, "varList", block_ids, parent_block_id=-40)
+
+end subroutine check_get_block_ids_bad_block_id
+
+subroutine check_get_num_blocks_bad_block_id
+   integer :: yaml_file_id
+   integer :: nblocks
+
+   yaml_file_id = open_and_parse_file("diag_table.yaml")
+
+   nblocks = get_num_blocks(yaml_file_id, "varList", parent_block_id=-30)
+
+end subroutine check_get_num_blocks_bad_block_id
+
+subroutine check_get_value_from_key_bad_block_id
+   integer :: yaml_file_id
+   integer :: key_value
+
+   yaml_file_id = open_and_parse_file("diag_table.yaml")
+   call get_value_from_key(yaml_file_id, 999, "mullions", key_value)
+
+end subroutine check_get_value_from_key_bad_block_id
 
 !> @brief This is to check if the parser crashes correctly if user tries to open a missing file. 
 subroutine check_read_and_parse_file_missing
    integer :: yaml_file_id
    yaml_file_id = open_and_parse_file("missing")
 end subroutine check_read_and_parse_file_missing
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid file id to get_block_ids
+subroutine check_get_block_ids_bad_id
+   integer :: block_ids(10)
+   call get_block_ids(-40, "diagFiles", block_ids)
+end subroutine check_get_block_ids_bad_id
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid file id to get_key_name
+subroutine check_get_key_name_bad_id
+   character(len=10) :: buffer
+   call get_key_name(-45, 1, buffer)
+end subroutine check_get_key_name_bad_id
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid file id to get_key_value
+subroutine check_get_key_value_bad_id
+   character(len=10) :: buffer
+   call get_key_value(-45, 1, buffer)
+end subroutine check_get_key_value_bad_id
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid file id to get_num_blocks
+subroutine check_get_num_blocks_bad_id
+   integer :: nblocks
+   nblocks = get_num_blocks(-45, "diagFiles")
+end subroutine check_get_num_blocks_bad_id
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid file id to get_value_from_key
+subroutine check_get_value_from_key_bad_id
+   character(len=10) :: string_buffer
+   call get_value_from_key(-45, 1, "varName", string_buffer)
+end subroutine check_get_value_from_key_bad_id
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid file id to get_nkeys
+subroutine check_get_nkeys_bad_id
+   integer :: nkeys
+   nkeys = get_nkeys(-45, 1)
+end subroutine check_get_nkeys_bad_id
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid file id to get_key_ids
+subroutine check_get_key_ids_bad_id
+   integer :: key_ids(10)
+   call get_key_ids(-45, 1, key_ids)
+end subroutine check_get_key_ids_bad_id
 
 !> @brief This is to check if the parser crashes correctly if user sends a buffer of the wrong type
 subroutine check_bad_conversion
@@ -56,23 +176,42 @@ subroutine check_missing_key
    call get_value_from_key(yaml_file_id, 9, "missing", buffer)
 end subroutine check_missing_key
 
-subroutine check_get_key_name_bad_id
+!> @brief This is to check if the parser crashes correctly if user sends an invalid key id to get_key_name
+subroutine check_get_key_name_bad_key_id
+    integer :: yaml_file_id
+    character(len=10) :: buffer
+
+   yaml_file_id = open_and_parse_file("diag_table.yaml")
+   call get_key_name(yaml_file_id, 666, buffer)
+
+end subroutine check_get_key_name_bad_key_id
+
+!> @brief This is to check if the parser crashes correctly if user sends an invalid key id to get_key_value
+subroutine check_get_key_value_bad_key_id
     integer :: yaml_file_id
     character(len=10) :: buffer
 
    yaml_file_id = open_and_parse_file("diag_table.yaml")
    call get_key_value(yaml_file_id, 666, buffer)
 
-end subroutine check_get_key_name_bad_id
+end subroutine check_get_key_value_bad_key_id
 
-subroutine check_wrong_buffer_size
+subroutine check_wrong_buffer_size_key_id
    integer :: yaml_file_id
-   integer :: file_ids(1)
+   integer :: key_ids(1)
 
    yaml_file_id = open_and_parse_file("diag_table.yaml")
-   call get_block_ids(yaml_file_id, "diag_files", file_ids)
-   print *, file_ids
+   call get_key_ids(yaml_file_id, 19, key_ids)
 
-end subroutine check_wrong_buffer_size
+end subroutine check_wrong_buffer_size_key_id
+
+subroutine check_wrong_buffer_size_block_id
+   integer :: yaml_file_id
+   integer :: block_ids(10)
+
+   yaml_file_id = open_and_parse_file("diag_table.yaml")
+   call get_block_ids(yaml_file_id, "diag_files", block_ids)
+
+end subroutine check_wrong_buffer_size_block_id
 #endif
 end program check_crashes

@@ -107,10 +107,6 @@ if (trim(string_buffer) .ne. "") call mpp_error(FATAL, "string_buffer was set wh
 nkeys = get_nkeys(yaml_file_id1, variable_ids(1))
 if (nkeys .ne. 3) call mpp_error(FATAL, "The number of keys was not read correctly")
 
-!! Try to get the number of keys from a variable_id that doesn't exist
-zero = get_nkeys(yaml_file_id1, 666)
-if (zero .ne. 0) call mpp_error(FATAL, "The number of keys was not read correctly for a block id that does not exist")
-
 !< -----------------------------------
 
 !< Test get_key_ids
@@ -129,8 +125,6 @@ if ((trim(key_name) .ne. "varName")) call mpp_error(FATAL, "get_key_name did not
 !< Test get_key_value
 call get_key_value(yaml_file_id1, key_ids(1), key_value)
 if ((trim(key_value) .ne. "tdata")) call mpp_error(FATAL, "get_key_name did not output the correct name")
-
-!< Error check wrong id
 
 deallocate(key_ids)
 deallocate(variable_ids)

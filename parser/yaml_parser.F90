@@ -69,23 +69,42 @@ function open_and_parse_file_wrap(filename, file_id) bind(c) &
    logical(kind=c_bool) :: sucess !< Flag indicating if the read was sucessful
 end function open_and_parse_file_wrap
 
-!> @brief c function that gets the number of key-value pairs in a block (see yaml_parser_binding.c)
+!> @brief Private c function that checks if a file_id is valid (see yaml_parser_binding.c)
+!! @return Flag indicating if the file_id is valid
+function is_valid_file_id(file_id) bind(c) &
+   result(is_valid)
+   use iso_c_binding, only: c_char, c_int, c_bool
+   integer(kind=c_int), intent(in) :: file_id !< File id corresponding to the yaml file that was opened
+   logical(kind=c_bool) :: is_valid !< Flag indicating if the file_id is valid
+end function is_valid_file_id
+
+!> @brief Private c function that gets the number of key-value pairs in a block (see yaml_parser_binding.c)
 !! @return Number of key-value pairs in this block
-function get_nkeys(file_id, block_id) bind(c) &
+function get_nkeys_binding(file_id, block_id) bind(c) &
    result(nkeys)
    use iso_c_binding, only: c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id corresponding to the yaml file that was opened
    integer(kind=c_int), intent(in) :: block_id !< Id of the parent_block
    integer(kind=c_int) :: nkeys
-end function get_nkeys
+end function get_nkeys_binding
 
-!> @brief c function that gets the ids of the key-value pairs in a block (see yaml_parser_binding.c)
-subroutine get_key_ids(file_id, block_id, key_ids) bind(c)
+!> @brief Private c function that gets the ids of the key-value pairs in a block (see yaml_parser_binding.c)
+subroutine get_key_ids_binding(file_id, block_id, key_ids) bind(c)
    use iso_c_binding, only: c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id corresponding to the yaml file that was opened
    integer(kind=c_int), intent(in) :: block_id !< Id of the parent_block
    integer(kind=c_int), intent(inout) :: key_ids(*) !< Ids of the key-value pairs
-end subroutine get_key_ids
+end subroutine get_key_ids_binding
+
+!> @brief Private c function that checks if a key_id is valid (see yaml_parser_binding.c)
+!! @return Flag indicating if the key_id is valid
+function is_valid_key_id(file_id, key_id) bind(c) &
+   result(is_valid)
+   use iso_c_binding, only: c_char, c_int, c_bool
+   integer(kind=c_int), intent(in) :: file_id !< File id corresponding to the yaml file that was opened
+   integer(kind=c_int), intent(in) :: key_id !< Key id to check if valid
+   logical(kind=c_bool) :: is_valid !< Flag indicating if the file_id is valid
+end function is_valid_key_id
 
 !> @brief Private c function that get the key from a key_id in a yaml file
 !! @return Name of the key obtained
@@ -116,7 +135,7 @@ function get_value_from_key_wrap(file_id, block_id, key_name, sucess) bind(c) &
    integer(kind=c_int), intent(in) :: file_id !< File id of the yaml file to search
    integer(kind=c_int), intent(in) :: block_id !< ID corresponding to the block you want the key for
    character(kind=c_char), intent(in) :: key_name !< Name of the key you want the value for
-   logical(kind=c_bool), intent(out) :: sucess !< Flag indicating if the call was sucessful
+   integer(kind=c_int), intent(out) :: sucess !< Flag indicating if the call was sucessful
    type(c_ptr) :: key_value2
 end function get_value_from_key_wrap
 
@@ -164,6 +183,16 @@ subroutine get_block_ids_child(file_id, block_name, block_ids, parent_block_id) 
    integer(kind=c_int) :: parent_block_id !< Id of the parent block
 end subroutine get_block_ids_child
 
+!> @brief Private c function that checks if a block_id is valid (see yaml_parser_binding.c)
+!! @return Flag indicating if the block_id is valid
+function is_valid_block_id(file_id, block_id) bind(c) &
+   result(is_valid)
+   use iso_c_binding, only: c_char, c_int, c_bool
+   integer(kind=c_int), intent(in) :: file_id !< File id corresponding to the yaml file that was opened
+   integer(kind=c_int), intent(in) :: block_id !< Block id to check if valid
+   logical(kind=c_bool) :: is_valid !< Flag indicating if the file_id is valid
+end function is_valid_block_id
+
 end interface
 
 !> @addtogroup yaml_parser_mod
@@ -191,6 +220,9 @@ subroutine get_key_name(file_id, key_id, key_name)
    integer, intent(in) :: file_id !< File id of the yaml file to search
    character(len=*), intent(out) :: key_name
 
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_key_name call is invalid! Check your call.")
+   if (.not. is_valid_key_id(file_id, key_id)) call mpp_error(FATAL, "The key id in your get_key_name call is invalid! Check your call.")
+
    key_name = fms_c2f_string(get_key(file_id, key_id))
 
 end subroutine get_key_name
@@ -200,6 +232,9 @@ subroutine get_key_value(file_id, key_id, key_value)
    integer, intent(in) :: key_id !< Id of the key-value pair of interest
    integer, intent(in) :: file_id !< File id of the yaml file to search
    character(len=*), intent(out) :: key_value
+
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_key_value call is invalid! Check your call.")
+   if (.not. is_valid_key_id(file_id, key_id)) call mpp_error(FATAL, "The key id in your get_key_value call is invalid! Check your call.")
 
    key_value = fms_c2f_string(get_value(file_id, key_id))
 
@@ -218,14 +253,18 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
    character(len=255) :: buffer !< String buffer with the value
 
    type(c_ptr) :: c_buffer !< c pointer with the value
-   logical(kind=c_bool) :: sucess !< Flag indicating if the value was obtained sucessfully
+   integer(kind=c_int) :: sucess !< Flag indicating if the value was obtained sucessfully
    logical :: optional !< Flag indicating that the key was optional
    integer :: err_unit !< integer with io error
 
+   optional = .false.
    if (present(is_optional)) optional = is_optional
 
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_value_from_key call is invalid! Check your call.")
+   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_value_from_key call is invalid! Check your call.")
+
    c_buffer = get_value_from_key_wrap(file_id, block_id, key_name, sucess)
-   if (sucess) then
+   if (sucess == 1) then
      buffer = fms_c2f_string(c_buffer)
 
      select type (key_value)
@@ -247,8 +286,9 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
        call mpp_error(FATAL, "The type of your buffer in your get_value_from_key call for key "//trim(key_name)//&
                             &" is not supported. Only i4, i8, r4, r8 and strings are supported.")
      end select
+   else
+     if(.not. optional) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
    endif
-   if(.not. sucess .and. .not. optional) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
 
 end subroutine get_value_from_key_0d
 
@@ -259,20 +299,24 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
    character(len=*), intent(in) :: key_name !< Name of the key you want the value for
    class(*), intent(inout):: key_value(:) !< Value of the key
    logical, intent(in), optional :: is_optional !< Flag indicating if it is okay for they key' to not exist.
-                                                !! If the key does not exist key_value will not be set, so it 
+                                                !! If the key does not exist key_value will not be set, so it
                                                 !! is the user's responsibility to initialize it before the call
 
    character(len=255) :: buffer !< String buffer with the value
 
    type(c_ptr) :: c_buffer !< c pointer with the value
-   logical(kind=c_bool) :: sucess !< Flag indicating if the value was obtained sucessfully
+   integer(kind=c_int) :: sucess !< Flag indicating if the value was obtained sucessfully
    logical :: optional !< Flag indicating that the key was optional
    integer :: err_unit !< integer with io error
 
+   optional=.false.
    if (present(is_optional)) optional = is_optional
 
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_value_from_key call is invalid! Check your call.")
+   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_value_from_key call is invalid! Check your call.")
+
    c_buffer = get_value_from_key_wrap(file_id, block_id, key_name, sucess)
-   if (sucess) then
+   if (sucess == 1) then
      buffer = fms_c2f_string(c_buffer)
 
      select type (key_value)
@@ -294,9 +338,9 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
        call mpp_error(FATAL, "The type of your buffer in your get_value_from_key call for key "//trim(key_name)//&
                             &" is not supported. Only i4, i8, r4, r8 and strings are supported.")
      end select
+   else
+     if(.not. optional) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
    endif
-   if(.not. sucess .and. .not. optional) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
-
 end subroutine get_value_from_key_1d
 
 !> @brief Determines the number of blocks with block_name in the yaml file
@@ -310,9 +354,12 @@ function get_num_blocks(file_id, block_name, parent_block_id) &
     integer, intent(in), optional :: parent_block_id !< Id of the parent block
     integer :: nblocks
 
+    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_num_blocks call is invalid! Check your call.")
+
     if (.not. present(parent_block_id)) then
        nblocks=get_num_blocks_all(file_id, block_name)
     else
+       if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, "The parent_block id in your get_num_blocks call is invalid! Check your call.")
        nblocks=get_num_blocks_child(file_id, block_name, parent_block_id)
     endif
 end function get_num_blocks
@@ -325,13 +372,56 @@ subroutine get_block_ids(file_id, block_name, block_ids, parent_block_id)
     character(len=*), intent(in) :: block_name !< The name of the block you are looking for
     integer, intent(inout) :: block_ids(:) !< Id of blocks with block_name
     integer, intent(in), optional :: parent_block_id !< Id of the parent_block
+    integer :: nblocks_id
+    integer :: nblocks
+
+    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_block_ids call is invalid! Check your call.")
+
+    nblocks_id = size(block_ids)
+    nblocks = get_num_blocks(file_id, block_name, parent_block_id)
+    if (nblocks .ne. nblocks_id) call mpp_error(FATAL, "The size of your block_ids array is not correct")
 
     if (.not. present(parent_block_id)) then
        call get_block_ids_all(file_id, block_name, block_ids)
     else
+       if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, "The parent_block id in your get_block_ids call is invalid! Check your call.")
        call get_block_ids_child(file_id, block_name, block_ids, parent_block_id)
     endif
 end subroutine get_block_ids
+
+!> @brief Gets the number of key-value pairs in a block
+!! @return Number of key-value pairs in this block
+function get_nkeys(file_id, block_id) &
+   result(nkeys)
+   integer, intent(in) :: file_id !< File id corresponding to the yaml file that was opened
+   integer, intent(in) :: block_id !< Id of the parent_block
+   integer :: nkeys
+
+    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_nkeys call is invalid! Check your call.")
+    if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_nkeys call is invalid! Check your call.")
+
+    nkeys = get_nkeys_binding(file_id, block_id)
+end function get_nkeys
+
+!> @brief Gets the ids of the key-value pairs in a block
+subroutine get_key_ids (file_id, block_id, key_ids)
+   integer, intent(in) :: file_id !< File id corresponding to the yaml file that was opened
+   integer, intent(in) :: block_id !< Id of the parent_block
+   integer, intent(inout) :: key_ids(:) !< Ids of the key-value pairs
+
+   integer :: nkey_ids !< Size of key_ids
+   integer :: nkeys !< Actual number of keys
+
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_key_ids call is invalid! Check your call.")
+   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_key_ids call is invalid! Check your call.")
+
+   nkey_ids = size(key_ids)
+   nkeys = get_nkeys(file_id, block_id)
+
+   if (nkeys .ne. nkey_ids) call mpp_error(FATAL, "The size of your key_ids array is not correct.")
+
+   call get_key_ids_binding (file_id, block_id, key_ids)
+end subroutine get_key_ids
 
 #endif
 end module yaml_parser_mod

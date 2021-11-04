@@ -43,7 +43,7 @@ typedef struct {
 file_type my_files;
 int nfiles = 0;
 
-int get_nkeys(int *file_id, int *block_id)
+int get_nkeys_binding(int *file_id, int *block_id)
 {
   int nkeys = 0;
   int i;
@@ -58,17 +58,17 @@ int get_nkeys(int *file_id, int *block_id)
 
 }
 
-void get_key_ids(int *file_id, int *block_id, int key_ids[*])
+void get_key_ids_binding(int *file_id, int *block_id, int key_ids[*])
 {
   int i;
-  int nkeys = -1;
+  int key_count = -1;
   int j = *file_id;
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
      if(my_files.files[j].keys[i].parent_key == *block_id && !strcmp(my_files.files[j].keys[i].parent_name, "") ){
-        nkeys = nkeys + 1;
-        key_ids[nkeys] = i;
+        key_count = key_count + 1;
+        key_ids[key_count] = i;
      }
   }
 
@@ -97,13 +97,13 @@ char *get_value(int *file_id, int *key_id)
   return key_value;
 }
 
-char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, bool *sucess) /*, char *key_name) */
+char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, int *sucess) /*, char *key_name) */
 {
   int i;
   int j = *file_id;
  
- char *key_value=NULL;
- *sucess = false;
+  char *key_value=NULL;
+  *sucess = 0;
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
   {
@@ -113,7 +113,7 @@ char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, bool 
         {
            key_value = malloc(sizeof(char) * (strlen(my_files.files[j].keys[i].value) + 1));
            strcpy(key_value, my_files.files[j].keys[i].value);
-           *sucess = true;
+           *sucess = 1;
            break;
         }
      }
@@ -179,6 +179,28 @@ void get_block_ids_child(int *file_id, char *block_name, int block_ids[*], int *
      }
   }
   return;
+}
+
+bool is_valid_block_id(int *file_id, int *block_id)
+{
+   /* If the block id it not in the allowed range is not a valid block id */
+   if (*block_id <= -1 || *block_id > my_files.files[*file_id].nkeys) {return false;}
+
+   /* If the block id has an empty parent name then it is not a valid block id */
+   if (strcmp(my_files.files[*file_id].keys[*block_id].parent_name, "") == 0) {return false;} 
+   return true;
+}
+
+bool is_valid_key_id(int *file_id, int *key_id)
+{
+   if (*key_id > -1 && *key_id < my_files.files[*file_id].nkeys) {return true;}
+   else { return false;}
+}
+
+bool is_valid_file_id(int *file_id)
+{
+   if (*file_id > -1 && *file_id < nfiles) {return true;}
+   else { return false;}
 }
 
 bool open_and_parse_file_wrap(char *filename, int *file_id)

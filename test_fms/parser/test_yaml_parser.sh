@@ -51,6 +51,34 @@ if [ $? -eq 0 ]; then
   exit 3
 fi
 
+printf "&check_crashes_nml \n get_block_ids_bad_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_num_blocks_bad_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_nkeys_bad_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_key_ids_bad_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
 printf "&check_crashes_nml \n get_key_name_bad_id = .true. \n/" | cat > input.nml
 run_test check_crashes 1 $parser_skip && echo "It worked?"
 if [ $? -eq 0 ]; then
@@ -58,9 +86,80 @@ if [ $? -eq 0 ]; then
   exit 3
 fi
 
-#printf "&check_crashes_nml \n wrong_buffer_size = .true. \n/" | cat > input.nml
-#run_test check_crashes 1 && echo "It worked?"
-#if [ $? -eq 0 ]; then
-#  echo "The test should have failed"
-#  exit 3
-#fi
+printf "&check_crashes_nml \n get_key_value_bad_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_value_from_key_bad_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_key_name_bad_key_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_key_value_bad_key_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+###
+printf "&check_crashes_nml \n get_key_ids_bad_block_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_nkeys_bad_block_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_block_ids_bad_block_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_num_blocks_bad_block_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n get_value_from_key_bad_block_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 $parser_skip && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n wrong_buffer_size_key_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
+
+printf "&check_crashes_nml \n wrong_buffer_size_block_id = .true. \n/" | cat > input.nml
+run_test check_crashes 1 && echo "It worked?"
+if [ $? -eq 0 ]; then
+  echo "The test should have failed"
+  exit 3
+fi
