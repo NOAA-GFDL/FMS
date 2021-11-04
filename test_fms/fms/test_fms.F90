@@ -55,7 +55,11 @@ program test_fms
 ! Test the c string to c pointer conversion
  test = "                "
  answer = '100'
- Cstring =  "100             "//c_null_char
+ Cstring =  "                "
+ Cstring(1) = "1"
+ Cstring(2) = "0"
+ Cstring(3) = "0"
+ Cstring(17) = c_null_char
  call mpp_error(NOTE,"Testing fms_cstring2cpointer and fms_c2f_string")
 ! test = fms_c2f_string(fms_cstring2cpointer(c_char_"100             "//c_null_char))
  test = fms_c2f_string(fms_cstring2cpointer(Cstring))
