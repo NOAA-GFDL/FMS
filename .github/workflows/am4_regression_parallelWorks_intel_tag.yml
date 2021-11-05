@@ -1,4 +1,4 @@
-name: Tag CI libFMS and AM4 regression
+name: Tag CI libFMS with AM4 regression
   
 on:
    push:
@@ -14,15 +14,12 @@ jobs:
       max-parallel: 3
       matrix:
         include:
-# Turn this back on when fixed 
-                - runname: FMS with intel 18
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel18StartClusters.py main
-# Runs on FMS_CONTAINER_CI cluster
-                - runname: FMS with intel 2021 container
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel21StartClusters.py main
-# Runs AM4
-                - runname: AM4 regression
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel21StartClusters.py azcluster_noaa
+# Runs AM4 with intel18 on AM4_intel18 
+                - runname: AM4 build and run with intel 18
+                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel18StartClusters.py am4_intel18
+# Runs AM4 using a container to build and run the model with intel 21
+                - runname: AM4 regression with intel 21 and answer check
+                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel21StartClusters.py am4_container
 
     steps:
                 - name: FMS make check on paralellWorks
@@ -37,10 +34,8 @@ jobs:
     strategy:
       matrix:
         include:
-                - cluster: azcluster_noaa
-                - cluster: FMS_CONTAINER_CI
-                - cluster: fms_intel18_ci
-
+                - cluster: am4_intel18
+                - cluster: am4_container
     steps:
                 - name: Turn off cluster
                   env:

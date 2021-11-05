@@ -83,9 +83,6 @@ id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
 id_sst = register_diag_field  ('test_diag_manager_mod', 'sst', (/id_x,id_y,id_z/), Time, 'SST', 'K')
 id_ice = register_diag_field  ('test_diag_manager_mod', 'ice', (/id_x,id_y/), Time, 'ICE', 'm')
 
-! Send the first time's data
-used = send_data(id_sst, sst, Time)
-
 ! Increase the time and send data
 do i=1,23
 Time = set_date(2,1,1,i,0,0)

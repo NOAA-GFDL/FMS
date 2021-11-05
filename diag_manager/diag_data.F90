@@ -53,7 +53,6 @@ use platform_mod
 
   USE time_manager_mod, ONLY: time_type
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
-  USE mpp_io_mod, ONLY: fieldtype
   USE fms_mod, ONLY: WARNING, write_version_number
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
@@ -99,12 +98,12 @@ use platform_mod
   !> @brief Diagnostic field type
   !> @ingroup diag_data_mod
   TYPE diag_fieldtype
-     TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
      TYPE(domainUG) :: DomainU
      REAL :: miss, miss_pack
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count
+     character(len=128)      :: fieldname !< Fieldname
   END TYPE diag_fieldtype
 
   !> @brief Attribute type for diagnostic fields

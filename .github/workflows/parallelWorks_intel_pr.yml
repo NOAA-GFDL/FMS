@@ -1,6 +1,6 @@
 name: Pull Request CI libFMS with intel18 and intel21
   
-on: pull_request 
+on: [pull_request,workflow_dispatch]
 jobs:
    parallelWorks:
     runs-on: [self-hosted, pw-platform]
