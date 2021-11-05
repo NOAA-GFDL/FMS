@@ -33,6 +33,7 @@ module gradient_mod
 
 use mpp_mod,       only : mpp_error, FATAL
 use constants_mod, only : RADIUS
+use platform_mod
 
 implicit none
 private
@@ -65,11 +66,11 @@ subroutine gradient_cubic(pin, dx, dy, area, edge_w, edge_e, edge_s, edge_n,    
                           en_n, en_e, vlon, vlat, grad_x, grad_y, on_west_edge, &
                           on_east_edge, on_south_edge, on_north_edge)
 
-  real,    dimension(:,:  ), intent(in ) :: pin, dx, dy, area
-  real,    dimension(:    ), intent(in ) :: edge_w, edge_e, edge_s, edge_n
-  real,    dimension(:,:,:), intent(in ) :: en_n, en_e
-  real,    dimension(:,:,:), intent(in ) :: vlon, vlat
-  real,    dimension(:,:  ), intent(out) :: grad_x, grad_y
+  real(r8_kind),    dimension(:,:  ), intent(in ) :: pin, dx, dy, area
+  real(r8_kind),    dimension(:    ), intent(in ) :: edge_w, edge_e, edge_s, edge_n
+  real(r8_kind),    dimension(:,:,:), intent(in ) :: en_n, en_e
+  real(r8_kind),    dimension(:,:,:), intent(in ) :: vlon, vlat
+  real(r8_kind),    dimension(:,:  ), intent(out) :: grad_x, grad_y
   logical,                   intent(in ) :: on_west_edge, on_east_edge, on_south_edge, on_north_edge
   integer :: nx, ny
 
@@ -104,11 +105,11 @@ end subroutine gradient_cubic
 
 subroutine calc_cubic_grid_info(xt, yt, xc, yc, dx, dy, area, edge_w, edge_e, edge_s, edge_n, &
                            en_n, en_e, vlon, vlat, on_west_edge, on_east_edge, on_south_edge, on_north_edge )
-  real,    dimension(:,:  ), intent(in ) :: xt, yt, xc, yc
-  real,    dimension(:,:  ), intent(out) :: dx, dy, area
-  real,    dimension(:    ), intent(out) :: edge_w, edge_e, edge_s, edge_n
-  real,    dimension(:,:,:), intent(out) :: en_n, en_e
-  real,    dimension(:,:,:), intent(out) :: vlon, vlat
+  real(r8_kind),    dimension(:,:  ), intent(in ) :: xt, yt, xc, yc
+  real(r8_kind),    dimension(:,:  ), intent(out) :: dx, dy, area
+  real(r8_kind),    dimension(:    ), intent(out) :: edge_w, edge_e, edge_s, edge_n
+  real(r8_kind),    dimension(:,:,:), intent(out) :: en_n, en_e
+  real(r8_kind),    dimension(:,:,:), intent(out) :: vlon, vlat
   logical,                   intent(in ) :: on_west_edge, on_east_edge, on_south_edge, on_north_edge
   integer :: nx, ny, nxp, nyp
 
