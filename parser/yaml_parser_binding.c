@@ -85,26 +85,16 @@ void get_key_ids_binding(int *file_id, int *block_id, int key_ids[*])
    @return Name of the key obtained */
 char *get_key(int *file_id, int *key_id)
 {
-   char *key_name;     /* Name of the key */
-   int j = *file_id;   /* To minimize the typing :) */
-
-  key_name = malloc(sizeof(char) * (strlen(my_files.files[j].keys[*key_id].key) + 1));
-  strcpy(key_name, my_files.files[j].keys[*key_id].key);
-
-  return key_name;
+  int j = *file_id;   /* To minimize the typing :) */
+  return my_files.files[j].keys[*key_id].key;
 }
 
 /* @brief Private c function that get the value from a key_id in a yaml file
    @return String containing the value obtained */
 char *get_value(int *file_id, int *key_id)
 {
-  char *key_value;    /* Value of the key */
   int j = *file_id;   /* To minimize the typing :) */
-
-  key_value = malloc(sizeof(char) * (strlen(my_files.files[j].keys[*key_id].value) + 1));
-  strcpy(key_value, my_files.files[j].keys[*key_id].value);
-
-  return key_value;
+  return my_files.files[j].keys[*key_id].value;
 }
 
 /* @brief Private c function that determines they value of a key in yaml_file
@@ -114,7 +104,6 @@ char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, int *
   int i;              /* For loops */
   int j = *file_id;   /* To minimize the typing :) */
  
-  char *key_value=NULL; /* Value of the key */
   *sucess = 0;          /* Flag indicating if the search was sucessful */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
@@ -123,14 +112,12 @@ char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, int *
      {
         if( strcmp(my_files.files[j].keys[i].key, key_name) == 0)
         {
-           key_value = malloc(sizeof(char) * (strlen(my_files.files[j].keys[i].value) + 1));
-           strcpy(key_value, my_files.files[j].keys[i].value);
            *sucess = 1;
            break;
         }
      }
   }
-  return key_value;
+  if (*sucess == 1) {return my_files.files[j].keys[i].value;} else {return "";}
 }
 
 /* @brief Private c function that determines the number of blocks with block_name in the yaml file
