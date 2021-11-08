@@ -932,7 +932,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      allocate(overlap%recv(nrecv))
      do n = 1, nrecv
         call copy_nest_overlap( overlap%recv(n), overLaplist(n) )
-!        call print_nest_overlap(overlap%recv(n), "C2F RECV")
+        if(DEBUG) call print_nest_overlap(overlap%recv(n), "C2F RECV")
         call deallocate_nest_overlap( overLaplist(n) )
      enddo
   endif
@@ -942,7 +942,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      allocate(overlap%send(nsend))
      do n = 1, nsend
         call copy_nest_overlap( overlap%send(n), overLaplist(n) )
-!       call print_nest_overlap(overlap%send(n), "C2F SEND")
+        if(DEBUG) call print_nest_overlap(overlap%send(n), "C2F SEND")
         call deallocate_nest_overlap( overLaplist(n) )
      enddo
   endif
@@ -1159,7 +1159,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
         allocate(overlap%send(nsend))
         do n = 1, nsend
            call copy_nest_overlap(overlap%send(n), overlaplist(n) )
-!           call print_nest_overlap(overlap%send(n), "SEND")
+           if(DEBUG) call print_nest_overlap(overlap%send(n), "SEND")
            call deallocate_nest_overlap(overlaplist(n))
         enddo
      endif
@@ -1219,7 +1219,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
            allocate(overlap%recv(nrecv))
            do n = 1, nrecv
               call copy_nest_overlap(overlap%recv(n), overlaplist(n) )
-!              call print_nest_overlap(overlap%recv(n), "RECV")
+              if(DEBUG) call print_nest_overlap(overlap%recv(n), "RECV")
               call deallocate_nest_overlap( overLaplist(n) )
            enddo
         endif
@@ -1701,118 +1701,6 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
   end subroutine get_coarse_index
 
-  !--- this routine will get number of nest.
-  subroutine get_nnest(domain, num_nest, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
-                       x_refine, y_refine, nnest, t_coarse, ncross_coarse, rotate_coarse,                     &
-                       is_coarse, ie_coarse, js_coarse, je_coarse, is_fine, ie_fine, js_fine, je_fine)
-    type(domain2D), intent(in) :: domain
-    integer, intent(in)  :: num_nest, istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
-    integer, intent(in)  :: tile_coarse(:)
-    integer, intent(in)  :: x_refine, y_refine
-    integer, intent(out) :: nnest, is_coarse(:), ie_coarse(:), js_coarse(:), je_coarse(:)
-    integer, intent(out) :: is_fine(:), ie_fine(:), js_fine(:), je_fine(:)
-    integer, intent(out) :: t_coarse(:), ncross_coarse(:), rotate_coarse(:)
-    integer :: is, ie, js, je, tile, isg, ieg, jsg, jeg
-    integer :: ncross, rotate, i1, i2
-    integer :: is_c, ie_c, js_c, je_c
-    integer :: n, iadd, jadd
-
-
-    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
-    nnest = 0
-    do n = 1, num_nest
-       is = istart_coarse(n); ie = iend_coarse(n)
-       js = jstart_coarse(n); je = jend_coarse(n)
-       tile = tile_coarse(n)
-       iadd = 0 ; jadd = 0
-       ncross = 0
-       rotate = 0
-       do while ( ie .GE. is .AND. je .GE. js)
-          nnest = nnest+1
-          t_coarse(nnest) = tile
-          ncross_coarse(nnest) = ncross
-          rotate_coarse(nnest) = rotate
-          !--- rotate should be 0, 90 or -90.
-          if(rotate .NE. 0 .AND. rotate .NE. 90 .AND. rotate .NE. -90) then
-             call mpp_error(FATAL, "get_nnest: roate should be 0, 90 or -90")
-          endif
-          if( ieg .GE. ie .AND. jeg .GE. je) then
-             is_coarse(nnest) = is; ie_coarse(nnest) = ie
-             js_coarse(nnest) = js; je_coarse(nnest) = je
-             call get_coarse_index(rotate, is_coarse(nnest), ie_coarse(nnest), js_coarse(nnest), je_coarse(nnest), &
-                                   iadd, jadd, is_c, ie_c, js_c, je_c)
-             is = ie + 1; js = je + 1
-          else if( ieg .GE. ie ) then  ! jeg < je, will cross the north edge
-             is_coarse(nnest) = is; ie_coarse(nnest) = ie
-             js_coarse(nnest) = js; je_coarse(nnest) = jeg
-             call get_coarse_index(rotate, is_coarse(nnest), ie_coarse(nnest), js_coarse(nnest), je_coarse(nnest), &
-                                   iadd, jadd, is_c, ie_c, js_c, je_c)
-             if(rotate ==0) then
-                jadd = jadd + jeg
-             else
-                iadd = iadd + ieg
-             endif
-             js = 1; je = je-jeg
-             ncross = ncross+1
-             if(mod(tile,2) ==0) then ! tile 2 4 6
-                tile = tile + 1
-                if(tile>6) tile=tile-6
-             else ! rotate 90 degree
-                tile = tile + 2
-                if(tile>6) tile=tile-6
-                i1 = is; i2 = ie
-                is = js; ie = je
-                js = i1; je = i2
-                rotate = rotate + 90
-             endif
-
-
-          else if( jeg .GE. je ) then ! ieg < ie, will cross the east edge
-             is_coarse(nnest) = is; ie_coarse(nnest) = ieg
-             js_coarse(nnest) = js; je_coarse(nnest) = je
-             call get_coarse_index(rotate, is_coarse(nnest), ie_coarse(nnest), js_coarse(nnest), je_coarse(nnest), &
-                                   iadd, jadd, is_c, ie_c, js_c, je_c)
-             if(rotate ==0) then
-                iadd = iadd + ieg
-             else
-                jadd = jadd + jeg
-             endif
-             is = 1; ie = ie-ieg
-             ncross = ncross+1
-             if(mod(tile,2) ==0) then ! rotate -90
-                tile = tile + 2
-                if(tile>6) tile=tile-6
-                i1 = is; i2 = ie
-                is = js; ie = je
-                js = i1; je = i2
-                rotate = rotate - 90
-             else
-                tile = tile + 1
-                if(tile>6) tile=tile-6
-             endif
-          else
-             call mpp_error(FATAL, "get_nnest: do not support cross the corner")
-          endif
-
-          !--- is_c:ie_c,js_c:je_c must be inside istart_coarse(n):iend_coarse(n), jstart_coarse(n):jend_coarse(n)
-          if(is_c < istart_coarse(n)) call mpp_error(FATAL, "get_nnest: is_c < istart_coarse")
-          if(ie_c > iend_coarse(n)) call mpp_error(FATAL, "get_nnest: ie_c > iend_coarse")
-          if(js_c < jstart_coarse(n)) call mpp_error(FATAL, "get_nnest: js_c < jstart_coarse")
-          if(je_c > jend_coarse(n)) call mpp_error(FATAL, "get_nnest: je_c > jend_coarse")
-          is_fine(nnest) = (is_c - istart_coarse(n)) * x_refine + 1
-          ie_fine(nnest) = (ie_c - istart_coarse(n)+1) * x_refine
-          js_fine(nnest) = (js_c - jstart_coarse(n)) * y_refine + 1
-          je_fine(nnest) = (je_c - jstart_coarse(n)+1) * y_refine
-
-          !--- it should not cross the edge more than 3 times.
-          if(ncross > 3) call mpp_error(FATAL, "get_nnest: nncross > 3")
-       enddo
-    enddo
-
-
-  end subroutine get_nnest
-
-
   !> This routine will convert the global coarse grid index to nest grid index.
   function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
                        ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out, rotate_out)
@@ -2093,62 +1981,6 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
 
   end function convert_index_to_coarse
-
-
-  subroutine convert_index_back(domain, ishift, jshift, rotate, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out)
-    type(domain2D), intent(in) :: domain
-    integer, intent(in)  :: ishift, jshift
-    integer, intent(in)  :: is_in, ie_in, js_in, je_in, rotate
-    integer, intent(out) :: is_out, ie_out, js_out, je_out
-    integer :: isg, ieg, jsg, jeg
-    integer :: ncross
-
-    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
-    ncross = 0
-    if( je_in > jeg+jshift .and. ie_in > ieg+ishift ) then
-       call mpp_error(FATAL,"convert_index_back:  je_in > jeg .and. ie_in > ieg")
-    else if (je_in > jeg+jshift) then
-       ncross = je_in/jeg
-       select case(rotate)
-       case(0)
-          is_out = is_in
-          ie_out = ie_in
-          js_out = js_in - ncross*jeg
-          je_out = je_in - ncross*jeg
-       case(90)
-          is_out = js_in - ncross*jeg
-          ie_out = je_in - ncross*jeg
-          js_out = jeg - ie_in + 1
-          je_out = jeg - is_in + 1
-       case default
-          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or 90 when je_in>jeg")
-       end select
-    else if (ie_in > ieg+ishift) then
-       ncross = ie_in/ieg
-       select case(rotate)
-       case(0)
-          is_out = is_in - ncross*ieg
-          ie_out = ie_in - ncross*ieg
-          js_out = js_in
-          je_out = je_in
-       case(-90)
-          js_out = is_in - ncross*ieg
-          je_out = ie_in - ncross*ieg
-          is_out = ieg - je_in + 1
-          ie_out = ieg - js_in + 1
-       case default
-          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or -90 when ie_in>ieg")
-       end select
-    else
-       is_out = is_in
-       ie_out = ie_in
-       js_out = js_in
-       je_out = je_in
-    endif
-
-  end subroutine convert_index_back
-
-
 
   function get_nest_vector_recv(nest_domain, update_x, update_y, ind_x, ind_y, start_pos, pelist)
     type(nest_level_type), intent(in) :: nest_domain

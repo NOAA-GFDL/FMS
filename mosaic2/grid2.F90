@@ -368,7 +368,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
                 'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
         end select
         ! convert area to m2
-        cellarea = cellarea*4.*PI*radius**2
+        cellarea = real(cellarea*4.*PI*radius**2, r4_kind)
      case(VERSION_2, VERSION_3)
         if (present(domain)) then
            call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
@@ -600,7 +600,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         deallocate(nest_tile_name)
      end select ! version
      ! convert area to m2
-     area = area*4.*PI*radius**2
+     area = real(area*4.*PI*radius**2, r4_kind)
   !! R8 version ###################################
   type is (real(r8_kind))
      select case (grid_version   )

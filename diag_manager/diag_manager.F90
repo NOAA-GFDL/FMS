@@ -3466,7 +3466,7 @@ CONTAINS
     INTEGER, INTENT(in) :: file
     TYPE(time_type), INTENT(in) :: time
 
-    INTEGER :: j, i, input_num, freq, status, loop1, loop2
+    INTEGER :: j, i, input_num, freq, status
     INTEGER :: stdout_unit
     LOGICAL :: reduced_k_range, need_compute, local_output
     CHARACTER(len=128) :: message

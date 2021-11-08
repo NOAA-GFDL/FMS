@@ -61,25 +61,13 @@ public :: calc_mosaic_grid_area
 public :: calc_mosaic_grid_great_circle_area
 public :: is_inside_polygon
 
+!--- external c routines
+external get_grid_area, get_grid_great_circle_area, grad_c2l, calc_c2l_grid_info
+
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
 contains
-
-!#######################################################################
-
-!> @brief Initialize the mosaic_mod.
-!!
-!! Initialization routine for the mosaic module. It writes the
-!! version information to the log file.
-subroutine mosaic_init()
-
-  if (module_is_initialized) return
-  module_is_initialized = .TRUE.
-
-!--------- write version number and namelist ------------------
-
-end subroutine mosaic_init
 
 !###############################################################################
 

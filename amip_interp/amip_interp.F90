@@ -102,7 +102,8 @@ private
 !----------------- Public interfaces -----------------------------------
 
 public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
-       amip_interp_del, amip_interp_type, assignment(=)
+       amip_interp_del, amip_interp_type, assignment(=), get_sst_grid_size, &
+       get_sst_grid_boundary
 
 !-----------------------------------------------------------------------
 !----------------- Public Data -----------------------------------
@@ -892,7 +893,7 @@ endif
 
     tice_crit_k = tice_crit
     if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + TFREEZE
-    ice_crit = nint((tice_crit_k-TFREEZE)*100.)
+    ice_crit = int((tice_crit_k-TFREEZE)*100., I2_KIND)
 
 !   ---- set up file dependent variable ----
 !   ----   global file name   ----
@@ -1282,7 +1283,6 @@ endif
      integer(I2_KIND) :: idat(mobs,nobs)
      integer :: nrecords, yr, mo, dy, ierr, k
      integer, dimension(:), allocatable :: ryr, rmo, rdy
-     character(len=38)   :: mesg
      character(len=maxc) :: ncfilename, ncfieldname
      type(FmsNetcdfFile_t), pointer :: fileobj
 
@@ -1358,7 +1358,7 @@ endif
      else
           call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-     idat =  nint(dat) ! reconstruct packed data for reproducibility
+     idat =  int(dat, I2_KIND) ! reconstruct packed data for reproducibility
 
    !---- unpacking of data ----
 
@@ -1380,13 +1380,7 @@ endif
         endif
      endif
 
-
      return
-
-10   write (mesg, 20) unit
-     call error_mesg ('read_record in amip_interp_mod', mesg, FATAL)
-
-20   format ('end of file reading unit ',i2,' (sst data)')
 
    end subroutine read_record
 
@@ -1461,33 +1455,6 @@ integer :: i, dif(3)
    enddo
 
 end function date_gt
-
-!#######################################################################
-
-subroutine print_dates (Time, Date1, Udate1,  &
-                              Date2, Udate2, fmonth)
-
-   type (time_type), intent(in) :: Time
-   type (date_type), intent(in) :: Date1, Udate1, Date2, Udate2
-   real,             intent(in) :: fmonth
-
-   integer :: year, month, day, hour, minute, second
-
-   call get_date (Time, year, month, day, hour, minute, second)
-
-   write (*,10) year,month,day, hour,minute,second
-   write (*,20) fmonth
-   write (*,30) Date1, Udate1
-   write (*,40) Date2, Udate2
-
-10 format (/,' date(y/m/d h:m:s) = ',i4,2('/',i2.2),1x,2(i2.2,':'),i2.2)
-20 format (' fmonth = ',f9.7)
-30 format (' date1(y/m/d) = ',i4,2('/',i2.2),6x, &
-                    'used = ',i4,2('/',i2.2),6x  )
-40 format (' date2(y/m/d) = ',i4,2('/',i2.2),6x, &
-                    'used = ',i4,2('/',i2.2),6x  )
-
-end subroutine print_dates
 
 !#######################################################################
 

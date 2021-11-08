@@ -542,7 +542,7 @@ end subroutine horiz_interp_spherical_init
        do i=1,map_dst_xsize
           continue_search=.true.
           step = 1
-          step_size = sqrt(real(map_src_size) )
+          step_size = int( sqrt(real(map_src_size) ))
           do while (continue_search .and. step_size > 0)
              do while (step <= map_src_size .and. continue_search)
                 ! count land points as nearest neighbors

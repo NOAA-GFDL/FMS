@@ -984,7 +984,7 @@ end function rarray_to_char
           total_time = clock_summary(ct)%event(k)%total_time
           total_time_all = total_time_all + total_time
           total_data = clock_summary(ct)%event(k)%total_data
-          total_calls = clock_summary(ct)%event(k)%total_cnts
+          total_calls = int(clock_summary(ct)%event(k)%total_cnts)
 
           write(SD_UNIT,1000) clock_summary(ct)%event(k)%name(1:9) // ':'
 
@@ -1011,7 +1011,7 @@ end function rarray_to_char
                 u = 'MB'
              endif
 
-             msg_cnt = clock_summary(ct)%event(k)%msg_size_cnts(j)
+             msg_cnt = int(clock_summary(ct)%event(k)%msg_size_cnts(j))
              msg_size = &
                   s*(clock_summary(ct)%event(k)%msg_size_sums(j)/real(msg_cnt))
              eff_BW = (1.0e-6)*( clock_summary(ct)%event(k)%msg_size_sums(j) / &
@@ -1031,7 +1031,7 @@ end function rarray_to_char
 
           total_time = clock_summary(ct)%event(MAX_EVENT_TYPES)%total_time
           total_time_all = total_time_all + total_time
-          total_calls = clock_summary(ct)%event(MAX_EVENT_TYPES)%total_cnts
+          total_calls = int(clock_summary(ct)%event(MAX_EVENT_TYPES)%total_cnts)
 
           write(SD_UNIT,1000) clock_summary(ct)%event(MAX_EVENT_TYPES)%name(1:9) // ':'
 
@@ -1098,7 +1098,7 @@ end function rarray_to_char
              clock_summary(ct)%event(j)%total_cnts = &
                   clock_summary(ct)%event(j)%total_cnts + 1
 
-             event_size = clocks(ct)%events(j)%bytes(i)
+             event_size = int(clocks(ct)%events(j)%bytes(i))
 
              k = find_bin(event_size)
 

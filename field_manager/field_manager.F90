@@ -1377,11 +1377,6 @@ integer                      :: find_field_index_new
 character(len=*), intent(in) :: field_name !< The path to the name of the field that an index is
                              !! being requested for.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: i
-
 find_field_index_new = NO_FIELD
 
 find_field_index_new = fm_get_index(field_name)

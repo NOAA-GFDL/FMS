@@ -1559,10 +1559,6 @@ module mpp_domains_mod
      module procedure mpp_pass_UG_to_SG_l4_3d
   end interface
 
-
-!!$     module procedure mpp_do_update_ad_i4_3d
-!!$  end interface
-!
   !> @ingroup mpp_domains_mod
   interface mpp_do_update_ad
      module procedure mpp_do_update_ad_r8_3d
@@ -1649,10 +1645,6 @@ module mpp_domains_mod
      module procedure mpp_redistribute_i8_3D
      module procedure mpp_redistribute_i8_4D
      module procedure mpp_redistribute_i8_5D
-!!$     module procedure mpp_redistribute_l8_2D
-!!$     module procedure mpp_redistribute_l8_3D
-!!$     module procedure mpp_redistribute_l8_4D
-!!$     module procedure mpp_redistribute_l8_5D
      module procedure mpp_redistribute_r4_2D
      module procedure mpp_redistribute_r4_3D
      module procedure mpp_redistribute_r4_4D
@@ -1667,10 +1659,6 @@ module mpp_domains_mod
      module procedure mpp_redistribute_i4_3D
      module procedure mpp_redistribute_i4_4D
      module procedure mpp_redistribute_i4_5D
-!!$     module procedure mpp_redistribute_l4_2D
-!!$     module procedure mpp_redistribute_l4_3D
-!!$     module procedure mpp_redistribute_l4_4D
-!!$     module procedure mpp_redistribute_l4_5D
   end interface
 
   !> @ingroup mpp_domains_mod
@@ -1680,13 +1668,11 @@ module mpp_domains_mod
      module procedure mpp_do_redistribute_c8_3D
 #endif
      module procedure mpp_do_redistribute_i8_3D
-     module procedure mpp_do_redistribute_l8_3D
      module procedure mpp_do_redistribute_r4_3D
 #ifdef OVERLOAD_C4
      module procedure mpp_do_redistribute_c4_3D
 #endif
      module procedure mpp_do_redistribute_i4_3D
-     module procedure mpp_do_redistribute_l4_3D
   end interface
 
 !> Parallel checking between two ensembles which run on different set pes at the same time<br>
@@ -1783,8 +1769,11 @@ module mpp_domains_mod
   interface mpp_global_field_ad
      module procedure mpp_global_field2D_r8_2d_ad
      module procedure mpp_global_field2D_r8_3d_ad
-     module procedure mpp_global_field2D_r8_4d_ad
+
+     module procedure mpp_global_field2d_r8_4d_ad
+
      module procedure mpp_global_field2D_r8_5d_ad
+
 #ifdef OVERLOAD_C8
      module procedure mpp_global_field2D_c8_2d_ad
      module procedure mpp_global_field2D_c8_3d_ad
@@ -1802,7 +1791,7 @@ module mpp_domains_mod
      module procedure mpp_global_field2D_r4_2d_ad
      module procedure mpp_global_field2D_r4_3d_ad
      module procedure mpp_global_field2D_r4_4d_ad
-     module procedure mpp_global_field2D_r4_5d_ad
+     module procedure mpp_global_field2d_r4_5d_ad
 #ifdef OVERLOAD_C4
      module procedure mpp_global_field2D_c4_2d_ad
      module procedure mpp_global_field2D_c4_3d_ad

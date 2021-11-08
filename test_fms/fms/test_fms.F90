@@ -15,6 +15,7 @@ program test_fms
  use fms_mod, only : fms_init, string, fms_end
  use fms_mod, only : fms_c2f_string
  use test_fms_mod
+ use fms
  use, intrinsic :: iso_c_binding
 
  integer :: i !< Integer
@@ -25,6 +26,8 @@ program test_fms
 
  call mpp_init()
  call fms_init()
+
+ print *, stdlog() 
 
  test = "                "
  answer = "          "

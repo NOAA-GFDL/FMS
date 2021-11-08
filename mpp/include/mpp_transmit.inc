@@ -42,6 +42,11 @@
       pointer( ptrp, put_data1D )
       pointer( ptrg, get_data1D )
 
+#ifdef MPP_TYPE_LOGICAL
+      get_data = .false.
+#else
+      get_data = 0
+#endif
       ptrp = LOC(put_data)
       ptrg = LOC(get_data)
       put_len=1; if(PRESENT(plen))put_len=plen
@@ -64,6 +69,11 @@
 
       pointer( ptrp, put_data1D )
       pointer( ptrg, get_data1D )
+#ifdef MPP_TYPE_LOGICAL
+      get_data = .false.
+#else
+      get_data = 0
+#endif
       ptrp = LOC(put_data)
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
@@ -84,6 +94,11 @@
 
       pointer( ptrp, put_data1D )
       pointer( ptrg, get_data1D )
+#ifdef MPP_TYPE_LOGICAL
+      get_data = .false.
+#else
+      get_data = 0
+#endif
       ptrp = LOC(put_data)
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
@@ -104,6 +119,11 @@
 
       pointer( ptrp, put_data1D )
       pointer( ptrg, get_data1D )
+#ifdef MPP_TYPE_LOGICAL
+      get_data = .false.
+#else
+      get_data = 0
+#endif
       ptrp = LOC(put_data)
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
@@ -124,6 +144,11 @@
 
       pointer( ptrp, put_data1D )
       pointer( ptrg, get_data1D )
+#ifdef MPP_TYPE_LOGICAL
+      get_data = .false.
+#else
+      get_data = 0
+#endif
       ptrp = LOC(put_data)
       ptrg = LOC(get_data)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
@@ -173,6 +198,11 @@
       MPP_TYPE_ :: dummy(1)
 
       pointer( ptr, get_data1D )
+#ifdef MPP_TYPE_LOGICAL
+      get_data = .false.
+#else
+      get_data = 0
+#endif
       ptr = LOC(get_data)
       get_len=1; if(PRESENT(glen))get_len=glen
       call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request )

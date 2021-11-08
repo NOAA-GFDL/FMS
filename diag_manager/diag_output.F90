@@ -218,7 +218,6 @@ CONTAINS
     CHARACTER(len=1)     :: axis_cart_name
     INTEGER              :: axis_direction, axis_edges
     REAL, ALLOCATABLE    :: axis_data(:)
-    INTEGER, ALLOCATABLE :: axis_extent(:), pelist(:)
     integer              :: axis_pos
     INTEGER              :: num_attributes
     TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE :: attributes
@@ -767,8 +766,6 @@ character(len=128),dimension(size(axes)) :: axis_names
   !!     <TT>diag_field_out</TT> call.
   SUBROUTINE done_meta_data(file_unit)
     INTEGER,  INTENT(in)  :: file_unit !< Output file unit number
-
-    INTEGER               :: i
 
     !---- write data for all non-time axes ----
     num_axis_in_file = 0

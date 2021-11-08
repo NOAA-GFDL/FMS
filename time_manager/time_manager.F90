@@ -1463,8 +1463,6 @@ subroutine set_calendar_type(type, err_msg)
 
 integer, intent(in) :: type
 character(len=*), intent(out), optional :: err_msg
-integer :: iday, days_this_month, year, month, day
-logical :: leap
 character(len=256) :: err_msg_local
 
 if(.not.module_is_initialized) call time_manager_init()
