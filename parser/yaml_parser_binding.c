@@ -64,7 +64,7 @@ int get_nkeys_binding(int *file_id, int *block_id)
 }
 
 /* @brief Private c function that gets the ids of the key-value pairs in a block */
-void get_key_ids_binding(int *file_id, int *block_id, int key_ids[*])
+void get_key_ids_binding(int *file_id, int *block_id, int *key_ids)
 {
   int i;              /* For loops */
   int key_count = -1; /* Number of key-value pairs */
@@ -155,7 +155,7 @@ int get_num_blocks_child(int *file_id, char *block_name, int *parent_block_id)
 
 
 /* @brief Private c function that gets the the ids of the blocks with block_name in the yaml file */
-void get_block_ids_all(int *file_id, char *block_name, int block_ids[*])
+void get_block_ids_all(int *file_id, char *block_name, int *block_ids)
 {
   int i;              /* For loops */
   int nblocks = -1;   /* Number of blocks */
@@ -173,7 +173,7 @@ void get_block_ids_all(int *file_id, char *block_name, int block_ids[*])
 
 /* @brief Private c function that gets the the ids of the blocks with block_name and that
    belong to a parent block id in the yaml file */
-void get_block_ids_child(int *file_id, char *block_name, int block_ids[*], int *parent_key_id )
+void get_block_ids_child(int *file_id, char *block_name, int *block_ids, int *parent_key_id )
 {
   int i;              /* For loops */
   int nblocks = -1;   /* Number of blocks */

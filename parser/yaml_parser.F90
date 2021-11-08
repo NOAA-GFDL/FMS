@@ -209,7 +209,7 @@ function open_and_parse_file(filename) &
 
    integer :: file_id
 
-   sucess = open_and_parse_file_wrap(filename, file_id)
+   sucess = open_and_parse_file_wrap(trim(filename)//c_null_char, file_id)
    if (.not. sucess) call mpp_error(FATAL, "Error opening the yaml file:"//trim(filename)//". Check the file!")
 
 end function open_and_parse_file
@@ -263,7 +263,7 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_value_from_key call is invalid! Check your call.")
    if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_value_from_key call is invalid! Check your call.")
 
-   c_buffer = get_value_from_key_wrap(file_id, block_id, key_name, sucess)
+   c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, sucess)
    if (sucess == 1) then
      buffer = fms_c2f_string(c_buffer)
 
@@ -315,7 +315,7 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_value_from_key call is invalid! Check your call.")
    if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_value_from_key call is invalid! Check your call.")
 
-   c_buffer = get_value_from_key_wrap(file_id, block_id, key_name, sucess)
+   c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, sucess)
    if (sucess == 1) then
      buffer = fms_c2f_string(c_buffer)
 
@@ -357,10 +357,10 @@ function get_num_blocks(file_id, block_name, parent_block_id) &
     if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_num_blocks call is invalid! Check your call.")
 
     if (.not. present(parent_block_id)) then
-       nblocks=get_num_blocks_all(file_id, block_name)
+       nblocks=get_num_blocks_all(file_id, trim(block_name)//c_null_char)
     else
        if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, "The parent_block id in your get_num_blocks call is invalid! Check your call.")
-       nblocks=get_num_blocks_child(file_id, block_name, parent_block_id)
+       nblocks=get_num_blocks_child(file_id, trim(block_name)//c_null_char, parent_block_id)
     endif
 end function get_num_blocks
 
@@ -382,10 +382,10 @@ subroutine get_block_ids(file_id, block_name, block_ids, parent_block_id)
     if (nblocks .ne. nblocks_id) call mpp_error(FATAL, "The size of your block_ids array is not correct")
 
     if (.not. present(parent_block_id)) then
-       call get_block_ids_all(file_id, block_name, block_ids)
+       call get_block_ids_all(file_id, trim(block_name)//c_null_char, block_ids)
     else
        if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, "The parent_block id in your get_block_ids call is invalid! Check your call.")
-       call get_block_ids_child(file_id, block_name, block_ids, parent_block_id)
+       call get_block_ids_child(file_id, trim(block_name)//c_null_char, block_ids, parent_block_id)
     endif
 end subroutine get_block_ids
 
