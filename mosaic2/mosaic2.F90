@@ -69,10 +69,28 @@ public :: calc_mosaic_grid_area
 public :: calc_mosaic_grid_great_circle_area
 public :: is_inside_polygon
 
+logical :: module_is_initialized = .true.
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
 contains
+
+!#######################################################################
+
+!> @brief Initialize the mosaic_mod.
+!> Initialization routine for the mosaic module. It writes the
+!! version information to the log file.
+!! <br>Example usage:
+!!     call mosaic_init ( )
+subroutine mosaic_init()
+
+  if (module_is_initialized) return
+  module_is_initialized = .TRUE.
+
+!--------- write version number and namelist ------------------
+!  call write_version_number("MOSAIC_MOD", version)
+
+end subroutine mosaic_init
 
 !#######################################################################
 !> @brief return exchange grid size of mosaic xgrid file.

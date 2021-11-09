@@ -914,6 +914,20 @@ integer :: yr, mo, dy, hr, mn, se, mtime
 
 end function set_modtime
 
+!#######################################################################
+
+subroutine error_handler (string)
+character(len=*), intent(in) :: string
+
+  call error_mesg ('time_interp_mod', trim(string), FATAL)
+
+! write (*,'(a)') 'ERROR in time_interp: ' // trim(string)
+! stop 111
+
+end subroutine error_handler
+
+!#######################################################################
+
 end module time_interp_mod
 
 ! <INFO>

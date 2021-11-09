@@ -808,6 +808,11 @@ CONTAINS
     END SELECT
   END FUNCTION find_unit_ivalue
 
+  !> @brief Allocate the file, in and out field arrays after reading the <TT>diag_table</TT> file. (CURRENTLY EMPTY)
+  SUBROUTINE initialize_output_arrays()
+    ! Place Holder
+  END SUBROUTINE initialize_output_arrays
+
 END MODULE diag_table_mod
 !> @}
 ! close documentation grouping

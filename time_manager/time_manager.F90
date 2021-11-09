@@ -2740,6 +2740,19 @@ if(leap_year_julian(Time) .and. month == 2) days_in_month_julian = 29
 end function days_in_month_julian
 
 !--------------------------------------------------------------------------
+function days_in_month_thirty(Time)
+
+! Returns the number of days in a thirty day month (needed for transparent
+! changes to calendar type).
+
+integer :: days_in_month_thirty
+type(time_type), intent(in) :: Time
+
+days_in_month_thirty = 30
+
+end function days_in_month_thirty
+
+!--------------------------------------------------------------------------
 function days_in_month_no_leap(Time)
 
 ! Returns the number of days in a 365 day year month.
@@ -2841,6 +2854,31 @@ leap_year_julian = ((year / 4 * 4) == year)
 
 end function leap_year_julian
 
+!--------------------------------------------------------------------------
+
+function leap_year_thirty(Time)
+
+! No leap years in thirty day months, included for transparency.
+
+logical :: leap_year_thirty
+type(time_type), intent(in) :: Time
+
+leap_year_thirty = .FALSE.
+
+end function leap_year_thirty
+
+!--------------------------------------------------------------------------
+
+function leap_year_no_leap(Time)
+
+! Another tough one; no leap year returns false for leap year inquiry.
+
+logical :: leap_year_no_leap
+type(time_type), intent(in) :: Time
+
+leap_year_no_leap = .FALSE.
+
+end function leap_year_no_leap
 
 !END OF leap_year BLOCK
 !==========================================================================

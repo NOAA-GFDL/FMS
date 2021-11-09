@@ -156,7 +156,6 @@ integer, parameter :: MAX_FIELDS         = 80
 logical :: make_exchange_reproduce = .false. !< Set to .true. to make <TT>xgrid_mod</TT> reproduce answers on different
                                              !! numbers of PEs.  This option has a considerable performance impact.
 !< exactly same on different # PEs
-logical :: xgrid_log = .false.
 character(len=64) :: interp_method = 'first_order' !< Exchange grid interpolation method.
                                               !! It has two options: "first_order", "second_order".
 logical :: debug_stocks = .false.
@@ -178,7 +177,6 @@ namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid
     monotonic_exchange, nsubset, do_alltoall, do_alltoallv, &
     use_mpp_io
 
-logical :: init = .true.
 integer :: remapping_method
 
 !> Area elements used inside each model

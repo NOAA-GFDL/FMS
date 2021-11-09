@@ -603,12 +603,12 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=1024)              :: record
-character(len=fm_path_name_len)  :: control_str
+character(len=fm_string_len)     :: control_str
 character(len=fm_path_name_len)  :: list_name
-character(len=fm_path_name_len)  :: method_name
-character(len=fm_path_name_len)  :: name_str
-character(len=fm_path_name_len)  :: type_str
-character(len=fm_path_name_len)  :: val_name
+character(len=fm_string_len)     :: method_name
+character(len=fm_string_len)     :: name_str
+character(len=fm_string_len)     :: type_str
+character(len=fm_string_len)     :: val_name
 character(len=fm_string_len)     :: tbl_name
 integer                          :: control_array(MAX_FIELDS,3)
 integer                          :: endcont

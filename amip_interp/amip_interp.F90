@@ -1458,6 +1458,33 @@ end function date_gt
 
 !#######################################################################
 
+subroutine print_dates (Time, Date1, Udate1,  &
+                              Date2, Udate2, fmonth)
+
+   type (time_type), intent(in) :: Time
+   type (date_type), intent(in) :: Date1, Udate1, Date2, Udate2
+   real,             intent(in) :: fmonth
+
+   integer :: year, month, day, hour, minute, second
+
+   call get_date (Time, year, month, day, hour, minute, second)
+
+   write (*,10) year,month,day, hour,minute,second
+   write (*,20) fmonth
+   write (*,30) Date1, Udate1
+   write (*,40) Date2, Udate2
+
+10 format (/,' date(y/m/d h:m:s) = ',i4,2('/',i2.2),1x,2(i2.2,':'),i2.2)
+20 format (' fmonth = ',f9.7)
+30 format (' date1(y/m/d) = ',i4,2('/',i2.2),6x, &
+                    'used = ',i4,2('/',i2.2),6x  )
+40 format (' date2(y/m/d) = ',i4,2('/',i2.2),6x, &
+                    'used = ',i4,2('/',i2.2),6x  )
+
+end subroutine print_dates
+
+!#######################################################################
+
 subroutine zonal_sst (Time, ice, sst)
 
    type (time_type), intent(in)  :: Time

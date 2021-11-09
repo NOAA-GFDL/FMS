@@ -132,6 +132,34 @@ contains
   end subroutine drifters_comm_del
 
 !===============================================================================
+  !> @brief Set data domain bounds.
+  subroutine drifters_comm_set_data_bounds(self, xmin, ymin, xmax, ymax)
+    ! Set data domain bounds.
+    type(drifters_comm_type)   :: self
+    real, intent(in)           :: xmin, ymin, xmax, ymax
+
+    self%xdmin = max(xmin, self%xdmin)
+    self%xdmax = min(xmax, self%xdmax)
+    self%ydmin = max(ymin, self%ydmin)
+    self%ydmax = min(ymax, self%ydmax)
+
+  end subroutine drifters_comm_set_data_bounds
+
+!===============================================================================
+  !> @brief Set compute domain bounds.
+  subroutine drifters_comm_set_comp_bounds(self, xmin, ymin, xmax, ymax)
+    ! Set compute domain bounds.
+    type(drifters_comm_type)   :: self
+    real, intent(in)           :: xmin, ymin, xmax, ymax
+
+    self%xcmin = max(xmin, self%xcmin)
+    self%xcmax = min(xmax, self%xcmax)
+    self%ycmin = max(ymin, self%ycmin)
+    self%ycmax = min(ymax, self%ycmax)
+
+  end subroutine drifters_comm_set_comp_bounds
+
+!===============================================================================
   !> @brief Set neighboring pe numbers.
   subroutine drifters_comm_set_pe_neighbors(self, domain)
     ! Set neighboring pe numbers.

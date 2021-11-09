@@ -837,10 +837,6 @@ if(mpp_pe()==mpp_root_pe() .and. TRACER_ARRAY(model,n)> 0 ) then
   write(log_unit, *)'----------------------------------------------------'
 endif
 
-!900 FORMAT(A,2(1x,E12.6))
-!901 FORMAT(E12.6,1x,E12.6)
-
-
 end subroutine print_tracer_info
 
 !#######################################################################

@@ -1836,6 +1836,12 @@ end subroutine init_nonblock_type
 #include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_
+#define MPP_TYPE_ logical(l8_kind)
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_l8_3D
+#include <mpp_do_redistribute.h>
+
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_r4_3D
@@ -1854,6 +1860,12 @@ end subroutine init_nonblock_type
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_i4_3D
+#include <mpp_do_redistribute.h>
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ logical(l4_kind)
+#undef MPP_DO_REDISTRIBUTE_3D_
+#define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_l4_3D
 #include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_

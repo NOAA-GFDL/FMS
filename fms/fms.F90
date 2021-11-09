@@ -819,7 +819,6 @@ function fms_c2f_string (cstring) result(fstring)
  character(len=:), allocatable :: fstring    !< The fortran string returned
  character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
  integer(c_size_t) :: length !< The string length
- integer :: i
 
   length = c_strlen(cstring)
   allocate (character(len=length, kind=c_char) :: string_buffer)

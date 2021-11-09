@@ -229,7 +229,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     call write_version_number("DATA_OVERRIDE_MOD", version)
 
 !  Initialize user-provided data table
-    default_table%gridname = 'none'
+    default_table%gridname = 'non'
     default_table%fieldname_code = 'none'
     default_table%fieldname_file = 'none'
     default_table%file_name = 'none'
@@ -356,7 +356,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in closing file data_table')
 
 !  Initialize override array
-    default_array%gridname = 'NONE'
+    default_array%gridname = 'NON'
     default_array%fieldname = 'NONE'
     default_array%t_index = -1
     default_array%dims = -1
