@@ -102,8 +102,7 @@ private
 !----------------- Public interfaces -----------------------------------
 
 public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
-       amip_interp_del, amip_interp_type, assignment(=), get_sst_grid_size, &
-       get_sst_grid_boundary
+       amip_interp_del, amip_interp_type, assignment(=)
 
 !-----------------------------------------------------------------------
 !----------------- Public Data -----------------------------------

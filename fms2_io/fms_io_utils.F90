@@ -703,7 +703,6 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   do n = 1, nmask
      maskmap(mask_list(n,1),mask_list(n,2),mask_list(n,3)) = .false.
   enddo
-  mask_table_contents = ''
   deallocate(mask_list, mask_table_contents)
 end subroutine parse_mask_table_3d
 

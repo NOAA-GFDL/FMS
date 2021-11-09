@@ -2692,7 +2692,7 @@ if(present(err_msg)) err_msg = ''
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   days_in_month = 30
+   days_in_month = days_in_month_thirty(Time)
 case(GREGORIAN)
    days_in_month = days_in_month_gregorian(Time)
 case(JULIAN)
@@ -2799,13 +2799,13 @@ if(present(err_msg)) err_msg=''
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   leap_year = .false.
+   leap_year = leap_year_thirty(Time)
 case(GREGORIAN)
    leap_year = leap_year_gregorian(Time)
 case(JULIAN)
    leap_year = leap_year_julian(Time)
 case(NOLEAP)
-   leap_year = .false.
+   leap_year = leap_year_no_leap(Time)
 case default
    if(error_handler('function leap_year', 'Invalid calendar type in leap_year', err_msg)) return
 end select
@@ -2986,13 +2986,13 @@ if(.not.module_is_initialized) call time_manager_init
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   days_in_year = days_in_year_thirty()
+   days_in_year = days_in_year_thirty(Time)
 case(GREGORIAN)
    days_in_year = days_in_year_gregorian(Time)
 case(JULIAN)
    days_in_year = days_in_year_julian(Time)
 case(NOLEAP)
-   days_in_year = days_in_year_no_leap()
+   days_in_year = days_in_year_no_leap(Time)
 case default
    call error_mesg('days_in_year','Invalid calendar type in days_in_year',FATAL)
 end select
@@ -3001,9 +3001,10 @@ end function days_in_year
 
 !--------------------------------------------------------------------------
 
-function days_in_year_thirty()
+function days_in_year_thirty(Time)
 
 integer :: days_in_year_thirty
+type(time_type), intent(in) :: Time
 
 days_in_year_thirty = 360
 
@@ -3040,9 +3041,10 @@ end function days_in_year_julian
 
 !--------------------------------------------------------------------------
 
-function days_in_year_no_leap()
+function days_in_year_no_leap(Time)
 
 integer :: days_in_year_no_leap
+type(time_type), intent(in) :: Time
 
 days_in_year_no_leap = 365
 

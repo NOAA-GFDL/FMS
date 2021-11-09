@@ -1790,6 +1790,12 @@ end subroutine init_nonblock_type
 #define VECTOR_FIELD_
 #endif
 
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(i8_kind)
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
+#include <mpp_do_update_ad.h>
+
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
@@ -1812,6 +1818,12 @@ end subroutine init_nonblock_type
 #include <mpp_do_update_ad.h>
 #define VECTOR_FIELD_
 #endif
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(i4_kind)
+#undef MPP_DO_UPDATE_AD_3D_
+#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
+#include <mpp_do_update_ad.h>
 
 !********************************************************
 #undef MPP_TYPE_

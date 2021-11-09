@@ -71,10 +71,11 @@ end subroutine register_global_attribute_0d
 !> @brief Add a global attribute.
 subroutine register_global_attribute_1d(fileobj, &
                                                   attribute_name, &
-                                                  attribute_value)
+                                                  attribute_value, str_len)
     class(FmsNetcdfFile_t),intent(in) :: fileobj !< File object.
     character(len=*),intent(in) :: attribute_name !< Attribute name.
     class(*),dimension(:), intent(in) :: attribute_value !< Attribute value
+    integer, intent(in), optional :: str_len !< Length of the string
     integer :: err
     if (fileobj%is_root) then
         call set_netcdf_mode(fileobj%ncid, &

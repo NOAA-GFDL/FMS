@@ -932,7 +932,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      allocate(overlap%recv(nrecv))
      do n = 1, nrecv
         call copy_nest_overlap( overlap%recv(n), overLaplist(n) )
-        if(DEBUG) call print_nest_overlap(overlap%recv(n), "C2F RECV")
+!        call print_nest_overlap(overlap%recv(n), "C2F RECV")
         call deallocate_nest_overlap( overLaplist(n) )
      enddo
   endif
@@ -942,7 +942,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      allocate(overlap%send(nsend))
      do n = 1, nsend
         call copy_nest_overlap( overlap%send(n), overLaplist(n) )
-        if(DEBUG) call print_nest_overlap(overlap%send(n), "C2F SEND")
+!       call print_nest_overlap(overlap%send(n), "C2F SEND")
         call deallocate_nest_overlap( overLaplist(n) )
      enddo
   endif
@@ -1159,7 +1159,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
         allocate(overlap%send(nsend))
         do n = 1, nsend
            call copy_nest_overlap(overlap%send(n), overlaplist(n) )
-           if(DEBUG) call print_nest_overlap(overlap%send(n), "SEND")
+!           call print_nest_overlap(overlap%send(n), "SEND")
            call deallocate_nest_overlap(overlaplist(n))
         enddo
      endif
@@ -1219,7 +1219,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
            allocate(overlap%recv(nrecv))
            do n = 1, nrecv
               call copy_nest_overlap(overlap%recv(n), overlaplist(n) )
-              if(DEBUG) call print_nest_overlap(overlap%recv(n), "RECV")
+!              call print_nest_overlap(overlap%recv(n), "RECV")
               call deallocate_nest_overlap( overLaplist(n) )
            enddo
         endif
