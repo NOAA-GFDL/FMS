@@ -134,7 +134,7 @@ function get_value_from_key_wrap(file_id, block_id, key_name, sucess) bind(c) &
    use iso_c_binding, only: c_ptr, c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id of the yaml file to search
    integer(kind=c_int), intent(in) :: block_id !< ID corresponding to the block you want the key for
-   character(kind=c_char), intent(in) :: key_name !< Name of the key you want the value for
+   character(kind=c_char), intent(in) :: key_name(*) !< Name of the key you want the value for
    integer(kind=c_int), intent(out) :: sucess !< Flag indicating if the call was sucessful
    type(c_ptr) :: key_value2
 end function get_value_from_key_wrap
@@ -146,7 +146,7 @@ function get_num_blocks_all(file_id, block_name) bind(c) &
    result(nblocks)
    use iso_c_binding, only: c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id of the yaml file to search
-   character(kind=c_char), intent(in) :: block_name !< The name of the block you are looking for
+   character(kind=c_char), intent(in) :: block_name(*) !< The name of the block you are looking for
 
    integer(kind=c_int) :: nblocks
 end function get_num_blocks_all
@@ -158,7 +158,7 @@ function get_num_blocks_child(file_id, block_name, parent_block_id) bind(c) &
    result(nblocks)
    use iso_c_binding, only: c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id of the yaml file to search
-   character(kind=c_char), intent(in) :: block_name !< The name of the block you are looking for
+   character(kind=c_char), intent(in) :: block_name(*) !< The name of the block you are looking for
    integer(kind=c_int) :: parent_block_id !< Id of the parent block
 
    integer(kind=c_int) :: nblocks
@@ -169,7 +169,7 @@ end function get_num_blocks_child
 subroutine get_block_ids_all(file_id, block_name, block_ids) bind(c)
    use iso_c_binding, only: c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id of the yaml file to search
-   character(kind=c_char), intent(in) :: block_name !< The name of the block you are looking for
+   character(kind=c_char), intent(in) :: block_name(*) !< The name of the block you are looking for
    integer(kind=c_int), intent(inout) :: block_ids(*) !< Id of the parent_block
 end subroutine get_block_ids_all
 
@@ -178,7 +178,7 @@ end subroutine get_block_ids_all
 subroutine get_block_ids_child(file_id, block_name, block_ids, parent_block_id) bind(c)
    use iso_c_binding, only: c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id of the yaml file to search
-   character(kind=c_char), intent(in) :: block_name !< The name of the block you are looking for
+   character(kind=c_char), intent(in) :: block_name(*) !< The name of the block you are looking for
    integer(kind=c_int), intent(inout) :: block_ids(*) !< Id of the parent_block
    integer(kind=c_int) :: parent_block_id !< Id of the parent block
 end subroutine get_block_ids_child
