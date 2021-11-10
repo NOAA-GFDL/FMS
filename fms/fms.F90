@@ -825,7 +825,7 @@ end function monotonic_array
   end function string_from_real
 
 !> \brief Converts a C-string to a pointer and then to a Fortran string
-pure function cstring_fortran_conversion (cstring) result(fstring)
+function cstring_fortran_conversion (cstring) result(fstring)
  character (kind=c_char), intent(in) :: cstring (*) !< Input C-string
  character(len=:), allocatable :: fstring    !< The fortran string returned
  fstring = cpointer_fortran_conversion(fms_cstring2cpointer(cstring))
@@ -833,7 +833,7 @@ end function cstring_fortran_conversion
 
 !> \brief Converts a C-string returned from a TYPE(C_PTR) function to
 !! a fortran string with type character.
-pure function cpointer_fortran_conversion (cstring) result(fstring)
+function cpointer_fortran_conversion (cstring) result(fstring)
  type (c_ptr), intent(in) :: cstring !< Input C-pointer
  character(len=:), allocatable :: fstring    !< The fortran string returned
  character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
