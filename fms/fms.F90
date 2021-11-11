@@ -300,6 +300,10 @@ interface string
    module procedure string_from_integer
    module procedure string_from_real
 end interface
+interface fms_c2f_string
+   module procedure cstring_fortran_conversion
+   module procedure cpointer_fortran_conversion
+end interface
 !> C functions
   interface
     !> @brief converts a kind=c_char to type c_ptr
@@ -820,10 +824,17 @@ end function monotonic_array
 
   end function string_from_real
 
+!> \brief Converts a C-string to a pointer and then to a Fortran string
+function cstring_fortran_conversion (cstring) result(fstring)
+ character (kind=c_char), intent(in) :: cstring (*) !< Input C-string
+ character(len=:), allocatable :: fstring    !< The fortran string returned
+ fstring = cpointer_fortran_conversion(fms_cstring2cpointer(cstring))
+end function cstring_fortran_conversion
+
 !> \brief Converts a C-string returned from a TYPE(C_PTR) function to
 !! a fortran string with type character.
-function fms_c2f_string (cstring) result(fstring)
- type (c_ptr) :: cstring
+function cpointer_fortran_conversion (cstring) result(fstring)
+ type (c_ptr), intent(in) :: cstring !< Input C-pointer
  character(len=:), allocatable :: fstring    !< The fortran string returned
  character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
  integer(c_size_t) :: length !< The string length
@@ -840,7 +851,7 @@ function fms_c2f_string (cstring) result(fstring)
  allocate(character(len=length) :: fstring) !> Set the length of fstring
 fstring = string_buffer
 
-end function fms_c2f_string
+end function cpointer_fortran_conversion
 !#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and
 !!  tag name.
