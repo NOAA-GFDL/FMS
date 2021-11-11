@@ -107,7 +107,7 @@ type fms_diag_object
      procedure :: get_id => fms_diag_get_id
      procedure :: id => fms_diag_get_id
      procedure :: copy => copy_diag_obj
-     procedure :: register_meta => fms_register_diag_field_obj
+     procedure :: register => fms_register_diag_field_obj
      procedure :: setID => set_diag_id
      procedure :: is_registered => diag_ob_registered
      procedure :: set_type => set_vartype
