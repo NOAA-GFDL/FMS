@@ -650,9 +650,11 @@ CONTAINS
     IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
 
     ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) .AND. (SIZE(range) .NE. 2) ) THEN
-       ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-       CALL error_mesg ('diag_util_mod::log_diag_field_info', 'extent of range should be 2', FATAL)
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_util_mod::log_diag_field_info', 'extent of range should be 2', FATAL)
+       END IF
     END IF
 
     lmodule = TRIM(module_name)
@@ -681,6 +683,8 @@ CONTAINS
              missing_value_use = missing_value
           TYPE IS (real(kind=r8_kind))
              missing_value_use = missing_value
+          CLASS DEFAULT
+             CALL error_mesg ('diag_util_mod::log_diag_field_info', 'unsupported kind', FATAL)
           END SELECT
           WRITE (lmissval,*) missing_value_use
        END IF
@@ -694,6 +698,8 @@ CONTAINS
           range_use = range
        TYPE IS (real(kind=r8_kind))
           range_use = range
+       CLASS DEFAULT
+          CALL error_mesg ('diag_util_mod::log_diag_field_info', 'unsupported kind', FATAL)
        END SELECT
        WRITE (lmin,*) range_use(1)
        WRITE (lmax,*) range_use(2)

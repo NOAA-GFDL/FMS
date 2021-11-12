@@ -236,6 +236,8 @@ CONTAINS
        Axes(diag_axis_init)%data = DATA(1:axlen)
     TYPE IS (real(kind=r8_kind))
        Axes(diag_axis_init)%data = DATA(1:axlen)
+    CLASS DEFAULT
+       CALL error_mesg('diag_axis_mod::diag_axis_init', 'unsupported kind', FATAL)
     END SELECT
     Axes(diag_axis_init)%units  = units
     Axes(diag_axis_init)%length = axlen
@@ -491,6 +493,8 @@ CONTAINS
           DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
        TYPE IS (real(kind=r8_kind))
           DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+       CLASS DEFAULT
+          CALL error_mesg('diag_axis_mod::get_diag_axis', 'unsupported kind', FATAL)
        END SELECT
     END IF
     IF ( PRESENT(num_attributes) ) THEN

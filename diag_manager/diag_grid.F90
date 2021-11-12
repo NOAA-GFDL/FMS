@@ -259,6 +259,8 @@ CONTAINS
           diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
        END SELECT
 
        SELECT TYPE (aglo_lon)
@@ -266,6 +268,8 @@ CONTAINS
           diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
        END SELECT
     ELSE
        SELECT TYPE (aglo_lat)
@@ -273,6 +277,8 @@ CONTAINS
           diag_global_grid%aglo_lat = aglo_lat
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lat = aglo_lat
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
        END SELECT
 
        SELECT TYPE (aglo_lon)
@@ -280,6 +286,8 @@ CONTAINS
           diag_global_grid%aglo_lon = aglo_lon
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lon = aglo_lon
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
        END SELECT
     END IF
 
@@ -288,6 +296,8 @@ CONTAINS
        diag_global_grid%glo_lat = glo_lat
     TYPE IS (real(kind=r8_kind))
        diag_global_grid%glo_lat = glo_lat
+    CLASS DEFAULT
+       CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
     END SELECT
 
     SELECT TYPE (glo_lon)
@@ -295,6 +305,8 @@ CONTAINS
        diag_global_grid%glo_lon = glo_lon
     TYPE IS (real(kind=r8_kind))
        diag_global_grid%glo_lon = glo_lon
+    CLASS DEFAULT
+       CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
     END SELECT
 
     diag_global_grid%dimI = i_dim

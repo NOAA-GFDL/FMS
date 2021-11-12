@@ -1070,6 +1070,8 @@ type is (real(kind=r4_kind))
   tracer = surf_value
 type is (real(kind=r8_kind))
   tracer = surf_value
+class default
+  call mpp_error(FATAL, "set_tracer_profile : unsupported kind")
 end select
 
 if ( query_method ( 'profile_type',model,n,scheme,control)) then
@@ -1084,6 +1086,8 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
       tracer = surf_value
     type is (real(kind=r8_kind))
       tracer = surf_value
+    class default
+      call mpp_error(FATAL, "set_tracer_profile : unsupported kind")
     end select
   endif
 
@@ -1128,6 +1132,8 @@ numlevels = size(tracer,3) -1
           do k = 2, size(tracer,3)
             tracer(:,:,k) = tracer(:,:,k-1) * multiplier
           enddo
+        class default
+          call mpp_error(FATAL, "set_tracer_profile : unsupported kind")
         end select
       case (MODEL_OCEAN)
         multiplier = exp( log (bottom_value/surf_value) /numlevels)
@@ -1142,6 +1148,8 @@ numlevels = size(tracer,3) -1
           do k = size(tracer,3) - 1, 1, -1
             tracer(:,:,k) = tracer(:,:,k+1) * multiplier
           enddo
+        class default
+          call mpp_error(FATAL, "set_tracer_profile : unsupported kind")
         end select
       case default
     end select

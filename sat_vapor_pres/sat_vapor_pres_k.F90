@@ -50,6 +50,7 @@
 ! not be a fortran module. This complicates things greatly for questionable
 ! benefit and could be done as a second step anyway, if necessary.
 
+ use fms_mod, only: error_mesg, FATAL
  use platform_mod, only: r4_kind, r8_kind
 
  implicit none
@@ -491,6 +492,105 @@
  real(kind=r8_kind), allocatable, dimension(:,:,:) :: esloc_r8, desat_r8, denom_r8
  integer :: i, j, k
  real    :: hc_loc
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(hc)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (hc)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (hc)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(dqsdT)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (dqsdT)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(esat)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (esat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (esat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
 
    select type (temp)
    type is (real(kind=r4_kind))
@@ -712,6 +812,105 @@
  real(kind=r8_kind), allocatable, dimension(:,:) :: esloc_r8, desat_r8, denom_r8
  integer :: i, j
  real    :: hc_loc
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(hc)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (hc)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (hc)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(dqsdT)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (dqsdT)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(esat)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (esat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (esat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
 
    select type (temp)
    type is (real(kind=r4_kind))
@@ -929,6 +1128,105 @@
  real(kind=r8_kind), allocatable, dimension(:) :: esloc_r8, desat_r8, denom_r8
  integer :: i
  real    :: hc_loc
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(hc)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (hc)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (hc)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(dqsdT)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (dqsdT)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(esat)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (esat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (esat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
 
    select type (temp)
    type is (real(kind=r4_kind))
@@ -1141,6 +1439,105 @@
  real(kind=r4_kind) :: esloc_r4, desat_r4, denom_r4
  real(kind=r8_kind) :: esloc_r8, desat_r8, denom_r8
  real    :: hc_loc
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(hc)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (hc)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (hc)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(dqsdT)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (dqsdT)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (dqsdT)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
+
+   if (present(esat)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (esat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (esat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d', 'unsupported kind', FATAL)
+   end if
 
    if (present(hc)) then
      select type (hc)
@@ -1662,6 +2059,29 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -1723,6 +2143,29 @@
 
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -1780,6 +2223,29 @@
 
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -1841,6 +2307,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -1853,6 +2321,8 @@
        esat = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
      type is (real(kind=r8_kind))
        esat = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_0d', 'unsupported kind', FATAL)
      end select
 
      select type (desat)
@@ -1860,6 +2330,8 @@
        desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
      type is (real(kind=r8_kind))
        desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -1873,6 +2345,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -1925,6 +2414,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -1976,6 +2482,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2022,6 +2545,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2068,6 +2608,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2110,6 +2667,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2160,6 +2734,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -2172,6 +2748,8 @@
        desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
      type is (real(kind=r8_kind))
        desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -2191,6 +2769,8 @@
       tmp = temp-tminl
    type is (real(kind=r8_kind))
       tmp = temp-tminl
+   class default
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -2203,6 +2783,8 @@
         esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
      type is (real(kind=r8_kind))
         esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     class default
+        call error_mesg ('sat_vapor_pres_k_mod::lookup_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -2216,6 +2798,29 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2277,6 +2882,29 @@
 
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2334,6 +2962,29 @@
 
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2395,6 +3046,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -2407,6 +3060,8 @@
        esat = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
      type is (real(kind=r8_kind))
        esat = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_0d', 'unsupported kind', FATAL)
      end select
 
      select type (desat)
@@ -2414,6 +3069,8 @@
        desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
      type is (real(kind=r8_kind))
        desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -2427,6 +3084,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2479,6 +3153,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2530,6 +3221,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2576,6 +3284,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2622,6 +3347,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2664,6 +3406,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2714,6 +3473,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -2726,6 +3487,8 @@
        desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
      type is (real(kind=r8_kind))
        desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -2745,6 +3508,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -2757,6 +3522,8 @@
        esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
      type is (real(kind=r8_kind))
        esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -2772,6 +3539,29 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2833,6 +3623,29 @@
 
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2890,6 +3703,29 @@
 
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -2951,6 +3787,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -2963,6 +3801,8 @@
        esat = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
      type is (real(kind=r8_kind))
        esat = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_0d', 'unsupported kind', FATAL)
      end select
 
      select type (desat)
@@ -2970,6 +3810,8 @@
        desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
      type is (real(kind=r8_kind))
        desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -2983,6 +3825,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -3035,6 +3894,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_3d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -3086,6 +3962,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -3132,6 +4025,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_2d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -3178,6 +4088,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -3220,6 +4147,23 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types = .false.
+
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_1d', 'unsupported kind', FATAL)
+   end if
 
    nbad = 0
 
@@ -3270,6 +4214,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -3282,6 +4228,8 @@
        desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
      type is (real(kind=r8_kind))
        desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
@@ -3301,6 +4249,8 @@
      tmp = temp-tminl
    type is (real(kind=r8_kind))
      tmp = temp-tminl
+   class default
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_0d', 'unsupported kind', FATAL)
    end select
 
    ind = int(dtinvl*(tmp+tepsl))
@@ -3313,6 +4263,8 @@
        esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
      type is (real(kind=r8_kind))
        esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+     class default
+       call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_0d', 'unsupported kind', FATAL)
      end select
    endif
 
