@@ -839,7 +839,7 @@ function fms_c2f_string (cstring) result(fstring)
 
  allocate(character(len=length) :: fstring) !> Set the length of fstring
 fstring = string_buffer
-
+ deallocate(string_buffer)
 end function fms_c2f_string
 !#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and

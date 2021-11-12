@@ -17,17 +17,26 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is an automake file for the constants directory of the FMS
+# package.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Ed Hartnett 2/22/19
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic interpolator fms mpp mpp_io time_interp time_manager \
-horiz_interp field_manager axis_utils affinity fms2_io parser
+# Include .h and .mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-# This input file must be distributed, it is turned into
-# test_common.sh by configure.
-EXTRA_DIST = test_common.sh.in
+# Build this uninstalled convenience library.
+noinst_LTLIBRARIES = libparser.la
+
+# The convenience library depends on its source.
+libparser_la_SOURCES = \
+  yaml_parser.F90 \
+  yaml_parser_binding.c
+
+MODFILES = \
+  yaml_parser_mod.$(FC_MODEXT)
+BUILT_SOURCES = $(MODFILES)
+nodist_include_HEADERS = $(MODFILES)
+
+include $(top_srcdir)/mkmods.mk
