@@ -41,7 +41,7 @@ parser_demo2_SOURCES = parser_demo2.F90
 TESTS = test_yaml_parser.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = test_yaml_parser.sh data_table.yaml diag_table.yaml
+EXTRA_DIST = test_yaml_parser.sh
 
 if SKIP_PARSER_TESTS
 skipflag="skip"
@@ -51,4 +51,4 @@ endif
 
 TESTS_ENVIRONMENT = parser_skip=${skipflag}
 # Clean up
-CLEANFILES = input.nml *.nc* *.out
+CLEANFILES = input.nml *.nc* *.out *.yaml

@@ -27,6 +27,58 @@
 
 touch input.nml
 
+cat <<_EOF > data_table.yaml
+data_table:
+ - gridname          : "ICE"
+   fieldname_code    : "sic_obs"
+   fieldname_file    : "ice"
+   file_name         : "INPUT/hadisst_ice.data.nc"
+   interpol_method   : "bilinear"
+   factor            : 0.01
+ - gridname          : "WUT"
+   fieldname_code    : "potato"
+   fieldname_file    : "mullions"
+   file_name         : "INPUT/potato.nc"
+   interpol_method   : "bilinear"
+   factor            : 1e-06
+   region_type       : "inside_region"
+   lat_start         : -89.1
+   lat_end           : 89.8
+   lon_start         : 3.4
+   lon_end           : 154.4
+_EOF
+
+cat <<_EOF > diag_table.yaml
+title: c384L49_esm5PIcontrol
+baseDate: [1960 1 1 1 1 1 1]
+diag_files:
+-    fileName: "atmos_daily"
+     freq: 24
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - varName: tdata
+       reduction: False
+       module: mullions
+       mullions: 10
+       fill_value: -999.9
+     - varName: pdata
+       outName: pressure
+       reduction: False
+       kind: double
+       module: "moist"
+-    fileName: atmos_8xdaily
+     freq: 3
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - varName: tdata
+       reduction: False
+       module: "moist"
+_EOF
+
 run_test test_yaml_parser 1 $parser_skip
 run_test parser_demo 1 $parser_skip
 run_test parser_demo2 1 $parser_skip
