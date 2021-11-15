@@ -277,6 +277,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
   pointer(ptr_field, field)
 
   update_edge_only = BTEST(flags, EDGEONLY)
+  recv = .false.
   recv(1) = BTEST(flags,EAST)
   recv(3) = BTEST(flags,SOUTH)
   recv(5) = BTEST(flags,WEST)
