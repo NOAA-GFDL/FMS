@@ -62,6 +62,7 @@ libFMS_la_LIBADD += $(top_builddir)/tracer_manager/libtracer_manager.la
 libFMS_la_LIBADD += $(top_builddir)/random_numbers/librandom_numbers.la
 libFMS_la_LIBADD += $(top_builddir)/diag_integral/libdiag_integral.la
 libFMS_la_LIBADD += $(top_builddir)/sat_vapor_pres/libsat_vapor_pres.la
+libFMS_la_LIBADD += $(top_builddir)/parser/libparser.la
 libFMS_la_LIBADD += $(top_builddir)/libFMS_mod.la
 
 # At least one source file must be included to please Automake.
