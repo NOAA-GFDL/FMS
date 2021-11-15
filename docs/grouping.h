@@ -114,6 +114,10 @@
  *
  */
 
+/** @defgroup parser Parser
+ *
+ */
+
 /** @defgroup platform Platform
  *
  */

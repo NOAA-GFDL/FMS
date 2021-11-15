@@ -853,7 +853,9 @@ function cpointer_fortran_conversion (cstring) result(fstring)
  allocate(character(len=length) :: fstring) !> Set the length of fstring
 fstring = string_buffer
  deallocate(string_buffer)
+
 end function cpointer_fortran_conversion
+
 !#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and
 !!  tag name.
