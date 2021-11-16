@@ -41,7 +41,8 @@ libdiag_manager_la_SOURCES = \
   fms_diag_yaml.F90 \
   diag_yaml.h \
   diag_yaml.c \
-  fms_diag_object.F90
+  fms_diag_object.F90 \
+  fms_diag_yaml_object.F90
 
 # Some mods are dependant on other mods in this dir.
 diag_axis_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
@@ -63,6 +64,7 @@ MODFILES = \
   diag_output_mod.$(FC_MODEXT) \
   diag_util_mod.$(FC_MODEXT) \
   diag_table_mod.$(FC_MODEXT) \
+  fms_diag_yaml_object_mod.$(FC_MODEXT) \
   fms_diag_yaml_mod.$(FC_MODEXT) \
   fms_diag_object_mod.$(FC_MODEXT) \
   diag_manager_mod.$(FC_MODEXT)
