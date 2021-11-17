@@ -2015,7 +2015,7 @@ SEARCH_INCLUDES        = YES
 # preprocessor.
 # This tag requires that the tag SEARCH_INCLUDES is set to YES.
 
-INCLUDE_PATH           = @abs_top_srcdir@/*/include @abs_top_srcdir@/include
+INCLUDE_PATH           = @abs_top_srcdir@/mpp/include @abs_top_srcdir@/fms2_io/include @abs_top_srcdir@/include
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the
