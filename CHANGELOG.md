@@ -6,12 +6,6 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
-## [2021.03.01] - 2021-09-07
-### Fixed
-- TIME_INTERP: Fixes issue in load_record when reading 3d variables with fms2_io and elimates redundant loads and validity checks for on-grid interpolations
-### Changed
-- Changes configure script to only check for gcc 11.1.0, not any gcc 11 version
-
 ## [2021.03] - 2021-08-16
 ### Known Issues
 - DIAG_MANAGER: 3D diurnal diagnostic variables are not supported in this version of FMS

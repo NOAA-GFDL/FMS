@@ -184,7 +184,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   allocate(nest_domain%istart_coarse(num_nest), nest_domain%iend_coarse(num_nest) )
   allocate(nest_domain%jstart_coarse(num_nest), nest_domain%jend_coarse(num_nest) )
 
-  ! WDR Added to enable moving nests
+  !---Added to enable moving nests
   allocate(nest_domain%nest_level(num_nest))
 
   nest_domain%tile_fine = tile_fine(1:num_nest)
@@ -198,7 +198,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   nest_domain%jstart_coarse = jstart_coarse(1:num_nest)
   nest_domain%jend_coarse = jend_coarse(1:num_nest)
 
-  ! WDR Added to enable moving nests; need this information when shifting the nest position.
+  !---Added to enable moving nests; need this information when shifting the nest position.
   nest_domain%nest_level = nest_level(1:num_nest)
 
   !--- make sure the tile_id of top level of grid is continuous and starting from 1
@@ -364,15 +364,17 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
 
 end subroutine mpp_define_nest_domains
 
-!  Ramstrom/HRD Moving Nest
-!  Based on mpp_define_nest_domains, but just resets positioning of nest 
-!    Modifies the parent/coarse start and end indices of the nest location
-!    Computes new overlaps of nest PEs on parent PEs
+!>  Based on mpp_define_nest_domains, but just resets positioning of nest 
+!>    Modifies the parent/coarse start and end indices of the nest location
+!!    Computes new overlaps of nest PEs on parent PEs
+!!    Ramstrom/HRD Moving Nest
 subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_coarse, extra_halo)
-  type(nest_domain_type),     intent(inout) :: nest_domain
-  type(domain2D), target,     intent(in   ) :: domain
-  integer,                    intent(in   ) :: delta_i_coarse(:), delta_j_coarse(:)
-  integer,          optional, intent(in   ) :: extra_halo
+  type(nest_domain_type),     intent(inout) :: nest_domain !< holds the information to pass data
+                                                           !! between nest and parent grids.
+  type(domain2D), target,     intent(in   ) :: domain !< domain for the grid defined in the current pelist
+  integer,                    intent(in   ) :: delta_i_coarse(:) !< Array of deltas of coarse grid in y direction
+  integer,                    intent(in   ) :: delta_j_coarse(:) !< Array of deltas of coarse grid in y direction
+  integer,          optional, intent(in   ) :: extra_halo  !< Extra halo size
 
   integer                                   :: n, l, m, my_tile_coarse
   integer                                   :: num_nest
