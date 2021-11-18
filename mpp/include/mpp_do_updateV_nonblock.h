@@ -567,6 +567,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   integer :: tMe, dir
 
   update_edge_only = BTEST(flags, EDGEONLY)
+  recv = .false.
   recv(1) = BTEST(flags,EAST)
   recv(3) = BTEST(flags,SOUTH)
   recv(5) = BTEST(flags,WEST)

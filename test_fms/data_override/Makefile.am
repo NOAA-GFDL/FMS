@@ -44,4 +44,4 @@ EXTRA_DIST = input_base.nml diag_table_base data_table_base	\
 test_data_override2.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table
+CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml

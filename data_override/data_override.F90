@@ -40,6 +40,7 @@
 !> @brief File for @ref data_override_mod
 
 module data_override_mod
+use yaml_parser_mod
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error, FATAL, WARNING, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
@@ -139,7 +140,12 @@ real                                      :: min_glo_lon_atm, max_glo_lon_atm
 real                                      :: min_glo_lon_lnd, max_glo_lon_lnd
 real                                      :: min_glo_lon_ice, max_glo_lon_ice
 integer:: num_fields = 0 !< number of fields in override_array already processed
+#ifdef use_yaml
+type(data_type), dimension(:), allocatable           :: data_table !< user-provided data table
+#else
 type(data_type), dimension(max_table)           :: data_table !< user-provided data table
+#endif
+
 type(data_type)                                 :: default_table
 type(override_type), dimension(max_array), save :: override_array !< to store processed fields
 type(override_type), save                       :: default_array
@@ -188,14 +194,9 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
   character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,use_get_grid_version
-  integer               :: i, iunit, ntable, ntable_lima, ntable_new, unit,io_status, ierr
-  character(len=256)    :: record
+  integer               :: i, unit, io_status, ierr
   logical               :: file_open
-  logical               :: ongrid
-  character(len=128)    :: region, region_type
   type(FmsNetcdfFile_t) :: fileobj
-
-  type(data_type)  :: data_entry
 
   debug_data_override = .false.
 
@@ -235,128 +236,18 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     default_table%file_name = 'none'
     default_table%factor = 1.
     default_table%interpol_method = 'bilinear'
+
+#ifdef use_yaml
+    call read_table_yaml(data_table)
+#else
     do i = 1,max_table
        data_table(i) = default_table
     enddo
-
-!  Read coupler_table
-    open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
-    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
-
-    ntable = 0
-    ntable_lima = 0
-    ntable_new = 0
-
-    do while (ntable <= max_table)
-       read(iunit,'(a)',end=100) record
-       if (record(1:1) == '#') cycle
-       if (record(1:10) == '          ') cycle
-       ntable=ntable+1
-       if (index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
-          if(index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
-             ntable_lima = ntable_lima + 1
-             read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
-                                   data_entry%file_name, ongrid, data_entry%factor, region, region_type
-             if(ongrid) then
-                data_entry%interpol_method = 'none'
-             else
-                data_entry%interpol_method = 'bilinear'
-             endif
-          else
-             ntable_new=ntable_new+1
-             read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
-                                   data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, region_type
-             if (data_entry%interpol_method == 'default') then
-                data_entry%interpol_method = default_table%interpol_method
-             endif
-             if (.not.(data_entry%interpol_method == 'default'  .or. &
-                  data_entry%interpol_method == 'bicubic'  .or. &
-                  data_entry%interpol_method == 'bilinear' .or. &
-                  data_entry%interpol_method == 'none')) then
-                unit = stdout()
-                write(unit,*)" gridname is ", trim(data_entry%gridname)
-                write(unit,*)" fieldname_code is ", trim(data_entry%fieldname_code)
-                write(unit,*)" fieldname_file is ", trim(data_entry%fieldname_file)
-                write(unit,*)" file_name is ", trim(data_entry%file_name)
-                write(unit,*)" factor is ", data_entry%factor
-                write(unit,*)" interpol_method is ", trim(data_entry%interpol_method)
-                call mpp_error(FATAL, 'data_override_mod: invalid last entry in data_override_table, ' &
-                     //'its value should be "default", "bicubic", "bilinear" or "none" ')
-             endif
-          endif
-          if( trim(region_type) == "inside_region" ) then
-             data_entry%region_type = INSIDE_REGION
-          else if( trim(region_type) == "outside_region" ) then
-             data_entry%region_type = OUTSIDE_REGION
-          else
-             call mpp_error(FATAL, 'data_override_mod: region type should be inside_region or outside_region')
-          endif
-          if (data_entry%file_name == "") call mpp_error(FATAL, &
-              "data_override: filename not given in data_table when region_type is not NO_REGION")
-          if(data_entry%fieldname_file == "") call mpp_error(FATAL, &
-             "data_override: fieldname_file must be specified in data_table when region_type is not NO_REGION")
-          if( trim(data_entry%interpol_method) == 'none') call mpp_error(FATAL, &
-             "data_override(data_override_init): ongrid must be false when region_type is not NO_REGION")
-          read(region,*) data_entry%lon_start, data_entry%lon_end, data_entry%lat_start, data_entry%lat_end
-          !--- make sure data_entry%lon_end > data_entry%lon_start and data_entry%lat_end > data_entry%lat_start
-          if(data_entry%lon_end .LE. data_entry%lon_start) call mpp_error(FATAL, &
-             "data_override: lon_end should be greater than lon_start")
-          if(data_entry%lat_end .LE. data_entry%lat_start) call mpp_error(FATAL, &
-             "data_override: lat_end should be greater than lat_start")
-       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then ! old format
-          ntable_lima = ntable_lima + 1
-          read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
-                                   data_entry%file_name, ongrid, data_entry%factor
-          if(ongrid) then
-             data_entry%interpol_method = 'none'
-          else
-             data_entry%interpol_method = 'bilinear'
-          endif
-          data_entry%lon_start = 0.0
-          data_entry%lon_end   = -1.0
-          data_entry%lat_start = 0.0
-          data_entry%lat_end   = -1.0
-          data_entry%region_type = NO_REGION
-       else                                      ! new format
-          ntable_new=ntable_new+1
-          read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
-                                data_entry%file_name, data_entry%interpol_method, data_entry%factor
-          if (data_entry%interpol_method == 'default') then
-            data_entry%interpol_method = default_table%interpol_method
-          endif
-          if (.not.(data_entry%interpol_method == 'default'  .or. &
-                    data_entry%interpol_method == 'bicubic'  .or. &
-                    data_entry%interpol_method == 'bilinear' .or. &
-                    data_entry%interpol_method == 'none')) then
-             unit = stdout()
-             write(unit,*)" gridname is ", trim(data_entry%gridname)
-             write(unit,*)" fieldname_code is ", trim(data_entry%fieldname_code)
-             write(unit,*)" fieldname_file is ", trim(data_entry%fieldname_file)
-             write(unit,*)" file_name is ", trim(data_entry%file_name)
-             write(unit,*)" factor is ", data_entry%factor
-             write(unit,*)" interpol_method is ", trim(data_entry%interpol_method)
-             call mpp_error(FATAL, 'data_override_mod: invalid last entry in data_override_table, ' &
-                               //'its value should be "default", "bicubic", "bilinear" or "none" ')
-          endif
-          data_entry%lon_start = 0.0
-          data_entry%lon_end   = -1.0
-          data_entry%lat_start = 0.0
-          data_entry%lat_end   = -1.0
-          data_entry%region_type = NO_REGION
-       endif
-       data_table(ntable) = data_entry
-    enddo
-    call mpp_error(FATAL,'too many enries in data_table')
-99  call mpp_error(FATAL,'error in data_table format')
-100 continue
-    table_size = ntable
-    if(ntable_new*ntable_lima /= 0) call mpp_error(FATAL, &
-       'data_override_mod: New and old formats together in same data_table not supported')
-    close(iunit, iostat=io_status)
-    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in closing file data_table')
+    call read_table(data_table)
+#endif
 
 !  Initialize override array
-    default_array%gridname = 'NON'
+    default_array%gridname = 'NONE'
     default_array%fieldname = 'NONE'
     default_array%t_index = -1
     default_array%dims = -1
@@ -454,6 +345,185 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  end if
 
 end subroutine data_override_init
+
+#ifndef use_yaml
+subroutine read_table(data_table)
+    type(data_type), dimension(max_table), intent(inout) :: data_table
+
+    integer :: ntable
+    integer :: ntable_lima
+    integer :: ntable_new
+
+    integer :: iunit
+    integer :: io_status
+    character(len=256)    :: record
+    type(data_type)  :: data_entry
+
+    logical               :: ongrid
+    character(len=128)    :: region, region_type
+
+    integer :: sunit
+
+!  Read coupler_table
+    open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
+    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
+
+    ntable = 0
+    ntable_lima = 0
+    ntable_new = 0
+
+    do while (ntable <= max_table)
+       read(iunit,'(a)',end=100) record
+       if (record(1:1) == '#') cycle
+       if (record(1:10) == '          ') cycle
+       ntable=ntable+1
+       if (index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
+          if(index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
+             ntable_lima = ntable_lima + 1
+             read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                   data_entry%file_name, ongrid, data_entry%factor, region, region_type
+             if(ongrid) then
+                data_entry%interpol_method = 'none'
+             else
+                data_entry%interpol_method = 'bilinear'
+             endif
+          else
+             ntable_new=ntable_new+1
+             read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                   data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, region_type
+             if (data_entry%interpol_method == 'default') then
+                data_entry%interpol_method = default_table%interpol_method
+             endif
+             if (.not.(data_entry%interpol_method == 'default'  .or. &
+                  data_entry%interpol_method == 'bicubic'  .or. &
+                  data_entry%interpol_method == 'bilinear' .or. &
+                  data_entry%interpol_method == 'none')) then
+                sunit = stdout()
+                write(sunit,*)" gridname is ", trim(data_entry%gridname)
+                write(sunit,*)" fieldname_code is ", trim(data_entry%fieldname_code)
+                write(sunit,*)" fieldname_file is ", trim(data_entry%fieldname_file)
+                write(sunit,*)" file_name is ", trim(data_entry%file_name)
+                write(sunit,*)" factor is ", data_entry%factor
+                write(sunit,*)" interpol_method is ", trim(data_entry%interpol_method)
+                call mpp_error(FATAL, 'data_override_mod: invalid last entry in data_override_table, ' &
+                     //'its value should be "default", "bicubic", "bilinear" or "none" ')
+             endif
+          endif
+          if( trim(region_type) == "inside_region" ) then
+             data_entry%region_type = INSIDE_REGION
+          else if( trim(region_type) == "outside_region" ) then
+             data_entry%region_type = OUTSIDE_REGION
+          else
+             call mpp_error(FATAL, 'data_override_mod: region type should be inside_region or outside_region')
+          endif
+          if (data_entry%file_name == "") call mpp_error(FATAL, &
+              "data_override: filename not given in data_table when region_type is not NO_REGION")
+          if(data_entry%fieldname_file == "") call mpp_error(FATAL, &
+             "data_override: fieldname_file must be specified in data_table when region_type is not NO_REGION")
+          if( trim(data_entry%interpol_method) == 'none') call mpp_error(FATAL, &
+             "data_override(data_override_init): ongrid must be false when region_type is not NO_REGION")
+          read(region,*) data_entry%lon_start, data_entry%lon_end, data_entry%lat_start, data_entry%lat_end
+          !--- make sure data_entry%lon_end > data_entry%lon_start and data_entry%lat_end > data_entry%lat_start
+          if(data_entry%lon_end .LE. data_entry%lon_start) call mpp_error(FATAL, &
+             "data_override: lon_end should be greater than lon_start")
+          if(data_entry%lat_end .LE. data_entry%lat_start) call mpp_error(FATAL, &
+             "data_override: lat_end should be greater than lat_start")
+       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then ! old format
+          ntable_lima = ntable_lima + 1
+          read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                   data_entry%file_name, ongrid, data_entry%factor
+          if(ongrid) then
+             data_entry%interpol_method = 'none'
+          else
+             data_entry%interpol_method = 'bilinear'
+          endif
+          data_entry%lon_start = 0.0
+          data_entry%lon_end   = -1.0
+          data_entry%lat_start = 0.0
+          data_entry%lat_end   = -1.0
+          data_entry%region_type = NO_REGION
+       else                                      ! new format
+          ntable_new=ntable_new+1
+          read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
+                                data_entry%file_name, data_entry%interpol_method, data_entry%factor
+          if (data_entry%interpol_method == 'default') then
+            data_entry%interpol_method = default_table%interpol_method
+          endif
+          if (.not.(data_entry%interpol_method == 'default'  .or. &
+                    data_entry%interpol_method == 'bicubic'  .or. &
+                    data_entry%interpol_method == 'bilinear' .or. &
+                    data_entry%interpol_method == 'none')) then
+             sunit = stdout()
+             write(sunit,*)" gridname is ", trim(data_entry%gridname)
+             write(sunit,*)" fieldname_code is ", trim(data_entry%fieldname_code)
+             write(sunit,*)" fieldname_file is ", trim(data_entry%fieldname_file)
+             write(sunit,*)" file_name is ", trim(data_entry%file_name)
+             write(sunit,*)" factor is ", data_entry%factor
+             write(sunit,*)" interpol_method is ", trim(data_entry%interpol_method)
+             call mpp_error(FATAL, 'data_override_mod: invalid last entry in data_override_table, ' &
+                               //'its value should be "default", "bicubic", "bilinear" or "none" ')
+          endif
+          data_entry%lon_start = 0.0
+          data_entry%lon_end   = -1.0
+          data_entry%lat_start = 0.0
+          data_entry%lat_end   = -1.0
+          data_entry%region_type = NO_REGION
+       endif
+       data_table(ntable) = data_entry
+    enddo
+    call mpp_error(FATAL,'too many enries in data_table')
+99  call mpp_error(FATAL,'error in data_table format')
+100 continue
+    table_size = ntable
+    if(ntable_new*ntable_lima /= 0) call mpp_error(FATAL, &
+       'data_override_mod: New and old formats together in same data_table not supported')
+    close(iunit, iostat=io_status)
+    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in closing file data_table')
+end subroutine read_table
+
+#else
+subroutine read_table_yaml(data_table)
+    type(data_type), dimension(:), allocatable, intent(out) :: data_table
+
+    integer, allocatable :: entry_id(:)
+    integer :: nentries
+    integer :: i
+    character(len=50) :: buffer
+    integer :: file_id
+
+    file_id = open_and_parse_file("data_table.yaml")
+    nentries = get_num_blocks(file_id, "data_table")
+    allocate(data_table(nentries))
+    allocate(entry_id(nentries))
+    call get_block_ids(file_id, "data_table", entry_id)
+
+    do i = 1, nentries
+       call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
+       call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
+       call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
+       call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
+       call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
+       call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+       call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
+
+       if(trim(buffer) == "inside_region" ) then
+          data_table(i)%region_type = INSIDE_REGION
+       else if( trim(buffer) == "outside_region" ) then
+          data_table(i)%region_type = OUTSIDE_REGION
+       else
+          data_table(i)%region_type = NO_REGION
+       endif
+
+       call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
+       call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
+       call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
+       call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+
+    end do
+
+    table_size = nentries !< Because one variable is not enough
+end subroutine read_table_yaml
+#endif
 
 !> @brief Unset domains that had previously been set for use by data_override.
 !!
