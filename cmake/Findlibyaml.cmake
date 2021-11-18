@@ -1,0 +1,9 @@
+# Try to find libyaml includes and library.
+# The following variables are set:
+#    LIBYAML_INCLUDE_DIR
+#    LIBYAML_LIBRARIES
+
+
+FIND_PATH(LIBYAML_INCLUDE_DIR NAMES yaml.h)
+FIND_LIBRARY(LIBYAML_LIBRARIES NAMES yaml libyaml)
+MARK_AS_ADVANCED(LIBYAML_INCLUDE_DIR LIBYAML_LIBRARIES)
