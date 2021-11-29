@@ -91,21 +91,21 @@ type diag_yaml_files_type
 
  contains
  procedure :: copy_struct => copy_file_struct_to_object
- procedure :: fname => get_file_fname
- procedure :: frequnit => get_file_frequnit
- procedure :: freq => get_file_freq
- procedure :: timeunit => get_file_timeunit
- procedure :: unlimdim => get_file_unlimdim
- procedure :: write_file => get_file_write
- procedure :: realm => get_file_realm
- procedure :: region => get_file_region
- procedure :: new_file_freq => get_file_new_file_freq
- procedure :: new_file_freq_units => get_file_new_file_freq_units
- procedure :: start_time => get_file_start_time
- procedure :: duration => get_file_duration
- procedure :: duration_units => get_file_duration_units
- procedure :: varlist => get_file_varlist
- procedure :: global_meta => get_file_global_meta
+ procedure :: get_file_fname
+ procedure :: get_file_frequnit
+ procedure :: get_file_freq
+ procedure :: get_file_timeunit
+ procedure :: get_file_unlimdim
+ procedure :: get_file_write
+ procedure :: get_file_realm
+ procedure :: get_file_region
+ procedure :: get_file_new_file_freq
+ procedure :: get_file_new_file_freq_units
+ procedure :: get_file_start_time
+ procedure :: get_file_duration
+ procedure :: get_file_duration_units
+ procedure :: get_file_varlist
+ procedure :: get_file_global_meta
 
 end type diag_yaml_files_type
 
@@ -141,16 +141,16 @@ type diag_yaml_files_var_type
                                                                      !! add from diag_yaml
  contains
   procedure :: copy_struct => copy_variable_struct_to_object 
-  procedure :: fname => get_var_fname
-  procedure :: varname => get_var_varname
-  procedure :: reduction => get_var_reduction
-  procedure :: module_var => get_var_module
-  procedure :: skind => get_var_skind
-  procedure :: outname => get_var_outname
-  procedure :: longname => get_var_longname
-  procedure :: units => get_var_units
-  procedure :: write_var => get_var_write
-  procedure :: attr => get_var_attributes
+  procedure :: get_var_fname
+  procedure :: get_var_varname
+  procedure :: get_var_reduction
+  procedure :: get_var_module
+  procedure :: get_var_skind
+  procedure :: get_var_outname
+  procedure :: get_var_longname
+  procedure :: get_var_units
+  procedure :: get_var_write
+  procedure :: get_var_attributes
 
 end type diag_yaml_files_var_type
 
