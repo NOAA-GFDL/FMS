@@ -3685,6 +3685,7 @@ CONTAINS
        END IF
     END IF
 
+    CALL diag_yaml_object_init()
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
     IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
