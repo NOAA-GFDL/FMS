@@ -1,0 +1,21 @@
+name: Build libFMS with cmake
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest 
+    strategy:
+      matrix:
+        omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
+    container:
+      image: ryanmulhall/ubuntu_libfms_cmake_gnu:latest
+      env:
+        CMAKE_FLAGS: "${{ matrix.omp-flags }} -D64BIT=on"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Generate makefiles with CMake 
+      run: cmake $CMAKE_FLAGS
+    - name: Build the library
+      run: make
