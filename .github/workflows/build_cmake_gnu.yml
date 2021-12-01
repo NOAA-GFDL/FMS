@@ -9,7 +9,7 @@ jobs:
       matrix:
         omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
     container:
-      image: ryanmulhall/ubuntu_libfms_cmake_gnu:latest
+      image: noaagfdl/ubuntu_libfms_gnu:cmake-3.22.0
       env:
         CMAKE_FLAGS: "${{ matrix.omp-flags }} -D64BIT=on"
     steps:
