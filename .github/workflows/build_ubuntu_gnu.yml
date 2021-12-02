@@ -1,4 +1,4 @@
-name: Build libFMS test
+name: Build libFMS test with autotools
 
 on: [push, pull_request]
 
