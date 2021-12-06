@@ -31,8 +31,8 @@ noinst_LTLIBRARIES = libdiag_manager.la
 
 # Each convenience library depends on its source.
 libdiag_manager_la_SOURCES = \
-  diag_axis.F90 \
   diag_data.F90 \
+		diag_axis.F90 \
   diag_grid.F90 \
   diag_manager.F90 \
   diag_output.F90 \
@@ -42,7 +42,9 @@ libdiag_manager_la_SOURCES = \
   diag_yaml.h \
   diag_yaml.c \
   fms_diag_object.F90 \
-  fms_diag_yaml_object.F90
+  fms_diag_yaml_object.F90 \
+  fms_diag_object_container.F90 \
+  fms_doubly_linked_list.F90
 
 # Some mods are dependant on other mods in this dir.
 diag_axis_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
@@ -52,9 +54,13 @@ diag_util_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_axis_mod.$(FC_MODEXT
 diag_table_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT)
 fms_diag_yaml_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT) diag_yaml.h
 fms_diag_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_axis_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) diag_yaml.h
+fms_diag_object_container_mod.$(FC_MODEXT): fms_diag_object_mod.$(FC_MODEXT) fms_doubly_linked_list_mod.$(FC_MODEXT)
 diag_manager_mod.$(FC_MODEXT): diag_axis_mod.$(FC_MODEXT) diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT) \
-	                   diag_output_mod.$(FC_MODEXT) diag_grid_mod.$(FC_MODEXT) diag_table_mod.$(FC_MODEXT) \
-			   fms_diag_object_mod.$(FC_MODEXT)
+	diag_output_mod.$(FC_MODEXT) diag_grid_mod.$(FC_MODEXT) diag_table_mod.$(FC_MODEXT) \
+	fms_diag_object_mod.$(FC_MODEXT) fms_diag_object_container_mod.$(FC_MODEXT)
+
+# diag_data_mod.$(FC_MODEXT): fms_diag_object_mod.$(FC_MODEXT) fms_diag_object_container_mod.$(FC_MODEXT)
+
 
 # Mod files are built and then installed as headers.
 MODFILES = \
@@ -67,7 +73,10 @@ MODFILES = \
   fms_diag_yaml_object_mod.$(FC_MODEXT) \
   fms_diag_yaml_mod.$(FC_MODEXT) \
   fms_diag_object_mod.$(FC_MODEXT) \
+  fms_doubly_linked_list_mod.$(FC_MODEXT) \
+  fms_diag_object_container_mod.$(FC_MODEXT) \
   diag_manager_mod.$(FC_MODEXT)
+
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
