@@ -12,6 +12,7 @@ use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
+use fms_diag_yaml_object_mod, only: diag_yaml_files_type, diag_yaml_files_var_type
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -28,6 +29,8 @@ implicit none
 
 !> \brief Object that holds all variable information
 type fms_diag_object
+     type (diag_yaml_files_var_type), allocatable, dimension(:) :: diag_field !< info from diag_table
+     type (diag_yaml_files_type),     allocatable, dimension(:) :: diag_file  !< info from diag_table
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the 
                                                                            !! file objects for this variable

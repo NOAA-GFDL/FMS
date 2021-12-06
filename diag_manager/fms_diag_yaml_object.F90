@@ -56,7 +56,8 @@ type diag_yaml_files_type
      integer :: file_new_file_freq !< Frequency for closing the existing file
      character (len=:), allocatable :: file_new_file_freq_units !< Time units for creating a new file.
                                                         !! Required if “new_file_freq” used
-     character (len=:), allocatable :: file_start_time !< Time to start the file for the first time. Requires “new_file_freq”
+     character (len=:), allocatable :: file_start_time !< Time to start the file for the first time. Requires
+                                                       !! “new_file_freq”
      integer :: file_duration !< How long the file should receive data after start time
                                       !! in “file_duration_units”.  This optional field can only
                                       !! be used if the start_time field is present.  If this field
