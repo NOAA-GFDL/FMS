@@ -18,8 +18,8 @@
 !***********************************************************************
 !> @defgroup fms_diag_yaml_object_mod fms_diag_yaml_object_mod
 !> @ingroup diag_manager
-!! @brief The diag yaml objects are handled here, with variables the correspond to 
-!! entries in the diag yaml file.  The actual parsing of the yaml is handled in 
+!! @brief The diag yaml objects are handled here, with variables the correspond to
+!! entries in the diag yaml file.  The actual parsing of the yaml is handled in
 !! @ref fms_diag_yaml_mod.
 !! @author Tom Robinson
 
@@ -35,12 +35,12 @@ use iso_c_binding
       implicit none
 integer, parameter :: NUM_REGION_ARRAY = 8
 
-type subregion_type
-     character (len=:), allocatable :: subregion_type !< Flag indication the type of region,
+type sub_region_type
+     character (len=:), allocatable :: grid_type !< Flag indicating the type of region,
                                                       !!accepetable values are "latlon" and "index"
-     real :: file_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mod
-     integer :: file_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mod
-end type subregion_type
+     real :: lat_lon_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mod
+     integer :: index_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mod
+end type sub_region_type
 
 type diag_yaml_files_type
      character (len=:), allocatable :: file_fname !< file name
@@ -49,26 +49,26 @@ type diag_yaml_files_type
      character (len=:), allocatable :: file_timeunit !< The unit of time
      character (len=:), allocatable :: file_unlimdim !< The name of the unlimited dimension
      logical :: file_write
-     character (len=:), allocatable :: string_file_write !< false if the user doesn’t want the file to be 
+     character (len=:), allocatable :: string_file_write !< false if the user doesn’t want the file to be
                                                !! created (default is true).
      character (len=:), allocatable :: file_realm !< The modeling realm that the variables come from
-     real :: file_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture
+     type(sub_region_type) :: file_sub_region !< type containing info about the subregion, if any
      integer :: file_new_file_freq !< Frequency for closing the existing file
-     character (len=:), allocatable :: file_new_file_freq_units !< Time units for creating a new file. 
+     character (len=:), allocatable :: file_new_file_freq_units !< Time units for creating a new file.
                                                         !! Required if “new_file_freq” used
      character (len=:), allocatable :: file_start_time !< Time to start the file for the first time. Requires “new_file_freq”
-     integer :: file_duration !< How long the file should receive data after start time 
-                                      !! in “file_duration_units”.  This optional field can only 
+     integer :: file_duration !< How long the file should receive data after start time
+                                      !! in “file_duration_units”.  This optional field can only
                                       !! be used if the start_time field is present.  If this field
                                       !! is absent, then the file duration will be equal to the
-                                      !! frequency for creating new files.  
+                                      !! frequency for creating new files.
                                       !! NOTE: The file_duration_units field must also be present if
                                       !! this field is present.
     character (len=:), allocatable :: file_duration_units !< The file duration units
-    character (len=:), dimension(:), allocatable :: file_varlist !< An array of variable names
+    character (len=50), dimension(:), allocatable :: file_varlist !< An array of variable names
                                                              !! within a file
-    character (len=:), dimension(:,:), allocatable :: file_global_meta !< Array of key(dim=1) 
-                                                        !! and values(dim=2) to be added as global 
+    character (len=50), dimension(:,:), allocatable :: file_global_meta !< Array of key(dim=1)
+                                                        !! and values(dim=2) to be added as global
                                                         !! meta data to the file
 
  contains
@@ -79,7 +79,7 @@ type diag_yaml_files_type
  procedure :: get_file_unlimdim
  procedure :: get_file_write
  procedure :: get_file_realm
- procedure :: get_file_region
+ procedure :: get_file_sub_region
  procedure :: get_file_new_file_freq
  procedure :: get_file_new_file_freq_units
  procedure :: get_file_start_time
@@ -103,7 +103,7 @@ type diag_yaml_files_var_type
      character (len=:), allocatable :: var_outname !< Name of the variable as written to the file
      character (len=:), allocatable :: var_longname !< Overwrites the long name of the variable
      character (len=:), allocatable :: var_units !< Overwrites the units
-     character (len=:), dimension (:), allocatable :: var_attributes !< Attributes to overwrite or
+     character (len=255), dimension (:, :), allocatable :: var_attributes !< Attributes to overwrite or
                                                                      !! add from diag_yaml
  contains
   procedure :: get_var_fname
@@ -163,12 +163,12 @@ pure function get_file_realm(diag_files_obj) result (res)
  character (:), allocatable :: res !< What is returned
   res = diag_files_obj%file_realm
 end function get_file_realm
-!> \brief Inquiry for diag_files_obj%file_region
-pure function get_file_region (diag_files_obj) result (res)
+!> \brief Inquiry for diag_files_obj%file_subregion
+pure function get_file_sub_region (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
- real :: res (NUM_REGION_ARRAY) !< What is returned
-  res = diag_files_obj%file_region
-end function get_file_region
+ type(sub_region_type) :: res !< What is returned
+  res = diag_files_obj%file_sub_region
+end function get_file_sub_region
 !> \brief Inquiry for diag_files_obj%file_new_file_freq
 pure function get_file_new_file_freq(diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
@@ -184,7 +184,7 @@ end function get_file_new_file_freq_units
 !> \brief Inquiry for diag_files_obj%file_start_time
 pure function get_file_start_time (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
- integer :: res !< What is returned
+ character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_start_time
 end function get_file_start_time
 !> \brief Inquiry for diag_files_obj%file_duration
@@ -275,26 +275,20 @@ end function get_var_write
 !> \brief Inquiry for diag_yaml_files_var_obj%var_attributes
 pure function get_var_attributes(diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
- character (len=:), allocatable :: res (:) !< What is returned
+ character (len=255), allocatable :: res (:,:) !< What is returned
  res = diag_var_obj%var_attributes
 end function get_var_attributes
 
+!> @brief Initializes the non string values of a diag_yaml_files_type to its
+!! default values
 subroutine diag_yaml_files_obj_init(obj)
-  type(diag_yaml_files_type), intent(in) :: obj
+  type(diag_yaml_files_type), intent(out) :: obj !< diag_yaml_files_type object to initialize
 
-  obj%file_fname          = ""
-  obj%file_frequnit       = 0
   obj%file_freq           = 0
-  obj%file_timeunit       = ""
-  obj%file_unlimdim       = ""
   obj%file_write          = .true.
-  obj%string_file_write   = ""
-  obj%file_realm          = ""
-  obj%file_new_file_freq  = ""
-  obj%file_start_time     = ""
   obj%file_duration       = 0
-  obj%file_duration_units = ""
-
+  obj%file_sub_region%lat_lon_region = -999.
+  obj%file_sub_region%index_region = -999
 end subroutine diag_yaml_files_obj_init
 
 end module fms_diag_yaml_object_mod

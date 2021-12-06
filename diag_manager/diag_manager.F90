@@ -225,6 +225,9 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+#ifdef use_yaml
+  use fms_diag_yaml_mod, only: diag_yaml_object_init
+#endif
   USE fms_diag_object_mod, ONLY: fms_diag_object, diag_object_placeholder
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
@@ -3685,7 +3688,10 @@ CONTAINS
        END IF
     END IF
 
+#ifdef use_yaml
     CALL diag_yaml_object_init()
+#endif
+
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
     IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
