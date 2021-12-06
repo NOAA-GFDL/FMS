@@ -33,7 +33,7 @@ subroutine system_clock_mpi( count, count_rate, count_max )
       if(first_call_system_clock_mpi)then
          first_call_system_clock_mpi=.false.
          mpi_count0 = MPI_WTime()
-         mpi_tick_rate = real(1.d0/MPI_WTick())
+         mpi_tick_rate = real(1.d0/MPI_WTick(), r8_kind)
       endif
       if( PRESENT(count) )then
           count = int((MPI_WTime()-mpi_count0)*mpi_tick_rate, i8_kind)

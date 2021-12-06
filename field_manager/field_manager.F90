@@ -4694,12 +4694,6 @@ end function fm_modify_name  !}
 !! all fields and reset the field tree to only the root field.
 subroutine initialize  !{
 !
-!        arguments
-!
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!
 !        Initialize the root field
 !
 if (.not. module_is_initialized) then  !{

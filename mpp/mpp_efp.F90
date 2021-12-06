@@ -257,7 +257,7 @@ function mpp_reproducing_sum_r4_2d(array, isr, ier, jsr, jer, EFP_sum, reproduci
 
   array_r8 = array
 
-  sum = int(mpp_reproducing_sum_r8_2d(array_r8, isr, ier, jsr, jer, EFP_sum, reproducing, &
+  sum = real(mpp_reproducing_sum_r8_2d(array_r8, isr, ier, jsr, jer, EFP_sum, reproducing, &
                             overflow_check, err), r4_kind)
 
   return

@@ -1776,7 +1776,7 @@ module mpp_domains_mod
   interface mpp_global_field_ad
      module procedure mpp_global_field2D_r8_2d_ad
      module procedure mpp_global_field2D_r8_3d_ad
-     module procedure mpp_global_field2d_r8_4d_ad
+     module procedure mpp_global_field2D_r8_4d_ad
      module procedure mpp_global_field2D_r8_5d_ad
 #ifdef OVERLOAD_C8
      module procedure mpp_global_field2D_c8_2d_ad

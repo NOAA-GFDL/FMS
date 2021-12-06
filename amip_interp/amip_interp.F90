@@ -892,7 +892,7 @@ endif
 
     tice_crit_k = tice_crit
     if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + TFREEZE
-    ice_crit = int((tice_crit_k-TFREEZE)*100., I2_KIND)
+    ice_crit = nint((tice_crit_k-TFREEZE)*100., I2_KIND)
 
 !   ---- set up file dependent variable ----
 !   ----   global file name   ----
@@ -1357,7 +1357,7 @@ endif
      else
           call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-     idat =  int(dat, I2_KIND) ! reconstruct packed data for reproducibility
+     idat =  nint(dat, I2_KIND) ! reconstruct packed data for reproducibility
 
    !---- unpacking of data ----
 
