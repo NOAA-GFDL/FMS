@@ -125,8 +125,6 @@ subroutine diag_yaml_object_init
     deallocate(var_ids)
   enddo
 
-  call dump_diag_yaml()
-
   deallocate(file_ids)
 end subroutine
 
@@ -302,68 +300,6 @@ subroutine get_region_index(diag_yaml_id, region_id, index_region)
   call get_value_from_key(diag_yaml_id, region_id, "uend", index_region(8), is_optional=.true.)
 
 end subroutine get_region_index
-
-!< @brief dumps the contents of the diag_yaml obj
-subroutine dump_diag_yaml()
-  integer :: i, j      !< For do loops
-  integer :: diag_unit !< Unit for the output diag_yaml file
-
-  if (mpp_pe() .eq. mpp_root_pe()) then
-
-  open(newunit = diag_unit, file='diag_table_out.yaml', status='replace', form='formatted')
-
-  write(diag_unit, *), "Printing contents from the diag_table.yaml"
-  write(diag_unit, *), "title:", diag_yaml%diag_title
-  write(diag_unit, *), "base_date:", diag_yaml%diag_basedate
-
-  do i = 1, size(diag_yaml%diag_files, 1)
-    write(diag_unit, *), ""
-    write(diag_unit, *), "New File!:"
-    write(diag_unit, *), "file_name:", trim(diag_yaml%diag_files(i)%file_fname)
-    write(diag_unit, *), "freq_units:", trim(diag_yaml%diag_files(i)%file_frequnit)
-    write(diag_unit, *), "freq:", diag_yaml%diag_files(i)%file_freq
-    write(diag_unit, *), "unlimdim:", trim(diag_yaml%diag_files(i)%file_unlimdim)
-    write(diag_unit, *), "time_units:", trim(diag_yaml%diag_files(i)%file_timeunit)
-    write(diag_unit, *), "write_file:", diag_yaml%diag_files(i)%file_write
-
-    if( trim(diag_yaml%diag_files(i)%file_sub_region%grid_type) .eq. "latlon") then
-      write(diag_unit, *), "subregion:", diag_yaml%diag_files(i)%file_sub_region%lat_lon_region
-    elseif( trim(diag_yaml%diag_files(i)%file_sub_region%grid_type) .eq. "index") then
-      write(diag_unit, *), "subregion:", diag_yaml%diag_files(i)%file_sub_region%index_region
-    endif
-
-    if (allocated(diag_yaml%diag_files(i)%file_global_meta)) then
-      do j=1, size(diag_yaml%diag_files(i)%file_global_meta, 1)
-        write(diag_unit, *), "key:", trim(diag_yaml%diag_files(i)%file_global_meta(j,1)), &
-          " value:", trim(diag_yaml%diag_files(i)%file_global_meta(j,2))
-      enddo
-    endif
-  enddo
-
-  do i = 1, size(diag_yaml%diag_fields, 1)
-    write(diag_unit, *), ""
-    write(diag_unit, *), "New Variable!:"
-
-    write(diag_unit, *), "var_name:", trim(diag_yaml%diag_fields(i)%var_varname)
-    write(diag_unit, *), "reduction:", trim(diag_yaml%diag_fields(i)%var_reduction)
-    write(diag_unit, *), "module:", trim(diag_yaml%diag_fields(i)%var_module)
-    write(diag_unit, *), "kind:", trim(diag_yaml%diag_fields(i)%var_skind)
-    write(diag_unit, *), "var_write:", diag_yaml%diag_fields(i)%var_write
-    write(diag_unit, *), "out_name:", trim(diag_yaml%diag_fields(i)%var_outname)
-    if (allocated(diag_yaml%diag_fields(i)%var_longname)) write(diag_unit, *), &
-      "long_name:", trim(diag_yaml%diag_fields(i)%var_longname)
-    if (allocated(diag_yaml%diag_fields(i)%var_units)) write(diag_unit, *), "units:", &
-      trim(diag_yaml%diag_fields(i)%var_units)
-    if (allocated(diag_yaml%diag_fields(i)%var_attributes)) then
-      do j=1, size(diag_yaml%diag_fields(i)%var_attributes, 1)
-        write(diag_unit, *), "key:", trim(diag_yaml%diag_fields(i)%var_attributes(j,1)), &
-          " value:", trim(diag_yaml%diag_fields(i)%var_attributes(j,2))
-      enddo
-    endif
-  enddo
-  close(diag_unit)
-  endif
-end subroutine
 
 !< @brief gets the total number of variables in the diag_table yaml file
 !< @return total number of variables
