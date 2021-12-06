@@ -37,9 +37,9 @@ integer, parameter :: NUM_REGION_ARRAY = 8
 
 type sub_region_type
      character (len=:), allocatable :: grid_type !< Flag indicating the type of region,
-                                                      !!accepetable values are "latlon" and "index"
-     real :: lat_lon_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mod
-     integer :: index_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mod
+                                                      !!acceptable values are "latlon" and "index"
+     real :: lat_lon_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mode
+     integer :: index_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "index" mode
 end type sub_region_type
 
 type diag_yaml_files_type
