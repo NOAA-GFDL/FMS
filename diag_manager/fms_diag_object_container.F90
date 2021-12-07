@@ -118,11 +118,13 @@ contains
       integer , intent (in) :: key
       class(diag_obj_iterator), intent (in), optional :: iiter
       class(diag_obj_iterator), allocatable:: riter
+      class(literator), allocatable :: temp_liter
       integer :: status
       !!
       !Find the object in the container.
       riter = this%find ( key , iiter)
-      riter = this%the_ll%remove( riter%liter%current )
+      temp_liter = this%the_ll%remove( riter%liter%current )
+      riter = diag_obj_iterator(temp_liter)
    end function
 
    !> return the number of objects held in the container
@@ -137,14 +139,17 @@ contains
    function get_iterator (this) result (oliter)
       class (fms_diag_object_container), intent (in) :: this
       class(diag_obj_iterator) , allocatable :: oliter
-      oliter = diag_obj_iterator()
-      oliter%liter = this%the_ll%get_literator()
+      oliter = diag_obj_iterator( this%the_ll%get_literator() )
    end function
 
-   function diag_obj_iterator_constructor ( ) result (litr)
-      class (diag_obj_iterator), allocatable :: litr
-      allocate(litr)
-   end function diag_obj_iterator_constructor
+
+   function diag_obj_iterator_constructor( iliter ) result (diag_itr)
+    class (literator), allocatable :: iliter
+    class (diag_obj_iterator), allocatable :: diag_itr
+    allocate(diag_itr)
+    diag_itr%liter = iliter;
+ end function diag_obj_iterator_constructor
+
 
    function diag_object_container_constructor () result (doc)
       type(fms_diag_object_container), allocatable :: doc
