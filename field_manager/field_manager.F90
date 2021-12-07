@@ -712,7 +712,8 @@ do while (.TRUE.)
              text_names%mod_name = lowercase(trim(text_names_short%mod_name))
              text_names%fld_name = lowercase(trim(text_names_short%mod_name))
            case(2)
-! If there is only the method_type string then the last 2 strings need to be blank and there are only 2 '"' in the record.
+! If there is only the method_type string then the last 2 strings need to be blank and there
+! are only 2 '"' in the record.
              read(record,*,end=79,err=79) text_names_short
              text_names%fld_type = lowercase(trim(text_names_short%fld_type))
              text_names%mod_name = lowercase(trim(text_names_short%mod_name))
@@ -857,7 +858,8 @@ do while (.TRUE.)
           control_str = text_method_short%method_name
 
         case(2)
-! If there is only the method_type string then the last 2 strings need to be blank and there are only 2 '"' in the record.
+! If there is only the method_type string then the last 2 strings need to be blank and there
+! are only 2 '"' in the record.
           read(record,*,end=99,err=99) text_method_very_short
           fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method_very_short%method_type))
           fields(num_fields)%methods(m)%method_name = " "
@@ -1034,7 +1036,8 @@ do i=1,num_fields-1
        fields(i)%model      == fields(num_fields)%model      .and. &
        fields(i)%field_name == fields(num_fields)%field_name ) then
     if (mpp_pe() .eq. mpp_root_pe()) then
-      call mpp_error(WARNING,'Error in field_manager_mod. Duplicate field name: Field type='//trim(fields(i)%field_type)// &
+      call mpp_error(WARNING,'Error in field_manager_mod. Duplicate field name: Field type='//&
+         trim(fields(i)%field_type)// &
          ',  Model='//trim(MODEL_NAMES(fields(i)%model))// &
          ',  Duplicated name='//trim(fields(i)%field_name))
     endif
@@ -1202,7 +1205,8 @@ do i = 1, num_elem
 
       if ( scan(val_name, set_nonexp ) > 0 ) then
         if (verb .gt. verb_level_warn) then
-!     <ERROR MSG="First character of value is numerical but the value does not appear to be numerical." STATUS="WARNING">
+!     <ERROR MSG="First character of value is numerical but the value does not appear to be
+!     numerical." STATUS="WARNING">
 !       The value may not be numerical. This is a warning as the user may wish to use a value of 2nd_order.
 !     </ERROR>
           call mpp_error(WARNING, trim(warn_header)//                                  &

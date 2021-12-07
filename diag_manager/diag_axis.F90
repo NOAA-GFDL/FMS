@@ -518,7 +518,8 @@ CONTAINS
              IF ( allocated(Axes(id)%attributes(i)%fatt) ) THEN
                 ALLOCATE(attributes(i)%fatt(SIZE(Axes(id)%attributes(i)%fatt(:))), STAT=istat)
                 IF ( istat .NE. 0 ) THEN
-                   CALL error_mesg('diag_axis_mod::get_diag_axis', 'Unable to allocate memory for attribute%fatt', FATAL)
+                   CALL error_mesg('diag_axis_mod::get_diag_axis', &
+                                  &  'Unable to allocate memory for attribute%fatt', FATAL)
                 END IF
                 DO j=1, SIZE(attributes(i)%fatt(:))
                    attributes(i)%fatt(j) = Axes(id)%attributes(i)%fatt(j)
@@ -528,7 +529,8 @@ CONTAINS
              IF ( allocated(Axes(id)%attributes(i)%iatt) ) THEN
                 ALLOCATE(attributes(i)%iatt(SIZE(Axes(id)%attributes(i)%iatt(:))), STAT=istat)
                 IF ( istat .NE. 0 ) THEN
-                   CALL error_mesg('diag_axis_mod::get_diag_axis', 'Unable to allocate memory for attribute%iatt', FATAL)
+                   CALL error_mesg('diag_axis_mod::get_diag_axis', &
+                                  &  'Unable to allocate memory for attribute%iatt', FATAL)
                 END IF
                 DO j=1, SIZE(attributes(i)%iatt(:))
                    attributes(i)%iatt(j) = Axes(id)%attributes(i)%iatt(j)
@@ -1083,7 +1085,8 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   Unable to allocate memory for diag axis attributes
           ! </ERROR>
-          IF ( fms_error_handler('diag_util_mod::attribute_init_axis', 'Unable to allocate memory for diag axis attributes', err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::attribute_init_axis', &
+             &  'Unable to allocate memory for diag axis attributes', err_msg) ) THEN
              RETURN
           END IF
        ELSE
@@ -1218,7 +1221,8 @@ CONTAINS
 
     associate (axis=>Axes(id))
     if (.not.allocated(axis%attributes)) call error_mesg(tag, &
-       'attempt to get compression dimensions from axis "'//trim(axis%name)//'" which is not compressed (does not have any attributes)', FATAL)
+       'attempt to get compression dimensions from axis "'//trim(axis%name)// &
+        & '" which is not compressed (does not have any attributes)', FATAL)
 
     iatt = 0
     do k = 1,axis%num_attributes

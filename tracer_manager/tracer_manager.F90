@@ -267,7 +267,8 @@ do n=1,nfields
 !   <ERROR MSG="MAX_TRACER_FIELDS exceeded" STATUS="FATAL">
 !     The maximum number of tracer fields has been exceeded.
 !   </ERROR>
-         if(num_tracer_fields > MAX_TRACER_FIELDS) call mpp_error(FATAL,'tracer_manager_init: MAX_TRACER_FIELDS exceeded')
+         if(num_tracer_fields > MAX_TRACER_FIELDS) call mpp_error(FATAL, &
+            & 'tracer_manager_init: MAX_TRACER_FIELDS exceeded')
          TRACER_ARRAY(model,total_tracers(model))  = num_tracer_fields
          tracers(num_tracer_fields)%model          = model
          tracers(num_tracer_fields)%tracer_name    = name
@@ -656,7 +657,8 @@ j = TRACER_ARRAY(model,i)
 !   <ERROR MSG="index array size too small in get_tracer_indices" STATUS="FATAL">
 !     The global index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
-         if (n > size(ind(:))) call mpp_error(FATAL,'get_tracer_indices : index array size too small in get_tracer_indices')
+         if (n > size(ind(:))) call mpp_error(FATAL, &
+             & 'get_tracer_indices : index array size too small in get_tracer_indices')
          ind(n) = i
       endif
 
@@ -1089,7 +1091,8 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
       case (MODEL_OCEAN)
         flag =parse(control,'bottom_value',bottom_value)
         if(mpp_pe() == mpp_root_pe() .and. flag == 0) &
-           call mpp_error(NOTE,'set_tracer_profile : Parameter bottom_value needs to be defined for the tracer profile.')
+           call mpp_error(NOTE, &
+                          & 'set_tracer_profile : Parameter bottom_value needs to be defined for the tracer profile.')
       case default
 !   Should there be a NOTE or WARNING message here?
     end select

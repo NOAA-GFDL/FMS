@@ -129,7 +129,8 @@ public       &
 !! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
 !! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
 !! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+!! (a):(a/r)**2 [dimensionless]
 !! @param [in] <dt> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous. [radians], (1 day = 2 * pi)
 !! @param [in] <dt_time> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
@@ -190,8 +191,10 @@ end interface
 !! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
 !! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
 !! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
-!! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared) [dimensionless]
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+!! (a):(a/r)**2 [dimensionless]
+!! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared) [dimensionless]
 !> @ingroup astronomy_mod
 interface daily_mean_solar
    module procedure daily_mean_solar_2d
@@ -2141,7 +2144,7 @@ real, dimension(size(latitude,1),size(latitude,2))   :: h
 !---------------------------------------------------------------------
       real, dimension (size(latitude,1),size(latitude,2)):: &
                                                   cos_half_day, & !< Cosine of half-day length [dimensionless]
-                                                                                                  lat !< Model latitude, adjusted so that it is never 0.5*pi or -0.5*pi
+                                                  lat !< Model latitude, adjusted so that it is never 0.5*pi or -0.5*pi
       real :: tan_dec !< tangent of solar declination [dimensionless]
       real :: eps = 1.0E-05 !< small increment
 
