@@ -21,7 +21,7 @@
 !! @brief The diag yaml objects are handled here, with variables the correspond to
 !! entries in the diag yaml file.  The actual parsing of the yaml is handled in
 !! @ref fms_diag_yaml_mod.
-!! @author Tom Robinson
+!! @author Tom Robinson, Uriel Ramirez
 
 !> @file
 !> @brief File for @ref fms_diag_yaml_object_mod
@@ -33,13 +33,23 @@ module fms_diag_yaml_object_mod
 use fms_mod , only: fms_c2f_string
 use iso_c_binding
       implicit none
-integer, parameter :: NUM_REGION_ARRAY = 8
+integer, parameter :: NUM_SUB_REGION_ARRAY = 8
+integer, parameter :: MAX_STR_LEN = 255
 
+!> @brief type to hold the sub region information about a file
 type sub_region_type
      character (len=:), allocatable :: grid_type !< Flag indicating the type of region,
-                                                      !!acceptable values are "latlon" and "index"
-     real :: lat_lon_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "latlon" mode
-     integer :: index_region (NUM_REGION_ARRAY) !< Bounds of the regional section to capture if in "index" mode
+                                                 !! acceptable values are "latlon" and "index"
+     real :: lat_lon_sub_region (NUM_SUB_REGION_ARRAY)  !< Array that stores the grid point bounds for the sub region
+                                                        !! to use if grid_type is set to "latlon"
+                                                        !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
+                                                        !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
+     integer :: index_sub_region (NUM_SUB_REGION_ARRAY) !< Array that stores the index bounds for the sub region to
+                                                        !! to use if grid_type is set to "index"
+                                                        !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
+                                                        !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
+     integer :: tile !< Tile number of the sub region, required if using the "index" grid type
+
 end type sub_region_type
 
 type diag_yaml_files_type
@@ -66,9 +76,9 @@ type diag_yaml_files_type
                                       !! NOTE: The file_duration_units field must also be present if
                                       !! this field is present.
     character (len=:), allocatable :: file_duration_units !< The file duration units
-    character (len=50), dimension(:), allocatable :: file_varlist !< An array of variable names
+    character (len=MAX_STR_LEN), dimension(:), allocatable :: file_varlist !< An array of variable names
                                                              !! within a file
-    character (len=50), dimension(:,:), allocatable :: file_global_meta !< Array of key(dim=1)
+    character (len=MAX_STR_LEN), dimension(:,:), allocatable :: file_global_meta !< Array of key(dim=1)
                                                         !! and values(dim=2) to be added as global
                                                         !! meta data to the file
 
@@ -104,7 +114,7 @@ type diag_yaml_files_var_type
      character (len=:), allocatable :: var_outname !< Name of the variable as written to the file
      character (len=:), allocatable :: var_longname !< Overwrites the long name of the variable
      character (len=:), allocatable :: var_units !< Overwrites the units
-     character (len=255), dimension (:, :), allocatable :: var_attributes !< Attributes to overwrite or
+     character (len=MAX_STR_LEN), dimension (:, :), allocatable :: var_attributes !< Attributes to overwrite or
                                                                      !! add from diag_yaml
  contains
   procedure :: get_var_fname
@@ -288,8 +298,9 @@ subroutine diag_yaml_files_obj_init(obj)
   obj%file_freq           = 0
   obj%file_write          = .true.
   obj%file_duration       = 0
-  obj%file_sub_region%lat_lon_region = -999.
-  obj%file_sub_region%index_region = -999
+  obj%file_sub_region%lat_lon_sub_region = -999.
+  obj%file_sub_region%index_sub_region = -999
+  obj%file_sub_region%tile = 0
 end subroutine diag_yaml_files_obj_init
 
 end module fms_diag_yaml_object_mod

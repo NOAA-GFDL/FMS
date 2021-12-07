@@ -3475,7 +3475,7 @@ CONTAINS
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
 
 #ifdef use_yaml
-    call diag_yaml_object_end
+    if (use_modern_diag) call diag_yaml_object_end
 #endif
   END SUBROUTINE diag_manager_end
 
@@ -3693,7 +3693,7 @@ CONTAINS
     END IF
 
 #ifdef use_yaml
-    CALL diag_yaml_object_init()
+    if (use_modern_diag) CALL diag_yaml_object_init()
 #endif
 
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)

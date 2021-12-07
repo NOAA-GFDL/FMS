@@ -30,7 +30,8 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use fms_diag_yaml_object_mod, only: diag_yaml_files_type, diag_yaml_files_var_type, diag_yaml_files_obj_init
+use fms_diag_yaml_object_mod, only: diag_yaml_files_type, diag_yaml_files_var_type, diag_yaml_files_obj_init, &
+                                    NUM_SUB_REGION_ARRAY
 use yaml_parser_mod
 use mpp_mod
 
@@ -45,10 +46,10 @@ integer, parameter :: basedate_size = 6
 
 !> @brief Reads the subregion in a yaml file
 !> @ingroup fms_diag_yaml_mod
-interface get_region
-  module procedure get_region_latlon
-  module procedure get_region_index
-end interface get_region
+interface get_sub_region
+  module procedure get_sub_region_latlon
+  module procedure get_sub_region_index
+end interface get_sub_region
 
 !> @brief Object that holds the information of the diag_yaml
 !> @ingroup fms_diag_yaml_mod
@@ -58,8 +59,8 @@ type diag_yaml_object
   type(diag_yaml_files_type), allocatable, private, dimension (:) :: diag_files!< History file info
   type(diag_yaml_files_var_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
   contains
-  procedure :: title => get_title        !< Returns the title
-  procedure :: basedate => get_basedate  !< Returns the basedate array
+  procedure :: get_title        !< Returns the title
+  procedure :: get_basedate     !< Returns the basedate array
 end type diag_yaml_object
 
 type (diag_yaml_object) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
@@ -110,7 +111,7 @@ subroutine diag_yaml_object_init
   allocate(diag_yaml%diag_fields(total_nvars))
 
   var_count = 0
-  do i = 1, nfiles
+  nfiles_loop: do i = 1, nfiles
     call diag_yaml_files_obj_init(diag_yaml%diag_files(i))
     call fill_in_diag_files(diag_yaml_id, file_ids(i), diag_yaml%diag_files(i))
 
@@ -118,12 +119,12 @@ subroutine diag_yaml_object_init
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=file_ids(i))
     allocate(var_ids(nvars))
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=file_ids(i))
-    do j = 1, nvars
+    nvars_loop: do j = 1, nvars
       var_count = var_count + 1
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
-    enddo
+    enddo nvars_loop
     deallocate(var_ids)
-  enddo
+  enddo nfiles_loop
 
   deallocate(file_ids)
 end subroutine
@@ -151,7 +152,7 @@ subroutine fill_in_diag_files(diag_yaml_id, file_id, fileobj)
   type(diag_yaml_files_type), intent(inout) :: fileobj      !< diag_yaml_files_type obj to read the contents into
 
   integer :: nregion          !< Flag indicating of there any regions (0 or 1)
-  integer :: region_id(1)     !< Id of the region clock
+  integer :: sub_region_id(1) !< Id of the sub_region block
   integer :: natt             !< Number of global attributes in the current file
   integer :: global_att_id(1) !< Id of the global attributes block
   integer :: nkeys            !< Number of key/value global attributes pair
@@ -178,12 +179,15 @@ subroutine fill_in_diag_files(diag_yaml_id, file_id, fileobj)
   nregion = 0
   nregion = get_num_blocks(diag_yaml_id, "sub_region", parent_block_id=file_id)
   if (nregion .ne. 0) then
-    call get_block_ids(diag_yaml_id, "sub_region", region_id, parent_block_id=file_id)
-    call diag_get_value_from_key(diag_yaml_id, region_id(1), "grid_type", fileobj%file_sub_region%grid_type)
+    call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=file_id)
+    call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", fileobj%file_sub_region%grid_type)
     if (trim(fileobj%file_sub_region%grid_type) .eq. "latlon") then
-      call get_region(diag_yaml_id, region_id(1), fileobj%file_sub_region%lat_lon_region)
+      call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%lat_lon_sub_region)
     elseif (trim(fileobj%file_sub_region%grid_type) .eq. "index") then
-      call get_region(diag_yaml_id, region_id(1), fileobj%file_sub_region%index_region)
+      call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%index_sub_region)
+      call get_value_from_key(diag_yaml_id, sub_region_id(1), "tile", fileobj%file_sub_region%tile, is_optional=.true.)
+      if (fileobj%file_sub_region%tile .eq. 0) call mpp_error(FATAL, "The tile number is required when defining a "//&
+        "subregion. Check your subregion entry for "//trim(fileobj%file_fname))
     endif
   endif
 
@@ -268,38 +272,38 @@ subroutine diag_get_value_from_key(file_id, par_id, key_name, value_name, is_opt
 end subroutine diag_get_value_from_key
 
 !< @brief gets the lat/lon of the sub region to use in a diag_table yaml
-subroutine get_region_latlon(diag_yaml_id, region_id, lat_lon_region)
+subroutine get_sub_region_latlon(diag_yaml_id, sub_region_id, lat_lon_sub_region)
   integer, intent(in)  :: diag_yaml_id       !< Id of the diag_table yaml file
-  integer, intent(in)  :: region_id          !< Id of the region block to read from
-  real,    intent(out) :: lat_lon_region (8) !< sub region
+  integer, intent(in)  :: sub_region_id      !< Id of the region block to read from
+  real,    intent(out) :: lat_lon_sub_region (NUM_SUB_REGION_ARRAY) !< Array storing the bounds of the sub region
 
-  call get_value_from_key(diag_yaml_id, region_id, "xbegin", lat_lon_region(1), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "xend", lat_lon_region(2), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "ybegin", lat_lon_region(3), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "yend", lat_lon_region(4), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "zbegin", lat_lon_region(5), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "zend", lat_lon_region(6), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "ubegin", lat_lon_region(7), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "uend", lat_lon_region(8), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_begin", lat_lon_sub_region(1), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_end", lat_lon_sub_region(2), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_begin", lat_lon_sub_region(3), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_end", lat_lon_sub_region(4), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_begin", lat_lon_sub_region(5), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_end", lat_lon_sub_region(6), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_begin", lat_lon_sub_region(7), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_end", lat_lon_sub_region(8), is_optional=.true.)
 
-end subroutine get_region_latlon
+end subroutine get_sub_region_latlon
 
 !< @brief gets the indexes of the sub region to use in a diag_table yaml
-subroutine get_region_index(diag_yaml_id, region_id, index_region)
+subroutine get_sub_region_index(diag_yaml_id, sub_region_id, index_sub_region)
   integer, intent(in)  :: diag_yaml_id     !< Id of the diag_table yaml file
-  integer, intent(in)  :: region_id        !< Id of the region block to read from
-  integer, intent(out) :: index_region (8) !< sub region
+  integer, intent(in)  :: sub_region_id    !< Id of the region block to read from
+  integer, intent(out) :: index_sub_region (NUM_SUB_REGION_ARRAY) !< Array storing the index bounds of the sub region
 
-  call get_value_from_key(diag_yaml_id, region_id, "xbegin", index_region(1), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "xend", index_region(2), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "ybegin", index_region(3), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "yend", index_region(4), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "zbegin", index_region(5), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "zend", index_region(6), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "ubegin", index_region(7), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, region_id, "uend", index_region(8), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_begin", index_sub_region(1), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_end", index_sub_region(2), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_begin", index_sub_region(3), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_end", index_sub_region(4), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_begin", index_sub_region(5), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_end", index_sub_region(6), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_begin", index_sub_region(7), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_end", index_sub_region(8), is_optional=.true.)
 
-end subroutine get_region_index
+end subroutine get_sub_region_index
 
 !< @brief gets the total number of variables in the diag_table yaml file
 !< @return total number of variables
