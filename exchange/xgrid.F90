@@ -3262,7 +3262,7 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
   integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
-  d = 0
+  d = 0.
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
      if(present(complete)) is_complete=complete
@@ -4742,7 +4742,7 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
   integer(i8_kind), dimension(MAX_FIELDS), save :: d_addrs=-9999
   integer(i8_kind), dimension(MAX_FIELDS), save :: x_addrs=-9999
 
-  d = 0
+  d = 0.
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
      if(present(complete)) is_complete=complete
