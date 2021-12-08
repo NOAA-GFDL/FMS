@@ -42,13 +42,13 @@ MODULE fms_diag_object_container_mod
 
    implicit none
 
-   !> \brief A container of fms_diag_object instances providing insert, remove ,
-   !!  find/search, and size (functions). Iterator is provided by the associated
-   !! iterator class (see  dig_obj_iterator class).
+   !> @brief A container of fms_diag_object instances providing insert, remove ,
+   !!  find/search, and size public member functions. Iterator is provided by
+   !!  the associated iterator class (see  dig_obj_iterator class).
    !!
    !!  This version does not enforce uniqueness of ID keys (I.e. it is not a set).
    !!
-   type, public :: fms_diag_object_container_type
+   type, public:: fms_diag_object_container_type
       TYPE (linked_list_type), ALLOCATABLE :: the_linked_list !!This version based on the FDS linked_list.
    contains
       procedure :: insert => insert_diag_object
@@ -80,7 +80,7 @@ MODULE fms_diag_object_container_mod
 
 contains
 
-   !> \brief Returns an empty itetator if a diag object with this ID was not found.
+   !> @brief Returns an empty itetator if a diag object with this ID was not found.
    !! If the diag object was found, return an iterator with the current object being
    !! the found object, ad the last/anchor being the last/anchor of the container.
    !! Note that this routine can accept an optional iterator as input, which
@@ -107,7 +107,7 @@ contains
       end do
    end function find_diag_object
 
-   !> \brief insert diagnostic object obj with given id.
+   !> @brief insert diagnostic object obj with given id.
    !! Objects are inserted at the back / end of the list
    !! This version of the container also enforces that the
    !! objects ID is equal the input id. status of -1
@@ -129,7 +129,7 @@ contains
       endif
    end function
 
-   !> \brief Remove and return the first object in the container with the corresponding id .
+   !> @brief Remove and return the first object in the container with the corresponding id .
    !! Return an iterator that starts with the next object on the container. (Note, if the client
    !! code does not already have a referenc to the object being removed, then  the client may
    !! want to to use subroutine find before using subroutine remove. If subroutine find is used,
@@ -152,7 +152,7 @@ contains
       riter = diag_obj_iterator_type(temp_liter)
    end function
 
-   !> return the number of objects held in the container
+   !> @brief Return the number of objects held in the container.
    function get_num_objects (this )result (sz)
       class (fms_diag_object_container_type), intent (in out) :: this
       integer :: sz                     !> The returned result - the number of objects in container.
@@ -160,14 +160,14 @@ contains
    end function
 
 
-   !> return a pointer to an iterator for the objects in the container.
+   !> @brief Return a pointer to an iterator for the objects in the container.
    function get_iterator (this) result (oliter)
       class (fms_diag_object_container_type), intent (in) :: this
       class(diag_obj_iterator_type) , allocatable :: oliter !> The reurned iterator to the objects in the container.
       oliter = diag_obj_iterator_type( this%the_linked_list%get_literator() )
    end function
 
-  !> A consructor for a container's iterator.
+  !> @brief A consructor for a container's iterator.
    function diag_obj_iterator_constructor( iliter ) result (diag_itr)
     class (literator_type), allocatable :: iliter !> An iterator. Normally the one that the container is based on.
     class (diag_obj_iterator_type), allocatable :: diag_itr !> The returned diag object iterator.
@@ -175,7 +175,7 @@ contains
     diag_itr%liter = iliter;
  end function diag_obj_iterator_constructor
 
- !> A the default consructor for the container.
+ !> @brief the default consructor for the container.
    function diag_object_container_constructor () result (doc)
       type(fms_diag_object_container_type), allocatable :: doc !> The resultant container.
       allocate(doc)
@@ -184,14 +184,14 @@ contains
    end function diag_object_container_constructor
 
 
-   !> Return true if there is more data this iterator can access
+   !> @Return true if there is more data this iterator can access.
    function literator_has_data( this ) result( r )
       class(diag_obj_iterator_type), intent(in) :: this
       logical :: r                  !> True if this iterator has data,
       r = this%liter%has_data()
    end function literator_has_data
 
-   !> Move the iterator to the next data
+   !> @Move the iterator to the next data.
    function literator_next( this ) result( status )
       class(diag_obj_iterator_type), intent(in out ) :: this
       integer :: status !> !> Returned status of operation. 0 if the iterator can be moved to the next object.
@@ -199,7 +199,7 @@ contains
       status = this%liter%next()
    end function literator_next
 
-   !> Get the current data the iterator is poiting to
+   !> @ Get the current data the iterator is poiting to.
    function  literator_data( this ) result( rdo )
       class(diag_obj_iterator_type), intent(in) :: this
       class(fms_diag_object),  pointer :: rdo !> The resultant diagnostic object.
@@ -215,7 +215,7 @@ contains
       end select
    end function literator_data
 
-   !> The destroctor for the container
+   !> @brief The destroctor for the container.
    subroutine destructor(this)
       type(fms_diag_object_container_type) :: this  !Note for destructors its needs to be type and not class!
       deallocate(this%the_linked_list)
