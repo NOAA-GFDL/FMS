@@ -223,11 +223,10 @@ use platform_mod
        & use_mpp_io, use_modern_diag
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
-  !!USE diag_data_mod, ONLY : the_diag_object_container
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fms_diag_object
-  use fms_diag_object_container_mod, ONLY: fms_diag_object_container
+  use fms_diag_object_container_mod, ONLY: fms_diag_object_container_type
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -263,7 +262,7 @@ use platform_mod
 
   type(time_type) :: Time_end
 
-  TYPE(fms_diag_object_container), ALLOCATABLE :: the_diag_object_container
+  TYPE(fms_diag_object_container_type), ALLOCATABLE :: the_diag_object_container
 
   !> @brief Send data over to output fields.
   !!
@@ -429,9 +428,9 @@ CONTAINS
     LOGICAL :: mask_variant1, verbose1
     LOGICAL :: cm_found
     CHARACTER(len=128) :: msg
-    INTEGER :: ic_status !< used to check the status of insert into container.
-    class(fms_diag_object), allocatable , target ::  a_diag_obj
-    type(fms_diag_object), pointer :: diag_obj_ptr
+    INTEGER :: status_ic !< used to check the status of insert into container.
+    CLASS(fms_diag_object), ALLOCATABLE , TARGET :: diag_obj  !< the diag object that is (to be) registered
+    TYPE(fms_diag_object), POINTER :: diag_obj_ptr => NULL() !< a pointer to the registered diag_object
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -594,14 +593,14 @@ CONTAINS
       !! Create a diag object, initialize it with the registered data, and insert
       !! it ino the diag_obj_container singleton.
 
-      allocate( a_diag_obj )
-      call a_diag_obj%register (module_name, field_name, axes, init_time, &
+      allocate( diag_obj )
+      call diag_obj%register (module_name, field_name, axes, init_time, &
         long_name, units, missing_value, Range, mask_variant, standard_name, &
         do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
 
-      diag_obj_ptr => a_diag_obj
-      ic_status = the_diag_object_container%insert(diag_obj_ptr%get_id(), diag_obj_ptr)
-      if(ic_status .ne. 0) then
+      diag_obj_ptr => diag_obj
+      status_ic = the_diag_object_container%insert(diag_obj_ptr%get_id(), diag_obj_ptr)
+      if(status_ic .ne. 0) then
          print *, "Insertion ERROR for id ", diag_obj_ptr%get_id()
       endif
     endif
@@ -3724,7 +3723,7 @@ CONTAINS
     END IF
 
     !!Create the diag_object container; Its a singleton in the diag_data mod
-    the_diag_object_container = fms_diag_object_container()
+    the_diag_object_container = fms_diag_object_container_type()
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here
